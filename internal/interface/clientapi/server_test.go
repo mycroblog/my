@@ -72,6 +72,8 @@ func TestGetInstance(t *testing.T) {
 		SearchIndexing: clientapi.SearchIndexingDeny, AiUsage: clientapi.AIUsageDeny,
 		// Unset, link cards are fetched and obey robots.txt (ADR-0062).
 		LinkCards: true,
+		// A server built without UX measurements takes none (ADR-0167 §3).
+		UxMeasurement: new(false),
 		// Unset, the costs are private (ADR-0067 §8).
 		FinanceVisibility:       clientapi.FinanceVisibilityPrivate,
 		IncomeVisibility:        clientapi.IncomeVisibilityPrivate,
@@ -248,7 +250,7 @@ func TestProblemsAreLocalized(t *testing.T) {
 				clientapi.RequestErrorHandler(s)(w, r, &clientapi.InvalidParamFormatError{ParamName: "limit"})
 			},
 			wantStatus: http.StatusBadRequest,
-			wantTitle:  "The request is invalid.", wantDetail: "The parameter limit has an invalid value.",
+			wantTitle:  "This could not be done because of a problem in the app. Reload or update the app and try again.", wantDetail: "The parameter limit has an invalid value.",
 		},
 		{
 			name: "invalid parameter in ja", acceptLanguage: "ja", wantLanguage: "ja",
@@ -256,7 +258,7 @@ func TestProblemsAreLocalized(t *testing.T) {
 				clientapi.RequestErrorHandler(s)(w, r, &clientapi.RequiredParamError{ParamName: "cursor"})
 			},
 			wantStatus: http.StatusBadRequest,
-			wantTitle:  "リクエストが正しくありません。", wantDetail: "パラメーター cursor の値が正しくありません。",
+			wantTitle:  "アプリの問題で、この操作を行えませんでした。アプリを読み込み直すか更新してから、もう一度試してください。", wantDetail: "パラメーター cursor の値が正しくありません。",
 		},
 		{
 			name: "handler error in ja", acceptLanguage: "ja-JP", wantLanguage: "ja",

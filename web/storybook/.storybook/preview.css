@@ -1,0 +1,17 @@
+/* SPDX-License-Identifier: AGPL-3.0-only */
+
+/* The page every story renders on, as the app's frame paints it: the surface and the text of the toolbar's theme
+   (data-theme on <html>), so that no story shows the browser's own canvas around or under it. */
+html,
+body {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+/* What the app's frame says to the parts on a phone (under `tablet`, shell.tsx), for a story that renders a part
+   without that frame: a disclosure's toggle is its label's width and little more. */
+@media (width < 40rem) {
+  html {
+    --disclosure-toggle-inline: var(--disclosure-padding);
+  }
+}

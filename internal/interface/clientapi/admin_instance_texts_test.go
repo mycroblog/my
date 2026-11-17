@@ -157,8 +157,8 @@ func TestInstanceTextProblems(t *testing.T) {
 	for _, tc := range []struct {
 		name, path, body string
 		status           int
-		// detail is the property that the detail names.
-		detail string
+		// field is the property that the problem names.
+		field string
 	}{
 		{"unknown key", "/admin/instance_texts/motto", `{"body":"x"}`, http.StatusNotFound, ""},
 		{"too long", "/admin/instance_texts/name", `{"body":"` + strings.Repeat("a", 101) + `"}`, http.StatusUnprocessableEntity, "body"},
@@ -168,8 +168,8 @@ func TestInstanceTextProblems(t *testing.T) {
 	} {
 		res := e.send(t, http.MethodPut, tc.path, "admin", tc.body)
 		p := decodeProblem(t, res)
-		if res.StatusCode != tc.status || (tc.detail != "" && (p.Detail == nil || !strings.Contains(*p.Detail, tc.detail))) {
-			t.Errorf("%s: %d %+v, want %d %q", tc.name, res.StatusCode, p, tc.status, tc.detail)
+		if res.StatusCode != tc.status || (tc.field != "" && (p.Field == nil || *p.Field != tc.field)) {
+			t.Errorf("%s: %d %+v, want %d %q", tc.name, res.StatusCode, p, tc.status, tc.field)
 		}
 	}
 	if len(f.sets) != 0 {

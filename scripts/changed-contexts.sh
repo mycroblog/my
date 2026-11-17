@@ -14,29 +14,33 @@
 #   docs    Markdown lint, the documentation rules, the ADR numbers (docs:check)
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
-#   mail    app/mail, the MJML layout of the HTML emails         (mail:check)
 #   api     the OpenAPI spec and the code generated from it      (api:check)
-#   ui      app/ui (@my/ui)                                      (ui:check, the story tests)
-#   web     app/web and the workspace-wide client checks         (web:check)
+#   web     the Bun workspace: its packages under web/ and the workspace-wide checks (web:check); of its tests,
+#           scripts/changed-web-packages.sh picks the packages a change reaches
 #   docker  the Dockerfile and the deployments                   (docker:check, the Docker smoke test)
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
 #   agentkit tools/agentkit and the context map (the context-map.yaml files), which covers every path (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
-#   site    the documentation site app/docs and what it publishes: docs/operations, docs/reference, docs/guide,
-#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml; app/docs selects no other context
-#           (site:check: the build of docs:site-build, the tsc, Oxlint, and knip of app/docs, and the check of its translations)
+#   site    the documentation site web/docs and what it publishes: docs/operations, docs/reference, docs/guide,
+#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml
+#           (site:check: the build of docs:site-build, the tsc, Oxlint, and knip of web/docs, and the check of its translations)
+#   e2e     the E2E tests of web/e2e against the demo server (web:e2e, a job of its own rather than a part of `check`):
+#           the workspace packages @my/app and @my/e2e depend on (is_e2e), and the server code the demo server builds
+#   stories the tests in a browser on the built catalog of the Storybook host web/storybook (web:layout-test,
+#           web:browser-test, a job of their own): the host and the workspace packages it depends on, whose stories it
+#           composes (is_stories)
 #
-# A change to shared configuration (Taskfile.yml, .tool-versions, tools/go.mod, ci.yml and ui-test.yml, which run the
+# A change to shared configuration (Taskfile.yml, .tool-versions, tools/go.mod, and ci.yml, which runs the
 # checks, and the actions) selects every context, and so does any path no rule below knows; the tasks of one area
 # (tasks/<area>.yml) select that area's contexts and those of the areas whose tasks call it; the other workflows select
 # none. Any path no rule knows selects every context: a new kind of file runs everything until a
-# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; app/bun.lock: ui,
-# web, mail, and site), so a Dependabot pull request runs the jobs that use the dependency.
+# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; bun.lock: the
+# workspace's members, web, i18n, mykit, and site), so a Dependabot pull request runs the jobs that use the dependency.
 set -euo pipefail
 
-ALL=(docs go i18n mail api ui web docker shell schema agentkit mykit tofu site)
+ALL=(docs go i18n api web docker shell schema agentkit mykit tofu site e2e stories)
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -66,6 +70,65 @@ case "$1" in
     ;;
 esac
 
+# workspace_dirs NAME... prints the directories of the workspace packages NAME and of every workspace package they
+# depend on, directly or not: the Bun workspace's dependency graph, read from the members' package.json (`workspace:`
+# versions of dependencies, devDependencies, and peerDependencies).
+workspace_dirs() {
+  local -A dir_of=() seen=()
+  local pattern f name dep queue=("$@")
+  for pattern in $(jq -r '.workspaces[]' "$root/package.json"); do
+    for f in "$root"/$pattern/package.json; do
+      [ -f "$f" ] || continue
+      name="$(jq -r .name "$f")"
+      f="${f#"$root"/}"
+      dir_of[$name]="${f%/package.json}"
+    done
+  done
+  while [ "${#queue[@]}" -gt 0 ]; do
+    name="${queue[0]}"
+    queue=("${queue[@]:1}")
+    [ -n "${seen[$name]:-}" ] && continue
+    seen[$name]=1
+    echo "${dir_of[$name]}"
+    for dep in $(jq -r '[.dependencies, .devDependencies, .peerDependencies] | map(select(. != null) | to_entries[]
+      | select(.value | startswith("workspace:")) | .key) | .[]' "$root/${dir_of[$name]}/package.json"); do
+      queue+=("$dep")
+    done
+  done
+}
+# What the E2E tests run: @my/app, the client the server embeds, and @my/e2e, the tests, the scenario and the demo
+# server. What the catalog's tests run: @my/storybook, the host, which depends on each package whose stories it composes.
+mapfile -t E2E_DIRS < <(workspace_dirs "@my/app" "@my/e2e")
+mapfile -t STORIES_DIRS < <(workspace_dirs "@my/storybook")
+
+# is_e2e PATH: whether the path changes what the E2E tests run: a package of E2E_DIRS, the lockfile that pins their
+# dependencies, or the server that the demo server builds from (its Go code, module, spec, schema, and queries).
+is_e2e() {
+  local dir
+  case "$1" in
+    context-map.yaml | */context-map.yaml) return 1 ;;
+    internal/* | cmd/* | api/* | schema/* | queries/* | go.mod | go.sum | bun.lock) return 0 ;;
+  esac
+  for dir in "${E2E_DIRS[@]}"; do
+    case "$1" in "$dir"/*) return 0 ;; esac
+  done
+  return 1
+}
+
+# is_stories PATH: whether the path changes what the catalog's tests run: a package of STORIES_DIRS, or the lockfile that
+# pins their dependencies.
+is_stories() {
+  local dir
+  case "$1" in
+    context-map.yaml | */context-map.yaml) return 1 ;;
+    bun.lock) return 0 ;;
+  esac
+  for dir in "${STORIES_DIRS[@]}"; do
+    case "$1" in "$dir"/*) return 0 ;; esac
+  done
+  return 1
+}
+
 declare -A selected=()
 select_contexts() {
   local c
@@ -81,7 +144,11 @@ task_area_contexts() {
     docs) echo docs site ;;
     # The emoji tables and fonts are generated by hand; the go and web contexts check the generated files.
     emoji) ;;
-    agentkit | api | docker | go | i18n | mail | mykit | shell | tofu | ui | web) echo "$1" ;;
+    agentkit | api | docker | go | i18n | mykit | shell | tofu) echo "$1" ;;
+    # web:e2e, web:demo, web:stories and the tests on the built catalog live with the workspace's tasks.
+    web) echo web e2e stories ;;
+    # The previews and golden files of the emails, which go test reads.
+    mail) echo go ;;
     *) echo "${ALL[@]}" ;;
   esac
 }
@@ -101,11 +168,17 @@ select_task_area() {
   done
 }
 
-# classify PATH selects the contexts of one changed path. Rules add up: app/ui/README.md is docs, ui, and web.
+# classify PATH selects the contexts of one changed path. Rules add up: web/docs/README.md is docs and site.
 classify() {
   local path="$1" known=0
   # The context-map.yaml files must cover every path, so any change can break `agentkit map check`.
   select_contexts agentkit
+  if is_e2e "$path"; then
+    select_contexts e2e
+  fi
+  if is_stories "$path"; then
+    select_contexts stories
+  fi
   case "$path" in
     # A map file, which `agentkit map check` alone reads.
     context-map.yaml | */context-map.yaml)
@@ -113,7 +186,7 @@ classify() {
       ;;
     # Shared configuration, which every check runs through: the task runner and its tasks, the tool versions (go-task,
     # sqlc, oapi-codegen, and go-licenses are pinned in tools/go.mod), and the workflows. Everything.
-    Taskfile.yml | scripts/task.sh | .tool-versions | .github/workflows/ci.yml | .github/workflows/ui-test.yml | \
+    Taskfile.yml | scripts/task.sh | .tool-versions | .github/workflows/ci.yml | \
       .github/actions/* | scripts/changed-contexts.sh | tools/go.mod | tools/go.sum)
       select_contexts "${ALL[@]}"
       return
@@ -139,13 +212,14 @@ classify() {
       select_contexts go mykit agentkit
       return
       ;;
-    # The options and the ignored files of bun fmt, which web:fmt-check reads for every TS package.
-    bunfig.toml | .prettierignore | .editorconfig)
+    # The indentation and line endings of bun fmt, which web:fmt-check reads for every TS package.
+    .editorconfig)
       select_contexts web
       return
       ;;
-    app/bun.lock | app/bunfig.toml | app/package.json)
-      select_contexts ui web mail site
+    # The configuration of the workspace, which every member installs, type-checks, and lints with.
+    bun.lock | bunfig.toml | package.json | tsconfig.base.json | .oxlintrc.json | knip.json)
+      select_contexts web i18n mykit site
       return
       ;;
     # The bundle of the spec, which the documentation site publishes too (ADR-0150 §5).
@@ -163,21 +237,24 @@ classify() {
       select_contexts api go
       return
       ;;
-    # The npm license check, which the web context runs on the client workspace too.
+    # The npm license check, which the web and mykit contexts run on the workspace too.
     tools/i18n/src/licenses.ts)
-      select_contexts i18n web
+      select_contexts i18n web mykit
       return
       ;;
-    # The email layout, a package of the client workspace that Oxlint, knip, and bun fmt of the web context read too;
-    # the Go template it compiles to is the go context's (internal/*), checked by mail:gen-check.
-    app/mail/*)
-      select_contexts mail web
-      return
-      ;;
-    # The catalogs and their tools: the Go accessors (go, added below as i18n's dependent) and the web client, which
-    # bundles the client catalogs and the generated TypeScript accessors. @my/ui reads neither.
+    # The catalogs and their tools: the Go accessors (go, added below as i18n's dependent).
     locales/* | tools/i18n/*)
+      select_contexts i18n
+      return
+      ;;
+    # The catalogs of the web packages and @my/i18n, which compiles them for the packages that read them.
+    web/*/locales/* | web/i18n/*)
       select_contexts i18n web
+      return
+      ;;
+    # The copy role's knowledge: its word decisions are rules of the copy lint, and its shape a documentation rule.
+    .claude/knowledge/copy/*)
+      select_contexts docs i18n
       return
       ;;
   esac
@@ -227,10 +304,9 @@ classify() {
       ;;
   esac
   case "$path" in
-    # The documentation site (ADR-0150 §7): its workspace and the documents it copies in and builds. app/docs is a
-    # package of the client workspace, but site:check runs its tsc, Oxlint, and knip, and it imports nothing from app/web
-    # or app/ui, so it selects no client context (web, below).
-    app/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/README.md)
+    # The documentation site (ADR-0150 §7): its package and the documents it copies in and builds. site:check runs its
+    # tsc, Oxlint, and knip.
+    web/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/README.md)
       select_contexts site
       known=1
       ;;
@@ -238,8 +314,16 @@ classify() {
   case "$path" in
     # go test fails when the generated configuration or command reference is stale (go:config-docs, go:cli-docs).
     *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-build-tags.sh | scripts/go-work-check.sh | scripts/stable-mtime.py | \
-      docs/reference/configuration.md | docs/reference/cli.md)
+      scripts/go-test-sleep.sh | scripts/go-test-sleep.baseline | docs/reference/configuration.md | docs/reference/cli.md)
       select_contexts go
+      known=1
+      ;;
+  esac
+  case "$path" in
+    # web:test fails when the Go list generated from web/design-tokens is stale, and a test of web/app-features reads
+    # the vectors of the text rules it shares with the server.
+    internal/domain/instance/theme_tokens.gen.go | pkg/testkit/fixtures/text/tokens.json)
+      select_contexts web
       known=1
       ;;
   esac
@@ -256,14 +340,7 @@ classify() {
       ;;
   esac
   case "$path" in
-    # The shared text token vectors, which the web client's lib/textTokens.ts test reads too (ADR-0092 §4).
-    pkg/testkit/fixtures/text/*)
-      select_contexts web
-      known=1
-      ;;
-  esac
-  case "$path" in
-    internal/interface/clientapi/* | app/web/src/lib/api/* | scripts/generate.sh | scripts/api-spec-check.sh | scripts/license-scope-check.sh)
+    internal/interface/clientapi/* | scripts/generate.sh | scripts/api-spec-check.sh | scripts/license-scope-check.sh)
       select_contexts api
       known=1
       ;;
@@ -277,35 +354,21 @@ classify() {
       ;;
   esac
   case "$path" in
-    app/ui/* | app/tsconfig.base.json | app/.oxlintrc.json | app/oxlint/* | app/knip.json | scripts/ui-test-docker.sh)
-      select_contexts ui
+    # The other packages of the workspace under web/, the script that renders the brand icons of web/brand, and the
+    # one that picks the packages web:test runs.
+    web/docs/*) ;;
+    # The brand assets, which the server image embeds.
+    web/brand/*)
+      select_contexts web docker
       known=1
       ;;
-  esac
-  case "$path" in
-    # The workspace configuration that the checks of the documentation site read too (tsc, Oxlint, knip).
-    app/tsconfig.base.json | app/.oxlintrc.json | app/oxlint/* | app/knip.json)
-      select_contexts site
-      ;;
-  esac
-  case "$path" in
-    # The documentation site, whose checks are the site context's (above).
-    app/docs/*) ;;
-    # web:tokens fails when the token list generated from app/ui/src/theme.css is stale.
-    app/* | scripts/playwright-image-check.sh | scripts/web-icons.sh | internal/domain/instance/theme_tokens.gen.go)
+    web/* | scripts/web-icons.sh | scripts/changed-web-packages.sh)
       select_contexts web
       known=1
       ;;
   esac
   case "$path" in
-    # mail:gen-check fails when the email layout compiled from app/mail/frame.mjml, with the colors of the token list, is stale.
-    internal/app/kernel/mail_frame.gen.html | internal/domain/instance/theme_tokens.gen.go)
-      select_contexts mail
-      known=1
-      ;;
-  esac
-  case "$path" in
-    Dockerfile | .dockerignore | compose.yaml | deploy/* | test/upgrade-test/* | test/federation-live/* | scripts/docker-smoke.sh | scripts/docker-web-reproducible.sh | scripts/web-sign-in.sh | scripts/upgrade-test.sh | scripts/federation-live.sh)
+    Dockerfile | .dockerignore | compose.yaml | deploy/* | test/upgrade-test/* | test/federation-live/* | scripts/docker-smoke.sh | scripts/web-sign-in.sh | scripts/upgrade-test.sh | scripts/federation-live.sh)
       select_contexts docker
       known=1
       ;;
@@ -340,10 +403,8 @@ while IFS= read -r path; do
   [ -n "$path" ] && classify "$path"
 done <<< "$files"
 
-# Dependents: @my/ui is compiled into app/web, the API code is generated into Go, app/web, and pkg/mykit,
-# the Go i18n accessors are Go, and the schema is embedded into Go.
-[ -n "${selected[ui]:-}" ] && select_contexts web
-[ -n "${selected[api]:-}" ] && select_contexts go web mykit
+# Dependents: the API code is generated into Go and pkg/mykit, and the Go i18n accessors are Go.
+[ -n "${selected[api]:-}" ] && select_contexts go mykit
 [ -n "${selected[i18n]:-}" ] && select_contexts go
 
 for c in "${ALL[@]}"; do

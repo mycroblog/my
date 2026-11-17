@@ -318,7 +318,7 @@ func TestCreateDomainActionRejectsInvalidInput(t *testing.T) {
 		`{"domain":"bad.example","kind":"suspend","private_note":"\u0000"}`:                                                                           "private_note",
 	} {
 		res := e.sendJSON(t, http.MethodPost, "/admin/domain_actions", "admin", body)
-		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, want) {
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != want {
 			t.Errorf("%.80s = %d %+v, want 422 naming %s", body, res.StatusCode, p, want)
 		}
 	}
@@ -480,7 +480,7 @@ func TestAssignAndResolveReport(t *testing.T) {
 	}
 
 	res = e.sendJSON(t, http.MethodPost, "/admin/reports/"+reportOne+"/resolve", "admin", `{"outcome":"ignored","x":"invalid-on-purpose"}`)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "outcome") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "outcome" {
 		t.Errorf("resolve(ignored) = %d %+v, want 422", res.StatusCode, p)
 	}
 	for _, path := range []string{"/assign_to_self", "/unassign", "/resolve"} {

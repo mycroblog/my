@@ -1,0 +1,16 @@
+# SPDX-License-Identifier: MIT
+description: A stored override that no longer applies, as it was saved, and why.
+type: object
+required: [token, reason]
+properties:
+  token:
+    type: string
+  light:
+    type: string
+  dark:
+    type: string
+  value:
+    type: string
+  reason:
+    type: string
+    enum: [unknown_token, duplicate_token, invalid_value, out_of_range]

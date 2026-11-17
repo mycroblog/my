@@ -129,7 +129,7 @@ func TestAcquireTimeoutDoesNotBoundWhatRunsOnTheConnection(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Query: %v", err)
 	}
-	time.Sleep(2 * wait)
+	// Reading the rows waits for pg_sleep, past the bound.
 	for rows.Next() {
 		continue
 	}

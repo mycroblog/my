@@ -1,0 +1,53 @@
+{
+  "name": "@my/design-system",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts",
+    "./test/chunks": "./src/test/chunks.ts",
+    "./editor": "./src/editor.tsx",
+    "./preview": "./src/preview.tsx",
+    "./samples": "./src/samples.tsx",
+    "./styles.css": "./src/styles.css",
+    "./emoji.css": "./src/emoji.css",
+    "./cjk.css": "./src/cjk.css",
+    "./noto-sans.css": "./src/noto-sans.css"
+  },
+  "scripts": {
+    "typecheck": "bun --bun tsc -p .",
+    "test": "bun test --path-ignore-patterns '**/*.{dom,jsdom}.test.tsx' && dom-tests happy-dom && dom-tests jsdom"
+  },
+  "dependencies": {
+    "@lexical/history": "0.53.0",
+    "@lexical/plain-text": "0.53.0",
+    "@lexical/react": "0.53.0",
+    "@lexical/utils": "0.53.0",
+    "@lingui/core": "6.12.0",
+    "@my/design-tokens": "workspace:*",
+    "@tabler/icons-react": "3.51.0",
+    "@tanstack/react-virtual": "3.14.26",
+    "lexical": "0.53.0",
+    "motion": "14.9.0",
+    "react-aria": "3.53.1",
+    "react-aria-components": "1.22.1",
+    "tailwind-variants": "4.0.2",
+    "tailwindcss": "4.3.5"
+  },
+  "peerDependencies": {
+    "react": "19.3.1"
+  },
+  "devDependencies": {
+    "@my/devtools": "workspace:*",
+    "@storybook/react-vite": "10.6.7",
+    "@testing-library/dom": "10.4.2",
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.10",
+    "@types/bun": "1.4.4",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "storybook": "10.6.7"
+  }
+}

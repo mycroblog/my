@@ -17,25 +17,23 @@ TypeScript は `bun fmt` で整形する。依存は Dependabot で検知し更�
 | `api/openapi.yaml`、`clientapi/*.gen.go` | コミットする（Go が読む） | `task api:generate` |
 | sqlc の生成物 | コミットする（Go が読む） | `task go:sqlc` |
 | `internal/i18n/messages_gen.go`、`internal/i18n/testdata/golden.json` | コミットする（Go が読む） | `task i18n:gen` |
-| `internal/domain/instance/theme_tokens.gen.go` | コミットする（Go が読む） | `task web:tokens-gen` |
+| `internal/domain/instance/theme_tokens.gen.go` | コミットする（Go が読む） | デザインシステムの生成 |
 | `emoji_table.gen.go`、`ai_crawlers.gen.go` | コミットする（外のデータを固定した版で取り込む。入力がリポジトリにない） | 手動 |
 | `docs/reference/configuration.md` | コミットする（Go のテストが生成する人向けの文書。衝突は少ない） | `task go:config-docs` |
 | `docs/reference/cli.md` | コミットする（Go のテストが生成する人向けの文書。衝突は少ない） | `task go:cli-docs` |
-| `@my/ui` のスクリーンショットの基準画像 | コミットする（派生物ではなく期待値。ADR-0110） | CI のコンテナ |
-| `tools/i18n/src/runtime/messages.gen.ts` | **コミットしない** | 型検査・ビルド・テストの前（`deps`） |
+| `web/<package>/src/messages.gen.ts`（Lingui） | **コミットしない** | 型検査・ビルド・テストの前（`deps`） |
 | `pkg/mykit/ts/src/schema.gen.ts` | コミットする（TS だけが読むが、配るパッケージの一部。ADR-0093） | `task api:generate` |
-| `app/web/src/routeTree.gen.ts` | **コミットしない** | 同上 |
-| `app/ui/src/themeTokens.gen.ts` | **コミットしない** | 同上 |
+| クライアントのルートの木（`routeTree.gen.ts`）とトークンの一覧 | **コミットしない** | 同上 |
 | `server` の疑似ロケール（`locales/{en-XA,ar-XB}/server/`） | コミットする（Go が読む） | `task i18n:gen` |
 | `client` の疑似ロケール（`locales/{en-XA,ar-XB}/client/`） | **コミットしない** | 開発の起動・E2E・クライアントのビルドの前 |
 | ADR の索引（`docs/adr/README.md` の表） | **持たない**（§3） | — |
 
 - コミットしない生成物は `.gitignore` に入れる。生成のタスクは `sources` と `generates` を宣言する（§4）。
-  使う側のタスク（`web:typecheck`・`web:build`・`web:test`・`i18n:test` など）は、生成のタスクを `deps` に持つ。入力が変わっていなければ、生成は飛ぶ。
+  使う側のタスク（`web:build`・`i18n:test` など）は、生成のタスクを `deps` に持つ。入力が変わっていなければ、生成は飛ぶ。
 - `go build` と `go test` は、Go だけで（Bun なしで）動く（ADR-0016）。
 - ルートの木（`routeTree.gen.ts`）は、Vite を通さず `@tanstack/router-generator`（MIT）の `Generator` と `getConfig` を直接呼んで作る。
   `vite.config.ts` と同じ設定（`target: "react"`、`autoCodeSplitting: true`）で回すと、200 ms で、コミットしていたファイルとバイト単位で同じものができた（1.167.40、2026-10-23）。版を固定して直接の依存にする。
-- エディタの型検査のために、`task generate` を一度回す手順を CONTRIBUTING.md に書く。開発の起動（`task dev`）も生成を `deps` に持つ。
+- エディタの型検査のために、`task generate` を一度回す手順を CONTRIBUTING.md に書く。開発の起動も生成を `deps` に持つ。
 - コミットする生成物の鮮度は、Merge Queue の `server-static`（ADR-0079）で検査する。2 つの PR の入力を重ねると古くなりうるからである。
 
 ### 2. 疑似ロケール
@@ -70,10 +68,10 @@ Go が整形するのは `client` 以外の名前空間だけである（Go の�
 Taskfile.yml              ルート。includes と check・check:changed・generate だけを書く
 tasks/
   go.yml                  go:vet・go:lint・go:test・go:build・go:build-tags・go:licenses・go:mod・go:sqlc
-  web.yml / ui.yml        web:*・ui:*（typecheck・lint・knip・build・test・ui-test・e2e）
+  web.yml                 web:*（install・build・licenses・fmt）
   i18n.yml / api.yml      i18n:*・api:*（生成は sources / generates を宣言する）
   db.yml / docker.yml / docs.yml / agentkit.yml
-  emoji.yml / mail.yml / mykit.yml / shell.yml
+  emoji.yml / mail.yml / mykit.yml / shell.yml / tofu.yml
 ```
 
 - 1 つのファイルに全部を書かず、領域ごとのファイルに分ける。新しい領域は新しいファイルとして足し、ルートには include を 1 行足すだけにする（§7）。
@@ -107,7 +105,6 @@ tasks/
 | 対象 | 形 | 束ねる側 |
 | --- | --- | --- |
 | ロケールのカタログ | `locales/<locale>/<namespace>/<area>.json`。`area` はキーの先頭の区切り（`settings`・`compose` など）。`admin` は 2 つ目の区切りまで（`admin.domain_actions` → `admin/domain_actions.json`） | `tools/i18n` のローダーと `locales.go` の `go:embed` がディレクトリを読む。キーは変えない |
-| Web クライアントの設計文書 | `docs/architecture/web-client/<NN>-<slug>.md`（節ごと。`14-admin.md` など） | `web-client/README.md` に節の一覧と、節をまたぐ原則を置く |
 | `internal/platform` の `NewApp` | `internal/platform/setup_<module>.go` ごとに、モジュールの配線を `(a *App) setUp<Module>(...)` にまとめる | `NewApp` はモジュールの `setUp*` を依存の順に呼ぶだけにする |
 | スキーマ | `schema/<NN>-<module>/<dialect>.sql`（モジュールのディレクトリは Go のパッケージ。ADR-0153 §3） | Atlas には `scripts/schema-files.sh` が方言のファイルを 1 つのディレクトリに `<NN>-<module>.sql` として写して渡す（`db:check`・`db:lint`）。Go はパッケージ `schema` が各モジュールのパッケージを import し、名前の順に連結する。モジュールを足すときは `schema.go` に 1 行足す |
 
@@ -120,21 +117,20 @@ tasks/
   モジュールのファイルは自分で作るものだけを使う（外部キーはなく、索引と注釈は同じファイルの表の後に置く）ので、依存するモジュールだけを当てたテストの DB でも通る（`schema_test.go` が各モジュールで確かめる）。
 - 翻訳のプラットフォームの候補（ADR-0009）は、どちらも分けたカタログを扱える。Weblate は Component discovery のアドオンが、名前付きのグループ（`language`・`component`）を持つ正規表現でファイルを探し、コンポーネントを自動で足し引きする（[Add-ons](https://docs.weblate.org/en/latest/admin/addons.html)）。
   Crowdin は `crowdin.yml` の `source` に `**` を、`translation` に `%locale%` を書ける（[Configuration file](https://support.crowdin.com/configuration-file/)）。いずれも 2026-10-23 確認。
-- 節の参照: agentkit の `show web-client§14.2` は、節の番号から分けたファイルを引く。
 - `AGENTS.md` と機能要件の表（`01-functional.md`）は分けない。規則や要件の追加は決定者の判断を伴い、並行して変わることが少ないからである。
 
 ### 9. TypeScript の整形: bun fmt
 
 TypeScript と JavaScript のコードは `bun fmt` で整形し、CI で検査する。
 
-- 範囲は `app/`、`pkg/mykit/ts`、`pkg/mybot/ts`、`tools/i18n` の `*.ts`・`*.tsx`・`*.js`・`*.mjs` である。CSS・JSON（`locales/`）・Markdown・YAML（`api/spec`）は範囲に入れない。
-- 設定はリポジトリの根の `bunfig.toml` の `[fmt]` に置く。`bun fmt` は `[fmt]` を持つ一番近い `bunfig.toml` を読むので、各パッケージの `bunfig.toml`（`[install]` だけ）は `[fmt]` を持たない。
+- 範囲は `web/`、`pkg/mykit/ts`、`pkg/mybot/ts`、`tools/i18n` の `*.ts`・`*.tsx`・`*.js`・`*.mjs` である。CSS・JSON（`locales/`）・Markdown・YAML（`api/spec`）は範囲に入れない。
+- 設定はリポジトリの根の `bunfig.toml` の `[fmt]` に置く。
   - `printWidth = 120`。ほかは Prettier の既定（二重引用符、セミコロン、`trailingComma: "all"`、`arrowParens: "always"`、`objectWrap: "preserve"`）で、字下げと改行は `.editorconfig` から読む。
     120 は、コメントと文書を折り返している幅で、当時の行の 96.5 % が収まった。整形器はコメントを折り返さないので、広い幅ほど一度の差分は小さくても、コードとコメントの幅が揃う 120 を採る。
   - `sortImports`・`sortTailwindcss`・`sortPackageJson`・`jsdoc` は使わない（既定で切れている）。import の順と Tailwind のクラスは Oxlint と `better-tailwindcss` が受け持つ。
-- 整形しないファイルは根の `.prettierignore` に挙げる（`.gitignore` のファイルも読まない）。API の仕様から作る `pkg/mykit/ts/src/schema.gen.ts` と、Oxlint の違反の見本（`app/oxlint/violations/`。各行の `expect:` のコメントが報告される行を指すので、配置が検査の中身である）と、`web:lint-rules` が動く間だけ `app/web/src` に置くその写しを外す。コミットしない生成物（§1）は `.gitignore` にあるので読まない。
+- 範囲も `[fmt]` の `ignorePatterns` に置き、範囲の外と生成物（`*.gen.*`）を外す（`.gitignore` のファイルも読まない）。根で引数なしの `bun fmt` は `web:fmt` と同じ。
 - タスクは `web:fmt`（書き込む）と `web:fmt-check`（`bun fmt --check`。整形が要るファイルがあると失敗する）で、範囲の全部を一度に扱う。
-  `web:check`・`i18n:check`・`mail:check`・`mykit:check` が `web:fmt-check` を持つので、`check:changed` はどのパッケージを変えても検査する。CI では、Pull Request の preflight と、Merge Queue の `repo` ジョブで動かす（ADR-0079）。
+  `web:check`・`i18n:check`・`mykit:check`・`site:check` が `web:fmt-check` を持つので、`check:changed` はどのパッケージを変えても検査する。CI では、Pull Request の preflight と、Merge Queue の `repo` ジョブで動かす（ADR-0079）。
 - TypeScript を変えたら、コミットの前に `scripts/task.sh web:fmt` を回す。整形したファイルの衝突は、解いたあとで `web:fmt` を回し直す。
 - 一度の整形は整形だけのコミットにし、根の `.git-blame-ignore-revs` に挙げる。
 
@@ -142,10 +138,10 @@ TypeScript と JavaScript のコードは `bun fmt` で整形し、CI で検査�
 
 NFR-SEC-8 の依存関係の既知の脆弱性の検知は、Dependabot で行う。`govulncheck` は週 1 回の定期実行も含めて持たない。
 
-- **検知**: リポジトリの Dependabot Alerts（vulnerability alerts）で、Go モジュール（`go.mod`・`tools/go.mod`）、Bun（`app/bun.lock`・`tools/i18n/bun.lock`）、GitHub Actions、`Dockerfile` のベースイメージの既知の脆弱性を検知する。CI のジョブ・タスクとしての脆弱性検査は持たない。
+- **検知**: リポジトリの Dependabot Alerts（vulnerability alerts）で、Go モジュール（`go.mod`・`tools/go.mod`）、Bun（`bun.lock`）、GitHub Actions、`Dockerfile` のベースイメージの既知の脆弱性を検知する。CI のジョブ・タスクとしての脆弱性検査は持たない。
 - **更新の提案**: `.github/dependabot.yml` で版更新の PR を週 1 回作らせる。
-  ecosystem は `gomod`（`/`・`/tools`。§11）、`bun`（`/app`・`/tools/i18n`。Dependabot は text 形式の `bun.lock` に対応する）、`github-actions`、`docker`（`/` の `Dockerfile` と `/pkg/mybot/examples`）。
-- **cooldown**: すべての ecosystem で `cooldown.default-days: 3` を設定し、公開から 3 日未満の版への更新 PR を作らない。公開から 3 日未満の版を入れない決まり（`app/bunfig.toml`・`tools/i18n/bunfig.toml` の `minimumReleaseAge`）と揃える。
+  ecosystem は `gomod`（`/`・`/tools`。§11）、`bun`（`/`。Dependabot は text 形式の `bun.lock` に対応する）、`github-actions`、`docker`（`/` の `Dockerfile` と `/pkg/mybot/examples`）。
+- **cooldown**: すべての ecosystem で `cooldown.default-days: 3` を設定し、公開から 3 日未満の版への更新 PR を作らない。公開から 3 日未満の版を入れない決まり（`bunfig.toml` の `minimumReleaseAge`）と揃える。
   cooldown は版更新だけに効き、脆弱性を直す security update には効かない。
 - Dependabot の PR も通常の PR と同じく CI の `check` を通してから人間がマージする。
   `Dockerfile` の Go・Node.js・Bun のタグは `.tool-versions` と一致させる必要がある（`docker:dockerfile-check`）ので、タグの版は `ignore` にして手で上げ、Dependabot は `FROM` の digest だけを上げる。
@@ -245,7 +241,7 @@ Dependabot の Go の更新は、ルートだけを上げると `integration` �
   - 直接依存の更新 1 つの PR に `integration` と `tools/agentkit` の変更が入り、`pkg/mykit`・`pkg/mybot` の利用者に見える要求の版はサーバーに引きずられない。
 - 悪い影響・トレードオフ:
   - clone した直後や `git pull` の後は、`task generate`（か、生成を `deps` に持つタスク）を回すまで、エディタの TS の型検査が通らない。
-  - API の TS の型やルートの木の変化は、PR の差分では見えない。レビューは入力（`api/spec/`・`app/web/src/routes/`）で行う。
+  - API の TS の型やルートの木の変化は、PR の差分では見えない。レビューは入力（`api/spec/`・ルートの定義）で行う。
   - Go が読む生成物（sqlc・API・i18n の Go 側）の衝突は残る。
   - README を見ても ADR の Status の一覧が分からない。
   - コントリビューターは make の代わりに go-task を使う。`.task/` のチェックサムが手元の状態を持つ。おかしくなったら `task --force` で回し直す。

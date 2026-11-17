@@ -16,21 +16,19 @@ vars:
   # Licenses compatible with AGPL-3.0-only (ADR-0011). Anything else, including unknown, fails. Unicode-DFS-2016 is
   # the permissive license of the Unicode data tables in go-textseg, which the Atlas library's HCL parser uses.
   GO_ALLOWED_LICENSES: 0BSD,AGPL-3.0,Apache-2.0,BSD-2-Clause,BSD-3-Clause,BSL-1.0,CC0-1.0,ISC,MIT,MPL-2.0,Unicode-DFS-2016,Unlicense,Zlib
-  # npm dependencies of tools/i18n and of the client workspace app/ must satisfy the same allowlist, plus the
-  # permissive BlueOak-1.0.0 and MIT-0 (no attribution clause), which jsdom's dependencies use.
-  NPM_ALLOWED_LICENSES: "{{.GO_ALLOWED_LICENSES}},BlueOak-1.0.0,MIT-0"
+  # npm dependencies of the Bun workspace must satisfy the same allowlist, plus the permissive BlueOak-1.0.0, which
+  # sax, lru-cache, and common-ancestor-path use.
+  NPM_ALLOWED_LICENSES: "{{.GO_ALLOWED_LICENSES}},BlueOak-1.0.0"
   # Comma-separated build tags of go:bin and docker:build that leave adapters out of the server
   # (docs/reference/build-tags.md); empty builds every adapter.
   GO_TAGS: '{{.GO_TAGS | default ""}}'
-  # The official Playwright image every browser job runs in, pinned by digest. Its version must match the
-  # playwright packages in app/; web:playwright-image-check also keeps the workflows on this exact reference.
-  PLAYWRIGHT_IMAGE: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
   # The contexts of `check` (scripts/changed-contexts.sh), each with a `<context>:check` task.
-  CHECKS: '{{.CHECKS | default "docs go i18n mail api ui web docker agentkit mykit site"}}'
+  CHECKS: '{{.CHECKS | default "docs go i18n api web docker agentkit mykit site"}}'
 
 includes:
   agentkit: ./tasks/agentkit.yml
   api: ./tasks/api.yml
+  cjk: ./tasks/cjk.yml
   db: ./tasks/db.yml
   docker: ./tasks/docker.yml
   docs: ./tasks/docs.yml
@@ -41,26 +39,27 @@ includes:
   mykit: ./tasks/mykit.yml
   shell: ./tasks/shell.yml
   tofu: ./tasks/tofu.yml
-  ui: ./tasks/ui.yml
   web: ./tasks/web.yml
 
 tasks:
-  # The site context runs after the others: its build rewrites app/docs/dist, which the Go commands of go:check walk
-  # (`./...` descends into app/), and a file that vanishes during the walk fails them.
+  # The site context runs after the others: its build rewrites web/docs/dist, which the Go commands of go:check walk
+  # (`./...` descends into web/), and a file that vanishes during the walk fails them.
   check:
-    desc: Run every offline check, the contexts and the checks inside each in parallel (CHECKS="go web" for some); the site context last, since its build rewrites app/docs/dist under the Go walk
+    desc: Run every offline check, the contexts and the checks inside each in parallel (CHECKS="go web" for some); the site context last, since its build rewrites web/docs/dist under the Go walk
     vars:
-      PARALLEL:
-        sh: for c in {{.CHECKS}}; do [ "$c" = site ] || printf '%s ' "$c"; done
+      # Not a `sh:` variable: `--summary`, which scripts/ci-coverage.sh reads, lists a loop over one as no dependency.
+      PARALLEL: '{{without (splitList " " .CHECKS) "site" "" | join " "}}'
     deps:
       - for: { var: PARALLEL }
         task: "{{.ITEM}}:check"
+        # The web packages that web:test runs: every one without it.
+        vars: { PACKAGES: "{{.WEB_PACKAGES}}" }
     cmds:
       - task: site:check
         if: case " {{.CHECKS}} " in *" site "*) true;; *) false;; esac
 
   check:changed:
-    desc: Run the checks of the contexts changed since BASE (default origin/main) and of their dependents
+    desc: Run the checks of the contexts changed since BASE (default origin/main) and of their dependents, with the tests of the web packages the changes reach
     vars:
       # The changes since the merge base of BASE and HEAD, uncommitted and untracked files included.
       BASE: '{{.BASE | default "origin/main"}}'
@@ -68,26 +67,36 @@ tasks:
         sh: scripts/changed-contexts.sh '{{.BASE}}' | tr '\n' ' '
       SELECTED:
         sh: for c in {{.CONTEXTS}}; do case " {{.CHECKS}} " in *" $c "*) printf '%s ' "$c";; esac; done
+      # The web packages whose tests the changes reach, which web:test runs alone.
+      WEB_PACKAGES:
+        sh: p="$(scripts/changed-web-packages.sh '{{.BASE}}' | tr '\n' ' ')"; echo "${p:-none}"
     cmds:
       - "echo 'contexts changed since {{.BASE}}: {{.CONTEXTS}}'"
+      - "echo 'web packages to test: {{.WEB_PACKAGES}}'"
       - cmd: echo 'also run `scripts/task.sh shell:check` (shellcheck; CI runs it)'
         if: case " {{.CONTEXTS}} " in *" shell "*) true;; *) false;; esac
       - cmd: echo 'also run `scripts/task.sh db:check-all` and `scripts/task.sh db:lint` for both dialects (PostgreSQL needs Docker; CI runs them)'
         if: case " {{.CONTEXTS}} " in *" schema "*) true;; *) false;; esac
       - cmd: echo 'also run `scripts/task.sh tofu:check` (needs tofu; CI runs it)'
         if: case " {{.CONTEXTS}} " in *" tofu "*) true;; *) false;; esac
+      - cmd: echo 'also run `scripts/task.sh web:e2e` (the E2E tests; CI runs them)'
+        if: case " {{.CONTEXTS}} " in *" e2e "*) true;; *) false;; esac
       - cmd: echo 'no check covers these changes'
         if: '[ -z "{{trim .SELECTED}}" ]'
       - task: check
-        vars: { CHECKS: "{{.SELECTED}}" }
+        vars: { CHECKS: "{{.SELECTED}}", WEB_PACKAGES: "{{.WEB_PACKAGES}}" }
         if: '[ -n "{{trim .SELECTED}}" ]'
+      # A change outside the web context reaches the packages that depend on it (pkg/mykit/ts, tools/i18n).
+      - task: web:test
+        vars: { PACKAGES: "{{.WEB_PACKAGES}}" }
+        if: case " {{.SELECTED}} " in *" web "*) false;; *) [ "{{.WEB_PACKAGES}}" != none ];; esac
 
   # The check of the site context. The tasks of the documentation site live in tasks/docs.yml (ADR-0150 §2), so the
   # context has no namespace of its own in which `check` could find a `site:check`.
-  # app/docs selects no client context, so its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge
-  # queue's repo job (bun fmt also in the preflight).
+  # Its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge queue's repo job (bun fmt also in the
+  # preflight).
   site:check:
-    desc: "Build the documentation site (app/docs) as the deploy combines it, which fails on a broken link or #anchor between its pages, on a page that does not render, or on a robots.txt, root sitemap, noindex, or page metadata that is missing or wrong, run its unit tests, and run tsc, Oxlint, and knip on it, the check of its translations, and the TS formatting (web:fmt-check)"
+    desc: "Build the documentation site (web/docs) as the deploy combines it, which fails on a broken link or #anchor between its pages, on a page that does not render, or on a robots.txt, root sitemap, noindex, or page metadata that is missing or wrong, run its unit tests, and run tsc, Oxlint, and knip on it, the check of its translations, and the TS formatting (web:fmt-check)"
     deps: [docs:site-index-check, docs:site-typecheck, docs:site-test, docs:site-lint, docs:site-knip, docs:site-translations-check, web:fmt-check]
 
   # The generated files Go reads are committed; the ones only the TS clients read are not, and the tasks that read
@@ -101,6 +110,5 @@ tasks:
       - go:config-docs
       - go:cli-docs
       - i18n:gen
-      - mail:gen
+      - i18n:compile
       - web:tokens-gen
-      - web:routes-gen

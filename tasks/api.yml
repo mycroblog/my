@@ -37,7 +37,7 @@ tasks:
       - pkg/mykit/oapi-codegen-overlay.yaml
       - "internal/interface/clientapi/internal/securitygen/**/*.go"
       - tools/go.mod
-      - app/bun.lock
+      - bun.lock
       - tasks/api.yml
     generates:
       - api/openapi.yaml
@@ -52,7 +52,7 @@ tasks:
 
   generate-check:
     desc: Fail if the committed bundle, Go client API code (the server's and pkg/mykit's), or @mycroblog/mykit types are stale
-    # openapi-typescript is a dependency of the client workspace.
+    # openapi-typescript is a dependency of @mycroblog/mykit in the workspace.
     deps: [":web:install", warm]
     env:
       REDOCLY_VERSION: "{{.REDOCLY_VERSION}}"

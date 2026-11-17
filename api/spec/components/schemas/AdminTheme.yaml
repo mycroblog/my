@@ -1,24 +1,8 @@
 # SPDX-License-Identifier: MIT
 description: The instance theme as its administrators edit it.
 type: object
-required: [tokens, custom_css]
 properties:
-  revision:
-    description: The ID of the current theme revision; omitted when no theme was ever saved.
-    type: string
-  stylesheet_url:
-    description: The stylesheet of the theme; omitted when the theme changes nothing.
-    type: string
-    format: uri
-  tokens:
-    description: The overridden tokens, in the order of the token list.
-    type: array
-    items:
-      $ref: ./ThemeTokenValue.yaml
-  custom_css:
-    description: The custom CSS; empty for none.
-    type: string
-  revised_at:
-    description: When the current revision was recorded; omitted when no theme was ever saved.
-    type: string
-    format: date-time
+  draft:
+    $ref: ./ThemeSet.yaml
+  published:
+    $ref: ./AdminThemeRevision.yaml

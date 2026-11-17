@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests scripts/docs-site.sh without an account or the network: how `resolve` turns app/docs/versions.json and the
+# Tests scripts/docs-site.sh without an account or the network: how `resolve` turns web/docs/versions.json and the
 # published releases into the versions the deploy builds, the checks of `stage-preview` on builds a pull request
 # could upload, the pages the preview comment links, what `index-site` writes for search engines and what `check-site`
 # and `check-preview` refuse, and the dry run of `comment`.
@@ -78,6 +78,8 @@ expect_stage() {
     [[ -z "$want" ]] || fail "stage $name: passed, want an error with '$want'"
     [[ -n "$want" || (-f "$tmp/work-$name/site/next/index.html" && -f "$tmp/work-$name/wrangler.jsonc") ]] ||
       fail "stage $name: did not copy the build and the config"
+    [[ -n "$want" || (-f "$tmp/work-$name/worker/index.ts" && -z "$(find "$tmp/work-$name/worker" -name '*.test.ts')") ]] ||
+      fail "stage $name: did not copy the Worker's code alone"
     [[ -n "$want" ]] || grep -qx '/ /next/ 302' "$tmp/work-$name/site/_redirects" ||
       fail "stage $name: no redirect of / to /next/"
   else
@@ -99,17 +101,17 @@ expect_stage no-index "next/index.html" "rm next/index.html"
 # pages: the published documents among the changed files that the build has, and nothing else.
 preview "$tmp/pages"
 printf '%s\n' docs/operations/running.md docs/guide/README.md docs/adr/0150-x.md \
-  docs/operations/gone.md 'docs/guide/../../etc/passwd.md' app/docs/astro.config.ts >"$tmp/changed"
+  docs/operations/gone.md 'docs/guide/../../etc/passwd.md' web/docs/astro.config.ts >"$tmp/changed"
 got="$("$script" pages "$tmp/pages" https://pr-1-my-docs.example.workers.dev "$tmp/changed")"
 want="$(printf '%s\n' 'The pages this pull request changes:' '' \
   '- [guide](https://pr-1-my-docs.example.workers.dev/next/guide/)' \
   '- [operations/running](https://pr-1-my-docs.example.workers.dev/next/operations/running/)')"
 [[ "$got" == "$want" ]] || fail "pages: got '$got', want '$want'"
-printf '%s\n' app/docs/astro.config.ts >"$tmp/changed"
+printf '%s\n' web/docs/astro.config.ts >"$tmp/changed"
 got="$("$script" pages "$tmp/pages" https://pr-1-my-docs.example.workers.dev "$tmp/changed")"
 [[ -z "$got" ]] || fail "pages with no published document: got '$got'"
 
-# page FILE CANONICAL [noindex] writes a page with the head app/docs/src/indexing.ts gives it.
+# page FILE CANONICAL [noindex] writes a page with the head web/docs/src/indexing.ts gives it.
 origin=https://mycroblog.dev
 page() {
   local robots=""

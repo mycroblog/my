@@ -135,7 +135,7 @@ func TestEveryCatchUpLatestRunsOnce(t *testing.T) {
 					return at.Equal(mustTime(t, tc.want[0]))
 				})
 			}
-			time.Sleep(50 * time.Millisecond)
+			// The start is over (the job sleeps), and Run returns once the running handlers have.
 			if err := stop(); err != nil {
 				t.Fatal(err)
 			}

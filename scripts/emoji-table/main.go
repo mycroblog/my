@@ -12,7 +12,7 @@
 // checks their digests, and runs it:
 //
 //	go run ./scripts/emoji-table -in emoji-test.txt -version 18.0.0 -out internal/domain/content/emoji_table.gen.go \
-//	  -cldr .tmp/cldr -cldr-version 49.0.0 -locales en,ja -web-out app/web/src/features/emoji/unicode
+//	  -cldr .tmp/cldr -cldr-version 49.0.0 -locales en,ja -web-out web/app-features/src/emoji/unicode
 //
 // The -cldr directory holds annotations/<locale>.json and annotationsDerived/<locale>.json, the files of the same
 // paths in the cldr-json packages cldr-annotations-full and cldr-annotations-derived-full.

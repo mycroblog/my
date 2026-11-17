@@ -12,6 +12,7 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/adapter/system"
@@ -48,12 +49,8 @@ func (c *countingCheck) fail(err error) {
 // waitRuns waits until c ran n times.
 func waitRuns(t *testing.T, c *countingCheck, n int64) {
 	t.Helper()
-	deadline := time.Now().Add(5 * time.Second)
-	for c.runs.Load() < n {
-		if time.Now().After(deadline) {
-			t.Fatalf("the check ran %d times, want %d", c.runs.Load(), n)
-		}
-		time.Sleep(time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return c.runs.Load() >= n }) {
+		t.Fatalf("the check ran %d times, want %d", c.runs.Load(), n)
 	}
 }
 
@@ -95,28 +92,32 @@ func TestHealthCacheChecksOncePerTTL(t *testing.T) {
 
 func TestHealthCacheRunsOneCheckForConcurrentCalls(t *testing.T) {
 	t.Parallel()
-	clock := testkit.NewClock(time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC))
-	c := &countingCheck{gate: make(chan struct{})}
-	check := platform.NewHealthCache(c.check, clock)
+	synctest.Test(t, func(t *testing.T) {
+		clock := testkit.NewClock(time.Date(2026, 10, 25, 12, 0, 0, 0, time.UTC))
+		c := &countingCheck{gate: make(chan struct{})}
+		check := platform.NewHealthCache(c.check, clock)
 
-	const calls = 20
-	var wg sync.WaitGroup
-	results := make([]bool, calls)
-	for i := range calls {
-		wg.Go(func() { results[i], _ = check(t.Context()) })
-	}
-	waitRuns(t, c, 1)
-	// Let the other calls join the running check. A call that comes after it ends finds the
-	// fresh result, so it never runs a second check either.
-	time.Sleep(50 * time.Millisecond)
-	close(c.gate)
-	wg.Wait()
-	if n := c.runs.Load(); n != 1 {
-		t.Errorf("the check ran %d times for %d concurrent calls, want 1", n, calls)
-	}
-	if slices.Contains(results, false) {
-		t.Errorf("results = %v, want every call healthy", results)
-	}
+		const calls = 20
+		var wg sync.WaitGroup
+		results := make([]bool, calls)
+		for i := range calls {
+			wg.Go(func() { results[i], _ = check(t.Context()) })
+		}
+		// Every call either runs the check or has joined it. A call that came after it ended would
+		// find the fresh result, so it would never run a second check either.
+		synctest.Wait()
+		if n := c.runs.Load(); n != 1 {
+			t.Fatalf("the check ran %d times while it was held, want 1", n)
+		}
+		close(c.gate)
+		wg.Wait()
+		if n := c.runs.Load(); n != 1 {
+			t.Errorf("the check ran %d times for %d concurrent calls, want 1", n, calls)
+		}
+		if slices.Contains(results, false) {
+			t.Errorf("results = %v, want every call healthy", results)
+		}
+	})
 }
 
 func TestInstanceHealth(t *testing.T) {
@@ -212,7 +213,8 @@ func TestReadinessRunsOneCheckForConcurrentRequests(t *testing.T) {
 	t.Parallel()
 	c := &countingCheck{gate: make(chan struct{})}
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
-	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) { platform.SetReadyCheck(a, c.check) })
+	meter := testkit.NewMeter()
+	s := startApp(t, cfg, platform.AppOptions{Meter: meter}, platform.ServeOptions{}, func(a *platform.App) { platform.SetReadyCheck(a, c.check) })
 
 	const requests = 10
 	var wg sync.WaitGroup
@@ -225,7 +227,11 @@ func TestReadinessRunsOneCheckForConcurrentRequests(t *testing.T) {
 		})
 	}
 	waitRuns(t, c, 1)
-	time.Sleep(200 * time.Millisecond) // let the other requests join the running check
+	// The other requests join the running check.
+	shared := func() float64 { return meter.Sum("my.readiness.shared", nil) }
+	if !testkit.Eventually(t, 10*time.Second, func() bool { return shared() >= requests-1 }) {
+		t.Fatalf("%v requests joined the running check, want %d", shared(), requests-1)
+	}
 	close(c.gate)
 	wg.Wait()
 	if n := c.runs.Load(); n != 1 {

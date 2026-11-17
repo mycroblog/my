@@ -16,6 +16,14 @@ import (
 	"strings"
 )
 
+// Trunk is the branch pull requests target and branches are rebased onto: the default branch. A variable so that
+// tests can run on an integration branch too, whose pull requests do not close issues by keyword: there `pr land`
+// closes them itself and leaves their parents open until the branch reaches the default one.
+var Trunk = Default
+
+// Default is the repository's default branch.
+const Default = "main"
+
 // Repo is one working tree.
 type Repo struct {
 	Root   string // the working tree

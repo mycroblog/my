@@ -46,7 +46,8 @@ var publicTimelineStreams = map[string]publicTimelineStream{
 
 // serveTimelineStream serves GET /api/v1/streaming/timelines/{timeline}: a Server-Sent Events
 // stream of the new posts of the local or the federated timeline (ADR-0013), event update with
-// a Status, for logged-in users only. It sends a post when the REST timeline (GET
+// a Status, and event delete with the ID of a deleted status that it may have listed, for
+// logged-in users only. It sends a post when the REST timeline (GET
 // /timelines/local or /timelines/federated) lists it for the viewer at that moment, which
 // LocalEntry and PublicEntry decide with the same policy, and nothing is replayed. It is a 404
 // for another timeline and while the instance setting of the timeline is off; every heartbeat
@@ -94,6 +95,7 @@ func (s *Server) serveTimelineStream(w http.ResponseWriter, r *http.Request) {
 		s.public.add(ts)
 		defer s.public.remove(ts)
 	}
+	defer s.deleted.register(v.AccountID)()
 	alive := func(ctx context.Context) bool {
 		denied, err := s.timelineDenied(ctx, tl.access)
 		return err != nil || denied == nil // a failed read keeps the stream until the next heartbeat
@@ -109,8 +111,15 @@ type timelineStream struct {
 }
 
 // handle sends the post of a public timeline entry when the viewer's timeline lists it and the
-// stream has not sent it recently: a cross-process broker may deliver its signal twice.
+// stream has not sent it recently: a cross-process broker may deliver its signal twice. It sends
+// the deletion of a status that the timeline may have listed as the user stream does.
 func (ts *timelineStream) handle(ctx context.Context, e stream.Event) error {
+	if e.Kind == stream.KindStatusDeleted {
+		if !apptimeline.DeletedFrom(e).OnTimeline(ts.timeline) {
+			return nil
+		}
+		return ts.deleted(ctx, e)
+	}
 	if e.Kind != stream.KindPublicEntry || ts.sentEntries.has(e.EntryID) {
 		return nil
 	}

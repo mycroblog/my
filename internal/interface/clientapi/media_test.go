@@ -666,7 +666,7 @@ func TestUpdateMedia(t *testing.T) {
 		e.upload(t, "bob-write", png(), part{name: "description", data: []byte("a\xffcat")}),
 	} {
 		p := wantProblem(t, res, http.StatusUnprocessableEntity, clientapi.ProblemTypeBlank)
-		if p.Detail == nil || !strings.Contains(*p.Detail, "description") {
+		if p.Field == nil || *p.Field != "description" {
 			t.Errorf("invalid description: detail = %v, want one naming description", p.Detail)
 		}
 	}

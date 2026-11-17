@@ -58,7 +58,8 @@ func acceptanceCriteria(body string) []criterion {
 	return out
 }
 
-// Open passes the branch through the gate (gate.go: a worktree, a linear history, the quick checks), pushes it,
+// Open passes the branch through the gate (gate.go: a worktree, a history that merges in only its base, the
+// quick checks), pushes it (pushArgs),
 // and opens its pull request from .github/pull_request_template.md's sections: the summary, Closes #N for each
 // issue (or Stacked on #M first), the commit subjects as the changes, the issues' acceptance criteria with the checked state they have in the issue, the decisions, and the checklist. It prints the documents that describe the changed paths and are not
 // changed (docImpact), and opens the PR either way. It comments the PR on each issue and returns the PR URL.
@@ -67,11 +68,11 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if branch == "main" || branch == "HEAD" {
+	if isTrunk(branch) || branch == "HEAD" {
 		return "", fmt.Errorf("on %s: work on a <type>/<issue>-<slug> branch (/work-on-issue)", branch)
 	}
 	if o.Base == "" {
-		o.Base = "main"
+		o.Base = repo.Trunk
 	}
 	if err := gate(r, branch, "origin/"+o.Base); err != nil {
 		return "", err
@@ -92,8 +93,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		return "", err
 	}
 	if !o.NoPush {
-		// A rebased branch replaces what was pushed; the lease refuses when someone else pushed meanwhile.
-		if out, err := exec.Command("git", "-C", r.Root, "push", "--force-with-lease", "-u", "origin", "HEAD").CombinedOutput(); err != nil {
+		if out, err := exec.Command("git", append([]string{"-C", r.Root, "push"}, pushArgs(r, branch)...)...).CombinedOutput(); err != nil {
 			return "", fmt.Errorf("git push: %w: %s", err, strings.TrimSpace(string(out)))
 		}
 	}
@@ -102,7 +102,7 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 	}
 
 	var b strings.Builder
-	if o.Base != "main" {
+	if o.Base != repo.Trunk {
 		var prs []struct {
 			Number int `json:"number"`
 		}
@@ -202,6 +202,21 @@ func Open(r *repo.Repo, o OpenOptions) (string, error) {
 		}
 	}
 	return url, nil
+}
+
+// pushArgs are the arguments of the push of branch: a plain push, or --force-with-lease when what was last pushed
+// (the remote-tracking ref, not fetched again) is not under HEAD, a branch rewritten after its push. Either way a
+// push someone else made meanwhile is refused, not overwritten.
+func pushArgs(r *repo.Repo, branch string) []string {
+	args := []string{"-u", "origin", "HEAD"}
+	remote := "refs/remotes/origin/" + branch
+	if _, err := repo.Git(r.Root, "rev-parse", "--verify", "--quiet", remote); err != nil {
+		return args // not pushed yet
+	}
+	if exec.Command("git", "-C", r.Root, "merge-base", "--is-ancestor", remote, "HEAD").Run() == nil {
+		return args
+	}
+	return append([]string{"--force-with-lease"}, args...)
 }
 
 func mark(b bool) string {
@@ -570,7 +585,7 @@ func Wait(w io.Writer, n int, o WaitOptions) int {
 		case behind:
 			// GitHub has not seen the push yet.
 		case p.Mergeable == "CONFLICTING":
-			say("PR #%d conflicts with its base: CI does not run. Rebase onto origin/main, regenerate generated files (agentkit regen), push with --force-with-lease", n)
+			say("PR #%d conflicts with its base: CI does not run\nfix: in the branch's worktree: %s, git push", n, mergeFix(trunkRef()))
 			return 3
 		default:
 			last = &p

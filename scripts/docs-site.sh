@@ -6,7 +6,7 @@
 # builds every published version and combines them:
 #
 #   /next/      main (the checkout this script runs in)
-#   /vX.Y/      each minor version of app/docs/versions.json that has a published stable release, from the tag of its
+#   /vX.Y/      each minor version of web/docs/versions.json that has a published stable release, from the tag of its
 #               newest one
 #   /latest/    the newest of those, from the same tag
 #   /           the landing page and the 404 page of /latest/ (of /next/ before the first release, when /latest/
@@ -16,7 +16,7 @@
 # A pull request gets /next/ alone on the Workers Preview pr-<number> of the same Worker: docs-site-preview.yml builds
 # it from the pull request's checkout without secrets (build-preview), and docs-site-preview-deploy.yml publishes it
 # from main's checkout (deploy-pr). That build comes from code anyone can write (forks included), so it is only ever
-# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config and redirects,
+# data: `stage-preview` checks that it is plain static files and copies it next to main's Worker config, code and redirects,
 # and wrangler uploads it as assets. Nothing in it is executed or sourced, and nothing of it reaches a shell, a config,
 # or a command line.
 #
@@ -45,7 +45,7 @@
 # GH_TOKEN and GITHUB_REPOSITORY (build, resolve without <releases>, comment, cleanup); DOCS_SITE_WORK, the work dir
 # (default .tmp/docs-site); DOCS_SITE_RELEASES, a <releases> file for `build` instead of the API; HEAD_SHA, the commit
 # the preview comment names; DOCS_SITE_CF_BEACON_TOKEN, the site token of Cloudflare Web Analytics, which `build` puts
-# in the head of every page (app/docs/src/analytics.ts; only docs-site-deploy.yml sets it, and `build-preview` drops
+# in the head of every page (web/docs/src/analytics.ts; only docs-site-deploy.yml sets it, and `build-preview` drops
 # it, so a preview never has the beacon). DRY_RUN=1 runs `deploy` and `deploy-pr` as `wrangler deploy --dry-run`, which checks the
 # config and the assets without an account, with https://pr-<pr>-my-docs.example.workers.dev as the Preview URL, and
 # prints the wrangler and gh commands of deploy-pr, comment, and cleanup instead of running them (cleanup still lists
@@ -60,7 +60,8 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 config="$root/scripts/docs-site/wrangler.jsonc"
-# The same wrangler as scripts/ui-preview.sh; fetched by its exact version, since only this CI job runs it.
+# Fetched by its exact version, since only the CI jobs run it. Wrangler does not run on Bun (#2954): npx runs it on the
+# Node.js of the workflow.
 wrangler_version="4.151.0"
 dry_run="${DRY_RUN:-}"
 work="${DOCS_SITE_WORK:-$root/.tmp/docs-site}"
@@ -130,10 +131,10 @@ build_tree() {
   echo "docs-site: building $version ($ref) under $base" >&2
   (cd "$tree" && DOCS_SITE_VERSION="$version" DOCS_SITE_BASE="$base" DOCS_SITE_REF="$ref" DOCS_SITE_VERSIONS="$resolved" \
     DOCS_SITE_PREVIEW="$preview" scripts/task.sh docs:site-build)
-  [[ -f "$tree/app/docs/dist/index.html" ]] || die "the build of $version has no index.html"
+  [[ -f "$tree/web/docs/dist/index.html" ]] || die "the build of $version has no index.html"
   mkdir -p "$(dirname "$dest")"
   rm -rf "$dest"
-  cp -R "$tree/app/docs/dist" "$dest"
+  cp -R "$tree/web/docs/dist" "$dest"
 }
 
 # build OUT builds every version and combines them in OUT.
@@ -141,9 +142,9 @@ build() {
   local out="$1" resolved="$work/versions.json" latest count minor tag tree home
   mkdir -p "$work"
   if [[ -n "${DOCS_SITE_RELEASES:-}" ]]; then
-    resolve "$root/app/docs/versions.json" "$DOCS_SITE_RELEASES" >"$resolved"
+    resolve "$root/web/docs/versions.json" "$DOCS_SITE_RELEASES" >"$resolved"
   else
-    resolve "$root/app/docs/versions.json" >"$resolved"
+    resolve "$root/web/docs/versions.json" >"$resolved"
   fi
   rm -rf "$out"
   mkdir -p "$out"
@@ -192,7 +193,7 @@ check() {
   [[ -z "$bad" ]] || die "${bad#"$site"/} is larger than $max_file_bytes bytes"
 }
 
-# What search engines read (app/docs/src/indexing.ts): one version is indexed, /latest/ once a release exists and
+# What search engines read (web/docs/src/indexing.ts): one version is indexed, /latest/ once a release exists and
 # /next/ before the first one; the pages of the other versions carry noindex, and the landing page of the indexed
 # version is the root of the domain. index_site writes robots.txt and the one sitemap at the root, and check_site and
 # check_preview fail a build that breaks any of it.
@@ -329,7 +330,7 @@ check_preview() {
   check_pages "$build"
 }
 
-# deploy SITE publishes SITE as the Worker, from a work dir that holds only the Worker config and site/.
+# deploy SITE publishes SITE as the Worker, from a work dir that holds only the Worker config, its code and site/.
 deploy() {
   local site="$1" stage="$work/deploy"
   [[ -f "$site/index.html" && -d "$site/next" ]] || die "$site is not a combined site of scripts/docs-site.sh build"
@@ -337,14 +338,25 @@ deploy() {
   rm -rf "$stage"
   mkdir -p "$stage/site"
   cp -R "$site/." "$stage/site/"
-  cp "$config" "$stage/wrangler.jsonc"
+  stage_worker "$stage"
   local args=(deploy)
   [[ -z "$dry_run" ]] || args+=(--dry-run)
   wrangler_in "$stage" "${args[@]}"
 }
 
+# stage_worker DIR copies the Worker config and the Worker's code (web/docs/worker/, without its tests) of this
+# checkout into DIR, next to DIR/site.
+stage_worker() {
+  local dir="$1" file
+  cp "$config" "$dir/wrangler.jsonc"
+  mkdir -p "$dir/worker"
+  for file in "$root"/web/docs/worker/*.ts; do
+    [[ "$file" == *.test.ts ]] || cp "$file" "$dir/worker/"
+  done
+}
+
 # wrangler_in DIR ARGS... runs the pinned wrangler on the config DIR/wrangler.jsonc, from DIR (which holds only the
-# config and site/), with telemetry off.
+# config, worker/ and site/), with telemetry off.
 wrangler_in() {
   local dir="$1"
   shift
@@ -369,7 +381,7 @@ build_preview() {
   local out="$1" resolved="$work/preview-versions.json"
   mkdir -p "$work"
   # The Preview serves /next/ alone, so its version switcher lists no released version.
-  resolve "$root/app/docs/versions.json" /dev/null >"$resolved"
+  resolve "$root/web/docs/versions.json" /dev/null >"$resolved"
   # A preview is not the production site: its pages have no analytics beacon, whatever the environment holds.
   unset DOCS_SITE_CF_BEACON_TOKEN
   rm -rf "$out"
@@ -382,7 +394,7 @@ build_preview() {
 }
 
 # stage_preview BUILD DEST checks that BUILD is a preview build of plain files (build-preview) and copies it to
-# DEST/site, with the Worker config and the redirects of this checkout.
+# DEST/site, with the Worker config, the Worker's code and the redirects of this checkout.
 stage_preview() {
   local build="$1" dest="$2" bad total
   [[ -d "$build" ]] || die "no build directory: $build"
@@ -406,7 +418,7 @@ stage_preview() {
   rm -rf "$dest"
   mkdir -p "$dest/site"
   cp -R "$build/." "$dest/site/"
-  cp "$config" "$dest/wrangler.jsonc"
+  stage_worker "$dest"
   # The Preview has no released version: its root and /latest/ open /next/.
   printf '%s\n' '/ /next/ 302' '/latest /next/ 302' '/latest/* /next/:splat 302' >"$dest/site/_redirects"
   echo "docs-site: staged the preview ($total bytes) in $dest/site" >&2
@@ -491,7 +503,7 @@ cleanup() {
   done
   rm -rf "$stage"
   mkdir -p "$stage/site"
-  cp "$config" "$stage/wrangler.jsonc"
+  stage_worker "$stage"
   while IFS= read -r name; do
     [[ "$name" =~ ^pr-([1-9][0-9]{0,8})$ ]] || continue
     pr="${BASH_REMATCH[1]}"

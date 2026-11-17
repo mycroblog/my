@@ -1,0 +1,22 @@
+{
+  "shortcuts.title": {
+    "defaultMessage": "キーボードショートカット",
+    "description": "The heading of the dialog that lists the keyboard shortcuts usable on the current screen."
+  },
+  "shortcuts.help": {
+    "defaultMessage": "キーボードショートカットを表示",
+    "description": "The action, listed in the keyboard shortcuts dialog itself, that opens that dialog."
+  },
+  "shortcuts.screen": {
+    "defaultMessage": "この画面",
+    "description": "The heading of the group of shortcuts that work anywhere on the current screen, in the keyboard shortcuts dialog."
+  },
+  "shortcuts.close": {
+    "defaultMessage": "閉じる",
+    "description": "The button that closes the keyboard shortcuts dialog."
+  },
+  "shortcuts.current": {
+    "defaultMessage": "現在",
+    "description": "A mark beside the heading of the group of keyboard shortcuts that act on what has focus now, in the keyboard shortcuts dialog."
+  }
+}

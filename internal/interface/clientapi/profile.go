@@ -12,7 +12,6 @@ import (
 	appcontent "github.com/mycroblog/my/internal/app/content"
 	"github.com/mycroblog/my/internal/domain/account"
 	"github.com/mycroblog/my/internal/domain/content"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // ProblemTypeProfileRejected is the problem of a profile update that the hook local.profile refused.
@@ -162,11 +161,8 @@ func (s *Server) UpdateAccountCredentials(ctx context.Context, req UpdateAccount
 	a, err := s.o.Profiles.UpdateProfile(ctx, v.AccountID, in)
 	var invalid *account.ProfileError
 	if errors.As(err, &invalid) {
-		body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
-			s.Localizer(ctx).ServerErrorsUnprocessable(), s.profileProblemDetail(ctx, invalid))
-		return UpdateAccountCredentialsdefaultApplicationProblemPlusJSONResponse{
-			Body: body, Headers: headers, StatusCode: http.StatusUnprocessableEntity,
-		}, nil
+		return UpdateAccountCredentialsdefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, profileProperties[invalid.Property], s.profileProblemDetail(ctx, invalid))), nil
 	}
 	if errors.Is(err, appaccount.ErrProfileRejected) {
 		// An update that local.profile refused: fixed text that holds nothing of the plugin's
@@ -203,16 +199,16 @@ var profileProperties = map[account.ProfileProperty]string{
 	account.PropertyHeader:      "header_media_id",
 }
 
+// profileProblemDetail says what is wrong with the value of the property of e, without naming it.
 func (s *Server) profileProblemDetail(ctx context.Context, e *account.ProfileError) string {
 	l := s.Localizer(ctx)
-	name := profileProperties[e.Property]
 	switch {
 	case e.Problem == account.ProblemTooLong:
-		return l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: e.Max, Name: name})
+		return l.ServerErrorsTooLong(e.Max)
 	case e.Problem == account.ProblemTooMany:
-		return l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: e.Max, Name: name})
+		return l.ServerErrorsTooMany(e.Max)
 	case e.Property == account.PropertyAvatar || e.Property == account.PropertyHeader:
-		return l.ServerErrorsUnusableImage(name)
+		return l.ServerErrorsUnusableImage()
 	}
-	return l.ServerErrorsInvalidValue(name)
+	return l.ServerErrorsInvalidValue()
 }

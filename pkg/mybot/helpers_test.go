@@ -39,6 +39,62 @@ type fakeServer struct {
 	// tokens maps a valid refresh token to the one that replaces it.
 	tokens map[string]string
 	scope  string
+	// log records the log of the bots of config.
+	log *botLog
+}
+
+// botLog is a slog.Handler that records the bot's log at every level, for a test to wait for the debug lines
+// that Config.Logger documents. It drops the attributes of WithAttrs and the groups, which the bot's lines need
+// not.
+type botLog struct {
+	mu    sync.Mutex
+	lines []slog.Record
+}
+
+func (l *botLog) Enabled(context.Context, slog.Level) bool { return true }
+
+func (l *botLog) Handle(_ context.Context, r slog.Record) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.lines = append(l.lines, r.Clone())
+	return nil
+}
+
+func (l *botLog) WithAttrs([]slog.Attr) slog.Handler { return l }
+func (l *botLog) WithGroup(string) slog.Handler      { return l }
+
+// count returns the lines with the message msg (after "mybot: ") whose attribute key is value.
+func (l *botLog) count(msg, key, value string) int {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	n := 0
+	for _, r := range l.lines {
+		if r.Message != "mybot: "+msg {
+			continue
+		}
+		r.Attrs(func(a slog.Attr) bool {
+			if a.Key == key && a.Value.String() == value {
+				n++
+				return false
+			}
+			return true
+		})
+	}
+	return n
+}
+
+// The debug lines of the bot that the tests wait for (Config.Logger).
+const (
+	logWaits   = "a notification of the event stream waits for the catch-up"
+	logSkipped = "skipped a notification already processed"
+	logStopped = "stopped before the notification was recorded processed; the next start handles it again"
+	logIdle    = "every notification handed out is processed"
+)
+
+// waitLog waits for a line of the bot with the message msg whose attribute key is value.
+func (f *fakeServer) waitLog(msg, key, value string) {
+	f.t.Helper()
+	eventually(f.t, fmt.Sprintf("the bot to log %q with %s=%s", msg, key, value), func() bool { return f.log.count(msg, key, value) > 0 })
 }
 
 // posted is a request of createStatus.
@@ -54,6 +110,7 @@ func newFakeServer(t *testing.T) *fakeServer {
 		me:     mykit.CredentialAccount{Id: id(0), Username: "bot", Acct: "bot", Domain: "example.com", Bot: true},
 		tokens: map[string]string{},
 		scope:  "read write",
+		log:    &botLog{},
 	}
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /api/v1/accounts/verify_credentials", func(w http.ResponseWriter, _ *http.Request) {
@@ -179,7 +236,7 @@ func (f *fakeServer) config() Config {
 		Server:      f.srv.URL,
 		TokenSource: mykit.StaticToken("token"),
 		Store:       NewMemoryStore(),
-		Logger:      slog.New(slog.DiscardHandler),
+		Logger:      slog.New(f.log),
 		Mode:        Polling,
 	}
 }
@@ -244,15 +301,19 @@ func runBot(t *testing.T, b *Bot) (stop func() error) {
 	return stop
 }
 
-// eventually waits for cond, failing the test after a few seconds.
+// eventually polls cond, which nothing signals, until it holds, failing the test after a few seconds.
 func eventually(t *testing.T, what string, cond func() bool) {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
+	deadline := time.NewTimer(10 * time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(10 * time.Millisecond)
+	defer tick.Stop()
 	for !cond() {
-		if time.Now().After(deadline) {
+		select {
+		case <-deadline.C:
 			t.Fatalf("timed out waiting for %s", what)
+		case <-tick.C:
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
 }
 

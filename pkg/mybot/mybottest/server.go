@@ -53,8 +53,10 @@ type Server struct {
 	favourites    []string
 	follows       []string
 	streams       map[*stream]struct{}
-	// held, while Disconnect holds the connections, is closed by Reconnect.
+	// held, while Disconnect holds the connections, is closed by Reconnect; holding counts the connections
+	// that it holds.
 	held    chan struct{}
+	holding int
 	changed chan struct{}
 	// opened, when a test sets it, runs after an event stream has answered.
 	opened func()
@@ -317,6 +319,12 @@ func (s *Server) WaitStreams(ctx context.Context, n int) error {
 	return s.wait(ctx, func() bool { return len(s.streams) >= n })
 }
 
+// WaitHeld waits until Disconnect holds at least n connections of an event stream, or returns the error of ctx
+// when it ends first: once it holds the bot's, the bot has no stream open and gets nothing until Reconnect.
+func (s *Server) WaitHeld(ctx context.Context, n int) error {
+	return s.wait(ctx, func() bool { return s.holding >= n })
+}
+
 // wait waits until cond, called with s.mu held, holds.
 func (s *Server) wait(ctx context.Context, cond func() bool) error {
 	for {
@@ -494,10 +502,18 @@ func (s *Server) streamEvents(w http.ResponseWriter, r *http.Request) {
 			s.mu.Unlock()
 			break
 		}
+		s.holding++
+		s.notifyLocked()
 		s.mu.Unlock()
 		select {
 		case <-held:
 		case <-r.Context().Done():
+		}
+		s.mu.Lock()
+		s.holding--
+		s.notifyLocked()
+		s.mu.Unlock()
+		if r.Context().Err() != nil {
 			return
 		}
 	}

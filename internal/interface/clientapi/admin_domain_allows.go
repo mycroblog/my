@@ -6,13 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appfederation "github.com/mycroblog/my/internal/app/federation"
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The allowlist of federation (ADR-0159): the moderators' operations on /admin/domain_allows
@@ -78,9 +76,9 @@ func (s *Server) CreateDomainAllow(ctx context.Context, req CreateDomainAllowReq
 		return CreateDomainAllowdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "domain")), nil
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (CreateDomainAllowResponseObject, error) {
+	unprocessable := func(field, detail string) (CreateDomainAllowResponseObject, error) {
 		return CreateDomainAllowdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	domain, err := appfederation.CanonicalHost(req.Body.Domain)
 	if err != nil || !moderation.ValidDomain(domain) {
@@ -89,11 +87,11 @@ func (s *Server) CreateDomainAllow(ctx context.Context, req CreateDomainAllowReq
 	a, created, err := s.o.DomainAllows.AllowDomain(ctx, appmoderation.AllowDomainInput{Domain: domain, Comment: deref(req.Body.Comment), ByUserID: v.UserID})
 	switch {
 	case errors.Is(err, moderation.ErrOwnDomain):
-		return unprocessable(l.ServerErrorsInvalidValue("domain"))
+		return unprocessable("domain", l.ServerErrorsInvalidValue())
 	case errors.Is(err, appmoderation.ErrTooManyDomainAllows):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainAllows, Name: "domains"}))
+		return unprocessable("domains", l.ServerErrorsTooMany(moderation.MaxDomainAllows))
 	case errors.Is(err, appmoderation.ErrInvalidDomainAllow):
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: moderation.MaxDomainAllowComment, Name: "comment"}))
+		return unprocessable("comment", l.ServerErrorsTooLong(moderation.MaxDomainAllowComment))
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: allow domain %s: %w", domain, err)
 	}

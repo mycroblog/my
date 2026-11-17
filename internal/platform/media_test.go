@@ -30,13 +30,15 @@ func TestUploadedMediaIsServedWithoutLocation(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Upload: %v", err)
 			}
-			deadline := time.Now().Add(10 * time.Second)
-			for !m.Ready() && time.Now().Before(deadline) {
-				time.Sleep(20 * time.Millisecond)
+			testkit.Eventually(t, 10*time.Second, func() bool {
+				if m.Ready() {
+					return true
+				}
 				if m, err = s.app.Media.Media(t.Context(), m.File.ID); err != nil {
 					t.Fatal(err)
 				}
-			}
+				return m.Ready()
+			})
 			if !m.Ready() {
 				t.Fatalf("not processed: %+v", m.Result)
 			}
@@ -71,12 +73,11 @@ func TestUploadedMediaIsServedWithoutLocation(t *testing.T) {
 			}
 			// The job records the result before it deletes the upload as received, so the
 			// deletion may still be under way when the media reads as ready.
-			_, err = s.app.Blobs.Head(t.Context(), m.Upload.BlobKey)
-			for err == nil && time.Now().Before(deadline) {
-				time.Sleep(20 * time.Millisecond)
-				_, err = s.app.Blobs.Head(t.Context(), m.Upload.BlobKey)
-			}
-			if err == nil {
+			deleted := testkit.Eventually(t, 10*time.Second, func() bool {
+				_, err := s.app.Blobs.Head(t.Context(), m.Upload.BlobKey)
+				return err != nil
+			})
+			if !deleted {
 				t.Errorf("the upload as received, with its location, is kept at %s", m.Upload.BlobKey)
 			}
 			if resp, _ := s.do(t, http.MethodGet, "/"+m.Upload.BlobKey, nil); resp.StatusCode != http.StatusNotFound {

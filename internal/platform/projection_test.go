@@ -60,17 +60,18 @@ func TestProjectionsVerifyAndRebuild(t *testing.T) {
 				"MY_DATABASE": dialect, "MY_DATABASE_URL": dbURL, "MY_WEB_ORIGIN": webOrigin, "MY_MAIL": "none", "MY_BILLING_SOURCES": "aws",
 				"MY_PLUGIN_INBOUND_STATUS_ADDRESS": fakeplugin.ServeUnix(t, verdictPlugin(&verdict, &calls)),
 			})
+			// The actions that fillModeration issues end, and the expiry job judges them, by this
+			// clock, which fillModeration moves ahead past their ends.
+			clock := laterClock{steadyClock: newSteadyClock(), ahead: &atomic.Int64{}}
 			app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{
 				Logger: slog.New(slog.DiscardHandler), BillingSources: map[string]appfinance.BillingSource{"aws": billingFixture()},
-				// The actions that fillModeration issues end, and the expiry job judges them, by
-				// this clock, after waits on the monotonic clock.
-				Clock: newSteadyClock(),
+				Clock: clock,
 			})
 			if err != nil {
 				t.Fatalf("NewApp: %v", err)
 			}
 			t.Cleanup(func() { _ = app.Close() })
-			fillProjections(t, app)
+			fillProjections(t, app, clock)
 			exec, count := rawSQL(t, dialect, dbURL)
 			checkProjections(t, app, exec, count)
 		})
@@ -105,7 +106,7 @@ func fillDeactivations(t *testing.T, a *platform.App) {
 	}
 }
 
-func fillProjections(t *testing.T, a *platform.App) {
+func fillProjections(t *testing.T, a *platform.App, clock laterClock) {
 	t.Helper()
 	ctx := t.Context()
 	ids := map[string]string{}
@@ -169,7 +170,7 @@ func fillProjections(t *testing.T, a *platform.App) {
 		t.Fatalf("React: %v", err)
 	}
 	fillRemotePoll(t, a, dave)
-	fillModeration(t, a, ids, dave, hello)
+	fillModeration(t, a, clock, ids, dave, hello)
 	fillWebhooks(t, a)
 	fillFinance(t, a)
 	fillIdentity(t, a, bob)
@@ -322,7 +323,7 @@ func fillHookMarks(t *testing.T, a *platform.App, status string) {
 // fillModeration fills the moderation projections, status_sensitivity_overrides, and the feed
 // restrictions: actions on accounts and domains (one lifted, one that has expired), a report
 // assigned, resolved, and reopened, and an appeal pending and one decided.
-func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, hello string) {
+func fillModeration(t *testing.T, a *platform.App, clock laterClock, ids map[string]string, dave, hello string) {
 	t.Helper()
 	ctx := t.Context()
 	alice, bob, carol := ids["alice"], ids["bob"], ids["carol"]
@@ -356,13 +357,11 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 	// job removes the account's row of the first; the second leaves a row of the timelines whose
 	// end has passed, as does the limit on dave below, whose rows also stay in
 	// account_restrictions, since the expiry job does not run again.
-	// The wait starts after the actions are issued, so that a slow machine cannot make it too short.
-	waitPast(time.Now().Add(5 * time.Millisecond))
+	clock.ahead.Add(int64(5 * time.Millisecond))
 	if _, err := a.Moderation.ExpireAccountRestrictions(ctx); err != nil {
 		t.Fatalf("ExpireAccountRestrictions = %v", err)
 	}
 	issue(appmoderation.AccountActionInput{TargetAccountID: dave, Kind: moderation.ActionLimit, Duration: 20 * time.Millisecond})
-	limitEnds := time.Now().Add(25 * time.Millisecond)
 
 	r, _, err := a.Moderation.FileRemoteReport(ctx, appmoderation.RemoteReportInput{
 		URI: "https://remote.example/flags/1", ReporterAccountID: dave, TargetAccountID: alice, Comment: "spam",
@@ -403,16 +402,7 @@ func fillModeration(t *testing.T, a *platform.App, ids map[string]string, dave, 
 		t.Fatalf("DecideAppeal = %v", err)
 	}
 	// The limit on dave ends.
-	waitPast(limitEnds)
-}
-
-// waitPast blocks until the monotonic clock is past t, a reading of time.Now, however long the
-// machine took to get here. The App must tell the time with a steadyClock, which follows the
-// monotonic clock, for its clock to be past t too.
-func waitPast(t time.Time) {
-	for d := time.Until(t); d > 0; d = time.Until(t) {
-		time.Sleep(d)
-	}
+	clock.ahead.Add(int64(25 * time.Millisecond))
 }
 
 // fillIdentity fills the identity projections: a role grant, a revoked one, and sign-ups

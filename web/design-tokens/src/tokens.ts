@@ -1,0 +1,768 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The design tokens of the web client (ADR-0025 §2, ADR-0059): the values the design system reads. They start from
+// the set the decider picked in their stories and grow with the components. `css` writes them as custom
+// properties; `contrastPairs` are the pairs of colors a check holds to their minimum in both schemes.
+
+/** The root font size the rem values are relative to, in px. */
+export const rootPx = 16;
+
+/**
+ * The regions of Noto Sans CJK, the self-hosted web font of @my/design-system/cjk.css (ADR-0009 §5), with the
+ * languages whose Han characters each draws, as `:lang()` matches them: the region of a text is the last whose
+ * language matches it. A text in no CJK language keeps the region of the text around it, and the page's default is
+ * the first region.
+ */
+export const cjkRegions = [
+  { family: "my Noto Sans CJK JP", langs: ["ja"] },
+  { family: "my Noto Sans CJK SC", langs: ["zh"] },
+  { family: "my Noto Sans CJK TC", langs: ["zh-Hant", "zh-TW", "zh-HK", "zh-MO"] },
+  { family: "my Noto Sans CJK KR", langs: ["ko"] },
+] as const;
+
+/** The emoji font first (ADR-0091 §10), and the system's emoji fonts last, for when it cannot load. */
+const emoji = { first: '"my Noto Color Emoji"', last: '"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"' };
+
+/**
+ * The self-hosted Noto Sans of @my/design-system/noto-sans.css (ADR-0009 §5), which draws Latin, Greek and Cyrillic
+ * before Noto Sans CJK, which lacks letters such as ą ł ї: "my Noto Sans" for a text in no CJK language, and beside a
+ * CJK region's font the family that leaves to it the punctuation it draws full-width (… ※ ×).
+ */
+export const latinFamily = { family: "my Noto Sans", besideCjk: "my Noto Sans beside CJK" } as const;
+
+/**
+ * The stacks of the text, fixed: "my Noto Color Emoji", whose unicode-range holds only emoji, so that it wins over the
+ * fonts that have their own glyphs of symbols such as ☀ ♠ ❤; then a theme's own fonts (`--font-*-override`, the
+ * tokens a server theme sets, ADR-0059 §2); then Noto Sans for Latin, Greek and Cyrillic (`--font-latin`); then Noto
+ * Sans CJK of the text's region (`--font-cjk`); then the system's fonts for the scripts neither has (Arabic, Hebrew,
+ * Thai, …). The mono stack puts the system's monospace fonts, which have no CJK, before Noto Sans CJK, whose Latin is
+ * proportional, and has no Noto Sans, which is proportional too: the monospace fonts and the generic family at the end
+ * have the letters of Latin, Greek and Cyrillic. A page that does not load the web fonts has no such faces and skips
+ * them. No font from a CDN, which the CSP does not allow.
+ */
+export const fontFamily = {
+  sans: `${emoji.first}, var(--font-sans-override), var(--font-latin), var(--font-cjk), system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif, ${emoji.last}`,
+  mono: `${emoji.first}, var(--font-mono-override), ui-monospace, "SF Mono", Menlo, Consolas, "Cascadia Mono", "Liberation Mono", "DejaVu Sans Mono", var(--font-cjk), monospace, ${emoji.last}`,
+} as const;
+
+/**
+ * The defaults of the overrides: a family name that no system has, which the browser skips. A custom property left
+ * unset or empty would make the whole stack invalid.
+ */
+export const fontOverride = { sans: '"my no font"', mono: '"my no font"' } as const;
+
+export type TextStep = {
+  /** The font size, in rem. */
+  size: number;
+  lineHeight: number;
+  fontWeight: number;
+  letterSpacing?: string;
+};
+
+/**
+ * The type scale, from the largest; the tagline reads as a catch copy. An article's page sets its title as `headline`,
+ * its headings as `heading` (h2) and `title` (h3), and its text as `reading`, a step up from a post's for long reading.
+ */
+export const text = {
+  tagline: { size: 1.875, lineHeight: 1.2, fontWeight: 800, letterSpacing: "-0.01em" },
+  headline: { size: 1.625, lineHeight: 1.3, fontWeight: 700 },
+  heading: { size: 1.3125, lineHeight: 1.35, fontWeight: 700 },
+  title: { size: 1.125, lineHeight: 1.35, fontWeight: 700 },
+  reading: { size: 1, lineHeight: 1.75, fontWeight: 400 },
+  body: { size: 0.875, lineHeight: 1.55, fontWeight: 400 },
+  caption: { size: 0.75, lineHeight: 1.45, fontWeight: 400 },
+} as const satisfies Record<string, TextStep>;
+
+export type TextName = keyof typeof text;
+
+export type Scheme = "light" | "dark";
+
+/** A color for each scheme, as #rrggbb. */
+export type SchemeColor = Record<Scheme, string>;
+
+/**
+ * The colors. `accent` is the brand's coral as a fill, with `on-accent` on it; `accent-text` carries links and the
+ * focus ring, darker than the fill in light, where the coral reaches only 2.8:1 on the surface. Coral means the
+ * primary action and links only. `surface-raised` and its hovered and pressed steps are the neutral surface of a
+ * control, drawn from the warmth of the palette; `surface-hover` and `surface-pressed` answer a control without a
+ * surface, lighter than `surface-raised`, so that it never reads as one with a surface.
+ */
+export const color = {
+  surface: { light: "#ffffff", dark: "#221c1b" },
+  text: { light: "#111111", dark: "#f2e9e7" },
+  "muted-text": { light: "#74665f", dark: "#9c908b" },
+  accent: { light: "#ff6b6b", dark: "#ff6b6b" },
+  "on-accent": { light: "#111111", dark: "#111111" },
+  "accent-text": { light: "#a64646", dark: "#ff6b6b" },
+  "surface-raised": { light: "#f4efed", dark: "#372826" },
+  "surface-raised-hover": { light: "#e6ddd9", dark: "#43302d" },
+  "surface-raised-pressed": { light: "#d9cdc8", dark: "#503835" },
+  "surface-hover": { light: "#f9f6f5", dark: "#2b201f" },
+  "surface-pressed": { light: "#f1ebe9", dark: "#332624" },
+  // The backing under an avatar's image: light in both schemes, so that a dark logo on transparency stays seen.
+  "avatar-backing": { light: "#f4efed", dark: "#f4efed" },
+  // The bar at the start of a quote in what people write: a mark, at 3:1 on every surface a post or a quoted post has.
+  "quote-bar": { light: "#938882", dark: "#7e726f" },
+} as const satisfies Record<string, SchemeColor>;
+
+export type ColorName = keyof typeof color;
+
+/** A foreground color drawn on a background color, and the contrast ratio it needs in both schemes. */
+export type ContrastPair = { fg: ColorName; bg: ColorName; minimum: number };
+
+/**
+ * The pairs a check holds: text needs 4.5:1, which also covers the focus ring's 3:1 (WCAG 1.4.11). The fill against
+ * the surface is no pair: the button's text carries its meaning.
+ */
+export const contrastPairs: readonly ContrastPair[] = [
+  { fg: "text", bg: "surface", minimum: 4.5 },
+  { fg: "muted-text", bg: "surface", minimum: 4.5 },
+  { fg: "accent-text", bg: "surface", minimum: 4.5 },
+  { fg: "on-accent", bg: "accent", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised-hover", minimum: 4.5 },
+  { fg: "text", bg: "surface-raised-pressed", minimum: 4.5 },
+  { fg: "text", bg: "surface-hover", minimum: 4.5 },
+  { fg: "text", bg: "surface-pressed", minimum: 4.5 },
+  // An icon button's muted count, hovered, and hovered in a marked post; pressed, it takes the text.
+  { fg: "muted-text", bg: "surface-hover", minimum: 4.5 },
+  { fg: "muted-text", bg: "surface-pressed", minimum: 4.5 },
+  // A quote's muted text and its bar (a mark, 3:1), in a post, hovered, and in a quoted post on the raised surface.
+  { fg: "muted-text", bg: "surface-raised", minimum: 4.5 },
+  { fg: "quote-bar", bg: "surface", minimum: 3 },
+  { fg: "quote-bar", bg: "surface-hover", minimum: 3 },
+  { fg: "quote-bar", bg: "surface-raised", minimum: 3 },
+];
+
+/** The weight of a control's label, and of a name that heads what follows it (a post's author). */
+export const fontWeight = { label: 600, strong: 700 } as const;
+
+/** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
+export const radius = { control: 0.375, overlay: 0.5 } as const;
+
+/**
+ * A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form; and the block
+ * padding a button in words keeps once its label wraps onto more lines than its height holds, little enough that a
+ * glyph beside the label fits the height.
+ */
+export const control = {
+  timeline: { height: 2, paddingInline: 0.75, paddingBlock: 0.25 },
+  form: { height: 2.5, paddingInline: 1, paddingBlock: 0.25 },
+} as const satisfies Record<string, { height: number; paddingInline: number; paddingBlock: number }>;
+
+/**
+ * The icon button of a post's actions, in rem: its tile is a timeline control's height, with a narrow inline padding
+ * so that the tile and the focus ring stay inside a marked post's surface, a gap between the glyph and the count, and
+ * the height its hit area reaches on a touch screen, beyond the tile.
+ */
+export const iconButton = { paddingInline: 0.375, gap: 0.25, touch: 2.75 } as const;
+
+/**
+ * The least a target reaches on each side, in rem (WCAG 2.5.8, 24 CSS px): a link in a line of text reaches it around
+ * its text without moving the line.
+ */
+export const target = { minimum: 1.5 } as const;
+
+/**
+ * The focus ring, in px: a gap of the surface, a ring of `accent-text`, and a halo of the accent at `haloShare`, so
+ * that it marks focus around any control, also one without a surface.
+ */
+export const focusRing = { gap: 2, width: 2, halo: 3, haloShare: 0.35 } as const;
+
+/**
+ * How a control answers the pointer: a fill mixes in `hover` and `pressed` of `shade` (on-accent keeps 4.5:1, a test
+ * holds it), a press moves it down `shift` px, and a disabled control shows at `disabledOpacity`.
+ */
+export const press = { shade: "#000000", hover: 0.1, pressed: 0.2, shift: 1, disabledOpacity: 0.4 } as const;
+
+/** A motion: its duration in ms, and whether it stands `still` or keeps turning with reduced motion. */
+export type Motion = { duration: number; reduced: "still" | "turn" };
+
+/**
+ * Motion. The spinner of a control in flight turns once in `duration` ms; with reduced motion it stands `still`,
+ * since a ring with one arc reads as busy without turning.
+ */
+export const motion: { readonly spin: Motion } = { spin: { duration: 800, reduced: "still" } };
+
+/**
+ * The motion of a change of screen, by its kind (ADR-0025 §4): how long a push, a pop, a modal and a replace take, in
+ * ms; the easing of the screen that enters, which slows into place, and of the one that leaves, which speeds away; and
+ * how far a screen moves, in rem: sideways on a push or a pop, up on a modal. With reduced motion no screen moves.
+ */
+export const transition = {
+  duration: { push: 300, pop: 250, modal: 300, replace: 150 },
+  ease: { enter: "cubic-bezier(0.05, 0.7, 0.1, 1)", exit: "cubic-bezier(0.3, 0, 0.8, 0.15)" },
+  shift: 2,
+  rise: 3,
+} as const;
+
+/** The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. */
+export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
+
+/**
+ * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a
+ * neutral grey in both schemes, apart from the warm surfaces and from the coral of links; and the frame the tint makes
+ * around an added image, in rem.
+ */
+export const diff = { addedShare: 0.14, imageFrame: 0.25 } as const;
+
+/**
+ * An icon's size where it sits, in rem: in an action of a timeline, beside a caption, or in the app's navigation. An
+ * on state the icon set cannot draw by shape is the glyph knocked out of a solid tile: the tile's corner radius and the
+ * glyph's size within it, as shares of the tile.
+ */
+export const icon = { action: 1.125, caption: 0.875, navigation: 1.5, tile: { radius: 0.22, glyph: 0.72 } } as const;
+
+/**
+ * An avatar's size where it sits, in rem: inline beside a name (a mention, a reply context), at the start of a row of
+ * a list on one line (a suggestion), at the head of a post, and in a profile preview; and the size of the initial that
+ * stands in for a missing image, as a share of the avatar, larger on the inline and the row avatars, where a kanji or an
+ * Arabic letter at the share of the larger ones is a few pixels high.
+ */
+export const avatar = { inline: 1.25, row: 1.5, post: 2.5, preview: 4, initial: 0.44, initialSmall: 0.52 } as const;
+
+/**
+ * The shadow a surface over the page (a menu) casts, down `y` px and blurred `blur` px, in a share of black that is
+ * heavier in dark, where a shadow shows less: it sets off a surface that is the page's own.
+ */
+export const shadow = { y: 4, blur: 16, share: { light: 0.12, dark: 0.5 } } as const;
+
+/** The shadow a bar fixed at the bottom of the viewport (the tab bar) casts up over what scrolls under it, likewise. */
+export const barShadow = { y: -2, blur: 12, share: { light: 0.08, dark: 0.4 } } as const;
+
+/**
+ * A menu, in rem: its padding around the items, the space between its groups, the gap between an item's glyph and
+ * its label, and its least width. Its rows are a form control's height; one that grows keeps a padding above and
+ * below: with a quiet line under its label (`describedBlock`), or with a label that wraps (`wrappedBlock`).
+ */
+export const menu = {
+  padding: 0.25,
+  groupGap: 0.5,
+  iconGap: 0.625,
+  minWidth: 12,
+  describedBlock: 0.5,
+  wrappedBlock: 0.25,
+} as const;
+
+/**
+ * A disclosure, in rem: the space between its summary and what it folds, and between the summary's glyph, text and
+ * button; the summary's padding around its button; and the wider padding at the summary's start, before its glyph.
+ */
+export const disclosure = { gap: 0.5, padding: 0.375, paddingStart: 0.75 } as const;
+
+/**
+ * What people write (a post's body): the space between its paragraphs and the indent of its lists, in rem; a quote's
+ * bar and the space after it, in rem; a code block's padding, in rem, and the indent of a line's continuation, in ch;
+ * inline code's padding, in em; and a custom emoji's size, in em of the text around it, which it overhangs evenly
+ * above and below.
+ */
+export const content = {
+  paragraphGap: 0.5,
+  indent: 1.25,
+  quoteBar: 0.1875,
+  quoteIndent: 0.75,
+  codePaddingBlock: 0.5,
+  codePaddingInline: 0.75,
+  codeHang: 2,
+  codeInline: 0.25,
+  emoji: 1.4,
+} as const;
+
+/**
+ * An article (ADR-0160): on its page, the most a line of its text runs, in em of `reading`; the space between its
+ * blocks and above a heading, in rem; and its cover's height as a share of its width, at most `coverMaxHeight` rem.
+ * In a timeline, its card's square cover is `cardThumb` rem wide. In its editor: the block padding of a text of a few
+ * lines on a field's surface; the room the hashtags' field keeps around its hashtags and before what is typed; and
+ * the least width of what is typed there before it goes on a next line.
+ */
+export const article = {
+  measure: 38,
+  blockGap: 1,
+  headingGap: 1.75,
+  coverRatio: 0.5625,
+  coverMaxHeight: 22,
+  cardThumb: 5.5,
+  fieldBlock: 0.375,
+  tagsInset: 0.25,
+  tagInput: 6,
+} as const;
+
+/**
+ * An entry of a feed (a post), in rem: the space between its parts and between the lines of one part; how far its
+ * surface reaches past its content when hovered or focused, which holds an action's tile and its focus ring, and that
+ * surface's corner; the gap after the avatar, between the name and what ends its line, after a caption's glyph and
+ * between the actions; the leading of the author's two lines, unitless; and the room kept below it when it scrolls into
+ * view.
+ */
+export const entry = {
+  gap: 0.5,
+  lineGap: 0.25,
+  reach: 0.875,
+  radius: 0.5,
+  avatarGap: 0.625,
+  nameGap: 0.5,
+  captionGap: 0.375,
+  actionGap: 0.25,
+  leading: 1.3,
+  scrollMargin: 4.5,
+} as const;
+
+/**
+ * A feed of entries (a timeline), in rem: the space between its entries, in which their surfaces meet edge to edge
+ * (twice an entry's reach), and the room kept above an entry the keyboard brings to the top of the view, which holds
+ * its focus ring; and the space between the posts of a conversation of direct messages, which read as one exchange,
+ * where a hovered post's surface stops short of the next post.
+ */
+export const feed = { gap: 1.75, scrollMargin: 0.75, tightGap: 1.25 } as const;
+
+/** Something embedded in an entry (a quoted post) on the raised surface, in rem: its padding and the space between its parts. */
+export const embed = { padding: 0.75, gap: 0.375 } as const;
+
+/**
+ * A poll's options inside its card, in rem: the padding of the surface they sit on, an option's inline padding, and
+ * the block padding of an option shown as a result.
+ */
+export const poll = { padding: 0.25, optionInline: 0.5, resultBlock: 0.375 } as const;
+
+/**
+ * Media: in a grid at the full width, the gap between them, the height as a share of the width (16:9) and the most
+ * it may reach in rem, so that the next entry shows on the same screen; as small previews, their width and height in
+ * rem. Over a picture, a mark (ALT, GIF, a video's length) sits `badgeInset` rem from its corner on a backing of black
+ * at `badgeShare`, in white at any scheme, and a video's play disc is `play` rem wide. A link card's square image, in
+ * its small size, is `cardThumb` rem wide, and its large image at most `cardMaxHeight` rem tall.
+ */
+export const media = {
+  gap: 0.25,
+  ratio: 0.5625,
+  maxHeight: 20,
+  previewWidth: 6,
+  previewHeight: 4.5,
+  badgeInset: 0.375,
+  badgeShare: 0.6,
+  play: 3,
+  cardThumb: 5.5,
+  cardMaxHeight: 16,
+} as const;
+
+/**
+ * The media viewer: one picture or video whole over the page, always in the dark scheme, its backing black at
+ * `scrim`; its bar's height and the space it keeps around the picture, in rem; the inline padding of the buttons at
+ * the stage's sides and the height of a specimen in a page, in rem; the most a picture zooms to, and the step of a
+ * wheel's or a key's zoom.
+ */
+export const viewer = {
+  scrim: 0.92,
+  bar: 3.5,
+  inset: 0.75,
+  sideInline: 0.8125,
+  specimen: 40,
+  maxZoom: 4,
+  zoomStep: 0.5,
+} as const;
+
+/**
+ * A chip (an emoji reaction), in rem: its height, its inline padding, the gap between its glyph and its count, and
+ * the space between chips; and its glyph's size, in em of its count.
+ */
+export const chip = { height: 1.75, paddingInline: 0.5, gap: 0.25, spacing: 0.375, glyph: 1.25 } as const;
+
+/**
+ * A switch (a setting on or off), in rem: its track's width and height, the thumb's size, and the gap between the
+ * track and its label.
+ */
+export const toggle = { width: 2.5, height: 1.5, thumb: 1.125, gap: 0.75 } as const;
+
+/**
+ * The emoji picker, in rem: a cell of its grid, and on a touch screen; the font size of an emoji in a cell; a button of
+ * its row of categories; the width of its popover and the most height of its grid there; the height of its sheet on a
+ * phone; the space between its parts, and between a heading of its grid and the cells under it.
+ */
+export const emojiPicker = {
+  cell: 2.5,
+  cellCoarse: 2.75,
+  glyph: 1.5,
+  tab: 2,
+  width: 22,
+  height: 16,
+  sheet: 36,
+  gap: 0.5,
+  headingGap: 0.25,
+} as const;
+
+/**
+ * A dialog over the page (the keyboard shortcuts), in rem: its padding, the space between its parts and between the
+ * rows of a list in it, its most width, and the margin it keeps from the viewport's edges; the radius of the blur of the
+ * page behind it, in px, so that the reader's eye stays on the dialog; and the scrim that dims that page, a share of
+ * black that is heavier in dark.
+ */
+export const dialog = {
+  padding: 1.25,
+  gap: 1,
+  rowGap: 0.5,
+  maxWidth: 28,
+  margin: 1,
+  blur: 6,
+  scrim: { light: 0.4, dark: 0.6 },
+} as const;
+
+/**
+ * The post composer, in rem: the size of an image's thumbnail beside its description; the least space inside its
+ * cards, the block padding of a field of text and the room a text keeps for the button that removes it; the size and the leading
+ * (unitless) of the text, which keeps `textLines` lines of room while nothing follows it; the space above the dialog
+ * from `tablet`, and below it; the width of the line of a poll option's mark, in px; the corner of
+ * a mark behind the text (what the server will read, the part over the limit), in px; and the share of the coral in
+ * the tint behind what the server will read (the link it becomes), over whichever surface the text is on, heavier in
+ * dark, where a tint of the coral over a dark surface reads less.
+ */
+export const composer = {
+  thumb: 4.5,
+  inset: 0.25,
+  fieldBlock: 0.375,
+  removeRoom: 2,
+  textSize: 1,
+  textLeading: 1.55,
+  textLines: 3,
+  top: 4,
+  bottom: 2,
+  markLine: 1.5,
+  overRadius: 2,
+  markShare: { light: 0.18, dark: 0.32 },
+} as const;
+
+/** A key's cap (a shortcut's key), in rem: its least width, its height, its inline padding, and the gap between caps. */
+export const kbd = { minWidth: 1.5, height: 1.5, paddingInline: 0.375, gap: 0.25 } as const;
+
+/**
+ * A page of its own outside the app's frame (a sign-in or a consent), in rem: the most width of its column, and from
+ * `desktop` of its column beside the introduction; the space between the column's parts (the mark, the screen, the
+ * footer), between a screen's parts, between a form's fields, inside a field, and under a title; the space above the
+ * column on a phone and from `tablet`, and below it; the padding of the introduction's panel and the most width of
+ * what it holds, and the space between its parts; the height of the wordmark and the size of a server's own logo, in
+ * the column and in the introduction, and the gap after them; a checkbox's size; the padding of a form's alert and the
+ * gap after its glyph; the indent of a list and the space between its items; the width of a faulty field's line; and
+ * the height a third party's widget (a CAPTCHA's frame) holds before it draws. The banner's width is `bannerRatio`
+ * times its height.
+ */
+export const formPage = {
+  column: 24,
+  columnWide: 26,
+  gap: 2,
+  screenGap: 1.5,
+  formGap: 1.25,
+  fieldGap: 0.25,
+  headGap: 0.375,
+  top: 1.5,
+  topWide: 4,
+  bottom: 1,
+  introBlock: 4,
+  introInline: 2.5,
+  introWidth: 26,
+  introGap: 1.25,
+  mark: 1.5,
+  logo: 2,
+  markIntro: 2,
+  logoIntro: 3,
+  markGap: 0.625,
+  check: 1.125,
+  alertPadding: 0.75,
+  alertGap: 0.5,
+  indent: 1.25,
+  listGap: 0.375,
+  invalid: 0.125,
+  widget: 4.0625,
+  bannerRatio: 3,
+} as const;
+
+/**
+ * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row
+ * and before what ends it; above a heading of a group of a list; around a thread's focused post and between its
+ * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
+ * ring of the page's surface around the avatar and its inset; the space between a profile's parts, between the names
+ * on its lines (and inside a badge), between its counts, and between its fields; the size of the unread mark; and the
+ * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
+ * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
+ * ring of the page's surface that cuts it out of that one; and how far a face of a conversation's people tucks under
+ * the one before, little enough that each stays recognisable; and the padding of the surface under what a field found.
+ */
+export const screen = {
+  tabGap: 0.25,
+  tabsGap: 0.5,
+  groupGap: 0.5,
+  focusGap: 0.75,
+  replyStep: 1.5,
+  replyFrom: 30,
+  headRoom: 1,
+  avatarRing: 0.25,
+  avatarInset: 0.25,
+  profileGap: 0.75,
+  nameGap: 0.375,
+  metaGap: 1,
+  fieldGap: 0.5,
+  unread: 0.5,
+  rowGap: 0.75,
+  rowBlock: 0.5,
+  rowInline: 0.75,
+  air: 0.25,
+  facesLead: 3.5,
+  faceOverlap: 0.5,
+  faceCut: 0.125,
+  faceTuck: 0.25,
+  foundPadding: 0.75,
+} as const;
+
+/**
+ * The viewport widths, in rem, at which the app's frame changes (ADR-0110 §10): a rail from `tablet`, a sidebar from
+ * `desktop`, and a column beside the main one from `wide`. A media query reads no custom property, so the design
+ * system's theme names them as breakpoints, not as properties.
+ */
+export const breakpoint = { tablet: 40, desktop: 68.75, wide: 77.5 } as const;
+
+/**
+ * The app's frame, in rem: the width of the rail, of the sidebar, of the main column and of the column beside it; the
+ * height of the tab bar, which is also the size of the action floating over it, and of an item of the rail; the space
+ * between the rail's items, and inside an item of the sidebar before its glyph; the size of a label of the sidebar;
+ * the space the frame keeps from the viewport's edge, between its columns (`gapWide` from `desktop`), and below the
+ * main column where no tab bar covers it; the rail's padding; the space between the sections of the column beside the
+ * main one; the height of the mark at the top of the rail; the height of the call's bar above the tab bar; the least
+ * size of a count's badge and its inline padding; the height of a meter's bar; the room the menu's sheet leaves
+ * above it; and the padding of a toast around its controls.
+ */
+export const shell = {
+  rail: 3.5,
+  sidebar: 15,
+  column: 37.5,
+  aside: 18.75,
+  bar: 3.5,
+  item: 3,
+  itemGap: 0.25,
+  itemInline: 0.75,
+  label: 1,
+  edge: 1,
+  gap: 1.5,
+  gapWide: 2.5,
+  end: 3,
+  inset: 0.5,
+  section: 2,
+  mark: 1.5,
+  callBar: 3.5,
+  badge: 1.125,
+  badgeInline: 0.3125,
+  meter: 0.375,
+  sheetRoom: 4,
+  toastInset: 0.25,
+} as const;
+
+const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+
+/** The WCAG 2 relative luminance of a #rrggbb color. */
+const luminance = (hex: string) => {
+  const [r = 0, g = 0, b = 0] = channels(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+
+/** The WCAG 2 contrast ratio of two #rrggbb colors, from 1 to 21. */
+export function contrast(a: string, b: string): number {
+  const [hi = 0, lo = 0] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+  return (hi + 0.05) / (lo + 0.05);
+}
+
+/** `over` mixed over `under` at `share` (0 to 1) in sRGB, as CSS color-mix does, as #rrggbb. */
+export function mix(over: string, under: string, share: number): string {
+  const u = channels(under);
+  const mixed = channels(over).map((v, i) => Math.round(v * share + (u[i] ?? 0) * (1 - share)));
+  return `#${mixed.map((v) => v.toString(16).padStart(2, "0")).join("")}`;
+}
+
+const textProperties = (name: string, step: TextStep): [string, string][] => [
+  [`--text-${name}`, `${step.size}rem`],
+  [`--text-${name}--line-height`, `${step.lineHeight}`],
+  [`--text-${name}--font-weight`, `${step.fontWeight}`],
+  ...(step.letterSpacing === undefined
+    ? []
+    : [[`--text-${name}--letter-spacing`, step.letterSpacing] as [string, string]]),
+];
+
+const percent = (share: number) => `${share * 100}%`;
+
+/** A token's camel-case name as a custom property's: `gapWide` as `gap-wide`. */
+const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase()}`);
+
+/**
+ * The tokens as custom properties, each name with its value: `--font-*` (the stacks, their overrides and the CJK
+ * region's family), `--text-*` (with Tailwind's
+ * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
+ * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * :root.
+ */
+export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
+  ...Object.entries(fontFamily).map(([name, value]): [string, string] => [`--font-${name}`, value]),
+  ...Object.entries(fontOverride).map(([name, value]): [string, string] => [`--font-${name}-override`, value]),
+  ["--font-latin", `"${latinFamily.family}"`],
+  ["--font-cjk", `"${cjkRegions[0].family}"`],
+  ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step)),
+  ...Object.entries(color).map(([name, c]): [string, string] => [
+    `--color-${name}`,
+    `light-dark(${c.light}, ${c.dark})`,
+  ]),
+  ...Object.entries(fontWeight).map(([name, w]): [string, string] => [`--font-weight-${name}`, `${w}`]),
+  ...Object.entries(radius).map(([name, r]): [string, string] => [`--radius-${name}`, `${r}rem`]),
+  ...Object.entries(control).flatMap(([size, c]): [string, string][] => [
+    [`--control-${size}-height`, `${c.height}rem`],
+    [`--control-${size}-padding-inline`, `${c.paddingInline}rem`],
+    [`--control-${size}-padding-block`, `${c.paddingBlock}rem`],
+  ]),
+  ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
+  ["--icon-button-gap", `${iconButton.gap}rem`],
+  ["--icon-button-touch", `${iconButton.touch}rem`],
+  ["--target-minimum", `${target.minimum}rem`],
+  ["--focus-ring-gap", `${focusRing.gap}px`],
+  ["--focus-ring-width", `${focusRing.width}px`],
+  ["--focus-ring-halo", `${focusRing.halo}px`],
+  ["--focus-ring-halo-share", percent(focusRing.haloShare)],
+  ["--press-shade", press.shade],
+  ["--press-hover", percent(press.hover)],
+  ["--press-pressed", percent(press.pressed)],
+  ["--press-shift", `${press.shift}px`],
+  ["--press-disabled-opacity", `${press.disabledOpacity}`],
+  ...Object.entries(motion).map(([name, m]): [string, string] => [`--duration-${name}`, `${m.duration}ms`]),
+  ...Object.entries(transition.duration).map(([kind, ms]): [string, string] => [`--transition-${kind}`, `${ms}ms`]),
+  ["--transition-ease-enter", transition.ease.enter],
+  ["--transition-ease-exit", transition.ease.exit],
+  ["--transition-shift", `${transition.shift}rem`],
+  ["--transition-rise", `${transition.rise}rem`],
+  ["--spinner-size", `${spinner.size}em`],
+  ["--spinner-stroke", `${spinner.stroke}em`],
+  ["--spinner-track-share", percent(spinner.trackShare)],
+  ["--diff-added-share", percent(diff.addedShare)],
+  ["--diff-image-frame", `${diff.imageFrame}rem`],
+  ["--icon-action", `${icon.action}rem`],
+  ["--icon-caption", `${icon.caption}rem`],
+  ["--icon-navigation", `${icon.navigation}rem`],
+  ["--icon-tile-radius", percent(icon.tile.radius)],
+  ["--icon-tile-glyph", percent(icon.tile.glyph)],
+  ["--avatar-inline", `${avatar.inline}rem`],
+  ["--avatar-row", `${avatar.row}rem`],
+  ["--avatar-post", `${avatar.post}rem`],
+  ["--avatar-preview", `${avatar.preview}rem`],
+  ["--avatar-initial", `${avatar.initial}`],
+  ["--avatar-initial-small", `${avatar.initialSmall}`],
+  [
+    "--shadow-overlay",
+    `0 ${shadow.y}px ${shadow.blur}px light-dark(rgb(0 0 0 / ${percent(shadow.share.light)}), rgb(0 0 0 / ${percent(shadow.share.dark)}))`,
+  ],
+  [
+    "--shadow-bar",
+    `0 ${barShadow.y}px ${barShadow.blur}px light-dark(rgb(0 0 0 / ${percent(barShadow.share.light)}), rgb(0 0 0 / ${percent(barShadow.share.dark)}))`,
+  ],
+  ["--menu-padding", `${menu.padding}rem`],
+  ["--menu-group-gap", `${menu.groupGap}rem`],
+  ["--menu-icon-gap", `${menu.iconGap}rem`],
+  ["--menu-min-width", `${menu.minWidth}rem`],
+  ["--menu-described-block", `${menu.describedBlock}rem`],
+  ["--menu-wrapped-block", `${menu.wrappedBlock}rem`],
+  ["--disclosure-gap", `${disclosure.gap}rem`],
+  ["--disclosure-padding", `${disclosure.padding}rem`],
+  ["--disclosure-padding-start", `${disclosure.paddingStart}rem`],
+  ["--content-paragraph-gap", `${content.paragraphGap}rem`],
+  ["--content-indent", `${content.indent}rem`],
+  ["--content-quote-bar", `${content.quoteBar}rem`],
+  ["--content-quote-indent", `${content.quoteIndent}rem`],
+  ["--content-code-padding-block", `${content.codePaddingBlock}rem`],
+  ["--content-code-padding-inline", `${content.codePaddingInline}rem`],
+  ["--content-code-hang", `${content.codeHang}ch`],
+  ["--content-code-inline", `${content.codeInline}em`],
+  ["--content-emoji", `${content.emoji}em`],
+  ["--article-measure", `${article.measure}em`],
+  ["--article-block-gap", `${article.blockGap}rem`],
+  ["--article-heading-gap", `${article.headingGap}rem`],
+  ["--article-cover-ratio", `${article.coverRatio}`],
+  ["--article-cover-max-height", `${article.coverMaxHeight}rem`],
+  ["--article-card-thumb", `${article.cardThumb}rem`],
+  ["--article-field-block", `${article.fieldBlock}rem`],
+  ["--article-tags-inset", `${article.tagsInset}rem`],
+  ["--article-tag-input", `${article.tagInput}rem`],
+  ["--entry-gap", `${entry.gap}rem`],
+  ["--entry-line-gap", `${entry.lineGap}rem`],
+  ["--entry-reach", `${entry.reach}rem`],
+  ["--entry-radius", `${entry.radius}rem`],
+  ["--entry-avatar-gap", `${entry.avatarGap}rem`],
+  ["--entry-name-gap", `${entry.nameGap}rem`],
+  ["--entry-caption-gap", `${entry.captionGap}rem`],
+  ["--entry-action-gap", `${entry.actionGap}rem`],
+  ["--entry-leading", `${entry.leading}`],
+  ["--entry-scroll-margin", `${entry.scrollMargin}rem`],
+  ["--feed-gap", `${feed.gap}rem`],
+  ["--feed-scroll-margin", `${feed.scrollMargin}rem`],
+  ["--feed-tight-gap", `${feed.tightGap}rem`],
+  ["--embed-padding", `${embed.padding}rem`],
+  ["--embed-gap", `${embed.gap}rem`],
+  ["--poll-padding", `${poll.padding}rem`],
+  ["--poll-option-inline", `${poll.optionInline}rem`],
+  ["--poll-result-block", `${poll.resultBlock}rem`],
+  ["--media-gap", `${media.gap}rem`],
+  ["--media-ratio", `${media.ratio}`],
+  ["--media-max-height", `${media.maxHeight}rem`],
+  ["--media-preview-width", `${media.previewWidth}rem`],
+  ["--media-preview-height", `${media.previewHeight}rem`],
+  ["--media-badge-inset", `${media.badgeInset}rem`],
+  ["--media-badge-backing", `rgb(0 0 0 / ${percent(media.badgeShare)})`],
+  ["--media-play", `${media.play}rem`],
+  ["--media-card-thumb", `${media.cardThumb}rem`],
+  ["--media-card-max-height", `${media.cardMaxHeight}rem`],
+  ["--viewer-scrim", `rgb(0 0 0 / ${percent(viewer.scrim)})`],
+  ["--viewer-bar", `${viewer.bar}rem`],
+  ["--viewer-inset", `${viewer.inset}rem`],
+  ["--viewer-side-inline", `${viewer.sideInline}rem`],
+  ["--viewer-specimen", `${viewer.specimen}rem`],
+  ["--chip-height", `${chip.height}rem`],
+  ["--chip-padding-inline", `${chip.paddingInline}rem`],
+  ["--chip-gap", `${chip.gap}rem`],
+  ["--chip-spacing", `${chip.spacing}rem`],
+  ["--chip-glyph", `${chip.glyph}em`],
+  ...Object.entries(toggle).map(([name, value]): [string, string] => [`--toggle-${name}`, `${value}rem`]),
+  ...Object.entries(emojiPicker).map(([name, value]): [string, string] => [
+    `--emoji-picker-${kebab(name)}`,
+    `${value}rem`,
+  ]),
+  ["--dialog-padding", `${dialog.padding}rem`],
+  ["--dialog-gap", `${dialog.gap}rem`],
+  ["--dialog-row-gap", `${dialog.rowGap}rem`],
+  ["--dialog-max-width", `${dialog.maxWidth}rem`],
+  ["--dialog-margin", `${dialog.margin}rem`],
+  ["--dialog-blur", `${dialog.blur}px`],
+  [
+    "--dialog-scrim",
+    `light-dark(rgb(0 0 0 / ${percent(dialog.scrim.light)}), rgb(0 0 0 / ${percent(dialog.scrim.dark)}))`,
+  ],
+  ["--composer-thumb", `${composer.thumb}rem`],
+  ["--composer-inset", `${composer.inset}rem`],
+  ["--composer-field-block", `${composer.fieldBlock}rem`],
+  ["--composer-remove-room", `${composer.removeRoom}rem`],
+  ["--composer-text-size", `${composer.textSize}rem`],
+  ["--composer-text-leading", `${composer.textLeading}`],
+  ["--composer-text-lines", `${composer.textLines}`],
+  ["--composer-top", `${composer.top}rem`],
+  ["--composer-bottom", `${composer.bottom}rem`],
+  ["--composer-mark-line", `${composer.markLine}px`],
+  ["--composer-over-radius", `${composer.overRadius}px`],
+  [
+    "--composer-mark",
+    `light-dark(${(["light", "dark"] as const)
+      .map((s) => `color-mix(in srgb, var(--color-accent) ${percent(composer.markShare[s])}, transparent)`)
+      .join(", ")})`,
+  ],
+  ["--kbd-min-width", `${kbd.minWidth}rem`],
+  ["--kbd-height", `${kbd.height}rem`],
+  ["--kbd-padding-inline", `${kbd.paddingInline}rem`],
+  ["--kbd-gap", `${kbd.gap}rem`],
+  ...Object.entries(shell).map(([name, value]): [string, string] => [`--shell-${kebab(name)}`, `${value}rem`]),
+  ...Object.entries(screen).map(([name, value]): [string, string] => [`--screen-${kebab(name)}`, `${value}rem`]),
+  ...Object.entries(formPage).map(([name, value]): [string, string] => [
+    `--form-page-${kebab(name)}`,
+    name === "bannerRatio" ? `${value}` : `${value}rem`,
+  ]),
+]);

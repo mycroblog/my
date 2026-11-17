@@ -1,0 +1,3418 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The fake of the client API (ADR-0171 §5), the one the component tests and the screens' stories share, where no
+// server runs: a `fetch`-compatible `serve(request)` that answers as the server would after the seed applied the
+// scenario (scenario.ts), as one person of it reads it. Each operation it implements is a handler of `handlers`, whose
+// request and answer are typed by the API specification (spec.ts); a request of no handler fails by name. A fake holds
+// its own state, so a test makes one of its own, from the scenario or from a seed it gives.
+//
+// The statuses, the home timeline, a thread, a profile with its lists of follows and followers (as far as their owner
+// shows them), the relationships and the notifications are derived from the seed's people, follows, posts,
+// interactions and restrictions; the IDs and times are the fake's own (the server decides them for real), newest last
+// in the seed's order; in the scenario a person of another server is the fake's own, since the seed's server federates
+// with none, one of them moved, and so is a person of this server who deactivated their account. The writes (a post, a
+// boost, a follow, a block, a mute, a private note, being notified of a person's posts, a follower removed, a server
+// muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
+// conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
+// hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
+// published, the reader's articles posted and edited and the images they upload) are kept in memory; a post's edit
+// history holds the scenario's versions of it, then the reader's edits. An article's body comes only with the status
+// read alone, as the server's does, and its preview renders as publishing would, unless the options make it fail. A
+// list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list
+// read to its end ends; a later page comes late only with `lateMs`. With `failFirst` the home timeline's first page
+// fails during the first second, and its retry succeeds late. What the shell reads (the instance, the reader's rights
+// and preferences, the announcements, the voice rooms, the events) answers in the state the options give the server:
+// its timelines, one person's, its closure, its maintenance, down, or newer than the app. The voice rooms are the
+// fake's own, since a room lives only while people are in it and the seed opens none. A post is translated by the
+// provider `translation` names, which answers or refuses as the options say. With `approvals`, posts of the fake's own
+// approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
+// reader's requests list and are answered, and a reply approved joins its thread.
+//
+// The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
+// `newNotification` make one. A test scripts an operation with `script` (script.ts).
+
+import type { StreamEvent } from "@mycroblog/mykit";
+import { drawingBlurhash, drawingURL } from "../drawing";
+import {
+  admin,
+  announcements as scenarioAnnouncements,
+  conversationReads as scenarioConversationReads,
+  drafts as scenarioDrafts,
+  draftSchedule,
+  emojis as scenarioEmojis,
+  eventStart,
+  events as scenarioEvents,
+  follows as scenarioFollows,
+  interactions as scenarioInteractions,
+  lists as scenarioLists,
+  people as scenarioPeople,
+  portrait,
+  posts as scenarioPosts,
+  restrictions as scenarioRestrictions,
+  type CustomEmoji,
+  type DraftPlan,
+  type Follow,
+  type Image,
+  type Interaction,
+  type LinkCard,
+  type Person,
+  type PersonList,
+  type Post,
+  type Restriction,
+  type ServerAnnouncement,
+  type ServerEventPlan,
+} from "../scenario";
+import { articleHtml, serverHtml } from "./html";
+import { createScripts, type Script, type Scripted } from "./script";
+import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
+
+type Account = Schema<"Account">;
+type Status = Schema<"Status">;
+type Notification = Schema<"Notification">;
+type Draft = Schema<"Draft">;
+type MediaAttachment = Schema<"MediaAttachment">;
+
+/** A person of a seed; one of another server has their whole handle, `user@domain`, as `username`. */
+export type FakePerson = Person & {
+  /** The handle of the account they moved to. */
+  movedTo?: string;
+};
+
+/** What a fake server holds when it starts, in the scenario's terms (scenario.ts), each list oldest first. */
+export type FakeSeed = {
+  people: readonly FakePerson[];
+  follows: readonly Follow[];
+  posts: readonly Post[];
+  interactions: readonly Interaction[];
+  restrictions: readonly Restriction[];
+  lists: readonly PersonList[];
+  drafts: readonly DraftPlan[];
+  announcements: readonly ServerAnnouncement[];
+  events: readonly ServerEventPlan[];
+  emojis: readonly CustomEmoji[];
+  conversationReads: readonly { by: string; post: string }[];
+};
+
+/**
+ * The people of other servers, the fake's own, since the seed's server federates with none. sora, on photos.example,
+ * follows the reader, and sam boosts a post of sora's; sora's account on social.example moved to it, and keeps its
+ * posts.
+ */
+const remotePeople: readonly FakePerson[] = [
+  {
+    username: "sora@photos.example",
+    email: "",
+    password: "",
+    displayName: "Sora そら",
+    note: "Film photographer on another server. 別のサーバーでフィルム写真を撮っています。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([60, 140, 170]),
+  },
+  {
+    username: "sora@social.example",
+    email: "",
+    password: "",
+    displayName: "Sora そら",
+    note: "This account moved. 引っ越しました。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([60, 140, 170]),
+    movedTo: "sora@photos.example",
+  },
+  {
+    // A bakery's account, so that one word ("bak") finds a person, the scenario's #baking and its posts at once.
+    username: "kobo@bread.example",
+    email: "",
+    password: "",
+    displayName: "Bakery Kobo",
+    note: "A small bakery by the station. 駅前の小さなパン屋です。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([200, 150, 90]),
+  },
+  {
+    username: "kiri@far.example",
+    email: "",
+    password: "",
+    displayName: "Kiri 霧",
+    note: "Writes about mountain weather. 山の天気について書いています。",
+    fields: [],
+    locale: "en",
+    avatar: portrait([150, 150, 160]),
+  },
+];
+
+const remotePosts: readonly Post[] = [
+  {
+    key: "sora-moving",
+    author: "sora@social.example",
+    text: "Moving to photos.example, where the darkroom is. See you there.",
+    visibility: "public",
+    language: "en",
+  },
+  {
+    key: "sora-film",
+    author: "sora@photos.example",
+    text: "Developed the first roll from the coast. The grain came out just right.",
+    visibility: "public",
+    language: "en",
+  },
+];
+
+/** What a fake holds unless it is given a seed: the scenario, then the people of other servers and what they did. */
+export const scenario: FakeSeed = {
+  people: [...scenarioPeople, ...remotePeople],
+  follows: [...scenarioFollows, { follower: "sora@photos.example", followee: "yuki" }],
+  posts: [...scenarioPosts, ...remotePosts],
+  interactions: [...scenarioInteractions, { kind: "boost", by: "sam", post: "sora-film" }],
+  restrictions: scenarioRestrictions,
+  lists: scenarioLists,
+  drafts: scenarioDrafts,
+  announcements: scenarioAnnouncements,
+  events: scenarioEvents,
+  emojis: scenarioEmojis,
+  conversationReads: scenarioConversationReads,
+};
+
+const nothing: FakeSeed = {
+  people: [],
+  follows: [],
+  posts: [],
+  interactions: [],
+  restrictions: [],
+  lists: [],
+  drafts: [],
+  announcements: [],
+  events: [],
+  emojis: [],
+  conversationReads: [],
+};
+
+/**
+ * A person of another server this one has not met yet: no search finds them until a lookup with `resolve` fetched
+ * their account (FR-305), by `@kiri@far.example` or their profile's address.
+ */
+const unmet = "kiri@far.example";
+
+/**
+ * A person of this server who deactivated their account, whom the server answers as not there (ADR-0089 §15): a 404,
+ * and in no list.
+ */
+const deactivated = "nao";
+
+/** The domain of a person's server: theirs after the `@` of their handle, else this server's. */
+const domainOf = (username: string) => (username.includes("@") ? username.slice(username.indexOf("@") + 1) : undefined);
+
+/** The host the fake answers as. */
+export const fakeHost = "demo.test";
+/** The origin the fake answers as. */
+export const fakeOrigin = `https://${fakeHost}`;
+
+/** The origin of a person's server. */
+const originOf = (username: string) => `https://${domainOf(username) ?? fakeHost}`;
+
+/** Who may read a public timeline (the API's InstanceAudience). */
+export type Audience = Schema<"InstanceAudience">;
+
+export type FakeOptions = {
+  /**
+   * What the server holds in place of the scenario: the lists it names, and nothing else. The options that name the
+   * scenario's people (`approvals`, `held`, `everyKind`, `singleUser`) need them.
+   */
+  seed?: Partial<FakeSeed>;
+  /** The username of the person who reads; yuki by default. Their roles (the seed's `staff`) set their rights. */
+  viewer?: string;
+  /** The reader has no session: what needs one answers 401. */
+  visitor?: boolean;
+  /** Fails the home timeline's first page during the first second. */
+  failFirst?: boolean;
+  /**
+   * How late a later page comes, in ms, so that loading more shows; none by default, as a server answers at once. The
+   * retry of `failFirst` comes 2 s late unless this says otherwise.
+   */
+  lateMs?: number;
+  /** Who may read the local and the federated timelines; everyone by default. */
+  timelines?: { local: Audience; federated: Audience };
+  /** A one-person server, of the scenario's administrator: no public timelines. */
+  singleUser?: boolean;
+  /** The instance has a logo of its own. */
+  logo?: boolean;
+  /** The instance has a thumbnail, the image that represents it. */
+  thumbnail?: boolean;
+  /** The registration mode; open by default, closed on a one-person server. */
+  registrations?: "open" | "approval" | "invite" | "closed";
+  /** The instance's summary runs long. */
+  longSummary?: boolean;
+  /** The closure of the service: announced, or the server closed. */
+  closure?: "announced" | "closed";
+  /** The server is under maintenance: every operation answers its problem. */
+  maintenance?: boolean;
+  /**
+   * The server stops answering, all but the first request of `/instance` (which the shell read before): the reader's
+   * device has no network (`offline`, every request fails), or the server is down (`outage`, it answers 503 and its
+   * health `unavailable`).
+   */
+  down?: "offline" | "outage";
+  /** The server's web client epoch is above the app's, which then needs an update. */
+  newerEpoch?: boolean;
+  /** What is around the reader beside the timeline: everything by default, or nothing. */
+  around?: "all" | "none";
+  /** The voice chat rooms are off: the instance says so and `/voice/...` answers 404. */
+  voiceOff?: boolean;
+  /** The reader's latest export of their data: none by default, one being built, or one ready to download. */
+  dataExport?: "none" | "building" | "ready";
+  /**
+   * How posts are translated: not at all by default. `provider` enables one provider of the server, for the posts of
+   * every visibility but followers-only and direct: one that answers (`answers`, each text behind the language it
+   * goes into, "[ja] …", as the server's fake provider does), or one that refuses every request, over the monthly limit
+   * (`limit`), as no provider may receive the post (`unavailable`), for a language it does not translate (`language`),
+   * or failing (`failed`). `browser` lets readers use the browser's own translator.
+   */
+  translation?: {
+    provider?: "answers" | "limit" | "unavailable" | "language" | "failed";
+    browser?: boolean;
+  };
+  /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
+  bookmarks?: readonly string[];
+  /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
+  followedTagLimit?: number;
+  /**
+   * The articles (ADR-0160): who may write new ones, everyone by default or only the roles with `create_articles`
+   * (`authoring: "permission"`, which no person of the scenario has); a preview of a body that fails (`preview:
+   * "fails"`); a publication or an edit the server's review refuses (`publish: "refused"`), or refuses for the value
+   * of its summary, which the problem names (`publish: "summary"`).
+   */
+  articles?: { authoring?: "everyone" | "permission"; preview?: "fails"; publish?: "refused" | "summary" };
+  /**
+   * Posts whose authors approve replies, boosts and quotes by hand (ADR-0155), after the scenario's (`approvalPosts`):
+   * the reader's (yuki's), which marco replies to and boosts and mio quotes, each waiting for the reader's approval, and
+   * layla's, to which the reader's reply waits, another was not approved, and the reader's boost waits. The requests
+   * are answered as the server answers them.
+   */
+  approvals?: boolean;
+  /** The lists of an account's follows and followers fail (`fails`, a 500) or never answer (`waits`). */
+  followsLists?: "fails" | "waits";
+  /**
+   * The search (ADR-0149): `posts` gives the server a search engine, which the instance says and which finds the
+   * public and local posts that hold every word; none by default, as a server without one.
+   */
+  search?: { posts?: boolean };
+  /**
+   * The most lists the reader may have (the server's 50 by default) and members a list may (1,000): a smaller one shows
+   * the server's refusal at its limit (the reader has 3 lists, the first holds 2 accounts).
+   */
+  listLimits?: { lists?: number; members?: number };
+  /**
+   * The follow requests to the reader: those of the seed (sam's to ren) and, after them, of the people named in
+   * `from`, the last the newest; their list fails (`fails`, a 500) or never answers (`waits`).
+   */
+  followRequests?: { from?: readonly string[]; answer?: "fails" | "waits" };
+  /** The reader's private notes on people at the start, by username. */
+  notes?: Readonly<Record<string, string>>;
+  /** The people whose new posts notify the reader at the start. */
+  subscriptions?: readonly string[];
+  /** The domains the reader mutes at the start. */
+  domainMutes?: readonly string[];
+  /**
+   * In place of the seed's notifications, one of each kind of a group the server sends: from people (`people`), the
+   * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
+   */
+  everyKind?: "people" | "notices" | "moderators";
+  /**
+   * The notifications the reader's notification policy holds back (ADR-0158 §7), by account: a boost and a favourite
+   * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
+   */
+  held?: boolean;
+  /**
+   * Web Push (FR-206): the server sends it (its application key), the reader has no subscription until they register
+   * one, and their notification settings list the rows of the ordinary kinds; none by default, as a server without
+   * a VAPID key.
+   */
+  push?: boolean;
+  /**
+   * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
+   * their notification settings (`settings-fail`) fails with a 500.
+   */
+  pushState?: "subscribed" | "subscription-fails" | "settings-fail";
+  /** How many of the reader's newest notifications they have not read yet; 3 by default. */
+  unreadNotifications?: number;
+  /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
+  dismissFails?: boolean;
+  /**
+   * An upload is still processed when the server answers it, and ready when it is read again (GET /media/{id}), as on
+   * a server that processes it meanwhile; ready at once by default.
+   */
+  uploads?: "processing";
+};
+
+/** Whom an interaction policy admits (the API's InteractionAudience). */
+type PolicyAudience = Schema<"InteractionAudience">;
+
+/** Who may reply to, boost and quote a post: at once, and by its author's approval (the API's InteractionRule). */
+type PolicyRule = Schema<"InteractionRule">;
+
+type Policy = Partial<Record<"reply" | "announce" | "quote", PolicyRule>>;
+
+/** A post of `approvals`: its policy, and whether the author of the post it replies to declined it. */
+type ApprovalPost = Post & {
+  policy?: Policy;
+  declined?: boolean;
+};
+
+/** The posts of `approvals`, after the scenario's, oldest first. */
+const approvalPosts: readonly ApprovalPost[] = [
+  {
+    key: "yuki-asks",
+    author: "yuki",
+    text: "週末の写真展に出す一枚を、まだ選べずにいます。",
+    visibility: "public",
+    language: "ja",
+    policy: {
+      reply: { automatic: "followers", manual: "everyone" },
+      announce: { automatic: "followers", manual: "everyone" },
+      quote: { automatic: "nobody", manual: "everyone" },
+    },
+  },
+  {
+    key: "layla-asks",
+    author: "layla",
+    text: "Translating a poem this week. Please ask before you share it.",
+    visibility: "public",
+    language: "en",
+    policy: {
+      reply: { automatic: "mentioned", manual: "everyone" },
+      announce: { automatic: "mentioned", manual: "everyone" },
+      quote: { automatic: "nobody" },
+    },
+  },
+  {
+    key: "marco-asks-reply",
+    author: "marco",
+    replyTo: "yuki-asks",
+    text: "The ridge at dawn would be my pick.",
+    visibility: "public",
+    language: "en",
+  },
+  {
+    key: "mio-asks-quote",
+    author: "mio",
+    quote: "yuki-asks",
+    text: "写真展、楽しみ。",
+    visibility: "public",
+    language: "ja",
+  },
+  {
+    key: "yuki-waits",
+    author: "yuki",
+    replyTo: "layla-asks",
+    text: "どの詩ですか？ 読んでみたいです。",
+    visibility: "public",
+    language: "ja",
+  },
+  {
+    key: "yuki-declined",
+    author: "yuki",
+    replyTo: "layla-asks",
+    text: "翻訳ができたら教えてください。",
+    visibility: "public",
+    language: "ja",
+    declined: true,
+  },
+];
+
+/** The boosts of `approvals`, each waiting for the approval of the post's author. */
+const approvalInteractions: readonly Interaction[] = [
+  { kind: "boost", by: "marco", post: "yuki-asks" },
+  { kind: "boost", by: "yuki", post: "layla-asks" },
+];
+
+/** The address of the fake's status page. */
+export const fakeStatusPage = "https://status.demo.test";
+
+/** An event of the stream as mykit reads it, which `send` writes as the server does. */
+export type FakeStreamEvent = Exclude<StreamEvent, { type: "unknown" }>;
+
+export type FakeApi = {
+  /** Answers a request of the client API, as a `fetch`; one for an operation the fake does not implement throws. */
+  serve: (request: Request) => Promise<Response>;
+  /**
+   * Scripts the operation of `route` (`POST /statuses`, `GET /statuses/{id}`) from now on: its requests are counted
+   * and kept, and its answer held, failed or changed as `script` says.
+   */
+  script: <R extends Route>(route: R, script?: Script<R>) => Scripted<R>;
+  /** Sends `event` on every open stream (GET /streaming). */
+  send: (event: FakeStreamEvent) => void;
+  /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
+  readonly unimplemented: readonly string[];
+  /** Adds `count` posts to the home timeline, sends them on the stream, and returns them, newest first. */
+  newPosts: (count: number) => Status[];
+  /** Adds a notification (a favourite of the reader's post), sends it on the stream, and returns it. */
+  newNotification: () => Notification;
+  /**
+   * Adds a direct post to the reader's conversation at `index` of their direct messages (newest first, the hidden ones
+   * too), by its first other person in reply to its latest post, sends the conversation on the stream, and returns
+   * the post.
+   */
+  newMessage: (index: number) => Status;
+  /** The app's address of the post with `key`. */
+  postPath: (key: string) => string;
+  /** The app's address of the seed's announcement with `key`, or of the fake's one that ended (`ended`). */
+  announcementPath: (key: string) => string;
+  /** The app's address of the reader's list at `index`, oldest first. */
+  listPath: (index: number) => string;
+  /** The ID of the seed's post of `key`, or of the reader's draft of that key. */
+  idOf: (key: string) => string;
+  /** The ID of the account of the seed's person of `username`. */
+  accountId: (username: string) => string;
+  /** The app's address of the reader's conversation at `index` of their direct messages, newest first. */
+  conversationPath: (index: number) => string;
+  /** The app's address of the held-back notifications of the person of `username` (`held`). */
+  heldPath: (username: string) => string;
+  /** The app's address of the reader's newest notification of `type`: where a push or an email about it leads. */
+  notificationPath: (type: string) => string;
+};
+
+/** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
+const pageSize = 20;
+const maxPageSize = 40;
+const minute = 60_000;
+const day = 24 * 60 * minute;
+
+/** A problem as the server answers it: `about:blank` unless `more` names its type. */
+const problem = (status: number, title: string, more: Partial<Schema<"Problem">> = {}): Refusal => ({
+  problem: { type: "about:blank", title, status, ...more },
+});
+const notFound = () => problem(404, "Not Found");
+
+/** An answer that never comes. */
+const never = () => new Promise<never>(() => undefined);
+
+/** An ID as the server's, a UUIDv7: in its canonical form, a later one sorts after an earlier one. */
+function idAt(ms: number, n: number): string {
+  const time = Math.max(0, Math.round(ms)).toString(16).padStart(12, "0");
+  return `${time.slice(0, 8)}-${time.slice(8)}-7000-8000-${n.toString(16).padStart(12, "0")}`;
+}
+
+/** An image in the sizes the server gives it. */
+const variants = (url: string): Schema<"MediaVariants"> => ({ small: { url }, medium: { url }, large: { url } });
+
+/** A page of a list, as the server pages it. */
+type Paged<T> = { from: number; body: { items: T[]; next_cursor?: string } };
+type PageQuery = { get: (name: "cursor" | "limit") => string | null };
+
+/**
+ * The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list; the cursor of a
+ * page is the `key` of its last item, its ID unless the items have none.
+ */
+function page<T extends { id: string }>(items: readonly T[], query: PageQuery): Paged<T>;
+function page<T>(items: readonly T[], query: PageQuery, key: (item: T) => string): Paged<T>;
+function page<T>(
+  items: readonly T[],
+  query: PageQuery,
+  key: (item: T) => string = (item) => (item as { id: string }).id,
+): Paged<T> {
+  const cursor = query.get("cursor");
+  const limit = Number(query.get("limit") ?? pageSize);
+  const size = Number.isInteger(limit) && limit > 0 ? Math.min(limit, maxPageSize) : pageSize;
+  const from = cursor === null ? 0 : items.findIndex((s) => key(s) === cursor) + 1;
+  const slice = items.slice(from, from + size);
+  const last = slice.at(-1);
+  return {
+    from,
+    body: { items: slice, ...(last !== undefined && from + size < items.length ? { next_cursor: key(last) } : {}) },
+  };
+}
+
+/** The IDs of the reader's uploads a body in Markdown shows as images (`![alt](media:ID)`), each once, in order. */
+const bodyImages = (text: string) =>
+  [...new Set([...text.matchAll(/!\[[^\]]*\]\(media:([^)\s]+)\)/g)].map((x) => x[1] ?? ""))].toSorted();
+
+/**
+ * The summary the server makes of an article's body: the text of its blocks (no headings, code or images) with one
+ * space between blocks and lines, as the server joins them, cut at a word, with an ellipsis.
+ */
+const summaryOf = (text: string) => {
+  const plain = text
+    .split("\n")
+    .filter((l) => !l.startsWith("#") && !l.startsWith("```"))
+    // A line's block marker (a list item's, a quote's) is no text of it.
+    .map((l) => l.replace(/^\s*(?:[-*+]|\d+[.)]|>)\s+/, ""))
+    .join(" ")
+    .replace(/!\[[^\]]*\]\([^)]*\)|\*\*|`/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (plain.length <= 200) return plain;
+  const cut = plain.slice(0, 200);
+  return `${cut.slice(0, Math.max(cut.lastIndexOf(" "), 1))}…`;
+};
+
+/** The hashtags of a text, as written. */
+const hashtagsIn = (text: string) => [...text.matchAll(/#([\p{L}\p{M}\p{N}_]+)/gu)].map((x) => x[1] ?? "");
+
+/** What an event of the stream is on the wire: its name, and its data. */
+function wire(event: FakeStreamEvent): [string, unknown] {
+  switch (event.type) {
+    case "update":
+      return ["update", event.status];
+    case "list_update":
+      return ["list_update", { list_id: event.listId, status: event.status }];
+    case "notification":
+      return ["notification", event.notification];
+    case "conversation":
+      return ["conversation", event.conversation];
+    case "announcement":
+      return ["announcement", event.announcement];
+    case "notification_requests":
+      return ["notification_requests", event.summary];
+    default:
+      return [event.type, { id: event.id }];
+  }
+}
+
+/** Creates a fake of the client API as `viewer` reads it. */
+export function createFakeApi(o: FakeOptions = {}): FakeApi {
+  const seed: FakeSeed = o.seed === undefined ? scenario : { ...nothing, ...o.seed };
+  const { people, follows, restrictions } = seed;
+  const personOf = (username: string): FakePerson => {
+    const found = people.find((p) => p.username === username);
+    if (found === undefined) throw new Error(`fake: no person ${username}`);
+    return found;
+  };
+  /** The handle of the account a person moved to, if they moved. */
+  const movedOf = (username: string) => people.find((p) => p.username === username)?.movedTo;
+  /** The usernames a text mentions, among the people. */
+  const mentioned = (text: string) =>
+    [...text.matchAll(/@(\w+)/g)].map((m) => m[1] ?? "").filter((u) => people.some((p) => p.username === u));
+
+  const customEmojis: Schema<"CustomEmoji">[] = seed.emojis.map((e) => {
+    const url = drawingURL(e.drawing);
+    return { shortcode: e.shortcode, url, static_url: url };
+  });
+  /** The custom emoji as the picker lists them: those without a category first, then by category and shortcode. */
+  const pickerEmojis: Schema<"PickerCustomEmoji">[] = seed.emojis
+    .map((e) => {
+      const url = drawingURL(e.drawing);
+      return exact<Schema<"PickerCustomEmoji">>()({
+        shortcode: e.shortcode,
+        url,
+        static_url: url,
+        aliases: [...(e.aliases ?? [])],
+        ...(e.category === undefined ? {} : { category: e.category }),
+      });
+    })
+    .toSorted(
+      (a, b) =>
+        Number(a.category !== undefined) - Number(b.category !== undefined) ||
+        (a.category ?? "").localeCompare(b.category ?? "") ||
+        a.shortcode.localeCompare(b.shortcode),
+    );
+  /** A reaction's emoji as the seed writes it (`:shortcode:` for a custom one) from what a request names. */
+  const seedEmoji = (name: string) => {
+    const bare = name.replace(/^:|:$/g, "");
+    return customEmojis.some((e) => e.shortcode === bare) ? `:${bare}:` : name;
+  };
+
+  const viewer = personOf(o.viewer ?? "yuki").username;
+  /** The reader has no session: the server answers them what anyone may read, with nothing of a reader's own. */
+  const visitor = o.visitor === true;
+  const posts: ApprovalPost[] = [...seed.posts, ...(o.approvals === true ? approvalPosts : [])];
+  const interactions = [...seed.interactions, ...(o.approvals === true ? approvalInteractions : [])];
+  const started = Date.now();
+  const wait = (ms: number) => new Promise((done) => setTimeout(done, ms));
+  /** A later page's delay: none unless `lateMs` asks for one. */
+  const late = () => wait(o.lateMs ?? 0);
+
+  // The seed's steps in order, follows, then posts, then interactions, a few minutes apart up to now.
+  const steps = follows.length + posts.length + interactions.length;
+  const timeOf = (step: number) => started - (steps - step) * 6 * minute;
+
+  // ---- People and relationships -------------------------------------------------------------------------------------
+
+  const accountId = new Map(people.map((p, i) => [p.username, idAt(0, i + 1)]));
+  const usernameOf = new Map([...accountId].map(([u, id]) => [id, u]));
+  const idOf = (username: string) => accountId.get(username) ?? "";
+  const following = new Set<string>();
+  const requested = new Set<string>();
+  /** The people of other servers this one has met by a lookup with `resolve` (`unmet` until then). */
+  const met = new Set<string>();
+  for (const f of follows) {
+    const edge = `${f.follower}>${f.followee}`;
+    if (personOf(f.followee).locked === true && f.accepted !== true) requested.add(edge);
+    else following.add(edge);
+  }
+  for (const from of o.followRequests?.from ?? []) requested.add(`${personOf(from).username}>${viewer}`);
+  const blocking = new Set(restrictions.filter((r) => r.kind === "block").map((r) => `${r.by}>${r.target}`));
+  const muting = new Set(restrictions.filter((r) => r.kind === "mute").map((r) => `${r.by}>${r.target}`));
+  const follows_ = (a: string, b: string) => following.has(`${a}>${b}`);
+  /**
+   * The follows a person's counts take in beyond the seed's people (with people of servers the seed's federates
+   * with none), the fake's own: an account whose lists its owner keeps (FR-311) still shows how many they hold.
+   */
+  const beyond: Readonly<Record<string, { followers: number; following: number }>> = {
+    mio: { followers: 48, following: 35 },
+    kai: { followers: 127, following: 64 },
+    "sora@photos.example": { followers: 1284, following: 312 },
+    // Its followers moved with it; it still follows those it did.
+    "sora@social.example": { followers: 3, following: 298 },
+  };
+  /**
+   * Who may read a person's lists of follows and followers (FR-311), the fake's own, since the seed sets none: mio
+   * shows them to mio's followers only, kai to nobody, everyone else to everyone.
+   */
+  const followsVisibility: Readonly<Record<string, Schema<"FollowsVisibility">>> = {
+    mio: "followers",
+    kai: "private",
+  };
+  const hidden = (author: string) =>
+    !visitor && (blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`));
+
+  // Every account the server answers is a whole one, as the client API's Account is: a post's author too, which the
+  // client shows a profile from at once.
+  const accountOf = (username: string): Account => fullAccount(personOf(username));
+
+  const fullAccount = (p: FakePerson): Account => {
+    const remote = domainOf(p.username);
+    const username = remote === undefined ? p.username : p.username.slice(0, p.username.indexOf("@"));
+    const moved = movedOf(p.username);
+    return exact<Account>()({
+      id: idOf(p.username),
+      username,
+      acct: p.username,
+      domain: remote ?? fakeHost,
+      display_name: p.displayName,
+      emojis: [],
+      avatar: variants(drawingURL(p.avatar)),
+      uri: `${originOf(p.username)}/users/${username}`,
+      url: `${originOf(p.username)}/@${username}`,
+      note: serverHtml(p.note, remote ?? fakeHost),
+      locked: p.locked ?? false,
+      bot: false,
+      created_at: new Date(started - 30 * day).toISOString(),
+      fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
+      badges: [],
+      ...(p.header === undefined ? {} : { header: variants(drawingURL(p.header)) }),
+      // The account it moved to, without a move of its own: moves are not followed in chains.
+      ...(moved === undefined ? {} : { moved: fullAccount(personOf(moved)) }),
+      followers_count:
+        people.filter((x) => follows_(x.username, p.username)).length + (beyond[p.username]?.followers ?? 0),
+      following_count:
+        people.filter((x) => follows_(p.username, x.username)).length + (beyond[p.username]?.following ?? 0),
+    });
+  };
+
+  /** The reader's private notes on people, by username, and the people whose new posts notify them. */
+  const notes = new Map<string, string>(Object.entries(o.notes ?? {}));
+  const subscribed = new Set<string>(o.subscriptions ?? []);
+
+  const relationshipOf = (id: string): Schema<"Relationship"> => {
+    const other = usernameOf.get(id) ?? "";
+    return {
+      id,
+      following: follows_(viewer, other),
+      requested: requested.has(`${viewer}>${other}`),
+      followed_by: follows_(other, viewer),
+      requested_by: requested.has(`${other}>${viewer}`),
+      blocking: blocking.has(`${viewer}>${other}`),
+      muting: muting.has(`${viewer}>${other}`),
+      muting_notifications: muting.has(`${viewer}>${other}`),
+      notify: subscribed.has(other),
+      show_boosts: true,
+      note: notes.get(other) ?? "",
+    };
+  };
+
+  /** The domains the reader mutes, in the order they muted them, and whether a person's server is one of them. */
+  const domainMutes: Schema<"DomainMute">[] = (o.domainMutes ?? []).map((domain) => ({
+    domain,
+    created_at: new Date(started).toISOString(),
+  }));
+  const mutedServer = (username: string) => {
+    const domain = domainOf(username);
+    return domain !== undefined && domainMutes.some((m) => domain === m.domain || domain.endsWith(`.${m.domain}`));
+  };
+
+  // ---- Posts --------------------------------------------------------------------------------------------------------
+
+  const postStep = (key: string) => follows.length + posts.findIndex((p) => p.key === key);
+  const statusId = new Map(posts.map((p) => [p.key, idAt(timeOf(postStep(p.key)), postStep(p.key))]));
+  const keyOf = new Map([...statusId].map(([k, id]) => [id, k]));
+  const postOf = (key: string): ApprovalPost => {
+    const p = posts.find((x) => x.key === key);
+    if (p === undefined) throw new Error(`fake: no post ${key}`);
+    return p;
+  };
+
+  // ---- Approvals (ADR-0155) -----------------------------------------------------------------------------------------
+
+  type Kind = Schema<"InteractionKind">;
+  /** Whether `audience` of `p` admits `who`: its author always, the mentioned in any but nobody, as the server does. */
+  const admits = (audience: PolicyAudience, p: Post, who: string) =>
+    who === p.author ||
+    audience === "everyone" ||
+    (audience === "followers" && follows_(who, p.author)) ||
+    (audience !== "nobody" && mentioned(p.text).includes(who));
+  /** Whether `who` may do `kind` with the post `p` of `policy`: at once, once its author approves, or not. */
+  const permitted = (policy: Policy, p: Post, kind: Kind, who: string): Schema<"InteractionPermission"> => {
+    const rule = policy[kind] ?? { automatic: "everyone" };
+    if (admits(rule.automatic, p, who)) return "allowed";
+    return rule.manual !== undefined && admits(rule.manual, p, who) ? "pending" : "denied";
+  };
+  /** The same for a post: none for one of no policy. */
+  const permissionOf = (p: ApprovalPost, kind: Kind, who: string) =>
+    p.policy === undefined ? undefined : permitted(p.policy, p, kind, who);
+  /**
+   * A request of `by` to reply to (`via` the reply), boost or quote (`via` the quoting post) the post of `target`, at
+   * the step of what asks; one the seed says the author declined is so from the start.
+   */
+  type AskedApproval = {
+    key: string;
+    kind: Kind;
+    by: string;
+    target: string;
+    via?: string;
+    step: number;
+    declined: boolean;
+  };
+  const requests: AskedApproval[] = [];
+  posts.forEach((p, n) => {
+    const step = follows.length + n;
+    for (const [kind, target] of [
+      ["reply", p.replyTo],
+      ["quote", p.quote],
+    ] as const)
+      if (target !== undefined && permissionOf(postOf(target), kind, p.author) === "pending")
+        requests.push({
+          key: `${kind}:${p.key}`,
+          kind,
+          by: p.author,
+          target,
+          via: p.key,
+          step,
+          declined: p.declined === true,
+        });
+  });
+  interactions.forEach((i, n) => {
+    if (i.kind === "boost" && permissionOf(postOf(i.post), "announce", i.by) === "pending")
+      requests.push({
+        key: `announce:${i.by}:${i.post}`,
+        kind: "announce",
+        by: i.by,
+        target: i.post,
+        step: follows.length + posts.length + n,
+        declined: false,
+      });
+  });
+  /** The answers the reader gave to the requests of their posts, by the request's key. */
+  const answers = new Map<string, "accepted" | "rejected">();
+  const stateOf = (r: AskedApproval) => answers.get(r.key) ?? (r.declined ? "rejected" : "pending");
+  const requestId = (r: AskedApproval) => idAt(timeOf(r.step), 85_000 + r.step);
+  /** The approval the reply of `key` waits for or was refused, while it is not given; none for a reply that needs none. */
+  const replyApproval = (key: string) => {
+    const r = requests.find((x) => x.kind === "reply" && x.via === key);
+    const state = r === undefined ? "accepted" : stateOf(r);
+    return state === "accepted" ? undefined : state;
+  };
+  /** Whether the boost `i` waits for the approval of its post's author, or was refused it. */
+  const boostWaits = (i: { by: string; post: string }) => {
+    const r = requests.find((x) => x.kind === "announce" && x.by === i.by && x.target === i.post);
+    return r !== undefined && stateOf(r) !== "accepted";
+  };
+  /** The quote by the post of `key` while its author has not approved it: pending or rejected. */
+  const quoteApproval = (key: string) => {
+    const r = requests.find((x) => x.kind === "quote" && x.via === key);
+    const state = r === undefined ? "accepted" : stateOf(r);
+    return state === "accepted" ? undefined : state;
+  };
+
+  /** The reader's boosts as they set them, by the key of the post, over the seed's. */
+  const ownBoost = new Map<string, boolean>();
+  /** The reader's boosts made here that wait for the approval of the post's author, by the key of the post. */
+  const waitingBoosts = new Set<string>();
+  /** The interactions of `kind` with the post of `key`; a boost only once it needs no approval or has it. */
+  const on = (key: string, kind: string) =>
+    interactions.filter((i) => i.post === key && i.kind === kind && !(i.kind === "boost" && boostWaits(i)));
+  /** Who boosted the post of `key`, in order. */
+  const boostersOf = (key: string) => [
+    ...on(key, "boost").flatMap((i) => (i.by === viewer && ownBoost.has(key) ? [] : [i.by])),
+    ...(ownBoost.get(key) === true ? [viewer] : []),
+  ];
+
+  // The reader's favourite and reaction as they set them, by the key of the post, over the seed's: one or the
+  // other, a reaction's emoji as the seed writes it, or none (null).
+  const ownFavourite = new Map<string, boolean>();
+  const ownReaction = new Map<string, string | null>();
+  const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** The threads the reader muted (ADR-0158 §8), by the key of the post that starts each. */
+  const mutedThreads = new Set<string>();
+  const threadOf = (key: string): string => {
+    const parent = postOf(key).replyTo;
+    return parent === undefined || !posts.some((p) => p.key === parent) ? key : threadOf(parent);
+  };
+  /** The keys of the posts the reader bookmarked, the newest bookmark first: the options', then the seed's. */
+  const bookmarks: string[] = [
+    ...new Set([
+      ...(o.bookmarks ?? []),
+      ...interactions
+        .filter((i) => i.kind === "bookmark" && i.by === viewer)
+        .map((i) => i.post)
+        .toReversed(),
+    ]),
+  ];
+  /**
+   * The reader's lists of the people they follow, oldest first, with ids of the fake's own; the reader makes, renames
+   * and deletes them and changes their members (ADR-0013 §11, §14).
+   */
+  const lists: { id: string; name: string; members: string[]; created_at: string }[] = seed.lists
+    .filter((l) => l.owner === viewer)
+    .map((l, n) => ({
+      id: idAt(0, 60_000 + n),
+      name: l.name,
+      members: [...l.members],
+      created_at: new Date(started - (30 - n) * day).toISOString(),
+    }));
+  /** How many lists the reader may have, and members a list. */
+  const listLimit = o.listLimits?.lists ?? 50;
+  const memberLimit = o.listLimits?.members ?? 1000;
+  /** How many lists the reader made here, for the ids of new ones. */
+  let madeLists = 0;
+  /** Whether `name` is a list's name: 1 to 50 characters (grapheme clusters) without control characters. */
+  const listName = (name: string) => {
+    const length = [...new Intl.Segmenter().segment(name)].length;
+    return length > 0 && length <= 50 && !/\p{Cc}/u.test(name);
+  };
+  /** The server's refusal of a list's name that is not one: blank, too long, or with control characters. */
+  const listNameRefused = () =>
+    problem(422, "The list could not be saved", {
+      type: "/api/v1/problems/validation",
+      field: "name",
+      detail: "Write a name of 1 to 50 characters on one line.",
+    });
+  const listBody = (l: (typeof lists)[number]): Schema<"List"> => ({
+    id: l.id,
+    name: l.name,
+    members_count: l.members.length,
+    created_at: l.created_at,
+  });
+  /** The hashtags the reader follows, by their names in lowercase. */
+  const followedTags = new Set<string>();
+  /** The hashtags of a text, in lowercase, as the server reads them. */
+  const hashtagsOf = (text: string) => hashtagsIn(text).map((name) => name.toLowerCase());
+  /** A hashtag as first written in a post, else as asked, and whether the reader follows it. */
+  const tagOf = (asked: string): Schema<"Hashtag"> => {
+    const key = asked.toLowerCase();
+    const written = posts.flatMap((p) => hashtagsIn(p.text)).find((name) => name.toLowerCase() === key);
+    return {
+      name: written ?? asked,
+      url: `${fakeOrigin}/tags/${encodeURIComponent(key)}`,
+      following: followedTags.has(key),
+    };
+  };
+  /** The hashtags of a status, as its text and its article name them, each once. */
+  const statusTags = (text: string, more: readonly string[] = []): Schema<"StatusTag">[] =>
+    [...new Map([...hashtagsIn(text), ...more.map((t) => t.replace(/^#/, ""))].map((t) => [t.toLowerCase(), t]))].map(
+      ([key, name]) => ({ name, url: `${fakeOrigin}/tags/${encodeURIComponent(key)}` }),
+    );
+  /** The people a status mentions, as the API's StatusMention. */
+  const mentionsOf = (text: string): Schema<"StatusMention">[] =>
+    mentioned(text).map((u) => ({ id: idOf(u), username: u, acct: u, url: `${fakeOrigin}/@${u}` }));
+  /** Who favourited the post of `key`, in order. */
+  const favouritersOf = (key: string) => [
+    ...on(key, "favourite").flatMap((i) => (i.by === viewer && mineSet(key) ? [] : [i.by])),
+    ...(ownFavourite.get(key) === true ? [viewer] : []),
+  ];
+  /** The reactions to the post of `key`, oldest first: who reacted, with which emoji, at which step. */
+  const reactionsOf = (key: string) => {
+    const list = interactions.flatMap((i, n) =>
+      i.kind === "reaction" && i.post === key && !(i.by === viewer && mineSet(key))
+        ? [{ by: i.by, emoji: i.emoji, step: follows.length + posts.length + n }]
+        : [],
+    );
+    const mine = ownReaction.get(key);
+    if (mine !== undefined && mine !== null) list.push({ by: viewer, emoji: mine, step: steps });
+    return list;
+  };
+  /** A reaction's emoji as the API gives it (ReactionEmoji): a custom one with its image. */
+  const reactionEmojiOf = (emoji: string): Schema<"ReactionEmoji"> => {
+    const custom = customEmojis.find((e) => `:${e.shortcode}:` === emoji);
+    return custom === undefined
+      ? { name: emoji }
+      : { name: custom.shortcode, shortcode: custom.shortcode, emoji: custom };
+  };
+
+  /** The reader's votes, by the key of the post, as the seed has them and as the reader votes. */
+  const ownVotes = new Map<string, readonly number[]>();
+  for (const i of interactions) if (i.kind === "vote" && i.by === viewer) ownVotes.set(i.post, i.choices);
+
+  /**
+   * The poll of `p` as the reader sees it, open for the days the seed gives it from the start of the fake; a visitor's
+   * says nothing of a vote of their own.
+   */
+  function pollOf(p: Post): Schema<"Poll"> | undefined {
+    if (p.poll === undefined) return undefined;
+    const own = ownVotes.get(p.key);
+    const votes = [
+      ...interactions.flatMap((i) => (i.kind === "vote" && i.post === p.key && i.by !== viewer ? [i.choices] : [])),
+      ...(own === undefined ? [] : [own]),
+    ];
+    return exact<Schema<"Poll">>()({
+      id: idAt(timeOf(postStep(p.key)), 60_000 + postStep(p.key)),
+      expires_at: new Date(started + p.poll.days * day).toISOString(),
+      expired: false,
+      multiple: p.poll.multiple ?? false,
+      votes_count: votes.reduce((n, c) => n + c.length, 0),
+      voters_count: votes.length,
+      options: p.poll.options.map((title, i) => ({ title, votes_count: votes.filter((c) => c.includes(i)).length })),
+      ...(visitor ? {} : { voted: own !== undefined, own_votes: [...(own ?? [])] }),
+    });
+  }
+
+  // The reader's own posts they deleted, by key, and the versions of each post: those of the seed (its `earlier`,
+  // then its text), then the reader's edits.
+  const deleted = new Set<string>();
+  type Version = { text: string; spoiler: string; at: number; media?: readonly string[] };
+  const edits = new Map<string, Version[]>();
+  /** The versions of `p`, oldest first: what it was posted with first, the last what it says now. */
+  function versionsOf(p: Post): readonly Version[] {
+    const posted = timeOf(postStep(p.key));
+    const first = [...(p.earlier ?? []), p.text].map((text, i) => ({
+      text,
+      spoiler: p.spoiler ?? "",
+      at: posted + i * 2 * minute,
+    }));
+    return [...first, ...(edits.get(p.key) ?? [])];
+  }
+
+  const centered = { focus: { x: 0, y: 0 } };
+  /** An image of the seed as an attachment of `id`: its drawing served whole and as its preview, with its blurhash. */
+  const imageOf = (id: string, image: Image): MediaAttachment => {
+    const url = drawingURL(image.drawing);
+    const { width, height } = image.drawing;
+    return {
+      id,
+      type: "image",
+      state: "ready",
+      description: image.description,
+      url,
+      preview_url: url,
+      blurhash: drawingBlurhash(image.drawing),
+      meta: { width, height, ...centered },
+    };
+  };
+
+  /**
+   * A post's attachments as a version of it holds them (all of them unless it names which), as the server gives them,
+   * its images then the rest: a picture's drawing; a video's or a GIF's poster as its preview, with no file the fake
+   * could play; a sound with its length and no file; and a file of another kind as a link to where it would be.
+   */
+  const mediaOf = (p: Post, id: string, version: Version): MediaAttachment[] => {
+    const images = (p.images ?? []).map((image, i) => imageOf(`${id}-${i}`, image));
+    const rest = (p.attachments ?? []).map((a, n): MediaAttachment => {
+      const base = {
+        id: `${id}-${images.length + n}`,
+        state: "ready" as const,
+        ...(a.description === "" ? {} : { description: a.description }),
+      };
+      const attachment = exact<MediaAttachment>();
+      if (a.kind === "audio") return attachment({ ...base, type: "audio", meta: { duration: a.seconds, ...centered } });
+      if (a.kind === "unknown")
+        return attachment({ ...base, type: "unknown", url: `${fakeOrigin}/media/${a.name}`, meta: centered });
+      const { width, height } = a.poster;
+      return attachment({
+        ...base,
+        type: a.kind,
+        preview_url: drawingURL(a.poster),
+        blurhash: drawingBlurhash(a.poster),
+        meta: exact<Schema<"MediaMeta">>()({
+          width,
+          height,
+          ...(a.seconds === undefined ? {} : { duration: a.seconds }),
+          ...centered,
+        }),
+      });
+    });
+    return [...images, ...rest].filter((m) => version.media === undefined || version.media.includes(m.id));
+  };
+
+  /** The card of a post's first link, as the server makes it from the page `text` links to. */
+  const cardOf = (card: LinkCard, text: string): Schema<"LinkCard"> =>
+    exact<Schema<"LinkCard">>()({
+      url: /https?:\/\/\S+/.exec(text)?.[0] ?? fakeOrigin,
+      title: card.title,
+      description: card.description,
+      site_name: card.site,
+      ...(card.language === undefined ? {} : { language: card.language }),
+      ...(card.image === undefined
+        ? {}
+        : {
+            image: exact<Schema<"LinkCardImage">>()({
+              url: drawingURL(card.image.drawing),
+              width: card.image.drawing.width,
+              height: card.image.drawing.height,
+              blurhash: drawingBlurhash(card.image.drawing),
+              ...(card.image.description === undefined ? {} : { description: card.image.description }),
+            }),
+          }),
+      ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
+    });
+
+  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may.
+  const visible = (p: Post) => {
+    const own = !visitor && p.author === viewer;
+    return (
+      !deleted.has(p.key) &&
+      (own || replyApproval(p.key) === undefined) &&
+      (own ||
+        p.visibility === "public" ||
+        p.visibility === "unlisted" ||
+        p.visibility === "local" ||
+        (!visitor && p.visibility === "private" && follows_(viewer, p.author)) ||
+        (!visitor && p.visibility === "direct" && mentioned(p.text).includes(viewer)))
+    );
+  };
+
+  /** How many replies the reader posted here to each status that count on it, by its ID: those that wait for no approval. */
+  const repliesMade = new Map<string, number>();
+
+  /** The title, summary and hashtags of the seed's articles as the reader edited them, by the key of each. */
+  const articleEdits = new Map<string, { title: string; summary: string; tags: readonly string[] }>();
+
+  /** An article's title, summary and cover, as the API's StatusArticle. */
+  const articleOf = (p: Post, id: string): Schema<"StatusArticle"> | undefined => {
+    const a = p.article;
+    if (a === undefined) return undefined;
+    const edited = articleEdits.get(p.key);
+    return exact<Schema<"StatusArticle">>()({
+      title: edited?.title ?? a.title,
+      summary: edited?.summary ?? a.summary,
+      ...(a.cover === undefined ? {} : { cover: imageOf(`${id}-cover`, a.cover) }),
+    });
+  };
+
+  /**
+   * A post as the API's Status; an article with its body only when `full`, as a status read alone gives it, and with
+   * none in a list (ADR-0160 §8). A visitor's has none of a reader's own marks, as the server leaves them out of an
+   * anonymous answer: whether they favourited, boosted, bookmarked, muted, pinned or reacted, their approvals, and
+   * what they may do with it.
+   */
+  function statusOf(p: ApprovalPost, depth = 0, full = false): Status {
+    const id = statusId.get(p.key) ?? "";
+    const approval = !visitor && p.author === viewer ? replyApproval(p.key) : undefined;
+    const quoteState = quoteApproval(p.key) ?? "accepted";
+    const article = articleOf(p, id);
+    const versions = versionsOf(p);
+    const now = versions.at(-1) ?? { text: p.text, spoiler: p.spoiler ?? "", at: 0 };
+    const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
+    const reactions = new Map<string, { count: number; me: boolean }>();
+    for (const r of reactionsOf(p.key)) {
+      const now = reactions.get(r.emoji) ?? { count: 0, me: false };
+      reactions.set(r.emoji, { count: now.count + 1, me: now.me || r.by === viewer });
+    }
+    const favouriters = favouritersOf(p.key);
+    const boosters = boostersOf(p.key);
+    const poll = pollOf(p);
+    const local = p.author.split("@")[0] ?? "";
+    return exact<Status>()({
+      id,
+      uri: `${originOf(p.author)}/users/${local}/statuses/${id}`,
+      url: `${originOf(p.author)}/@${local}/${id}`,
+      account: accountOf(p.author),
+      content: article === undefined ? serverHtml(now.text, fakeHost) : full ? articleHtml(now.text, fakeHost) : "",
+      spoiler_text: now.spoiler,
+      sensitive: now.spoiler !== "" || p.sensitive === true,
+      visibility: p.visibility,
+      language: p.language,
+      created_at: new Date(timeOf(postStep(p.key))).toISOString(),
+      ...(versions.length > 1 ? { edited_at: new Date(now.at).toISOString() } : {}),
+      ...(parent === undefined
+        ? {}
+        : { in_reply_to_id: statusId.get(parent.key) ?? "", in_reply_to_account_id: idOf(parent.author) }),
+      media_attachments: mediaOf(p, id, now),
+      // A card is of the text's first link: an edit that takes the link out takes the card with it.
+      ...(p.card === undefined || !/https?:\/\/\S+/.test(now.text) ? {} : { card: cardOf(p.card, now.text) }),
+      mentions: mentionsOf(now.text),
+      tags: statusTags(now.text, articleEdits.get(p.key)?.tags),
+      filtered: [],
+      emojis: customEmojis,
+      replies_count:
+        posts.filter((x) => x.replyTo === p.key && replyApproval(x.key) === undefined).length +
+        (repliesMade.get(id) ?? 0),
+      boosts_count: boosters.length,
+      favourites_count: favouriters.length,
+      reactions: [...reactions]
+        .toSorted(([, a], [, b]) => b.count - a.count)
+        .map(([emoji, r]) =>
+          exact<Schema<"StatusReaction">>()({
+            ...reactionEmojiOf(emoji),
+            count: r.count,
+            ...(visitor ? {} : { me: r.me }),
+          }),
+        ),
+      ...(visitor
+        ? {}
+        : {
+            favourited: favouriters.includes(viewer),
+            boosted: boosters.includes(viewer),
+            bookmarked: bookmarks.includes(p.key),
+            muted: mutedThreads.has(threadOf(p.key)),
+          }),
+      ...(!visitor && p.author === viewer ? { pinned: p.pinned === true } : {}),
+      ...(poll === undefined ? {} : { poll }),
+      ...(article === undefined ? {} : { article }),
+      ...(p.quote === undefined || depth > 0
+        ? {}
+        : {
+            quote: exact<Schema<"StatusQuote">>()({
+              state: quoteState,
+              ...(quoteState === "accepted" ? { quoted_status: statusOf(postOf(p.quote), depth + 1) } : {}),
+            }),
+          }),
+      ...(approval === undefined ? {} : { approval }),
+      ...(!visitor &&
+      (waitingBoosts.has(p.key) ||
+        interactions.some((i) => i.kind === "boost" && i.by === viewer && i.post === p.key && boostWaits(i)))
+        ? { boost_approval: "pending" as const }
+        : {}),
+      ...(p.policy === undefined || visitor
+        ? {}
+        : {
+            permissions: {
+              reply: permitted(p.policy, p, "reply", viewer),
+              announce: permitted(p.policy, p, "announce", viewer),
+              quote: permitted(p.policy, p, "quote", viewer),
+            },
+            ...(p.author === viewer
+              ? {
+                  interaction_policy: {
+                    reply: p.policy.reply ?? { automatic: "everyone" as const },
+                    announce: p.policy.announce ?? { automatic: "everyone" as const },
+                    quote: p.policy.quote ?? { automatic: "everyone" as const },
+                  },
+                }
+              : {}),
+          }),
+    });
+  }
+
+  /** A boost of `p` by `by`, at the interaction's step. */
+  const boostOf = (p: Post, by: string, step: number): Status => {
+    const shown = statusOf(p);
+    return {
+      ...shown,
+      id: idAt(timeOf(step), step),
+      created_at: new Date(timeOf(step)).toISOString(),
+      account: accountOf(by),
+      boost: shown,
+    };
+  };
+
+  // The home timeline, newest first: the reader's posts and those of whom they follow (a reply only to one of
+  // them), with their boosts; what the reader blocks or mutes is left out.
+  const inHome = (author: string) => author === viewer || follows_(viewer, author);
+  const homeEntries: { at: number; status: Status }[] = [];
+  for (const p of posts) {
+    const parent = p.replyTo === undefined ? undefined : postOf(p.replyTo);
+    if (!inHome(p.author) || hidden(p.author) || !visible(p)) continue;
+    if (parent !== undefined && !inHome(parent.author)) continue;
+    homeEntries.push({ at: postStep(p.key), status: statusOf(p) });
+  }
+  interactions.forEach((i, n) => {
+    if (i.kind !== "boost" || !inHome(i.by) || i.by === viewer || boostWaits(i)) return;
+    const p = postOf(i.post);
+    if (hidden(p.author) || !visible(p) || p.visibility === "private" || p.visibility === "direct") return;
+    const step = follows.length + posts.length + n;
+    homeEntries.push({ at: step, status: boostOf(p, i.by, step) });
+  });
+  const home: Status[] = homeEntries.toSorted((a, b) => b.at - a.at).map((e) => e.status);
+  /** The handle of a status's author, or of a notification's sender; empty for a notification from no one. */
+  const authorOf = (s: { account?: Account }) => s.account?.acct ?? "";
+  /**
+   * Whether a status of home stays there as the reader's blocks and mutes are now: none of whom they block or mute, and
+   * of the servers they mute (ADR-0013 §30) a boost of a post leaves, and so does a post, unless the reader follows its
+   * author.
+   */
+  const inHomeNow = (s: Status) => {
+    const boosted = s.boost;
+    if (hidden(authorOf(s)) || (boosted !== undefined && hidden(authorOf(boosted)))) return false;
+    if (boosted !== undefined) return !mutedServer(authorOf(boosted));
+    return !mutedServer(authorOf(s)) || follows_(viewer, authorOf(s));
+  };
+
+  /**
+   * A status of a list as it is now: a post of the seed (or a boost of one) as edited since, none once deleted;
+   * another (a post the stream brought, one the reader made here) as it was.
+   */
+  function current(s: Status): Status[] {
+    const key = keyOf.get(s.id);
+    if (key !== undefined) return deleted.has(key) ? [] : [statusOf(postOf(key))];
+    const boostedKey = s.boost === undefined ? undefined : keyOf.get(s.boost.id);
+    if (boostedKey === undefined) return [s];
+    return deleted.has(boostedKey) ? [] : [{ ...s, boost: statusOf(postOf(boostedKey)) }];
+  }
+  /** The home timeline as it reads now. */
+  const homeNow = () => home.flatMap(current).filter(inHomeNow);
+
+  /** The seed's post of the status `id` that the reader may see, or none. */
+  const shownPost = (id: string) => {
+    const key = keyOf.get(id);
+    const p = key === undefined ? undefined : postOf(key);
+    return p === undefined || !visible(p) ? undefined : p;
+  };
+
+  /** A person's posts on their profile, newest first. */
+  const profilePosts = (username: string) => posts.filter((p) => p.author === username && visible(p)).toReversed();
+
+  /** The ancestors and descendants of a post, depth first, without what the reader blocks or mutes. */
+  function contextOf(key: string): Schema<"StatusContext"> {
+    const ancestors: Status[] = [];
+    for (let p = postOf(key).replyTo; p !== undefined; p = postOf(p).replyTo) {
+      const parent = postOf(p);
+      if (visible(parent) && !hidden(parent.author)) ancestors.unshift(statusOf(parent));
+    }
+    const descendants: Status[] = [];
+    const walk = (k: string) => {
+      for (const child of posts.filter((x) => x.replyTo === k && visible(x) && !hidden(x.author))) {
+        descendants.push(statusOf(child));
+        walk(child.key);
+      }
+    };
+    walk(key);
+    return { ancestors, descendants };
+  }
+
+  // The translation provider of `translation`, with the visibilities a provider receives by default.
+  const translationProvider: Schema<"InstanceTranslationProvider"> = {
+    id: "fake",
+    name: "Demo Translate",
+    visibilities: ["public", "local", "unlisted"],
+  };
+
+  /**
+   * The answer to translating `p` into `target`, by the provider of `translation`: the post with each text behind the
+   * language it goes into, or the refusal the provider stands for. A post whose visibility the provider may not receive
+   * is refused as the server refuses it, whatever the provider.
+   */
+  function translationOf(p: Post, target: string): Answer<"POST /statuses/{id}/translation"> {
+    const provider = o.translation?.provider;
+    const refuse = (status: number, type: string, title: string, headers: Record<string, string> = {}): Refusal => ({
+      ...problem(status, title, { type: `/api/v1/problems/${type}` }),
+      headers,
+    });
+    if (
+      provider === undefined ||
+      provider === "unavailable" ||
+      !translationProvider.visibilities.includes(p.visibility)
+    )
+      return refuse(422, "translation-unavailable", "No translation provider may receive this post");
+    if (provider === "limit") {
+      const now = new Date();
+      const next = Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1);
+      return refuse(429, "translation-limit", "The monthly translation limit is reached", {
+        "Retry-After": String(Math.ceil((next - now.getTime()) / 1000)),
+      });
+    }
+    if (provider === "language")
+      return refuse(
+        422,
+        "translation-unsupported-language",
+        "The translation providers do not translate this language",
+      );
+    if (provider === "failed") return refuse(503, "translation-failed", "The translation provider did not answer");
+    const into = (text: string) => `[${target}] ${text}`;
+    const body: Schema<"StatusTranslation"> = {
+      language: target,
+      source_language: p.language,
+      content: serverHtml(into(p.text), fakeHost),
+      spoiler_text: p.spoiler === undefined ? "" : into(p.spoiler),
+      media_attachments: (p.images ?? []).map((image, i) => ({
+        id: `${statusId.get(p.key) ?? ""}-${i}`,
+        description: into(image.description),
+      })),
+      poll_options: (p.poll?.options ?? []).map(into),
+      provider: { id: translationProvider.id, name: translationProvider.name },
+    };
+    return { status: 200, body };
+  }
+
+  /** A request as the API's InteractionRequest: what the reply or the quoting post says, none for a boost. */
+  const requestBody = (r: AskedApproval): Schema<"InteractionRequest"> =>
+    exact<Schema<"InteractionRequest">>()({
+      id: requestId(r),
+      kind: r.kind,
+      state: stateOf(r),
+      created_at: new Date(timeOf(r.step)).toISOString(),
+      account: accountOf(r.by),
+      status: statusOf(postOf(r.target)),
+      ...(r.via === undefined ? {} : { interacting_status: statusOf(postOf(r.via)) }),
+    });
+
+  // ---- Direct messages ----------------------------------------------------------------------------------------------
+
+  // The reader's conversations: their direct posts by thread, each by its root's key, newest first. One is unread while
+  // a post by another is newer than where the reader read it to (the seed's reads, then the reader's), as the
+  // server says, whoever wrote the latest; one hidden stays out until a newer post.
+  const rootOf = (p: Post): Post => (p.replyTo === undefined ? p : rootOf(postOf(p.replyTo)));
+  const conversationIdOf = (root: Post) => idAt(0, 95_000 + posts.indexOf(root));
+  const readTo = new Map<string, string>(
+    seed.conversationReads
+      .filter((r) => r.by === viewer)
+      .map((r) => [conversationIdOf(rootOf(postOf(r.post))), statusId.get(r.post) ?? ""]),
+  );
+  const hiddenTo = new Map<string, string>();
+  type HeldConversation = { at: string; hidden: boolean; body: Schema<"Conversation"> };
+  const conversationsNow = (): HeldConversation[] => {
+    const threads = new Map<Post, Post[]>();
+    for (const p of posts)
+      if (p.visibility === "direct" && visible(p) && !hidden(p.author))
+        threads.set(rootOf(p), [...(threads.get(rootOf(p)) ?? []), p]);
+    return [...threads]
+      .flatMap(([root, thread]): HeldConversation[] => {
+        const last = thread.at(-1);
+        if (last === undefined) return [];
+        const id = conversationIdOf(root);
+        const lastId = statusId.get(last.key) ?? "";
+        const others = [...new Set(thread.flatMap((p) => [p.author, ...mentioned(p.text)]))].filter(
+          (u) => u !== viewer,
+        );
+        return [
+          {
+            at: lastId,
+            hidden: hiddenTo.get(id) === lastId,
+            body: {
+              id,
+              accounts: others.map(accountOf),
+              last_status: statusOf(last),
+              unread: thread.some((p) => p.author !== viewer && (readTo.get(id) ?? "") < (statusId.get(p.key) ?? "")),
+            },
+          },
+        ];
+      })
+      .toSorted((a, b) => (b.at > a.at ? 1 : -1));
+  };
+  const conversationOf = (id: string) => conversationsNow().find((c) => c.body.id === id);
+
+  // ---- Notifications ------------------------------------------------------------------------------------------------
+
+  type NotificationType = Schema<"NotificationType">;
+  /** What a notification is about, beside who sent it. */
+  type About = Omit<Notification, "id" | "type" | "created_at" | "account">;
+  const newestFirst = (a: { id: string }, b: { id: string }) => (b.id > a.id ? 1 : -1);
+  const notifications: Notification[] = [];
+  const notify = (step: number, type: NotificationType, from: string, more: About = {}) => {
+    if (from === viewer || hidden(from)) return;
+    const at = timeOf(step);
+    notifications.unshift({
+      id: idAt(at, 10_000 + step),
+      type,
+      created_at: new Date(at).toISOString(),
+      account: accountOf(from),
+      ...more,
+    });
+  };
+  follows.forEach((f, step) => {
+    if (f.followee !== viewer) return;
+    notify(step, requested.has(`${f.follower}>${f.followee}`) ? "follow_request" : "follow", f.follower);
+  });
+  // A reply or a quote that waits for an approval tells nothing but its request, and a boost too.
+  posts.forEach((p, n) => {
+    const step = follows.length + n;
+    if (mentioned(p.text).includes(viewer) && replyApproval(p.key) === undefined)
+      notify(step, "mention", p.author, { status: statusOf(p) });
+    if (p.quote !== undefined && postOf(p.quote).author === viewer && quoteApproval(p.key) === undefined)
+      notify(step, "quote", p.author, { status: statusOf(p) });
+  });
+  const requestType = { reply: "reply_request", announce: "boost_request", quote: "quote_request" } as const;
+  for (const r of requests)
+    if (postOf(r.target).author === viewer && stateOf(r) === "pending")
+      notify(r.step, requestType[r.kind], r.by, { status: statusOf(postOf(r.target)) });
+  interactions.forEach((i, n) => {
+    const p = postOf(i.post);
+    if (p.author !== viewer || i.kind === "bookmark" || i.kind === "vote") return;
+    if (i.kind === "boost" && boostWaits(i)) return;
+    const step = follows.length + posts.length + n;
+    // A reaction's emoji as the API gives it: a custom one of this server with its shortcode and image, else Unicode.
+    notify(step, i.kind, i.by, {
+      status: statusOf(p),
+      ...(i.kind === "reaction" ? { reaction: reactionEmojiOf(i.emoji) } : {}),
+    });
+  });
+
+  // ---- Drafts, scheduled posts and what the reader posts ------------------------------------------------------------
+
+  // The reader's drafts, newest first, each saved a few hours before the next: the seed's, then those the reader
+  // saves. One whose schedule `fails` failed yesterday, for the post it replied to that is gone, and the reader was
+  // notified; one with a `schedule` waits for its time.
+  const draftLimits: Schema<"InstanceDraftLimits"> = {
+    max_drafts: 100,
+    max_scheduled_posts: 300,
+    max_scheduled_posts_per_day: 25,
+    scheduled_post_min_lead_minutes: 5,
+    scheduled_post_max_lead_days: 366,
+  };
+  /** The limits of an article's body, the server's defaults (ADR-0160 §5). */
+  const articleLimits: Schema<"InstanceArticleLimits"> = { max_bytes: 100_000, max_images: 20 };
+  const gonePost = idAt(started - 48 * 60 * minute, 80_999);
+  const seedDrafts = seed.drafts.filter((d) => d.author === viewer);
+  /** The ID of the seed's draft at `i`, and when it was saved. */
+  const draftTime = (i: number) => started - (seedDrafts.length - i) * 5 * 60 * minute;
+  const draftId = (i: number) => idAt(draftTime(i), 80_000 + i);
+  const ownDrafts: Draft[] = seedDrafts
+    .map((d, i): Draft => {
+      const id = draftId(i);
+      const saved = new Date(draftTime(i)).toISOString();
+      const replyTo = d.fails !== undefined ? gonePost : d.replyTo === undefined ? undefined : statusId.get(d.replyTo);
+      const failedAt = new Date(started - 40 * minute).toISOString();
+      return exact<Draft>()({
+        id,
+        created_at: saved,
+        updated_at: saved,
+        text: d.text,
+        spoiler_text: d.spoiler ?? "",
+        sensitive: false,
+        language: d.language,
+        visibility: "public",
+        ...(replyTo === undefined ? {} : { in_reply_to_id: replyTo }),
+        media: (d.images ?? []).map((image, n) => ({ id: `${id}-${String(n)}`, description: image.description })),
+        ...(d.article === undefined
+          ? {}
+          : { article: { title: d.article.title, summary: d.article.summary, tags: [...d.article.tags], images: [] } }),
+        ...(d.poll === undefined
+          ? {}
+          : {
+              poll: {
+                options: [...d.poll.options],
+                expires_in: d.poll.days * 86_400,
+                multiple: d.poll.multiple ?? false,
+              },
+            }),
+        ...(d.schedule === undefined ? {} : { scheduled_at: draftSchedule(d.schedule, started).toISOString() }),
+        ...(d.fails === undefined
+          ? {}
+          : {
+              last_schedule: {
+                publish_at: failedAt,
+                outcome: "failed" as const,
+                reason: "reply_unavailable" as const,
+                occurred_at: failedAt,
+              },
+            }),
+      });
+    })
+    .toReversed();
+  /** The images of the seed's drafts, by the ID of each as the drafts name it. */
+  const draftImages = new Map<string, Image>(
+    seedDrafts.flatMap((d, i) => (d.images ?? []).map((image, n) => [`${draftId(i)}-${String(n)}`, image] as const)),
+  );
+  let draftsMade = 0;
+  const draftOf = (id: string) => ownDrafts.find((d) => d.id === id);
+  const etagOf = (d: Draft) => `"${String(Date.parse(d.updated_at))}"`;
+  /** A draft as a save leaves it: its content replaced by `body`, saved now (a millisecond after its last save at least). */
+  const savedDraft = (
+    d: Pick<Draft, "id" | "created_at" | "updated_at" | "scheduled_at" | "last_schedule">,
+    body: Schema<"DraftRequest">,
+  ): Draft => {
+    const { article, poll } = body;
+    return exact<Draft>()({
+      id: d.id,
+      created_at: d.created_at,
+      updated_at: new Date(Math.max(Date.now(), Date.parse(d.updated_at) + 1)).toISOString(),
+      text: body.text ?? "",
+      spoiler_text: body.spoiler_text ?? "",
+      sensitive: body.sensitive ?? false,
+      ...(body.language === undefined ? {} : { language: body.language }),
+      visibility: body.visibility,
+      ...(body.in_reply_to_id === undefined ? {} : { in_reply_to_id: body.in_reply_to_id }),
+      ...(body.quoted_status_id === undefined ? {} : { quoted_status_id: body.quoted_status_id }),
+      ...(body.interaction_policy === undefined ? {} : { interaction_policy: body.interaction_policy }),
+      media: body.media ?? [],
+      ...(poll === undefined ? {} : { poll }),
+      // An article's draft lists the uploads its body shows, as the server finds them at each save.
+      ...(article === undefined
+        ? {}
+        : {
+            article: {
+              title: article.title ?? "",
+              summary: article.summary ?? "",
+              tags: article.tags ?? [],
+              ...(article.cover === undefined ? {} : { cover: article.cover }),
+              images: bodyImages(body.text ?? ""),
+            },
+          }),
+      ...(d.scheduled_at === undefined ? {} : { scheduled_at: d.scheduled_at }),
+      ...(d.last_schedule === undefined ? {} : { last_schedule: d.last_schedule }),
+    });
+  };
+  const putDraft = (d: Draft) => {
+    ownDrafts.splice(
+      ownDrafts.findIndex((x) => x.id === d.id),
+      1,
+      d,
+    );
+  };
+  const draftAnswer = <S extends 200 | 201>(status: S, d: Draft) => ({ status, body: d, headers: { ETag: etagOf(d) } });
+  const unprocessable = (detail: string) => problem(422, "Unprocessable Content", { detail });
+  /** An article the server's automated review refuses, as the server answers it. */
+  const refusedArticle = () =>
+    problem(422, "The post was rejected", {
+      type: "/api/v1/problems/status-rejected",
+      detail: "This server's review did not accept the article. Change it and try again.",
+    });
+  /** An article refused for the value of its summary, which the problem names in `field`, as the server answers it. */
+  const refusedSummary = () =>
+    problem(422, "This could not be done.", {
+      detail: "This value is not valid. Check what you entered.",
+      field: "summary",
+    });
+  /** The reader's uploads, by their IDs: the file each was, as the fake serves it once it is processed. */
+  const uploads = new Map<string, MediaAttachment>();
+  let uploaded = 0;
+  /** The statuses the fake made (a post, a draft published, an article), by their IDs, each as it is read alone. */
+  const made = new Map<string, Status>();
+  /** The HTML of an article's body, its images of the reader's uploads as images, any other as a link of its alt text. */
+  const bodyHtml = (text: string) => {
+    // Each image of an upload stands as a mark the rendering leaves alone, then as its <img>.
+    const images: string[] = [];
+    const marked = text.replace(/!\[([^\]]*)\]\(media:([^)\s]+)\)/g, (whole, alt: string, id: string) => {
+      const file = uploads.get(id);
+      if (file === undefined) return whole;
+      const { width = 0, height = 0 } = file.meta;
+      images.push(
+        `<img src="${file.url ?? ""}" alt="${alt.replace(/"/g, "&quot;")}" width="${String(width)}" height="${String(height)}" loading="lazy">`,
+      );
+      return `⟦${String(images.length - 1)}⟧`;
+    });
+    return articleHtml(marked, fakeHost).replace(/⟦(\d+)⟧/g, (_, n: string) => images[Number(n)] ?? "");
+  };
+  /** A file the reader names in what they write: an upload of theirs, or an image of a draft of the seed. */
+  const fileOf = (item: Schema<"StatusMediaItem">): MediaAttachment | undefined => {
+    const image = draftImages.get(item.id);
+    const file = uploads.get(item.id) ?? (image === undefined ? undefined : imageOf(item.id, image));
+    if (file === undefined) return undefined;
+    return item.description === undefined ? file : { ...file, description: item.description };
+  };
+  /** What the reader wrote of an article: its title, and its summary, cover and hashtags when it has them. */
+  type WrittenArticle = {
+    title: string;
+    summary?: string;
+    tags?: readonly string[];
+    cover?: Schema<"StatusMediaItem">;
+  };
+  /** What the reader posts: a post, a draft they publish, or an article. */
+  type Written = {
+    text: string;
+    spoiler_text?: string;
+    sensitive?: boolean;
+    language?: string;
+    visibility: Schema<"Visibility">;
+    in_reply_to_id?: string;
+    quoted_status_id?: string;
+    media?: readonly Schema<"StatusMediaItem">[];
+    poll?: Schema<"PollInput">;
+    article?: WrittenArticle;
+  };
+  /** An article's part of a status, from what its author wrote: its title, its summary, its cover. */
+  const madeArticle = (article: WrittenArticle, text: string): Schema<"StatusArticle"> => {
+    const summary = (article.summary ?? "").trim();
+    const cover = article.cover === undefined ? undefined : fileOf(article.cover);
+    return exact<Schema<"StatusArticle">>()({
+      title: article.title,
+      summary: summary === "" ? summaryOf(text) : summary,
+      ...(cover === undefined ? {} : { cover: { ...cover, description: article.cover?.description ?? "" } }),
+    });
+  };
+  /** What the reader wrote of each article the fake made, by its ID: its body and its article's part. */
+  const madeSources = new Map<string, { text: string; spoiler: string; article?: WrittenArticle }>();
+  /** A status by its ID as it reads now: one the fake made, or a post of the seed the reader may see. */
+  const statusById = (id: string): Status | undefined => {
+    const p = shownPost(id);
+    return made.get(id) ?? (p === undefined ? undefined : statusOf(p));
+  };
+  /**
+   * A status the reader makes: a post, a draft published, or an article posted (with its body, as read alone), newest,
+   * on top of their home timeline.
+   */
+  const publish = (w: Written): Status => {
+    draftsMade += 1;
+    const at = Date.now();
+    const { article, text } = w;
+    const id = idAt(at, 950_000 + draftsMade);
+    const parent = w.in_reply_to_id === undefined ? undefined : statusById(w.in_reply_to_id);
+    const quoted = w.quoted_status_id === undefined ? undefined : statusById(w.quoted_status_id);
+    // A reply to a post whose author approves the reader's replies by hand waits, and counts nowhere (ADR-0155).
+    const asked = w.in_reply_to_id === undefined ? undefined : shownPost(w.in_reply_to_id);
+    const waits = asked !== undefined && permissionOf(asked, "reply", viewer) === "pending";
+    const status = exact<Status>()({
+      id,
+      uri: `${fakeOrigin}/users/${viewer}/statuses/${id}`,
+      url: `${fakeOrigin}/@${viewer}/${id}`,
+      account: accountOf(viewer),
+      content: article === undefined ? serverHtml(text, fakeHost) : bodyHtml(text),
+      spoiler_text: w.spoiler_text ?? "",
+      sensitive: w.sensitive ?? false,
+      visibility: w.visibility,
+      language: w.language ?? "en",
+      created_at: new Date(at).toISOString(),
+      ...(w.in_reply_to_id === undefined ? {} : { in_reply_to_id: w.in_reply_to_id }),
+      ...(parent === undefined ? {} : { in_reply_to_account_id: parent.account.id }),
+      media_attachments: (w.media ?? []).flatMap((item) => fileOf(item) ?? []),
+      mentions: mentionsOf(text),
+      tags: statusTags(article === undefined ? text : "", article?.tags),
+      filtered: [],
+      emojis: customEmojis,
+      replies_count: 0,
+      boosts_count: 0,
+      favourites_count: 0,
+      reactions: [],
+      favourited: false,
+      boosted: false,
+      bookmarked: false,
+      pinned: false,
+      ...(w.poll === undefined
+        ? {}
+        : {
+            poll: {
+              id: idAt(at, 960_000 + draftsMade),
+              expires_at: new Date(at + w.poll.expires_in * 1000).toISOString(),
+              expired: false,
+              multiple: w.poll.multiple ?? false,
+              votes_count: 0,
+              voters_count: 0,
+              options: w.poll.options.map((title) => ({ title, votes_count: 0 })),
+              voted: false,
+              own_votes: [],
+            },
+          }),
+      ...(quoted === undefined ? {} : { quote: { state: "accepted" as const, quoted_status: quoted } }),
+      ...(article === undefined ? {} : { article: madeArticle(article, text) }),
+      ...(waits ? { approval: "pending" as const } : {}),
+    });
+    made.set(id, status);
+    if (parent !== undefined && !waits) countReply(parent.id, 1);
+    madeSources.set(id, { text, spoiler: w.spoiler_text ?? "", ...(article === undefined ? {} : { article }) });
+    // A list holds no article's body (ADR-0160 §8).
+    home.unshift(article === undefined ? status : { ...status, content: "" });
+    return status;
+  };
+  /** Counts `by` more replies on the status `id`, one of the seed or one the reader made here. */
+  const countReply = (id: string, by: number) => {
+    const own = made.get(id);
+    if (own === undefined) {
+      repliesMade.set(id, Math.max(0, (repliesMade.get(id) ?? 0) + by));
+      return;
+    }
+    const counted = { ...own, replies_count: Math.max(0, own.replies_count + by) };
+    made.set(id, counted);
+    const at = home.findIndex((s) => s.id === id);
+    if (at >= 0) home.splice(at, 1, counted.article === undefined ? counted : { ...counted, content: "" });
+  };
+  /** The statuses posted with an `Idempotency-Key`, by the key. */
+  const posted = new Map<string, Status>();
+  /** What `post` makes, or what the request's `Idempotency-Key` made before: a retry posts nothing again. */
+  const once = (request: Request, post: () => Status): Status => {
+    const key = request.headers.get("Idempotency-Key");
+    const before = key === null ? undefined : posted.get(key);
+    if (before !== undefined) return before;
+    const status = post();
+    if (key !== null) posted.set(key, status);
+    return status;
+  };
+  /** Edits the article of `id` the fake made, as `PUT /articles/{id}` does: its body, title, summary, cover, hashtags. */
+  const editMade = (id: string, edit: Schema<"EditArticleRequest">): Status | undefined => {
+    const before = made.get(id);
+    if (before === undefined) return undefined;
+    const { text } = edit;
+    const article: WrittenArticle = {
+      title: edit.title,
+      summary: edit.summary ?? "",
+      tags: edit.tags ?? [],
+      ...(edit.cover === undefined ? {} : { cover: edit.cover }),
+    };
+    const after: Status = {
+      ...before,
+      content: bodyHtml(text),
+      sensitive: edit.sensitive ?? before.sensitive,
+      language: edit.language ?? before.language,
+      edited_at: new Date().toISOString(),
+      tags: statusTags("", article.tags),
+      article: madeArticle(article, text),
+    };
+    made.set(id, after);
+    madeSources.set(id, { text, spoiler: "", article });
+    const at = home.findIndex((s) => s.id === id);
+    if (at >= 0) home.splice(at, 1, { ...after, content: "" });
+    return after;
+  };
+  // The notification of each failed schedule, among the others by its time.
+  for (const d of ownDrafts) {
+    const failed = d.last_schedule;
+    if (failed?.reason === undefined) continue;
+    notifications.push({
+      id: idAt(Date.parse(failed.occurred_at), 10_900),
+      type: "scheduled_status_failed",
+      created_at: failed.occurred_at,
+      scheduled_status_failure: { draft_id: d.id, reason: failed.reason, publish_at: failed.publish_at },
+    });
+  }
+  notifications.sort(newestFirst);
+
+  // The reader read all but the newest, three unless the options say how many.
+  const unreadAtStart = o.unreadNotifications ?? 3;
+  let lastRead = notifications[unreadAtStart]?.id;
+  const unreadCount = () => notifications.filter((n) => lastRead === undefined || n.id > lastRead).length;
+
+  // ---- The shell: the instance, the reader's rights, what is around them --------------------------------------------
+
+  const permissionsOf = (username: string): Schema<"Permission">[] => {
+    const staff = personOf(username).staff;
+    const moderation = ["manage_reports", "manage_accounts", "manage_domains", "manage_invites", "view_audit"] as const;
+    if (staff === "moderator") return [...moderation];
+    if (staff !== "admin") return [];
+    return [
+      ...moderation,
+      ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
+      ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance"] as const),
+      "manage_service_closure",
+    ];
+  };
+  /** The reader's own account, with what only they read of it. */
+  const credentialOf = (username: string): Schema<"CredentialAccount"> => {
+    const p = personOf(username);
+    return exact<Schema<"CredentialAccount">>()({
+      ...fullAccount(p),
+      discoverable: true,
+      indexable: true,
+      ai_opt_out: false,
+      feed_enabled: false,
+      feed_follows_indexable: false,
+      follows_visibility: followsVisibility[username] ?? "public",
+      source: { note: p.note, fields: p.fields.map(([name, value]) => ({ name, value })) },
+      posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
+      statuses_count: posts.filter((x) => x.author === username).length,
+      follow_requests_count: [...requested].filter((edge) => edge.endsWith(`>${username}`)).length,
+      permissions: permissionsOf(username),
+    });
+  };
+  /** The reader's preferences, the server's defaults for a person of their locale. */
+  const preferences: Schema<"Preferences"> = {
+    locale: personOf(viewer).locale,
+    locale_follows_browser: true,
+    time_zone: "UTC",
+    time_zone_chosen: false,
+    time_zone_follows_browser: true,
+    default_visibility: "public",
+    default_interaction_policy: {
+      reply: { automatic: "everyone" },
+      announce: { automatic: "everyone" },
+      quote: { automatic: "everyone" },
+    },
+    default_post_language: "und",
+    require_media_description: false,
+    timeline_auto_insert: false,
+    link_card_size: "large",
+    timeline_languages: [],
+  };
+  const brandImage = (svg: string): Schema<"InstanceBrandImage"> => ({
+    revision: "1",
+    svg_url: `data:image/svg+xml,${encodeURIComponent(svg)}`,
+    width: 64,
+    height: 64,
+    renditions: [],
+  });
+  const logoSvg = (fill: string) =>
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="14" fill="${fill}"/><circle cx="32" cy="32" r="14" fill="#fff"/></svg>`;
+  // A landscape of hills under a sun, at the 3:1 of a banner.
+  const thumbnailSvg =
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400"><rect width="1200" height="400" fill="#d6e6df"/>` +
+    `<circle cx="960" cy="110" r="46" fill="#f6efe2"/><path d="M0 290 Q300 200 620 270 T1200 230 V400 H0Z" fill="#86b8a2"/>` +
+    `<path d="M0 340 Q420 280 800 330 T1200 310 V400 H0Z" fill="#2f6f5b"/></svg>`;
+  const summary =
+    o.longSummary === true
+      ? "A small community to try mycroblog with, run by volunteers who meet once a month. We post about the river " +
+        "park, the town's events, lost and found, and photos of each season; newcomers are welcome to ask anything, " +
+        "and the moderators answer reports within a day. 小さなコミュニティで mycroblog を試せます。"
+      : "A small community to try mycroblog with.";
+  const timelines: Schema<"InstanceTimelines"> =
+    o.singleUser === true
+      ? { local: "off", federated: "off" }
+      : (o.timelines ?? { local: "everyone", federated: "everyone" });
+  const around = o.around ?? "all";
+  // An uncompressed P-256 point, as a server's VAPID key is: a key of no server, which no push service is asked for.
+  const pushServerKey = "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM";
+  const month = new Date(started).toISOString().slice(0, 7);
+  const instanceBody = exact<Schema<"Instance">>()({
+    domain: fakeHost,
+    name: "mycroblog demo",
+    short_description: summary,
+    version: "0.0.0-demo",
+    source_url: "https://example.invalid/mycroblog/my",
+    status_page_url: fakeStatusPage,
+    terms_url: `${fakeOrigin}/about/terms`,
+    privacy_policy_url: `${fakeOrigin}/about/privacy`,
+    // A one-person server and a closure close the registration whatever the mode (GET /instance shows the effective one).
+    registrations: {
+      mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
+    },
+    login_providers_only: false,
+    limits: {
+      max_post_characters: 500,
+      require_media_description: false,
+      drafts: draftLimits,
+      articles: articleLimits,
+    },
+    article_authoring: o.articles?.authoring ?? "everyone",
+    timelines,
+    federation: { mode: "off" },
+    sends_email: false,
+    ...(o.push === true ? { push_server_key: pushServerKey } : {}),
+    rules: [],
+    search_indexing: "allow",
+    ai_usage: "allow",
+    link_cards: false,
+    link_cards_ignore_robots_txt: false,
+    finance_visibility: "private",
+    income_visibility: "private",
+    supporters_enabled: false,
+    tips_enabled: false,
+    supporter_list_visibility: "off",
+    voice_enabled: o.voiceOff !== true,
+    voice_room_starters: "everyone",
+    full_text_search:
+      o.search?.posts === true
+        ? { available: true, visibilities: ["public", "local"] }
+        : { available: false, visibilities: [] },
+    translation: {
+      browser: o.translation?.browser === true,
+      providers: o.translation?.provider === undefined ? [] : [translationProvider],
+    },
+    single_user: o.singleUser === true,
+    ...(o.singleUser === true ? { single_user_account: fullAccount(personOf(admin)) } : {}),
+    ...(o.logo === true ? { logo: brandImage(logoSvg("#2f6f8f")), logo_dark: brandImage(logoSvg("#8fc7e0")) } : {}),
+    ...(o.thumbnail === true
+      ? {
+          thumbnail: {
+            url: `data:image/svg+xml,${encodeURIComponent(thumbnailSvg)}`,
+            width: 1200,
+            height: 400,
+            alt: "Green hills under a pale sun.",
+          },
+        }
+      : {}),
+    ...(o.closure === undefined
+      ? {}
+      : {
+          closure: {
+            state: o.closure,
+            closes_at: new Date(started + (o.closure === "announced" ? 60 : -5) * day).toISOString(),
+            export_until: new Date(started + (o.closure === "announced" ? 90 : 25) * day).toISOString(),
+            message: "Thank you for the good years together. — the admins",
+          },
+        }),
+    ...(around === "all"
+      ? {
+          funding_meter: {
+            visibility: "percent" as const,
+            label: month,
+            starts_on: `${month}-01`,
+            ends_on: `${month}-28`,
+            percent: 72,
+            covered: false,
+            // A usage charge of the month is not closed yet, so the share may still change.
+            estimated: true,
+            rail: true,
+          },
+        }
+      : {}),
+  });
+
+  // The announcements, newest first, each read by whom the seed says; reads are kept.
+  const announcementRead = new Set(
+    seed.announcements.filter((a) => a.readBy?.includes(viewer) === true).map((a) => a.key),
+  );
+  const announcementTime = (key: string) =>
+    started - (seed.announcements.length - seed.announcements.findIndex((a) => a.key === key)) * day;
+  const announcementId = (key: string) => idAt(announcementTime(key), 20_000);
+  const announcementOf = (key: string): Schema<"Announcement"> => {
+    const a = seed.announcements.find((x) => x.key === key);
+    const at = new Date(announcementTime(key)).toISOString();
+    return {
+      id: announcementId(key),
+      title: a?.title ?? "",
+      content: serverHtml(a?.text ?? "", fakeHost),
+      published_at: at,
+      revised_at: at,
+      read: announcementRead.has(key),
+      ended: false,
+    };
+  };
+  const shownAnnouncements = () =>
+    around === "none" ? [] : seed.announcements.toReversed().map((a) => announcementOf(a.key));
+  // One whose window ended a month ago, which the history lists after the ones showing now: the seed publishes none,
+  // since a window that ended cannot be set on a new announcement.
+  const endedAnnouncement: Schema<"Announcement"> = {
+    id: idAt(started - 40 * day, 20_001),
+    title: "The server moved to a new data center",
+    content: serverHtml("The move is done. Thank you for your patience during the short downtime.", fakeHost),
+    published_at: new Date(started - 40 * day).toISOString(),
+    ends_at: new Date(started - 30 * day).toISOString(),
+    revised_at: new Date(started - 40 * day).toISOString(),
+    read: false,
+    ended: true,
+  };
+  const announcementHistory = () => (around === "none" ? [] : [...shownAnnouncements(), endedAnnouncement]);
+
+  // The open voice rooms: rooms are live, so the scenario, which the seed applies, holds none; these stand in, each
+  // while the seed has its host.
+  const rooms: Schema<"VoiceRoom">[] = [
+    { name: "Morning coffee chat", host: "sam", count: 12 },
+    { name: "Release party for v0.2", host: "hana", count: 48 },
+    { name: "Photo walk planning: which trail this weekend, and who brings the long lens", host: "yuki", count: 3 },
+    { name: "Arabic and English, slowly", host: "layla", count: 5 },
+  ].flatMap((r, i) =>
+    people.some((p) => p.username === r.host)
+      ? [
+          {
+            id: idAt(started - (i + 1) * 30 * minute, 30_000 + i),
+            name: r.name,
+            description: "",
+            hashtags: [],
+            visibility: "local",
+            speakers: "everyone",
+            host: accountOf(r.host),
+            opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
+            participants_count: r.count,
+            participants: [],
+          },
+        ]
+      : [],
+  );
+
+  // The reader's exports of their data, newest first; a request adds one being built, which stays so.
+  const dataExports: Schema<"DataExport">[] = [];
+  if (o.dataExport === "building")
+    dataExports.push({
+      id: idAt(started - 10 * minute, 50_100),
+      state: "pending",
+      requested_at: new Date(started - 10 * minute).toISOString(),
+    });
+  if (o.dataExport === "ready")
+    dataExports.push({
+      id: idAt(started - day, 50_100),
+      state: "ready",
+      requested_at: new Date(started - day).toISOString(),
+      completed_at: new Date(started - day + 20 * minute).toISOString(),
+      expires_at: new Date(started + 6 * day).toISOString(),
+      file_size: 4_812_345,
+    });
+
+  const eventOf = (e: ServerEventPlan, i: number): Schema<"Event"> => {
+    const startsAt = eventStart(e, started);
+    return {
+      id: idAt(startsAt.getTime(), 40_000 + i),
+      organizer: accountOf(e.organizer),
+      coorganizers: [],
+      title: e.title,
+      description: e.description,
+      visibility: "public",
+      time_zone: e.timeZone,
+      place_disclosure: "approved",
+      capacity: 0,
+      places: [],
+      hidden_places: [],
+      starts_at: startsAt.toISOString(),
+      ends_at: new Date(startsAt.getTime() + e.hours * 60 * minute).toISOString(),
+      state: "scheduled",
+      going_count: 4,
+      created_at: new Date(started - day).toISOString(),
+      revised_at: new Date(started - day).toISOString(),
+      revision_count: 1,
+      viewer: { organizer: e.organizer === viewer, coorganizer: false, invited: false, approved: false },
+    };
+  };
+
+  // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
+  // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
+  // target read.
+  if (o.everyKind !== undefined) {
+    const own = posts.find((p) => p.author === viewer);
+    const status: About = own === undefined ? {} : { status: statusOf(own) };
+    // A post of `from`: one that mentions the reader, else any of theirs, else the reader's own.
+    const postBy = (from: string): About => {
+      const p =
+        posts.find((x) => x.author === from && mentioned(x.text).includes(viewer)) ??
+        posts.find((x) => x.author === from);
+      return p === undefined ? status : { status: statusOf(p) };
+    };
+    const firstEvent = seed.events[0];
+    const event = firstEvent === undefined ? undefined : eventOf(firstEvent, 0);
+    const about: About = event === undefined ? {} : { event_id: event.id, event };
+    const room = rooms[0];
+    type Kinds = [NotificationType, string | undefined, About][];
+    const fromPeople: Kinds = [
+      ["follow", "kobo@bread.example", {}],
+      ["follow_request", "kiri@far.example", {}],
+      ["mention", "sam", postBy("sam")],
+      ["quote", "mio", postBy("mio")],
+      ["favourite", "marco", status],
+      ["boost", "hana", status],
+      ["reaction", "layla", { ...status, reaction: { name: "🎉" } }],
+      ["reply_request", "marco", status],
+      ["boost_request", "mio", status],
+      ["quote_request", "sam", status],
+      ["status", "hana", postBy("hana")],
+      ["follow_accepted", "hana", {}],
+      ["poll_closed", undefined, status],
+      ["interaction_accepted", "layla", status],
+      ["interaction_rejected", "marco", status],
+      ["account_moved", "sora@social.example", { account_move: { target: accountOf("sora@photos.example") } }],
+      ["voice_room_started", "hana", room === undefined ? {} : { voice_room_id: room.id, voice_room: room }],
+      ["voice_room_invited", "sam", room === undefined ? {} : { voice_room_id: room.id }],
+      ["event_invited", "mio", about],
+    ];
+    const notices: Kinds = [
+      ["event_schedule_confirmed", undefined, about],
+      ["event_changed", undefined, about],
+      ["event_cancelled", undefined, about],
+      ["event_reminder", undefined, about],
+      ["event_started", undefined, about],
+      ["event_room_unavailable", undefined, about],
+      ["announcement", undefined, { announcement: announcementOf(seed.announcements[0]?.key ?? "") }],
+      ["moderation_notice", undefined, {}],
+      ["report_resolved", undefined, {}],
+      ["appeal_decided", undefined, {}],
+      ["hook_appeal_decided", undefined, {}],
+      ["relationships_severed", undefined, {}],
+      ["custom_emoji_request_decided", undefined, {}],
+      ["supporter_payment_failed", undefined, {}],
+      ["supporter_subscription_ended", undefined, {}],
+      ["supporter_plan_retired", undefined, {}],
+      ["service_closure", undefined, { service_closure: { change: "announced" } }],
+      ["supporter_service_closure", undefined, { service_closure: { change: "announced" } }],
+      [
+        "auto_delete_limit",
+        undefined,
+        { auto_delete_limit: { max_age_days: 365, enforce_from: new Date(started + 30 * day).toISOString() } },
+      ],
+    ];
+    const moderators: Kinds = [
+      ["admin_report", undefined, { report_id: idAt(started, 60_000) }],
+      ["admin_sign_up", "kiri@far.example", {}],
+      ["admin_appeal", undefined, { appeal_id: idAt(started, 60_001) }],
+      ["admin_webhook_disabled", undefined, {}],
+      ["admin_hook_failing", undefined, {}],
+      ["admin_domain_list_failing", undefined, {}],
+      ["admin_custom_emoji_request", "mio", {}],
+      ["admin_account_moved", undefined, { account_move: { target: accountOf("sora@photos.example") } }],
+      ["admin_service_closure_due", undefined, { service_closure: { change: "announced" } }],
+      ["admin_error_group", undefined, { error_group: { change: "created" } }],
+      ["admin_hook_appeal", undefined, { hook_appeal_id: idAt(started, 60_002) }],
+    ];
+    const kinds = { people: fromPeople, notices, moderators }[o.everyKind];
+    notifications.length = 0;
+    kinds.forEach(([type, from, more], i) => {
+      const at = started - (i + 1) * 60 * minute;
+      notifications.push({
+        id: idAt(at, 11_000 + i),
+        type,
+        created_at: new Date(at).toISOString(),
+        ...(from === undefined ? {} : { account: accountOf(from) }),
+        ...more,
+      });
+    });
+    notifications.sort(newestFirst);
+    // The reader read all but the newest, as of the seed's.
+    lastRead = notifications[unreadAtStart]?.id;
+  }
+
+  // With `dismissFails`, the dismissals of a notification still to fail before one is kept.
+  let dismissFailures = o.dismissFails === true ? 1 : 0;
+
+  // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
+  const held = new Map<string, Notification[]>();
+  if (o.held === true) {
+    const own = posts.find((p) => p.author === viewer);
+    const about: About = own === undefined ? {} : { status: statusOf(own) };
+    const hold = (from: string, type: NotificationType, minutesAgo: number, n: number, more: About = {}) => {
+      const at = started - minutesAgo * minute;
+      const list = held.get(from) ?? [];
+      list.push({
+        id: idAt(at, 12_000 + n),
+        type,
+        created_at: new Date(at).toISOString(),
+        account: accountOf(from),
+        ...more,
+      });
+      held.set(from, list);
+    };
+    hold("kiri@far.example", "favourite", 20, 0, about);
+    hold("kiri@far.example", "boost", 45, 1, about);
+    hold("kobo@bread.example", "follow", 90, 2);
+  }
+  const heldRequestOf = (username: string): Schema<"NotificationRequest"> => {
+    const list = held.get(username) ?? [];
+    return exact<Schema<"NotificationRequest">>()({
+      id: idOf(username),
+      account: accountOf(username),
+      notifications_count: list.length,
+      ...(list[0] === undefined ? {} : { last_notification: list[0] }),
+    });
+  };
+
+  /** The reader's Web Push subscription, once they registered one (`push`). */
+  let pushSubscription: Schema<"PushSubscription"> | undefined =
+    o.pushState === "subscribed"
+      ? { id: idAt(0, 70_000), endpoint: "https://push.example/s/held", alerts: ["mention"], server_key: pushServerKey }
+      : undefined;
+
+  // ---- The stream ---------------------------------------------------------------------------------------------------
+
+  /** The open streams, which stay open until their requests are given up. */
+  const streams = new Set<ReadableStreamDefaultController<Uint8Array>>();
+  const encoder = new TextEncoder();
+  function send(event: FakeStreamEvent) {
+    const [name, data] = wire(event);
+    const frame = encoder.encode(`event: ${name}\ndata: ${JSON.stringify(data)}\n\n`);
+    for (const stream of streams) stream.enqueue(frame);
+  }
+  /** A stream that opens now and ends when `signal` aborts. */
+  function openStream(signal: AbortSignal): ReadableStream<Uint8Array> {
+    let own: ReadableStreamDefaultController<Uint8Array> | undefined;
+    const close = () => {
+      if (own === undefined || !streams.delete(own)) return;
+      own.close();
+    };
+    return new ReadableStream<Uint8Array>({
+      start(controller) {
+        own = controller;
+        streams.add(controller);
+        signal.addEventListener("abort", close, { once: true });
+      },
+      cancel() {
+        if (own !== undefined) streams.delete(own);
+      },
+    });
+  }
+
+  // ---- Answers ------------------------------------------------------------------------------------------------------
+
+  function change(id: string, what: "follow" | "block" | "mute", add: boolean): Answer<"POST /accounts/{id}/follow"> {
+    const other = usernameOf.get(id);
+    if (other === undefined) return notFound();
+    const edge = `${viewer}>${other}`;
+    if (what === "follow") {
+      following.delete(edge);
+      requested.delete(edge);
+      if (add) (personOf(other).locked === true ? requested : following).add(edge);
+    }
+    if (what === "block") {
+      if (add) {
+        blocking.add(edge);
+        following.delete(edge);
+        following.delete(`${other}>${viewer}`);
+      } else blocking.delete(edge);
+    }
+    if (what === "mute" && add) muting.add(edge);
+    if (what === "mute" && !add) muting.delete(edge);
+    // An account the reader no longer follows leaves every list of theirs (ADR-0013 §11).
+    if (!following.has(edge)) for (const l of lists) l.members = l.members.filter((x) => x !== other);
+    return { status: 200, body: relationshipOf(id) };
+  }
+
+  /** Does `act` to the seed's post of the status `id` the reader may see, and answers it as it reads then. */
+  function acted(id: string, act: (p: ApprovalPost) => Refusal | undefined): Answer<"POST /statuses/{id}/bookmark"> {
+    const p = shownPost(id);
+    if (p === undefined) return notFound();
+    return act(p) ?? { status: 200, body: statusOf(p) };
+  }
+
+  /** The seed's posts as a page of statuses, later pages late. */
+  async function statusPage(shown: readonly Status[], query: PageQuery): Promise<Answer<"GET /timelines/home">> {
+    const { from, body } = page(shown, query);
+    if (from > 0) await late();
+    return { status: 200, body };
+  }
+
+  /** A page of accounts, later pages late. */
+  async function accountPage(
+    shown: readonly Account[],
+    query: PageQuery,
+  ): Promise<Answer<"GET /accounts/{id}/followers">> {
+    const { from, body } = page(shown, query);
+    if (from > 0) await late();
+    return { status: 200, body };
+  }
+
+  /** The reader's private note on the person of the account `id`, set to `note`. */
+  function noted(id: string, note: string): Answer<"PUT /accounts/{id}/note"> {
+    const other = usernameOf.get(id);
+    if (other === undefined) return notFound();
+    // The server counts code points.
+    if (Array.from(note).length > 2000) return problem(422, "Unprocessable Entity");
+    if (note === "") notes.delete(other);
+    else notes.set(other, note);
+    return { status: 200, body: relationshipOf(id) };
+  }
+
+  /** An account's list of whom it follows, or of its `followers`, newest follow first, as far as it shows them. */
+  function followsOf(
+    id: string,
+    followers: boolean,
+    query: PageQuery,
+  ): Promise<Answer<"GET /accounts/{id}/followers">> {
+    if (o.followsLists === "waits") return never();
+    if (o.followsLists === "fails") return Promise.resolve(problem(500, "Internal Server Error"));
+    const username = usernameOf.get(id);
+    if (username === undefined) return Promise.resolve(notFound());
+    const shown = followsVisibility[username] ?? "public";
+    if (username !== viewer && shown !== "public" && !(shown === "followers" && follows_(viewer, username)))
+      return Promise.resolve(
+        problem(403, "This account's follows are not shown", { type: "/api/v1/problems/follows-hidden" }),
+      );
+    const listed = [...following]
+      .toReversed()
+      .map((edge) => edge.split(">") as [string, string])
+      .filter(([from, to]) => (followers ? to === username : from === username))
+      .map(([from, to]) => accountOf(followers ? from : to));
+    return accountPage(listed, query);
+  }
+
+  /** The reader's notification as its list shows it now: with its post as it is, none once that is deleted. */
+  const notificationNow = (n: Notification): Notification[] => {
+    if (n.status === undefined) return [n];
+    const now = current(n.status)[0];
+    return now === undefined ? [] : [{ ...n, status: now }];
+  };
+
+  /** The source of the seed's post `p` of the reader's own, as they wrote it. */
+  const sourceOf = (p: Post): Schema<"StatusSource"> => {
+    const id = statusId.get(p.key) ?? "";
+    const now = versionsOf(p).at(-1);
+    const a = p.article;
+    const edited = articleEdits.get(p.key);
+    return exact<Schema<"StatusSource">>()({
+      id,
+      text: now?.text ?? p.text,
+      spoiler_text: now?.spoiler ?? "",
+      language: p.language,
+      ...(a === undefined
+        ? {}
+        : {
+            article: exact<Schema<"ArticleSource">>()({
+              title: edited?.title ?? a.title,
+              summary: edited?.summary ?? a.summary,
+              tags: [...(edited?.tags ?? [])],
+              ...(a.cover === undefined ? {} : { cover: { id: `${id}-cover`, description: a.cover.description } }),
+            }),
+          }),
+    });
+  };
+
+  /** The operations the fake implements, each typed by the specification. */
+  const handlers: Handlers = {
+    // ---- Timelines, hashtags, lists, bookmarks ----------------------------------------------------------------------
+
+    "GET /timelines/home": async ({ query }) => {
+      const { from, body } = page(homeNow(), query);
+      if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
+        return problem(500, "Internal Server Error");
+      // The retry after the first page failed comes late, so that the screen shows it loading again.
+      if (o.failFirst === true) await wait(o.lateMs ?? 2000);
+      else if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "GET /timelines/tag/{hashtag}": ({ params, query }) => {
+      // The public posts with the hashtag, newest first, as they read now, and its local ones for a reader signed in.
+      const tag = params.hashtag.replace(/^#/, "").toLowerCase();
+      const audience = o.visitor === true ? ["public"] : ["public", "local"];
+      const shown = posts
+        .filter(
+          (p) =>
+            visible(p) &&
+            audience.includes(p.visibility) &&
+            (o.visitor === true || (!hidden(p.author) && !mutedServer(p.author))),
+        )
+        .filter((p) => hashtagsOf(versionsOf(p).at(-1)?.text ?? p.text).includes(tag))
+        .toReversed()
+        .map((p) => statusOf(p));
+      return statusPage(shown, query);
+    },
+    "GET /timelines/local": ({ query }) => publicTimeline("local", query),
+    "GET /timelines/federated": ({ query }) => publicTimeline("federated", query),
+    "GET /timelines/list/{id}": ({ params, query }) => {
+      // The home timeline's entries by the list's members, never the reader's own (ADR-0013 §13).
+      const found = lists.find((l) => l.id === params.id);
+      if (found === undefined) return notFound();
+      return statusPage(
+        homeNow().filter((s) => found.members.includes(s.account.username)),
+        query,
+      );
+    },
+    "GET /bookmarks": ({ query }) =>
+      statusPage(
+        bookmarks
+          .map(postOf)
+          .filter((p) => visible(p))
+          .map((p) => statusOf(p)),
+        query,
+      ),
+    "GET /tags/{hashtag}": ({ params }) => ({ status: 200, body: tagOf(params.hashtag.replace(/^#/, "")) }),
+    "POST /tags/{hashtag}/follow": ({ params }) => {
+      // One more than the most the reader may follow is refused as the server refuses it.
+      const asked = params.hashtag.replace(/^#/, "");
+      const key = asked.toLowerCase();
+      if (!followedTags.has(key)) {
+        if (followedTags.size >= (o.followedTagLimit ?? 100))
+          return problem(422, "Too many followed hashtags", {
+            type: "/api/v1/problems/too-many-followed-tags",
+            detail: "You follow as many hashtags as you can. Unfollow one to follow another.",
+          });
+        followedTags.add(key);
+      }
+      return { status: 200, body: tagOf(asked) };
+    },
+    "DELETE /tags/{hashtag}/follow": ({ params }) => {
+      const asked = params.hashtag.replace(/^#/, "");
+      followedTags.delete(asked.toLowerCase());
+      return { status: 200, body: tagOf(asked) };
+    },
+    "GET /tags/search": ({ query }) => {
+      // The hashtags of the public, local and unlisted posts that start with `q`: the one equal to it first, then the
+      // most used.
+      const q = (query.get("q") ?? "").replace(/^#/u, "").normalize("NFKC").toLowerCase();
+      const limit = Number(query.get("limit") ?? "8");
+      const uses = new Map<string, { name: string; count: number }>();
+      for (const p of posts)
+        if (!deleted.has(p.key) && p.visibility !== "private" && p.visibility !== "direct")
+          for (const [, tag = ""] of p.text.matchAll(/(?<![\p{L}\p{N}_])#([\p{L}\p{M}\p{N}_]+)/gu)) {
+            const key = tag.normalize("NFKC").toLowerCase();
+            uses.set(key, { name: uses.get(key)?.name ?? tag, count: (uses.get(key)?.count ?? 0) + 1 });
+          }
+      const found = [...uses]
+        .filter(([key]) => key.startsWith(q))
+        .toSorted(([ka, a], [kb, b]) => Number(kb === q) - Number(ka === q) || b.count - a.count)
+        .map(([, t]): Schema<"TagSuggestion"> => ({ name: t.name, statuses_count: t.count }));
+      return { status: 200, body: { items: found.slice(0, limit) } };
+    },
+    "GET /lists": () => ({ status: 200, body: { items: lists.map(listBody) } }),
+    "POST /lists": ({ body }) => {
+      // A name of 1 to 50 characters on one line; at the limit of lists, the server's refusal.
+      const name = body.name.trim();
+      if (!listName(name)) return listNameRefused();
+      if (lists.length >= listLimit)
+        return problem(422, "You have as many lists as you may", { type: "/api/v1/problems/too-many-lists" });
+      madeLists += 1;
+      const list = {
+        id: idAt(Date.now(), 61_000 + madeLists),
+        name,
+        members: [],
+        created_at: new Date().toISOString(),
+      };
+      lists.push(list);
+      return { status: 201, body: listBody(list) };
+    },
+    "GET /lists/{id}": ({ params }) => {
+      const found = lists.find((l) => l.id === params.id);
+      return found === undefined ? notFound() : { status: 200, body: listBody(found) };
+    },
+    "PATCH /lists/{id}": ({ params, body }) => {
+      const found = lists.find((l) => l.id === params.id);
+      if (found === undefined) return notFound();
+      const name = body.name.trim();
+      if (!listName(name)) return listNameRefused();
+      found.name = name;
+      return { status: 200, body: listBody(found) };
+    },
+    "DELETE /lists/{id}": ({ params }) => {
+      const at = lists.findIndex((l) => l.id === params.id);
+      if (at < 0) return notFound();
+      lists.splice(at, 1);
+      return { status: 204 };
+    },
+    "GET /lists/{id}/accounts": ({ params, query }) => {
+      // The members in the order of their IDs.
+      const found = lists.find((l) => l.id === params.id);
+      if (found === undefined) return notFound();
+      return accountPage(
+        found.members.map(accountOf).toSorted((a, b) => a.id.localeCompare(b.id)),
+        query,
+      );
+    },
+    "POST /lists/{id}/accounts/{account_id}": ({ params }) => {
+      const found = lists.find((l) => l.id === params.id);
+      const username = usernameOf.get(params.account_id);
+      if (found === undefined || username === undefined) return notFound();
+      if (found.members.includes(username)) return { status: 204 };
+      if (!follows_(viewer, username))
+        return problem(422, "You can add only accounts you follow", { type: "/api/v1/problems/not-followed" });
+      if (found.members.length >= memberLimit)
+        return problem(422, "The list has as many members as it may", {
+          type: "/api/v1/problems/too-many-list-members",
+        });
+      found.members.push(username);
+      return { status: 204 };
+    },
+    "DELETE /lists/{id}/accounts/{account_id}": ({ params }) => {
+      const found = lists.find((l) => l.id === params.id);
+      const username = usernameOf.get(params.account_id);
+      if (found === undefined || username === undefined) return notFound();
+      found.members = found.members.filter((x) => x !== username);
+      return { status: 204 };
+    },
+    "GET /accounts/{id}/lists": ({ params }) => {
+      const username = usernameOf.get(params.id);
+      return {
+        status: 200,
+        body: { items: lists.filter((l) => username !== undefined && l.members.includes(username)).map(listBody) },
+      };
+    },
+
+    // ---- The shell --------------------------------------------------------------------------------------------------
+
+    "GET /accounts/verify_credentials": () => ({ status: 200, body: credentialOf(viewer) }),
+    "GET /preferences": () => ({ status: 200, body: preferences }),
+    "GET /instance": () => ({ status: 200, body: instanceBody }),
+    "GET /instance/health": () => {
+      const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
+      return { status: 200, body: health };
+    },
+    "GET /announcements": () => ({ status: 200, body: { items: shownAnnouncements() } }),
+    "GET /announcements/history": ({ query }) => ({ status: 200, body: page(announcementHistory(), query).body }),
+    "GET /announcements/{id}": ({ params }) => {
+      const found = announcementHistory().find((a) => a.id === params.id);
+      return found === undefined ? notFound() : { status: 200, body: found };
+    },
+    "POST /announcements/{id}/read": ({ params }) => {
+      const a = seed.announcements.find((x) => announcementId(x.key) === params.id);
+      if (a === undefined) return notFound();
+      announcementRead.add(a.key);
+      return { status: 200, body: announcementOf(a.key) };
+    },
+    "GET /voice/rooms": ({ query }) => {
+      if (o.voiceOff === true) return notFound();
+      return { status: 200, body: page(around === "none" ? [] : rooms, query).body };
+    },
+    "GET /events": ({ query }) => ({
+      status: 200,
+      body: page(around === "none" ? [] : seed.events.map(eventOf), query).body,
+    }),
+    "GET /admin/counts": () => {
+      const granted = permissionsOf(viewer);
+      const counts = exact<Schema<"AdminCounts">>()({
+        ...(granted.includes("manage_reports") ? { open_reports: 3 } : {}),
+        ...(granted.includes("manage_accounts") ? { pending_registrations: 2, pending_appeals: 1 } : {}),
+      });
+      return { status: 200, body: counts };
+    },
+    "GET /custom_emojis": () => ({ status: 200, body: { items: pickerEmojis } }),
+    "GET /streaming": ({ request }) => ({ status: 200, type: "text/event-stream", raw: openStream(request.signal) }),
+
+    // ---- The reader's exports ---------------------------------------------------------------------------------------
+
+    "GET /exports": () => ({ status: 200, body: { items: dataExports } }),
+    "POST /exports": () => {
+      if (dataExports.some((e) => e.state === "pending"))
+        return problem(409, "An export is in progress", { type: "/api/v1/problems/export-in-progress" });
+      const requested: Schema<"DataExport"> = {
+        id: idAt(Date.now(), 50_000 + dataExports.length),
+        state: "pending",
+        requested_at: new Date().toISOString(),
+      };
+      dataExports.unshift(requested);
+      return { status: 202, body: requested };
+    },
+    "GET /exports/{id}/archive": ({ params }) => {
+      const found = dataExports.find((e) => e.id === params.id);
+      if (found === undefined) return notFound();
+      if (found.state !== "ready")
+        return problem(409, "The export is not ready", { type: "/api/v1/problems/export-not-ready" });
+      return {
+        status: 200,
+        type: "application/zip",
+        raw: new Uint8Array([0x50, 0x4b, 0x05, 0x06, ...new Array<number>(18).fill(0)]),
+        headers: { "Content-Disposition": 'attachment; filename="export.zip"' },
+      };
+    },
+    "GET /csv_exports/{kind}": ({ params }) => {
+      const rows = people
+        .filter((p) => follows_(viewer, p.username))
+        .map((p) => `${p.username}@${fakeHost},true,false,`);
+      const name = params.kind === "following" ? "following_accounts" : params.kind;
+      return {
+        status: 200,
+        type: "text/csv",
+        raw: ["Account address,Show boosts,Notify on new posts,Languages", ...rows].join("\n"),
+        headers: { "Content-Disposition": `attachment; filename="${name}.csv"` },
+      };
+    },
+
+    // ---- Accounts ---------------------------------------------------------------------------------------------------
+
+    "GET /accounts/search": ({ query }) => {
+      // As the server finds them (ADR-0092 §1, FR-307): a username, `username@host` or a word of the display name that
+      // starts with `q`, and an account of this server whose username or display name holds it; the blocked and muted
+      // left out, and the person of another server it has not met; the exact username first, then the followed, then
+      // the rest.
+      const q = (query.get("q") ?? "").replace(/^@/u, "").normalize("NFKC").toLowerCase();
+      const limit = Number(query.get("limit") ?? "8");
+      const name = (p: Person) => p.displayName.normalize("NFKC").toLowerCase().replace(/:\w+:/gu, "");
+      const found = people
+        .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
+        .filter((p) => p.username !== unmet || met.has(unmet))
+        .filter(
+          (p) =>
+            [
+              p.username.includes("@") ? p.username : `${p.username}@${fakeHost}`,
+              name(p),
+              ...name(p).split(/\s+/u),
+            ].some((w) => w.startsWith(q)) ||
+            (!p.username.includes("@") && (p.username.includes(q) || name(p).includes(q))),
+        )
+        .toSorted(
+          (a, b) =>
+            Number(b.username === q) - Number(a.username === q) ||
+            Number(follows_(viewer, b.username)) - Number(follows_(viewer, a.username)),
+        );
+      return { status: 200, body: { items: found.slice(0, limit).map(fullAccount) } };
+    },
+    "GET /accounts/lookup": ({ query }) => {
+      // A handle, or the address of a profile (`https://host/@user`); the person of another server this one has not
+      // met is found only by `resolve`, which fetches and keeps their account (FR-305).
+      const asked = (query.get("acct") ?? "").replace(/^@/u, "");
+      const profile = /^https?:\/\/([^/]+)\/@([^/@]+)\/?$/u.exec(asked);
+      const handle = profile === null ? asked : `${profile[2] ?? ""}@${profile[1] ?? ""}`;
+      const acct = handle.replace(new RegExp(`@${fakeHost}$`), "");
+      if (acct === unmet && query.get("resolve") === "true") met.add(unmet);
+      const found =
+        acct === deactivated || (acct === unmet && !met.has(unmet))
+          ? undefined
+          : people.find((p) => p.username === acct);
+      return found === undefined ? notFound() : { status: 200, body: fullAccount(found) };
+    },
+    "GET /accounts/suggestions": () => {
+      // This server's accounts the reader does not follow, those that posted last first (FR-308); none on a
+      // one-person server.
+      if (o.singleUser === true)
+        return problem(404, "This is a one-person server", { type: "/api/v1/problems/single-user-mode" });
+      const lastPost = (username: string) => posts.findLastIndex((p) => p.author === username);
+      const suggested = people
+        .filter((p) => !p.username.includes("@") && p.username !== viewer && p.username !== deactivated)
+        .filter((p) => !follows_(viewer, p.username) && !requested.has(`${viewer}>${p.username}`))
+        .filter((p) => !blocking.has(`${viewer}>${p.username}`) && !muting.has(`${viewer}>${p.username}`))
+        .toSorted((a, b) => lastPost(b.username) - lastPost(a.username))
+        .map((p): Schema<"AccountSuggestion"> => ({ source: "recently_active", account: accountOf(p.username) }));
+      return { status: 200, body: { items: suggested } };
+    },
+    "GET /accounts/relationships": ({ query }) => ({
+      status: 200,
+      body: { items: query.all("id").map(relationshipOf) },
+    }),
+    "GET /accounts/{id}": ({ params }) => {
+      const username = usernameOf.get(params.id);
+      return username === undefined ? notFound() : { status: 200, body: fullAccount(personOf(username)) };
+    },
+    "GET /accounts/{id}/statuses": ({ params, query }) => {
+      const all = profilePosts(usernameOf.get(params.id) ?? "");
+      if (query.get("pinned") === "true")
+        return { status: 200, body: { items: all.filter((p) => p.pinned === true).map((p) => statusOf(p)) } };
+      const shown =
+        query.get("articles") === "true"
+          ? all.filter((p) => p.article !== undefined)
+          : query.get("exclude_replies") === "true"
+            ? all.filter((p) => p.replyTo === undefined)
+            : all;
+      return statusPage(
+        shown.map((p) => statusOf(p)),
+        query,
+      );
+    },
+    "GET /accounts/{id}/featured_tags": () => ({ status: 200, body: { items: [] } }),
+    "GET /accounts/{id}/followers": ({ params, query }) => followsOf(params.id, true, query),
+    "GET /accounts/{id}/following": ({ params, query }) => followsOf(params.id, false, query),
+    "POST /accounts/{id}/follow": ({ params }) => change(params.id, "follow", true),
+    "DELETE /accounts/{id}/follow": ({ params }) => change(params.id, "follow", false),
+    "POST /accounts/{id}/block": ({ params }) => change(params.id, "block", true),
+    "DELETE /accounts/{id}/block": ({ params }) => change(params.id, "block", false),
+    "POST /accounts/{id}/mute": ({ params }) => change(params.id, "mute", true),
+    "DELETE /accounts/{id}/mute": ({ params }) => change(params.id, "mute", false),
+    "PUT /accounts/{id}/note": ({ params, body }) => noted(params.id, body.note),
+    "DELETE /accounts/{id}/note": ({ params }) => noted(params.id, ""),
+    "POST /accounts/{id}/subscribe": ({ params }) => {
+      const other = usernameOf.get(params.id);
+      if (other === undefined) return notFound();
+      subscribed.add(other);
+      return { status: 200, body: relationshipOf(params.id) };
+    },
+    "DELETE /accounts/{id}/subscribe": ({ params }) => {
+      const other = usernameOf.get(params.id);
+      if (other === undefined) return notFound();
+      subscribed.delete(other);
+      return { status: 200, body: relationshipOf(params.id) };
+    },
+    "DELETE /accounts/{id}/follower": ({ params }) => {
+      const other = usernameOf.get(params.id);
+      if (other === undefined) return notFound();
+      following.delete(`${other}>${viewer}`);
+      return { status: 200, body: relationshipOf(params.id) };
+    },
+    "GET /follow_requests": ({ query }) => {
+      // The accounts that ask to follow the reader, newest first.
+      if (o.followRequests?.answer === "waits") return never();
+      if (o.followRequests?.answer === "fails") return problem(500, "Internal Server Error");
+      const asking = [...requested]
+        .toReversed()
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([, to]) => to === viewer)
+        .map(([from]) => accountOf(from));
+      return accountPage(asking, query);
+    },
+    "POST /follow_requests/{id}/accept": ({ params }) => {
+      const other = usernameOf.get(params.id);
+      if (other === undefined || !requested.delete(`${other}>${viewer}`)) return notFound();
+      following.add(`${other}>${viewer}`);
+      return { status: 200, body: relationshipOf(params.id) };
+    },
+    "POST /follow_requests/{id}/reject": ({ params }) => {
+      const other = usernameOf.get(params.id);
+      if (other === undefined || !requested.delete(`${other}>${viewer}`)) return notFound();
+      return { status: 200, body: relationshipOf(params.id) };
+    },
+    "GET /domain_mutes": ({ query }) => ({ status: 200, body: page(domainMutes, query, (m) => m.domain).body }),
+    "POST /domain_mutes": ({ body }) => {
+      // A remote domain, as the server normalizes it; this server's own is refused.
+      const domain = body.domain.toLowerCase().replace(/\.$/, "");
+      if (domain === fakeHost || !domain.includes(".")) return problem(422, "Unprocessable Entity");
+      let mute = domainMutes.find((d) => d.domain === domain);
+      if (mute === undefined) {
+        mute = { domain, created_at: new Date().toISOString() };
+        domainMutes.push(mute);
+      }
+      return { status: 200, body: mute };
+    },
+    "DELETE /domain_mutes/{domain}": ({ params }) => {
+      const at = domainMutes.findIndex((d) => d.domain === params.domain.toLowerCase());
+      if (at >= 0) domainMutes.splice(at, 1);
+      return { status: 204 };
+    },
+
+    // ---- Statuses ---------------------------------------------------------------------------------------------------
+
+    "POST /statuses": ({ body, request }) => ({ status: 201, body: once(request, () => publish(body)) }),
+    "GET /statuses/search": ({ query }) => {
+      // The public and local posts that hold every word, newest first, where the server has a search engine (ADR-0149).
+      if (o.search?.posts !== true)
+        return problem(404, "Posts cannot be searched on this server", {
+          type: "/api/v1/problems/search-unavailable",
+        });
+      const words = (query.get("q") ?? "")
+        .normalize("NFKC")
+        .toLowerCase()
+        .split(/\s+/u)
+        .filter((w) => w !== "");
+      const shown = posts
+        .filter((p) => !deleted.has(p.key) && (p.visibility === "public" || p.visibility === "local"))
+        .filter((p) => !hidden(p.author) && visible(p))
+        .filter((p) => words.every((w) => p.text.normalize("NFKC").toLowerCase().includes(w)))
+        .toReversed()
+        .map((p) => statusOf(p));
+      return statusPage(shown, query);
+    },
+    "GET /statuses/{id}": ({ params }) => {
+      // A status the reader made here is read alone with its body; a post of the seed, an article with its body.
+      const own = made.get(params.id);
+      if (own !== undefined) return { status: 200, body: own };
+      const p = shownPost(params.id);
+      return p === undefined ? notFound() : { status: 200, body: statusOf(p, 0, true) };
+    },
+    "PUT /statuses/{id}": ({ params, body }) => {
+      const p = shownPost(params.id);
+      if (p === undefined) return notFound();
+      if (p.author !== viewer) return problem(403, "Forbidden");
+      // A post with a poll is never edited: its votes belong to the poll as posted. An article is edited with
+      // PUT /articles/{id}.
+      if (p.poll !== undefined || p.article !== undefined) return problem(422, "Unprocessable Entity");
+      edits.set(p.key, [
+        ...(edits.get(p.key) ?? []),
+        {
+          text: body.text,
+          spoiler: body.spoiler_text ?? "",
+          at: Date.now(),
+          media: (body.media ?? []).map((x) => x.id),
+        },
+      ]);
+      return { status: 200, body: statusOf(p) };
+    },
+    "DELETE /statuses/{id}": ({ params }) => {
+      const own = made.get(params.id);
+      if (own !== undefined) {
+        made.delete(params.id);
+        if (own.in_reply_to_id !== undefined && own.approval === undefined) countReply(own.in_reply_to_id, -1);
+        const at = home.findIndex((s) => s.id === params.id);
+        if (at >= 0) home.splice(at, 1);
+        return { status: 204 };
+      }
+      const p = shownPost(params.id);
+      if (p === undefined) return notFound();
+      if (p.author !== viewer) return problem(403, "Forbidden");
+      deleted.add(p.key);
+      return { status: 204 };
+    },
+    "GET /statuses/{id}/source": ({ params }) => {
+      // The source of a status the reader made here is what they wrote; that of another's post is a 404, as the
+      // server's is.
+      const own = made.get(params.id);
+      if (own !== undefined) {
+        const source = madeSources.get(params.id);
+        const article = source?.article;
+        const body = exact<Schema<"StatusSource">>()({
+          id: params.id,
+          text: source?.text ?? "",
+          spoiler_text: source?.spoiler ?? "",
+          language: own.language,
+          ...(article === undefined
+            ? {}
+            : {
+                article: exact<Schema<"ArticleSource">>()({
+                  title: article.title,
+                  summary: article.summary ?? "",
+                  tags: [...(article.tags ?? [])],
+                  ...(article.cover === undefined ? {} : { cover: article.cover }),
+                }),
+              }),
+        });
+        return { status: 200, body };
+      }
+      const p = shownPost(params.id);
+      return p === undefined || p.author !== viewer ? notFound() : { status: 200, body: sourceOf(p) };
+    },
+    "GET /statuses/{id}/history": ({ params }) => {
+      if (made.has(params.id)) return { status: 200, body: { items: [] } };
+      const p = shownPost(params.id);
+      if (p === undefined) return notFound();
+      const id = statusId.get(p.key) ?? "";
+      const items = versionsOf(p).map((v): Schema<"StatusEdit"> => ({
+        content: serverHtml(v.text, fakeHost),
+        spoiler_text: v.spoiler,
+        sensitive: v.spoiler !== "",
+        created_at: new Date(v.at).toISOString(),
+        media_attachments: mediaOf(p, id, v),
+        emojis: customEmojis,
+      }));
+      return { status: 200, body: { items } };
+    },
+    "GET /statuses/{id}/context": ({ params }) => {
+      if (made.has(params.id)) return { status: 200, body: { ancestors: [], descendants: [] } };
+      const key = keyOf.get(params.id);
+      return key === undefined ? notFound() : { status: 200, body: contextOf(key) };
+    },
+    "POST /statuses/{id}/mute": ({ params }) =>
+      acted(params.id, (p) => {
+        mutedThreads.add(threadOf(p.key));
+        return undefined;
+      }),
+    "DELETE /statuses/{id}/mute": ({ params }) =>
+      acted(params.id, (p) => {
+        mutedThreads.delete(threadOf(p.key));
+        return undefined;
+      }),
+    "POST /statuses/{id}/bookmark": ({ params }) =>
+      acted(params.id, (p) => {
+        const at = bookmarks.indexOf(p.key);
+        if (at >= 0) bookmarks.splice(at, 1);
+        bookmarks.unshift(p.key);
+        return undefined;
+      }),
+    "DELETE /statuses/{id}/bookmark": ({ params }) =>
+      acted(params.id, (p) => {
+        const at = bookmarks.indexOf(p.key);
+        if (at >= 0) bookmarks.splice(at, 1);
+        return undefined;
+      }),
+    "POST /statuses/{id}/boost": ({ params }) =>
+      acted(params.id, (p) => {
+        // A boost its author must approve waits (ADR-0155); one the policy denies is refused.
+        const permission = permissionOf(p, "announce", viewer);
+        if (permission === "denied") return problem(403, "Forbidden");
+        if (permission === "pending") waitingBoosts.add(p.key);
+        else ownBoost.set(p.key, true);
+        return undefined;
+      }),
+    "DELETE /statuses/{id}/boost": ({ params }) =>
+      acted(params.id, (p) => {
+        waitingBoosts.delete(p.key);
+        ownBoost.set(p.key, false);
+        return undefined;
+      }),
+    "POST /statuses/{id}/favourite": ({ params }) =>
+      acted(params.id, (p) => {
+        keepOwn(p.key);
+        ownFavourite.set(p.key, true);
+        ownReaction.set(p.key, null);
+        return undefined;
+      }),
+    "DELETE /statuses/{id}/favourite": ({ params }) =>
+      acted(params.id, (p) => {
+        keepOwn(p.key);
+        ownFavourite.set(p.key, false);
+        return undefined;
+      }),
+    "PUT /statuses/{id}/reaction": ({ params, body }) =>
+      acted(params.id, (p) => {
+        const named = seedEmoji(body.emoji);
+        // A custom emoji of another server, or a shortcode this server has not, is refused as the server does.
+        if (named.includes("@") || /^\w+$/u.test(named)) return problem(422, "Unprocessable Entity");
+        keepOwn(p.key);
+        ownReaction.set(p.key, named);
+        ownFavourite.set(p.key, false);
+        return undefined;
+      }),
+    "DELETE /statuses/{id}/reaction": ({ params }) =>
+      acted(params.id, (p) => {
+        keepOwn(p.key);
+        ownReaction.set(p.key, null);
+        return undefined;
+      }),
+    "POST /statuses/{id}/poll/votes": ({ params, body }) =>
+      acted(params.id, (p) => {
+        const poll = pollOf(p);
+        if (poll !== undefined && poll.id !== body.poll_id) return problem(409, "Conflict");
+        const { choices } = body;
+        const taken =
+          poll !== undefined &&
+          poll.voted !== true &&
+          choices.length > 0 &&
+          (p.poll?.multiple === true || choices.length === 1) &&
+          new Set(choices).size === choices.length &&
+          choices.every((c) => Number.isInteger(c) && c >= 0 && c < (p.poll?.options.length ?? 0));
+        if (!taken) return problem(422, "Unprocessable Entity");
+        ownVotes.set(p.key, choices);
+        return undefined;
+      }),
+    "GET /statuses/{id}/reactions": async ({ params, query }) => {
+      const p = shownPost(params.id);
+      if (p === undefined) return notFound();
+      const emoji = query.get("emoji");
+      // Who reacted, newest first; the cursor of a page is where its last reaction stands among them.
+      const shown = reactionsOf(p.key)
+        .filter((r) => emoji === null || reactionEmojiOf(r.emoji).name === emoji)
+        .toReversed()
+        .map((r) => ({
+          at: idAt(timeOf(r.step), 70_000 + r.step),
+          reactor: {
+            account: accountOf(r.by),
+            emoji: reactionEmojiOf(r.emoji),
+            created_at: new Date(timeOf(r.step)).toISOString(),
+          } satisfies Schema<"StatusReactor">,
+        }));
+      const { from, body } = page(shown, query, (r) => r.at);
+      if (from > 0) await late();
+      return { status: 200, body: { ...body, items: body.items.map((r) => r.reactor) } };
+    },
+    "POST /statuses/{id}/translation": ({ params, body }) => {
+      const p = shownPost(params.id);
+      return p === undefined ? notFound() : translationOf(p, body.target_language);
+    },
+
+    // ---- Notifications ----------------------------------------------------------------------------------------------
+
+    "GET /notifications": async ({ query }) => {
+      const types = query.all("types");
+      // None from whom the reader blocks or mutes now, or from a server they mute; a notification of a post shows it
+      // as it is now, and goes with it once it is deleted.
+      const shown = notifications
+        .filter((n) => types.length === 0 || types.includes(n.type))
+        .filter((n) => !hidden(authorOf(n)) && !mutedServer(authorOf(n)))
+        .flatMap(notificationNow);
+      const { from, body } = page(shown, query);
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "GET /notifications/{id}": ({ params }) => {
+      // One of the reader's notifications, as the list shows it; none of another or a dismissed one (a 404).
+      const found = notifications.find((n) => n.id === params.id);
+      if (found === undefined || hidden(authorOf(found)) || mutedServer(authorOf(found))) return notFound();
+      const now = notificationNow(found)[0];
+      return now === undefined ? notFound() : { status: 200, body: now };
+    },
+    "POST /notifications/{id}/dismiss": ({ params }) => {
+      if (dismissFailures > 0) {
+        dismissFailures -= 1;
+        return problem(500, "Internal Server Error");
+      }
+      const at = notifications.findIndex((n) => n.id === params.id);
+      if (at < 0) return notFound();
+      notifications.splice(at, 1);
+      return { status: 204 };
+    },
+    "GET /notifications/marker": () => ({ status: 200, body: markerNow() }),
+    "PUT /notifications/marker": ({ body }) => {
+      if (lastRead === undefined || body.last_read_id > lastRead) lastRead = body.last_read_id;
+      return { status: 200, body: markerNow() };
+    },
+    "GET /notifications/requests/summary": () => {
+      const summary: Schema<"NotificationRequestSummary"> = {
+        accounts_count: held.size,
+        notifications_count: [...held.values()].reduce((sum, list) => sum + list.length, 0),
+      };
+      return { status: 200, body: summary };
+    },
+    "GET /notifications/requests": async ({ query }) => {
+      const { from, body } = page([...held.keys()].map(heldRequestOf), query);
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "GET /notifications/requests/{id}": ({ params }) => {
+      const username = heldFrom(params.id);
+      return username === undefined ? notFound() : { status: 200, body: heldRequestOf(username) };
+    },
+    "GET /notifications/requests/{id}/notifications": ({ params, query }) => {
+      const username = heldFrom(params.id);
+      if (username === undefined) return notFound();
+      return { status: 200, body: page(held.get(username) ?? [], query).body };
+    },
+    "POST /notifications/requests/{id}/accept": ({ params }) => {
+      const username = heldFrom(params.id);
+      if (username === undefined) return notFound();
+      notifications.push(...(held.get(username) ?? []));
+      notifications.sort(newestFirst);
+      held.delete(username);
+      return { status: 204 };
+    },
+    "POST /notifications/requests/{id}/dismiss": ({ params }) => {
+      const username = heldFrom(params.id);
+      if (username === undefined) return notFound();
+      held.delete(username);
+      return { status: 204 };
+    },
+    "GET /push/subscription": () => {
+      if (o.push !== true) return notFound();
+      if (o.pushState === "subscription-fails") return problem(500, "Internal Server Error");
+      return pushSubscription === undefined ? notFound() : { status: 200, body: pushSubscription };
+    },
+    "PUT /push/subscription": ({ body }) => {
+      if (o.push !== true) return notFound();
+      pushSubscription = {
+        id: idAt(Date.now(), 70_000),
+        endpoint: body.endpoint,
+        alerts: body.alerts,
+        server_key: pushServerKey,
+      };
+      return { status: 200, body: pushSubscription };
+    },
+    "DELETE /push/subscription": () => {
+      if (o.push !== true) return notFound();
+      pushSubscription = undefined;
+      return { status: 204 };
+    },
+    "GET /preferences/notifications": () => {
+      if (o.pushState === "settings-fail") return problem(500, "Internal Server Error");
+      const rows = (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
+        (type): Schema<"NotificationSettingRow"> => ({
+          group: type,
+          section: "ordinary",
+          types: [type],
+          in_app: { enabled: true, fixed: false },
+        }),
+      );
+      return { status: 200, body: { rows } };
+    },
+
+    // ---- Direct messages --------------------------------------------------------------------------------------------
+
+    "GET /conversations": async ({ query }) => {
+      const { from, body } = page(
+        conversationsNow()
+          .filter((c) => !c.hidden)
+          .map((c) => c.body),
+        query,
+      );
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "GET /conversations/{id}": ({ params }) => {
+      const found = conversationOf(params.id);
+      return found === undefined ? notFound() : { status: 200, body: found.body };
+    },
+    "POST /conversations/{id}/read": ({ params }) => {
+      const found = conversationOf(params.id);
+      if (found === undefined) return notFound();
+      readTo.set(found.body.id, found.at);
+      return { status: 200, body: { ...found.body, unread: false } };
+    },
+    "POST /conversations/{id}/hide": ({ params }) => {
+      const found = conversationOf(params.id);
+      if (found === undefined) return notFound();
+      hiddenTo.set(found.body.id, found.at);
+      return { status: 204 };
+    },
+
+    // ---- Approvals --------------------------------------------------------------------------------------------------
+
+    "GET /interaction_requests": async ({ query }) => {
+      // Those of the reader's posts that wait, newest first, of one kind when it is asked.
+      const kind = query.get("kind");
+      const waiting = requests
+        .filter(
+          (r) => postOf(r.target).author === viewer && stateOf(r) === "pending" && (kind === null || r.kind === kind),
+        )
+        .toSorted((a, b) => b.step - a.step)
+        .map(requestBody);
+      const { from, body } = page(waiting, query);
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "POST /interaction_requests/{id}/accept": ({ params }) => answered(params.id, "accepted"),
+    "POST /interaction_requests/{id}/reject": ({ params }) => answered(params.id, "rejected"),
+
+    // ---- Articles, uploads, drafts ----------------------------------------------------------------------------------
+
+    "POST /articles/preview": ({ body }) => {
+      // The body as the server would render it, with its size and images; one that fails, as the options say.
+      if (o.articles?.preview === "fails") return problem(500, "Internal Server Error");
+      const { text, summary } = body;
+      const content = bodyHtml(text);
+      const blank = summary === undefined || summary.trim() === "";
+      const preview: Schema<"ArticlePreview"> = {
+        content,
+        summary: blank ? summaryOf(text) : summary.trim(),
+        summary_from_body: blank,
+        bytes: new TextEncoder().encode(content).length,
+        max_bytes: articleLimits.max_bytes,
+        images: bodyImages(text).filter((id) => uploads.has(id)).length,
+        max_images: articleLimits.max_images,
+      };
+      return { status: 200, body: preview };
+    },
+    "POST /articles": ({ body, request }) => {
+      if (o.articles?.authoring === "permission" && !permissionsOf(viewer).includes("create_articles"))
+        return problem(403, "Forbidden");
+      if (o.articles?.publish === "refused") return refusedArticle();
+      if (o.articles?.publish === "summary") return refusedSummary();
+      const { title, summary, tags, cover, text, visibility, language, sensitive } = body;
+      const article: WrittenArticle = {
+        title,
+        ...(summary === undefined ? {} : { summary }),
+        ...(tags === undefined ? {} : { tags }),
+        ...(cover === undefined ? {} : { cover }),
+      };
+      return {
+        status: 201,
+        body: once(request, () =>
+          publish({
+            text,
+            visibility,
+            article,
+            ...(language === undefined ? {} : { language }),
+            ...(sensitive === undefined ? {} : { sensitive }),
+          }),
+        ),
+      };
+    },
+    "PUT /articles/{id}": ({ params, body }) => {
+      if (o.articles?.publish === "refused") return refusedArticle();
+      if (o.articles?.publish === "summary") return refusedSummary();
+      const after = editMade(params.id, body);
+      if (after !== undefined) return { status: 200, body: after };
+      const p = shownPost(params.id);
+      if (p === undefined) return notFound();
+      if (p.author !== viewer) return problem(403, "Forbidden");
+      if (p.article === undefined) return problem(422, "Unprocessable Entity");
+      articleEdits.set(p.key, { title: body.title, summary: body.summary ?? "", tags: body.tags ?? [] });
+      edits.set(p.key, [...(edits.get(p.key) ?? []), { text: body.text, spoiler: "", at: Date.now() }]);
+      return { status: 200, body: statusOf(p, 0, true) };
+    },
+    "POST /media": async ({ request }) => {
+      // An image the reader uploads, served from the reader's own copy of the file: ready at once, or still processed
+      // until it is read again (`uploads`).
+      const form = await request.formData();
+      const file = form.get("file");
+      const description = form.get("description");
+      uploaded += 1;
+      const id = idAt(Date.now(), 990_000 + uploaded);
+      const url = file instanceof Blob ? URL.createObjectURL(file) : "";
+      const media = exact<MediaAttachment>()({
+        id,
+        type: "image",
+        state: "ready",
+        ...(typeof description === "string" && description !== "" ? { description } : {}),
+        url,
+        preview_url: url,
+        meta: { width: 1200, height: 800, ...centered },
+      });
+      uploads.set(id, media);
+      const waiting: MediaAttachment = { id, type: "image", state: "processing", meta: centered };
+      return { status: 202, body: o.uploads === "processing" ? waiting : media };
+    },
+    "GET /media/{id}": ({ params }) => {
+      // An upload of the reader's, processed by now, or an image of a draft of the seed.
+      const image = draftImages.get(params.id);
+      const media = uploads.get(params.id) ?? (image === undefined ? undefined : imageOf(params.id, image));
+      return media === undefined ? notFound() : { status: 200, body: media };
+    },
+    "GET /drafts": ({ query }) => {
+      const scheduled = query.get("scheduled");
+      const shown = ownDrafts.filter(
+        (d) => scheduled === null || (d.scheduled_at !== undefined) === (scheduled === "true"),
+      );
+      return { status: 200, body: page(shown, query).body };
+    },
+    "POST /drafts": ({ body }) => {
+      draftsMade += 1;
+      const now = new Date().toISOString();
+      const draft = savedDraft({ id: idAt(Date.now(), 85_000 + draftsMade), created_at: now, updated_at: now }, body);
+      ownDrafts.unshift(draft);
+      return draftAnswer(201, draft);
+    },
+    "GET /drafts/{id}": ({ params }) => {
+      const d = draftOf(params.id);
+      return d === undefined ? notFound() : draftAnswer(200, d);
+    },
+    "PUT /drafts/{id}": ({ params, body, request }) => {
+      const d = draftOf(params.id);
+      if (d === undefined) return notFound();
+      // A save over a version another device replaced since is refused, as the server does (ADR-0156 §9).
+      if (request.headers.get("If-Match") !== etagOf(d)) return problem(412, "Precondition Failed");
+      const saved = savedDraft(d, body);
+      putDraft(saved);
+      return draftAnswer(200, saved);
+    },
+    "DELETE /drafts/{id}": ({ params }) => {
+      const d = draftOf(params.id);
+      if (d === undefined) return notFound();
+      ownDrafts.splice(ownDrafts.indexOf(d), 1);
+      return { status: 204 };
+    },
+    "PUT /drafts/{id}/schedule": ({ params, body }) => {
+      const d = draftOf(params.id);
+      if (d === undefined) return notFound();
+      const lead = Date.parse(body.publish_at) - Date.now();
+      if (lead < draftLimits.scheduled_post_min_lead_minutes * minute)
+        return unprocessable(
+          `A post can be scheduled no sooner than ${String(draftLimits.scheduled_post_min_lead_minutes)} minutes from now.`,
+        );
+      if (lead > draftLimits.scheduled_post_max_lead_days * day)
+        return unprocessable(
+          `A post can be scheduled no later than ${String(draftLimits.scheduled_post_max_lead_days)} days from now.`,
+        );
+      const scheduled: Draft = { ...d, scheduled_at: new Date(Date.parse(body.publish_at)).toISOString() };
+      putDraft(scheduled);
+      return draftAnswer(200, scheduled);
+    },
+    "DELETE /drafts/{id}/schedule": ({ params }) => {
+      const d = draftOf(params.id);
+      if (d === undefined) return notFound();
+      if (d.scheduled_at === undefined) return problem(409, "Conflict");
+      const { scheduled_at: at, ...rest } = d;
+      const unscheduled: Draft = {
+        ...rest,
+        last_schedule: { publish_at: at, outcome: "cancelled", occurred_at: new Date().toISOString() },
+      };
+      putDraft(unscheduled);
+      return draftAnswer(200, unscheduled);
+    },
+    "POST /drafts/{id}/publish": ({ params }) => {
+      const d = draftOf(params.id);
+      if (d === undefined) return notFound();
+      // The review refuses an article published from its draft as it refuses one posted at once; the draft stays.
+      if (d.article !== undefined && o.articles?.publish === "refused") return refusedArticle();
+      ownDrafts.splice(ownDrafts.indexOf(d), 1);
+      return { status: 201, body: publish(d) };
+    },
+  };
+
+  /**
+   * Keeps what the reader has now of the post of `key` as theirs, before a write changes it: one favourite or one
+   * reaction per post (FR-116), so setting one takes back the other, and taking back one leaves the other as it was.
+   */
+  function keepOwn(key: string) {
+    const favourited = favouritersOf(key).includes(viewer);
+    const reacted = reactionsOf(key).find((r) => r.by === viewer)?.emoji ?? null;
+    ownFavourite.set(key, favourited);
+    ownReaction.set(key, reacted);
+  }
+
+  // The seed's people are all this server's, so both public timelines hold their public posts (the local one also
+  // those for this server only), newest first; a timeline the instance does not offer is a 404, one for signed-in
+  // readers a 401 to a visitor.
+  function publicTimeline(kind: "local" | "federated", query: PageQuery): Promise<Answer<"GET /timelines/local">> {
+    if (timelines[kind] === "off") return Promise.resolve(notFound());
+    if (timelines[kind] === "signed_in" && o.visitor === true) return Promise.resolve(problem(401, "Unauthorized"));
+    const shown = posts
+      .filter((p) => !deleted.has(p.key))
+      .filter((p) => p.visibility === "public" || (kind === "local" && p.visibility === "local"))
+      .filter((p) => o.visitor === true || (!hidden(p.author) && !mutedServer(p.author)))
+      .toReversed()
+      .map((p) => statusOf(p));
+    return statusPage(shown, query);
+  }
+
+  const markerNow = (): Schema<"NotificationMarker"> =>
+    exact<Schema<"NotificationMarker">>()({
+      ...(lastRead === undefined ? {} : { last_read_id: lastRead }),
+      unread_count: unreadCount(),
+    });
+
+  /** The username of the account `id` whose notifications are held back, or none. */
+  const heldFrom = (id: string) => {
+    const username = usernameOf.get(id);
+    return username === undefined || !held.has(username) ? undefined : username;
+  };
+
+  /** The reader's answer to the request `id` of one of their posts. */
+  function answered(id: string, answer: "accepted" | "rejected"): Answer<"POST /interaction_requests/{id}/accept"> {
+    const r = requests.find((x) => requestId(x) === id);
+    if (r === undefined || postOf(r.target).author !== viewer) return notFound();
+    if (stateOf(r) !== "pending") return problem(409, "Conflict");
+    answers.set(r.key, answer);
+    return { status: 200, body: requestBody(r) };
+  }
+
+  /**
+   * The operations a visitor without a session may call, as the specification opens them (`security: {}`); every other
+   * answers 401: the reader's own account, their relationships, the searches and the suggestions among them, whose
+   * paths read like an account's, a status's or a hashtag's.
+   */
+  const publicPath =
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+)$/;
+  /** Whether `/instance` answered once, before the server stopped answering (`down`). */
+  let instanceRead = false;
+
+  const json = (body: unknown, status: number, headers: Record<string, string> = {}) =>
+    new Response(JSON.stringify(body), {
+      status,
+      headers: { "Content-Type": status >= 400 ? "application/problem+json" : "application/json", ...headers },
+    });
+  const health = (body: Schema<"ServerHealth">, headers: Record<string, string> = {}) =>
+    json(body, 503, { "Content-Type": "application/json", ...headers });
+
+  const unimplemented: string[] = [];
+  const route = createRouter(handlers, (error) => {
+    unimplemented.push(error.operation);
+  });
+
+  /** The answer of the server in the state of the options: down, under maintenance, or as it is. */
+  async function served(request: Request): Promise<Response> {
+    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
+    const down = o.down !== undefined && (path !== "/instance" || instanceRead);
+    if (path === "/instance") instanceRead = true;
+    if (down && o.down === "offline") throw new TypeError("Failed to fetch");
+    if (down && o.down === "outage")
+      return path === "/instance/health"
+        ? health({ status: "unavailable", checked_at: new Date().toISOString() })
+        : json(problem(503, "Service Unavailable").problem, 503);
+    // The maintenance problem carries the operator's message, its end and the status page beside a problem's members.
+    if (o.maintenance === true)
+      return path === "/instance/health"
+        ? health({ status: "maintenance" }, { "Retry-After": "3600" })
+        : json(
+            {
+              ...problem(503, "Under maintenance", { type: "/api/v1/problems/maintenance" }).problem,
+              message: "Moving the database to a larger disk. Thanks for your patience! — the admins",
+              until: new Date(started + 2 * 60 * minute).toISOString(),
+              status_page_url: fakeStatusPage,
+            },
+            503,
+            { "Retry-After": "3600" },
+          );
+    if (o.visitor === true && !publicPath.test(path)) return json(problem(401, "Unauthorized").problem, 401);
+    const response = await route(request);
+    if (o.newerEpoch === true) response.headers.set("X-Web-Client-Epoch", "999");
+    return response;
+  }
+
+  const scripts = createScripts(Object.keys(handlers) as Route[], served);
+
+  let added = 0;
+
+  function newPosts(count: number): Status[] {
+    const pool = posts.filter((p) => p.author !== viewer && inHome(p.author) && !hidden(p.author) && visible(p));
+    const fresh = Array.from({ length: count }, () => {
+      added += 1;
+      const p = pool[(added - 1) % pool.length];
+      if (p === undefined) throw new Error("fake: the reader follows no one who posts");
+      const at = Date.now();
+      return { ...statusOf(p), id: idAt(at, 900_000 + added), created_at: new Date(at).toISOString() };
+    }).toReversed();
+    home.unshift(...fresh);
+    for (const status of fresh.toReversed()) send({ type: "update", status });
+    return fresh;
+  }
+
+  function newNotification(): Notification {
+    added += 1;
+    const fans = people.filter((p) => follows_(p.username, viewer) && !hidden(p.username));
+    const from = fans[added % Math.max(1, fans.length)]?.username ?? viewer;
+    const own = posts.find((p) => p.author === viewer);
+    const at = Date.now();
+    const notification = exact<Notification>()({
+      id: idAt(at, 900_000 + added),
+      type: "favourite",
+      created_at: new Date(at).toISOString(),
+      account: accountOf(from),
+      ...(own === undefined ? {} : { status: statusOf(own) }),
+    });
+    notifications.unshift(notification);
+    send({ type: "notification", notification });
+    return notification;
+  }
+
+  function newMessage(index: number): Status {
+    const held = conversationsNow()[index];
+    const last = posts.find((p) => statusId.get(p.key) === held?.at);
+    const from = usernameOf.get(held?.body.accounts[0]?.id ?? "");
+    if (held === undefined || last === undefined || from === undefined)
+      throw new Error(`fake: ${viewer} has no conversation ${String(index)} with another person`);
+    added += 1;
+    const message: Post = {
+      key: `message-${String(added)}`,
+      author: from,
+      replyTo: last.key,
+      text: `@${viewer} One more thing, number ${String(added)}.`,
+      visibility: "direct",
+      language: "en",
+    };
+    posts.push(message);
+    const id = idAt(timeOf(postStep(message.key)), postStep(message.key));
+    statusId.set(message.key, id);
+    keyOf.set(id, message.key);
+    const now = conversationOf(held.body.id);
+    if (now !== undefined) send({ type: "conversation", conversation: now.body });
+    return statusOf(message);
+  }
+
+  const postPath = (key: string) => `/@${postOf(key).author}/status/${statusId.get(key) ?? ""}`;
+  const announcementPath = (key: string) =>
+    `/announcements/${key === "ended" ? endedAnnouncement.id : announcementId(key)}`;
+
+  const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
+
+  const keyedId = (key: string) => {
+    const post = statusId.get(key);
+    if (post !== undefined) return post;
+    const at = seedDrafts.findIndex((d) => d.key === key);
+    if (at < 0) throw new Error(`fake: no post or draft ${key} of ${viewer}`);
+    return draftId(at);
+  };
+
+  const conversationPath = (index: number) => `/conversations/${conversationsNow()[index]?.body.id ?? "none"}`;
+
+  const heldPath = (username: string) => `/notifications/requests/${idOf(username)}`;
+  const notificationPath = (type: string) =>
+    `/notifications/${notifications.find((n) => n.type === type)?.id ?? "none"}`;
+
+  return {
+    serve: scripts.serve,
+    script: scripts.script,
+    send,
+    unimplemented,
+    newPosts,
+    newNotification,
+    newMessage,
+    postPath,
+    announcementPath,
+    listPath,
+    idOf: keyedId,
+    accountId: (username) => idOf(personOf(username).username),
+    conversationPath,
+    heldPath,
+    notificationPath,
+  };
+}

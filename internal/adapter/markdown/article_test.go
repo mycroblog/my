@@ -99,3 +99,57 @@ func TestRenderArticleIsStable(t *testing.T) {
 		t.Errorf("two renderings differ:\n%s\n%s", a, b)
 	}
 }
+
+// TestRenderArticleTextSeparatesBlocks checks that the text of a body reads block by block, with
+// list items and table cells as items (ADR-0160 §6).
+func TestRenderArticleTextSeparatesBlocks(t *testing.T) {
+	r := markdown.NewArticleRenderer()
+	for _, tc := range []struct {
+		name, in, want string
+	}{
+		{"ja list and paragraphs", "材料:\n\n- 卵\n- 牛乳\n- 砂糖\n\n混ぜる\n\n焼く", "材料: 卵、牛乳、砂糖。混ぜる。焼く"},
+		{"en list and paragraphs", "Ingredients\n\n- eggs\n- milk\n- sugar\n\nMix them\n\nBake.\nThen eat", "Ingredients. eggs, milk, sugar. Mix them. Bake. Then eat"},
+		{"ja paragraphs", "一つ目\n\n二つ目", "一つ目。二つ目"},
+		{"en paragraphs", "First one\n\nSecond one", "First one. Second one"},
+		{"soft break", "一行目\n二行目", "一行目 二行目"},
+		{"hard break", "line one  \nline two\\\nline three", "line one line two line three"},
+		{"ordered list", "1. 一\n2. 二", "一、二"},
+		{"loose list", "- a\n\n- b", "a, b"},
+		{"nested list", "- a\n  - b\n- c", "a, b, c"},
+		{"items end in punctuation", "- one.\n- two\n\nend", "one. two. end"},
+		{"full-width end", "質問？\n\n答え。\n\n次", "質問？答え。次"},
+		{"mixed scripts", "- 卵\n- milk\n- 砂糖", "卵、milk, 砂糖"},
+		{"table", "| a | b |\n|-|-|\n| 1 | 2 |", "a, b, 1, 2"},
+		{"ja table", "| 名前 | 数 |\n|-|-|\n| 卵 | 二つ |\n\n以上", "名前、数、卵、二つ。以上"},
+		{"headings skipped", "# 見出し\n\n本文\n\n## Next\n\nmore", "本文。more"},
+		{"code skipped", "before\n\n```\ncode()\n```\n\nafter", "before. after"},
+		{"quote", "> quoted\n\nafter", "quoted. after"},
+		{"thematic break", "a\n\n---\n\nb", "a. b"},
+		{"image only paragraph", "a\n\n![cat](media:m1)\n\nb", "a. b"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got := r.RenderArticle(tc.in, resolution).Text
+			if text := strings.Join(strings.Fields(got), " "); text != tc.want {
+				t.Errorf("Text = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// TestRenderArticleSummaryOfAList checks the summary made from the text of a long list: cut
+// without a separator before the ellipsis (ADR-0160 §6).
+func TestRenderArticleSummaryOfAList(t *testing.T) {
+	r := markdown.NewArticleRenderer()
+	for _, tc := range []struct {
+		name, in, want string
+	}{
+		{"en", strings.Repeat("- word\n", 60), strings.Repeat("word, ", 32) + "word…"},
+		{"ja", strings.Repeat("- 卵\n", 150), strings.Repeat("卵、", 99) + "卵…"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got := content.ArticleSummaryFromBody(r.RenderArticle(tc.in, resolution).Text); got != tc.want {
+				t.Errorf("summary = %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

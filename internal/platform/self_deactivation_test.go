@@ -112,6 +112,14 @@ func (s *deactivationScreens) page() string {
 	return s.do(http.MethodGet, authpages.PathSignIn, nil).Body.String()
 }
 
+// offersReactivation reports whether body is the status screen of a deactivated account, which
+// offers to reactivate it (PathReactivate) and to delete it (PathDeleteDeactivated).
+func offersReactivation(t *testing.T, body string) bool {
+	t.Helper()
+	data := authData(t, body)
+	return authText(data, "screen") == "status" && authAt(data, "status.deactivated") == true
+}
+
 // TestSelfDeactivationThroughTheAPI drives the whole of the feature through the client API and the
 // server-rendered screens (ADR-0089): the confirmation, the date and the one email, the end of
 // the sessions and tokens, what others no longer see, what the reactivation brings back, the
@@ -238,10 +246,8 @@ func TestSelfDeactivationThroughTheAPI(t *testing.T) {
 	s := e.screens()
 	s.signIn("alice")
 	body := s.page()
-	for _, want := range []string{deletionDate(due), authpages.PathReactivate, authpages.PathDeleteDeactivated} {
-		if !strings.Contains(body, want) {
-			t.Errorf("the status page has no %q:\n%s", want, body)
-		}
+	if !offersReactivation(t, body) || authText(authData(t, body), "status.deletionDate") != deletionDate(due) {
+		t.Errorf("the status page offers no reactivation or lacks the date %q:\n%s", deletionDate(due), body)
 	}
 
 	// Reactivating brings everything back, with the old token still ended.
@@ -249,7 +255,7 @@ func TestSelfDeactivationThroughTheAPI(t *testing.T) {
 	if rec := s.do(http.MethodPost, authpages.PathReactivate, s.form(authpages.PathSignIn)); rec.Code != http.StatusSeeOther {
 		t.Fatalf("POST reactivate = %d %s", rec.Code, rec.Body)
 	}
-	if body := s.page(); strings.Contains(body, authpages.PathReactivate) {
+	if body := s.page(); offersReactivation(t, body) {
 		t.Errorf("the page after the reactivation still offers it:\n%s", body)
 	}
 	if res := e.do("alice", http.MethodGet, "/accounts/verify_credentials", nil, nil); res.StatusCode != http.StatusUnauthorized {
@@ -678,7 +684,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 	wantUpdates("the second suspension", 0)
 	s := e.screens()
 	s.signIn("alice")
-	if body := s.page(); !strings.Contains(body, authpages.PathReactivate) || !strings.Contains(body, "moderation-actions") {
+	if body := s.page(); !offersReactivation(t, body) || authAt(authData(t, body), "status.actions.0") == nil {
 		t.Errorf("the page of a suspended, deactivated account:\n%s", body)
 	}
 	if rec := s.do(http.MethodPost, authpages.PathReactivate, s.form(authpages.PathSignIn)); rec.Code != http.StatusSeeOther {
@@ -722,7 +728,7 @@ func TestSelfDeactivationAndModeration(t *testing.T) {
 	}
 	s = e.screens()
 	s.signIn("alice")
-	if body := s.page(); strings.Contains(body, authpages.PathReactivate) {
+	if body := s.page(); offersReactivation(t, body) {
 		t.Errorf("the page of a banned account offers the reactivation:\n%s", body)
 	}
 }

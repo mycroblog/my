@@ -7,7 +7,7 @@
 # pinned in tools/go.mod, the per-operation security metadata that the client API enforces
 # (internal/interface/clientapi/internal/securitygen), and the TypeScript types of @mycroblog/mykit (pkg/mykit/ts) with
 # the openapi-typescript version pinned in its package.json (needs `scripts/task.sh web:install`). Every target is
-# committed; the web client reads the types of @mycroblog/mykit (ADR-0093 §3).
+# committed.
 #
 #   scripts/generate.sh          regenerate every target in place
 #   scripts/generate.sh --check  generate the committed targets into a scratch directory and fail if they differ
@@ -71,7 +71,7 @@ generate() {
 generate_ts() {
   local package="$1" out="$2" license="$3"
   mkdir -p "$(dirname "$out")"
-  (cd "$root" && "$package/node_modules/.bin/openapi-typescript" "$spec" --output "$out.tmp" >/dev/null)
+  (cd "$root" && bun --bun "$package/node_modules/.bin/openapi-typescript" "$spec" --output "$out.tmp" >/dev/null)
   printf '// SPDX-License-Identifier: %s\n' "$license" | cat - "$out.tmp" > "$out"
   rm "$out.tmp"
 }

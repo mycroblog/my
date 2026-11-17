@@ -35,7 +35,7 @@ func TestJobTypeNames(t *testing.T) {
 	for _, want := range []string{
 		"federation.purge_records", "federation.update_poll", "federation.refresh_stale_actors", "federation.refetch_walk",
 		"media.purge_unattached", "media.purge_remote_cache", "content.purge_link_cards", "graph.expire_mutes", "kv.purge_expired",
-		"notification.purge_error_group_notices", "diagnostics.purge_error_counts", "identity.purge_unused_oauth_clients",
+		"notification.purge_error_group_notices", "diagnostics.purge_error_counts", "diagnostics.purge_ux_counts", "identity.purge_unused_oauth_clients",
 		"supporters.purge_payment_receipts", "supporters.reconcile_payments", "supporters.apply_payment_event",
 		"supporters.sync_due", "supporters.cancel_for_closure", "identity.reject_for_closure", "identity.queue_closure_reminders",
 		"instance.closure_delete_actors", "instance.check_closure_delivery", "notification.closure_fanout",

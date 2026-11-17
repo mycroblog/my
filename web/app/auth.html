@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- The input of the auth entry of the Vite build (ADR-0028 §4, ADR-0090 §16) and its stand-in on the dev server. The
+     Go server serves its own shell of the entry (internal/interface/authpages, page.go), with the tags of the build's
+     manifest key auth.html and the screen's data, and never this file. -->
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>mycroblog</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/auth.tsx"></script>
+  </body>
+</html>

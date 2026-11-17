@@ -3,15 +3,17 @@ name: CI
 # The pull request and merge queue checks (ADR-0079). One workflow and one required status check, `check`, whose jobs
 # depend on the event:
 #
-# - pull_request: `preflight`, the checks a pull request's own files decide; the @my/ui story tests (ui-test.yml) when
-#   the ui context changes; the app/web screen stories (ui-test.yml with web:story-test) when the client changes; golangci-lint (`lint`) when Go changes; the Docker Compose smoke test (`docker-smoke`) when
-#   the docker context changes; the formatting of the OpenTofu modules (`tofu-fmt`) when the tofu context changes; the destructive changes of the schema against the base (`db-lint`) when the schema
-#   changes.
+# - pull_request: `preflight`, the checks a pull request's own files decide; golangci-lint (`lint`) when Go changes;
+#   the Docker Compose smoke test (`docker-smoke`) when the docker context changes; the formatting of the OpenTofu
+#   modules (`tofu-fmt`) when the tofu context changes; the destructive changes of the schema against the base
+#   (`db-lint`) when the schema changes. The OpenTofu checks that need tofu itself run in the slow suite.
 # - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
-#   server-test, client-static, client-test (2 shards), and repo, the container contracts of the adapters it changes
-#   (scripts/changed-contracts.sh), and the web E2E of the primary project (e2e, a build, 3 shards, and a report,
-#   web-e2e.yml) when the client changes, and the OpenTofu modules (`tofu`) when the tofu context changes; repo also checks the documentation
-#   site (app/docs) when the site context changes.
+#   server-test, and repo, and the container contracts of the adapters it changes (scripts/changed-contracts.sh);
+#   repo also checks the documentation site (web/docs), the catalog tools (tools/i18n), and the published packages
+#   when their contexts change; web runs the web client's static checks and its build, and web-test the tests of
+#   each web package the change reaches, a runner each; e2e
+#   runs the E2E tests of the web client when the e2e context changes, and layout the tests in a browser on the
+#   Storybook host's built catalog when the stories context changes.
 # - pull_request labelled `allow:full-ci`: both.
 #
 # Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
@@ -51,9 +53,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       full: ${{ steps.select.outputs.full }}
-      ui: ${{ steps.select.outputs.ui }}
       server: ${{ steps.select.outputs.server }}
-      client: ${{ steps.select.outputs.client }}
+      i18n: ${{ steps.select.outputs.i18n }}
       docker: ${{ steps.select.outputs.docker }}
       lint-go: ${{ steps.select.outputs.lint-go }}
       lint-agentkit: ${{ steps.select.outputs.lint-agentkit }}
@@ -61,6 +62,11 @@ jobs:
       schema: ${{ steps.select.outputs.schema }}
       tofu: ${{ steps.select.outputs.tofu }}
       site: ${{ steps.select.outputs.site }}
+      web: ${{ steps.select.outputs.web }}
+      web-packages: ${{ steps.select.outputs.web-packages }}
+      web-packages-json: ${{ steps.select.outputs.web-packages-json }}
+      e2e: ${{ steps.select.outputs.e2e }}
+      stories: ${{ steps.select.outputs.stories }}
       contracts: ${{ steps.select.outputs.contracts }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
@@ -97,9 +103,8 @@ jobs:
             echo "$job=$value" >> "$GITHUB_OUTPUT"
           }
           echo "full=$FULL" >> "$GITHUB_OUTPUT"
-          touches ui ui
-          touches server go schema api i18n mail
-          touches client ui web api i18n
+          touches server go schema api i18n
+          touches i18n i18n
           touches lint-go go
           # tools/agentkit is a Go module of its own outside the go context.
           if grep -qE '^tools/agentkit/(.*\.go|go\.(mod|sum)|\.golangci\.yml)$' "$RUNNER_TEMP/changed"; then
@@ -112,6 +117,15 @@ jobs:
           touches schema schema
           touches tofu tofu
           touches site site
+          touches web web
+          # The web packages whose tests the change reaches (ADR-0079 §18), separated by spaces: web:test runs these.
+          web_packages="$(scripts/changed-web-packages.sh --files "$RUNNER_TEMP/changed" | tr '\n' ' ')"
+          echo "web packages: $web_packages"
+          echo "web-packages=${web_packages% }" >> "$GITHUB_OUTPUT"
+          # The same as a JSON list, which the matrix of web-test reads.
+          echo "web-packages-json=$(printf '%s' "${web_packages% }" | jq -Rnc '[inputs] | join(" ") | split(" ") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
+          touches e2e e2e
+          touches stories stories
           # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
           # sides, so that a job's `if` finds a name with contains().
           contracts=" $(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | tr '\n' ' ')"
@@ -122,13 +136,12 @@ jobs:
   # --- Pull requests --------------------------------------------------------------------------------------------
 
   preflight:
-    # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile and Playwright image versions, the design
-    # tokens, the CSS 100vh check, the types of the email layout's compiler (app/mail), and the Documentation section
-    # of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
+    # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile's image versions, and the Documentation
+    # section of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
     # requests in the merge queue cannot break them and the queue does not run them again.
     # api:live-calls also runs here and in the merge queue's repo job: the spec and the live tests' calls can change in
     # two pull requests, and the live tests themselves run on neither.
-    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's repo job, because two pull requests
+    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's web job, because two pull requests
     # that each format their own lines can meet in one statement.
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -144,10 +157,8 @@ jobs:
         uses: ./.github/actions/setup-go
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
-        with:
-          node: "false"
       - name: Install the Bun packages
-        run: scripts/task.sh web:install i18n:install
+        run: scripts/task.sh web:install
       - parallel:
           - name: docs:lint
             run: scripts/task.sh docs:lint
@@ -157,6 +168,17 @@ jobs:
             run: scripts/task.sh shell:test
           - name: go:fmt-check
             run: scripts/task.sh go:fmt-check
+          # The OpenTofu checks that are scripts and need no tofu: the MY_ names, the backend fields, the
+          # classification of every setting (ADR-0164 §12, so that a pull request that adds a setting decides how the
+          # public modules take it), and the module sources.
+          - name: tofu:env-check
+            run: scripts/task.sh tofu:env-check
+          - name: tofu:backend-fields
+            run: scripts/task.sh tofu:backend-fields
+          - name: tofu:coverage
+            run: scripts/task.sh tofu:coverage
+          - name: tofu:sources
+            run: scripts/task.sh tofu:sources
           - name: web:fmt-check
             run: scripts/task.sh web:fmt-check
           - name: api:live-calls
@@ -175,55 +197,17 @@ jobs:
             run: scripts/task.sh mykit:mybot-licenses
           - name: mykit:mybot-ts-licenses
             run: scripts/task.sh mykit:mybot-ts-licenses
-          - name: mail:typecheck
-            run: scripts/task.sh mail:typecheck
           # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
           # owner approved the growth with the allow:docs-growth label (labelling reruns the checks).
           - name: docs:growth
             env:
               APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
             run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
+          # At most three waivers of the copy lint in one change, against the same base.
+          - name: i18n:waivers
+            run: scripts/task.sh i18n:waivers BASE=HEAD^1
           - name: docker:dockerfile-check
             run: scripts/task.sh docker:dockerfile-check
-          - name: web:playwright-image-check
-            run: scripts/task.sh web:playwright-image-check
-          - name: web:tokens
-            run: scripts/task.sh web:tokens
-          - name: web:lint-css
-            run: scripts/task.sh web:lint-css
-          # The pull request's own commits hold no merge commit: a branch is rebased onto main, never merged into.
-          # The checkout is the merge of the two with a depth of 2, so the commits are fetched first, one deeper
-          # than the pull request has, which leaves the commit it branched from without parents. Dependabot rebases
-          # its branches itself.
-          - name: docs:pr-commits
-            env:
-              AUTHOR: ${{ github.event.pull_request.user.login }}
-              COMMITS: ${{ github.event.pull_request.commits }}
-              BASE_SHA: ${{ github.event.pull_request.base.sha }}
-              HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-            run: |
-              if [ "$AUTHOR" = "dependabot[bot]" ]; then
-                echo "A Dependabot update: skipped."
-                exit 0
-              fi
-              git fetch --no-tags --quiet --depth="$((COMMITS + 1))" origin "$HEAD_SHA"
-              scripts/task.sh docs:pr-commits BASE="$BASE_SHA" HEAD="$HEAD_SHA"
-
-  ui-test:
-    # The @my/ui story tests (ADR-0110), on pull requests alone: a pull request that changes a screenshot fixes its
-    # baselines itself, and a change from stacking two of them is rare.
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.ui == 'true'
-    uses: ./.github/workflows/ui-test.yml
-
-  web-story-test:
-    # The app/web screen stories (ADR-0165 §1): their play functions and axe, on pull requests alone, like ui-test. They
-    # render the whole app with the features' MSW handlers, so any change to the client can break them.
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.client == 'true'
-    uses: ./.github/workflows/ui-test.yml
-    with:
-      task: web:story-test
 
   lint:
     # golangci-lint over the modules a pull request changes (ADR-0079), through the area tasks. The merge queue does not
@@ -285,12 +269,10 @@ jobs:
         run: scripts/task.sh docker:alert-rules
       - name: docker:smoke
         run: scripts/task.sh docker:smoke
-      - name: docker:web-reproducible
-        run: scripts/task.sh docker:web-reproducible
 
   tofu-fmt:
     # The formatting of deploy/opentofu (ADR-0010), which each file decides alone, so the merge queue does not run it
-    # again. The checks that read several modules run in the merge queue's `tofu` job.
+    # again. The checks that run tofu on several modules run in the slow suite.
     needs: changes
     if: github.event_name == 'pull_request' && needs.changes.outputs.tofu == 'true'
     runs-on: ubuntu-latest
@@ -357,8 +339,8 @@ jobs:
       - name: Set up Go
         uses: ./.github/actions/setup-go
         id: go
-      # The api checks bundle the spec with Redocly on Bun. i18n:lint runs once, in client-static, which every i18n change
-      # also selects.
+      # The api checks bundle the spec with Redocly on Bun. i18n:lint runs once, in repo, which every i18n change also
+      # selects.
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       # The db:check and db:lint steps use Atlas, and the PostgreSQL ones the container of db:up. Mostly waiting on the
@@ -375,9 +357,8 @@ jobs:
       # once: fetch it before them.
       - name: Fetch the Redocly CLI once
         run: scripts/task.sh api:warm
-      # mail:gen-check compiles the email layout with the token colors of the merged main: a pull request that changes
-      # the tokens and one that changes the layout can each be fresh alone (ADR-0081).
-      - name: Install the client workspace, which holds the email layout's packages
+      # api:generate-check runs the openapi-typescript of @mycroblog/mykit.
+      - name: Install the Bun workspace
         run: scripts/task.sh web:install
       - name: Wait for Atlas and PostgreSQL
         wait: db
@@ -424,8 +405,6 @@ jobs:
             run: scripts/task.sh api:spec-check
           - name: api:license-scope
             run: scripts/task.sh api:license-scope
-          - name: mail:gen-check
-            run: scripts/task.sh mail:gen-check
 
   server-test:
     # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0015); the slow suite runs them
@@ -449,17 +428,6 @@ jobs:
         run: scripts/task.sh go:test
         env:
           TEST_VALKEY_REQUIRED: "1"
-
-  e2e:
-    # The web E2E of the primary project (ADR-0079 §5, ADR-0015 §1: every spec, en at 1440 px; the width and locale
-    # projects stay in the Nightly) when the group changes the client, on 3 shards of one build. Pull requests do not
-    # run it; with `allow:full-ci` they do.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
-    uses: ./.github/workflows/web-e2e.yml
-    with:
-      matrix: pr
-      shards: 3
 
   contracts:
     # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job,
@@ -500,125 +468,15 @@ jobs:
         if: contains(env.CONTRACTS, ' acme ')
         run: scripts/task.sh go:test-acme
 
-  tofu:
-    # The checks of deploy/opentofu (ADR-0010) that read more than one file, when the group changes the tofu context:
-    # the modules call each other and the examples call the modules, and the scripts compare the modules with the
-    # configuration reference, the server's job types, and the guides, so two pull requests can break them together.
-    # The steps are those of tofu:check after its formatting check (the pull request's `tofu-fmt`), in its order and
-    # one after another: validate and the tests already run 4 modules at a time, and each init writes the plugin
-    # cache the others read. Nothing reaches a cloud: the tests mock the providers or call a local stub.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.tofu == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Read the OpenTofu version
-        id: tofu
-        run: echo "version=$(awk '$1 == "opentofu" { print $2 }' .tool-versions)" >> "$GITHUB_OUTPUT"
-      - name: Set up OpenTofu
-        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
-        with:
-          tofu_version: ${{ steps.tofu.outputs.version }}
-          tofu_wrapper: false
-      - name: tofu:env-check
-        run: scripts/task.sh tofu:env-check
-      - name: tofu:backend-fields
-        run: scripts/task.sh tofu:backend-fields
-      - name: tofu:coverage
-        run: scripts/task.sh tofu:coverage
-      - name: tofu:sources
-        run: scripts/task.sh tofu:sources
-      - name: tofu:validate
-        run: scripts/task.sh tofu:validate
-      - name: tofu:test
-        run: scripts/task.sh tofu:test
-      - name: tofu:example-test
-        run: scripts/task.sh tofu:example-test
-      - name: tofu:git-source-test
-        run: scripts/task.sh tofu:git-source-test
-      - name: tofu:state-test
-        run: scripts/task.sh tofu:state-test
-      - name: tofu:db-state-test
-        run: scripts/task.sh tofu:db-state-test
-      - name: tofu:aws-plan-test
-        run: scripts/task.sh tofu:aws-plan-test
-
-  client-static:
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      # The packages and the generated files every step reads, once: the steps' own generators then skip.
-      - name: Generate the client files
-        run: scripts/task.sh web:generate
-      # web:lint-rules copies its fixtures into app/web/src, so the steps that read app/web/src run after it.
-      - parallel:
-          - name: web:lint-rules
-            run: scripts/task.sh web:lint-rules
-          - name: ui:typecheck
-            run: scripts/task.sh ui:typecheck
-          - name: i18n:lint
-            run: scripts/task.sh i18n:lint
-          - name: i18n:typecheck
-            run: scripts/task.sh i18n:typecheck
-      - parallel:
-          - name: web:typecheck
-            run: scripts/task.sh web:typecheck
-          - name: web:oxlint
-            run: scripts/task.sh web:oxlint
-          - name: web:knip
-            run: scripts/task.sh web:knip
-          - name: web:dist
-            run: scripts/task.sh web:dist
-
-  client-test:
-    # Vitest of app/web in two shards, the longest job otherwise; the second shard, the shorter half, also runs app/ui
-    # and tools/i18n. No explicit name: GitHub names the jobs `client-test (1/2)` and `client-test (2/2)`, and a skipped
-    # job, whose matrix is never expanded, plain `client-test`.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.client == 'true'
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        shard: [1/2, 2/2]
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      - name: Generate the client files
-        run: scripts/task.sh web:generate
-      - parallel:
-          - name: web:test
-            run: scripts/task.sh web:test SHARD=${{ matrix.shard }}
-          # On the second shard, whose half of the web tests is the shorter one.
-          - name: ui:unit-test
-            if: matrix.shard == '2/2'
-            run: scripts/task.sh ui:unit-test
-          - name: i18n:test
-            if: matrix.shard == '2/2'
-            run: scripts/task.sh i18n:test
-
   repo:
     # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
-    # files) and inventories (the names each document must mention), the ADR numbers, the bun fmt check of the TS packages, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
+    # files) and inventories (the names each document must mention), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
     # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
     # pkg/mybot/ts when the mykit context changes (their licenses run in preflight). Also the build of the documentation
-    # site (app/docs, ADR-0150 §7) and its tsc, Oxlint, and knip when the site context changes: the build fails on a
+    # site (web/docs, ADR-0150 §7) and its tsc, Oxlint, and knip when the site context changes: the build fails on a
     # broken link or a page that does not render, which two pull requests can cause together (one removes a heading, the other links to it), so it runs on
-    # the merge group and not in preflight. A step here rather than a job of its own keeps a group at 6 jobs.
+    # the merge group and not in preflight. Also the catalog lint and the tests of tools/i18n when the i18n context
+    # changes. The web client's checks run in web, and its packages' tests in web-test.
     needs: changes
     if: needs.changes.outputs.full == 'true'
     runs-on: ubuntu-latest
@@ -636,14 +494,11 @@ jobs:
       - name: Build pkg/mykit and pkg/mybot once
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:warm
-      # web:fmt-check needs only Bun. The TypeScript checks of @mycroblog/mykit run with the client workspace's packages
-      # (tsc and Oxlint on Node.js), and so does Astro, which builds the documentation site.
+      # The TypeScript checks of the packages run with the workspace's packages, on Bun.
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
-        with:
-          node: ${{ needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' }}
       - name: Install the Bun packages
-        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true'
+        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true'
         run: scripts/task.sh web:install
       # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
       - parallel:
@@ -665,15 +520,25 @@ jobs:
             run: scripts/task.sh docs:adr-numbers
           - name: docs:ci-coverage
             run: scripts/task.sh docs:ci-coverage
-          # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet.
-          - name: web:fmt-check
-            run: scripts/task.sh web:fmt-check
           # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
           - name: api:live-calls
             run: scripts/task.sh api:live-calls
+          - name: i18n:lint
+            if: needs.changes.outputs.i18n == 'true'
+            run: scripts/task.sh i18n:lint
+          # The web tasks compile the catalogs first; a change to tools/i18n alone selects none of them.
+          - name: i18n:compile
+            if: needs.changes.outputs.i18n == 'true'
+            run: scripts/task.sh i18n:compile
+          - name: i18n:typecheck
+            if: needs.changes.outputs.i18n == 'true'
+            run: scripts/task.sh i18n:typecheck
+          - name: i18n:knip
+            if: needs.changes.outputs.i18n == 'true'
+            run: scripts/task.sh i18n:knip
           # The check of the site context (site:check): copy the published documents in and build the site as the
-          # deploy combines it, checking what it tells search engines, and run its unit tests, tsc, Oxlint, and knip on app/docs, which
-          # selects no client context (its bun fmt is web:fmt-check above), and the check of its translations.
+          # deploy combines it, checking what it tells search engines, and run its unit tests, tsc, Oxlint, and knip on
+          # web/docs (its bun fmt is web:fmt-check, in the web job), and the check of its translations.
           - name: docs:site-index-check
             if: needs.changes.outputs.site == 'true'
             run: scripts/task.sh docs:site-index-check
@@ -769,6 +634,12 @@ jobs:
             if: needs.changes.outputs.mykit == 'true'
             run: scripts/task.sh mykit:mybot-ts-test
 
+      # After the parallel checks: its tests start the CLI as a process per case, and the checks above, sharing the
+      # runner, hold each case past bun test's 5 s.
+      - name: i18n:test
+        if: needs.changes.outputs.i18n == 'true'
+        run: scripts/task.sh i18n:test
+
       # After the parallel checks, whose mykit:ts-build would rewrite mykit's dist/ beside the build of mybot: the ESM
       # build of @mycroblog/mybot on Node.js 22, the oldest Node.js it supports, and on Deno (ADR-0093 §9), a bot run on
       # each (pkg/mybot/ts/test/runtimes.mjs). Bun runs the unit tests above.
@@ -789,14 +660,175 @@ jobs:
         if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:mybot-ts-runtimes
 
+  e2e-build:
+    # The test build of bin/my, with the web client embedded, built once for the jobs of e2e, so that every one of
+    # them tests the same build (ADR-0079 §9).
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: go:bin
+        run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
+      - name: Keep bin/my for the E2E jobs
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-my
+          path: bin/my
+          retention-days: 1
+
+  e2e:
+    # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
+    # test build of bin/my that e2e-build made, when the e2e context changes: a workspace package that @my/app or
+    # @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from Playwright's CLI, run
+    # on Bun. Four jobs side by side, each with a server of its own and a quarter of the spec files (Playwright's
+    # --shard): the tests take most of the time, and a pull request waits for the slowest job.
+    needs: [changes, e2e-build]
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
+        # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      - name: Fetch bin/my
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: e2e-my
+          path: bin
+      # An artifact does not keep the file's mode.
+      - name: Make bin/my executable
+        run: chmod +x bin/my
+      - name: web:e2e-built
+        # What the client does, once: a test that fails runs again, twice at most, so that a test that fails only
+        # sometimes does not hold a pull request. The slow suite finds those tests (slow-suite.yml's e2e).
+        run: scripts/task.sh web:e2e-built -- --retries=2 --shard=${{ matrix.shard }}/4
+
+  web:
+    # The web client's static checks and its build: the tokens of web/design-tokens (ADR-0059), the components of
+    # web/design-system and web/app-components (ADR-0025), the platform of web/platform and the server data of
+    # web/app-data (ADR-0028), the features and the app of web/app-features and web/app with the app's build
+    # (ADR-0025 §9), the development packages web/devtools (ADR-0168) and web/storybook (ADR-0165), and what the
+    # production build holds: no @my/devtools, the license notice of each font, and the editor in a chunk of its own.
+    # The steps run one after another: each check uses the runner's cores itself.
+    needs: changes
+    if: needs.changes.outputs.full == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet. It needs
+      # only Bun, and any change can break it.
+      - name: web:fmt-check
+        run: scripts/task.sh web:fmt-check
+      - name: Install the Bun packages
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:install
+      - name: web:typecheck
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:typecheck
+      - name: web:lint
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:lint
+      - name: web:direction
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:direction
+      - name: web:knip
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:knip
+      - name: web:build
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:build
+      - name: web:build-check
+        if: needs.changes.outputs.web == 'true'
+        run: scripts/task.sh web:build-check
+
+  web-test:
+    # The tests of the web packages the change reaches (scripts/changed-web-packages.sh, ADR-0079 §18), which a change
+    # outside the web context can do (pkg/mykit/ts); the slow suite runs every package. A package a runner: a test
+    # process uses a core, and a test that waits for one passes its limit.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.web-packages != ''
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.changes.outputs.web-packages-json) }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:test
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: scripts/task.sh web:test PACKAGES="$PACKAGE"
+
+  layout:
+    # The tests in a browser on the built catalog (ADR-0171 §1, §4), with the E2E tests' runner and no server, when
+    # the stories context changes: the layout tests of the design system's layout parts and overlays, and the browser
+    # tests of the parts.
+    # Chromium comes from Playwright's CLI, run on Bun.
+    needs: changes
+    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.stories == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      - name: web:stories
+        run: scripts/task.sh web:stories
+      - name: web:layout-test-built
+        run: scripts/task.sh web:layout-test-built
+      - name: web:browser-test-built
+        run: scripts/task.sh web:browser-test-built
+
   check:
     # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when
     # every job above passed, or was skipped because the event or the change does not need it. A job that calls a
-    # reusable workflow fails when a called job fails, so a failed story test fails `check`. `always()` makes it report
+    # `always()` makes it report
     # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
     # reports nothing, rather than a pass that checked nothing.
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [changes, preflight, ui-test, web-story-test, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, e2e, tofu, client-static, client-test, repo]
+    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, web, web-test, e2e-build, e2e, layout]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a check job failed or was cancelled

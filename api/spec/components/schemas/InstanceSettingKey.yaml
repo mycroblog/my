@@ -123,3 +123,4 @@ enum:
   - funding_meter_target_amount
   - funding_meter_target_currency
   - funding_meter_rail
+  - ux_measurement

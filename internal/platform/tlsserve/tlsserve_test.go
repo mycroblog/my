@@ -14,6 +14,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/platform/tlsserve"
@@ -183,28 +184,29 @@ func writeFile(name string, data []byte, modTime time.Time) error {
 
 func TestFileSourceWatch(t *testing.T) {
 	t.Parallel()
-	dir := t.TempDir()
-	first := newCert(t, 1, "social.example")
-	certFile, keyFile := first.WriteFiles(t, dir, time.Now().Add(-time.Hour))
-	h := tlsserve.NewHolder("social.example")
-	s := tlsserve.NewFileSource(h, certFile, keyFile, slog.New(slog.DiscardHandler))
-	if err := s.Load(); err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := context.WithCancel(t.Context())
-	done := make(chan struct{})
-	go func() { s.Watch(ctx, 10*time.Millisecond); close(done) }()
-	t.Cleanup(func() { cancel(); <-done })
+	synctest.Test(t, func(t *testing.T) {
+		dir := t.TempDir()
+		first := newCert(t, 1, "social.example")
+		certFile, keyFile := first.WriteFiles(t, dir, time.Now().Add(-time.Hour))
+		h := tlsserve.NewHolder("social.example")
+		s := tlsserve.NewFileSource(h, certFile, keyFile, slog.New(slog.DiscardHandler))
+		if err := s.Load(); err != nil {
+			t.Fatal(err)
+		}
+		ctx, cancel := context.WithCancel(t.Context())
+		done := make(chan struct{})
+		go func() { s.Watch(ctx, 10*time.Millisecond); close(done) }()
+		t.Cleanup(func() { cancel(); <-done })
 
-	second := newCert(t, 2, "social.example")
-	second.WriteFiles(t, dir, time.Now())
-	deadline := time.Now().Add(5 * time.Second)
-	for !bytes.Equal(h.Certificate("social.example").Certificate[0], second.Leaf.Raw) {
-		if time.Now().After(deadline) {
+		second := newCert(t, 2, "social.example")
+		second.WriteFiles(t, dir, time.Now())
+		// The next look at the files, 10ms on the bubble's clock, finds them replaced.
+		<-time.After(10 * time.Millisecond)
+		synctest.Wait()
+		if !bytes.Equal(h.Certificate("social.example").Certificate[0], second.Leaf.Raw) {
 			t.Fatal("Watch did not load the replaced certificate")
 		}
-		time.Sleep(10 * time.Millisecond)
-	}
+	})
 }
 
 func TestRedirectHandler(t *testing.T) {

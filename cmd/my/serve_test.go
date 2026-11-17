@@ -20,6 +20,7 @@ import (
 
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
@@ -141,21 +142,21 @@ func freeAddr(t *testing.T) string {
 // waitReady polls url until it answers 200, failing when serve exits first.
 func waitReady(t *testing.T, url string, done <-chan int) {
 	t.Helper()
-	deadline := time.Now().Add(10 * time.Second)
-	for time.Now().Before(deadline) {
+	ready := testkit.Eventually(t, 10*time.Second, func() bool {
 		select {
 		case code := <-done:
 			t.Fatalf("serve exited with %d before it was ready", code)
 		default:
 		}
 		req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, url, nil)
-		if resp, err := http.DefaultTransport.RoundTrip(req); err == nil {
-			_ = resp.Body.Close()
-			if resp.StatusCode == http.StatusOK {
-				return
-			}
+		resp, err := http.DefaultTransport.RoundTrip(req)
+		if err != nil {
+			return false
 		}
-		time.Sleep(20 * time.Millisecond)
+		_ = resp.Body.Close()
+		return resp.StatusCode == http.StatusOK
+	})
+	if !ready {
+		t.Fatal("serve did not become ready")
 	}
-	t.Fatal("serve did not become ready")
 }

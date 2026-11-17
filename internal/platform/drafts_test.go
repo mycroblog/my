@@ -271,3 +271,57 @@ func TestScheduledArticleDraft(t *testing.T) {
 		t.Errorf("Get after publication = %v, want ErrNotFound", err)
 	}
 }
+
+// TestScheduledDraftIsPublishedByTheServersOwnLoop checks that a server started as the binary
+// starts it (platform.Serve) publishes a draft at its time with nothing pushing the queue by
+// hand: no Drain, no Run. The clock is a fake one that the test moves to the time of the
+// schedule, so the wait is for the server's loop to take the job, not for the minutes.
+func TestScheduledDraftIsPublishedByTheServersOwnLoop(t *testing.T) {
+	t.Parallel()
+	for _, q := range []string{"inline", "db"} {
+		t.Run(q, func(t *testing.T) {
+			t.Parallel()
+			start := time.Date(2026, 11, 1, 12, 0, 0, 0, time.UTC)
+			clock := testkit.NewClock(start)
+			cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": q})
+			var alice string
+			var draftID string
+			publishAt := start.Add(10 * time.Minute)
+			s := startApp(t, cfg, platform.AppOptions{Clock: clock}, platform.ServeOptions{}, func(a *platform.App) {
+				ctx := t.Context()
+				reg, err := a.Identity.RegisterLocalUser(ctx, identity.RegisterInput{
+					Username: "alice", Password: "correct horse battery staple", DisplayName: "alice",
+				})
+				if err != nil {
+					t.Fatal(err)
+				}
+				alice = reg.AccountID
+				draft, err := a.Drafts.Create(ctx, alice, appcontent.DraftInput{Text: "on time", Visibility: content.VisibilityPublic})
+				if err != nil {
+					t.Fatalf("Create = %v", err)
+				}
+				draftID = draft.Draft.ID
+				if _, err := a.Drafts.Schedule(ctx, alice, draftID, publishAt); err != nil {
+					t.Fatalf("Schedule = %v", err)
+				}
+			})
+			published := func() bool {
+				_, err := s.app.Content.Replay(t.Context(), alice, content.DraftIdempotencyKey(draftID))
+				return err == nil
+			}
+			if testkit.Eventually(t, 500*time.Millisecond, published) {
+				t.Fatal("the draft was published before its time")
+			}
+			clock.Set(publishAt.Add(time.Minute))
+			if !testkit.Eventually(t, 10*time.Second, published) {
+				t.Fatal("the server's own loop did not publish the draft at its time")
+			}
+			if !testkit.Eventually(t, 5*time.Second, func() bool {
+				_, err := s.app.Drafts.Get(t.Context(), alice, draftID)
+				return errors.Is(err, appcontent.ErrNotFound)
+			}) {
+				t.Error("the draft stayed after its publication")
+			}
+		})
+	}
+}

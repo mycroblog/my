@@ -3,10 +3,12 @@
 package platform_test
 
 import (
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -59,7 +61,52 @@ func (c *authClient) do(method, path string, form url.Values, header map[string]
 	return resp, string(b)
 }
 
-var csrfToken = regexp.MustCompile(`name="csrf_token" value="([^"]+)"`)
+var csrfToken = regexp.MustCompile(`"csrfToken":"([^"]+)"`)
+
+// authDataBlock is the JSON data block of an auth screen, the data that the web client's auth
+// entry renders.
+var authDataBlock = regexp.MustCompile(`<script type="application/json" id="auth">([^<]*)</script>`)
+
+// authData returns the data of the auth screen body, failing t when it has none.
+func authData(t *testing.T, body string) map[string]any {
+	t.Helper()
+	m := authDataBlock.FindStringSubmatch(body)
+	if m == nil {
+		t.Fatalf("the answer is no auth screen:\n%s", body)
+	}
+	var data map[string]any
+	if err := json.Unmarshal([]byte(m[1]), &data); err != nil {
+		t.Fatalf("the auth screen's data is not JSON: %v\n%s", err, m[1])
+	}
+	return data
+}
+
+// authAt returns the value at the dotted path of an auth screen's data ("status.verifyEmail"),
+// with numbers for the elements of an array ("external.0.url"), or nil when there is none.
+func authAt(data map[string]any, path string) any {
+	var v any = data
+	for _, key := range strings.Split(path, ".") {
+		switch c := v.(type) {
+		case map[string]any:
+			v = c[key]
+		case []any:
+			i, err := strconv.Atoi(key)
+			if err != nil || i < 0 || i >= len(c) {
+				return nil
+			}
+			v = c[i]
+		default:
+			return nil
+		}
+	}
+	return v
+}
+
+// authText returns the string at path of an auth screen's data, "" when there is none.
+func authText(data map[string]any, path string) string {
+	s, _ := authAt(data, path).(string)
+	return s
+}
 
 // form fetches the sign-in screen and returns its form fields with the anti-forgery token.
 func (c *authClient) form(fields ...string) url.Values {
@@ -113,7 +160,7 @@ func TestSignInScreens(t *testing.T) {
 	if !strings.HasPrefix(first, identity.SessionTokenPrefix) {
 		t.Fatalf("session cookie = %q", first)
 	}
-	if _, body := c.do(http.MethodGet, authpages.PathSignIn, nil, nil); !strings.Contains(body, authpages.PathSignOut) {
+	if _, body := c.do(http.MethodGet, authpages.PathSignIn, nil, nil); authText(authData(t, body), "screen") != "signed_in" {
 		t.Fatalf("signed-in screen = %s", body)
 	}
 

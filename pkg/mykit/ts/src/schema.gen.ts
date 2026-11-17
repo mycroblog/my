@@ -2643,6 +2643,27 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/notifications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Get a notification
+         * @description One of the user's notifications, as the list shows it. A notification that is not the
+         *     user's, is dismissed, or that the list leaves out is a 404.
+         */
+        get: operations["getNotification"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/notifications/{id}/dismiss": {
         parameters: {
             query?: never;
@@ -4237,6 +4258,12 @@ export interface paths {
          *       is an `Announcement`.
          *     - `announcement_removed`: an announcement no longer shows (it was withdrawn, or its
          *       window changed). `data` is `{"id": "<announcement id>"}`.
+         *     - `delete`: a status that the user may have seen was deleted by its author, a moderator,
+         *       or its remote server. `data` is `{"id": "<status id>"}`; remove the status, and the boosts
+         *       of it, wherever they show. It is sent to the users who may see the status now (its
+         *       visibility, their follows, and blocks apply), not to the recipients of a `direct` post
+         *       other than its author. Purges of many statuses at once (an account's deletion, the
+         *       automatic deletion of old posts) send none.
          *
          *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
          *     the access token stops being valid, when the client does not keep up, and when it shuts
@@ -4291,6 +4318,8 @@ export interface paths {
          *       their `local` posts; the federated timeline has the public posts of local and remote
          *       accounts, never `local` posts, and neither has boosts. A remote post arrives when the
          *       server stores it.
+         *     - `delete`: a status that the timeline may have listed for the user was deleted, as
+         *       `GET /api/v1/streaming` sends it. `data` is `{"id": "<status id>"}`.
          *
          *     A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
          *     the access token stops being valid, when the setting of the timeline becomes `off`, when
@@ -5765,6 +5794,38 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/client_measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Report samples of how fast the web client responds
+         * @description Reports samples of how fast the web client responded, for the operators of the server: up
+         *     to 50 of them in a body of at most 16 KiB of `application/json`. A report that reaches the
+         *     operation is answered 204, which never tells whether it was kept; the limit of requests per
+         *     client IP (429) and an unavailable server (503) answer as for every operation. The server
+         *     ignores a body of another content type or over the size, and a body it cannot read; it
+         *     drops each sample whose name is not one of its metric or whose value is out of range, keeps
+         *     at most 10 reports a minute from each client IP, and takes nothing while the instance
+         *     setting `ux_measurement` is off (`ux_measurement` of the instance).
+         *
+         *     The client sends a sample of its page views, and nothing that identifies a person: a sample
+         *     names a route by its ID, never by its URL. A report may be sent without an access token,
+         *     with `navigator.sendBeacon` while the page is left. An access token that is sent must be
+         *     valid, as for every operation.
+         */
+        post: operations["reportClientMeasurements"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/queue": {
         parameters: {
             query?: never;
@@ -6633,6 +6694,29 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/ux_measurements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List the UX measurements
+         * @description The samples of how fast the web client responded (`POST /client_measurements`), summed over
+         *     the last `hours` hours, the current one included, by metric and name, with their buckets and
+         *     75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+         *     permission.
+         */
+        get: operations["listUXMeasurements"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/domain_actions/{id}/lift": {
         parameters: {
             query?: never;
@@ -7268,36 +7352,122 @@ export interface paths {
         };
         /**
          * Read the instance theme
-         * @description The current theme of the web client: the overridden design tokens and the
-         *     custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-         *     `manage_settings` permission.
+         * @description The theme of the web client as its administrators edit it: the draft token set and the set
+         *     in effect. Each omits what was never saved or published. A set lists the overrides that apply
+         *     in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+         *     retired their token or changed its bounds; the server leaves those out of the stylesheet and
+         *     the next save of the draft drops them. Needs the `manage_settings` permission.
          */
         get: operations["getAdminTheme"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/draft": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
         /**
-         * Replace the instance theme
-         * @description Records a revision of the theme, which every visitor's web client and the server-rendered
-         *     pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-         *     few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-         *     their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-         *     change are kept (the audit log's `setting_changed` of `theme`).
+         * Save the draft of the instance theme
+         * @description Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+         *     effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+         *     stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+         *     overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+         *     resets the theme.
          *
-         *     The overridable tokens are the web client's design tokens except the primitive palette
-         *     (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
-         *     (`#rrggbbaa` for `color-overlay`); the other tokens take `value`: a length is `0` or a `rem`
-         *     / `px` value within the token's bounds, a line height a number, a duration `ms` / `s`, an
-         *     easing a keyword or `cubic-bezier()`, a font family a list of family names, and an
-         *     `elevation-*` shadow `none` or up to four `[inset] <x> <y> [<blur> [<spread>]] <#color>`
-         *     layers. Every contrast pair of the color tokens, with the defaults of the tokens not
-         *     overridden, must meet WCAG 2.2 AA (4.5:1 for text, 3:1 for controls) in both color schemes.
-         *     The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-         *     does not read it, it runs under the same Content-Security-Policy as the client (only
-         *     same-origin resources), and what it does to contrast, layout, and focus is the
-         *     administrator's responsibility. A theme that breaks any rule is a 422
+         *     The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
+         *     and the spin duration of the web client's design tokens (the list generated from
+         *     `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+         *     charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+         *     take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
+         *     a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
+         *     of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
+         *     (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
          *     `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
          *     `manage_settings` permission.
          */
-        put: operations["setAdminTheme"];
+        put: operations["setAdminThemeDraft"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/draft/stylesheet": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Preview the draft of the instance theme
+         * @description The stylesheet that the draft would serve once published, for the administrator to apply
+         *     over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+         *     no draft was saved. Needs the `manage_settings` permission.
+         */
+        get: operations["getAdminThemeDraftStylesheet"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Publish the draft of the instance theme
+         * @description Publishes the draft under a new revision, which every visitor's web client and the
+         *     server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+         *     of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+         *     changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+         *     publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+         *     saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+         *     `manage_settings` permission.
+         */
+        post: operations["publishAdminTheme"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/theme/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Restore the previously published instance theme
+         * @description Publishes again, under a new revision, the token set published before the one in effect; the
+         *     draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+         *     restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+         *     other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+         *     meets a rule. Needs the `manage_settings` permission.
+         */
+        post: operations["restoreAdminTheme"];
         delete?: never;
         options?: never;
         head?: never;
@@ -12848,22 +13018,21 @@ export interface components {
         };
         /** @description The instance theme as its administrators edit it. */
         AdminTheme: {
-            /** @description The ID of the current theme revision; omitted when no theme was ever saved. */
-            revision?: string;
+            draft?: components["schemas"]["ThemeSet"];
+            published?: components["schemas"]["AdminThemeRevision"];
+        };
+        /** @description A publication of a token set, which made it the theme in effect. */
+        AdminThemeRevision: {
+            /** @description The ID of the publication, which names its stylesheet. */
+            revision: string;
             /**
              * Format: uri
-             * @description The stylesheet of the theme; omitted when the theme changes nothing.
+             * @description The stylesheet of the theme; omitted when the set overrides nothing.
              */
             stylesheet_url?: string;
-            /** @description The overridden tokens, in the order of the token list. */
-            tokens: components["schemas"]["ThemeTokenValue"][];
-            /** @description The custom CSS; empty for none. */
-            custom_css: string;
-            /**
-             * Format: date-time
-             * @description When the current revision was recorded; omitted when no theme was ever saved.
-             */
-            revised_at?: string;
+            set: components["schemas"]["ThemeSet"];
+            /** Format: date-time */
+            published_at: string;
         };
         /** @description The service closure as its administrators see it. */
         AdminServiceClosure: {
@@ -12969,6 +13138,21 @@ export interface components {
              * @enum {string}
              */
             kind: "route_error" | "boundary_error" | "uncaught" | "unhandledrejection";
+        };
+        /** @description One sample of how fast the web client responded. */
+        ClientMeasurement: {
+            metric: components["schemas"]["UXMetric"];
+            /** @description The route ID, interaction kind, action ID, or call transport that `metric` names. */
+            name: string;
+            /**
+             * Format: double
+             * @description The value in milliseconds, or in percent for `call_packet_loss`.
+             */
+            value: number;
+        };
+        /** @description Samples of how fast the web client responded, sent together. */
+        ClientMeasurementReport: {
+            measurements: components["schemas"]["ClientMeasurement"][];
         };
         /** @description The confirmation of the closure of the server. */
         CloseServiceRequest: {
@@ -15299,6 +15483,12 @@ export interface components {
              *     link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
              */
             link_cards_ignore_robots_txt: boolean;
+            /**
+             * @description Whether the server takes samples of how fast the web client responds
+             *     (`POST /client_measurements`). While it is false, the server takes none and the client sends
+             *     none.
+             */
+            ux_measurement?: boolean;
             translation: components["schemas"]["InstanceTranslation"];
             /**
              * @description The server maximum of the automatic deletion of old posts, which the about page shows so
@@ -15578,7 +15768,7 @@ export interface components {
          *     added; clients show the ones they know.
          * @enum {string}
          */
-        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail";
+        InstanceSettingKey: "registration_mode" | "max_status_length" | "default_locale" | "local_timeline_visibility" | "federated_timeline_visibility" | "preview_image" | "contact_account" | "contact_email" | "thumbnail" | "remote_media_policy" | "remote_media_cache_ttl_seconds" | "authorized_fetch" | "domain_actions_visibility" | "domain_actions_rationale_visibility" | "appeal_window_days" | "session_origins_retention_days" | "registration_origins_retention_days" | "reports_retention_days" | "moderation_actions_retention_days" | "audit_log_retention_days" | "search_indexing" | "ai_usage" | "indexable_default" | "search_visibilities" | "security_contact" | "require_media_description" | "link_cards" | "link_cards_ignore_robots_txt" | "finance_visibility" | "finance_viewer_item_names" | "finance_viewer_item_memos" | "finance_viewer_income" | "supporter_list_visibility" | "income_visibility" | "federation_mode" | "federation_scope" | "user_app_registration" | "dynamic_client_registration" | "oauth_metadata_document_clients" | "voice_room_starters" | "voice_public_summary" | "voice_participants_retention_days" | "hook_inbound_status_mode" | "hook_inbound_follow_mode" | "hook_signup_check_mode" | "hook_media_check_mode" | "hook_local_status_mode" | "hook_inbound_actor_mode" | "hook_local_profile_mode" | "hook_inbound_status_on_failure" | "hook_inbound_status_unfollowed_direct" | "hook_inbound_follow_on_failure" | "hook_signup_check_on_failure" | "hook_signup_check_reject" | "hook_local_status_account_age_days" | "hook_local_profile_account_age_days" | "hook_media_check_on_failure" | "hook_inbound_actor_on_failure" | "hook_decisions_retention_days" | "invite_creators" | "member_invite_max_active" | "member_invite_max_uses" | "member_invite_max_lifetime_seconds" | "public_counts" | "featured_accounts" | "login_providers_only" | "remote_media_cache_max_bytes" | "remote_status_retention_days" | "remote_status_max_retention_days" | "relay_status_retention_days" | "oauth_client_rate_limits" | "translation_providers" | "translation_provider_visibilities" | "translation_browser" | "translation_user_monthly_characters" | "translation_server_monthly_characters" | "translation_retention_days" | "translation_reports_to_server" | "auto_delete_default_enabled" | "auto_delete_default_min_age_days" | "auto_delete_default_keep_pinned" | "auto_delete_default_keep_bookmarked" | "auto_delete_default_keep_favourited" | "auto_delete_default_keep_media" | "auto_delete_default_keep_polls" | "auto_delete_default_keep_public" | "auto_delete_default_keep_local" | "auto_delete_default_keep_unlisted" | "auto_delete_default_keep_private" | "auto_delete_default_keep_direct" | "auto_delete_default_keep_min_boosts" | "auto_delete_default_keep_min_favourites" | "auto_delete_max_age_days" | "auto_delete_max_allow_pinned" | "auto_delete_max_kept_pins" | "auto_delete_max_allow_bookmarked" | "auto_delete_max_allow_favourited" | "auto_delete_max_allow_media" | "auto_delete_max_allow_polls" | "auto_delete_max_allow_visibilities" | "auto_delete_max_allow_thresholds" | "auto_delete_grace_days" | "single_user" | "max_drafts" | "max_scheduled_posts" | "max_scheduled_posts_per_day" | "scheduled_post_min_lead_minutes" | "scheduled_post_max_lead_days" | "article_authoring" | "max_article_bytes" | "max_article_images" | "auto_delete_default_keep_articles" | "auto_delete_max_allow_articles" | "event_creators" | "event_records_retention_days" | "funding_meter_visibility" | "funding_meter_target_amount" | "funding_meter_target_currency" | "funding_meter_rail" | "ux_measurement";
         /**
          * @description The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
          *     `minimum` to `maximum`. `enum`: one of `choices`. `locale`: a BCP 47 language tag.
@@ -17236,8 +17426,9 @@ export interface components {
          *       which.
          *     - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
          *       deleted; `reason` says why.
-         *     - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-         *       reason in `theme_errors` (`PUT /admin/theme`).
+         *     - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+         *       every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+         *       `POST /admin/theme/restore`).
          *     - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
          *       why (`/admin/instance/brand/...`).
          *     - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -17448,6 +17639,14 @@ export interface components {
             detail?: string;
             /** @description The request ID (the `X-Request-Id` response header), for reporting the problem. */
             request_id?: string;
+            /**
+             * @description The member of the request that a 422 is about, by its name in the request: a property of
+             *     the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+             *     field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+             *     wrong with its value without naming it, for the client to show beside that field. Absent
+             *     when the problem is not about one member.
+             */
+            field?: string;
         };
         /** @description One metadata field of a profile. */
         ProfileField: {
@@ -17949,10 +18148,9 @@ export interface components {
             /** @description What the administrators keep about the rule; empty when omitted. */
             note?: string;
         };
-        /** @description The whole theme; tokens left out go back to their defaults. */
+        /** @description A whole token set; tokens left out keep their defaults. */
         SetThemeRequest: {
             tokens: components["schemas"]["ThemeTokenValue"][];
-            custom_css: string;
         };
         /** @description What an import of a list of sign-up blocks did. */
         SignupBlockImportResult: {
@@ -18618,15 +18816,15 @@ export interface components {
             statuses_count: number;
         };
         /**
-         * @description One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
-         *     `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme
-         *     of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and ms for a
-         *     duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
-         *     `minimum`:1), `css_too_long` (`max` bytes), or `css_invalid` (not UTF-8 text).
+         * @description One reason a token set cannot be saved or published. `code` is `unknown_token`,
+         *     `duplicate_token`, `invalid_value` (the value does not have the token's shape; `scheme` names the
+         *     color scheme of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and
+         *     ms for a duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
+         *     `minimum`:1), or `too_many_overrides` (more than `max` tokens).
          */
         ThemeError: {
             /** @enum {string} */
-            code: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range" | "low_contrast" | "css_too_long" | "css_invalid";
+            code: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range" | "low_contrast" | "too_many_overrides";
             token?: string;
             /** @enum {string} */
             scheme?: "light" | "dark";
@@ -18637,14 +18835,37 @@ export interface components {
             max?: number;
         };
         /**
-         * @description A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-         *     lists why the theme cannot be saved; another 422 (a malformed request) has none.
+         * @description A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+         *     lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
          */
         ThemeProblem: components["schemas"]["Problem"] & {
             theme_errors?: components["schemas"]["ThemeError"][];
         };
+        /** @description A saved token set of the instance theme. */
+        ThemeSet: {
+            id: string;
+            /** @description The overrides that apply, in the order of the token list. */
+            tokens: components["schemas"]["ThemeTokenValue"][];
+            /**
+             * @description The overrides that no longer apply and are left out of the stylesheet: `reason` is
+             *     `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+             *     `out_of_range` (the token's kind or bounds changed).
+             */
+            stale_tokens: components["schemas"]["StaleThemeToken"][];
+            /** Format: date-time */
+            saved_at: string;
+        };
+        /** @description A stored override that no longer applies, as it was saved, and why. */
+        StaleThemeToken: {
+            token: string;
+            light?: string;
+            dark?: string;
+            value?: string;
+            /** @enum {string} */
+            reason: "unknown_token" | "duplicate_token" | "invalid_value" | "out_of_range";
+        };
         /**
-         * @description The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+         * @description The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
          *     and `dark` for a color token, `value` for the others.
          */
         ThemeTokenValue: {
@@ -18871,6 +19092,62 @@ export interface components {
             description?: string;
             events?: components["schemas"]["WebhookEventType"][];
         };
+        /**
+         * @description The samples whose value is above the bound of the bucket before and at most `le`. The last
+         *     bucket has no `le`: it holds the samples above every bound.
+         */
+        UXMeasurementBucket: {
+            /**
+             * Format: double
+             * @description The upper bound of the bucket, in the unit of the metric.
+             */
+            le?: number;
+            /** Format: int64 */
+            samples: number;
+        };
+        /** @description The UX measurements of a window of hours, by metric and then by most samples. */
+        UXMeasurementList: {
+            /**
+             * Format: date-time
+             * @description The start of the first hour of the window, in UTC.
+             */
+            since: string;
+            items: components["schemas"]["UXMeasurementSummary"][];
+        };
+        /** @description The samples of one metric and name over the window. */
+        UXMeasurementSummary: {
+            metric: components["schemas"]["UXMetric"];
+            /**
+             * @description The route ID, interaction kind, action ID, or call transport; `other` for the names past
+             *     the first 200 of the metric that a process of the server kept.
+             */
+            name: string;
+            /** Format: int64 */
+            samples: number;
+            /**
+             * Format: double
+             * @description The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+             *     the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+             */
+            p75?: number;
+            /** @description The samples by bucket, from the lowest bound up. */
+            buckets: components["schemas"]["UXMeasurementBucket"][];
+        };
+        /**
+         * @description What a UX measurement of the web client measures, and so what its name names. The values are
+         *     milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+         *
+         *     - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+         *       a long animation frame of a route, named by the route's ID (a pattern such as
+         *       `/_app/statuses/$id`, never the URL).
+         *     - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+         *       `replace`, `none`).
+         *     - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+         *     - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+         *       call transport (`p2p`, `livekit`, `sora`).
+         * @enum {string}
+         */
+        UXMetric: "lcp" | "inp" | "long_frame" | "transition" | "press" | "call_rtt" | "call_jitter" | "call_packet_loss";
         /**
          * @description Who may see a status: `public` everyone, listed on public timelines;
          *     `local` logged-in users of this instance and followers; `unlisted` everyone, kept off
@@ -19690,6 +19967,18 @@ export interface components {
             };
             content: {
                 "application/json": components["schemas"]["AdminTheme"];
+            };
+        };
+        /** @description The token set breaks a rule; nothing was saved or published. */
+        ThemeProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["ThemeProblem"];
             };
         };
         /** @description The service closure. */
@@ -23086,6 +23375,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NotificationMarker"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getNotification: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description The ID of the notification. */
+                id: components["schemas"]["Id"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The notification. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Notification"];
                 };
             };
             default: components["responses"]["Problem"];
@@ -26540,6 +26854,29 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    reportClientMeasurements: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ClientMeasurementReport"];
+            };
+        };
+        responses: {
+            /** @description The report was received, or ignored. */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     getAdminQueue: {
         parameters: {
             query?: never;
@@ -27507,6 +27844,31 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
+    listUXMeasurements: {
+        parameters: {
+            query?: {
+                /** @description The hours of the window, 24 by default. */
+                hours?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The measurements of the window. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UXMeasurementList"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
     liftDomainAction: {
         parameters: {
             query?: never;
@@ -28130,7 +28492,7 @@ export interface operations {
             default: components["responses"]["Problem"];
         };
     };
-    setAdminTheme: {
+    setAdminThemeDraft: {
         parameters: {
             query?: never;
             header?: never;
@@ -28144,18 +28506,57 @@ export interface operations {
         };
         responses: {
             200: components["responses"]["AdminTheme"];
-            /** @description The theme breaks a rule; nothing was saved. */
-            422: {
+            422: components["responses"]["ThemeProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    getAdminThemeDraftStylesheet: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The stylesheet of the draft. */
+            200: {
                 headers: {
-                    /** @description The locale of `title` and `detail`. */
-                    "Content-Language"?: string;
                     "Cache-Control": components["headers"]["CacheControl"];
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/problem+json": components["schemas"]["ThemeProblem"];
+                    "text/css": string;
                 };
             };
+            default: components["responses"]["Problem"];
+        };
+    };
+    publishAdminTheme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminTheme"];
+            422: components["responses"]["ThemeProblem"];
+            default: components["responses"]["Problem"];
+        };
+    };
+    restoreAdminTheme: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: components["responses"]["AdminTheme"];
+            422: components["responses"]["ThemeProblem"];
             default: components["responses"]["Problem"];
         };
     };

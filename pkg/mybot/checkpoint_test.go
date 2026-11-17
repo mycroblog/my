@@ -114,7 +114,7 @@ func TestFailedCatchUpHoldsThePosition(t *testing.T) {
 	bot, cfg, handled := streamingBot(t, f, clock)
 	runBot(t, bot)
 	<-sent
-	time.Sleep(100 * time.Millisecond)
+	f.waitLog(logWaits, "notification", live.Id)
 	if pos, _ := cfg.Store.Position(t.Context()); pos != "" {
 		t.Fatalf("position = %s before the catch-up succeeded, want none", pos)
 	}
@@ -148,7 +148,7 @@ func TestStreamWaitsForTheCatchUp(t *testing.T) {
 		if n == 1 {
 			// The stream brings the newer notification before the catch-up has read the older one.
 			<-sent
-			time.Sleep(100 * time.Millisecond)
+			f.waitLog(logWaits, "notification", live.Id)
 		}
 		return true
 	}
@@ -160,7 +160,7 @@ func TestStreamWaitsForTheCatchUp(t *testing.T) {
 	bot, cfg, handled := streamingBot(t, f, nil)
 	runBot(t, bot)
 	eventually(t, "both mentions processed", func() bool { return processed(cfg.Store, missed.Id, live.Id) })
-	time.Sleep(50 * time.Millisecond)
+	f.waitLog(logIdle, "position", live.Id) // nothing more is handed out
 	if got, want := handled(), []string{missed.Id, live.Id}; !slices.Equal(got, want) {
 		t.Errorf("handled %q, want %q", got, want)
 	}

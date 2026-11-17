@@ -65,8 +65,10 @@ type ExternalLogins interface {
 type externalButton struct {
 	// Label is the button's text: an OpenID Connect provider's display name as its
 	// administrator wrote it, never translated; the translated text for a github or discord provider.
-	Label string
-	URL   string
+	Label string `json:"label"`
+	URL   string `json:"url"`
+	// Kind is the provider's kind (identity.LoginProviderKind), whose mark the button shows.
+	Kind string `json:"kind"`
 }
 
 // externalButtons returns the links to the enabled providers, those that let new users sign
@@ -95,6 +97,7 @@ func (h *Handler) externalButtons(r *http.Request, returnTo string, signUp bool)
 		out = append(out, externalButton{
 			Label: label,
 			URL:   withReturnTo(appidentity.ExternalLoginPathPrefix+p.ID+"/start", returnTo),
+			Kind:  string(p.Kind),
 		})
 	}
 	return out
@@ -261,7 +264,7 @@ func (h *Handler) externalCallback(w http.ResponseWriter, r *http.Request) {
 	case res.SecondFactorChallenge != "":
 		h.askSecondFactor(w, r, res.SecondFactorChallenge, returnTo)
 	case res.SignUp != nil:
-		pg := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
+		pg := h.newPage(r, screenSignUp)
 		mode, err := h.o.Identity.RegistrationMode(r.Context())
 		if err != nil {
 			h.internalError(w, r, err)
@@ -283,7 +286,6 @@ func (h *Handler) externalCallback(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) renderExternalSignUp(w http.ResponseWriter, r *http.Request, status int, v appidentity.ExternalSignUpView, p *page) {
 	f := p.SignUp
 	f.External = &externalSignUpForm{Ticket: v.Ticket, Provider: v.ProviderName}
-	p.Title = p.L.ServerAuthExternalSignUpTitle(v.ProviderName)
 	if v.EmailVerified {
 		f.External.EmailVerifiedHint = p.L.ServerAuthExternalSignUpEmailVerified(v.ProviderName)
 	}
@@ -312,7 +314,7 @@ func (h *Handler) externalSignUp(w http.ResponseWriter, r *http.Request) {
 		h.internalError(w, r, err)
 		return
 	}
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthSignUpTitle)
+	p := h.newPage(r, screenSignUp)
 	f := newSignUpForm(p.L, mode)
 	p.SignUp = f
 	f.Username = strings.TrimSpace(form.Get(fieldUsername))
@@ -366,11 +368,11 @@ func (h *Handler) externalSignUpGone(w http.ResponseWriter, r *http.Request, err
 // externalSignUpForm is what the registration form of an account at a provider adds.
 type externalSignUpForm struct {
 	// Ticket is the sealed sign-up.
-	Ticket string
+	Ticket string `json:"ticket"`
 	// Provider is the provider's display name.
-	Provider string
+	Provider string `json:"provider"`
 	// EmailVerifiedHint tells that the provider verified the address in the form.
-	EmailVerifiedHint string
+	EmailVerifiedHint string `json:"emailVerifiedHint,omitempty"`
 }
 
 // checkFields sets the error of every field but the password that the identity module would

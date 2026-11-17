@@ -1,6 +1,6 @@
 {
   "moderation.action.category": {
-    "defaultMessage": "[{category,select,legal{Ŀḗḗɠȧȧŀ řḗḗȧȧşǿǿƞş} other{Ǿŧħḗḗř} spam{Şƥȧȧḿ} violation{Ṽīǿǿŀȧȧŧīǿǿƞ ǿǿƒ ŧħḗḗ īƞşŧȧȧƞƈḗḗ'ş řŭŭŀḗḗş}}]",
+    "defaultMessage": "[{category,select,legal{Ŀḗḗɠȧȧŀ řḗḗȧȧşǿǿƞş} other{Ǿŧħḗḗř} spam{Şƥȧȧḿ} violation{Ṽīǿǿŀȧȧŧīǿǿƞ ǿǿƒ ŧħḗḗ şḗḗřṽḗḗř'ş řŭŭŀḗḗş}}]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "moderation.action.kind": {

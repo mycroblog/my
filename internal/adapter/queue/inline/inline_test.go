@@ -5,6 +5,7 @@ package inline_test
 import (
 	"context"
 	"encoding/json"
+	"runtime"
 	"strconv"
 	"sync"
 	"testing"
@@ -123,7 +124,7 @@ func TestRunUntilWithSynchronousEnqueue(t *testing.T) {
 	var mu sync.Mutex
 	ran := map[string]bool{}
 	reg.Register("job", func(_ context.Context, j queue.Job) queue.Result {
-		time.Sleep(10 * time.Microsecond) // widens the window in which another worker holds the job
+		runtime.Gosched() // widens the window in which another worker holds the job
 		mu.Lock()
 		defer mu.Unlock()
 		ran[string(j.Payload)] = true

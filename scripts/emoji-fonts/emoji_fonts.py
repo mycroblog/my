@@ -6,7 +6,7 @@ checks their digests, and runs this through uv (uv.lock) after scripts/emoji-tab
 
     uv run --frozen --project scripts/emoji-fonts python -I scripts/emoji-fonts/emoji_fonts.py \
       --emoji-test emoji-test.txt --version 18.0.0 --colrv1 Noto-COLRv1.ttf --svg NotoColorEmoji-Regular.ttf \
-      --out app/ui/src/fonts/emoji --css app/ui/src/emoji.css
+      --out web/design-system/src/fonts/emoji --css web/design-system/src/emoji.css
 
 It writes, for each split, a COLRv1 and an OpenType-SVG WOFF2 into --out, and the @font-face rules of the family
 "my Noto Color Emoji" into --css. The splits follow the groups of emoji-test.txt, with Flags split into the country
@@ -14,7 +14,8 @@ flags (pairs of regional indicators) and the other flags; every sequence goes wh
 split's unicode-range is every code point of its sequences but those of TEXT_CODE_POINTS.
 
 It fails unless both fonts draw every fully-qualified and component sequence of emoji-test.txt as one glyph, in the
-whole font and in the split of the sequence, shaped by HarfBuzz. The outputs depend only on the inputs: running it
+whole font and in the split of the sequence, shaped by HarfBuzz, and unless the split's unicode-range claims every code
+point of each sequence but those that fall back to the OS emoji font by design (TEXT_FALLBACK_SEQUENCES). The outputs depend only on the inputs: running it
 twice writes the same bytes.
 """
 
@@ -36,7 +37,9 @@ FAMILY = "my Noto Color Emoji"
 
 # Code points that body text uses as ordinary characters, left out of every unicode-range so that the text fonts draw
 # them (ADR-0091 §10): the keycap bases (# * 0-9) and the symbols whose default presentation in emoji-test.txt is text and
-# that appear in running text. Their emoji presentation (#️⃣, ©️) falls back to the OS emoji font.
+# that appear in running text. Their emoji presentation (#️⃣, ©️) falls back to the OS emoji font, and so does a sequence
+# that holds one after its start (TEXT_FALLBACK_SEQUENCES): a browser draws a sequence with a face only when the face's
+# unicode-range claims every code point of it, and a face that claimed ↔ would draw every ↔ of running text as an emoji.
 TEXT_CODE_POINTS: frozenset[int] = frozenset(
     [
         0x0023,  # # number sign
@@ -57,13 +60,22 @@ TEXT_CODE_POINTS: frozenset[int] = frozenset(
         0x25C0,  # ◀ reverse button
         0x25FB,  # ◻ white medium square
         0x25FC,  # ◼ black medium square
-        0x2733,  # ✳ eight-spoked asterisk (the brand's spark, @my/ui Spark)
+        0x2733,  # ✳ eight-spoked asterisk
         0x2734,  # ✴ eight-pointed star
         0x2747,  # ❇ sparkle
         0x2934,  # ⤴ right arrow curving up
         0x2935,  # ⤵ right arrow curving down
         0x3030,  # 〰 wavy dash
         0x303D,  # 〽 part alternation mark
+    ]
+)
+
+# The sequences that hold a code point of TEXT_CODE_POINTS after their start, which the OS emoji font draws: the check
+# fails on any other sequence that its split's unicode-range does not claim whole.
+TEXT_FALLBACK_SEQUENCES: frozenset[tuple[int, ...]] = frozenset(
+    [
+        (0x1F642, 0x200D, 0x2194, 0xFE0F),  # 🙂‍↔️ head shaking horizontally
+        (0x1F642, 0x200D, 0x2195, 0xFE0F),  # 🙂‍↕️ head shaking vertically
     ]
 )
 
@@ -117,6 +129,24 @@ def read_splits(path: Path) -> list[Split]:
     if not splits:
         raise SystemExit(f"emoji-fonts: no sequences in {path}")
     return list(splits.values())
+
+
+def unclaimed(splits: list[Split]) -> tuple[list[tuple[int, ...]], list[str]]:
+    """Returns the sequences that their split's unicode-range does not claim whole and that the OS emoji font draws by
+    design (one that starts with a code point of TEXT_CODE_POINTS, or one of TEXT_FALLBACK_SEQUENCES), and a line for
+    each other such sequence, which no face would draw."""
+    expected, bad = [], []
+    for split in splits:
+        claimed = set(split.unicode_range())
+        for seq in split.sequences:
+            if all(cp in claimed for cp in seq):
+                continue
+            if seq[0] in TEXT_CODE_POINTS or seq in TEXT_FALLBACK_SEQUENCES:
+                expected.append(seq)
+                continue
+            missing = " ".join(f"{cp:04X}" for cp in seq if cp not in claimed)
+            bad.append(f"{' '.join(f'{cp:04X}' for cp in seq)} ({''.join(map(chr, seq))}) in {split.name}: {missing}")
+    return expected, bad
 
 
 def glyphs_of(face_blob: bytes, sequences: list[tuple[int, ...]]) -> list[str]:
@@ -190,7 +220,17 @@ def main() -> int:
         ("svg", args.svg, ["COLR", "CPAL"], "color-SVG"),
     ]
 
-    failures = []
+    to_os, failures = unclaimed(splits)
+    if failures:
+        print("emoji-fonts: a split's unicode-range does not claim every code point of its emoji:", file=sys.stderr)
+        print("\n".join(failures), file=sys.stderr)
+        return 1
+    missing = TEXT_FALLBACK_SEQUENCES - set(to_os)
+    if missing:
+        print("emoji-fonts: TEXT_FALLBACK_SEQUENCES lists sequences that need no fallback:", file=sys.stderr)
+        print("\n".join(" ".join(f"{cp:04X}" for cp in seq) for seq in sorted(missing)), file=sys.stderr)
+        return 1
+
     for _, path, _, _ in formats:
         for line in glyphs_of(path.read_bytes(), every):
             failures.append(f"{path.name}: {line}")
@@ -257,6 +297,7 @@ def main() -> int:
         total = sum(by_split.values())
         detail = ", ".join(f"{name} {size / 1000:.0f} kB" for name, size in by_split.items())
         print(f"emoji-fonts: {kind} {total / 1_000_000:.2f} MB in {len(by_split)} splits ({detail})")
+    print(f"emoji-fonts: {len(to_os)} sequences with a text code point fall back to the OS emoji font")
     return 0
 
 

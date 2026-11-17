@@ -13,7 +13,6 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The server-wide announcements (FR-726): the users' list with their reads, and the admin
@@ -193,14 +192,13 @@ func (s *Server) announcementProblem(ctx context.Context, err error) (problem, b
 	case errors.Is(err, instance.ErrAnnouncementWithdrawn):
 		return s.problem(ctx, http.StatusConflict, ProblemTypeBlank, l.ServerErrorsConflict(), ""), true
 	case errors.Is(err, instance.ErrAnnouncementTitle):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("title")), true
+		return s.fieldProblem(ctx, "title", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, instance.ErrAnnouncementWindow):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("ends_at")), true
+		return s.fieldProblem(ctx, "ends_at", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, instance.ErrAnnouncementTooLong):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(),
-			l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: instance.MaxAnnouncementBodyLength, Name: "text"})), true
+		return s.fieldProblem(ctx, "text", l.ServerErrorsTooLong(instance.MaxAnnouncementBodyLength)), true
 	case errors.Is(err, instance.ErrInvalidValue):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("text")), true
+		return s.fieldProblem(ctx, "text", l.ServerErrorsInvalidValue()), true
 	}
 	return problem{}, false
 }

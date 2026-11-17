@@ -67,9 +67,9 @@ func TestInstanceDocuments(t *testing.T) {
 		t.Errorf("GET /about/terms = %d, want the SPA shell", resp.StatusCode)
 	}
 
-	if _, body := c.do(http.MethodGet, authpages.PathSignUp, nil, ja); !strings.Contains(body, `id="sign-up-agreement"`) ||
-		!strings.Contains(body, `<a href="/about/terms"`) {
-		t.Errorf("sign-up page lacks the agreement:\n%s", body)
+	if _, body := c.do(http.MethodGet, authpages.PathSignUp, nil, ja); authText(authData(t, body), "documents.0.path") != "/about/terms" ||
+		authAt(authData(t, body), "documents.1") != nil {
+		t.Errorf("sign-up page lacks the agreement to the terms:\n%s", body)
 	}
 
 	resp, body = c.do(http.MethodGet, "/api/v1/instance", nil, ja)

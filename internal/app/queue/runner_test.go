@@ -6,45 +6,48 @@ import (
 	"context"
 	"errors"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/queue"
 )
 
-// slowClaimSource hands out one job after a delay, as a slow database would.
+// slowClaimSource hands out one job after a delay of the bubble's fake clock, as a slow database would.
 type slowClaimSource struct {
 	oneJobSource
 	delay time.Duration
 }
 
 func (s *slowClaimSource) Claim(ctx context.Context, w string, now time.Time, lease time.Duration) (queue.Job, bool, error) {
-	time.Sleep(s.delay)
+	<-time.After(s.delay)
 	return s.oneJobSource.Claim(ctx, w, now, lease)
 }
 
 // The handler's context ends no later than the lease, which starts before the claim: time spent
 // claiming is taken from the handler, so that no other worker can claim the job while it runs.
 func TestRunnerHandlerDeadlineEndsWithTheLease(t *testing.T) {
-	const lease = time.Second
-	src := &slowClaimSource{
-		oneJobSource: oneJobSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, completed: make(chan struct{})},
-		delay:        100 * time.Millisecond,
-	}
-	var deadline time.Time
-	reg := &queue.JobHandlerRegistry{}
-	reg.Register("slow", func(ctx context.Context, _ queue.Job) queue.Result {
-		deadline, _ = ctx.Deadline()
-		return queue.Done()
+	synctest.Test(t, func(t *testing.T) {
+		const lease = time.Second
+		src := &slowClaimSource{
+			oneJobSource: oneJobSource{emptySource: emptySource{claims: make(chan struct{}, 1)}, completed: make(chan struct{})},
+			delay:        100 * time.Millisecond,
+		}
+		var deadline time.Time
+		reg := &queue.JobHandlerRegistry{}
+		reg.Register("slow", func(ctx context.Context, _ queue.Job) queue.Result {
+			deadline, _ = ctx.Deadline()
+			return queue.Done()
+		})
+		r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Lease: lease})
+		before := time.Now()
+		if _, err := r.RunOnce(t.Context()); err != nil {
+			t.Fatal(err)
+		}
+		// The claim took 100ms: a deadline counted from after it would end that much later.
+		if latest := before.Add(lease + src.delay/2); deadline.IsZero() || deadline.After(latest) {
+			t.Errorf("handler deadline = %v, want no later than %v (the lease taken before the claim)", deadline, latest)
+		}
 	})
-	r := queue.NewPullRunner(src, reg, queue.RunnerOptions{Clock: clock{}, Lease: lease})
-	before := time.Now()
-	if _, err := r.RunOnce(t.Context()); err != nil {
-		t.Fatal(err)
-	}
-	// The claim took 100ms: a deadline counted from after it would end that much later.
-	if latest := before.Add(lease + src.delay/2); deadline.IsZero() || deadline.After(latest) {
-		t.Errorf("handler deadline = %v, want no later than %v (the lease taken before the claim)", deadline, latest)
-	}
 }
 
 // stalledSource never finishes recording a result until its context ends.

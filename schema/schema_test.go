@@ -190,25 +190,14 @@ func TestRequiresMatchTheImportsOfTheApplicationLayer(t *testing.T) {
 	}
 }
 
-// The CHECK constraint of instance_theme_tokens.token lists exactly the tokens a theme may override,
-// which are generated from the web client's theme.css (ADR-0059).
-func TestThemeTokenCheckMatchesTheTokenList(t *testing.T) {
-	var want []string
-	for _, tok := range instance.ThemeTokens() {
-		want = append(want, tok.Name)
-	}
-	check := regexp.MustCompile(`(?s)CREATE TABLE instance_theme_tokens \(.*?token [^\n]*CHECK \(token IN \((.*?)\)\)`)
+// No constraint names a theme token: the domain checks a token set against the list generated from
+// @my/design-tokens, so that renaming or retiring a token changes no schema (ADR-0059 §15).
+func TestNoConstraintNamesAThemeToken(t *testing.T) {
 	for name, sql := range map[string]string{"sqlite": schema.SQLite, "postgres": schema.Postgres} {
-		m := check.FindStringSubmatch(sql)
-		if m == nil {
-			t.Fatalf("%s: no CHECK on instance_theme_tokens.token", name)
-		}
-		var got []string
-		for _, q := range regexp.MustCompile(`'([^']+)'`).FindAllStringSubmatch(m[1], -1) {
-			got = append(got, q[1])
-		}
-		if !slices.Equal(got, want) {
-			t.Errorf("%s: CHECK lists %v, want %v", name, got, want)
+		for _, tok := range instance.ThemeTokens() {
+			if strings.Contains(sql, "'"+tok.Name+"'") {
+				t.Errorf("%s: the schema names the theme token %s", name, tok.Name)
+			}
 		}
 	}
 }

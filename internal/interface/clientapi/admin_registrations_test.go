@@ -207,7 +207,7 @@ func TestDecideRegistration(t *testing.T) {
 	}
 	long := `{"note":"` + strings.Repeat("a", identity.MaxDecisionNoteLength+1) + `"}`
 	res = e.adminBody(t, http.MethodPost, "/admin/registrations/"+registrationFern+"/approve", "admin-write", long)
-	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Detail == nil || !strings.Contains(*p.Detail, "note") {
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "note" {
 		t.Errorf("a too long note = %d %+v, want 422 on note", res.StatusCode, p)
 	}
 	if len(regs.decided) != 2 {

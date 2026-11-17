@@ -8,11 +8,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "closure.document_title": {
-    "defaultMessage": "‮Ↄʅosǝp – {server}‬",
+    "defaultMessage": "‮Ↄʅosǝp | {server}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "closure.notice": {
-    "defaultMessage": "‮Wǝssɐƃǝ ɟɹoɯ ʇɥǝ ɐpɯıuısʇɹɐʇoɹs‬",
+    "defaultMessage": "‮Noʇıɔǝ ɟɹoɯ ʇɥǝ ɐpɯıuısʇɹɐʇoɹs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "closure.status_page": {

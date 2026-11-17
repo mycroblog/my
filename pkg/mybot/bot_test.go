@@ -67,8 +67,10 @@ func TestStreamCatchesUpAfterReconnectingOnce(t *testing.T) {
 	})
 	stop := runBot(t, bot)
 	eventually(t, "the three mentions processed", func() bool { return processed(cfg.Store, a.Id, b.Id, c.Id) })
-	// Give a duplicate the time to arrive.
-	time.Sleep(100 * time.Millisecond)
+	// The duplicates arrived: a again on the stream after c, skipped, and nothing more is handed out with c
+	// processed.
+	f.waitLog(logSkipped, "notification", a.Id)
+	f.waitLog(logIdle, "position", c.Id)
 	if err := stop(); err != nil {
 		t.Fatalf("Run: %v", err)
 	}
@@ -479,7 +481,7 @@ func TestShutdownCancelsAfterTheGracePeriod(t *testing.T) {
 	case <-time.After(5 * time.Second):
 		t.Fatal("the handler's context was not cancelled")
 	}
-	time.Sleep(20 * time.Millisecond)
+	f.waitLog(logStopped, "notification", id(10))
 	if processed(cfg.Store, id(10)) {
 		t.Error("the cancelled notification was recorded as processed")
 	}
@@ -515,7 +517,7 @@ func TestCatchUpStopsAtThePositionAndTheLimit(t *testing.T) {
 	})
 	runBot(t, bot)
 	eventually(t, "the new mention processed", func() bool { return processed(cfg.Store, id(8)) })
-	time.Sleep(50 * time.Millisecond)
+	f.waitLog(logIdle, "position", id(8)) // nothing more is handed out
 	mu.Lock()
 	defer mu.Unlock()
 	if !slices.Equal(handled, []string{id(8)}) {

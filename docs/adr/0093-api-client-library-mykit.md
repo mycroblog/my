@@ -36,14 +36,14 @@ pkg/mykit/
 - `mykit` の `go.mod` は `github.com/mycroblog/my`（サーバーのモジュール）を require しない。これを検査する（下の §8）。
   別モジュールなので、Go の `internal` の規則は効かない。代わりにモジュールの境界が依存を止める。`mykit` は標準ライブラリと、生成物が要る依存だけを使う。生成物をビルドに含めるサードパーティのモジュールは `github.com/oapi-codegen/runtime`（Apache-2.0）・`github.com/apapsch/go-jsonmerge/v2`（MIT）・`github.com/google/uuid`（BSD-3-Clause）の 3 つで、`go.sum` は 23 行になる。runtime の `go.mod` は gin・echo・iris などのフレームワークを require するので、利用者の `go list -m all` には出るが、ビルドには入らない（2026-10-23 に runtime v1.7.0 で、別モジュールとして生成物をビルドして確認）。
 - 開発では、`integration/` の試験用モジュールだけが `replace` でサーバーと `mykit` を結ぶ。`tools/go.mod` と同じく、ルートの `./...` からは外れる。ルートの `go.work` は Dependabot のためだけにあり、`pkg/mykit`・`pkg/mybot` を入れない（ADR-0081）。
-- **TS は `pkg/mykit/ts/`** に置き、npm のパッケージ名は **`@mycroblog/mykit`**（`app/` の私用の `@my/*` とは別の公開のスコープ）。npm の組織 `mycroblog` は決定者が作って所有する。`@mycroblog/mykit`・`@mycroblog/mybot` はレジストリになく、スコープ `mycroblog` の公開のパッケージもない（2026-10-23 に registry.npmjs.org で確認）。組織の名前が取れなければ、そのときに別のスコープを決める。
-  Bun ワークスペース（ルートは `app/`）の `workspaces` に `../pkg/mykit/ts` を足し、`app/web` は `workspace:*` で使う。Bun はルートの外のパスをワークスペースとして扱い、`app/bunfig.toml` の `linker = "isolated"` でも `../pkg/mykit/ts` の依存（openapi-fetch）を解決する。`bun.lock` には `../pkg/mykit/ts` の項が入り、`pkg/mykit/ts/node_modules` ができる（2026-10-23 に Bun 1.4.3 で、`app/` と同じ設定の最小のワークスペースを作って確認）。
+- **TS は `pkg/mykit/ts/`** に置き、npm のパッケージ名は **`@mycroblog/mykit`**（`web/` の私用の `@my/*` とは別の公開のスコープ）。npm の組織 `mycroblog` は決定者が作って所有する。`@mycroblog/mykit`・`@mycroblog/mybot` はレジストリになく、スコープ `mycroblog` の公開のパッケージもない（2026-10-23 に registry.npmjs.org で確認）。組織の名前が取れなければ、そのときに別のスコープを決める。
+  ルートの Bun ワークスペース（ADR-0025 §2）の `workspaces` に `pkg/mykit/ts` を入れ、Web クライアントは `workspace:*` で使う。
 - `pkg/mybot`（§9）も同じ形（`pkg/mybot/` が Go の別モジュール、`pkg/mybot/ts/` が `@mycroblog/mybot`）にし、`mykit` だけに依存する。
 
 ### 2. ライセンス
 
 - `pkg/mykit/`・`pkg/mybot/` と、生成元の `api/spec/` とそのバンドル `api/openapi.yaml` を **MIT** にする。生成物は仕様から機械的に作るので、仕様が AGPL のままだと生成物の扱いが曖昧になる。仕様を同じライセンスにしてそれを避ける。
-  サーバーの実装（`internal/`・`cmd/`・`app/web` など）は AGPL-3.0-only のまま。MIT は AGPL-3.0 と両立するので、サーバーと Web クライアントが MIT のコードを使うことに問題はない。
+  サーバーの実装（`internal/`・`cmd/`・`web/` など）は AGPL-3.0-only のまま。MIT は AGPL-3.0 と両立するので、サーバーと Web クライアントが MIT のコードを使うことに問題はない。
 - `api/plugin/`（外部プラグインの proto。ADR-0146 §8）も **MIT** にする。プラグインの作者がそこから自分のコードを生成するので、同じ理由である。サーバーが使う Go の生成物は `internal/adapter/plugin/gen` に置き、`internal/` のほかのコードと同じ AGPL-3.0-only にする。プラグインは別プロセスでプロトコルだけを使うので、`my` の AGPL はプラグインに及ばない（ADR-0146 §17）。
 - **ADR-0011 との関係**: 上の範囲は ADR-0011 の「リポジトリは AGPL-3.0 とする」の例外である。AGPL 第 13 条のソースの提示などその他の決定は変えない。
 - 置き方: それぞれのディレクトリに MIT の `LICENSE` を置き、ルートの `README.md` のライセンスの節に例外の範囲を書く。
@@ -59,7 +59,7 @@ pkg/mykit/
     SSE の `streamEvents` は生成から外し、手書きする。
     この設定で今の `api/openapi.yaml` から client を生成でき、`CGO_ENABLED=0` でビルドと `go vet` が通る（2026-10-23 に `tools/go.mod` の oapi-codegen v2.8.0 で確認。生成物は約 7.6 万行・3.1 MB）。
     操作ごとに `<Op>WithResponse` が型付きの応答（`JSON200 *Status`・`ApplicationproblemJSONDefault *Problem`・応答ヘッダ）を返す。multipart の操作（`UploadMedia`）は `content-type` と `io.Reader` を受ける `<Op>WithBody` だけになるので、下のアップロードの関数で補う。
-  - TS: openapi-typescript で `pkg/mykit/ts/src/schema.gen.ts` を生成する。`app/web/src/lib/api/schema.gen.ts` は置かず、`app/web` は `@mycroblog/mykit` の型を使う。型の生成は 1 か所になる。
+  - TS: openapi-typescript で `pkg/mykit/ts/src/schema.gen.ts` を生成する。Web クライアントは型を別に生成せず、`@mycroblog/mykit` の型を使う。型の生成は 1 か所になる。
 - **手書きの層**は次の横断の処理だけにする。エンドポイントごとの便利な関数は書かない（生成したクライアントをそのまま公開する）。
   - 認証（§5）、`Accept-Language` の付与、`User-Agent`（Go）。
   - **エラー**: 2xx 以外の応答を RFC 9457 の問題の詳細の型 `Problem`（`type`・`title`・`status`・`detail`・拡張）を持つエラーにする（Go は `*mykit.Problem` を `errors.As` で取り出せる型、TS は `ProblemError`）。機械判定は `type` で行う。ネットワークの失敗は別の型にする。
@@ -67,7 +67,7 @@ pkg/mykit/
   - **レート制限と再試行**: 429 と 503 の `Retry-After` に従って待ち、上限回数まで再試行する。再試行するのは安全なメソッド（GET・HEAD）と、`Idempotency-Key` を付けた要求だけ。既定は有効で、無効にできる。
   - **冪等キー**: spec が `Idempotency-Key` を受ける操作では、利用者が渡さなければライブラリが UUID を作って付け、再試行で同じ値を送る。
   - **メディアのアップロード**: multipart の組み立てを `io.Reader`（Go）・`Blob`（TS）から行う関数を 1 つ置く。
-- **`app/web` との分担**: `app/web/src/lib/api/client.ts` の Bearer・401 での更新・エラーと `lib/sse/` の読み取りと再接続は `@mycroblog/mykit` に置き、`app/web` には文言の整形（i18n）・`lib/network` への報告・TanStack Query との接続（openapi-react-query）を残す。
+- **Web クライアントとの分担**: Bearer・401 での更新・エラーと SSE の読み取りと再接続は `@mycroblog/mykit` に置き、Web クライアントには文言の整形（i18n）・ネットワークの状態への報告・TanStack Query との接続（openapi-react-query）を残す。
   `mykit` は文言を持たない（i18n は利用者の仕事。サーバーがローカライズした `title`・`detail` はそのまま渡す）。
 
 ### 4. 公開する API の範囲
@@ -111,7 +111,7 @@ pkg/mykit/
   Go はタグを打つだけで proxy.golang.org が取り込む。
 - **テスト**:
   - 単体テスト: 手書きの層（再試行・ページング・SSE の解析と再接続・トークンの更新）を Go は `httptest`、TS は `bun test` で試す。
-  - 結合テスト: `pkg/mykit/integration/` の試験用モジュールで、`pkg/testkit` を使ってサーバーをプロセス内で起動し、Go のクライアントで主要な流れ（投稿・タイムラインのページング・ストリーミング・アップロード・429）を通す。TS の結合テストは `app/web` の E2E が `mykit` を通るので、別には持たない。
+  - 結合テスト: `pkg/mykit/integration/` の試験用モジュールで、`pkg/testkit` を使ってサーバーをプロセス内で起動し、Go のクライアントで主要な流れ（投稿・タイムラインのページング・ストリーミング・アップロード・429）を通す。TS の結合テストは Web クライアントの E2E が `mykit` を通るので、別には持たない。
   - CI: go-task に `mykit` の文脈（`tasks/mykit.yml`。Go の vet・lint・test・build・licenses、TS の typecheck・lint・test・licenses、`go.mod` がサーバーのモジュールを require しない検査）を足し、`check:changed` と merge queue の `check` に入れる。agentkit の `context-map.yaml` に `pkg/mykit`・`pkg/mybot` の領域を足す。
 - **文書**: 英語の README（インストール・認証・ページング・ストリーミング・エラー・再試行の例）を `pkg/mykit/README.md` に、Go の例は `example_test.go` に置く。#1031 の英語の文書の方針に従う。
 
@@ -282,11 +282,10 @@ pkg/mykit/
 - 悪い影響・トレードオフ
   - リポジトリの中にライセンスの異なる範囲ができる。SPDX ヘッダと `LICENSE` の置き方を間違えやすく、検査が要る。
   - Go の別モジュールが増え、タグ・`go.sum`・lint の設定・CI の文脈が増える。サーバーの変更で spec を変えると `mykit` の生成物も同じ PR で変わる。
-  - `app/web` が `mykit` に依存することで、Web クライアントのための変更がライブラリの公開の API の変更になる。v0 では許すが、v1 では分ける判断が要る。
+  - Web クライアントが `mykit` に依存することで、Web クライアントのための変更がライブラリの公開の API の変更になる。v0 では許すが、v1 では分ける判断が要る。
   - 生成物の名前（oapi-codegen の型名・関数名）が利用者から見え、spec の `operationId` やスキーマ名の変更が破壊的変更になる。
   - Go のモジュールの zip に TS のソースが入る。
   - Go の生成物は大きく、`api:generate` の時間とリポジトリの差分の量が増える。
-  - `pkg/mykit/ts` は `app/` の外にあるので、`app/` を前提にした道具（oxlint・knip・`web:check` の文脈）の設定に足す必要がある。
   - 既定の `FileStore` は書き込めるディスクを要る。読み取り専用のコンテナや Cloud Run では、永続のボリュームか自前の `Store`（DB・オブジェクトストレージ）を用意する必要がある。refresh token のローテーションを保存しないと次の起動で認証できないので、常駐のボットにも繰り返し起動するボットにも `MemoryStore` は使えない。
   - 新しい順の一覧を読み直す追いつきは、長く止まっていたボットではページを多く読む。
   - 行儀の既定（bot に応答しない・連鎖の上限・`unlisted` の既定）は、意図してボット同士で会話させたい作者には外す手間になる。

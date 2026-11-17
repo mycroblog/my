@@ -1,16 +1,16 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # CodeQL configuration of the javascript-typescript analysis (codeql.yml). The analysis reads the sources without
-# building them, so it is limited to the client workspace and the i18n tool; the generated route tree, API schema,
-# and message accessors, the intentional lint violations, and build output are left out. Tests (*.test.ts(x),
-# app/web/e2e) stay in: they can hold real mistakes, and an alert about a deliberate test input is dismissed as
-# "used in tests".
+# building them, so it is limited to the members of the Bun workspace: the documentation site, the TypeScript packages
+# of mykit and mybot, and the i18n tool; generated files and build output are left out. Tests (*.test.ts) stay in:
+# they can hold real mistakes, and an alert about a deliberate test input is dismissed as "used in tests".
 paths:
-  - app
+  - web
+  - pkg/mykit/ts
+  - pkg/mybot/ts
   - tools/i18n
 paths-ignore:
   - "**/*.gen.ts"
   - "**/node_modules"
   - "**/dist"
-  - "**/storybook-static"
-  - app/oxlint/violations
+  - "**/.astro"

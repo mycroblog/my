@@ -11,6 +11,7 @@ import (
 	"github.com/mycroblog/my/internal/app/graph"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // The scheduler's first tick enqueues every periodic cleanup, and the key-value store's cleanup
@@ -18,7 +19,8 @@ import (
 func TestSchedulerRunsTheCleanups(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_QUEUE": "inline"})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{})
+	clock := testkit.NewClock(time.Now())
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Clock: clock})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
@@ -42,7 +44,7 @@ func TestSchedulerRunsTheCleanups(t *testing.T) {
 	if err := app.KV.Set(ctx, "test", "live", []byte("v"), time.Hour); err != nil {
 		t.Fatal(err)
 	}
-	time.Sleep(10 * time.Millisecond)
+	clock.Advance(10 * time.Millisecond)
 	// The inline queue runs the enqueued jobs before Tick returns.
 	app.Scheduler.Tick(ctx)
 	if n, err := app.KV.DeleteExpired(ctx, 100); err != nil || n != 0 {

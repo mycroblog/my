@@ -80,6 +80,12 @@ var Requests = kernel.Instrument{
 	LabelKeys: []string{labelOutcome},
 }
 
+// LockWaits counts the requests that found another request translating the same revision into the
+// same language, and waited for its translation rather than asking a provider (ADR-0148 §8).
+var LockWaits = kernel.Instrument{
+	Name: "my.translation.lock_waits", Unit: "{request}", Description: "Translation requests that waited for another request translating the same post into the same language.",
+}
+
 // Characters counts the characters sent to providers, by provider (ADR-0148 §11).
 var Characters = kernel.Instrument{
 	Name: "my.translation.characters", Unit: "{character}", Description: "Characters of posts sent to translation providers, without markers, by provider.",
@@ -184,7 +190,7 @@ type Deps struct {
 	Registered []ProviderInfo
 	// RetentionDays returns translation_retention_days; nil means DefaultRetentionDays.
 	RetentionDays func(ctx context.Context) (int, error)
-	// Meter records Requests and Characters; nil records nothing.
+	// Meter records Requests, LockWaits, and Characters; nil records nothing.
 	Meter kernel.Meter
 	// Logger reports provider failures, which never hold the text of a post; nil logs nothing.
 	Logger *slog.Logger
@@ -199,6 +205,7 @@ type Deps struct {
 type Service struct {
 	d          Deps
 	requests   kernel.Counter
+	lockWaits  kernel.Counter
 	characters kernel.Counter
 	lookups    lookups
 }
@@ -220,7 +227,7 @@ func NewService(d Deps) *Service {
 	}
 	meter := kernel.MeterOrNop(d.Meter)
 	return &Service{
-		d: d, requests: meter.Counter(Requests), characters: meter.Counter(Characters),
+		d: d, requests: meter.Counter(Requests), lockWaits: meter.Counter(LockWaits), characters: meter.Counter(Characters),
 		lookups: lookups{pending: map[string]lookupCount{}, lastFlush: d.Clock.Now()},
 	}
 }
@@ -393,10 +400,12 @@ func (s *Service) requestUnkept(ctx context.Context, post appcontent.ReadableSta
 }
 
 // lock takes the lock of the translation. While another request holds it, lock waits for that
-// request's row and returns it; a request that ends without one frees the lock for this one.
+// request's row and returns it; a request that ends without one frees the lock for this one. A
+// request that waits counts once in LockWaits, when it starts to.
 func (s *Service) lock(ctx context.Context, key string, token []byte, post appcontent.ReadableStatus, target string, candidates []Provider) (Translation, bool, error) {
 	ctx, cancel := context.WithTimeout(ctx, lockWait)
 	defer cancel()
+	waiting := false
 	for {
 		got, err := s.d.KV.CompareAndSwap(ctx, lockNamespace, key, nil, token, lockTTL)
 		if err != nil {
@@ -419,6 +428,10 @@ func (s *Service) lock(ctx context.Context, key string, token []byte, post appco
 		}
 		if got {
 			return Translation{}, false, nil
+		}
+		if !waiting {
+			waiting = true
+			s.lockWaits.Add(ctx, 1, kernel.Labels{})
 		}
 		select {
 		case <-ctx.Done():

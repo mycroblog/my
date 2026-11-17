@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "//": "The app (src/, in the browser), its Vite configuration and plugin, the generator of its route tree, and their tests (on Bun). The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, as Vite does (vite.config.ts).",
+  "compilerOptions": {
+    "customConditions": ["@mycroblog/source"],
+    "allowImportingTsExtensions": true,
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["bun", "vite/client"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx", "vite.config.ts", "vite-plugins/**/*.ts", "scripts/**/*.ts"]
+}

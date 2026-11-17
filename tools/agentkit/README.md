@@ -15,7 +15,7 @@ Run it through `scripts/agentkit.sh <command>`, which builds `bin/agentkit` when
 | `grep` / `rg` / `git grep` over the repository | `grep <pattern> [path\|glob ...] [-i] [-w] [-F] [-l] [-o] [-C N] [--kind go,ts,md,sql,yaml,json]`: a regular expression (or `-F` string) over the tracked files, without generated files, lock files, snapshots, and tests (`--tests`, `--only-tests`, `--gen`); at most 40 matches (`-n`) and 6,000 characters (`--max`), grouped by file, each with its declaration or section and line range, and a last line that counts what was left out |
 | `grep "func X" -A 40`, `sed -n 'A,Bp'`, `head`, `tail` | `show <Name>` (also `Recv.Name`, `pkg.Name`, `<path>:<Name>`, `'func (s *Service) Create'`): the whole declaration; `show <path>:<from>-<to>`: the lines. The path may be relative to the working directory or any ending that names one file |
 | Looking for where a topic lives | `find <words> [--kind adr,section,go,ts,op,table,query,...] [--under <path>]`: ranked locations with sizes |
-| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'web-client§14.2'`, `show 'ADR-0070#decision'`, `show FR-915` |
+| `cat` of a large document | `outline <path>`, then `show '<path>#<anchor>'`, `show 'federation.md§1'`, `show 'ADR-0070#decision'`, `show FR-915` |
 | Following a request through the layers by hand | `trace op:<operationId>` or `trace <GoName>`: handler → app → adapter → query → table |
 | Grepping for the users of a name | `refs <ref>`: what points at it (documents, code, queries, client calls) and what it points at |
 | Listing `docs/adr/` and opening every ADR | `adr list [--status Proposed]`: number, status (the first word of its `- Status:` line), and title |
@@ -25,10 +25,9 @@ range there, and lists the candidates of a name that several declarations share 
 is shown, the test helpers of its name counted).
 References: node ids (`ADR-0070`, `FR-915`, `op:<id>`, `table:<name>`, `query:<Name>`, `schema:<Name>`,
 `sym:<dir>.<Recv>.<Name>`, `ts:<path>:<Name>`), short names (`SubmitRequest`, `custom_emojis`), sections by number or
-anchor of any unique path suffix (`web-client§14.2`, `web-client#5-アクセシビリティ`), and line ranges.
-A document split into one file per section (`docs/architecture/web-client/`) is
-looked up by its directory: `web-client§14` finds the section in whichever file holds it, and `show web-client`
-prints the directory's `README.md`.
+anchor of any unique path suffix (`federation.md§1`, `federation#1-モデレーションとの連携`), and line ranges.
+A document split into one file per section, a directory with a `README.md`, is looked up by its directory:
+`<dir>§14` finds the section in whichever file holds it, and `show <dir>` prints the directory's `README.md`.
 
 ## Workflow
 
@@ -39,12 +38,25 @@ prints the directory's `README.md`.
 | Verify | `check`: the quick checks of the changed files, one line each and the failing lines — `gofmt`, `go vet` of the changed packages, `bun fmt`, `tsc` and Oxlint, `i18n:lint`, `docs:lint` and `docs:rules`, shellcheck, `tofu fmt` of the changed OpenTofu files, the checks of the OpenTofu modules that compare files when the tofu context changed (`tofu:env-check`, `tofu:backend-fields`, `tofu:coverage`, `tofu:sources`), and that committed generated files are current. A step whose tool is not installed is skipped with a line. `check --full`: `scripts/task.sh check:changed` and the workers check, which the merge queue runs anyway |
 | Open the PR | `pr open [--issue n]... [--summary-file f] [--decisions text] [--confirm] [--footer text] [--base <branch>]`: prints the documents of `docs impact` the change does not touch; copies the issues' acceptance criteria with their checked state. It is the gate: before it pushes (`--force-with-lease`) it refuses, with the command that fixes it, outside a worktree, on a merge commit or a `fixup!` / `squash!` commit in `origin/main..HEAD`, on a conflict with the base, and when `check` fails. On a branch whose pull request is open (an epic's draft) it rewrites that pull request's description instead of opening another. Without `--issue` it closes the issue of the branch name and the `(#N)` of the commit subjects |
 | Finish the PR | `pr land <pr>` **in the background, in the main agent**: turns on auto-merge into the merge queue, prints one line per event until the merge, then removes the branch and its worktree, checks that the closed issues are closed, closes each parent issue whose sub-issues are all closed and each milestone left with no open issue, and ends with three lines (`merged:`, `cleaned up:`, `remains:`). Exit 1 when CI failed (with the failing lines), 3 on a conflict, 4 when cancelled, 5 when the merge queue dropped it (with the failing lines of its merge group), 124 on the timeout; each prints the fix |
-| Clean up | `tidy [--dry-run]`: removes the local branches whose pull request is merged or closed, with their worktrees; keeps and names those with uncommitted changes, commits the pull request does not hold, a lock, or the caller inside. The SessionStart hook prints one line when merged branches are left |
+| Clean up | `tidy [--dry-run]`: removes the local branches whose pull request is merged or closed, with their worktrees, after stopping the dev server of each (only a process inside the worktree); keeps and names those with uncommitted changes, commits the pull request does not hold, a lock, or the caller inside. The SessionStart hook prints one line when merged branches are left |
 | Wait for CI only | `pr wait <pr>` **in the background**: one line when CI passes; the failing lines of the failed jobs otherwise; exit 3 on a conflict; exit 4 when checks were cancelled and no newer run replaced them; exit 6 when the head moved. Only the newest run of each workflow counts (the checks of an older run on the same head, such as the failed `check` of a run cancelled by a newer one, are ignored while the newer run runs), and of it the latest attempt of each check; and CI passes only when the required `check` gate of the CI workflow has reported and succeeded |
 | Find the slow job of CI | `pr jobs <pr> [--run <id>] [-n 20]`: for the newest run of each workflow on the pull request's head (or the given run), one line with the run's wall time and its number of skipped jobs, then one line per job that ran — duration, result, name — slowest first, with the three slowest steps under a job longer than 3 minutes. It reads once and does not wait |
 | Resolve a conflict | `git rebase origin/main`, `regen` (runs the generators of the changed sources, including `scripts/tofu-workers-check.sh --write` for `internal/platform/job_types.go`), `check`, `git push --force-with-lease` |
 | Watch many PRs (§9) | `pr watch [<pr>...]` with the Monitor tool: one line per opened, merged, closed, conflicting, ci-failed, ci-cancelled, ci-green, dequeued |
 | Stop (§8) | `issue block <n> --type adr\|spike --title t --reason-file f`, or `--on <m>` |
+
+## On-screen feedback
+
+The decider writes notes on the stories of the Storybook host ([ADR-0168](../../docs/adr/0168-on-screen-feedback.md)) and
+sends them as one batch, which the dev server writes to `.tmp/feedback/<batch>.json`.
+
+| Step | Run |
+| --- | --- |
+| Start | `scripts/task.sh web:storybook` in the background, then `feedback url`, and give the decider the URL it prints. A worktree runs one: while its server answers, `web:storybook` prints that URL and starts none. With no dev server answering, it names the command that starts one and fails |
+| Receive | `feedback wait` **in the background**: returns with the oldest batch no wait has delivered, so a send notifies the session; run it again after each batch |
+| Read | `feedback show [<batch>\|<note>]`: each note with its source (`file:line`), layer (the package), page and state, the story it was written on (id, title, name, args and the toolbar's globals), and an outline of its accessibility tree; open the story (`web:shot -- --section <story id>`) at the note's viewport |
+| Answer | `feedback reply <note> [--kind fixed\|question] <text>`: the Storybook's Notes panel shows the answer next to the note at once |
+| Offer options | wrap the variants in `<Options id variants>` of `@my/devtools/options` in the story (only a story may import it; its package lists `@my/devtools` in its devDependencies while one is there), then `feedback reply <note> --kind options --options <id> <text>`: the decider switches between them in the Notes panel, and the pick arrives as a note, with the decider's reason when they gave one. Keep the picked variant and remove the `<Options>`, which a production build refuses |
 
 ## The context map
 
@@ -118,7 +130,7 @@ command to run instead, filled in from the denied one:
 | `sed -i`, `perl -pi`, a `python3` / `node` script that writes a file of the repository | the Edit tool; `scripts/i18n.sh add\|mv\|rm` for `locales/` |
 | `git merge` of `main`, `git pull` without `--rebase` or `--ff-only` | `git fetch origin && git rebase origin/main`, `regen`, `git push --force-with-lease` |
 | `gh pr checks`, `gh run watch`, `gh run view` without `--log-failed`, `gh run list` without `--workflow`, `gh api` of check runs and workflow runs, `statusCheckRollup` | `pr wait <pr>` in the background; `pr jobs <pr>` for the jobs of a run and their durations |
-| a loop that sleeps, `pgrep`, also inside `bash -c` | `run_in_background` and its notification |
+| a loop that sleeps, `pgrep`, a `sleep` over a second, also inside `bash -c` | end the turn: `run_in_background`, a subagent's result, and a message each notify |
 | reading a whole Markdown file of 40KB or more (code: 80KB) | `outline`, then `show` |
 
 It splits a compound command at `;`, `&&`, `||`, `|` and newlines outside quotes and here-documents, and follows `cd`

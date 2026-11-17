@@ -75,10 +75,6 @@
     "defaultMessage": "{instance} 的一个 Webhook 已关闭",
     "description": "Subject of the email to an administrator who chose to get moderator notifications by email: the server turned off a webhook endpoint that kept failing or answered that it is gone. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.password_changed.body": {
-    "defaultMessage": "你在 {instance} 上的账号密码已更改，你的其他会话和应用已退出登录。",
-    "description": "First paragraph of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
-  },
   "mail.password_changed.detail": {
     "defaultMessage": "如果不是你本人更改的，可能有其他人知道你的密码。请立即设置新密码。",
     "description": "Second paragraph of the email that tells a user their password was changed, before the link that asks for a password reset link."
@@ -86,10 +82,6 @@
   "mail.password_changed.subject": {
     "defaultMessage": "你在 {instance} 的密码已更改",
     "description": "Subject of the email that tells a user their password was changed. {instance} is the server's display name, or its domain name when it has none."
-  },
-  "mail.password_removed.body": {
-    "defaultMessage": "你在 {instance} 上的账号密码已移除，你的其他会话和应用已退出登录。今后你将使用通行密钥登录。",
-    "description": "First paragraph of the email that tells a user their password was removed, so that only their passkeys sign in. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.password_removed.detail": {
     "defaultMessage": "如果不是你本人移除的，可能有其他人已登录你的账号。请立即设置新密码。",
@@ -199,10 +191,6 @@
     "defaultMessage": "{instance} 的管理员撤回了已宣布的关闭。服务器将照常运行，你无需进行任何操作。",
     "description": "Paragraph of the email of the service closure to every user with a verified address: the announced closure is withdrawn. {instance} is the server's display name, or its domain name when it has none."
   },
-  "mail.service_closure_withdrawn.subject": {
-    "defaultMessage": "{instance} 不再关闭",
-    "description": "Subject of the email of the service closure to every user with a verified address: the administrators withdrew the announced closure. {instance} is the server's display name, or its domain name when it has none."
-  },
   "mail.signature.contact": {
     "defaultMessage": "联系方式：{email}",
     "description": "Line of the signature at the end of every email with the instance's contact address. {email} is the address."
@@ -231,10 +219,6 @@
     "defaultMessage": "{instance} 的管理员停用了你订阅的支持者方案“{plan}”。",
     "description": "First paragraph of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators."
   },
-  "mail.supporter_plan_retired.detail": {
-    "defaultMessage": "你的订阅已取消，不会续订。除非有逾期未付的款项，你可以保留方案权益至已付费期间结束。",
-    "description": "Second paragraph of the email to a subscriber whose supporter plan the administrators retired."
-  },
   "mail.supporter_plan_retired.subject": {
     "defaultMessage": "你在 {instance} 的支持者方案已停用",
     "description": "Subject of the email to a subscriber whose supporter plan the administrators retired. {instance} is the server's display name, or its domain name when it has none."
@@ -246,14 +230,6 @@
   "mail.supporter_service_closure.detail": {
     "defaultMessage": "你的订阅不会续订。除非有逾期未付的款项，你可以保留方案权益至已付费期间结束。",
     "description": "Second paragraph of the email to a subscriber whose supporter subscription the announced closure of the server cancels."
-  },
-  "mail.supporter_service_closure.subject": {
-    "defaultMessage": "你在 {instance} 的支持者订阅将随服务器关闭而结束",
-    "description": "Subject of the email to a subscriber whose supporter subscription the announced closure of the server cancels. {instance} is the server's display name, or its domain name when it has none."
-  },
-  "mail.supporter_subscription_ended.body": {
-    "defaultMessage": "你在 {instance} 的支持者方案“{plan}”已结束，其权益也随之终止。{reason, select, lapsed {付款失败后 7 天内未能成功付款，或订阅已暂停。} reversed {有一笔付款已全额退款或被拒付。} plan_retired {管理员停用了该方案。} account_suspended {你的账号已被封禁。} staff {管理员取消了该订阅。} other {该订阅已取消。}}",
-    "description": "Paragraph of the email to a subscriber whose supporter subscription ended. {instance} is the server's display name, or its domain name when it has none. {plan} is the plan's name, written by the administrators; {reason} the reason code (not shown), each branch saying why."
   },
   "mail.supporter_subscription_ended.subject": {
     "defaultMessage": "你在 {instance} 的支持者方案已结束",
@@ -410,10 +386,6 @@
   "mail.account_deactivated.detail": {
     "defaultMessage": "登录即可重新启用账号。在删除之前，我们不会再就此事给你发送邮件。如果这不是你本人的操作，请登录、重新启用账号并更改密码。",
     "description": "Second paragraph of the email that tells a user their account is deactivated: how to undo it, that no more email comes, and what to do when it was not them."
-  },
-  "mail.admin_hook_failing.body": {
-    "defaultMessage": "服务器 {instance} 上的外部审查调用持续失败。在其恢复正常之前，它所审查的内容将按其失败处理方式处理：默认情况下不经审查直接通过。",
-    "description": "First paragraph of the email to a moderator about an external review that keeps failing. {instance} is the server's display name, or its domain name when it has none."
   },
   "mail.admin_hook_failing.detail": {
     "defaultMessage": "打开通知，在自动审查中查看失败的内容。",

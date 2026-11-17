@@ -189,11 +189,14 @@ type Options struct {
 	// Streams opens the subscriptions of the streaming endpoint; nil answers it with 503.
 	// HomeEntries tells the streams whether a home timeline lists a new entry; nil streams no
 	// home timeline entries. EntryLists tells them which lists of the viewer list such an
-	// entry; nil streams no list_update events. StreamHeartbeat overrides
-	// DefaultStreamHeartbeat when positive, and StreamWriteTimeout DefaultStreamWriteTimeout.
+	// entry; nil streams no list_update events. DeletedAudience tells the streams, of every
+	// kind, whom to tell of a deleted status; nil streams no delete events. StreamHeartbeat
+	// overrides DefaultStreamHeartbeat when positive, and StreamWriteTimeout
+	// DefaultStreamWriteTimeout.
 	Streams            stream.Subscriber
 	HomeEntries        HomeEntries
 	EntryLists         EntryLists
+	DeletedAudience    DeletedAudience
 	StreamHeartbeat    time.Duration
 	StreamWriteTimeout time.Duration
 	// TimelineStreams opens the subscriptions of the streams of the local and federated
@@ -439,6 +442,12 @@ type Options struct {
 	ErrorReporter kernel.ErrorReporter
 	// ClientErrorLimit overrides the package's ClientErrorLimit when its Max is set.
 	ClientErrorLimit kernel.Limit
+	// UXMeasurements counts the UX measurements that the web client reports and sums them for
+	// /admin/ux_measurements (client_measurements.go); nil drops the reports and answers 404 to
+	// the admin operation.
+	UXMeasurements UXMeasurements
+	// ClientMeasurementLimit overrides the package's ClientMeasurementLimit when its Max is set.
+	ClientMeasurementLimit kernel.Limit
 }
 
 // Server implements the generated StrictServerInterface by calling application use cases.
@@ -446,8 +455,12 @@ type Server struct {
 	o Options
 	// streams counts the open streams.
 	streams kernel.UpDownCounter
+	// signals counts the signals that the open streams handled.
+	signals kernel.Counter
 	// home decides which user streams of the process check a new home entry.
 	home *homeGate
+	// deleted decides which streams of the process, of every kind, send the deletion of a status.
+	deleted *audienceGate
 	// monitor checks the tokens of the open streams of the process on every heartbeat; nil
 	// leaves each stream to check its own.
 	monitor *streamMonitor
@@ -475,10 +488,15 @@ func New(o Options) *Server {
 	if o.ClientErrorLimit.Max == 0 {
 		o.ClientErrorLimit = ClientErrorLimit
 	}
+	if o.ClientMeasurementLimit.Max == 0 {
+		o.ClientMeasurementLimit = ClientMeasurementLimit
+	}
 	if o.Authenticator == nil {
 		o.Authenticator = noTokens{}
 	}
-	s := &Server{o: o, streams: kernel.MeterOrNop(o.Meter).UpDownCounter(StreamConnections), home: newHomeGate(), public: newPublicDispatch()}
+	meter := kernel.MeterOrNop(o.Meter)
+	s := &Server{o: o, streams: meter.UpDownCounter(StreamConnections), signals: meter.Counter(StreamSignals),
+		home: newHomeGate(), deleted: newAudienceGate(), public: newPublicDispatch()}
 	if b, ok := o.Authenticator.(bearerBatch); ok {
 		every := o.StreamHeartbeat
 		if every <= 0 {
@@ -495,7 +513,7 @@ type Router interface {
 }
 
 // Register registers every operation of the spec on r under BasePath, the generated ones and
-// the hand-written streaming endpoints (streaming.go, voice_stream.go) and error reports (client_errors.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
+// the hand-written streaming endpoints (streaming.go, voice_stream.go) and error reports (client_errors.go) and UX measurements (client_measurements.go) and the bundled OpenAPI document (openapi.go), behind authentication and rate limiting, with the security of each operation enforced (auth.go). Requests that
 // match no operation are left to r, which answers them with its own 404 or 405 problem.
 func (s *Server) Register(r Router) {
 	strict := NewStrictHandlerWithOptions(s, []StrictMiddlewareFunc{s.rejectInvalidBodyText}, StrictHTTPServerOptions{
@@ -512,6 +530,7 @@ func (s *Server) Register(r Router) {
 	s.registerTimelineStream(r)
 	s.registerVoiceStream(r)
 	s.registerClientErrors(r)
+	s.registerClientMeasurements(r)
 	s.registerOpenAPI(r)
 }
 

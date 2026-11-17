@@ -1,0 +1,10 @@
+{
+  "disclosure.show": {
+    "defaultMessage": "表示",
+    "description": "The button of a disclosure that shows what it folds, such as a post behind a content warning."
+  },
+  "disclosure.hide": {
+    "defaultMessage": "非表示",
+    "description": "The button of a disclosure that folds again what it shows, such as a post behind a content warning."
+  }
+}

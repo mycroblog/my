@@ -16,6 +16,7 @@ import (
 	"time"
 
 	"github.com/mycroblog/my/internal/platform/platformtest"
+	"github.com/mycroblog/my/pkg/testkit"
 
 	"github.com/mycroblog/my/pkg/mybot"
 	"github.com/mycroblog/my/pkg/mykit"
@@ -139,13 +140,17 @@ type world struct {
 	bot      platformtest.User
 	botToken mykit.TokenSource
 	alice    *mykit.API
+	// botAPI is a session of the bot's account of its own, for the test to read the notifications.
+	botAPI *mykit.API
+	// log records the log of the bots of config.
+	log *botLog
 }
 
 func newWorld(t *testing.T) *world {
 	t.Helper()
 	srv := platformtest.Start(t, platformtest.Options{})
 	bot, alice := srv.User(t, "bot"), srv.User(t, "alice")
-	return &world{srv: srv, bot: bot, botToken: tokenSource(t, srv, bot), alice: client(t, srv, alice)}
+	return &world{srv: srv, bot: bot, botToken: tokenSource(t, srv, bot), alice: client(t, srv, alice), log: &botLog{}}
 }
 
 // config is the Config of the echo bot: the bot flag set on start, the store at storePath (kept across the
@@ -160,7 +165,7 @@ func (w *world) config(storePath string, transport http.RoundTripper) mybot.Conf
 		TokenSource:   w.botToken,
 		HTTPClient:    &http.Client{Transport: transport},
 		Store:         store,
-		Logger:        slog.New(slog.DiscardHandler),
+		Logger:        slog.New(w.log),
 		SetBotFlag:    true,
 		ShutdownGrace: 200 * time.Millisecond,
 	}
@@ -202,16 +207,11 @@ func (w *world) replies(t *testing.T, st mykit.Status) []mykit.Status {
 // waitReply waits for the first reply of the bot to st and returns it.
 func (w *world) waitReply(t *testing.T, st mykit.Status) mykit.Status {
 	t.Helper()
-	deadline := time.Now().Add(30 * time.Second)
-	for {
-		if r := w.replies(t, st); len(r) > 0 {
-			return r[0]
-		}
-		if time.Now().After(deadline) {
-			t.Fatalf("the bot did not reply to %q", mybot.PlainText(st.Content))
-		}
-		time.Sleep(50 * time.Millisecond)
+	var r []mykit.Status
+	if !testkit.Eventually(t, 30*time.Second, func() bool { r = w.replies(t, st); return len(r) > 0 }) {
+		t.Fatalf("the bot did not reply to %q", mybot.PlainText(st.Content))
 	}
+	return r[0]
 }
 
 // checkOneReply checks that the bot replied to st once, with want, and with an unlisted reply to the public post.
@@ -258,8 +258,76 @@ func start(t *testing.T, bot *mybot.Bot) (stop func()) {
 	return stop
 }
 
-// settle gives a bot that would answer twice the time to do it.
-func settle() { time.Sleep(time.Second) }
+// botLog is a slog.Handler that records the bots' log at every level, for a test to wait for the debug lines
+// that mybot.Config.Logger documents. It drops the attributes of WithAttrs and the groups.
+type botLog struct {
+	mu    sync.Mutex
+	lines []slog.Record
+}
+
+func (l *botLog) Enabled(context.Context, slog.Level) bool { return true }
+
+func (l *botLog) Handle(_ context.Context, r slog.Record) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.lines = append(l.lines, r.Clone())
+	return nil
+}
+
+func (l *botLog) WithAttrs([]slog.Attr) slog.Handler { return l }
+func (l *botLog) WithGroup(string) slog.Handler      { return l }
+
+// idle reports whether a bot logged that every notification handed out is processed, at the position.
+func (l *botLog) idle(position string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, r := range l.lines {
+		found := false
+		r.Attrs(func(a slog.Attr) bool {
+			found = a.Key == "position" && a.Value.String() == position
+			return !found
+		})
+		if r.Message == "mybot: every notification handed out is processed" && found {
+			return true
+		}
+	}
+	return false
+}
+
+// notificationOf waits until the server has made the bot's notification of the mention st, and returns its ID.
+func (w *world) notificationOf(t *testing.T, st mykit.Status) string {
+	t.Helper()
+	if w.botAPI == nil {
+		w.botAPI = client(t, w.srv, w.bot)
+	}
+	var id string
+	made := testkit.Eventually(t, 30*time.Second, func() bool {
+		resp, err := w.botAPI.ListNotificationsWithResponse(t.Context(), &mykit.ListNotificationsParams{})
+		if err != nil || resp.JSON200 == nil {
+			return false
+		}
+		for _, n := range resp.JSON200.Items {
+			if n.Status != nil && n.Status.Id == st.Id {
+				id = n.Id
+				return true
+			}
+		}
+		return false
+	})
+	if !made {
+		t.Fatalf("the server made no notification of %q", mybot.PlainText(st.Content))
+	}
+	return id
+}
+
+// settle waits until the bot has handed out and processed everything up to the notification position: a bot
+// that would answer twice has by then.
+func (w *world) settle(t *testing.T, position string) {
+	t.Helper()
+	if !testkit.Eventually(t, 30*time.Second, func() bool { return w.log.idle(position) }) {
+		t.Fatalf("the bot did not finish its notifications up to %s", position)
+	}
+}
 
 // TestEchoOnceAcrossStreamCut runs the echo bot against the server: it answers a mention from the event stream
 // once, then its stream is cut and a mention comes while it is down, which it answers once by its catch-up after
@@ -281,15 +349,15 @@ func TestEchoOnceAcrossStreamCut(t *testing.T) {
 
 	net.cut()
 	second := w.mention(t, "while you were away")
-	// Long enough for the server to have made the notification, which no stream carries to the bot.
-	time.Sleep(500 * time.Millisecond)
+	// The server has made the notification, which no stream carries to the bot.
+	notification := w.notificationOf(t, second)
 	if r := w.replies(t, second); len(r) != 0 {
 		t.Fatalf("the bot replied %d times to %q with its stream cut", len(r), "while you were away")
 	}
 	net.restore()
 	net.waitOpen(t)
 	w.waitReply(t, second)
-	settle()
+	w.settle(t, notification)
 	w.checkOneReply(t, first, "hello")
 	w.checkOneReply(t, second, "while you were away")
 }
@@ -350,21 +418,17 @@ func TestEchoOnceAcrossRestart(t *testing.T) {
 	case <-time.After(30 * time.Second):
 		t.Fatal("the restarted bot did not handle the mention again")
 	}
-	deadline := time.Now().Add(10 * time.Second)
-	for {
+	recorded := testkit.Eventually(t, 10*time.Second, func() bool {
 		ok, err := again.Store().IsProcessed(t.Context(), notification)
 		if err != nil {
 			t.Fatal(err)
 		}
-		if ok {
-			break
-		}
-		if time.Now().After(deadline) {
-			t.Fatal(errors.New("the restarted bot did not record the mention processed"))
-		}
-		time.Sleep(20 * time.Millisecond)
+		return ok
+	})
+	if !recorded {
+		t.Fatal(errors.New("the restarted bot did not record the mention processed"))
 	}
-	settle()
+	w.settle(t, notification)
 	w.checkOneReply(t, st, "hello")
 }
 
@@ -388,7 +452,7 @@ func TestEchoManyMentions(t *testing.T) {
 	for _, st := range posts {
 		w.waitReply(t, st)
 	}
-	settle()
+	w.settle(t, w.notificationOf(t, posts[len(posts)-1]))
 	for i, st := range posts {
 		w.checkOneReply(t, st, fmt.Sprintf("number %d", i))
 	}

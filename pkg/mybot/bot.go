@@ -65,7 +65,11 @@ type Config struct {
 
 	// Store keeps the state of the bot across restarts. Nil means a FileStore at DefaultStatePath.
 	Store Store
-	// Logger receives the log of the bot. Nil means slog.Default().
+	// Logger receives the log of the bot. Nil means slog.Default(). At the debug level it says, with the
+	// notification's ID, when a notification of the event stream waits for the catch-up, when a notification
+	// already processed is skipped, and when a handler stopped by the shutdown leaves its notification for the
+	// next start; and, with the position, when every notification handed to the handlers is processed and no
+	// catch-up runs. A test can wait for these lines instead of for a while.
 	Logger *slog.Logger
 	// UserAgent is the product of the bot, such as "echobot/1.0", sent before the library's own in User-Agent.
 	UserAgent string
@@ -553,6 +557,7 @@ func (b *Bot) stream(ctx context.Context, wg *sync.WaitGroup) error {
 				mu.Lock()
 				if catching {
 					waiting = append(waiting, n)
+					b.logger.Debug("mybot: a notification of the event stream waits for the catch-up", "notification", n.Id)
 				} else {
 					b.submitNotification(&n)
 				}
@@ -675,6 +680,7 @@ func (b *Bot) releaseHold() {
 	if p := b.tracker.release(); p != "" {
 		b.setPosition(p)
 	}
+	b.logIdle()
 }
 
 // submitNotification hands a notification to the dispatcher.
@@ -703,6 +709,7 @@ func (b *Bot) process(ctx context.Context, j job) {
 			return
 		}
 		if done {
+			b.logger.Debug("mybot: skipped a notification already processed", "notification", n.Id)
 			b.completed(n.Id)
 			return
 		}
@@ -727,7 +734,8 @@ func (b *Bot) process(ctx context.Context, j job) {
 		return b.store.MarkProcessed(ctx, n.Id, b.now())
 	})
 	if err != nil {
-		// Cancelled by the shutdown: handled again by the next start.
+		b.logger.Debug("mybot: stopped before the notification was recorded processed; the next start handles it again",
+			"notification", n.Id)
 		return
 	}
 	b.completed(n.Id)
@@ -761,6 +769,15 @@ func (b *Bot) retryStore(ctx context.Context, what, id string, op func() error) 
 func (b *Bot) completed(id string) {
 	if p := b.tracker.complete(id); p != "" {
 		b.setPosition(p)
+	}
+	b.logIdle()
+}
+
+// logIdle logs, at the debug level, that every notification handed out is processed and no catch-up holds the
+// position, when that is so: nothing is left to do until the next notification.
+func (b *Bot) logIdle() {
+	if pos, idle := b.tracker.idle(); idle {
+		b.logger.Debug("mybot: every notification handed out is processed", "position", pos)
 	}
 }
 

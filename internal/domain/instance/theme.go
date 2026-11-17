@@ -3,6 +3,7 @@
 package instance
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"regexp"
@@ -13,55 +14,44 @@ import (
 	"unicode/utf8"
 )
 
-// The instance theme (ADR-0059, FR-605): overrides of the web client's design tokens and one custom
-// stylesheet of the administrator. The overridable tokens, their kinds, defaults, and bounds, and the
-// contrast pairs of the colors are generated from app/ui/src/theme.css (theme_tokens.gen.go).
+// The instance theme (ADR-0059, FR-605): one set of overrides of the web client's design tokens per
+// server, stored as one versioned document and replaced as a whole (§15). The overridable tokens,
+// their kinds, defaults, and bounds, and the contrast pairs of the colors are generated from
+// @my/design-tokens (theme_tokens.gen.go, committed).
 
 // ThemeTokenKind is the kind of value a token holds, which decides the shape of its overrides.
 type ThemeTokenKind string
 
 // Kinds of theme tokens.
 const (
-	// ThemeTokenColor is a color with a value per color scheme, each #rrggbb (#rrggbbaa when
-	// ThemeToken.Alpha).
+	// ThemeTokenColor is a color with a value per color scheme, each #rrggbb.
 	ThemeTokenColor ThemeTokenKind = "color"
 	// ThemeTokenLength is 0 or a rem or px length, bounded in rem (16px each).
 	ThemeTokenLength ThemeTokenKind = "length"
 	// ThemeTokenNumber is a unitless number, such as a line height.
 	ThemeTokenNumber ThemeTokenKind = "number"
-	// ThemeTokenFontFamily is a comma-separated list of font family names.
+	// ThemeTokenFontFamily is a comma-separated list of font family names, with no generic family
+	// or keyword.
 	ThemeTokenFontFamily ThemeTokenKind = "font-family"
-	// ThemeTokenShadow is none or up to MaxShadowLayers box shadows.
-	ThemeTokenShadow ThemeTokenKind = "shadow"
 	// ThemeTokenDuration is a time in ms or s, bounded in ms.
 	ThemeTokenDuration ThemeTokenKind = "duration"
-	// ThemeTokenEasing is an easing keyword or a cubic-bezier() function.
-	ThemeTokenEasing ThemeTokenKind = "easing"
 )
 
 // Limits of a theme.
 const (
-	// MaxCustomCSSBytes bounds the custom stylesheet of a theme.
-	MaxCustomCSSBytes = 64 * 1024
 	// MaxFontFamilies bounds the families of a font-family value.
 	MaxFontFamilies = 30
 	// MaxFontFamilyLength bounds a font-family value, in characters.
 	MaxFontFamilyLength = 1000
-	// MaxShadowLayers bounds the layers of a shadow value.
-	MaxShadowLayers = 4
-	// MaxShadowOffsetRem bounds every length of a shadow, in rem.
-	MaxShadowOffsetRem = 4
 )
 
 // ThemeToken is a design token that a theme may override, named without the leading "--".
 type ThemeToken struct {
 	Name string
 	Kind ThemeTokenKind
-	// Light and Dark are the defaults of a color token, as #rrggbb (#rrggbbaa when Alpha).
+	// Light and Dark are the defaults of a color token, as #rrggbb.
 	Light, Dark string
-	// Alpha reports whether a color override may be translucent.
-	Alpha bool
-	// Default is the default of a token of another kind, as theme.css writes it.
+	// Default is the default of a token of another kind, as @my/design-tokens writes it.
 	Default string
 	// Min and Max bound a length (in rem), a number, or a duration (in ms), inclusive. Both are 0
 	// for the other kinds.
@@ -75,7 +65,7 @@ type ContrastPair struct {
 	Minimum float64
 }
 
-// ThemeTokens returns the overridable tokens, in the order of theme.css.
+// ThemeTokens returns the overridable tokens, in the order of @my/design-tokens.
 func ThemeTokens() []ThemeToken { return slices.Clone(themeTokens) }
 
 // ThemeContrastPairs returns the contrast pairs of the color tokens.
@@ -90,101 +80,152 @@ func LookupThemeToken(name string) (ThemeToken, bool) {
 	return themeTokens[i], true
 }
 
-// ColorScheme is the color scheme of a token value: light or dark for a color, all for the
-// other kinds (instance_theme_tokens.scheme).
+// ColorScheme is the color scheme of a color value or a contrast pair.
 type ColorScheme string
 
 // Color schemes.
 const (
 	SchemeLight ColorScheme = "light"
 	SchemeDark  ColorScheme = "dark"
-	SchemeAll   ColorScheme = "all"
 )
 
 // ThemeTokenValue is the override of one token: Light and Dark for a color token, Value for the
 // other kinds.
 type ThemeTokenValue struct {
-	Token       string
-	Light, Dark string
-	Value       string
+	Token string `json:"token"`
+	Light string `json:"light,omitempty"`
+	Dark  string `json:"dark,omitempty"`
+	Value string `json:"value,omitempty"`
 }
 
-// ThemeTokenRow is the override of a token in one color scheme, as the database stores it.
-type ThemeTokenRow struct {
-	Token  string
-	Scheme ColorScheme
-	Value  string
+// ThemeSetVersion is the version of the document of a token set (ThemeSet.Document).
+const ThemeSetVersion = 1
+
+// MaxThemeOverrides bounds the overrides of a token set.
+const MaxThemeOverrides = 200
+
+// ThemeSet is one saved token set of the theme (instance_theme_sets): the overrides of the light and
+// dark values, saved as a draft (§15). A set never changes; saving makes a new one.
+type ThemeSet struct {
+	ID string
+	// Tokens are the overrides that apply, in the order of ThemeTokens.
+	Tokens []ThemeTokenValue
+	// Stale are the stored overrides that no longer apply, which the stylesheet leaves out and the
+	// administrator is shown (ReadThemeSet).
+	Stale []StaleOverride
+	// SavedByUserID is the user who saved the set, or "" for the CLI and the data upgrade.
+	SavedByUserID string
+	SavedAt       time.Time
 }
 
-// Rows returns the rows that store v: one per color scheme for a color, one for SchemeAll otherwise.
-func (v ThemeTokenValue) Rows() []ThemeTokenRow {
-	if t, ok := LookupThemeToken(v.Token); ok && t.Kind == ThemeTokenColor {
-		return []ThemeTokenRow{{Token: v.Token, Scheme: SchemeLight, Value: v.Light}, {Token: v.Token, Scheme: SchemeDark, Value: v.Dark}}
+// StaleOverride is a stored override that no longer applies: its token left the list, or its value
+// no longer has the shape or the bounds of its token.
+type StaleOverride struct {
+	ThemeTokenValue
+	// Reason is ThemeUnknownToken, ThemeDuplicateToken, ThemeInvalidValue, or ThemeOutOfRange.
+	Reason ThemeProblemCode
+}
+
+// Empty reports whether the set overrides nothing, so the web client needs no stylesheet.
+func (s ThemeSet) Empty() bool { return len(s.Tokens) == 0 }
+
+// themeSetDocument is the stored form of a token set.
+type themeSetDocument struct {
+	Version int               `json:"version"`
+	Tokens  []ThemeTokenValue `json:"tokens"`
+}
+
+// Document returns the stored form of the set: {"version": 1, "tokens": [...]}, the overrides
+// that apply and then the stale ones, each {"token", "light", "dark"} or {"token", "value"}.
+func (s ThemeSet) Document() []byte {
+	tokens := make([]ThemeTokenValue, 0, len(s.Tokens)+len(s.Stale))
+	tokens = append(tokens, s.Tokens...)
+	for _, o := range s.Stale {
+		tokens = append(tokens, o.ThemeTokenValue)
 	}
-	return []ThemeTokenRow{{Token: v.Token, Scheme: SchemeAll, Value: v.Value}}
+	b, err := json.Marshal(themeSetDocument{Version: ThemeSetVersion, Tokens: tokens})
+	if err != nil {
+		panic(fmt.Sprintf("instance: encode a theme set: %v", err)) // strings only; never fails
+	}
+	return b
 }
 
-// ThemeTokenValuesFromRows folds stored rows back into token values, in the order of the tokens.
-func ThemeTokenValuesFromRows(rows []ThemeTokenRow) []ThemeTokenValue {
-	byToken := map[string]*ThemeTokenValue{}
-	for _, r := range rows {
-		v, ok := byToken[r.Token]
-		if !ok {
-			v = &ThemeTokenValue{Token: r.Token}
-			byToken[r.Token] = v
-		}
-		switch r.Scheme {
-		case SchemeLight:
-			v.Light = r.Value
-		case SchemeDark:
-			v.Dark = r.Value
-		default:
-			v.Value = r.Value
-		}
+// ReadThemeSet decodes the stored overrides of a set (ThemeSet.Document) and drops those that no
+// longer apply into the stale ones, so that a token renamed or retired by an upgrade never fails a
+// read (§15). Contrast is not checked again: it is a property of the whole set when it was saved.
+// It fails only on a document that is not one of a version this release reads.
+func ReadThemeSet(doc []byte) (tokens []ThemeTokenValue, stale []StaleOverride, err error) {
+	var d themeSetDocument
+	if err := json.Unmarshal(doc, &d); err != nil {
+		return nil, nil, fmt.Errorf("instance: read a theme set: %w", err)
 	}
+	if d.Version != ThemeSetVersion {
+		return nil, nil, fmt.Errorf("instance: read a theme set: version %d, want %d", d.Version, ThemeSetVersion)
+	}
+	byToken := map[string]ThemeTokenValue{}
+	for _, v := range d.Tokens {
+		t, ok := LookupThemeToken(v.Token)
+		switch {
+		case !ok:
+			stale = append(stale, StaleOverride{ThemeTokenValue: v, Reason: ThemeUnknownToken})
+			continue
+		case hasToken(byToken, v.Token):
+			stale = append(stale, StaleOverride{ThemeTokenValue: v, Reason: ThemeDuplicateToken})
+			continue
+		}
+		out, problems := normalizeTokenValue(t, v)
+		if len(problems) > 0 {
+			stale = append(stale, StaleOverride{ThemeTokenValue: v, Reason: problems[0].Code})
+			continue
+		}
+		byToken[t.Name] = out
+	}
+	return inTokenOrder(byToken), stale, nil
+}
+
+func hasToken(m map[string]ThemeTokenValue, name string) bool {
+	_, ok := m[name]
+	return ok
+}
+
+// inTokenOrder returns the values of byToken in the order of ThemeTokens.
+func inTokenOrder(byToken map[string]ThemeTokenValue) []ThemeTokenValue {
 	out := make([]ThemeTokenValue, 0, len(byToken))
 	for _, t := range themeTokens {
 		if v, ok := byToken[t.Name]; ok {
-			out = append(out, *v)
-			delete(byToken, t.Name)
+			out = append(out, v)
 		}
-	}
-	// Tokens that a later version no longer has stay at the end, by name; they are not rendered.
-	rest := make([]string, 0, len(byToken))
-	for name := range byToken {
-		rest = append(rest, name)
-	}
-	slices.Sort(rest)
-	for _, name := range rest {
-		out = append(out, *byToken[name])
 	}
 	return out
 }
 
-// ThemeRevision is one version of the instance theme (instance_theme_revisions with its
-// instance_theme_tokens). The revision with the greatest ID is the current theme; a revision with
-// no tokens and no custom CSS resets the theme to the defaults.
-type ThemeRevision struct {
-	ID string
-	// Tokens are the overridden tokens, in the order of ThemeTokens.
-	Tokens []ThemeTokenValue
-	// CustomCSS is the administrator's stylesheet, which the server serves without reading it.
-	CustomCSS string
-	// RevisedByUserID is the user who made the change, or "" for a change from the CLI.
-	RevisedByUserID string
-	RevisedAt       time.Time
+// ThemePublication is one publication of a token set (instance_theme_publications): from then on
+// the set is the theme in effect. Its ID is the revision of the theme, which names its stylesheet.
+type ThemePublication struct {
+	ID    string
+	SetID string
+	// PublishedByUserID is the user who published the set, or "" for the CLI and the data upgrade.
+	PublishedByUserID string
+	PublishedAt       time.Time
 }
 
-// Empty reports whether the revision changes nothing, so the web client needs no stylesheet.
-func (r ThemeRevision) Empty() bool { return len(r.Tokens) == 0 && r.CustomCSS == "" }
+// ThemeRevision is a publication with its set: the theme in effect from PublishedAt until the next
+// publication. The publication with the greatest ID is the current theme.
+type ThemeRevision struct {
+	ThemePublication
+	Set ThemeSet
+}
+
+// Empty reports whether the revision overrides nothing, so the web client needs no stylesheet.
+func (r ThemeRevision) Empty() bool { return r.Set.Empty() }
 
 // ThemeHead points at the current theme revision (the instance_theme projection).
 type ThemeHead struct {
 	RevisionID string
 }
 
-// Supersedes reports whether r should replace the head h, which is the zero value when the theme
-// has never been saved.
+// Supersedes reports whether r should replace the head h, which is the zero value when no set
+// has been published.
 func (r ThemeRevision) Supersedes(h ThemeHead) bool {
 	return h.RevisionID == "" || r.ID > h.RevisionID
 }
@@ -204,16 +245,14 @@ const (
 	ThemeOutOfRange ThemeProblemCode = "out_of_range"
 	// ThemeLowContrast: a contrast pair is below its minimum in a color scheme.
 	ThemeLowContrast ThemeProblemCode = "low_contrast"
-	// ThemeCSSTooLong: the custom CSS is longer than MaxCustomCSSBytes.
-	ThemeCSSTooLong ThemeProblemCode = "css_too_long"
-	// ThemeCSSInvalid: the custom CSS is not valid UTF-8 or contains U+0000.
-	ThemeCSSInvalid ThemeProblemCode = "css_invalid"
+	// ThemeTooManyOverrides: the set has more than MaxThemeOverrides overrides.
+	ThemeTooManyOverrides ThemeProblemCode = "too_many_overrides"
 )
 
 // ThemeProblem is one reason a theme cannot be saved.
 type ThemeProblem struct {
 	Code ThemeProblemCode
-	// Token is the token the problem is about (the foreground of a contrast pair), "" for the CSS.
+	// Token is the token the problem is about (the foreground of a contrast pair), "" for the set.
 	Token string
 	// Scheme is the color scheme of a color value or a contrast pair, "" otherwise.
 	Scheme ColorScheme
@@ -221,7 +260,8 @@ type ThemeProblem struct {
 	Background string
 	// Ratio and Minimum are the contrast of the pair and the minimum it needs.
 	Ratio, Minimum float64
-	// Min and Max are the bounds of an out-of-range value, in rem for a length and ms for a duration.
+	// Min and Max are the bounds of an out-of-range value, in rem for a length and ms for a
+	// duration; Max is MaxThemeOverrides for too many overrides.
 	Min, Max float64
 }
 
@@ -231,8 +271,8 @@ func (p ThemeProblem) String() string {
 		return fmt.Sprintf("%s on %s is %.2f:1 in the %s scheme; it needs %g:1", p.Token, p.Background, p.Ratio, p.Scheme, p.Minimum)
 	case ThemeOutOfRange:
 		return fmt.Sprintf("%s is outside %g..%g", p.Token, p.Min, p.Max)
-	case ThemeCSSTooLong, ThemeCSSInvalid:
-		return string(p.Code)
+	case ThemeTooManyOverrides:
+		return fmt.Sprintf("more than %g overrides", p.Max)
 	}
 	if p.Scheme != "" {
 		return fmt.Sprintf("%s (%s): %s", p.Token, p.Scheme, p.Code)
@@ -256,15 +296,18 @@ func (e *ThemeError) Error() string {
 // Unwrap makes errors.Is(err, ErrInvalidValue) hold.
 func (e *ThemeError) Unwrap() error { return ErrInvalidValue }
 
-// NormalizeTheme validates the overrides and the custom CSS of a theme and returns the overrides in
-// their canonical form (lowercase colors, single spaces), in the order of ThemeTokens. It fails with a
-// *ThemeError that lists every problem: unknown or repeated tokens, values without the shape or
-// outside the bounds of their kind, contrast pairs below their minimum in either color scheme with the
-// defaults of the tokens that are not overridden, and a custom CSS that is too long or not text.
-func NormalizeTheme(tokens []ThemeTokenValue, customCSS string) ([]ThemeTokenValue, error) {
+// NormalizeTheme validates a whole token set (ADR-0059 §4) and returns its overrides in their
+// canonical form (lowercase colors, single spaces), in the order of ThemeTokens. It fails with a
+// *ThemeError that lists every problem: too many overrides, unknown or repeated tokens, values
+// without the shape or outside the bounds of their kind, and contrast pairs below their minimum in
+// either color scheme with the defaults of the tokens that are not overridden.
+func NormalizeTheme(tokens []ThemeTokenValue) ([]ThemeTokenValue, error) {
+	if len(tokens) > MaxThemeOverrides {
+		return nil, &ThemeError{Problems: []ThemeProblem{{Code: ThemeTooManyOverrides, Max: MaxThemeOverrides}}}
+	}
 	var problems []ThemeProblem
-	seen := map[string]bool{}
 	byToken := map[string]ThemeTokenValue{}
+	seen := map[string]bool{}
 	for _, v := range tokens {
 		t, ok := LookupThemeToken(v.Token)
 		switch {
@@ -282,19 +325,8 @@ func NormalizeTheme(tokens []ThemeTokenValue, customCSS string) ([]ThemeTokenVal
 			byToken[t.Name] = out
 		}
 	}
-	switch {
-	case len(customCSS) > MaxCustomCSSBytes:
-		problems = append(problems, ThemeProblem{Code: ThemeCSSTooLong, Max: MaxCustomCSSBytes})
-	case !utf8.ValidString(customCSS) || strings.ContainsRune(customCSS, 0):
-		problems = append(problems, ThemeProblem{Code: ThemeCSSInvalid})
-	}
-	out := make([]ThemeTokenValue, 0, len(byToken))
-	for _, t := range themeTokens {
-		if v, ok := byToken[t.Name]; ok {
-			out = append(out, v)
-		}
-	}
-	// Contrast is checked only when every color parsed, so that a malformed color is reported once.
+	out := inTokenOrder(byToken)
+	// Contrast is checked only when every value parsed, so that a malformed color is reported once.
 	if len(problems) == 0 {
 		problems = append(problems, checkContrast(out)...)
 	}
@@ -313,7 +345,7 @@ func normalizeTokenValue(t ThemeToken, v ThemeTokenValue) (ThemeTokenValue, []Th
 			in     string
 			out    *string
 		}{{SchemeLight, v.Light, &out.Light}, {SchemeDark, v.Dark, &out.Dark}} {
-			c, ok := normalizeColor(side.in, t.Alpha)
+			c, ok := normalizeColor(side.in)
 			if !ok {
 				problems = append(problems, ThemeProblem{Code: ThemeInvalidValue, Token: t.Name, Scheme: side.scheme})
 				continue
@@ -335,24 +367,34 @@ func normalizeTokenValue(t ThemeToken, v ThemeTokenValue) (ThemeTokenValue, []Th
 }
 
 var (
-	hexColorPattern      = regexp.MustCompile(`^#[0-9a-f]{6}$`)
-	hexAlphaColorPattern = regexp.MustCompile(`^#[0-9a-f]{6}(?:[0-9a-f]{2})?$`)
-	lengthPattern        = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
-	numberPattern        = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
-	durationPattern      = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
-	cubicBezierPattern   = regexp.MustCompile(`^cubic-bezier\(\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*,\s*(-?\d*\.?\d+)\s*\)$`)
-	quotedFamilyPattern  = regexp.MustCompile(`^"[^"\\;{}<>\x00-\x1f]{1,100}"$`)
-	plainFamilyPattern   = regexp.MustCompile(`^[A-Za-z][A-Za-z0-9-]*(?: [A-Za-z0-9-]+)*$`)
-	shadowLengthPattern  = regexp.MustCompile(`^(?:0|-?(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
+	hexColorPattern = regexp.MustCompile(`^#[0-9a-f]{6}$`)
+	lengthPattern   = regexp.MustCompile(`^(?:0|(\d{1,3}(?:\.\d{1,4})?|\.\d{1,4})(rem|px))$`)
+	numberPattern   = regexp.MustCompile(`^\d{1,2}(?:\.\d{1,4})?$`)
+	durationPattern = regexp.MustCompile(`^(\d{1,5}(?:\.\d{1,3})?)(ms|s)$`)
+	// A quoted family name, in double or single quotes, as CSS writes either.
+	quotedFamilyPattern = regexp.MustCompile(`^(?:"[^"\\;{}<>\x00-\x1f]{1,100}"|'[^'\\;{}<>\x00-\x1f]{1,100}')$`)
+	// An unquoted family name is a sequence of CSS identifiers, each of which may start with a hyphen
+	// (-apple-system) but not with a digit: "M PLUS 1p" must be quoted.
+	plainFamilyPattern = regexp.MustCompile(`^-?[A-Za-z_][A-Za-z0-9_-]*(?: -?[A-Za-z_][A-Za-z0-9_-]*)*$`)
 )
 
-var easingKeywords = []string{"linear", "ease", "ease-in", "ease-out", "ease-in-out"}
+// genericFamilies are the unquoted names of a font-family value that name no family but match every character, and
+// so would hide the emoji and CJK fonts after the theme's in the stacks. Each is generic only as a whole name.
+// Quoted, each is a family name like any other.
+var genericFamilies = map[string]bool{
+	"serif": true, "sans-serif": true, "monospace": true, "cursive": true, "fantasy": true, "system-ui": true,
+	"ui-serif": true, "ui-sans-serif": true, "ui-monospace": true, "ui-rounded": true, "math": true, "emoji": true,
+	"fangsong": true,
+}
 
-func normalizeColor(s string, alpha bool) (string, bool) {
+// reservedFamilyWords are the CSS-wide keywords and default, which CSS refuses as any word of an unquoted family
+// name: "Noto inherit" makes the whole declaration invalid, and the page draws with the browser's font.
+var reservedFamilyWords = map[string]bool{
+	"inherit": true, "initial": true, "unset": true, "revert": true, "revert-layer": true, "default": true,
+}
+
+func normalizeColor(s string) (string, bool) {
 	c := strings.ToLower(strings.TrimSpace(s))
-	if alpha {
-		return c, hexAlphaColorPattern.MatchString(c)
-	}
 	return c, hexColorPattern.MatchString(c)
 }
 
@@ -403,45 +445,14 @@ func normalizeValue(t ThemeToken, s string) (string, ThemeProblemCode, bool) {
 		if !inRange(t, n) {
 			return "", ThemeOutOfRange, false
 		}
-	case ThemeTokenEasing:
-		if !validEasing(v) {
-			return "", ThemeInvalidValue, false
-		}
 	case ThemeTokenFontFamily:
 		if !validFontFamily(v) {
 			return "", ThemeInvalidValue, false
 		}
-	case ThemeTokenShadow:
-		out, ok := normalizeShadow(v)
-		if !ok {
-			return "", ThemeInvalidValue, false
-		}
-		v = out
 	default:
 		return "", ThemeInvalidValue, false
 	}
 	return v, "", true
-}
-
-func validEasing(v string) bool {
-	if slices.Contains(easingKeywords, v) {
-		return true
-	}
-	m := cubicBezierPattern.FindStringSubmatch(v)
-	if m == nil {
-		return false
-	}
-	for i, s := range m[1:] {
-		n, err := strconv.ParseFloat(s, 64)
-		if err != nil {
-			return false
-		}
-		// The x coordinates (1st and 3rd) must be in [0, 1]; the y coordinates may overshoot a little.
-		if i%2 == 0 && (n < 0 || n > 1) || i%2 == 1 && (n < -2 || n > 3) {
-			return false
-		}
-	}
-	return true
 }
 
 func validFontFamily(v string) bool {
@@ -454,44 +465,19 @@ func validFontFamily(v string) bool {
 	}
 	for _, f := range families {
 		f = strings.TrimSpace(f)
-		if !quotedFamilyPattern.MatchString(f) && (!plainFamilyPattern.MatchString(f) || len(f) > 100) {
+		if quotedFamilyPattern.MatchString(f) {
+			continue
+		}
+		if !plainFamilyPattern.MatchString(f) || len(f) > 100 || genericFamilies[strings.ToLower(f)] {
 			return false
+		}
+		for _, w := range strings.Split(f, " ") {
+			if reservedFamilyWords[strings.ToLower(w)] {
+				return false
+			}
 		}
 	}
 	return true
-}
-
-// normalizeShadow checks a shadow value: none, or up to MaxShadowLayers comma-separated layers of
-// [inset] <x> <y> [<blur> [<spread>]] <#color>, each length 0 or rem / px within MaxShadowOffsetRem.
-func normalizeShadow(v string) (string, bool) {
-	if v == "none" {
-		return v, true
-	}
-	layers := strings.Split(v, ",")
-	if len(layers) > MaxShadowLayers {
-		return "", false
-	}
-	out := make([]string, len(layers))
-	for i, layer := range layers {
-		parts := strings.Fields(layer)
-		if len(parts) > 0 && parts[0] == "inset" {
-			parts = parts[1:]
-		}
-		if len(parts) < 3 || len(parts) > 5 {
-			return "", false
-		}
-		if _, ok := normalizeColor(parts[len(parts)-1], true); !ok {
-			return "", false
-		}
-		for _, p := range parts[:len(parts)-1] {
-			m := shadowLengthPattern.FindStringSubmatch(p)
-			if m == nil || lengthRem(m) > MaxShadowOffsetRem {
-				return "", false
-			}
-		}
-		out[i] = strings.ToLower(strings.Join(strings.Fields(layer), " "))
-	}
-	return strings.Join(out, ", "), true
 }
 
 // rgba is a color in linear-light sRGB with straight alpha.
@@ -527,7 +513,7 @@ func luminance(c rgba) float64 { return 0.2126*c.r + 0.7152*c.g + 0.0722*c.b }
 
 // ContrastRatio returns the WCAG 2.2 contrast ratio of the color fg drawn on the opaque color bg,
 // both #rrggbb or #rrggbbaa, from 1 to 21. A translucent fg is composited over bg in gamma-encoded
-// sRGB, as browsers paint it. It computes what app/ui/src/color.ts computes.
+// sRGB, as browsers paint it.
 func ContrastRatio(fg, bg string) float64 {
 	f, b := parseHexColor(fg), parseHexColor(bg)
 	if f.a < 1 {
@@ -555,6 +541,15 @@ func ThemeColor(tokens []ThemeTokenValue, name string, scheme ColorScheme) strin
 	return light
 }
 
+// DefaultThemeColor returns the default of the color token name in the dark color scheme, or in
+// the light one, or "" for a name that is not a color token.
+func DefaultThemeColor(name string, dark bool) string {
+	if dark {
+		return ThemeColor(nil, name, SchemeDark)
+	}
+	return ThemeColor(nil, name, SchemeLight)
+}
+
 func checkContrast(tokens []ThemeTokenValue) []ThemeProblem {
 	var problems []ThemeProblem
 	for _, scheme := range []ColorScheme{SchemeLight, SchemeDark} {
@@ -571,16 +566,25 @@ func checkContrast(tokens []ThemeTokenValue) []ThemeProblem {
 	return problems
 }
 
-// Stylesheet returns the stylesheet of the theme (ADR-0059 §5): a :root rule with the token
-// overrides, colors as light-dark(), then the custom CSS. Neither is in a cascade layer, so both win
-// over the defaults and the utilities that Tailwind puts in its layers. The names come from the
-// generated token list and the values were validated against their kinds, so they cannot end the
-// rule; the custom CSS is the administrator's and is copied as it is.
+// Stylesheet returns the stylesheet of the revision (ADR-0059 §5).
 func (r ThemeRevision) Stylesheet() []byte {
+	return themeStylesheet("The theme of this server (revision "+r.ID+").", r.Set.Tokens)
+}
+
+// Stylesheet returns the stylesheet of the set, which previews a draft before it is published.
+func (s ThemeSet) Stylesheet() []byte {
+	return themeStylesheet("A draft theme of this server (set "+s.ID+"), not published.", s.Tokens)
+}
+
+// themeStylesheet returns a :root rule with the token overrides, colors as light-dark(), outside
+// any cascade layer, so that it wins over the defaults and the utilities that Tailwind puts in its
+// layers. The names come from the generated token list and the values were validated against their
+// kinds, so they cannot end the rule. A set without overrides is the comment alone.
+func themeStylesheet(comment string, tokens []ThemeTokenValue) []byte {
 	var b strings.Builder
-	b.WriteString("/* The theme of this server (revision " + r.ID + "). */\n")
+	b.WriteString("/* " + comment + " */\n")
 	var decls []string
-	for _, v := range r.Tokens {
+	for _, v := range tokens {
 		t, ok := LookupThemeToken(v.Token)
 		if !ok {
 			continue
@@ -597,12 +601,6 @@ func (r ThemeRevision) Stylesheet() []byte {
 			b.WriteString(d)
 		}
 		b.WriteString("}\n")
-	}
-	if r.CustomCSS != "" {
-		b.WriteString(r.CustomCSS)
-		if !strings.HasSuffix(r.CustomCSS, "\n") {
-			b.WriteString("\n")
-		}
 	}
 	return []byte(b.String())
 }

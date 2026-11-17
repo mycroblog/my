@@ -282,12 +282,19 @@ func TestStartWaitsForASidecar(t *testing.T) {
 	}
 	t.Cleanup(func() { _ = os.RemoveAll(dir) })
 	path := filepath.Join(dir, "p.sock")
-	conn := newConn(t, client.Options{Destination: kind.Destination{Address: "unix://" + path}})
+	meter := testkit.NewMeter()
+	conn := newConn(t, client.Options{Destination: kind.Destination{Address: "unix://" + path}, Meter: meter})
 
 	srv := &http.Server{Handler: storeOf(testkit.NewKeyManager(pluginKey)), ReadHeaderTimeout: time.Minute}
 	t.Cleanup(func() { _ = srv.Close() })
 	go func() {
-		time.Sleep(1200 * time.Millisecond)
+		// The sidecar comes up once Start has found it missing.
+		failed := func() bool {
+			return meter.Sum("my.plugin.failures", map[string]string{client.LabelKind: kind.KeyManager}) > 0
+		}
+		if !testkit.Eventually(t, keymanagerplugin.StartWait, failed) {
+			return
+		}
 		l, err := new(net.ListenConfig).Listen(context.Background(), "unix", path)
 		if err != nil {
 			return

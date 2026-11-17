@@ -26,11 +26,11 @@ type fastStep struct {
 	listing bool
 }
 
-// tsExts are the extensions `bun fmt` formats (FMT_FILES of tasks/web.yml).
+// tsExts are the extensions `bun fmt` formats (the [fmt] ignorePatterns of bunfig.toml).
 var tsExts = map[string]bool{".ts": true, ".tsx": true, ".js": true, ".mjs": true}
 
 // tsRoots are the TypeScript packages `bun fmt` formats.
-var tsRoots = []string{"app/", "pkg/mykit/ts/", "pkg/mybot/ts/", "tools/i18n/"}
+var tsRoots = []string{"web/", "pkg/mykit/ts/", "pkg/mybot/ts/", "tools/i18n/"}
 
 // tofuRoot is the directory tofu:fmt-check formats (tasks/tofu.yml), and tofuSuffixes are the files `tofu fmt`
 // reads there.
@@ -53,6 +53,12 @@ func isTofu(path string) bool {
 // tofuConsistency are the checks of tofu:check that compare files and run no tofu: the configuration keys, the
 // backend contract, the coverage of the settings, and the module sources against what the modules declare.
 var tofuConsistency = []string{"tofu:env-check", "tofu:backend-fields", "tofu:coverage", "tofu:sources"}
+
+// sleepScript refuses time.Sleep in the Go tests beyond sleepBaseline, the uses that predate it (ADR-0170 §7).
+const (
+	sleepScript   = "go-test-sleep.sh"
+	sleepBaseline = "scripts/go-test-sleep.baseline"
+)
 
 // contextsScript prints the check contexts of a list of changed paths; the merge queue picks its jobs with it.
 const contextsScript = "scripts/changed-contexts.sh"
@@ -86,7 +92,7 @@ func tofuContext(root string, changed []string) bool {
 }
 
 // stale maps the sources of committed generated files to the quick check that fails when those files are
-// stale; `regen` rewrites them.
+// stale (`regen` rewrites them), and the inputs of the catalog checks to those checks.
 var stale = []struct {
 	prefix string
 	step   fastStep
@@ -97,8 +103,9 @@ var stale = []struct {
 	{"sqlc.yaml", fastStep{name: "generated: go:sqlc-check", argv: []string{"scripts/task.sh", "go:sqlc-check"}}},
 	{"locales/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
 	{"tools/i18n/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
-	{"app/ui/src/theme.css", fastStep{name: "generated: web:tokens", argv: []string{"scripts/task.sh", "web:tokens"}}},
-	{"app/ui/src/tokens.ts", fastStep{name: "generated: web:tokens", argv: []string{"scripts/task.sh", "web:tokens"}}},
+	// The word decisions of the copy role are rules of the copy lint, and one change adds at most a few waivers.
+	{".claude/knowledge/copy/", fastStep{name: "i18n:lint", argv: []string{"scripts/task.sh", "i18n:lint"}}},
+	{"tools/i18n/waivers.json", fastStep{name: "i18n:waivers", argv: []string{"scripts/task.sh", "i18n:waivers"}}},
 	{"internal/platform/config/", fastStep{name: "generated: config docs", env: []string{"GOWORK=off"},
 		argv: []string{"go", "test", "./internal/platform/config", "-run", "^Test(Reference|ExampleEnv|SettingsJSON)UpToDate$"}}},
 	{"cmd/my/", fastStep{name: "generated: cli docs", env: []string{"GOWORK=off"},
@@ -126,11 +133,14 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		st, err := os.Stat(filepath.Join(root, p))
 		return err == nil && !st.IsDir()
 	}
-	var goFiles, tsFiles, appTS, shFiles, tofuFiles []string
+	var goFiles, tsFiles, webTS, shFiles, tofuFiles []string
 	pkgs := map[string]map[string]bool{} // module -> package directories
-	md, maps := false, false
+	md, maps, goTests := false, false, false
 	for _, f := range changed {
 		ext := filepath.Ext(f)
+		if strings.HasSuffix(f, "_test.go") || f == sleepBaseline {
+			goTests = true
+		}
 		switch {
 		case filepath.Base(f) == "context-map.yaml":
 			maps = true
@@ -159,9 +169,9 @@ func fastPlan(root string, changed []string) [][]fastStep {
 				if strings.HasPrefix(f, r) {
 					if exists(f) {
 						tsFiles = append(tsFiles, f)
-					}
-					if r == "app/" {
-						appTS = append(appTS, strings.TrimPrefix(f, "app/"))
+						if r == "web/" {
+							webTS = append(webTS, f)
+						}
 					}
 				}
 			}
@@ -195,23 +205,14 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		// vet compiles the packages and their tests, so it is the build too.
 		plan = append(plan, []fastStep{{name: name, dir: m, argv: append([]string{"go", "vet"}, dirs...), env: []string{"GOWORK=off", "CGO_ENABLED=0"}}})
 	}
-	if len(tsFiles) > 0 || len(appTS) > 0 {
-		var ts []fastStep
-		if len(tsFiles) > 0 {
-			ts = append(ts, fastStep{name: "bun fmt", argv: append([]string{"bun", "fmt", "--check"}, tsFiles...)})
-		}
-		if len(appTS) > 0 {
-			// web:typecheck generates the files tsc and Oxlint read, so Oxlint runs after it.
-			ts = append(ts, fastStep{name: "tsc app/web", argv: []string{"scripts/task.sh", "web:typecheck"}})
-			var lint []string
-			for _, f := range appTS {
-				if exists("app/" + f) {
-					lint = append(lint, f)
-				}
-			}
-			if len(lint) > 0 {
-				ts = append(ts, fastStep{name: fmt.Sprintf("oxlint (%d files)", len(lint)), dir: "app", argv: append([]string{"bun", "run", "lint"}, lint...)})
-			}
+	if goTests {
+		plan = append(plan, []fastStep{{name: sleepScript, argv: []string{"scripts/" + sleepScript}}})
+	}
+	if len(tsFiles) > 0 {
+		ts := []fastStep{{name: "bun fmt", argv: append([]string{"bun", "fmt", "--check"}, tsFiles...)}}
+		if len(webTS) > 0 {
+			// Oxlint runs from the repository root with its .oxlintrc.json, on Bun alone (ADR-0025 §10).
+			ts = append(ts, fastStep{name: fmt.Sprintf("oxlint (%d files)", len(webTS)), argv: append([]string{"bun", "--bun", "oxlint"}, webTS...)})
 		}
 		plan = append(plan, ts)
 	}
@@ -308,7 +309,7 @@ func fastFix(name string) string {
 }
 
 // CheckFast runs the quick checks of the files changed since the merge base with base — formatting, go vet of
-// the changed packages, tsc and Oxlint, the catalogs, Markdown, shellcheck, the formatting and the consistency of the OpenTofu modules, and that committed generated files
+// the changed packages, time.Sleep in the Go tests, Oxlint, the catalogs, Markdown, shellcheck, the formatting and the consistency of the OpenTofu modules, and that committed generated files
 // are current — and returns one line per check with the failing lines of those that failed. The tests and the
 // rest of the full check are the merge queue's.
 func CheckFast(r *repo.Repo, base string) (bool, []string, error) {

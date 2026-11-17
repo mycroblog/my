@@ -1,14 +1,13 @@
 name: Nightly
 
-# A run of some of the jobs is titled for them, as `Nightly (l4)`. A run titled just `Nightly` is a full one: it ran every
+# A run of some of the jobs is titled for them, as `Nightly (slow-suite)`. A run titled just `Nightly` is a full one: it ran every
 # job, or, on a schedule, skipped them because a full run had already passed on this commit. The `changes` job and the
 # check before a release (.claude/skills/release/SKILL.md) read this title.
 run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inputs.jobs) || 'Nightly' }}
 
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too
-# slow for the merge queue is found within a day, the web E2E of the demo server (ADR-0015), and the L4 task tests of
-# the screens (ADR-0015). A scheduled run is skipped when main has not moved since the last successful full run; a run
-# by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=l4`, `-f jobs=demo-e2e`, `-f jobs=slow-suite`, or
+# slow for the merge queue is found within a day. A scheduled run is skipped when main has not moved since the last
+# successful full run; a run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=slow-suite` or
 # `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 # The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh).
 # When the slow suite passes on main, the nightly-image jobs publish the image of that commit as
@@ -20,18 +19,10 @@ on:
   workflow_dispatch:
     inputs:
       jobs:
-        description: "The jobs to run: `all`, `slow-suite`, `demo-e2e` (the web E2E of the demo server), `l4` (the L4 task tests), or `image-scan` (the published images)."
+        description: "The jobs to run: `all`, `slow-suite`, or `image-scan` (the published images)."
         type: choice
-        options: [all, slow-suite, demo-e2e, l4, image-scan]
+        options: [all, slow-suite, image-scan]
         default: all
-      screens:
-        description: "L4: the screens to measure, by the names of their L1 files (`badges,settings-menu`); empty for every screen."
-        type: string
-        default: ""
-      l4_dry_run:
-        description: "L4: do everything but call the agent (no Claude API use, no issues)."
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -51,8 +42,8 @@ jobs:
     steps:
       # A skipped run succeeds with the same head, so the comparison holds until main moves. A partial run never counts,
       # even `slow-suite` alone: the other jobs still have to run on its commit. `since` is the head of the last
-      # successful full run, from which the L4 job picks the screens that changed. When none of the latest 100 successful
-      # runs is a full one, tonight's run is.
+      # successful full run, from which the report lists the commits. When none of the latest 100 successful runs is a
+      # full one, tonight's run is.
       - name: Compare main with the last successful full run
         id: compare
         env:
@@ -78,7 +69,7 @@ jobs:
 
   slow-suite:
     needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'demo-e2e' && inputs.jobs != 'image-scan'
+    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'image-scan'
     uses: ./.github/workflows/slow-suite.yml
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
@@ -88,10 +79,10 @@ jobs:
 
   # A red Nightly stops the line (ADR-0079 §8): on a full run of main, opens the issue of the failing Nightly or comments
   # on the open one, with the failed jobs and the commits since the last green run, and closes it when the Nightly
-  # passes again (scripts/nightly-report.sh). It also lists the E2E tests that passed only on a retry. A partial run
-  # by hand, a run on another branch, and a run that a newer one cancelled report nothing.
+  # passes again (scripts/nightly-report.sh). A partial run by hand, a run on another branch, and a run that a newer
+  # one cancelled report nothing.
   report:
-    needs: [changes, slow-suite, demo-e2e, nightly-image, nightly-image-check, nightly-image-attest, nightly-image-tag]
+    needs: [changes, slow-suite, nightly-image, nightly-image-check, nightly-image-attest, nightly-image-tag]
     if: ${{ always() && needs.changes.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
@@ -103,12 +94,6 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - name: Download the list of flaky tests
-        continue-on-error: true
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: e2e-flaky-full
-          path: ${{ runner.temp }}/flaky
       - name: Report the Nightly
         env:
           GH_TOKEN: ${{ github.token }}
@@ -117,7 +102,6 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           SHA: ${{ github.sha }}
           SINCE: ${{ needs.changes.outputs.since }}
-          FLAKY: ${{ runner.temp }}/flaky/flaky.txt
         run: |
           # The changes job itself is not a check of main.
           RESULTS="$(jq 'del(.changes)' <<< "$RESULTS")" scripts/nightly-report.sh
@@ -310,200 +294,3 @@ jobs:
             echo "ghcr.io/mycroblog/my:nightly@$DIGEST"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
-
-  # The web E2E of the demo server (app/web/e2e/demo-*.spec.ts, the project `demo-chromium`, ADR-0015 §8): the demo
-  # scenario signs in, a second run of the seed adds nothing, a password reset arrives in Mailpit, and a reply reaches
-  # the Service Worker as a Web Push notification through the fake push service (ADR-0015 §12). The specs need
-  # the test build of `bin/my` (`GO_TAGS=e2e_fakes`) and Mailpit, so they run here every night rather than in the
-  # merge queue. The demo server has Web Push on: `node e2e/server.ts demo` starts the test build's fake push service
-  # (`my dev push-service`) with the certificate that start-mailpit's scripts/mailpit-cert.sh writes, here and in the
-  # l4 job alike. The test build stays in the job and is never uploaded.
-  demo-e2e:
-    needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'l4' && inputs.jobs != 'slow-suite' && inputs.jobs != 'image-scan'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # The Playwright image of the l4 job below (`scripts/task.sh web:playwright-image-check`).
-    container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
-      options: --ipc=host
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      # The job runs as root in the container, and the workspace belongs to the runner's user: git refuses the
-      # checkout as of dubious ownership, and go build cannot stamp the VCS information of bin/my without it.
-      - name: Trust the workspace
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      # The image lacks the unzip that setup-bun extracts Bun with.
-      - name: Set up Bun and Node
-        uses: ./.github/actions/setup-bun
-        with:
-          npm: "true"
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-      - name: Start Mailpit
-        uses: ./.github/actions/start-mailpit
-        with:
-          container-id: ${{ job.container.id }}
-      - name: go:bin (the test build)
-        run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
-      - name: playwright test --project=demo-chromium
-        working-directory: app/web
-        env:
-          E2E_DEMO: "1"
-          # The job runs as root, but the runner sets HOME to /github/home, owned by another user.
-          HOME: /root
-        run: bun run playwright test --project=demo-chromium
-      - name: Upload the report
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: demo-e2e-report
-          path: |
-            app/web/playwright-report/
-            app/web/test-results/
-          retention-days: 14
-
-  # The L4 task tests (ADR-0110 §7, ADR-0015; `scripts/task.sh web:l4`, app/web/l4/run.ts): Claude Code, run
-  # non-interactively, does each task of the screens' L1 files through the Playwright MCP server, which gives it ARIA
-  # snapshots and no screenshots, against the demo server (ADR-0015 §8: the test build of `bin/my` with the demo
-  # scenario), signed in as the person of the scenario that the front matter of the screen's L1 file names. Mailpit runs in
-  # the job (.github/actions/start-mailpit), and a task that reads email reads it in Mailpit's web UI, whose steps are
-  # recorded apart from the lostness. A scheduled run measures the screens whose L1 file or the paths of its front matter changed
-  # since the last successful full run; a run by hand measures the `screens` input, or every screen.
-  #
-  # Per-night cap: at most 10 tasks a night (CAP below), taking the selected screens in turn, each a Claude Code session
-  # of at most 40 turns and US$1 (L4_MAX_TURNS, L4_BUDGET_USD). The spend limit of the Claude Console workspace that
-  # the federation rule targets bounds the total (ADR-0079).
-  #
-  # The job authenticates to the Claude API with Workload Identity Federation (ADR-0079), never an API key: it runs in
-  # the environment `ux-nightly` (main only), which holds the four IDs as variables, and only it has `id-token: write`.
-  # Claude Code exchanges the GitHub OIDC token in ANTHROPIC_IDENTITY_TOKEN_FILE; the step writes the file before the
-  # tests and every 2 minutes while they run, as GitHub's token expires about 5 minutes after it is issued.
-  l4:
-    needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'slow-suite' && inputs.jobs != 'demo-e2e' && inputs.jobs != 'image-scan'
-    runs-on: ubuntu-latest
-    timeout-minutes: 150
-    environment: ux-nightly
-    permissions:
-      contents: read
-      id-token: write
-    outputs:
-      results: ${{ steps.results.outputs.found }}
-    # The official Playwright image, pinned by digest, provides the Chromium of @playwright/test, which the sign-in
-    # and the Playwright MCP server drive, with its system libraries. On the runner itself Chromium finds no usable
-    # sandbox (Ubuntu 24.04 restricts unprivileged user namespaces). Must equal PLAYWRIGHT_IMAGE in Taskfile.yml
-    # (`scripts/task.sh web:playwright-image-check`).
-    container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
-      options: --ipc=host
-    steps:
-      # The whole history, for the diff since the last successful full run.
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      # The job runs as root in the container, and the workspace belongs to the runner's user: git refuses the
-      # checkout as of dubious ownership, and go build cannot stamp the VCS information of bin/my without it.
-      - name: Trust the workspace
-        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      # The image lacks the unzip that setup-bun extracts Bun with.
-      - name: Set up Bun and Node
-        uses: ./.github/actions/setup-bun
-        with:
-          npm: "true"
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-      - name: web:install
-        run: scripts/task.sh web:install
-      - name: Start Mailpit
-        uses: ./.github/actions/start-mailpit
-        with:
-          container-id: ${{ job.container.id }}
-      - name: Install Claude Code
-        if: ${{ !inputs.l4_dry_run }}
-        run: npm install --global @anthropic-ai/claude-code@2.1.308
-      - name: web:l4
-        env:
-          ANTHROPIC_FEDERATION_RULE_ID: ${{ vars.ANTHROPIC_FEDERATION_RULE_ID }}
-          ANTHROPIC_ORGANIZATION_ID: ${{ vars.ANTHROPIC_ORGANIZATION_ID }}
-          ANTHROPIC_SERVICE_ACCOUNT_ID: ${{ vars.ANTHROPIC_SERVICE_ACCOUNT_ID }}
-          ANTHROPIC_WORKSPACE_ID: ${{ vars.ANTHROPIC_WORKSPACE_ID }}
-          ANTHROPIC_IDENTITY_TOKEN_FILE: ${{ runner.temp }}/anthropic-identity-token
-          SINCE: ${{ needs.changes.outputs.since }}
-          SCREEN: ${{ inputs.screens }}
-          DRY_RUN: ${{ inputs.l4_dry_run && '1' || '' }}
-          # The job runs as root in the container, where Chromium refuses to start in its sandbox; the browser loads
-          # only the app of `my serve` and Mailpit's web UI on localhost.
-          L4_NO_SANDBOX: "1"
-          # Started above; web:l4 would start it with `docker compose` on the host's ports otherwise.
-          MAILPIT_RUNNING: "1"
-        run: |
-          if [ -z "$DRY_RUN" ]; then
-            fetch_token() {
-              curl -sSf -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-                "$ACTIONS_ID_TOKEN_REQUEST_URL&audience=https://api.anthropic.com" |
-                node -pe 'JSON.parse(fs.readFileSync(0, "utf8")).value || process.exit(1)' > "$ANTHROPIC_IDENTITY_TOKEN_FILE.next"
-              mv "$ANTHROPIC_IDENTITY_TOKEN_FILE.next" "$ANTHROPIC_IDENTITY_TOKEN_FILE"
-            }
-            fetch_token
-            ( while sleep 120; do fetch_token || echo "::warning::Could not refresh the GitHub OIDC token."; done ) &
-            refresher=$!
-            trap 'kill "$refresher"' EXIT
-          fi
-          scripts/task.sh web:l4 CAP=10 SINCE="$SINCE" SCREEN="$SCREEN" DRY_RUN="$DRY_RUN"
-      # l4-issues runs only when the tests wrote their results, not after a failure before them.
-      - name: Find the results
-        id: results
-        if: ${{ !cancelled() }}
-        run: |
-          if [ -f .tmp/l4/results.json ]; then
-            echo "found=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "::warning::web:l4 wrote no .tmp/l4/results.json: no issues are filed."
-          fi
-      # The results, the agent's transcripts, and the server's log; never the identity token, which is outside .tmp.
-      - name: Upload the results
-        if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
-        with:
-          name: l4-results
-          path: |
-            .tmp/l4/
-            !.tmp/l4/**/storage-state.json
-          retention-days: 30
-
-  # Files or updates one issue per screen for the tasks with lostness above 0.4, apart from the job that holds the
-  # identity token. It runs when the tests wrote their results, also after some of them failed, so the measured tasks
-  # still count, and is skipped when the l4 job stopped before them.
-  l4-issues:
-    needs: l4
-    if: ${{ !cancelled() && needs.l4.outputs.results == 'true' && !inputs.l4_dry_run }}
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      issues: write
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Node
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
-        with:
-          node-version-file: .tool-versions
-      - name: Download the results
-        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
-        with:
-          name: l4-results
-          path: .tmp/l4
-      - name: web:l4-issues
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-        run: scripts/task.sh web:l4-issues

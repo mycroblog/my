@@ -20,6 +20,7 @@ import (
 	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // set reports whether an optional field of a Relationship is present and true.
@@ -183,12 +184,8 @@ func TestModeratorNotificationsStayOutOfThirdPartyStreams(t *testing.T) {
 		t.Fatalf("GET /streaming = %d", res.StatusCode)
 	}
 	events := readEvents(bufio.NewReader(res.Body))
-	deadline := time.Now().Add(5 * time.Second)
-	for c.app.Streams.Len() == 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("the stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return c.app.Streams.Len() != 0 }) {
+		t.Fatal("the stream did not subscribe")
 	}
 	reportForModerators(t, c)
 	mention(t, c)

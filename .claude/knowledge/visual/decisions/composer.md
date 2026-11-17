@@ -1,0 +1,10 @@
+# visual: decisions, composer
+
+The post composer: where it opens, what sits where in it, its menus and its poll, and how it is left. One line each:
+`- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+
+- A dialog over the dimmed screen from the tablet width, a screen of its own on a phone, its row with Post right above the software keyboard — the reader keeps their place behind a dialog; the keyboard covers half a phone — the decider's answers on /app/compose (#3046) — 2026-11-14 — held 1 / missed 0
+- The post replied to or quoted sits above the text as its context, never below — a quote below the text gets in the way on mobile; reply and quote read alike — the decider's note 20261114-123316-730f.1 — 2026-11-14 — held 0 / missed 1
+- × or Escape discards a written post, with a short neutral notice offering Undo; leaving by accident (the backdrop, a phone's back gesture) saves a draft without a word; no three-way question — Escape is often pressed by mistake around an IME — the decider's answers (#3046) — 2026-11-14 — held 0 / missed 1
+- A menu of two kinds of setting groups each under its caption, a rule between: the audience's visibilities, then interactions, whose reply, boost and quote permissions open as a submenu — one run of items reads as one kind; a long menu runs off the screen — the decider's answers and note 20261114-123050-28ef.1 — 2026-11-14 — held 0 / missed 1
+- A part mirrors how the post will show it: the poll is a raised card under its caption and remove, each option headed by a radio's ring, or a checkbox's square with several choices; every control in it reads as pressable (a list's choice as a select: glyph, value, chevron, on a field's surface) and nothing else does — a poll "just dropped in" had inert parts that looked pressable — the decider's notes 20261114-123414-45d6.1, 20261114-124549-07df.1, the pick composer-poll card (20261114-124329-7937.1, 20261114-124907-3518.1) — 2026-11-14 — held 0 / missed 1

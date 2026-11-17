@@ -1,4 +1,0 @@
-# SPDX-License-Identifier: AGPL-3.0-only
-docs: ["docs/adr/0086-email-delivery.md#2-組み立てテンプレートと外枠"]
-userdocs: ["docs/operations/email.md#the-html-version"]
-checks: [go, mail]

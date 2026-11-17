@@ -27,10 +27,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc -p tsconfig.lib.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.lib.tsbuildinfo && tsc -p tsconfig.test.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.test.tsbuildinfo && tsc -p tsconfig.examples.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.examples.tsbuildinfo",
-    "lint": "oxlint",
+    "typecheck": "bun --bun tsc -p tsconfig.lib.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.lib.tsbuildinfo && bun --bun tsc -p tsconfig.test.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.test.tsbuildinfo && bun --bun tsc -p tsconfig.examples.json --incremental --tsBuildInfoFile node_modules/.cache/tsc/tsconfig.examples.tsbuildinfo",
+    "lint": "bun --bun oxlint",
     "test": "bun test --conditions=@mycroblog/source",
-    "build": "rm -rf dist && tsc -p tsconfig.build.json"
+    "build": "rm -rf dist && bun --bun tsc -p tsconfig.build.json"
   },
   "dependencies": {
     "@mycroblog/mykit": "workspace:*",
@@ -38,9 +38,7 @@
   },
   "devDependencies": {
     "@types/bun": "1.4.4",
-    "@typescript/native": "npm:typescript@7.0.2",
     "oxlint": "1.92.0",
-    "oxlint-tsgolint": "7.0.2006",
-    "typescript": "npm:@typescript/typescript6@6.0.2"
+    "oxlint-tsgolint": "7.0.2006"
   }
 }

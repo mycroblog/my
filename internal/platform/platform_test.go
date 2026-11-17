@@ -17,13 +17,16 @@ import (
 	"strings"
 	"sync"
 	"testing"
+	"testing/fstest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/dbupgrade"
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/domain/instance"
+	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform"
 	"github.com/mycroblog/my/internal/platform/config"
+	"github.com/mycroblog/my/pkg/testkit"
 	"github.com/mycroblog/my/pkg/testkit/sqlitetest"
 )
 
@@ -64,6 +67,18 @@ func newDatabase(t *testing.T, applied bool) string {
 		return filepath.Join(t.TempDir(), "my.db")
 	}
 	return sqlitetest.NewFile(t)
+}
+
+// webBuild adds to build, a build of the web client made here, the list of its files' ETags, which
+// the web build writes last.
+func webBuild(t *testing.T, build fstest.MapFS) fstest.MapFS {
+	t.Helper()
+	list, err := web.ListETags(build)
+	if err != nil {
+		t.Fatal(err)
+	}
+	build[web.ETagsPath] = &fstest.MapFile{Data: list}
+	return build
 }
 
 // loadConfig loads a configuration from env alone, with the required settings filled in.
@@ -234,11 +249,11 @@ func TestServeSQLite(t *testing.T) {
 			t.Fatalf("status = %d, want 404", resp.StatusCode)
 		}
 		p := decodeProblem(t, resp, body)
-		if resp.Header.Get("Content-Language") != "ja" || p.Title == "" || p.Title == "The requested resource was not found." {
+		if resp.Header.Get("Content-Language") != "ja" || p.Title == "" || p.Title == "This could not be found. It may have been deleted, or the link may be wrong. Check the link, or go back." {
 			t.Errorf("Content-Language = %q, title = %q; want a Japanese title", resp.Header.Get("Content-Language"), p.Title)
 		}
 		resp, body = s.do(t, http.MethodGet, "/ap/nope", nil)
-		if p := decodeProblem(t, resp, body); p.Title != "The requested resource was not found." || resp.Header.Get("Content-Language") != "en" {
+		if p := decodeProblem(t, resp, body); p.Title != "This could not be found. It may have been deleted, or the link may be wrong. Check the link, or go back." || resp.Header.Get("Content-Language") != "en" {
 			t.Errorf("default title = %q (%s), want the English message", p.Title, resp.Header.Get("Content-Language"))
 		}
 	})
@@ -422,11 +437,10 @@ func TestDeadJobIsReported(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	deadline := time.Now().Add(10 * time.Second)
 	// The report of a dead job comes after the line of its outcome, so wait for the reports themselves.
-	for time.Now().Before(deadline) && strings.Count(s.logs.String(), `"my.error.where":"test.dead"`) < 2 {
-		time.Sleep(10 * time.Millisecond)
-	}
+	testkit.Eventually(t, 10*time.Second, func() bool {
+		return strings.Count(s.logs.String(), `"my.error.where":"test.dead"`) >= 2
+	})
 	reports := errorReportLines(t, s.logs.String())
 	if len(reports) != 2 {
 		t.Fatalf("%d report lines, want 2:\n%s", len(reports), s.logs.String())

@@ -50,8 +50,7 @@ func TestEMFMetrics(t *testing.T) {
 		return out
 	}
 	var requests, jobs []map[string]any
-	deadline := time.Now().Add(10 * time.Second)
-	for {
+	testkit.Eventually(t, 10*time.Second, func() bool {
 		requests, jobs = nil, nil
 		for _, m := range parse(s.logs) {
 			switch {
@@ -61,11 +60,8 @@ func TestEMFMetrics(t *testing.T) {
 				jobs = append(jobs, m)
 			}
 		}
-		if len(requests) > 0 && len(jobs) > 0 || time.Now().After(deadline) {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
+		return len(requests) > 0 && len(jobs) > 0
+	})
 	if len(requests) != 1 || len(jobs) != 1 {
 		t.Fatalf("%d access log lines and %d job lines, want 1 each:\n%s", len(requests), len(jobs), s.logs.String())
 	}
@@ -375,9 +371,8 @@ func TestClientThatLeftIsNotAServerError(t *testing.T) {
 		}
 		return n
 	}
-	for deadline := time.Now().Add(10 * time.Second); accessLines() < 3 && time.Now().Before(deadline); {
-		time.Sleep(10 * time.Millisecond) // the server finishes the requests of the clients that left on its own
-	}
+	// The server finishes the requests of the clients that left on its own.
+	testkit.Eventually(t, 10*time.Second, func() bool { return accessLines() >= 3 })
 	want := map[line]bool{
 		{msg: "handler failed", path: "/left", severity: "INFO"}:                  false,
 		{msg: "http request", path: "/left", severity: "INFO", status: 499}:       false,

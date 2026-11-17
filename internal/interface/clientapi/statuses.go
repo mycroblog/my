@@ -5,6 +5,7 @@ package clientapi
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -122,9 +123,60 @@ func (s *Server) problem(ctx context.Context, status int, typ, title, detail str
 // statusProblem returns the problem that err of a statuses use case means to the client, or
 // false for an unexpected error, which the handler returns as a 500.
 func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
+	return s.contentProblem(ctx, err, "")
+}
+
+// contentField returns the member of the request of a post, an article, or a draft that err is
+// about, by its name in the request (Problem.field), or "" when it is about none. article is
+// the path of the members of an article in the request: "" in those of statuses and articles,
+// "article." in those of drafts, whose text, media, and poll are the post's.
+func contentField(err error, article string) string {
+	var (
+		poll        *content.PollInputError
+		description *appcontent.MediaDescriptionError
+		hashtag     *appcontent.HashtagError
+	)
+	switch {
+	case errors.As(err, &poll) && poll.Option >= 0:
+		return fmt.Sprintf("poll.options[%d]", poll.Option)
+	case errors.As(err, &poll) && poll.Duration:
+		return "poll.expires_in"
+	case errors.As(err, &poll):
+		return "poll.options"
+	case errors.As(err, &description):
+		switch description.Place {
+		case appcontent.MediaAttachment:
+			return fmt.Sprintf("media[%d].description", description.Index)
+		case appcontent.MediaCover:
+			return article + "cover.description"
+		}
+		return "text" // an image of the body of an article is written in its text
+	case errors.As(err, &hashtag):
+		return fmt.Sprintf("%stags[%d]", article, hashtag.Index)
+	case errors.As(err, new(*appcontent.TextTooLongError)), errors.Is(err, appcontent.ErrEmptyText),
+		errors.Is(err, appcontent.ErrInvalidText), errors.As(err, new(*appcontent.ArticleTooLongError)),
+		errors.As(err, new(*appcontent.TooManyArticleImagesError)):
+		return "text"
+	case errors.Is(err, appcontent.ErrInvalidLanguage):
+		return "language"
+	case errors.Is(err, appcontent.ErrTooManyMedia):
+		return "media"
+	case errors.Is(err, appcontent.ErrInvalidArticleTitle):
+		return article + "title"
+	case errors.Is(err, appcontent.ErrInvalidArticleSummary):
+		return article + "summary"
+	case errors.Is(err, appcontent.ErrTooManyHashtags):
+		return article + "tags"
+	}
+	return ""
+}
+
+// contentProblem is statusProblem in a request whose members of an article are under article
+// (contentField).
+func (s *Server) contentProblem(ctx context.Context, err error, article string) (problem, bool) {
 	l := s.Localizer(ctx)
 	unprocessable := func(detail string) (problem, bool) {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail), true
+		return s.fieldProblem(ctx, contentField(err, article), detail), true
 	}
 	var tooLong *appcontent.TextTooLongError
 	switch {
@@ -150,7 +202,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appcontent.ErrInvalidLanguage):
 		return unprocessable(l.ServerErrorsStatusInvalidLanguage())
 	case errors.Is(err, content.ErrInvalidIdempotencyKey):
-		return unprocessable(l.ServerErrorsInvalidValue("Idempotency-Key"))
+		return s.fieldProblem(ctx, "Idempotency-Key", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, content.ErrInvalidVisibility):
 		return unprocessable("")
 	case errors.Is(err, appcontent.ErrLocalVisibilityUnavailable):
@@ -166,7 +218,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appcontent.ErrQuoteRemoteAudience):
 		return unprocessable(l.ServerErrorsStatusQuoteRemoteAudience())
 	case errors.Is(err, appcontent.ErrInvalidInteractionPolicy):
-		return unprocessable(l.ServerErrorsInvalidValue("interaction_policy"))
+		return s.fieldProblem(ctx, "interaction_policy", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, appcontent.ErrTooManyMedia):
 		return unprocessable(l.ServerErrorsStatusTooManyMedia(appcontent.MaxAttachments))
 	case errors.Is(err, appcontent.ErrMediaNotFound):
@@ -204,7 +256,7 @@ func (s *Server) statusProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, appcontent.ErrPollNotEditable):
 		return unprocessable(l.ServerErrorsStatusPollNotEditable())
 	}
-	return s.articleProblem(ctx, err)
+	return s.articleProblem(ctx, err, article)
 }
 
 // authorProblem returns the problem of an edit or deletion that failed with err. Another

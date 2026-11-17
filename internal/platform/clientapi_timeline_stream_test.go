@@ -15,6 +15,7 @@ import (
 	appgraph "github.com/mycroblog/my/internal/app/graph"
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // openTimelineStream opens the stream of path on srv as viewer and returns its events;
@@ -93,12 +94,8 @@ func TestTimelineStreamsDeliverWhatTheTimelinesList(t *testing.T) {
 		"erin's local":      openTimelineStream(streamCtx, t, e, srv, erin, "/streaming/timelines/local"),
 	}
 	// Wait for the subscriptions, so that no signal is published before them.
-	deadline := time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() != len(streams) {
-		if time.Now().After(deadline) {
-			t.Fatalf("%d of %d streams subscribed", e.app.Streams.Len(), len(streams))
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() == len(streams) }) {
+		t.Fatalf("%d of %d streams subscribed", e.app.Streams.Len(), len(streams))
 	}
 
 	muted := e.post(t, carol, "muted by alice", domcontent.VisibilityPublic, "en")
@@ -139,11 +136,7 @@ func TestTimelineStreamsDeliverWhatTheTimelinesList(t *testing.T) {
 	}
 
 	disconnect()
-	deadline = time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() != 0 {
-		if time.Now().After(deadline) {
-			t.Fatalf("%d subscriptions still open after the clients disconnected", e.app.Streams.Len())
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() == 0 }) {
+		t.Fatalf("%d subscriptions still open after the clients disconnected", e.app.Streams.Len())
 	}
 }

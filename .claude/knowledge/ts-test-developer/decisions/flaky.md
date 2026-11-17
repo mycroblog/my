@@ -1,0 +1,22 @@
+# ts-test-developer: decisions, flaky
+
+One line each: `- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+[lint] marks a line that `restrict/e2e-flaky` enforces in @my/e2e; its message names the same evidence.
+
+- [lint] Assert on a screen at rest, with `reducedMotion: "reduce"` in playwright.config.ts, never after a wait for an animation to settle — every such wait flaked again (b5471c720, 6e27655b1, cce3243e7, 4de405ec6, b511410df) — #2876 — 2026-11-14 — held 0 / missed 0
+- [lint] Read the page only through retrying assertions (`toHaveText`, `toHaveCount`, `expect.poll`), never `expect(await …)`, `textContent()` or `allTextContents()` — a one-shot read sees the page before it settles (0ab550727, 07d058a31, cce3243e7) — #2876 — 2026-11-14 — held 0 / missed 0
+- [lint] Name an element exactly (`exact: true`, or a RegExp anchored `^…$`) inside a named region — a substring finds another element once a longer name shows (cce3243e7, b6632bd23, #1403) — #2876 — 2026-11-14 — held 0 / missed 0
+- [lint] Never pass `timeout:` to one wait; wait for the state that comes first — a longer wait hides the state the test skipped and flakes again under load (66d4f3db6, #309, #405) — #2876 — 2026-11-14 — held 0 / missed 0
+- [lint] Never sleep or read the wall clock; wait for an observable event, and move the page's time with `page.clock` (the consent screen's countdown: `clock.install()`, then `runFor`) — time differs per run and per load (66d4f3db6, 45883c030, #1588) — #2876 — 2026-11-14 — held 0 / missed 0
+- [lint] Choose a React Aria radio by clicking its label, never `.check()` or `force: true` — its input is hidden and its state comes from the press (6bd4f2c17, 5946eba33) — #2876 — 2026-11-14 — held 0 / missed 0
+- When a flake is a race in the product, report it for the product to fix, never bend the test around it — the user meets the same race (e13d43b6d, d3ff972e9, 852121337) — #2876 — 2026-11-14 — held 0 / missed 0
+- Never leave or reload the page before a write is answered; a screen part's write returns once the server answered (screens/write.ts) — a reload aborts the request (the lost favourite) — #2876 — 2026-11-14 — held 0 / missed 0
+- A test that writes acts on `fresh.*` subjects or as a fresh person and asserts what it changed, never global counts; seeded data stays read-only; run with `--repeat-each=2` as the slow suite does — a second run finds the first one's writes; each test's browser has its own client IP for shared limits — #2876 — 2026-11-14 — held 0 / missed 0
+- Never call the DevTools protocol from a story's play (`cdp()`): read what the page computes in the play, and a glyph's font in an E2E spec through Playwright's session — each call took 1–9 s under the suite — #3093 — 2026-11-15 — held 0 / missed 0
+- Set the options of every spec in a fixture of specs/test.ts or in playwright.config.ts, never with `test.use` in a shared module — the module runs once per worker, so its `test.use` reaches only the first file the worker loads — #2876 — 2026-11-14 — held 0 / missed 0
+- Clear a Lexical box with `ControlOrMeta+a`, `Delete`, never `fill("")` — it cleared only the first text node — #3091 — 2026-11-16 — held 0 / missed 0
+- Send an upload once GET /media/{id} answers a state other than processing (`processedIn`; a 200 can still be processing); hold it with `page.route` to test processing — a 200 alone hid it — #3091, #3109 — 2026-11-16 — held 0 / missed 1
+- Give a fresh person a post before `signInAs` — it waits for a Home feed an empty account lacks — #3113 — 2026-11-16 — held 0 / missed 0
+- Wait for a debounced answer (the article preview, 600 ms) longer than `waitFor`'s 1 s — it failed in the suite — #3091 — 2026-11-16 — held 0 / missed 0
+- Lift `inert` on the page before probing `elementFromPoint` (then restore) — hit testing skips an inert backdrop, so a sheet painted under it passed every test — #3129 — 2026-11-16 — held 0 / missed 0
+- Write one E2E test per kind of write that takes its own path to the server and back (an endpoint family and its cache), and fold a second button of the same endpoint into it with its write and its read after the reload; what one screen does with it is a component test on the fake, and what only the server decides (a scheduled post's publication, what a search finds) is a Go test — the suite repeated a write per action: 55 tests, 18 of them no flow of their own — ADR-0171 §5 — #3169 — 2026-11-17 — held 0 / missed 0

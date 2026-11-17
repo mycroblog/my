@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+#
+# The web client's text fonts, Noto Sans CJK in four regions and Noto Sans for Latin, Greek and Cyrillic, sliced from
+# pinned variable fonts that the repository does not hold (ADR-0009 §5). Not part of `check` or `generate`: run it by hand after changing the release, and commit what
+# it writes. The fonts are sliced by scripts/cjk-fonts, which runs in a throwaway Python environment that uv builds from
+# scripts/cjk-fonts/uv.lock (uv must be on PATH); nothing else needs Python.
+version: "3"
+
+vars:
+  # The release of notofonts/noto-cjk whose variable (wght) fonts the slices are cut from, at the commit of its tag.
+  NOTO_CJK_RELEASE: Sans2.004
+  NOTO_CJK_COMMIT: 523d033d6cb47f4a80c58a35753646f5c3608a78
+  NOTO_CJK_SHA256: |
+    ab2728702f90d2ae900309f299dc3c2b075010888a1a8a67fbd5b4c6aff713a0  NotoSansCJKjp-VF.otf
+    2745e9681cb9d8a5c8901b62c9e1bd98c9c774365fc3b84dd467621013b51cd3  NotoSansCJKsc-VF.otf
+    fb6fd590a4bcfe1b5d71b8bb0054719256b815e8fc700dd70fd171a3660a9e6b  NotoSansCJKtc-VF.otf
+    828d8415c3e601d1b7b94c2a86f8609ce4f78abebb92773724f3f004269059e8  NotoSansCJKkr-VF.otf
+    6a73f9541c2de74158c0e7cf6b0a58ef774f5a780bf191f2d7ec9cc53efe2bf2  LICENSE
+  # Where the WOFF2 slices and their license (OFL-NotoSansCJK.txt, its name in the build's licenses/) go, and the stylesheet of their @font-face rules
+  # (@my/design-system/cjk.css).
+  CJK_FONTS_DIR: web/design-system/src/fonts/cjk
+  CJK_CSS: web/design-system/src/cjk.css
+  # The variable Noto Sans (wdth, wght) and its OFL.txt of google/fonts at GOOGLE_FONTS_COMMIT, which the emoji fonts
+  # also pin (tasks/emoji.yml).
+  GOOGLE_FONTS_COMMIT: e7db6ca603fd4862010383ff17ffd6cc4ffac1c0
+  NOTO_SANS_SHA256: |
+    bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d  NotoSans-VF.ttf
+    cee9892f9f0cc8fe882c9e9537ee6a89621d86ee7ceaf70b02e2b2b1c25c061a  OFL.txt
+  # Where its WOFF2 slices and its license (OFL-NotoSans.txt) go, and the stylesheet of their @font-face rules
+  # (@my/design-system/noto-sans.css).
+  NOTO_SANS_FONTS_DIR: web/design-system/src/fonts/noto-sans
+  NOTO_SANS_CSS: web/design-system/src/noto-sans.css
+
+tasks:
+  generate:
+    desc: Regenerate the web client's Noto Sans CJK and Noto Sans slices from the pinned notofonts/noto-cjk and google/fonts
+    deps: [noto-cjk, noto-sans]
+    vars:
+      DIR: .tmp/cjk/noto
+      SANS_DIR: .tmp/cjk/noto-sans
+    cmds:
+      - mkdir -p {{.CJK_FONTS_DIR}}
+      - cp {{.DIR}}/LICENSE {{.CJK_FONTS_DIR}}/OFL-NotoSansCJK.txt
+      - >-
+        UV_PROJECT_ENVIRONMENT="{{.ROOT_DIR}}/.tmp/cjk/venv"
+        uv run --frozen --project scripts/cjk-fonts python -I scripts/cjk-fonts/cjk_fonts.py
+        --release {{.NOTO_CJK_RELEASE}}
+        --font jp={{.DIR}}/NotoSansCJKjp-VF.otf --font sc={{.DIR}}/NotoSansCJKsc-VF.otf
+        --font tc={{.DIR}}/NotoSansCJKtc-VF.otf --font kr={{.DIR}}/NotoSansCJKkr-VF.otf
+        --out {{.CJK_FONTS_DIR}} --css {{.CJK_CSS}}
+      - mkdir -p {{.NOTO_SANS_FONTS_DIR}}
+      - cp {{.SANS_DIR}}/OFL.txt {{.NOTO_SANS_FONTS_DIR}}/OFL-NotoSans.txt
+      - >-
+        UV_PROJECT_ENVIRONMENT="{{.ROOT_DIR}}/.tmp/cjk/venv"
+        uv run --frozen --project scripts/cjk-fonts python -I scripts/cjk-fonts/noto_sans.py
+        --release {{.GOOGLE_FONTS_COMMIT}} --font {{.SANS_DIR}}/NotoSans-VF.ttf
+        --cjk {{.DIR}}/NotoSansCJKjp-VF.otf --cjk {{.DIR}}/NotoSansCJKsc-VF.otf
+        --cjk {{.DIR}}/NotoSansCJKtc-VF.otf --cjk {{.DIR}}/NotoSansCJKkr-VF.otf
+        --out {{.NOTO_SANS_FONTS_DIR}} --css {{.NOTO_SANS_CSS}}
+
+  # The download prints the digests it got when they differ from the pinned ones, for an update.
+  noto-sans:
+    internal: true
+    vars:
+      DIR: .tmp/cjk/noto-sans
+      BASE: https://raw.githubusercontent.com/google/fonts/{{.GOOGLE_FONTS_COMMIT}}/ofl/notosans
+    status:
+      - cd {{.DIR}} && printf '%s' "{{.NOTO_SANS_SHA256}}" | sha256sum --quiet -c -
+    cmds:
+      - mkdir -p {{.DIR}}
+      - curl -fsSL -o {{.DIR}}/NotoSans-VF.ttf "{{.BASE}}/NotoSans%5Bwdth,wght%5D.ttf"
+      - curl -fsSL -o {{.DIR}}/OFL.txt {{.BASE}}/OFL.txt
+      - |
+        cd {{.DIR}}
+        if ! printf '%s' "{{.NOTO_SANS_SHA256}}" | sha256sum -c -; then
+          echo "the digests of {{.DIR}} differ from NOTO_SANS_SHA256; they are:" >&2
+          sha256sum NotoSans-VF.ttf OFL.txt >&2
+          exit 1
+        fi
+
+  # The download prints the digests it got when they differ from the pinned ones, for a release update.
+  noto-cjk:
+    internal: true
+    vars:
+      DIR: .tmp/cjk/noto
+      BASE: https://raw.githubusercontent.com/notofonts/noto-cjk/{{.NOTO_CJK_COMMIT}}
+    status:
+      - cd {{.DIR}} && printf '%s' "{{.NOTO_CJK_SHA256}}" | sha256sum --quiet -c -
+    cmds:
+      - mkdir -p {{.DIR}}
+      - for: [jp, sc, tc, kr]
+        cmd: curl -fsSL -o {{.DIR}}/NotoSansCJK{{.ITEM}}-VF.otf {{.BASE}}/Sans/Variable/OTF/NotoSansCJK{{.ITEM}}-VF.otf
+      - curl -fsSL -o {{.DIR}}/LICENSE {{.BASE}}/LICENSE
+      - |
+        cd {{.DIR}}
+        if ! printf '%s' "{{.NOTO_CJK_SHA256}}" | sha256sum -c -; then
+          echo "the digests of {{.DIR}} differ from NOTO_CJK_SHA256; they are:" >&2
+          sha256sum NotoSansCJK*-VF.otf LICENSE >&2
+          exit 1
+        fi

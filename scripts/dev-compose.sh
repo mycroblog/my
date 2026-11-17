@@ -3,19 +3,22 @@
 # The commands of the services of the root compose.yaml that run in the development image (the stage `dev` of the
 # Dockerfile), from the checkout mounted at /src (CONTRIBUTING.md, "Local development"). They start as root and do their
 # work as the owner of the checkout, so that what they write there and in the volumes belongs to the developer:
-#   prepare  check that scripts/dev-cert.sh has made the HTTPS certificate of Caddy, make the mount points of the node_modules volumes in the checkout (Docker would create them owned by
-#            root), and the certificates of Mailpit (scripts/mailpit-cert.sh, in .tmp/mailpit), which it copies to the
-#            volume mounted at /certs for Mailpit
-#   my       build `my` with GO_TAGS, apply the schema, and serve with the scripts from the Vite dev server
-#   vite     install the npm packages, generate what the web client reads and is not committed, and run Vite
-# Usage: scripts/dev-compose.sh prepare|my|vite
+#   prepare  check that scripts/dev-cert.sh has made the HTTPS certificate of Caddy, make the mount points of the
+#            volumes in the checkout, bin and the node_modules (Docker would create them owned by root), and the
+#            certificates of Mailpit (scripts/mailpit-cert.sh, in .tmp/mailpit), which it copies to the volume mounted
+#            at /certs for Mailpit
+#   my       give the owner the volumes in HOME and in the checkout, build the web client and `my` with GO_TAGS, apply
+#            the schema, and serve
+# Usage: scripts/dev-compose.sh prepare|my
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$root"
 
-# The node_modules directories of the workspaces, each a volume of compose.yaml.
-node_modules=(app app/ui app/web app/mail app/docs pkg/mykit/ts pkg/mybot/ts tools/i18n)
+# The node_modules directories of the Bun workspace (the root and each member), each a volume of compose.yaml, as is
+# bin, where scripts/task.sh builds go-task for this image rather than for the developer's machine.
+node_modules=(. web/app web/app-components web/app-data web/app-features web/design-system
+	web/design-tokens web/devtools web/docs web/i18n web/platform web/storybook pkg/mykit/ts pkg/mybot/ts tools/i18n)
 
 owner="$(stat -c %u:%g "$root")"
 
@@ -50,6 +53,7 @@ prepare)
 			"scripts/task.sh docker:dev-cert (mkcert), then run docker compose up again" >&2
 		exit 1
 	fi
+	as_owner mkdir -p bin
 	for dir in "${node_modules[@]}"; do
 		as_owner mkdir -p "$dir/node_modules"
 	done
@@ -57,7 +61,11 @@ prepare)
 	cp .tmp/mailpit/ca.pem .tmp/mailpit/server.pem .tmp/mailpit/server.key /certs/
 	;;
 my)
-	own "$HOME" "$HOME/.cache" "$HOME/bin" "$GOCACHE" "$GOMODCACHE" "$HOME/go" "$HOME/go/pkg"
+	own "$HOME" "$HOME/.cache" "$HOME/bin" "$GOCACHE" "$GOMODCACHE" "$HOME/go" "$HOME/go/pkg" \
+		"$HOME/.bun" "$HOME/.bun/install" "$BUN_INSTALL_CACHE_DIR" bin
+	for dir in "${node_modules[@]}"; do
+		own "$dir/node_modules"
+	done
 	exec_as_owner "$0" serve
 	;;
 serve)
@@ -65,29 +73,20 @@ serve)
 	# still reaches servers outside.
 	cat /etc/ssl/certs/ca-certificates.crt .tmp/mailpit/ca.pem >"$HOME/roots.pem"
 	export SSL_CERT_FILE="$HOME/roots.pem"
+	# What the server embeds: the build of `scripts/task.sh web:build`, as the image has it. The install comes first,
+	# since web:install skips while node_modules exists, and the volume mounted there may still be empty.
+	echo "dev-compose: building the web client"
+	bun install --frozen-lockfile
+	scripts/task.sh web:build
 	echo "dev-compose: building my${GO_TAGS:+ with the tags $GO_TAGS}"
 	# A git worktree's .git points outside the mount, so the build stamps no VCS information.
 	go build -trimpath -buildvcs=false -tags "${GO_TAGS:-}" -ldflags "-X main.version=dev" -o "$HOME/bin/my" ./cmd/my
 	my schema apply
 	my db upgrade
-	exec my serve -dev-vite-origin "${VITE_ORIGIN:?}"
-	;;
-vite)
-	own "$HOME" "$HOME/.cache" "$HOME/.bun" "$HOME/.bun/install" "$BUN_INSTALL_CACHE_DIR"
-	for dir in "${node_modules[@]}"; do
-		own "$dir/node_modules"
-	done
-	exec_as_owner "$0" vite-serve
-	;;
-vite-serve)
-	(cd app && bun install --frozen-lockfile)
-	(cd tools/i18n && bun install --frozen-lockfile && bun run src/gen.ts --ts)
-	(cd app/ui && bun run scripts/theme-tokens.ts --ts)
-	cd app/web
-	exec bun run dev --host 0.0.0.0 --port 5173 --strictPort
+	exec my serve
 	;;
 *)
-	echo "usage: $0 prepare|my|vite" >&2
+	echo "usage: $0 prepare|my" >&2
 	exit 2
 	;;
 esac

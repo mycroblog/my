@@ -25,8 +25,8 @@ English; the site adjusts them. The analytics notice is translated the same way.
 
 Add the catalog first (`/translate-catalogs`). Then:
 
-1. Add the locale to `translationLocales` in `app/docs/src/translations.ts`, by its catalog tag, and to `locales` in
-   `app/docs/astro.config.ts`, keyed by the tag in lower case with the tag as its `lang`
+1. Add the locale to `translationLocales` in `web/docs/src/translations.ts`, by its catalog tag, and to `locales` in
+   `web/docs/astro.config.ts`, keyed by the tag in lower case with the tag as its `lang`
    (`"zh-cn": { label: "简体中文", lang: "zh-CN" }`).
-2. Add the site's UI strings: `app/docs/src/content/i18n/<locale>.json`, with the keys of `en.json`.
+2. Add the site's UI strings: `web/docs/src/content/i18n/<locale>.json`, with the keys of `en.json`.
 3. Translate `docs/guide/` and the landing page first, and add `sidebar.json`.

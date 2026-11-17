@@ -308,7 +308,7 @@ func Build(k *kb.KB, cache *gh.Cache, m *ctxmap.Map, is *gh.Issue, o Options) (s
 			areas[e.Name] = e
 		}
 	}
-	if e, ok := m.For(map[string]string{"web": "app/web", "server": "internal"}[o.Layer]); ok && o.Layer != "" {
+	if e, ok := m.For(map[string]string{"web": "web", "server": "internal"}[o.Layer]); ok && o.Layer != "" {
 		areaScore[e.Name] += 100
 		areas[e.Name] = e
 	}
@@ -412,9 +412,9 @@ func focusTerms(is *gh.Issue) []string {
 func layerOK(p, layer string) bool {
 	switch layer {
 	case "server":
-		return !strings.HasPrefix(p, "app/")
+		return !strings.HasPrefix(p, "web/")
 	case "web":
-		return strings.HasPrefix(p, "app/") || strings.HasPrefix(p, "locales/") || strings.HasPrefix(p, "api/")
+		return strings.HasPrefix(p, "web/") || strings.HasPrefix(p, "locales/") || strings.HasPrefix(p, "api/")
 	}
 	return true
 }

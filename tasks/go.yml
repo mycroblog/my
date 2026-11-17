@@ -48,10 +48,11 @@ tasks:
       - go vet ./...
 
   lint:
-    desc: Run golangci-lint (includes the depguard architecture boundaries)
+    desc: Run golangci-lint (includes the depguard architecture boundaries) and refuse time.Sleep in the Go tests beyond its baseline (scripts/go-test-sleep.sh)
     cmds:
       # golangci-lint holds a lock while it runs: wait for it rather than fail beside go:lint or agentkit:lint.
       - golangci-lint run --allow-serial-runners ./...
+      - scripts/go-test-sleep.sh
 
   test:
     desc: Run Go tests (PostgreSQL tests on pgmem, ADR-0015)
@@ -138,7 +139,7 @@ tasks:
       - "{{.GO_TOOL}} go-licenses check --allowed_licenses={{.GO_ALLOWED_LICENSES}} ./..."
 
   bin:
-    desc: Build bin/my with the web client embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS=no_postgres,no_valkey leaves adapters out; GO_TAGS=e2e_fakes makes the test build, never to be released)
+    desc: Build bin/my with the build of web:build embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS=no_postgres,no_valkey leaves adapters out; GO_TAGS=e2e_fakes makes the test build, never to be released)
     deps: [":web:build"]
     vars:
       VERSION:
@@ -159,11 +160,15 @@ tasks:
     desc: Regenerate docs/reference/cli.md from the commands of cmd/my (go:test fails when it is stale)
     sources: ["cmd/my/*.go", "internal/platform/docsite/*.go"]
     generates: [docs/reference/cli.md]
+    # cmd/my imports the sqlc packages, which sqlc rewrites: build it only after they are written.
+    deps: [sqlc]
     cmds:
       - go test ./cmd/my -run '^TestCLIReferenceUpToDate$' -update
 
   sqlc:
     desc: Regenerate Go code from sqlc.yaml with the pinned sqlc (ADR-0003)
+    # It empties its output directories before writing them: every caller in one run waits for the same run.
+    run: once
     sources:
       - sqlc.yaml
       - "queries/**/*.sql"

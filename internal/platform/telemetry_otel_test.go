@@ -15,6 +15,7 @@ import (
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // TestPrometheusMetrics serves the scrape on its own listener and checks the HTTP and job
@@ -63,15 +64,11 @@ func TestPrometheusMetrics(t *testing.T) {
 		return string(b)
 	}
 	var out string
-	deadline := time.Now().Add(10 * time.Second)
-	for {
+	// The job's result is recorded after the handler returns.
+	testkit.Eventually(t, 10*time.Second, func() bool {
 		out = scrape()
-		// The job's result is recorded after the handler returns.
-		if strings.Contains(out, `my_job_duration_seconds_count{my_job_type="test.metrics",my_outcome="success"} 1`) || time.Now().After(deadline) {
-			break
-		}
-		time.Sleep(20 * time.Millisecond)
-	}
+		return strings.Contains(out, `my_job_duration_seconds_count{my_job_type="test.metrics",my_outcome="success"} 1`)
+	})
 	for _, want := range []string{
 		`http_server_request_duration_seconds_count{http_request_method="GET",http_response_status_code="200",http_route="/api/v1/instance",my_surface="client_api"} 1`,
 		`http_server_request_duration_seconds_count{http_request_method="GET",http_response_status_code="404",http_route="other",my_surface="web"} 1`,

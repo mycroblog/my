@@ -6,12 +6,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appvoice "github.com/mycroblog/my/internal/app/voice"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The moderation of the voice chat rooms (ADR-0100 §11): the target of a report of a room
@@ -51,7 +49,7 @@ func (s *Server) EndVoiceRoomAsModerator(ctx context.Context, req EndVoiceRoomAs
 	case errors.Is(err, appvoice.ErrInvalidEndNote):
 		l := s.Localizer(ctx)
 		return EndVoiceRoomAsModeratordefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: appvoice.MaxEndNote, Name: "reason"}))), nil
+			s.fieldProblem(ctx, "reason", l.ServerErrorsTooLong(appvoice.MaxEndNote))), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: end voice room %s: %w", req.Id, err)
 	}

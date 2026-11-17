@@ -16,6 +16,7 @@ import (
 	domcontent "github.com/mycroblog/my/internal/domain/content"
 	"github.com/mycroblog/my/internal/domain/timeline"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // keywordFilter creates a keyword filter of viewer from the JSON body and returns it.
@@ -236,12 +237,8 @@ func TestStreamingAppliesKeywordFilters(t *testing.T) {
 		"home":  openTimelineStream(ctx, t, e, srv, alice, "/streaming"),
 		"local": openTimelineStream(ctx, t, e, srv, alice, "/streaming/timelines/local"),
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	for e.app.Streams.Len() != len(streams) {
-		if time.Now().After(deadline) {
-			t.Fatal("the streams did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return e.app.Streams.Len() == len(streams) }) {
+		t.Fatal("the streams did not subscribe")
 	}
 
 	e.post(t, bob, "a sale", domcontent.VisibilityPublic, "en")

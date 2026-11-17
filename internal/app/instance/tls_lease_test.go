@@ -8,6 +8,7 @@ import (
 	"errors"
 	"sync"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/mycroblog/my/internal/app/kernel"
@@ -56,34 +57,37 @@ func (kv *leaseKV) CompareAndSwap(_ context.Context, ns, key string, old, value 
 
 func TestTLSOrderLeaseHoldsOneAtATime(t *testing.T) {
 	t.Parallel()
-	ctx := t.Context()
-	kv := newLeaseKV()
-	l := tlsOrderLease{kv: kv, ttl: time.Minute, renewal: 10 * time.Millisecond}
-	ran := false
-	held, err := l.hold(ctx, "social.example", func(ctx context.Context) error {
-		// Another process finds the lease taken, also across several extensions.
-		time.Sleep(50 * time.Millisecond)
-		other, err := l.hold(ctx, "social.example", func(context.Context) error {
-			t.Error("two holders of one lease")
+	synctest.Test(t, func(t *testing.T) {
+		ctx := t.Context()
+		kv := newLeaseKV()
+		l := tlsOrderLease{kv: kv, ttl: time.Minute, renewal: 10 * time.Millisecond}
+		ran := false
+		held, err := l.hold(ctx, "social.example", func(ctx context.Context) error {
+			// Another process finds the lease taken, also across several extensions.
+			<-time.After(50 * time.Millisecond)
+			synctest.Wait()
+			other, err := l.hold(ctx, "social.example", func(context.Context) error {
+				t.Error("two holders of one lease")
+				return nil
+			})
+			if other || err != nil {
+				t.Errorf("hold of a held lease = %v, %v; want false", other, err)
+			}
+			// Another host has a lease of its own.
+			if other, err := l.hold(ctx, "app.social.example", func(context.Context) error { return nil }); !other || err != nil {
+				t.Errorf("hold of another host = %v, %v; want true", other, err)
+			}
+			ran = ctx.Err() == nil
 			return nil
 		})
-		if other || err != nil {
-			t.Errorf("hold of a held lease = %v, %v; want false", other, err)
+		if !held || err != nil || !ran {
+			t.Fatalf("hold = %v, %v (ran %v); want it held and run", held, err, ran)
 		}
-		// Another host has a lease of its own.
-		if other, err := l.hold(ctx, "app.social.example", func(context.Context) error { return nil }); !other || err != nil {
-			t.Errorf("hold of another host = %v, %v; want true", other, err)
+		// Released at the end: the next holder takes it at once.
+		if held, err := l.hold(ctx, "social.example", func(context.Context) error { return nil }); !held || err != nil {
+			t.Errorf("hold after the release = %v, %v; want true", held, err)
 		}
-		ran = ctx.Err() == nil
-		return nil
 	})
-	if !held || err != nil || !ran {
-		t.Fatalf("hold = %v, %v (ran %v); want it held and run", held, err, ran)
-	}
-	// Released at the end: the next holder takes it at once.
-	if held, err := l.hold(ctx, "social.example", func(context.Context) error { return nil }); !held || err != nil {
-		t.Errorf("hold after the release = %v, %v; want true", held, err)
-	}
 }
 
 func TestTLSOrderLeaseEndsTheWorkWhenLost(t *testing.T) {

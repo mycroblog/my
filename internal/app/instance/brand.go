@@ -238,7 +238,7 @@ func (s *Service) brandBackground(ctx context.Context, in SetBrandInput) (string
 	if rev, ok, err := s.Theme(ctx); err != nil {
 		return "", err
 	} else if ok {
-		tokens = rev.Tokens
+		tokens = rev.Set.Tokens
 	}
 	return instance.NormalizeBrandBackground(instance.ThemeColor(tokens, "color-surface", instance.SchemeLight))
 }

@@ -80,6 +80,7 @@ default locale, who can see the timelines, the instance name, description, terms
 | `require_media_description` | `true` / `false` | `false` | Whether every media file (image, video, or audio) attached to a local post needs a description. When `true`, a post or an edit with a file whose description is missing or only whitespace is rejected with 422. It is published as `limits.require_media_description` in `GET /api/v1/instance`, and the web client makes the description field required. It is separate from the per-user setting `require_media_description`, which only checks before sending |
 | `link_cards` | `true` / `false` | `true` | Whether to show cards for links in posts. When `true`, the server fetches the linked page to build a card. When `false`, it stops fetching and also hides cards already built. To stop it only on some domains, see [link card domains](#link-card-domains) |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | Whether the fetches of link cards skip `robots.txt`. When `false`, the server obeys the `robots.txt` of the linked sites, so a site that disallows `my-linkcard` or `*` gets no card ([link previews](link-previews.md#cards-of-links-in-posts)). `/about/crawler` tells linked sites which it is. When `true`, the server neither fetches nor uses `robots.txt`, and a linked site can no longer refuse these fetches with it; the server still names itself `my-linkcard`. Turn it on only when too many cards are missing. Cards built while it was on are checked at their next refetch after it is off. The directives of a page and the link card domains apply either way |
+| `ux_measurement` | `true` / `false` | `false` | Whether the web client sends samples of how fast it responds, and this server keeps them ([UX measurements](error-reporting.md#ux-measurements)). The samples carry no account, address, or URL. When `false`, the server takes none, and `ux_measurement` in `GET /api/v1/instance` tells the client not to send them |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Whether to accept Client ID Metadata Document clients. When `true`, for an authorization request whose `client_id` is an `https` URL, the server fetches the metadata at that URL and treats it as the client (no prior registration). The fetch follows no redirects, reads at most 5 KB, and reuses the response for at most 24 hours following its cache directives. When `false`, it stops fetching and refuses authorization requests, token exchanges, and refreshes of these clients |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | How much of the running costs (recorded on `/admin/finance/costs`, and set on `/admin/finance/publication`) to publish. `private`: nothing is published (`GET /api/v1/instance/cost_totals` is 404). `totals`: only the total per period and currency. `breakdown`: the totals and a breakdown by provider and category, shown to everyone on the information pages (`/about` and `/about/costs`) and in the API. `breakdown` reveals which provider (for example, which cloud) you run on. At every level, item names, memos, and individual payments stay private. Periods up to and including the one containing today (UTC) are published |
 | `finance_viewer_item_names` | `true` / `false` | `false` | Whether users with the permission `view_finance` see cost item names and the service names of imported costs on the finance screen (`/finance`, `GET /api/v1/finance/cost_totals`). Totals and the breakdown by provider and category are always shown, whatever this setting is |
@@ -551,47 +552,61 @@ modes. A rule is the operator's choice, and it applies besides what the linked s
 
 ## Theme
 
-The server-wide theme is a set of overrides of the web client's design tokens plus one optional piece of CSS (custom CSS). It
-applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on), in
-both light and dark.
+The server-wide theme is one set of overrides of the web client's design tokens, with a light and a dark value for each color.
+It applies to the web client of every viewer and to the screens the server renders (sign-in, registration, terms, and so on).
+There is no custom CSS.
 
-- You can override every token in `app/ui/src/theme.css` except the primitive colors (`--palette-*`). The list, defaults, and
-  ranges are in [app/ui/README.md](../../app/ui/README.md#server-themes). A color is `#rrggbb` for light and for dark
-  (`color-overlay` may also be `#rrggbbaa`); the other tokens take a value of the shape of their kind (length, number,
-  duration, easing, font name list, shadow) within its range. When you override `font-sans` or `font-mono`, keep
-  `"my Noto Color Emoji"` first; otherwise the emoji of the web client are drawn with the OS font.
-- When you save, the server checks the shape and range of the values, the contrast of every pair of color tokens (tokens you do
-  not override use their defaults; WCAG 2.2 AA in both light and dark), and the length of the custom CSS (64 KiB). If any check
-  fails, nothing is saved.
-- The server does not read the custom CSS. It puts it in the same stylesheet after the token rules, outside any `@layer`. It runs
-  under the same CSP as the web client, so images, fonts, and `@import` from another origin cannot load.
-  **The server does not check the effects of custom CSS (contrast, horizontal scrolling, tap target size, focus indication,
-  right-to-left languages); that is the administrator's responsibility.** Class names and the page structure change between
-  versions, so only the tokens are stable to rely on.
-- A theme is kept as revisions (`instance_theme_revisions`), and the stylesheet of the current revision is served at
-  `/theme/{revision ID}.css` (`immutable`, cached for a long time). The HTML shell has a shared cache (60 seconds plus 300
-  seconds of revalidation), so it takes a few minutes after you save for everyone to get it. A page that is already open keeps
-  the old look until it is reloaded.
+- You can override these design tokens; the spacing, the sizes of the components, the weights of the type, the shadows, and
+  the colors of the data charts stay fixed:
+
+  | Tokens | Kind | Override |
+  | --- | --- | --- |
+  | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
+  | `font-sans-override`, `font-mono-override` | font family | Family names, comma-separated (at most 30), with no generic family such as `sans-serif`; quote a name with a word that starts with a digit, such as `"M PLUS 1p"` |
+  | `text-tagline`, `text-title`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
+  | `text-*--line-height` of the same four | number | 1 to 2.5 |
+  | `radius-control`, `radius-overlay` | length | 0 to 2rem |
+  | `duration-spin` | duration | ms / s, 0 to 1000ms |
+
+- The web client draws text with its own fonts: Noto Color Emoji for emoji, Noto Sans for Latin, Greek and Cyrillic, and
+  Noto Sans CJK in the glyphs of the text's language for the rest. The fonts of `font-sans-override` (text) and
+  `font-mono-override` (code) come right after the emoji font, and the web client's fonts draw the characters yours lack.
+  A theme cannot replace these fonts.
+- You save a set as a draft, preview it, and then publish it; the theme in effect does not change until you publish. Each save
+  replaces the whole draft, and each publication is a new revision. Restoring publishes again the set that was in effect
+  before the current one, and leaves the draft as it is.
+- When you save and when you publish, the server checks the shape and range of the values and the contrast of every pair of
+  color tokens (tokens you do not override use their defaults; WCAG 2.2 AA in both light and dark). If any check fails, nothing
+  is saved or published.
+- An override of a token that a new version renames or retires, or whose value no longer fits the token, never fails an upgrade.
+  It stays in the saved set but no longer applies: the admin API lists it under `stale_tokens`, `my instance theme get` names
+  it, and the next save of the draft drops it.
+- The stylesheet of the published revision is served at `/theme/{revision ID}.css` (`immutable`, cached for a long time). The
+  HTML shell has a shared cache (60 seconds plus 300 seconds of revalidation), so it takes a few minutes after you publish for
+  everyone to get it. A page that is already open keeps the old look until it is reloaded.
 - `<meta name="theme-color">` (light and dark) in the shell and `theme_color` / `background_color` (light) of the Web App
-  Manifest take the value of the theme's `color-surface`.
-- Saving a revision with no tokens and no custom CSS resets the theme to the default, and the stylesheet is no longer loaded.
-- You can change it on the admin screen of the web client ("Theme", `/admin/theme`), with the client API (`GET` / `PUT
-  /api/v1/admin/theme`), and with the CLI. The admin screen and the client API need the role permission `manage_settings`, and
-  changes are recorded in the audit log (`setting_changed`, target `theme`).
+  Manifest take the value of the theme's `color-surface`. Emails use the default colors of the tokens, whatever the theme.
+- Publishing a set with no tokens resets the theme to the default, and the stylesheet is no longer loaded.
+- You can change it with the client API and with the CLI. The client API needs the role permission `manage_settings`:
+  `GET /api/v1/admin/theme` reads the draft and the set in effect, `PUT /api/v1/admin/theme/draft` saves the draft,
+  `GET /api/v1/admin/theme/draft/stylesheet` returns the draft's stylesheet to preview, and `POST /api/v1/admin/theme/publish`
+  and `POST /api/v1/admin/theme/restore` publish. Publications are recorded in the audit log (`setting_changed`, target
+  `theme`).
 
 ```sh
-my instance theme get > theme.json                    # print the current theme as the same JSON as the admin API
-my instance theme set < theme.json                    # replace the whole theme (if a check fails, it prints why and changes nothing)
-echo '{"tokens":[],"custom_css":""}' | my instance theme set   # back to the default
+my instance theme get > theme.json          # print the draft as the same JSON as the admin API (-published: the set in effect)
+my instance theme set < theme.json          # save the whole draft (if a check fails, it prints why and changes nothing)
+my instance theme publish                   # publish the draft
+my instance theme restore                   # publish again the set in effect before the current one
+echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # back to the default
 ```
 
 ```json
 {
   "tokens": [
-    { "token": "color-accent", "light": "#1447e6", "dark": "#92c5fe" },
-    { "token": "radius-md", "value": "0.25rem" }
-  ],
-  "custom_css": ".brand { letter-spacing: 0.02em; }"
+    { "token": "color-accent", "light": "#ff8a80", "dark": "#ff8a80" },
+    { "token": "radius-control", "value": "0.25rem" }
+  ]
 }
 ```
 

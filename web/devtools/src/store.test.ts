@@ -1,0 +1,79 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { pickNote, type NoteInput } from "./note";
+import { batchId, feedbackDir, layerOf, readBatches, writeBatch } from "./store";
+
+let root = "";
+beforeEach(() => {
+  root = mkdtempSync(join(tmpdir(), "devtools-"));
+  mkdirSync(join(root, "web", "design-system", "src"), { recursive: true });
+  writeFileSync(join(root, "web", "design-system", "package.json"), JSON.stringify({ name: "@my/design-system" }));
+});
+afterEach(() => {
+  rmSync(root, { recursive: true, force: true });
+});
+
+const note = (source: string | null): NoteInput => ({
+  text: "too tight",
+  target: { tag: "h1", selector: "main > h1", text: "Type", rect: { x: 0, y: 0, width: 10, height: 10 }, area: null },
+  source,
+  sources: [],
+  state: {
+    page: "/",
+    route: null,
+    viewport: { width: 800, height: 600, devicePixelRatio: 1 },
+    theme: { page: null, system: "light" },
+    locale: "en",
+    direction: "ltr",
+    orientation: null,
+    account: null,
+  },
+  story: null,
+  accessibility: 'heading "Type" [level=1]',
+});
+
+describe("store", () => {
+  test("batchId sorts by time", () => {
+    expect(batchId(new Date(2026, 10, 12, 9, 5, 3), () => 0.5)).toBe("20261112-090503-8000");
+  });
+
+  test("layerOf names the package of the file", () => {
+    expect(layerOf(root, "web/design-system/src/button.tsx")).toBe("@my/design-system");
+    expect(layerOf(root, "elsewhere/x.tsx")).toBeNull();
+  });
+
+  test("writeBatch numbers the notes, adds their layer, and readBatches reads it back", () => {
+    const batch = writeBatch(root, { page: "/", notes: [note("web/design-system/src/button.tsx:3"), note(null)] });
+    expect(batch.notes.map((n) => [n.id, n.layer])).toEqual([
+      [`${batch.id}.1`, "@my/design-system"],
+      [`${batch.id}.2`, null],
+    ]);
+    const file = join(feedbackDir(root), `${batch.id}.json`);
+    expect(JSON.parse(readFileSync(file, "utf8"))).toEqual(batch);
+    writeFileSync(join(feedbackDir(root), "broken.json"), "{");
+    expect(readBatches(root)).toEqual([batch]);
+  });
+
+  test("a pick carries the decider's reason into the batch, and an empty reason still picks", () => {
+    const variants = { options: "swatch", variant: "round", variants: ["square", "round"] };
+    const why = pickNote(variants, "  softer next to\nthe avatars ");
+    const none = pickNote(variants, " ");
+    expect(none).toEqual({ text: "Pick round of swatch.", pick: variants });
+    const batch = writeBatch(root, {
+      page: "/",
+      notes: [
+        { ...note(null), ...why },
+        { ...note(null), ...none },
+      ],
+    });
+    expect(readBatches(root)[0]?.notes.map((n) => [n.text, n.pick?.reason])).toEqual([
+      ["Pick round of swatch: softer next to the avatars", "softer next to the avatars"],
+      ["Pick round of swatch.", undefined],
+    ]);
+    expect(batch.notes[0]?.pick?.reason).toBe("softer next to the avatars");
+  });
+});

@@ -57,7 +57,7 @@ func Kind(p string) string {
 	base := path.Base(p)
 	switch {
 	case strings.HasSuffix(p, ".md"):
-		if strings.HasPrefix(p, "app/") && strings.Contains(p, "/node_modules/") {
+		if strings.HasPrefix(p, "web/") && strings.Contains(p, "/node_modules/") {
 			return ""
 		}
 		return "md"
@@ -65,7 +65,7 @@ func Kind(p string) string {
 		return ""
 	case strings.HasSuffix(p, ".go"):
 		return "go"
-	case strings.HasPrefix(p, "app/") && (strings.HasSuffix(p, ".ts") || strings.HasSuffix(p, ".tsx")):
+	case strings.HasPrefix(p, "web/") && (strings.HasSuffix(p, ".ts") || strings.HasSuffix(p, ".tsx")):
 		if strings.HasSuffix(p, ".gen.ts") || strings.HasSuffix(p, ".d.ts") {
 			return ""
 		}

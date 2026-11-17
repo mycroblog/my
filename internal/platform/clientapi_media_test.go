@@ -82,10 +82,13 @@ func TestClientAPIMedia(t *testing.T) {
 	}
 	path := "/media/" + up.Id
 	got := up
-	for deadline := time.Now().Add(10 * time.Second); got.State == "processing" && time.Now().Before(deadline); {
-		time.Sleep(20 * time.Millisecond)
+	testkit.Eventually(t, 10*time.Second, func() bool {
+		if got.State != "processing" {
+			return true
+		}
 		_, got = send(http.MethodGet, path, users["alice"], "", nil)
-	}
+		return got.State != "processing"
+	})
 	if got.State != "ready" || got.Variants == nil || got.Blurhash == nil || got.Meta.Width == nil || *got.Meta.Width != 480 || *got.Meta.Height != 640 {
 		t.Fatalf("processed = %+v", got)
 	}

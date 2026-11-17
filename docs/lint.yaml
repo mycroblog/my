@@ -13,7 +13,7 @@ skip:
   - "**/testdata/**"
   # The translations of the documentation site: their links are written as in the English source they translate, and
   # `scripts/task.sh docs:site-translations-check` keeps each link target equal to the source's, whose links this checks.
-  - "app/docs/i18n/**"
+  - "web/docs/i18n/**"
   # The map files name headings by their anchors, which are Japanese for the design documents; `agentkit map check` reads them.
   - "**/context-map.yaml"
 
@@ -24,7 +24,6 @@ english:
   - "*.md"
   - "**/AGENTS.md"
   - "docs/README.md"
-  - ".claude/**/*.md"
   - "docs/operations/**"
   - "docs/guide/**"
   - "docs/reference/**"
@@ -39,10 +38,12 @@ english:
   - "test/**/*.yaml"
   - ".github/ISSUE_TEMPLATE/*"
   - ".github/pull_request_template.md"
-  - "app/ui/README.md"
-  - "app/docs/src/content/docs/index.mdx"
+  - "web/docs/src/content/docs/index.mdx"
   - "pkg/**/README.md"
   - "tools/agentkit/README.md"
+  # The copy role's decisions and exemplars quote the ja copy they decide.
+  - "!.claude/knowledge/copy/decisions.md"
+  - "!.claude/knowledge/copy/exemplars.md"
 
 # For users and operators: they explain the behaviour themselves and neither link to nor cite ADRs,
 # docs/requirements/, docs/architecture/, or GitHub issues and pull requests.
@@ -50,7 +51,7 @@ operator:
   - "README.md"
   - "SECURITY.md"
   # The landing page of the documentation site.
-  - "app/docs/src/content/docs/index.mdx"
+  - "web/docs/src/content/docs/index.mdx"
   - "docs/operations/**"
   - "docs/guide/**"
   - "docs/reference/**"
@@ -62,7 +63,7 @@ operator:
 maintainer-terms:
   files:
     - "README.md"
-    - "app/docs/src/content/docs/index.mdx"
+    - "web/docs/src/content/docs/index.mdx"
     - "docs/operations/**"
     - "docs/guide/**"
     - "docs/reference/**"
@@ -163,7 +164,6 @@ pending:
     - docs/adr/0103-error-reporting.md
     - docs/adr/0106-external-login-providers.md
     - docs/adr/0110-web-experience-principles.md
-    - docs/adr/0125-announcement-title-notification-list.md
     - docs/adr/0146-plugin-protocol.md
     - docs/adr/0147-decision-hooks.md
     - docs/adr/0148-post-translation.md
@@ -195,6 +195,23 @@ adrs:
     - "tools/agentkit/internal/**/*_test.go"
     - "tools/agentkit/internal/adr/aliases.go"
     - "tools/agentkit/internal/docslint/*.go"
+
+# The knowledge of the UI and developer roles (ADR-0169 §3, ADR-0170 §5), in <dir>/<role>/: index.md, the page the role always reads;
+# decisions.md and exemplars.md, a title and a lead, then one item per line, or instead area files of the same shape,
+# decisions/<area>.md and exemplars/<area>.md, each at most `area` bytes, with no limit on their total. Each file is at
+# most its limit in bytes; within it a new line needs no approval (ADR-0169 §4). Only the decider changes the roles and
+# the limits.
+# The records of the decider's picks are <picks>/<role>.jsonl, one JSON object per line: no role reads them, so they
+# have no limit, and the agreement check replays them (ADR-0169 §7).
+knowledge:
+  dir: .claude/knowledge
+  roles: [visual, motion, copy, visual-evaluator, walker, go-developer, go-test-developer, ts-developer, ts-test-developer]
+  picks: .claude/picks
+  limits:
+    index: 2048
+    decisions: 4096
+    exemplars: 4096
+    area: 16384
 
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the

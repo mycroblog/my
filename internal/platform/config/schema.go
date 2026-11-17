@@ -1119,6 +1119,16 @@ var schema = []field{
 		set:   func(c *Config, v string) { c.TranslatorAWSRegion = v },
 	},
 	{
+		key: "translator_fake",
+		doc: "Test builds only: registers the stand-in translation provider `fake`, which the instance setting `translation_providers` then enables, for end-to-end tests and demonstrations. It calls no service: it puts the target language before each text, as `[ja] Hello`, and fails as a provider that is down when a text contains `[translation-fails]`.",
+		def: "false",
+		choices: []choice{
+			{value: "false", doc: "No such provider."},
+			{value: "true", doc: "The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md))."},
+		},
+		set: func(c *Config, v string) { c.TranslatorFake = v == "true" },
+	},
+	{
 		key: "search",
 		doc: "The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.",
 		def: "none",
@@ -1580,6 +1590,27 @@ var schema = []field{
 		check:  checkEnvironmentName,
 		set:    func(c *Config, v string) { c.ErrorsEnvironment = v },
 	},
+	{
+		key:   "pprof_listen",
+		doc:   "TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.",
+		check: checkListen,
+		set:   func(c *Config, v string) { c.PprofListen = v },
+	},
+}
+
+// pprofChecks keeps the profiles off the other listeners of the process.
+func pprofChecks(vals map[string]string) []Issue {
+	l := vals["pprof_listen"]
+	switch {
+	case l == "":
+	case l == effectiveListen(vals):
+		return []Issue{{Key: "pprof_listen", Message: "must differ from listen: the profiles are never served on the public listener"}}
+	case l == vals["tls_http_listen"] && vals["tls"] != "" && vals["tls"] != TLSOff && vals["role"] != string(RoleWorker):
+		return []Issue{{Key: "pprof_listen", Message: "must differ from tls_http_listen"}}
+	case l == vals["metrics_listen"] && vals["metrics_exporter"] == "prometheus":
+		return []Issue{{Key: "pprof_listen", Message: "must differ from metrics_listen"}}
+	}
+	return nil
 }
 
 // crossChecks rejects missing conditional settings and contradictory combinations.
@@ -1718,6 +1749,9 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["search"] == "fake" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "search", Message: "fake is refused in the production profile: it is an index in memory for tests; set profile = development"})
 	}
+	if vals["translator_fake"] == "true" && vals["profile"] != "development" {
+		issues = append(issues, Issue{Key: "translator_fake", Message: "true is refused in the production profile: the provider fake translates nothing; set profile = development"})
+	}
 	if vals["http_allow_private_networks"] == "true" && vals["profile"] != "development" {
 		issues = append(issues, Issue{Key: "http_allow_private_networks", Message: "true is refused in the production profile; set profile = development"})
 	}
@@ -1728,6 +1762,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == effectiveListen(vals) {
 		issues = append(issues, Issue{Key: "metrics_listen", Message: "must differ from listen: the metrics are never served on the public listener"})
 	}
+	issues = append(issues, pprofChecks(vals)...)
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}

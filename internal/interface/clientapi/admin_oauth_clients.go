@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -96,7 +95,7 @@ func (s *Server) adminOAuthClientResponse(ctx context.Context, l identity.OAuthC
 // unprocessableValue is the 422 of a value that the request names and the server refuses.
 func (s *Server) unprocessableValue(ctx context.Context, name string) problem {
 	l := s.Localizer(ctx)
-	return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(name))
+	return s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue())
 }
 
 // ListAdminOAuthClients serves GET /api/v1/admin/oauth_clients, newest first. The cursor is the

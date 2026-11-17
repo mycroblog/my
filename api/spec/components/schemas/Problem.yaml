@@ -96,8 +96,9 @@ description: |
     which.
   - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
     deleted; `reason` says why.
-  - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-    reason in `theme_errors` (`PUT /admin/theme`).
+  - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+    every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+    `POST /admin/theme/restore`).
   - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
     why (`/admin/instance/brand/...`).
   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -314,4 +315,12 @@ properties:
     type: string
   request_id:
     description: The request ID (the `X-Request-Id` response header), for reporting the problem.
+    type: string
+  field:
+    description: |
+      The member of the request that a 422 is about, by its name in the request: a property of
+      the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+      field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+      wrong with its value without naming it, for the client to show beside that field. Absent
+      when the problem is not about one member.
     type: string

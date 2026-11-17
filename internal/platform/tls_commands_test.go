@@ -37,16 +37,17 @@ func commandApp(t *testing.T, env map[string]string, opts platform.AppOptions) *
 // awaitNoCertificate waits until addr presents no certificate for host.
 func awaitNoCertificate(t *testing.T, addr, host string, within time.Duration) {
 	t.Helper()
-	deadline := time.Now().Add(within)
-	for {
+	var serial *big.Int
+	gone := testkit.Eventually(t, within, func() bool {
 		chain, err := handshake(t.Context(), addr, host)
 		if err != nil {
-			return
+			return true
 		}
-		if time.Now().After(deadline) {
-			t.Fatalf("%s still serves %s with the certificate %s", addr, host, chain[0].SerialNumber)
-		}
-		time.Sleep(20 * time.Millisecond)
+		serial = chain[0].SerialNumber
+		return false
+	})
+	if !gone {
+		t.Fatalf("%s still serves %s with the certificate %s", addr, host, serial)
 	}
 }
 

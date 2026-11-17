@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appfinance "github.com/mycroblog/my/internal/app/finance"
 	"github.com/mycroblog/my/internal/domain/finance"
@@ -102,7 +101,7 @@ func (s *Server) costProblem(ctx context.Context, err error, dateField string) (
 // unprocessable returns the 422 problem of a property whose value the use cases reject.
 func (s *Server) unprocessable(ctx context.Context, name string) problem {
 	l := s.Localizer(ctx)
-	return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(name))
+	return s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue())
 }
 
 // parseCostDate parses an optional date of a request.

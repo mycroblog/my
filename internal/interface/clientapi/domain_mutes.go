@@ -56,7 +56,7 @@ func (s *Server) MuteDomain(ctx context.Context, req MuteDomainRequestObject) (M
 	}
 	l := s.Localizer(ctx)
 	invalid := MuteDomaindefaultApplicationProblemPlusJSONResponse(
-		s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("domain")))
+		s.fieldProblem(ctx, "domain", l.ServerErrorsInvalidValue()))
 	if req.Body == nil {
 		return invalid, nil
 	}

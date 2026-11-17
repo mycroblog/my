@@ -12,9 +12,11 @@ output-options:
   # GET /streaming and GET /streaming/timelines/{timeline} are Server-Sent Events streams, which the strict server cannot serve
   # (ADR-0016): streaming.go and timeline_stream.go implement them by hand, behind the same guard, and so does
   # voice_stream.go GET /voice/rooms/{id}/stream. POST /client_errors answers 204 to every body it
-  # receives, also one that the strict server would refuse (ADR-0103 §6): client_errors.go reads it by hand.
+  # receives, also one that the strict server would refuse (ADR-0103 §6): client_errors.go reads it by hand, and
+  # client_measurements.go POST /client_measurements the same way (ADR-0167 §3).
   exclude-operation-ids:
     - reportClientError
+    - reportClientMeasurements
     - streamEvents
     - streamTimeline
     - streamVoiceRoom

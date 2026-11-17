@@ -25,7 +25,7 @@ Read (instead of grep / cat over the repository):
                                                        go go-test ts ts-test op schema table query msg file
   show <ref> [--max 12000]                             the text of a ref: a declaration (<GoName>, Recv.Name,
                                                        pkg.Name, <path>:<Name>), lines (<path>:10-40), ADR-0070#decision,
-                                                       FR-915, web-client§14.2, web-client#5-アクセシビリティ, op:<id>,
+                                                       FR-915, federation.md§1, federation#1-モデレーションとの連携, op:<id>,
                                                        table:<name>, query:<Name>
   outline <path>                                       headings / declarations with line ranges and sizes
   refs <ref> [-n 40]                                   what points at ref, and what ref points at
@@ -65,10 +65,13 @@ Workflow (instead of gh / scripts/task.sh loops):
   pr watch [<pr>...] [--interval 60s]                one line per event: merged, closed, head-moved, conflicting,
                                                        ci-failed, ci-cancelled, ci-green, dequeued (for the
                                                        Monitor tool)
-  check [--base origin/main] [--full]                  the quick checks of the changed files, one line each
+  check [--base REF] [--full]                          the quick checks of the changed files, one line each
                                                        (pr open runs them); --full: scripts/task.sh check:changed
-  regen [--base origin/main] [--dry-run]               run the generators the changed sources need
+  regen [--base REF] [--dry-run]                       run the generators the changed sources need
   gh sync                                              refresh the local cache of issues and pull requests
+  feedback wait|show|reply                             the notes the decider sends from the dev server's page:
+                                                       wait in the background, show, answer next to the note
+                                                       (agentkit feedback for the flags)
 
 Maintenance:
   docs lint                                            links and anchors resolve, English-only documents have no
@@ -78,7 +81,7 @@ Maintenance:
                                                        of each ADR, which docs lint limits
   docs inventory                                       every command of my, metric, webhook event type, build tag,
                                                        and listed task is mentioned in its document
-  docs impact [--base origin/main]                     the user and operator documents (userdocs) of the changed
+  docs impact [--base REF]                             the user and operator documents (userdocs) of the changed
                                                        paths
   map check                                            every path is under a context-map.yaml, no map repeats one
                                                        above it, every user document is some map's userdocs
@@ -123,6 +126,8 @@ func run(args []string) error {
 		return runDocs(r, rest)
 	case "grep":
 		return runGrep(r, rest)
+	case "feedback":
+		return runFeedback(r, rest)
 	}
 	s, err := store.Open(r)
 	if err != nil {

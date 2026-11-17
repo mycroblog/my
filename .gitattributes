@@ -7,10 +7,17 @@ api/openapi.yaml linguist-generated=true
 # request diffs.
 internal/adapter/plugin/gen/** linguist-generated=true
 
-# The Unicode emoji data that `scripts/task.sh emoji:generate` writes (ADR-0091): collapsed in pull request diffs.
-app/web/src/features/emoji/unicode/*.gen.json linguist-generated=true
+# The Unicode emoji data that `scripts/task.sh emoji:generate` writes (ADR-0051 §6, ADR-0091 §1): collapsed in pull
+# request diffs.
+web/app-features/src/emoji/unicode/*.gen.json linguist-generated=true
 internal/domain/content/emoji_table.gen.go linguist-generated=true
 
-# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0091).
-app/ui/src/emoji.css linguist-generated=true
-app/ui/src/fonts/emoji/*.woff2 binary linguist-generated=true
+# The Noto Color Emoji web font that `scripts/task.sh emoji:generate` writes (ADR-0091 §9).
+web/design-system/src/emoji.css linguist-generated=true
+web/design-system/src/fonts/emoji/*.woff2 binary linguist-generated=true
+
+# The Noto Sans CJK and Noto Sans web fonts that `scripts/task.sh cjk:generate` writes (ADR-0009 §5).
+web/design-system/src/cjk.css linguist-generated=true
+web/design-system/src/fonts/cjk/*.woff2 binary linguist-generated=true
+web/design-system/src/noto-sans.css linguist-generated=true
+web/design-system/src/fonts/noto-sans/*.woff2 binary linguist-generated=true

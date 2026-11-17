@@ -1,0 +1,22 @@
+{
+  "account.follow": {
+    "defaultMessage": "Follow",
+    "description": "The button on a row of an account (a search's, a list's of follows, a notification's) that follows it."
+  },
+  "account.follow_back": {
+    "defaultMessage": "Follow back",
+    "description": "The follow of a row of an account that follows the reader."
+  },
+  "account.request_follow": {
+    "defaultMessage": "Request to follow",
+    "description": "The follow of a row of a locked account, which approves its followers: it asks to follow."
+  },
+  "account.following": {
+    "defaultMessage": "Following",
+    "description": "In place of the follow of a row of an account the reader follows."
+  },
+  "account.requested": {
+    "defaultMessage": "Requested",
+    "description": "In place of the follow of a row of an account the reader asked to follow, while it waits."
+  }
+}

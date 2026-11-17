@@ -4,7 +4,7 @@
 !go.sum
 !cmd/
 !internal/
-# The Dockerfile mounts the web build it makes over this directory; a local build stays out.
+# The stage web builds this directory; a local build stays out.
 internal/interface/web/dist/*
 !internal/interface/web/dist/.gitkeep
 !pkg/
@@ -12,21 +12,29 @@ internal/interface/web/dist/*
 !api/api.go
 !api/openapi.yaml
 !locales/
-!app/
-app/**/node_modules
-app/**/dist
-pkg/mykit/ts/node_modules
-pkg/mykit/ts/dist
-!tools/i18n/
-tools/i18n/node_modules
-# The generated files that are not committed (ADR-0081): the web stage generates its own.
-locales/en-XA/client*
-locales/ar-XB/client*
-tools/i18n/src/runtime/messages.gen.ts
-app/web/src/routeTree.gen.ts
-app/ui/src/themeTokens.gen.ts
 !schema/
 !scripts/install-atlas.sh
 !scripts/check-release-build.sh
+# The web client's build (the stage web): go-task, the Bun workspace, and its members. Of web/docs, which the build
+# does not read, only the manifest that the lockfile names.
+!scripts/task.sh
+!tools/go.mod
+!tools/go.sum
+!Taskfile.yml
+!tasks/
+!package.json
+!bun.lock
+!bunfig.toml
+!tsconfig.base.json
+!tools/i18n/
+!web/
+web/docs/
+!web/docs/package.json
+# What the stage installs or generates itself.
+**/node_modules
+**/dist
+web/*/src/messages.gen.ts
+web/app/src/routeTree.gen.ts
+!internal/interface/web/dist/.gitkeep
 # The pointers for coding agents: no build reads them, so a change to one keeps the layers.
 **/AGENTS.md

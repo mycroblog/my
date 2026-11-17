@@ -10,13 +10,13 @@ name: Docs site preview
 on:
   pull_request:
     paths:
-      # The published documents (app/docs/src/published.ts), the table of contents of the sidebar, and the site.
+      # The published documents (web/docs/src/published.ts), the table of contents of the sidebar, and the site.
       - "docs/README.md"
       - "docs/operations/**"
       - "docs/reference/**"
       - "docs/guide/**"
       - "docs/developers/**"
-      - "app/docs/**"
+      - "web/docs/**"
       - "api/openapi.yaml"
       - "scripts/docs-site.sh"
       - "scripts/docs-site/**"

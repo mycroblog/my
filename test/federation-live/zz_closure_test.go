@@ -159,7 +159,7 @@ func TestClosure(t *testing.T) {
 			}
 			time.Sleep(closureQuiet)
 
-			posts, err := peerRequests(ctx, p, http.MethodPost, closedAt)
+			posts, err := e.peerRequests(ctx, p, http.MethodPost, closedAt)
 			if err != nil {
 				t.Fatalf("reading the access log of the proxy: %v", err)
 			}

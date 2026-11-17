@@ -130,7 +130,7 @@ func TestClientAPIFallbackProblems(t *testing.T) {
 		wantStatus   int
 		wantTitle    string
 	}{
-		{http.MethodGet, "/api/v1/nope", http.StatusNotFound, "指定されたリソースが見つかりません。"},
+		{http.MethodGet, "/api/v1/nope", http.StatusNotFound, "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。リンクを確かめるか、前の画面に戻ってください。"},
 		{http.MethodDelete, "/api/v1/instance", http.StatusMethodNotAllowed, ""},
 	}
 	for _, tt := range tests {

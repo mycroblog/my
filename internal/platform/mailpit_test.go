@@ -51,9 +51,13 @@ func TestEmailLinksThroughMailpit(t *testing.T) {
 	}
 	const email, password, newPassword = "alice@example.com", "correct horse battery", "battery staple correct horse"
 	newClient := func() *authClient { return &authClient{t: t, s: s, cookies: map[string]string{}} }
+	// The auth screens are an entry of the web client: the page carries the screen's data as JSON, which the
+	// client draws, so these read the screen's name and its fields there.
+	shows := func(body, screen string) bool { return strings.Contains(body, `"screen":"`+screen+`"`) }
+	carries := func(body, token string) bool { return strings.Contains(body, `"token":"`+token+`"`) }
 	signedIn := func(c *authClient) bool {
 		_, body := c.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		return strings.Contains(body, "You are signed in")
+		return shows(body, "signed_in")
 	}
 	// link returns the path and the token of the link that re finds in the text of m, and
 	// checks that the HTML version carries the same link.
@@ -83,11 +87,11 @@ func TestEmailLinksThroughMailpit(t *testing.T) {
 	}
 	path, token := link(mp.WaitFor(t, email, 1, 30*time.Second), verifyLink)
 	if resp, body := alice.do(http.MethodGet, path, nil, nil); resp.StatusCode != http.StatusOK ||
-		!strings.Contains(body, `name="token" value="`+html.EscapeString(token)+`"`) {
+		!shows(body, "verify_email") || !carries(body, token) {
 		t.Fatalf("GET %s = %d\n%s", path, resp.StatusCode, body)
 	}
 	if resp, body := alice.do(http.MethodPost, authpages.PathVerifyEmail, alice.formAt(path, "token", token), nil); resp.StatusCode != http.StatusOK ||
-		!strings.Contains(body, "Your email address is confirmed.") {
+		!shows(body, "verified") {
 		t.Fatalf("POST verify_email = %d\n%s", resp.StatusCode, body)
 	}
 
@@ -109,7 +113,7 @@ func TestEmailLinksThroughMailpit(t *testing.T) {
 	}
 	path, token = link(mp.WaitFor(t, email, 2, 30*time.Second), resetLink)
 	if resp, body := forgot.do(http.MethodGet, path, nil, nil); resp.StatusCode != http.StatusOK ||
-		!strings.Contains(body, `name="token" value="`+html.EscapeString(token)+`"`) {
+		!shows(body, "reset_password") || !carries(body, token) {
 		t.Fatalf("GET %s = %d\n%s", path, resp.StatusCode, body)
 	}
 	if resp, body := forgot.do(http.MethodPost, authpages.PathResetPassword, forgot.formAt(path, "token", token, "password", newPassword), nil); resp.StatusCode != http.StatusOK {

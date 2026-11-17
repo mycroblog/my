@@ -147,3 +147,19 @@ FROM error_groups g
 JOIN error_group_states s ON s.group_id = g.id
 LEFT JOIN error_group_samples sm ON sm.group_id = g.id
 WHERE g.id = CAST(@id AS TEXT);
+
+-- AddUXCount adds samples to the count of the hour, metric, name, and bucket, in one statement.
+-- name: AddUXCount :exec
+INSERT INTO ux_measurement_counts (hour_start, metric, name, bucket, samples) VALUES (?, ?, ?, ?, ?)
+ON CONFLICT (hour_start, metric, name, bucket) DO UPDATE SET
+  samples = ux_measurement_counts.samples + excluded.samples;
+
+-- name: DeleteUXCountsBefore :execrows
+DELETE FROM ux_measurement_counts WHERE hour_start < ?;
+
+-- ListUXCountsSince sums the counts of the hours from since on by metric, name, and bucket: the
+-- admin view of the UX measurements.
+-- name: ListUXCountsSince :many
+SELECT metric, name, bucket, CAST(SUM(samples) AS INTEGER) AS samples FROM ux_measurement_counts
+WHERE hour_start >= ?
+GROUP BY metric, name, bucket;

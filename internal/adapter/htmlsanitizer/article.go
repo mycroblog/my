@@ -11,6 +11,8 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 	nethtml "golang.org/x/net/html"
 	"golang.org/x/net/html/atom"
+
+	"github.com/mycroblog/my/internal/domain/content"
 )
 
 // The allowlist of articles, the long posts in Markdown (ADR-0160 §4). It is its own, apart from
@@ -78,7 +80,8 @@ func SanitizeArticle(in string, keepImage func(src string) bool) string {
 }
 
 // articleOutput is what sanitizeArticle writes: the HTML, and the text of the body without its
-// headings, code, and images (and the links that images became).
+// headings, code, and images (and the links that images became), its blocks joined by
+// content.JoinArticleText.
 type articleOutput struct {
 	html, text string
 }
@@ -97,24 +100,31 @@ func sanitizeArticle(in string, image func(src, alt string) (string, bool)) arti
 	for _, n := range nodes {
 		w.node(n, false)
 	}
-	return articleOutput{html: articlePolicy.Sanitize(w.b.String()), text: w.text.String()}
+	w.endBlock(false)
+	return articleOutput{html: articlePolicy.Sanitize(w.b.String()), text: content.JoinArticleText(w.blocks)}
 }
 
 type articleWriter struct {
 	b     strings.Builder
 	image func(src, alt string) (string, bool)
-	// text is the text of the body outside headings, code, and images; quiet counts the
-	// elements around the current node whose text it leaves out.
-	text  strings.Builder
-	quiet int
+	// text is the text of the current block of the body outside headings, code, and images, and
+	// blocks the blocks before it; quiet counts the elements around the current node whose text
+	// it leaves out, and items the items of lists and the cells of tables around it.
+	text   strings.Builder
+	blocks []content.ArticleTextBlock
+	quiet  int
+	items  int
 }
 
 // articleQuietElements are the elements whose text a summary made from the body leaves out.
 var articleQuietElements = []string{"h1", "h2", "h3", "h4", "h5", "h6", "pre", "code"}
 
-// articleBlocks are the elements after which the text of the body has a space.
+// articleBlocks are the elements that start and end a block of the text of the body: those an
+// article keeps, and the block elements of HTML that it unwraps.
 var articleBlocks = []string{
-	"p", "br", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote", "ul", "ol", "li", "table", "tr", "th", "td",
+	"p", "hr", "h1", "h2", "h3", "h4", "h5", "h6", "pre", "blockquote", "ul", "ol", "li", "table", "tr", "th", "td",
+	"div", "section", "article", "aside", "header", "footer", "main", "nav", "figure", "figcaption",
+	"dl", "dt", "dd", "address", "details", "summary",
 }
 
 // node writes n and its descendants; inLink is true inside a link, where links are unwrapped.
@@ -134,6 +144,14 @@ func (w *articleWriter) node(n *nethtml.Node, inLink bool) {
 	quiet := slices.Contains(articleQuietElements, name)
 	if quiet {
 		w.quiet++
+	}
+	block := slices.Contains(articleBlocks, name)
+	if block { // the text before a block, such as that of an item before its nested list, is a block of its own
+		w.endBlock(w.items > 0)
+	}
+	item := name == "li" || name == "th" || name == "td"
+	if item {
+		w.items++
 	}
 	switch {
 	case n.Namespace != "", slices.Contains(droppedElements, name):
@@ -162,9 +180,21 @@ func (w *articleWriter) node(n *nethtml.Node, inLink bool) {
 	if quiet {
 		w.quiet--
 	}
-	if slices.Contains(articleBlocks, name) {
+	switch {
+	case name == "br":
 		w.text.WriteByte(' ')
+	case block:
+		w.endBlock(w.items > 0)
 	}
+	if item {
+		w.items--
+	}
+}
+
+// endBlock ends the current block of the text; item is true when it is in an item or a cell.
+func (w *articleWriter) endBlock(item bool) {
+	w.blocks = append(w.blocks, content.ArticleTextBlock{Text: w.text.String(), Item: item})
+	w.text.Reset()
 }
 
 // element writes the allowlisted element n as name, with the attributes it keeps.

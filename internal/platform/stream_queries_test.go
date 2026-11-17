@@ -25,9 +25,9 @@ import (
 // two followers got it. Every query is one round trip (one call in pg_stat_statements).
 func homeStreamQueries(t *testing.T, n int) int {
 	t.Helper()
-	tracer := testkit.NewTracer()
+	tracer, meter := testkit.NewTracer(), testkit.NewMeter()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), Tracer: tracer})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler), Tracer: tracer, Meter: meter})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
@@ -65,12 +65,8 @@ func homeStreamQueries(t *testing.T, n int) int {
 			followers[i] = events
 		}
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	for app.Streams.Len() < n {
-		if time.Now().After(deadline) {
-			t.Fatal("the streams did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return app.Streams.Len() >= n }) {
+		t.Fatal("the streams did not subscribe")
 	}
 	total := func() int {
 		count := 0
@@ -79,7 +75,8 @@ func homeStreamQueries(t *testing.T, n int) int {
 		}
 		return count
 	}
-	before := total()
+	signals := func() float64 { return meter.Sum("my.stream.signals", map[string]string{"my.stream.kind": "user"}) }
+	before, handled := total(), signals()
 	app.Streams.Publish(stream.Event{Kind: stream.KindHomeEntry, EntryID: post, AuthorAccountID: author.accountID})
 	for _, events := range followers {
 		select {
@@ -91,8 +88,10 @@ func homeStreamQueries(t *testing.T, n int) int {
 			t.Fatal("a follower got no update")
 		}
 	}
-	// The other streams handle the signal by then or soon after; let them.
-	time.Sleep(200 * time.Millisecond)
+	// The other streams handle the signal too, sending nothing.
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return signals() >= handled+float64(n) }) {
+		t.Fatalf("%v of %d streams handled the signal", signals()-handled, n)
+	}
 	return total() - before
 }
 

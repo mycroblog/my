@@ -9,17 +9,22 @@ import (
 	"net/http/httptest"
 	"slices"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/app/stream"
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/interface/clientapi"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // fakePolicies keeps a policy and the requests of bob's filtered notifications in memory, as
-// appnotification.Service does.
+// appnotification.Service does. Its methods are safe for concurrent use, since a stream calls them
+// while the test changes the requests with setWaiting.
 type fakePolicies struct {
+	mu       sync.Mutex
 	choices  map[notification.Condition]notification.Action
 	waiting  []notification.Notification // bob's filtered notifications of alice, newest first
 	accepted bool
@@ -34,11 +39,22 @@ func (f *fakePolicies) policy() notification.Policy {
 	return notification.NewPolicy(cs)
 }
 
+// setWaiting replaces bob's filtered notifications of alice.
+func (f *fakePolicies) setWaiting(ns []notification.Notification) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.waiting = ns
+}
+
 func (f *fakePolicies) Policy(context.Context, string) (notification.Policy, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	return f.policy(), nil
 }
 
 func (f *fakePolicies) UpdatePolicy(_ context.Context, _ string, choices []notification.PolicyChoice) (notification.Policy, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	for _, c := range choices {
 		if err := c.Validate(); err != nil {
 			return notification.Policy{}, err
@@ -62,6 +78,8 @@ func (f *fakePolicies) request(accountID, sourceID string) (notification.Request
 }
 
 func (f *fakePolicies) Requests(_ context.Context, accountID, before string, _ int) ([]notification.Request, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	r, err := f.request(accountID, bobAccountID)
 	if err != nil || before != "" && r.LastNotificationID >= before {
 		return nil, nil //nolint:nilerr // no request is an empty page
@@ -70,10 +88,14 @@ func (f *fakePolicies) Requests(_ context.Context, accountID, before string, _ i
 }
 
 func (f *fakePolicies) Request(_ context.Context, accountID, sourceID string) (notification.Request, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	return f.request(accountID, sourceID)
 }
 
 func (f *fakePolicies) RequestSummary(_ context.Context, accountID string) (notification.RequestSummary, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if _, err := f.request(accountID, bobAccountID); err != nil {
 		return notification.RequestSummary{}, nil //nolint:nilerr // no request counts nothing
 	}
@@ -81,6 +103,8 @@ func (f *fakePolicies) RequestSummary(_ context.Context, accountID string) (noti
 }
 
 func (f *fakePolicies) RequestNotifications(_ context.Context, accountID, sourceID, before string, limit int) ([]notification.Notification, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if _, err := f.request(accountID, sourceID); err != nil {
 		return nil, err
 	}
@@ -94,6 +118,8 @@ func (f *fakePolicies) RequestNotifications(_ context.Context, accountID, source
 }
 
 func (f *fakePolicies) AcceptRequest(_ context.Context, accountID, sourceID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if _, err := f.request(accountID, sourceID); err != nil {
 		return err
 	}
@@ -102,6 +128,8 @@ func (f *fakePolicies) AcceptRequest(_ context.Context, accountID, sourceID stri
 }
 
 func (f *fakePolicies) DismissRequest(_ context.Context, accountID, sourceID string) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
 	if _, err := f.request(accountID, sourceID); err != nil {
 		return err
 	}
@@ -225,7 +253,14 @@ func TestDismissNotificationRequest(t *testing.T) {
 func TestStreamingNotificationRequests(t *testing.T) {
 	hub := stream.NewHub(stream.HubOptions{})
 	f := &fakePolicies{choices: map[notification.Condition]notification.Action{}}
-	e, _, _ := newNotificationEnvWithViews(t, func(o *clientapi.Options) { o.Streams = hub; o.NotificationPolicies = f })
+	m := testkit.NewMeter()
+	e, _, _ := newNotificationEnvWithViews(t, func(o *clientapi.Options) { o.Streams, o.NotificationPolicies, o.Meter = hub, f, m })
+	handled := func(n float64) {
+		t.Helper()
+		if !testkit.Eventually(t, 5*time.Second, func() bool { return m.Sum("my.stream.signals", nil) >= n }) {
+			t.Fatalf("the stream handled %v signals, want %v", m.Sum("my.stream.signals", nil), n)
+		}
+	}
 	srv := httptest.NewServer(e.h)
 	t.Cleanup(srv.Close)
 
@@ -234,7 +269,7 @@ func TestStreamingNotificationRequests(t *testing.T) {
 		t.Fatalf("first line = %q, want the connected comment", line)
 	}
 	// A filtered notification arrives: no notification event, the new counts.
-	f.waiting = []notification.Notification{{ID: notificationID(7), RecipientAccountID: aliceAccountID, Type: notification.TypeFollow, SourceAccountID: bobAccountID}}
+	f.setWaiting([]notification.Notification{{ID: notificationID(7), RecipientAccountID: aliceAccountID, Type: notification.TypeFollow, SourceAccountID: bobAccountID}})
 	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
 	if line := readLine(t, r); line != "event: notification_requests" {
 		t.Fatalf("line = %q, want the counts of the requests", line)
@@ -248,7 +283,8 @@ func TestStreamingNotificationRequests(t *testing.T) {
 	}
 	// Unchanged counts send nothing; the dismissal sends zero.
 	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
-	f.waiting = nil
+	handled(2)
+	f.setWaiting(nil)
 	hub.Publish(stream.Event{Kind: stream.KindNotifications, AccountID: aliceAccountID})
 	if line := readLine(t, r); line != "event: notification_requests" {
 		t.Fatalf("line = %q, want the counts after the dismissal", line)

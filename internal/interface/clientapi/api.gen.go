@@ -3239,6 +3239,7 @@ const (
 	InstanceSettingKeyTranslationServerMonthlyCharacters InstanceSettingKey = "translation_server_monthly_characters"
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
 	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
+	InstanceSettingKeyUxMeasurement                      InstanceSettingKey = "ux_measurement"
 	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
@@ -3478,6 +3479,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyTranslationUserMonthlyCharacters:
 		return true
 	case InstanceSettingKeyUserAppRegistration:
+		return true
+	case InstanceSettingKeyUxMeasurement:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
@@ -4894,6 +4897,30 @@ func (e SignupBlockImportSkippedReason) Valid() bool {
 	}
 }
 
+// Defines values for StaleThemeTokenReason.
+const (
+	StaleThemeTokenReasonDuplicateToken StaleThemeTokenReason = "duplicate_token"
+	StaleThemeTokenReasonInvalidValue   StaleThemeTokenReason = "invalid_value"
+	StaleThemeTokenReasonOutOfRange     StaleThemeTokenReason = "out_of_range"
+	StaleThemeTokenReasonUnknownToken   StaleThemeTokenReason = "unknown_token"
+)
+
+// Valid indicates whether the value is a known member of the StaleThemeTokenReason enum.
+func (e StaleThemeTokenReason) Valid() bool {
+	switch e {
+	case StaleThemeTokenReasonDuplicateToken:
+		return true
+	case StaleThemeTokenReasonInvalidValue:
+		return true
+	case StaleThemeTokenReasonOutOfRange:
+		return true
+	case StaleThemeTokenReasonUnknownToken:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for SupporterEndReason.
 const (
 	SupporterEndReasonAccountClosed    SupporterEndReason = "account_closed"
@@ -5130,22 +5157,17 @@ func (e SupporterTipState) Valid() bool {
 
 // Defines values for ThemeErrorCode.
 const (
-	ThemeErrorCodeCssInvalid     ThemeErrorCode = "css_invalid"
-	ThemeErrorCodeCssTooLong     ThemeErrorCode = "css_too_long"
-	ThemeErrorCodeDuplicateToken ThemeErrorCode = "duplicate_token"
-	ThemeErrorCodeInvalidValue   ThemeErrorCode = "invalid_value"
-	ThemeErrorCodeLowContrast    ThemeErrorCode = "low_contrast"
-	ThemeErrorCodeOutOfRange     ThemeErrorCode = "out_of_range"
-	ThemeErrorCodeUnknownToken   ThemeErrorCode = "unknown_token"
+	ThemeErrorCodeDuplicateToken   ThemeErrorCode = "duplicate_token"
+	ThemeErrorCodeInvalidValue     ThemeErrorCode = "invalid_value"
+	ThemeErrorCodeLowContrast      ThemeErrorCode = "low_contrast"
+	ThemeErrorCodeOutOfRange       ThemeErrorCode = "out_of_range"
+	ThemeErrorCodeTooManyOverrides ThemeErrorCode = "too_many_overrides"
+	ThemeErrorCodeUnknownToken     ThemeErrorCode = "unknown_token"
 )
 
 // Valid indicates whether the value is a known member of the ThemeErrorCode enum.
 func (e ThemeErrorCode) Valid() bool {
 	switch e {
-	case ThemeErrorCodeCssInvalid:
-		return true
-	case ThemeErrorCodeCssTooLong:
-		return true
 	case ThemeErrorCodeDuplicateToken:
 		return true
 	case ThemeErrorCodeInvalidValue:
@@ -5153,6 +5175,8 @@ func (e ThemeErrorCode) Valid() bool {
 	case ThemeErrorCodeLowContrast:
 		return true
 	case ThemeErrorCodeOutOfRange:
+		return true
+	case ThemeErrorCodeTooManyOverrides:
 		return true
 	case ThemeErrorCodeUnknownToken:
 		return true
@@ -5194,6 +5218,42 @@ func (e TipAmountsProblemReason) Valid() bool {
 	case TipAmountsProblemReasonCurrency:
 		return true
 	case TipAmountsProblemReasonRange:
+		return true
+	default:
+		return false
+	}
+}
+
+// Defines values for UXMetric.
+const (
+	UXMetricCallJitter     UXMetric = "call_jitter"
+	UXMetricCallPacketLoss UXMetric = "call_packet_loss"
+	UXMetricCallRtt        UXMetric = "call_rtt"
+	UXMetricInp            UXMetric = "inp"
+	UXMetricLcp            UXMetric = "lcp"
+	UXMetricLongFrame      UXMetric = "long_frame"
+	UXMetricPress          UXMetric = "press"
+	UXMetricTransition     UXMetric = "transition"
+)
+
+// Valid indicates whether the value is a known member of the UXMetric enum.
+func (e UXMetric) Valid() bool {
+	switch e {
+	case UXMetricCallJitter:
+		return true
+	case UXMetricCallPacketLoss:
+		return true
+	case UXMetricCallRtt:
+		return true
+	case UXMetricInp:
+		return true
+	case UXMetricLcp:
+		return true
+	case UXMetricLongFrame:
+		return true
+	case UXMetricPress:
+		return true
+	case UXMetricTransition:
 		return true
 	default:
 		return false
@@ -8684,20 +8744,25 @@ type AdminSupporterTipsRequest struct {
 
 // AdminTheme The instance theme as its administrators edit it.
 type AdminTheme struct {
-	// CustomCss The custom CSS; empty for none.
-	CustomCss string `json:"custom_css"`
+	// Draft A saved token set of the instance theme.
+	Draft *ThemeSet `json:"draft,omitempty"`
 
-	// RevisedAt When the current revision was recorded; omitted when no theme was ever saved.
-	RevisedAt *time.Time `json:"revised_at,omitempty"`
+	// Published A publication of a token set, which made it the theme in effect.
+	Published *AdminThemeRevision `json:"published,omitempty"`
+}
 
-	// Revision The ID of the current theme revision; omitted when no theme was ever saved.
-	Revision *string `json:"revision,omitempty"`
+// AdminThemeRevision A publication of a token set, which made it the theme in effect.
+type AdminThemeRevision struct {
+	PublishedAt time.Time `json:"published_at"`
 
-	// StylesheetUrl The stylesheet of the theme; omitted when the theme changes nothing.
+	// Revision The ID of the publication, which names its stylesheet.
+	Revision string `json:"revision"`
+
+	// Set A saved token set of the instance theme.
+	Set ThemeSet `json:"set"`
+
+	// StylesheetUrl The stylesheet of the theme; omitted when the set overrides nothing.
 	StylesheetUrl *string `json:"stylesheet_url,omitempty"`
-
-	// Tokens The overridden tokens, in the order of the token list.
-	Tokens []ThemeTokenValue `json:"tokens"`
 }
 
 // AdminTranslationOverview How translation is used in the current month, and the providers that this server has.
@@ -9519,6 +9584,13 @@ type BrandProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
 
@@ -9649,6 +9721,33 @@ type ClientErrorReport struct {
 // boundary outside the routes, `uncaught` outside every boundary, and
 // `unhandledrejection` as a promise rejection that nothing handled.
 type ClientErrorReportKind string
+
+// ClientMeasurement One sample of how fast the web client responded.
+type ClientMeasurement struct {
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport that `metric` names.
+	Name string `json:"name"`
+
+	// Value The value in milliseconds, or in percent for `call_packet_loss`.
+	Value float64 `json:"value"`
+}
+
+// ClientMeasurementReport Samples of how fast the web client responded, sent together.
+type ClientMeasurementReport struct {
+	Measurements []ClientMeasurement `json:"measurements"`
+}
 
 // CloseServiceRequest The confirmation of the closure of the server.
 type CloseServiceRequest struct {
@@ -10492,6 +10591,13 @@ type CustomEmojiProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a custom emoji is refused. `invalid_shortcode`: not 2 to 30 letters, digits, and
 	// underscores. `shortcode_taken`: a local emoji has the shortcode, or a pending request reserves it. `invalid_alias`: an
 	// alias breaks the rules of a shortcode, or there are more than 10. `invalid_category`:
@@ -10603,6 +10709,13 @@ type CustomEmojiRequestPage struct {
 type CustomEmojiRequestProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason Why a custom emoji request cannot be decided or withdrawn. `not_pending`: it was already
 	// approved, rejected, withdrawn, or lapsed. `requester_cannot_create`: the requester no longer
@@ -12613,6 +12726,11 @@ type Instance struct {
 	// no `providers`, nothing can be translated and clients show no action for it.
 	Translation InstanceTranslation `json:"translation"`
 
+	// UxMeasurement Whether the server takes samples of how fast the web client responds
+	// (`POST /client_measurements`). While it is false, the server takes none and the client sends
+	// none.
+	UxMeasurement *bool `json:"ux_measurement,omitempty"`
+
 	// Version The server version.
 	Version string `json:"version"`
 
@@ -13468,6 +13586,13 @@ type LoginProviderKind string
 type LoginProviderProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason Why a login provider is refused. `kind`: not a known kind. `display_name`: empty, longer
 	// than 100 characters, or with control characters. `issuer`: not what the kind takes (an
@@ -15217,8 +15342,9 @@ type PreviewDomainBlockImportRequest struct {
 //     which.
 //   - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
 //     deleted; `reason` says why.
-//   - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-//     reason in `theme_errors` (`PUT /admin/theme`).
+//   - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+//     every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+//     `POST /admin/theme/restore`).
 //   - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
 //     why (`/admin/instance/brand/...`).
 //   - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -15416,6 +15542,13 @@ type PreviewDomainBlockImportRequest struct {
 type Problem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
@@ -15638,6 +15771,13 @@ type RelayProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a relay operation is refused. `url`: not an https URL of at most 2048 bytes.
 	// `exists`: a relay with the URL is registered. `domain_suspended`: a domain action
 	// suspends its server. `not_actor`: the URL of a `litepub` relay serves no actor with an
@@ -15794,6 +15934,13 @@ type RoleProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// MissingPermissions The permissions that the change needs and the viewer lacks, for `missing_permission`.
 	MissingPermissions *[]Permission `json:"missing_permissions,omitempty"`
 
@@ -15942,10 +16089,9 @@ type SetLinkCardDomainRuleRequest struct {
 	Note *string `json:"note,omitempty"`
 }
 
-// SetThemeRequest The whole theme; tokens left out go back to their defaults.
+// SetThemeRequest A whole token set; tokens left out keep their defaults.
 type SetThemeRequest struct {
-	CustomCss string            `json:"custom_css"`
-	Tokens    []ThemeTokenValue `json:"tokens"`
+	Tokens []ThemeTokenValue `json:"tokens"`
 }
 
 // SignupBlockImportResult What an import of a list of sign-up blocks did.
@@ -15978,6 +16124,18 @@ type SignupBlockImportSkippedReason string
 
 // SpoilerText The content warning; omitted or empty for none. It counts toward `max_post_characters`.
 type SpoilerText = string
+
+// StaleThemeToken A stored override that no longer applies, as it was saved, and why.
+type StaleThemeToken struct {
+	Dark   *string               `json:"dark,omitempty"`
+	Light  *string               `json:"light,omitempty"`
+	Reason StaleThemeTokenReason `json:"reason"`
+	Token  string                `json:"token"`
+	Value  *string               `json:"value,omitempty"`
+}
+
+// StaleThemeTokenReason defines model for StaleThemeToken.Reason.
+type StaleThemeTokenReason string
 
 // Status A status (post), as the viewer sees it. `favourited`, `boosted`, `bookmarked`, and
 // `muted` describe the authenticated user's relation to it and are omitted for anonymous
@@ -16373,6 +16531,13 @@ type StatusRejectedProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// HookDecisionId The decision to appeal.
 	HookDecisionId *Id `json:"hook_decision_id,omitempty"`
 
@@ -16574,6 +16739,13 @@ type SupporterPlanProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// Reason Why a supporter plan is refused. `name`, `description`, `monthly_price`, `currency`,
 	// `annual_discount_percent`, `emoji_limit`, `rank`, `visibility`: the value breaks its rule
 	// (a price below the provider's minimum, of its yearly price too, or a currency the
@@ -16761,11 +16933,11 @@ type TagSuggestionList struct {
 	Items []TagSuggestion `json:"items"`
 }
 
-// ThemeError One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
-// `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme
-// of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and ms for a
-// duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
-// `minimum`:1), `css_too_long` (`max` bytes), or `css_invalid` (not UTF-8 text).
+// ThemeError One reason a token set cannot be saved or published. `code` is `unknown_token`,
+// `duplicate_token`, `invalid_value` (the value does not have the token's shape; `scheme` names the
+// color scheme of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and
+// ms for a duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
+// `minimum`:1), or `too_many_overrides` (more than `max` tokens).
 type ThemeError struct {
 	Background *string           `json:"background,omitempty"`
 	Code       ThemeErrorCode    `json:"code"`
@@ -16783,11 +16955,18 @@ type ThemeErrorCode string
 // ThemeErrorScheme defines model for ThemeError.Scheme.
 type ThemeErrorScheme string
 
-// ThemeProblem A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-// lists why the theme cannot be saved; another 422 (a malformed request) has none.
+// ThemeProblem A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+// lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
 type ThemeProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
 	RequestId *string `json:"request_id,omitempty"`
@@ -16804,7 +16983,21 @@ type ThemeProblem struct {
 	Type string `json:"type"`
 }
 
-// ThemeTokenValue The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+// ThemeSet A saved token set of the instance theme.
+type ThemeSet struct {
+	Id      string    `json:"id"`
+	SavedAt time.Time `json:"saved_at"`
+
+	// StaleTokens The overrides that no longer apply and are left out of the stylesheet: `reason` is
+	// `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+	// `out_of_range` (the token's kind or bounds changed).
+	StaleTokens []StaleThemeToken `json:"stale_tokens"`
+
+	// Tokens The overrides that apply, in the order of the token list.
+	Tokens []ThemeTokenValue `json:"tokens"`
+}
+
+// ThemeTokenValue The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
 // and `dark` for a color token, `value` for the others.
 type ThemeTokenValue struct {
 	Dark  *string `json:"dark,omitempty"`
@@ -16823,6 +17016,13 @@ type TipAmounts struct {
 type TipAmountsProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
 
 	// Reason The rule that the amounts of the tips break: `count` (1 to 6 different amounts in one
 	// currency), `currency` (a currency that the tips and the payment provider take: JPY or USD),
@@ -16901,6 +17101,63 @@ type TwoFactorCodeRequest struct {
 	// Code A six-digit code of the app or an unused recovery code.
 	Code string `json:"code"`
 }
+
+// UXMeasurementBucket The samples whose value is above the bound of the bucket before and at most `le`. The last
+// bucket has no `le`: it holds the samples above every bound.
+type UXMeasurementBucket struct {
+	// Le The upper bound of the bucket, in the unit of the metric.
+	Le      *float64 `json:"le,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMeasurementList The UX measurements of a window of hours, by metric and then by most samples.
+type UXMeasurementList struct {
+	Items []UXMeasurementSummary `json:"items"`
+
+	// Since The start of the first hour of the window, in UTC.
+	Since time.Time `json:"since"`
+}
+
+// UXMeasurementSummary The samples of one metric and name over the window.
+type UXMeasurementSummary struct {
+	// Buckets The samples by bucket, from the lowest bound up.
+	Buckets []UXMeasurementBucket `json:"buckets"`
+
+	// Metric What a UX measurement of the web client measures, and so what its name names. The values are
+	// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+	//
+	// - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+	//   a long animation frame of a route, named by the route's ID (a pattern such as
+	//   `/_app/statuses/$id`, never the URL).
+	// - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+	//   `replace`, `none`).
+	// - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+	// - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+	//   call transport (`p2p`, `livekit`, `sora`).
+	Metric UXMetric `json:"metric"`
+
+	// Name The route ID, interaction kind, action ID, or call transport; `other` for the names past
+	// the first 200 of the metric that a process of the server kept.
+	Name string `json:"name"`
+
+	// P75 The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+	// the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+	P75     *float64 `json:"p75,omitempty"`
+	Samples int64    `json:"samples"`
+}
+
+// UXMetric What a UX measurement of the web client measures, and so what its name names. The values are
+// milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+//
+//   - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+//     a long animation frame of a route, named by the route's ID (a pattern such as
+//     `/_app/statuses/$id`, never the URL).
+//   - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+//     `replace`, `none`).
+//   - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+//   - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+//     call transport (`p2p`, `livekit`, `sora`).
+type UXMetric string
 
 // UpdateBadgeChoiceRequest Whether to show the badge of the role on the authenticated user's profile.
 type UpdateBadgeChoiceRequest struct {
@@ -17716,6 +17973,13 @@ type WebhookProblem struct {
 	// Detail An explanation of this occurrence, localized from `Accept-Language`.
 	Detail *string `json:"detail,omitempty"`
 
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
 	// MissingPermissions The permissions that the events need and the user lacks, for `missing_permission`.
 	MissingPermissions *[]Permission `json:"missing_permissions,omitempty"`
 
@@ -18529,6 +18793,12 @@ type ListSupporterSubscriptionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// ListUXMeasurementsParams defines parameters for ListUXMeasurements.
+type ListUXMeasurementsParams struct {
+	// Hours The hours of the window, 24 by default.
+	Hours *int `form:"hours,omitempty" json:"hours,omitempty"`
+}
+
 // ListWebhookDeliveriesParams defines parameters for ListWebhookDeliveries.
 type ListWebhookDeliveriesParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -19193,8 +19463,8 @@ type SetSupporterProgramJSONRequestBody = AdminSupporterProgramRequest
 // SetSupporterTipsJSONRequestBody defines body for SetSupporterTips for application/json ContentType.
 type SetSupporterTipsJSONRequestBody = AdminSupporterTipsRequest
 
-// SetAdminThemeJSONRequestBody defines body for SetAdminTheme for application/json ContentType.
-type SetAdminThemeJSONRequestBody = SetThemeRequest
+// SetAdminThemeDraftJSONRequestBody defines body for SetAdminThemeDraft for application/json ContentType.
+type SetAdminThemeDraftJSONRequestBody = SetThemeRequest
 
 // EndVoiceRoomAsModeratorJSONRequestBody defines body for EndVoiceRoomAsModerator for application/json ContentType.
 type EndVoiceRoomAsModeratorJSONRequestBody = AdminVoiceRoomEnd
@@ -20050,12 +20320,24 @@ type ServerInterface interface {
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(w http.ResponseWriter, r *http.Request)
-	// SetAdminTheme Replace the instance theme
-	// (PUT /admin/theme)
-	SetAdminTheme(w http.ResponseWriter, r *http.Request)
+	// SetAdminThemeDraft Save the draft of the instance theme
+	// (PUT /admin/theme/draft)
+	SetAdminThemeDraft(w http.ResponseWriter, r *http.Request)
+	// GetAdminThemeDraftStylesheet Preview the draft of the instance theme
+	// (GET /admin/theme/draft/stylesheet)
+	GetAdminThemeDraftStylesheet(w http.ResponseWriter, r *http.Request)
+	// PublishAdminTheme Publish the draft of the instance theme
+	// (POST /admin/theme/publish)
+	PublishAdminTheme(w http.ResponseWriter, r *http.Request)
+	// RestoreAdminTheme Restore the previously published instance theme
+	// (POST /admin/theme/restore)
+	RestoreAdminTheme(w http.ResponseWriter, r *http.Request)
 	// GetAdminTranslationOverview Show how translation is used
 	// (GET /admin/translation)
 	GetAdminTranslationOverview(w http.ResponseWriter, r *http.Request)
+	// ListUXMeasurements List the UX measurements
+	// (GET /admin/ux_measurements)
+	ListUXMeasurements(w http.ResponseWriter, r *http.Request, params ListUXMeasurementsParams)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(w http.ResponseWriter, r *http.Request, id VoiceRoomId)
@@ -20449,6 +20731,9 @@ type ServerInterface interface {
 	// ListNotificationRequestNotifications List the notifications of a notification request
 	// (GET /notifications/requests/{id}/notifications)
 	ListNotificationRequestNotifications(w http.ResponseWriter, r *http.Request, id AccountId, params ListNotificationRequestNotificationsParams)
+	// GetNotification Get a notification
+	// (GET /notifications/{id})
+	GetNotification(w http.ResponseWriter, r *http.Request, id Id)
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(w http.ResponseWriter, r *http.Request, id Id)
@@ -27182,11 +27467,53 @@ func (siw *ServerInterfaceWrapper) GetAdminTheme(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// SetAdminTheme operation middleware
-func (siw *ServerInterfaceWrapper) SetAdminTheme(w http.ResponseWriter, r *http.Request) {
+// SetAdminThemeDraft operation middleware
+func (siw *ServerInterfaceWrapper) SetAdminThemeDraft(w http.ResponseWriter, r *http.Request) {
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.SetAdminTheme(w, r)
+		siw.Handler.SetAdminThemeDraft(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAdminThemeDraftStylesheet operation middleware
+func (siw *ServerInterfaceWrapper) GetAdminThemeDraftStylesheet(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAdminThemeDraftStylesheet(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// PublishAdminTheme operation middleware
+func (siw *ServerInterfaceWrapper) PublishAdminTheme(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.PublishAdminTheme(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RestoreAdminTheme operation middleware
+func (siw *ServerInterfaceWrapper) RestoreAdminTheme(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RestoreAdminTheme(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -27201,6 +27528,39 @@ func (siw *ServerInterfaceWrapper) GetAdminTranslationOverview(w http.ResponseWr
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetAdminTranslationOverview(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// ListUXMeasurements operation middleware
+func (siw *ServerInterfaceWrapper) ListUXMeasurements(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListUXMeasurementsParams
+
+	// ------------- Optional query parameter "hours" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "hours", r.URL.Query(), &params.Hours, runtime.BindQueryParameterOptions{Type: "integer", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "hours"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "hours", Err: err})
+		}
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListUXMeasurements(w, r, params)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -31152,6 +31512,32 @@ func (siw *ServerInterfaceWrapper) ListNotificationRequestNotifications(w http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetNotification operation middleware
+func (siw *ServerInterfaceWrapper) GetNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotification(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DismissNotification operation middleware
 func (siw *ServerInterfaceWrapper) DismissNotification(w http.ResponseWriter, r *http.Request) {
 
@@ -34447,6 +34833,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications", wrapper.ListNotifications)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/marker", wrapper.GetNotificationMarker)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/notifications/marker", wrapper.UpdateNotificationMarker)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/{id}", wrapper.GetNotification)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/notifications/{id}/dismiss", wrapper.DismissNotification)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests", wrapper.ListNotificationRequests)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests/summary", wrapper.GetNotificationRequestSummary)
@@ -34626,6 +35013,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/resolve", wrapper.ResolveErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/mute", wrapper.MuteErrorGroup)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/error_groups/{id}/unmute", wrapper.UnmuteErrorGroup)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/ux_measurements", wrapper.ListUXMeasurements)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/domain_actions/{id}/lift", wrapper.LiftDomainAction)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports", wrapper.ListReports)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/reports/{id}", wrapper.GetReport)
@@ -34656,7 +35044,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/announcements/{id}/publish", wrapper.PublishAdminAnnouncement)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/announcements/{id}/withdraw", wrapper.WithdrawAdminAnnouncement)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/theme", wrapper.GetAdminTheme)
-	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/theme", wrapper.SetAdminTheme)
+	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/admin/theme/draft", wrapper.SetAdminThemeDraft)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/theme/draft/stylesheet", wrapper.GetAdminThemeDraftStylesheet)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/theme/publish", wrapper.PublishAdminTheme)
+	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/theme/restore", wrapper.RestoreAdminTheme)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/admin/instance/brand", wrapper.GetAdminBrands)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/admin/instance/brand/sanitize", wrapper.SanitizeAdminBrand)
 	m.HandleFunc(http.MethodDelete+" "+options.BaseURL+"/admin/instance/brand/{kind}", wrapper.ClearAdminBrand)
@@ -35335,6 +35726,16 @@ type SupporterPlanProblemApplicationProblemPlusJSONResponse struct {
 	Body SupporterPlanProblem
 
 	Headers SupporterPlanProblemResponseHeaders
+}
+
+type ThemeProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type ThemeProblemApplicationProblemPlusJSONResponse struct {
+	Body ThemeProblem
+
+	Headers ThemeProblemResponseHeaders
 }
 
 type TipAmountsProblemResponseHeaders struct {
@@ -48055,17 +48456,17 @@ func (response GetAdminThemedefaultApplicationProblemPlusJSONResponse) VisitGetA
 	return err
 }
 
-type SetAdminThemeRequestObject struct {
-	Body *SetAdminThemeJSONRequestBody
+type SetAdminThemeDraftRequestObject struct {
+	Body *SetAdminThemeDraftJSONRequestBody
 }
 
-type SetAdminThemeResponseObject interface {
-	VisitSetAdminThemeResponse(w http.ResponseWriter) error
+type SetAdminThemeDraftResponseObject interface {
+	VisitSetAdminThemeDraftResponse(w http.ResponseWriter) error
 }
 
-type SetAdminTheme200JSONResponse struct{ AdminThemeJSONResponse }
+type SetAdminThemeDraft200JSONResponse struct{ AdminThemeJSONResponse }
 
-func (response SetAdminTheme200JSONResponse) VisitSetAdminThemeResponse(w http.ResponseWriter) error {
+func (response SetAdminThemeDraft200JSONResponse) VisitSetAdminThemeDraftResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -48080,17 +48481,11 @@ func (response SetAdminTheme200JSONResponse) VisitSetAdminThemeResponse(w http.R
 	return err
 }
 
-type SetAdminTheme422ResponseHeaders struct {
-	CacheControl    *string
-	ContentLanguage *string
+type SetAdminThemeDraft422ApplicationProblemPlusJSONResponse struct {
+	ThemeProblemApplicationProblemPlusJSONResponse
 }
 
-type SetAdminTheme422ApplicationProblemPlusJSONResponse struct {
-	Body    ThemeProblem
-	Headers SetAdminTheme422ResponseHeaders
-}
-
-func (response SetAdminTheme422ApplicationProblemPlusJSONResponse) VisitSetAdminThemeResponse(w http.ResponseWriter) error {
+func (response SetAdminThemeDraft422ApplicationProblemPlusJSONResponse) VisitSetAdminThemeDraftResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -48108,13 +48503,230 @@ func (response SetAdminTheme422ApplicationProblemPlusJSONResponse) VisitSetAdmin
 	return err
 }
 
-type SetAdminThemedefaultApplicationProblemPlusJSONResponse struct {
+type SetAdminThemeDraftdefaultApplicationProblemPlusJSONResponse struct {
 	Body       Problem
 	Headers    ProblemResponseHeaders
 	StatusCode int
 }
 
-func (response SetAdminThemedefaultApplicationProblemPlusJSONResponse) VisitSetAdminThemeResponse(w http.ResponseWriter) error {
+func (response SetAdminThemeDraftdefaultApplicationProblemPlusJSONResponse) VisitSetAdminThemeDraftResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetAdminThemeDraftStylesheetRequestObject struct {
+}
+
+type GetAdminThemeDraftStylesheetResponseObject interface {
+	VisitGetAdminThemeDraftStylesheetResponse(w http.ResponseWriter) error
+}
+
+type GetAdminThemeDraftStylesheet200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetAdminThemeDraftStylesheet200TextcssResponse struct {
+	Body          io.Reader
+	Headers       GetAdminThemeDraftStylesheet200ResponseHeaders
+	ContentLength int64
+}
+
+func (response GetAdminThemeDraftStylesheet200TextcssResponse) VisitGetAdminThemeDraftStylesheetResponse(w http.ResponseWriter) error {
+
+	w.Header().Set("Content-Type", "text/css")
+	if response.ContentLength != 0 {
+		w.Header().Set("Content-Length", fmt.Sprint(response.ContentLength))
+	}
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+
+	if closer, ok := response.Body.(io.ReadCloser); ok {
+		defer closer.Close()
+	}
+	_, err := io.Copy(w, response.Body)
+	return err
+}
+
+type GetAdminThemeDraftStylesheetdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetAdminThemeDraftStylesheetdefaultApplicationProblemPlusJSONResponse) VisitGetAdminThemeDraftStylesheetResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PublishAdminThemeRequestObject struct {
+}
+
+type PublishAdminThemeResponseObject interface {
+	VisitPublishAdminThemeResponse(w http.ResponseWriter) error
+}
+
+type PublishAdminTheme200JSONResponse struct{ AdminThemeJSONResponse }
+
+func (response PublishAdminTheme200JSONResponse) VisitPublishAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PublishAdminTheme422ApplicationProblemPlusJSONResponse struct {
+	ThemeProblemApplicationProblemPlusJSONResponse
+}
+
+func (response PublishAdminTheme422ApplicationProblemPlusJSONResponse) VisitPublishAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type PublishAdminThemedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response PublishAdminThemedefaultApplicationProblemPlusJSONResponse) VisitPublishAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreAdminThemeRequestObject struct {
+}
+
+type RestoreAdminThemeResponseObject interface {
+	VisitRestoreAdminThemeResponse(w http.ResponseWriter) error
+}
+
+type RestoreAdminTheme200JSONResponse struct{ AdminThemeJSONResponse }
+
+func (response RestoreAdminTheme200JSONResponse) VisitRestoreAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreAdminTheme422ApplicationProblemPlusJSONResponse struct {
+	ThemeProblemApplicationProblemPlusJSONResponse
+}
+
+func (response RestoreAdminTheme422ApplicationProblemPlusJSONResponse) VisitRestoreAdminThemeResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(422)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type RestoreAdminThemedefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response RestoreAdminThemedefaultApplicationProblemPlusJSONResponse) VisitRestoreAdminThemeResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -48176,6 +48788,68 @@ type GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse struct
 }
 
 func (response GetAdminTranslationOverviewdefaultApplicationProblemPlusJSONResponse) VisitGetAdminTranslationOverviewResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUXMeasurementsRequestObject struct {
+	Params ListUXMeasurementsParams
+}
+
+type ListUXMeasurementsResponseObject interface {
+	VisitListUXMeasurementsResponse(w http.ResponseWriter) error
+}
+
+type ListUXMeasurements200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type ListUXMeasurements200JSONResponse struct {
+	Body    UXMeasurementList
+	Headers ListUXMeasurements200ResponseHeaders
+}
+
+func (response ListUXMeasurements200JSONResponse) VisitListUXMeasurementsResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type ListUXMeasurementsdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response ListUXMeasurementsdefaultApplicationProblemPlusJSONResponse) VisitListUXMeasurementsResponse(w http.ResponseWriter) error {
 
 	var buf bytes.Buffer
 	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
@@ -56027,6 +56701,68 @@ func (response ListNotificationRequestNotificationsdefaultApplicationProblemPlus
 	return err
 }
 
+type GetNotificationRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetNotificationResponseObject interface {
+	VisitGetNotificationResponse(w http.ResponseWriter) error
+}
+
+type GetNotification200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetNotification200JSONResponse struct {
+	Body    Notification
+	Headers GetNotification200ResponseHeaders
+}
+
+func (response GetNotification200JSONResponse) VisitGetNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNotificationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetNotificationdefaultApplicationProblemPlusJSONResponse) VisitGetNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DismissNotificationRequestObject struct {
 	Id Id `json:"id"`
 }
@@ -63512,12 +64248,24 @@ type StrictServerInterface interface {
 	// GetAdminTheme Read the instance theme
 	// (GET /admin/theme)
 	GetAdminTheme(ctx context.Context, request GetAdminThemeRequestObject) (GetAdminThemeResponseObject, error)
-	// SetAdminTheme Replace the instance theme
-	// (PUT /admin/theme)
-	SetAdminTheme(ctx context.Context, request SetAdminThemeRequestObject) (SetAdminThemeResponseObject, error)
+	// SetAdminThemeDraft Save the draft of the instance theme
+	// (PUT /admin/theme/draft)
+	SetAdminThemeDraft(ctx context.Context, request SetAdminThemeDraftRequestObject) (SetAdminThemeDraftResponseObject, error)
+	// GetAdminThemeDraftStylesheet Preview the draft of the instance theme
+	// (GET /admin/theme/draft/stylesheet)
+	GetAdminThemeDraftStylesheet(ctx context.Context, request GetAdminThemeDraftStylesheetRequestObject) (GetAdminThemeDraftStylesheetResponseObject, error)
+	// PublishAdminTheme Publish the draft of the instance theme
+	// (POST /admin/theme/publish)
+	PublishAdminTheme(ctx context.Context, request PublishAdminThemeRequestObject) (PublishAdminThemeResponseObject, error)
+	// RestoreAdminTheme Restore the previously published instance theme
+	// (POST /admin/theme/restore)
+	RestoreAdminTheme(ctx context.Context, request RestoreAdminThemeRequestObject) (RestoreAdminThemeResponseObject, error)
 	// GetAdminTranslationOverview Show how translation is used
 	// (GET /admin/translation)
 	GetAdminTranslationOverview(ctx context.Context, request GetAdminTranslationOverviewRequestObject) (GetAdminTranslationOverviewResponseObject, error)
+	// ListUXMeasurements List the UX measurements
+	// (GET /admin/ux_measurements)
+	ListUXMeasurements(ctx context.Context, request ListUXMeasurementsRequestObject) (ListUXMeasurementsResponseObject, error)
 	// EndVoiceRoomAsModerator End a voice chat room as a moderator
 	// (POST /admin/voice_rooms/{id}/end)
 	EndVoiceRoomAsModerator(ctx context.Context, request EndVoiceRoomAsModeratorRequestObject) (EndVoiceRoomAsModeratorResponseObject, error)
@@ -63911,6 +64659,9 @@ type StrictServerInterface interface {
 	// ListNotificationRequestNotifications List the notifications of a notification request
 	// (GET /notifications/requests/{id}/notifications)
 	ListNotificationRequestNotifications(ctx context.Context, request ListNotificationRequestNotificationsRequestObject) (ListNotificationRequestNotificationsResponseObject, error)
+	// GetNotification Get a notification
+	// (GET /notifications/{id})
+	GetNotification(ctx context.Context, request GetNotificationRequestObject) (GetNotificationResponseObject, error)
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(ctx context.Context, request DismissNotificationRequestObject) (DismissNotificationResponseObject, error)
@@ -70259,11 +71010,11 @@ func (sh *strictHandler) GetAdminTheme(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// SetAdminTheme operation middleware
-func (sh *strictHandler) SetAdminTheme(w http.ResponseWriter, r *http.Request) {
-	var request SetAdminThemeRequestObject
+// SetAdminThemeDraft operation middleware
+func (sh *strictHandler) SetAdminThemeDraft(w http.ResponseWriter, r *http.Request) {
+	var request SetAdminThemeDraftRequestObject
 
-	var body SetAdminThemeJSONRequestBody
+	var body SetAdminThemeDraftJSONRequestBody
 	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
 		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
 		return
@@ -70271,18 +71022,90 @@ func (sh *strictHandler) SetAdminTheme(w http.ResponseWriter, r *http.Request) {
 	request.Body = &body
 
 	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
-		return sh.ssi.SetAdminTheme(ctx, request.(SetAdminThemeRequestObject))
+		return sh.ssi.SetAdminThemeDraft(ctx, request.(SetAdminThemeDraftRequestObject))
 	}
 	for _, middleware := range sh.middlewares {
-		handler = middleware(handler, "SetAdminTheme")
+		handler = middleware(handler, "SetAdminThemeDraft")
 	}
 
 	response, err := handler(r.Context(), w, r, request)
 
 	if err != nil {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
-	} else if validResponse, ok := response.(SetAdminThemeResponseObject); ok {
-		if err := validResponse.VisitSetAdminThemeResponse(w); err != nil {
+	} else if validResponse, ok := response.(SetAdminThemeDraftResponseObject); ok {
+		if err := validResponse.VisitSetAdminThemeDraftResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAdminThemeDraftStylesheet operation middleware
+func (sh *strictHandler) GetAdminThemeDraftStylesheet(w http.ResponseWriter, r *http.Request) {
+	var request GetAdminThemeDraftStylesheetRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAdminThemeDraftStylesheet(ctx, request.(GetAdminThemeDraftStylesheetRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAdminThemeDraftStylesheet")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAdminThemeDraftStylesheetResponseObject); ok {
+		if err := validResponse.VisitGetAdminThemeDraftStylesheetResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// PublishAdminTheme operation middleware
+func (sh *strictHandler) PublishAdminTheme(w http.ResponseWriter, r *http.Request) {
+	var request PublishAdminThemeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.PublishAdminTheme(ctx, request.(PublishAdminThemeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "PublishAdminTheme")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(PublishAdminThemeResponseObject); ok {
+		if err := validResponse.VisitPublishAdminThemeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RestoreAdminTheme operation middleware
+func (sh *strictHandler) RestoreAdminTheme(w http.ResponseWriter, r *http.Request) {
+	var request RestoreAdminThemeRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RestoreAdminTheme(ctx, request.(RestoreAdminThemeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RestoreAdminTheme")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RestoreAdminThemeResponseObject); ok {
+		if err := validResponse.VisitRestoreAdminThemeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -70307,6 +71130,32 @@ func (sh *strictHandler) GetAdminTranslationOverview(w http.ResponseWriter, r *h
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetAdminTranslationOverviewResponseObject); ok {
 		if err := validResponse.VisitGetAdminTranslationOverviewResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// ListUXMeasurements operation middleware
+func (sh *strictHandler) ListUXMeasurements(w http.ResponseWriter, r *http.Request, params ListUXMeasurementsParams) {
+	var request ListUXMeasurementsRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListUXMeasurements(ctx, request.(ListUXMeasurementsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListUXMeasurements")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListUXMeasurementsResponseObject); ok {
+		if err := validResponse.VisitListUXMeasurementsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -73909,6 +74758,32 @@ func (sh *strictHandler) ListNotificationRequestNotifications(w http.ResponseWri
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListNotificationRequestNotificationsResponseObject); ok {
 		if err := validResponse.VisitListNotificationRequestNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNotification operation middleware
+func (sh *strictHandler) GetNotification(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetNotificationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNotification(ctx, request.(GetNotificationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNotification")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNotificationResponseObject); ok {
+		if err := validResponse.VisitGetNotificationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

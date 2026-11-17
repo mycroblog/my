@@ -224,7 +224,7 @@ func TestGitHubSignIn(t *testing.T) {
 
 	t.Run("button", func(t *testing.T) {
 		_, body := e.client().do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		if !strings.Contains(body, "/auth/external/"+open+"/start") || !strings.Contains(body, ">Sign in with GitHub</a>") {
+		if !hasExternalButton(authData(t, body), "/auth/external/"+open+"/start", "Sign in with GitHub", "github") {
 			t.Errorf("sign-in page:\n%s", body)
 		}
 	})
@@ -248,7 +248,7 @@ func TestGitHubSignIn(t *testing.T) {
 		c := e.client()
 		resp, body := gh.signIn(c, open, ghAccount{id: 2002, login: "Bob-Dev", emails: verifiedPrimary("bob@example.org")})
 		m := ticketField.FindStringSubmatch(body)
-		if resp.StatusCode != http.StatusOK || m == nil || !strings.Contains(body, `value="bob@example.org"`) {
+		if resp.StatusCode != http.StatusOK || m == nil || authText(authData(t, body), "signUp.email") != "bob@example.org" {
 			t.Fatalf("callback = %d, want the registration form with the address\n%s", resp.StatusCode, body)
 		}
 		form := url.Values{"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {m[1]}, "username": {"bob"}, "email": {"bob@example.org"}}

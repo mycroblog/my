@@ -114,6 +114,5 @@ func (h *Handler) deleteDeactivated(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{
 		Name: CookieSession, Value: "", Path: "/", MaxAge: -1, Secure: true, HttpOnly: true, SameSite: http.SameSiteLaxMode,
 	})
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthStatusDeletedTitle)
-	h.render(w, r, http.StatusOK, pageAccountDeleted, p)
+	h.render(w, r, http.StatusOK, h.newPage(r, screenAccountDeleted))
 }

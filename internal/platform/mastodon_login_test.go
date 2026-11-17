@@ -326,7 +326,7 @@ func TestMastodonSignUp(t *testing.T) {
 	if resp.StatusCode != http.StatusOK || ticket == nil {
 		t.Fatalf("callback = %d, want the registration form\n%s", resp.StatusCode, body)
 	}
-	if !strings.Contains(body, `name="username" type="text" value="bob"`) || strings.Contains(body, "confirmed this address") {
+	if data := authData(t, body); authText(data, "signUp.username") != "bob" || authAt(data, "signUp.external.emailVerifiedHint") != nil {
 		t.Errorf("registration form:\n%s", body)
 	}
 	form := url.Values{"csrf_token": {c.cookies[authpages.CookieCSRF]}, "ticket": {ticket[1]}, "username": {"bob"}, "email": {"bob@example.org"}}

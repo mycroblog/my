@@ -1,4 +1,4 @@
-Your supporter plan “Supporter” on Example Social ended, and its benefits with it. The subscription was canceled.
+Your supporter plan “Supporter” on Example Social ended, and its benefits with it. The subscription was cancelled.
 
 Open your notifications
 https://social.example/notifications

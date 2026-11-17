@@ -6,51 +6,40 @@
 #   docker build -t my .    # the server (default target "app"), which also applies the schema (my schema apply, ADR-0023)
 #
 # Base images are pinned by tag and multi-arch index digest, written in the FROM lines themselves so that Dependabot can
-# update them. The Go, Node.js, and Bun tags must match .tool-versions (docker:dockerfile-check), so they are raised by
+# update them. The Go and Bun tags must match .tool-versions (docker:dockerfile-check), so they are raised by
 # hand; Dependabot raises the digests.
 
-# The bun binary for the web stage, which runs on the build host's platform.
+# The bun binary of the web client's build and the development image.
 FROM --platform=$BUILDPLATFORM oven/bun:1.4.4-slim@sha256:1846adf22496bd711036aae8be147e57bdebbaea2e5264e3e0b5af1db187d9a4 AS bun
 
-# Node.js, which runs Vite in the web stage and in the development image.
-FROM --platform=$BUILDPLATFORM node:26.12.1-trixie-slim@sha256:94816674c62774da0d099a947bf4613b9e1972a2733abd0d0cd80e795f8411d0 AS node
+# The Go toolchain, of the build stages and the development image.
+FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:af1bfc2614ebb1dbd31af514b78740fd678850e76498762b425ecee4c5c6ea80 AS go
 
-# The web client (app/web), built as `scripts/task.sh web:build` does: Bun installs the packages and runs the
-# scripts, Vite runs on Node.js (ADR-0025). The output is the same for every platform, so it is built
-# once on the build host's platform. The build reads generated files that are not committed (ADR-0081):
-# the client pseudo-locales from tools/i18n and the theme token list of @my/ui are generated first, and
-# the Vite plugin generates the route tree.
-FROM node AS web
-# The SBOM of a released image covers this stage too: its npm packages reach the image only through the Go embed.
-ARG BUILDKIT_SBOM_SCAN_STAGE=true
+# What internal/interface/web embeds (ADR-0028): `scripts/task.sh web:build` on Bun (ADR-0025 §10), the Vite build of
+# web/app with its auth entry and the license notices of the npm packages it bundles, and the files of web/brand. The
+# npm packages stay in this stage. Its output is the same on every platform, so it runs once on the build host's. Each
+# layer reads only what the next one needs: go-task, which scripts/task.sh builds from tools/go.mod, then the
+# workspace's manifests and lockfile, then the sources.
+FROM go AS web
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
+ENV GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0
 WORKDIR /src
-COPY app/package.json app/bun.lock app/bunfig.toml app/
-COPY app/ui/package.json app/ui/
-COPY app/web/package.json app/web/
-# @mycroblog/mykit, a workspace package outside app/ that app/web depends on (ADR-0093 §1).
-COPY pkg/mykit/ts/package.json pkg/mykit/ts/
-COPY tools/i18n/package.json tools/i18n/bun.lock tools/i18n/bunfig.toml tools/i18n/
+COPY tools/go.mod tools/go.sum tools/
+COPY scripts/task.sh scripts/
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    scripts/task.sh --version
+COPY --parents package.json bun.lock bunfig.toml web/*/package.json tools/i18n/package.json pkg/mykit/ts/package.json \
+    pkg/mybot/ts/package.json ./
 RUN --mount=type=cache,target=/root/.bun/install/cache \
-    cd app && bun install --frozen-lockfile \
-    && cd ../tools/i18n && bun install --frozen-lockfile
+    bun install --frozen-lockfile
+COPY Taskfile.yml tsconfig.base.json ./
+COPY tasks/ tasks/
 COPY locales/ locales/
 COPY tools/i18n/ tools/i18n/
-COPY app/ app/
 COPY pkg/mykit/ts/ pkg/mykit/ts/
-# No VERSION here: the server gives the client its version at run time (runtimeConfig in internal/interface/web), so
-# that images of different commits with the same client have the same web assets and sw.js, and browsers see no update
-# (scripts/task.sh docker:web-reproducible).
-RUN cd tools/i18n && bun run src/gen.ts --ts \
-    && cd ../../app/ui && bun run scripts/theme-tokens.ts --ts \
-    && cd .. && bun run build
-
-# The files of the web build alone, for docker:web-reproducible to compare; the image embeds them in the stage below.
-FROM scratch AS web-dist
-COPY --from=web /src/app/web/dist /
-
-# The Go toolchain, of the build stage and the development image.
-FROM --platform=$BUILDPLATFORM golang:1.27.3-trixie@sha256:af1bfc2614ebb1dbd31af514b78740fd678850e76498762b425ecee4c5c6ea80 AS go
+COPY web/ web/
+RUN mkdir -p internal/interface/web/dist && scripts/task.sh web:build
 
 # Cross-compiles on the build host's platform; Go needs no emulation for the target architecture.
 FROM go AS build
@@ -69,22 +58,20 @@ RUN --mount=type=bind,source=go.mod,target=go.mod \
     --mount=type=bind,source=go.sum,target=go.sum \
     --mount=type=cache,target=/go/pkg/mod \
     go mod download
-# internal/interface/web embeds the web build from its dist/ (ADR-0028).
+# internal/interface/web embeds its dist/ (ADR-0028), the output of the stage web.
 RUN --mount=type=bind,target=. \
-    --mount=type=bind,from=web,source=/src/app/web/dist,target=internal/interface/web/dist \
+    --mount=type=bind,from=web,source=/src/internal/interface/web/dist,target=internal/interface/web/dist \
     --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     GOOS=$TARGETOS GOARCH=$TARGETARCH go build -trimpath -tags "${GO_TAGS}" -ldflags "-s -w -X main.version=${VERSION}" -o /out/my ./cmd/my \
     && scripts/check-release-build.sh /out/my \
     && mkdir -p /out/data
 
-# The development image of the root compose.yaml (CONTRIBUTING.md): the Go toolchain with Bun and Node.js, which runs
-# `my` and the Vite dev server from the checkout that compose.yaml mounts at /src. It starts as root and
-# scripts/dev-compose.sh runs the work as the owner of the checkout, so that what it writes there stays the developer's.
-# The caches in HOME are named volumes.
+# The development image of the root compose.yaml (CONTRIBUTING.md): the Go toolchain with Bun, which runs `my` from the
+# checkout that compose.yaml mounts at /src. It starts as root and scripts/dev-compose.sh runs the work as the owner of
+# the checkout, so that what it writes there stays the developer's. The caches in HOME are named volumes.
 FROM go AS dev
 COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
-COPY --from=node /usr/local/bin/node /usr/local/bin/node
 ENV GOTOOLCHAIN=local GOWORK=off CGO_ENABLED=0 HOME=/home/dev \
     GOCACHE=/home/dev/.cache/go-build GOMODCACHE=/home/dev/go/pkg/mod BUN_INSTALL_CACHE_DIR=/home/dev/.bun/install/cache \
     PATH=/home/dev/bin:$PATH

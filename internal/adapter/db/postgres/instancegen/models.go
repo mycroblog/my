@@ -79,11 +79,18 @@ type InstanceTextRevision struct {
 	RevisedAt       time.Time
 }
 
-type InstanceThemeRevision struct {
-	ID              string
-	CustomCss       string
-	RevisedByUserID *string
-	RevisedAt       time.Time
+type InstanceThemePublication struct {
+	ID                string
+	SetID             string
+	PublishedByUserID *string
+	PublishedAt       time.Time
+}
+
+type InstanceThemeSet struct {
+	ID            string
+	Document      []byte
+	SavedByUserID *string
+	SavedAt       time.Time
 }
 
 type LinkCardDomainRule struct {

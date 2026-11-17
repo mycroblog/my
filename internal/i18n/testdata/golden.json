@@ -7,10 +7,10 @@
       "Found 1,234 configuration errors.",
       "The setting MY_DATABASE has an invalid value.",
       "The required setting MY_DATABASE_URL is not set.",
-      "The request is invalid.",
-      "An unexpected error occurred. Please try again later.",
+      "This could not be done because of a problem in the app. Reload or update the app and try again.",
+      "An unexpected error occurred. Try again later.",
       "The DELETE method is not allowed for this resource.",
-      "The requested resource was not found.",
+      "This could not be found. It may have been deleted, or the link may be wrong. Check the link, or go back.",
       "The server is not ready to accept requests."
     ],
     "ja": [
@@ -20,10 +20,10 @@
       "設定エラーが1,234件あります。",
       "設定 MY_DATABASE の値が正しくありません。",
       "必須の設定 MY_DATABASE_URL が設定されていません。",
-      "リクエストが正しくありません。",
+      "アプリの問題で、この操作を行えませんでした。アプリを読み込み直すか更新してから、もう一度試してください。",
       "予期しないエラーが発生しました。しばらくしてからもう一度試してください。",
       "このリソースでは DELETE メソッドを使用できません。",
-      "指定されたリソースが見つかりません。",
+      "見つかりませんでした。削除されたか、リンクが間違っている可能性があります。リンクを確かめるか、前の画面に戻ってください。",
       "サーバーはまだリクエストを受け付けられる状態ではありません。"
     ],
     "zh-CN": [
@@ -33,10 +33,10 @@
       "发现 1,234 个配置错误。",
       "设置 MY_DATABASE 的值不正确。",
       "未设置必需的设置 MY_DATABASE_URL。",
-      "请求有误。",
+      "由于应用出现问题，无法完成此操作。请重新加载或更新应用后重试。",
       "发生意外错误。请稍后重试。",
       "此资源不允许使用 DELETE 方法。",
-      "找不到请求的资源。",
+      "找不到内容。它可能已被删除，或者链接有误。请检查链接，或返回上一页。",
       "服务器尚未准备好接受请求。"
     ],
     "zh-TW": [
@@ -46,10 +46,10 @@
       "發現 1,234 個設定錯誤。",
       "設定 MY_DATABASE 的值無效。",
       "必要的設定 MY_DATABASE_URL 尚未設定。",
-      "請求無效。",
+      "由於應用程式發生問題，無法完成此操作。請重新載入或更新應用程式後再試一次。",
       "發生未預期的錯誤。請稍後再試。",
       "這個資源不允許使用 DELETE 方法。",
-      "找不到要求的資源。",
+      "找不到內容。它可能已被刪除，或連結有誤。請檢查連結，或返回上一頁。",
       "伺服器尚未準備好接受請求。"
     ],
     "es": [
@@ -59,10 +59,10 @@
       "Se encontraron 1.234 errores de configuración.",
       "La opción de configuración MY_DATABASE tiene un valor no válido.",
       "La opción de configuración obligatoria MY_DATABASE_URL no está definida.",
-      "La solicitud no es válida.",
+      "No se pudo hacer por un problema de la app. Vuelve a cargar o actualiza la app e inténtalo de nuevo.",
       "Ha ocurrido un error inesperado. Inténtalo de nuevo más tarde.",
       "El método DELETE no está permitido para este recurso.",
-      "No se encontró el recurso solicitado.",
+      "No se encontró. Puede que se haya eliminado o que el enlace sea incorrecto. Comprueba el enlace o vuelve atrás.",
       "El servidor aún no está listo para aceptar solicitudes."
     ],
     "pt-BR": [
@@ -72,10 +72,10 @@
       "Foram encontrados 1.234 erros de configuração.",
       "A configuração MY_DATABASE tem um valor inválido.",
       "A configuração obrigatória MY_DATABASE_URL não foi definida.",
-      "A solicitação é inválida.",
+      "Não foi possível fazer isso por um problema no app. Recarregue ou atualize o app e tente novamente.",
       "Ocorreu um erro inesperado. Tente novamente mais tarde.",
       "O método DELETE não é permitido para este recurso.",
-      "O recurso solicitado não foi encontrado.",
+      "Não foi encontrado. Pode ter sido excluído, ou o link pode estar errado. Confira o link ou volte.",
       "O servidor não está pronto para aceitar solicitações."
     ],
     "de": [
@@ -85,10 +85,10 @@
       "1.234 Konfigurationsfehler gefunden.",
       "Die Einstellung MY_DATABASE hat einen ungültigen Wert.",
       "Die erforderliche Einstellung MY_DATABASE_URL ist nicht gesetzt.",
-      "Die Anfrage ist ungültig.",
+      "Das konnte wegen eines Problems in der App nicht ausgeführt werden. Lade die App neu oder aktualisiere sie und versuche es erneut.",
       "Ein unerwarteter Fehler ist aufgetreten. Versuche es später erneut.",
       "Die Methode DELETE ist für diese Ressource nicht erlaubt.",
-      "Die angeforderte Ressource wurde nicht gefunden.",
+      "Das wurde nicht gefunden. Vielleicht wurde es gelöscht, oder der Link ist falsch. Prüfe den Link, oder geh zurück.",
       "Der Server ist noch nicht bereit, Anfragen anzunehmen."
     ],
     "fr": [
@@ -98,10 +98,10 @@
       "1 234 erreurs de configuration détectées.",
       "Le paramètre MY_DATABASE a une valeur non valide.",
       "Le paramètre obligatoire MY_DATABASE_URL n’est pas défini.",
-      "La requête n’est pas valide.",
+      "Impossible de le faire à cause d’un problème dans l’app. Rechargez ou mettez à jour l’app, puis réessayez.",
       "Une erreur inattendue s’est produite. Réessayez plus tard.",
       "La méthode DELETE n’est pas autorisée pour cette ressource.",
-      "La ressource demandée est introuvable.",
+      "Introuvable. Il a peut-être été supprimé, ou le lien est erroné. Vérifiez le lien, ou revenez en arrière.",
       "Le serveur n’est pas prêt à accepter des requêtes."
     ],
     "en-XA": [
@@ -111,10 +111,10 @@
       "[Ƒǿǿŭŭƞḓ 1,234 ƈǿǿƞƒīɠŭŭřȧȧŧīǿǿƞ ḗḗřřǿǿřş.]",
       "[Ŧħḗḗ şḗḗŧŧīƞɠ MY_DATABASE ħȧȧş ȧȧƞ īƞṽȧȧŀīḓ ṽȧȧŀŭŭḗḗ.]",
       "[Ŧħḗḗ řḗḗɋŭŭīřḗḗḓ şḗḗŧŧīƞɠ MY_DATABASE_URL īş ƞǿǿŧ şḗḗŧ.]",
-      "[Ŧħḗḗ řḗḗɋŭŭḗḗşŧ īş īƞṽȧȧŀīḓ.]",
-      "[Ȧƞ ŭŭƞḗḗẋƥḗḗƈŧḗḗḓ ḗḗřřǿǿř ǿǿƈƈŭŭřřḗḗḓ. Ƥŀḗḗȧȧşḗḗ ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
+      "[Ŧħīş ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ḓǿǿƞḗḗ ƀḗḗƈȧȧŭŭşḗḗ ǿǿƒ ȧȧ ƥřǿǿƀŀḗḗḿ īƞ ŧħḗḗ ȧȧƥƥ. Řḗḗŀǿǿȧȧḓ ǿǿř ŭŭƥḓȧȧŧḗḗ ŧħḗḗ ȧȧƥƥ ȧȧƞḓ ŧřẏ ȧȧɠȧȧīƞ.]",
+      "[Ȧƞ ŭŭƞḗḗẋƥḗḗƈŧḗḗḓ ḗḗřřǿǿř ǿǿƈƈŭŭřřḗḗḓ. Ŧřẏ ȧȧɠȧȧīƞ ŀȧȧŧḗḗř.]",
       "[Ŧħḗḗ DELETE ḿḗḗŧħǿǿḓ īş ƞǿǿŧ ȧȧŀŀǿǿẇḗḗḓ ƒǿǿř ŧħīş řḗḗşǿǿŭŭřƈḗḗ.]",
-      "[Ŧħḗḗ řḗḗɋŭŭḗḗşŧḗḗḓ řḗḗşǿǿŭŭřƈḗḗ ẇȧȧş ƞǿǿŧ ƒǿǿŭŭƞḓ.]",
+      "[Ŧħīş ƈǿǿŭŭŀḓ ƞǿǿŧ ƀḗḗ ƒǿǿŭŭƞḓ. Īŧ ḿȧȧẏ ħȧȧṽḗḗ ƀḗḗḗḗƞ ḓḗḗŀḗḗŧḗḗḓ, ǿǿř ŧħḗḗ ŀīƞķ ḿȧȧẏ ƀḗḗ ẇřǿǿƞɠ. Ƈħḗḗƈķ ŧħḗḗ ŀīƞķ, ǿǿř ɠǿǿ ƀȧȧƈķ.]",
       "[Ŧħḗḗ şḗḗřṽḗḗř īş ƞǿǿŧ řḗḗȧȧḓẏ ŧǿǿ ȧȧƈƈḗḗƥŧ řḗḗɋŭŭḗḗşŧş.]"
     ],
     "ar-XB": [
@@ -124,10 +124,10 @@
       "‮Ⅎonup 1,234 ɔouɟıƃnɹɐʇıou ǝɹɹoɹs.‬",
       "‮⊥ɥǝ sǝʇʇıuƃ MY_DATABASE ɥɐs ɐu ıuʌɐʅıp ʌɐʅnǝ.‬",
       "‮⊥ɥǝ ɹǝbnıɹǝp sǝʇʇıuƃ MY_DATABASE_URL ıs uoʇ sǝʇ.‬",
-      "‮⊥ɥǝ ɹǝbnǝsʇ ıs ıuʌɐʅıp.‬",
-      "‮∀u nuǝxdǝɔʇǝp ǝɹɹoɹ oɔɔnɹɹǝp. Ԁʅǝɐsǝ ʇɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
+      "‮⊥ɥıs ɔonʅp uoʇ qǝ pouǝ qǝɔɐnsǝ oɟ ɐ dɹoqʅǝɯ ıu ʇɥǝ ɐdd. ᴚǝʅoɐp oɹ ndpɐʇǝ ʇɥǝ ɐdd ɐup ʇɹʎ ɐƃɐıu.‬",
+      "‮∀u nuǝxdǝɔʇǝp ǝɹɹoɹ oɔɔnɹɹǝp. ⊥ɹʎ ɐƃɐıu ʅɐʇǝɹ.‬",
       "‮⊥ɥǝ DELETE ɯǝʇɥop ıs uoʇ ɐʅʅoʍǝp ɟoɹ ʇɥıs ɹǝsonɹɔǝ.‬",
-      "‮⊥ɥǝ ɹǝbnǝsʇǝp ɹǝsonɹɔǝ ʍɐs uoʇ ɟonup.‬",
+      "‮⊥ɥıs ɔonʅp uoʇ qǝ ɟonup. Iʇ ɯɐʎ ɥɐʌǝ qǝǝu pǝʅǝʇǝp, oɹ ʇɥǝ ʅıuʞ ɯɐʎ qǝ ʍɹouƃ. Ↄɥǝɔʞ ʇɥǝ ʅıuʞ, oɹ ƃo qɐɔʞ.‬",
       "‮⊥ɥǝ sǝɹʌǝɹ ıs uoʇ ɹǝɐpʎ ʇo ɐɔɔǝdʇ ɹǝbnǝsʇs.‬"
     ]
   },

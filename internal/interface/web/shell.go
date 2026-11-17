@@ -34,6 +34,9 @@ type runtimeConfig struct {
 	// the build, so that the files of the build, and so the Service Worker, are the same for every
 	// version of the server with the same client; left out when there is none.
 	Version string `json:"version,omitempty"`
+	// ClientID is the client_id of the first-party web client, with which the client signs in by
+	// the authorization code flow with PKCE (ADR-0090 §16); left out when the server registers none.
+	ClientID string `json:"clientId,omitempty"`
 }
 
 type shellData struct {
@@ -63,12 +66,14 @@ type shellData struct {
 // marked as safe HTML, and user data never becomes template.HTML (ADR-0028).
 var shellTemplate = template.Must(template.New("shell").Parse(shellSource))
 
-// shellSource is the source of shellTemplate. Its hash is part of the ETag of previews.
+// shellSource is the source of shellTemplate. Its hash is part of the ETag of previews. Its viewport
+// shrinks with the software keyboard (interactive-widget=resizes-content), so that the composer's row
+// stays right above it in Chrome on Android.
 const shellSource = `<!doctype html>
 <html lang="{{.Lang}}" dir="{{.Dir}}">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>{{.Title}}</title>
 {{- with .Crawlers.Robots}}
 <meta name="robots" content="{{.}}">
@@ -179,7 +184,7 @@ func renderShell(d shellData) (document, error) {
 // server's own origin. Trusted Types are required for every script sink, and `trusted-types`
 // allows exactly the client's two policies, each created once (no 'allow-duplicates'):
 // my-server-sanitized-html (@my/ui PostContent, the server-sanitized post HTML) and
-// my-service-worker (app/web src/lib/pwa.ts, the worker's fixed URL). No other script can make a
+// my-service-worker (the worker's fixed URL). No other script can make a
 // policy of its own. Over HTTPS it ends with upgradeInsecureRequests.
 const contentSecurityPolicy = "default-src 'none'; " +
 	"script-src 'self'; " +

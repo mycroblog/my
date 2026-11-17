@@ -12,6 +12,15 @@ import (
 	"time"
 )
 
+const deleteInstanceThemeDraft = `-- name: DeleteInstanceThemeDraft :exec
+DELETE FROM instance_theme_draft
+`
+
+func (q *Queries) DeleteInstanceThemeDraft(ctx context.Context) error {
+	_, err := q.db.Exec(ctx, deleteInstanceThemeDraft)
+	return err
+}
+
 const deleteInstanceThemeHead = `-- name: DeleteInstanceThemeHead :exec
 DELETE FROM instance_theme
 `
@@ -19,6 +28,17 @@ DELETE FROM instance_theme
 func (q *Queries) DeleteInstanceThemeHead(ctx context.Context) error {
 	_, err := q.db.Exec(ctx, deleteInstanceThemeHead)
 	return err
+}
+
+const getInstanceThemeDraft = `-- name: GetInstanceThemeDraft :one
+SELECT set_id FROM instance_theme_draft WHERE id = 1
+`
+
+func (q *Queries) GetInstanceThemeDraft(ctx context.Context) (string, error) {
+	row := q.db.QueryRow(ctx, getInstanceThemeDraft)
+	var set_id string
+	err := row.Scan(&set_id)
+	return set_id, err
 }
 
 const getInstanceThemeHead = `-- name: GetInstanceThemeHead :one
@@ -32,105 +52,136 @@ func (q *Queries) GetInstanceThemeHead(ctx context.Context) (string, error) {
 	return revision_id, err
 }
 
-const getInstanceThemeRevision = `-- name: GetInstanceThemeRevision :one
-SELECT id, custom_css, revised_by_user_id, revised_at FROM instance_theme_revisions WHERE id = $1
+const getInstanceThemePublication = `-- name: GetInstanceThemePublication :one
+SELECT id, set_id, published_by_user_id, published_at FROM instance_theme_publications WHERE id = $1
 `
 
-func (q *Queries) GetInstanceThemeRevision(ctx context.Context, id string) (InstanceThemeRevision, error) {
-	row := q.db.QueryRow(ctx, getInstanceThemeRevision, id)
-	var i InstanceThemeRevision
+func (q *Queries) GetInstanceThemePublication(ctx context.Context, id string) (InstanceThemePublication, error) {
+	row := q.db.QueryRow(ctx, getInstanceThemePublication, id)
+	var i InstanceThemePublication
 	err := row.Scan(
 		&i.ID,
-		&i.CustomCss,
-		&i.RevisedByUserID,
-		&i.RevisedAt,
+		&i.SetID,
+		&i.PublishedByUserID,
+		&i.PublishedAt,
 	)
 	return i, err
 }
 
-const getLatestInstanceThemeRevisionID = `-- name: GetLatestInstanceThemeRevisionID :one
-SELECT id FROM instance_theme_revisions ORDER BY id DESC LIMIT 1
+const getInstanceThemeSet = `-- name: GetInstanceThemeSet :one
+SELECT id, document, saved_by_user_id, saved_at FROM instance_theme_sets WHERE id = $1
 `
 
-func (q *Queries) GetLatestInstanceThemeRevisionID(ctx context.Context) (string, error) {
-	row := q.db.QueryRow(ctx, getLatestInstanceThemeRevisionID)
+func (q *Queries) GetInstanceThemeSet(ctx context.Context, id string) (InstanceThemeSet, error) {
+	row := q.db.QueryRow(ctx, getInstanceThemeSet, id)
+	var i InstanceThemeSet
+	err := row.Scan(
+		&i.ID,
+		&i.Document,
+		&i.SavedByUserID,
+		&i.SavedAt,
+	)
+	return i, err
+}
+
+const getLatestInstanceThemePublicationID = `-- name: GetLatestInstanceThemePublicationID :one
+SELECT id FROM instance_theme_publications ORDER BY id DESC LIMIT 1
+`
+
+func (q *Queries) GetLatestInstanceThemePublicationID(ctx context.Context) (string, error) {
+	row := q.db.QueryRow(ctx, getLatestInstanceThemePublicationID)
 	var id string
 	err := row.Scan(&id)
 	return id, err
 }
 
-const insertInstanceThemeRevision = `-- name: InsertInstanceThemeRevision :exec
-
-INSERT INTO instance_theme_revisions (id, custom_css, revised_by_user_id, revised_at) VALUES ($1, $2, $3, $4)
+const getLatestInstanceThemeSetID = `-- name: GetLatestInstanceThemeSetID :one
+SELECT id FROM instance_theme_sets ORDER BY id DESC LIMIT 1
 `
 
-type InsertInstanceThemeRevisionParams struct {
-	ID              string
-	CustomCss       string
-	RevisedByUserID *string
-	RevisedAt       time.Time
+func (q *Queries) GetLatestInstanceThemeSetID(ctx context.Context) (string, error) {
+	row := q.db.QueryRow(ctx, getLatestInstanceThemeSetID)
+	var id string
+	err := row.Scan(&id)
+	return id, err
+}
+
+const getPreviousInstanceThemePublication = `-- name: GetPreviousInstanceThemePublication :one
+SELECT id, set_id, published_by_user_id, published_at FROM instance_theme_publications
+WHERE id < $1 AND set_id <> $2 ORDER BY id DESC LIMIT 1
+`
+
+type GetPreviousInstanceThemePublicationParams struct {
+	BeforeID string
+	SetID    string
+}
+
+func (q *Queries) GetPreviousInstanceThemePublication(ctx context.Context, arg GetPreviousInstanceThemePublicationParams) (InstanceThemePublication, error) {
+	row := q.db.QueryRow(ctx, getPreviousInstanceThemePublication, arg.BeforeID, arg.SetID)
+	var i InstanceThemePublication
+	err := row.Scan(
+		&i.ID,
+		&i.SetID,
+		&i.PublishedByUserID,
+		&i.PublishedAt,
+	)
+	return i, err
+}
+
+const insertInstanceThemePublication = `-- name: InsertInstanceThemePublication :exec
+INSERT INTO instance_theme_publications (id, set_id, published_by_user_id, published_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (id) DO NOTHING
+`
+
+type InsertInstanceThemePublicationParams struct {
+	ID                string
+	SetID             string
+	PublishedByUserID *string
+	PublishedAt       time.Time
+}
+
+func (q *Queries) InsertInstanceThemePublication(ctx context.Context, arg InsertInstanceThemePublicationParams) error {
+	_, err := q.db.Exec(ctx, insertInstanceThemePublication,
+		arg.ID,
+		arg.SetID,
+		arg.PublishedByUserID,
+		arg.PublishedAt,
+	)
+	return err
+}
+
+const insertInstanceThemeSet = `-- name: InsertInstanceThemeSet :exec
+
+INSERT INTO instance_theme_sets (id, document, saved_by_user_id, saved_at) VALUES ($1, $2, $3, $4)
+ON CONFLICT (id) DO NOTHING
+`
+
+type InsertInstanceThemeSetParams struct {
+	ID            string
+	Document      []byte
+	SavedByUserID *string
+	SavedAt       time.Time
 }
 
 // SPDX-License-Identifier: AGPL-3.0-only
-func (q *Queries) InsertInstanceThemeRevision(ctx context.Context, arg InsertInstanceThemeRevisionParams) error {
-	_, err := q.db.Exec(ctx, insertInstanceThemeRevision,
+func (q *Queries) InsertInstanceThemeSet(ctx context.Context, arg InsertInstanceThemeSetParams) error {
+	_, err := q.db.Exec(ctx, insertInstanceThemeSet,
 		arg.ID,
-		arg.CustomCss,
-		arg.RevisedByUserID,
-		arg.RevisedAt,
+		arg.Document,
+		arg.SavedByUserID,
+		arg.SavedAt,
 	)
 	return err
 }
 
-const insertInstanceThemeToken = `-- name: InsertInstanceThemeToken :exec
-INSERT INTO instance_theme_tokens (revision_id, token, scheme, value) VALUES ($1, $2, $3, $4)
+const upsertInstanceThemeDraft = `-- name: UpsertInstanceThemeDraft :exec
+INSERT INTO instance_theme_draft (id, set_id) VALUES (1, $1)
+ON CONFLICT (id) DO UPDATE SET set_id = excluded.set_id
 `
 
-type InsertInstanceThemeTokenParams struct {
-	RevisionID string
-	Token      string
-	Scheme     string
-	Value      string
-}
-
-func (q *Queries) InsertInstanceThemeToken(ctx context.Context, arg InsertInstanceThemeTokenParams) error {
-	_, err := q.db.Exec(ctx, insertInstanceThemeToken,
-		arg.RevisionID,
-		arg.Token,
-		arg.Scheme,
-		arg.Value,
-	)
+func (q *Queries) UpsertInstanceThemeDraft(ctx context.Context, setID string) error {
+	_, err := q.db.Exec(ctx, upsertInstanceThemeDraft, setID)
 	return err
-}
-
-const listInstanceThemeTokens = `-- name: ListInstanceThemeTokens :many
-SELECT token, scheme, value FROM instance_theme_tokens WHERE revision_id = $1 ORDER BY token, scheme
-`
-
-type ListInstanceThemeTokensRow struct {
-	Token  string
-	Scheme string
-	Value  string
-}
-
-func (q *Queries) ListInstanceThemeTokens(ctx context.Context, revisionID string) ([]ListInstanceThemeTokensRow, error) {
-	rows, err := q.db.Query(ctx, listInstanceThemeTokens, revisionID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	items := []ListInstanceThemeTokensRow{}
-	for rows.Next() {
-		var i ListInstanceThemeTokensRow
-		if err := rows.Scan(&i.Token, &i.Scheme, &i.Value); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
 }
 
 const upsertInstanceThemeHead = `-- name: UpsertInstanceThemeHead :exec

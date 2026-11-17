@@ -12,7 +12,7 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base origin/main]"
+const docsUsage = "usage: agentkit docs lint | docs inventory | docs adr-shape | docs impact [--base REF]"
 
 func runDocs(r *repo.Repo, args []string) error {
 	if len(args) == 0 {
@@ -102,7 +102,7 @@ func runDocsRules(r *repo.Repo, cmd string) error {
 // runDocsImpact prints the user and operator documents that describe the paths changed since the base.
 func runDocsImpact(r *repo.Repo, args []string) error {
 	fs := flag.NewFlagSet("docs impact", flag.ContinueOnError)
-	base := fs.String("base", "origin/main", "compare with the merge base of this revision")
+	base := fs.String("base", "origin/"+repo.Trunk, "compare with the merge base of this revision")
 	if pos, err := parse(fs, args); err != nil || len(pos) > 0 {
 		return errors.New(docsUsage)
 	}

@@ -67,7 +67,7 @@ func (s *Server) listProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, apptimeline.ErrNotFound):
 		return s.notFoundResponse(ctx), true
 	case errors.Is(err, timeline.ErrInvalidListName):
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue("name")), true
+		return s.fieldProblem(ctx, "name", l.ServerErrorsInvalidValue()), true
 	case errors.Is(err, timeline.ErrTooManyLists):
 		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeTooManyLists, l.ServerErrorsListsTooMany(), ""), true
 	case errors.Is(err, timeline.ErrTooManyListMembers):

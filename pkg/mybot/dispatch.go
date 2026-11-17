@@ -140,6 +140,16 @@ type tracker struct {
 	// done are the processed notifications above the position, in order.
 	done  []string
 	holds int
+	// position is the newest position that advance returned, "" before the first.
+	position string
+}
+
+// idle reports whether no hold is on and no notification handed out is pending, with the newest position that
+// the tracker moved to.
+func (t *tracker) idle() (position string, idle bool) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+	return t.position, t.holds == 0 && len(t.pending) == 0
 }
 
 func newTracker() *tracker { return &tracker{pending: map[string]int{}} }
@@ -210,5 +220,6 @@ func (t *tracker) advance() string {
 	}
 	pos := t.done[n-1]
 	t.done = slices.Delete(t.done, 0, n)
+	t.position = max(t.position, pos)
 	return pos
 }

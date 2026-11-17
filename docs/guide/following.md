@@ -2,11 +2,11 @@
 
 ## Finding people
 
-"Search" finds accounts: enter `@username@server` or the address of a profile, on this server or on another one. When
-you are signed in, the server looks up an account it does not know yet on its own server; visitors who are not signed in
-only find accounts the server already knows. Some servers do not look up accounts of other servers at all, and then
+"Search" finds people by name or handle, and hashtags; for another server's account, enter `@username@server` or the
+address of its profile. When you are signed in, the server looks up an account it does not know yet on its own server;
+visitors who are not signed in only find accounts the server already knows. Some servers do not look up accounts of other servers at all, and then
 only the accounts they already know are found. The "Posts" tab searches the words of posts when the server offers it;
-it finds public posts, and posts set to "This server" for people who are signed in, and only of
+it finds public posts, and posts set to "Local" for people who are signed in, and only of
 authors who allow it (authors can opt out in their profile settings).
 
 On a profile of an account on another server, the page shows only the posts this server has received and links to the
@@ -34,9 +34,9 @@ button.
 
 After you follow an account, the bell "Notify me of new posts" notifies you of each of its new posts.
 
-People who want to follow your account get a request when you approve your followers: see "Follow requests" in the
-settings, where you "Accept" or "Reject" each one, or "Approve" or "Decline" it from its notification. Your followers and the accounts you follow are on the profile page,
-which shows how many there are.
+When you approve your followers, people who want to follow you send a request. The row "N follow requests" above your
+notifications opens them, and you "Approve" or "Decline" each one. Your followers and the accounts you follow are on the
+profile page, which shows how many there are.
 
 "Who can see your follows and followers" under "Follows and followers" in the profile settings decides who can open
 those two lists: "Everyone" (the default), "Your followers" (people on this server whose follow you accepted), or
@@ -47,20 +47,20 @@ unless you choose "Everyone". A list you cannot open says so in place of the acc
 
 | Timeline | What it shows |
 | --- | --- |
-| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "This server" by the people you follow, and the public posts and posts set to "This server" of the hashtags you follow, from people you do not follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
-| Local | The public posts, and the posts set to "This server", of the accounts of this server. |
-| Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. Posts set to "This server" and unlisted posts are not on it. |
+| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "Local" by the people you follow, and the public posts and posts set to "Local" of the hashtags you follow, from people you do not follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
+| Local | The public posts, and the posts set to "Local", of the accounts of this server. |
+| Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. "Local" and "Quiet public" posts are not on it. |
 
 The Local and Federated timelines are for everyone who uses the server, whether you follow them or not. A server's
 operators can turn either one off, or show it only to people who are signed in; the page then says so. The settings under
 "Languages of your timelines" limit the timelines to the languages you check.
 
-A hashtag page (for example `#cats`) shows the public posts and the posts set to "This server" with that tag.
+A hashtag page (for example `#cats`) shows the public posts and the posts set to "Local" with that tag.
 
 ## Following hashtags
 
 A hashtag page has the button "Follow" when you are signed in. After you follow a hashtag, your home timeline also shows
-the public posts and the posts set to "This server" with it from people you do not follow, the next time you open it.
+the public posts and the posts set to "Local" with it from people you do not follow, the next time you open it.
 Such a post says "Followed hashtag #cats" above it, and the hashtag leads to its page, where "Following" unfollows it.
 Replies come too; boosts do not, and neither do posts of people you block or mute, or of accounts and servers that
 the server keeps off its public timelines. Home shows only the posts this server already has: following a hashtag does
@@ -71,8 +71,8 @@ one ("Follow a hashtag", with or without the `#`), and unfollows them.
 
 ## Featured hashtags
 
-A profile can feature up to ten hashtags, in the order its owner chose, each with how many of the owner's public and
-unlisted posts carry it and when the last one did. Choose yours under "Featured hashtags" in the profile settings:
+A profile can feature up to ten hashtags, in the order its owner chose, each with how many of the owner's "Public" and
+"Quiet public" posts carry it and when the last one did. Choose yours under "Featured hashtags" in the profile settings:
 "Add a hashtag" adds a row, the arrows move a row up or down, and "Save profile" saves them with the rest of your
 profile. A hashtag you have not used yet can be featured too. Other servers that show your profile get the same list.
 On a profile of another server, the counts are of the posts this server has received, so they may be lower than on
@@ -82,15 +82,14 @@ A featured hashtag opens that person's posts with the hashtag, newest first, tha
 ("Posts of Alice with #cats"); boosts are not listed. "All posts with #cats" opens the page of the hashtag with
 everyone's posts.
 
-An empty home timeline says "Your home timeline is empty". Follow someone, or "Browse the local timeline"; on a server
-without a local timeline, "Find people to follow" opens the search.
+While you follow no one, your home timeline shows people the server suggests; "Search" shows them before you type.
 
 ## Private notes
 
-Another person's profile has a "Private note" area where you keep a note on that account, up to 2,000 characters: how
-you met, what they like. Only you can see it; the account is not told, and the note does not leave this server. "Add
-note" or "Edit note" opens it, and saving it empty removes the note. The archive of "Archive and deletion" in the
-settings holds your notes, and a note goes when you or the other account is deleted.
+On another person's profile, "Add a note only you can see" keeps a note on that account, up to 2,000 characters: how
+you met, what they like. The account is not told, and the note does not leave this server. Press the note to edit it;
+saving it empty removes it. The archive of "Archive and deletion" in the settings holds your notes, and a note goes
+when you or the other account is deleted.
 
 ## Following in a feed reader
 
@@ -115,4 +114,4 @@ lists, and nobody is told that you put them in one. You can add only the people 
 
 ## Hiding what you do not want to read
 
-Mute accounts, mute whole servers, or block accounts: see [Blocking, muting, and reporting](safety.md).
+Mute accounts, mute whole servers, or block accounts: see [Blocking and muting](safety.md).

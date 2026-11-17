@@ -200,7 +200,7 @@ func TestCommittedData(t *testing.T) {
 		t.Fatalf("the server table has only %d emoji", len(want))
 	}
 
-	dir := filepath.Join(root, "app", "web", "src", "features", "emoji", "unicode")
+	dir := filepath.Join(root, "web", "app-features", "src", "emoji", "unicode")
 	var base baseData
 	readJSON(t, filepath.Join(dir, "base.gen.json"), &base)
 	if len(base.Groups) != 9 {

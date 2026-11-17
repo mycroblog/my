@@ -1,5 +1,5 @@
 {
-  "extends": "../../../app/tsconfig.base.json",
+  "extends": "../../../tsconfig.base.json",
   "//": "The bun test files, which may use Bun's and Node.js's APIs that the library itself must not.",
   "compilerOptions": {
     "module": "NodeNext",

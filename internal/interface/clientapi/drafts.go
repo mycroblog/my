@@ -261,7 +261,7 @@ func (s *Server) draftProblem(ctx context.Context, err error) (problem, bool) {
 	case errors.Is(err, content.ErrInvalidDraft):
 		return unprocessable(l.ServerErrorsDraftInvalid())
 	}
-	return s.statusProblem(ctx, err)
+	return s.contentProblem(ctx, err, "article.")
 }
 
 // draftInput maps the content of a draft that a request saves.

@@ -111,7 +111,7 @@ func TestPagesHeaders(t *testing.T) {
 			t.Errorf("%s = %q, want %q", k, got, want)
 		}
 	}
-	for _, want := range []string{"Supporter", "月額 1,200 円", `data-public-key="pk_test_public"`, "テストのモード", `value="alice@example.com"`, "/assets/server.css"} {
+	for _, want := range []string{"Supporter", "月額 1,200 円", `data-public-key="pk_test_public"`, "テストモード", `value="alice@example.com"`, "/assets/server.css"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("checkout page lacks %q", want)
 		}

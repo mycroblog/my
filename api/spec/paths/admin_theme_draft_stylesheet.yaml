@@ -1,0 +1,25 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getAdminThemeDraftStylesheet
+  x-permission: manage_settings
+  summary: Preview the draft of the instance theme
+  description: |
+    The stylesheet that the draft would serve once published, for the administrator to apply
+    over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+    no draft was saved. Needs the `manage_settings` permission.
+  tags: [admin-server]
+  security:
+    - oauth2: ["admin:read"]
+  responses:
+    "200":
+      description: The stylesheet of the draft.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        text/css:
+          schema:
+            type: string
+            format: binary
+    default:
+      $ref: ../components/responses/Problem.yaml

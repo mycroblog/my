@@ -37,6 +37,8 @@ type ServeOptions struct {
 	Listener net.Listener
 	// MetricsListener, when set, is used instead of listening on metrics_listen.
 	MetricsListener net.Listener
+	// PprofListener, when set, is used instead of listening on pprof_listen.
+	PprofListener net.Listener
 	// HTTPListener, when set, is used instead of listening on tls_http_listen, the plain HTTP
 	// port that redirects to https with tls other than off.
 	HTTPListener net.Listener
@@ -59,6 +61,7 @@ type ServeOptions struct {
 //     tls other than off, the web and all roles serve HTTPS there instead, and plain HTTP on
 //     tls_http_listen that redirects to https;
 //   - with metrics_exporter = prometheus, every role serves GET /metrics on metrics_listen;
+//   - with pprof_listen set, every role serves the Go runtime's profiles there;
 //   - the worker and all roles run the job runner and the scheduler of periodic jobs, or with
 //     queue = cloudtasks or sqs serve the endpoints that run the jobs and tick the periodic ones;
 //   - every role first ensures the built-in roles, giving admin every permission.
@@ -127,7 +130,16 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		tlsLn.close()
 		return err
 	}
-	serveErr := make(chan error, 3)
+	pprofSrv, err := a.servePprof(ctx, opts.PprofListener)
+	if err != nil {
+		_ = ln.Close()
+		tlsLn.close()
+		if metricsSrv != nil {
+			_ = metricsSrv.ln.Close()
+		}
+		return err
+	}
+	serveErr := make(chan error, 4)
 	// The panic of a goroutine of kernel.Go stops the server as a failure (ADR-0103 §5).
 	fatal := make(chan error, 1)
 	defer a.ErrorReporter.setStop(func(cause error) {
@@ -177,12 +189,27 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 			}
 		})
 	}
+	if pprofSrv != nil {
+		kernel.Go(ctx, "http.serve_pprof", a.ErrorReporter, func(context.Context) {
+			if err := pprofSrv.srv.Serve(pprofSrv.ln); !errors.Is(err, http.ErrServerClosed) {
+				serveErr <- fmt.Errorf("pprof: %w", err)
+			}
+		})
+	}
 
 	var jobs sync.WaitGroup
 	stopJobs := make(chan struct{})
 	// With a push receiver, the requests of the platform's queue run the jobs and those of its
-	// scheduler tick the periodic ones (ADR-0004 §12).
-	if a.Config.Role != config.RoleWeb && a.pushReceiver == nil {
+	// scheduler tick the periodic ones (ADR-0004 §12). The line "started" names which (jobsRun).
+	jobsRun := jobsRunNone
+	switch {
+	case a.Config.Role == config.RoleWeb:
+	case a.pushReceiver != nil:
+		jobsRun = jobsRunPush
+	default:
+		jobsRun = jobsRunPull
+	}
+	if jobsRun == jobsRunPull {
 		if len(a.skippedJobTypes) > 0 {
 			a.Logger.InfoContext(ctx, "this worker skips these job types; another worker has to run them", slog.Any("job_types", a.skippedJobTypes))
 		}
@@ -192,6 +219,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 		}
 		goJob(hardCtx, &jobs, "queue.run", a.ErrorReporter, func(ctx context.Context) {
 			if domainsSettled(verified, stopJobs) {
+				a.Logger.InfoContext(ctx, "job runner started")
 				_ = a.runJobs(ctx, stopJobs)
 			}
 		})
@@ -211,7 +239,7 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	}
 	a.logOriginCheck(ctx)
 	a.Logger.InfoContext(ctx, "started", slog.String("role", string(a.Config.Role)), slog.String("addr", ln.Addr().String()),
-		slog.Bool("tls", tlsLn != nil))
+		slog.Bool("tls", tlsLn != nil), slog.String("jobs", jobsRun))
 
 	select {
 	case <-ctx.Done():
@@ -231,6 +259,11 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	if metricsSrv != nil {
 		// A scrape is short; the metrics stay available while the requests finish.
 		_ = metricsSrv.srv.Shutdown(graceCtx)
+	}
+	if pprofSrv != nil {
+		// The profiles stay available while the requests finish, to show what a shutdown waits
+		// for; a profile still being taken is cut rather than awaited.
+		_ = pprofSrv.srv.Close()
 	}
 	jobsDone := make(chan struct{})
 	kernel.Go(graceCtx, "serve.wait_jobs", a.ErrorReporter, func(context.Context) { jobs.Wait(); close(jobsDone) })
@@ -255,6 +288,15 @@ func Serve(ctx context.Context, a *App, opts ServeOptions) error {
 	}
 	return err
 }
+
+// How a process runs the jobs, as its log line "started" says: jobsRunPull runs the job runner,
+// which logs "job runner started" once the domains are verified; jobsRunPush runs them on the
+// requests of the queue service (queue = cloudtasks or sqs); jobsRunNone, the web role, runs none.
+const (
+	jobsRunPull = "pull"
+	jobsRunPush = "push"
+	jobsRunNone = "none"
+)
 
 // domainsSettled waits until the domains are verified or the shutdown starts, and reports which.
 func domainsSettled(verified, stop <-chan struct{}) bool {
@@ -287,15 +329,15 @@ func (a *App) afterDomainsVerified(ctx context.Context) {
 	}
 }
 
-// metricsServer is the listener of the Prometheus scrape.
-type metricsServer struct {
+// sideServer is a listener beside the public one: the Prometheus scrape, the profiles.
+type sideServer struct {
 	srv *http.Server
 	ln  net.Listener
 }
 
 // serveMetrics listens on metrics_listen (or ln) for GET /metrics when the App has a scrape, and
 // returns nil otherwise. The metrics are never served on the public listener (ADR-0055 §2).
-func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*metricsServer, error) {
+func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*sideServer, error) {
 	if a.metricsHandler == nil {
 		if ln != nil {
 			_ = ln.Close()
@@ -311,7 +353,7 @@ func (a *App) serveMetrics(ctx context.Context, ln net.Listener) (*metricsServer
 	mux := http.NewServeMux()
 	mux.Handle("GET "+PathMetrics, a.metricsHandler)
 	a.Logger.InfoContext(ctx, "serving metrics", slog.String("addr", ln.Addr().String()))
-	return &metricsServer{
+	return &sideServer{
 		srv: &http.Server{
 			Handler: mux, ReadHeaderTimeout: 10 * time.Second, WriteTimeout: 30 * time.Second,
 			ErrorLog: slog.NewLogLogger(a.Logger.Handler(), slog.LevelWarn),

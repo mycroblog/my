@@ -99,9 +99,7 @@ func TestQueueRoutesSendSignalsToTheirQueue(t *testing.T) {
 		t.Errorf("the routed queue got %v for another type", got)
 	}
 
-	for deadline := time.Now().Add(5 * time.Second); !strings.Contains(s.logs.String(), `"routes_hash"`) && time.Now().Before(deadline); {
-		time.Sleep(10 * time.Millisecond)
-	}
+	testkit.Eventually(t, 5*time.Second, func() bool { return strings.Contains(s.logs.String(), `"routes_hash"`) })
 	if logs := s.logs.String(); !strings.Contains(logs, mailTasksQueue) {
 		t.Errorf("the startup log lacks the routes:\n%s", logs)
 	}

@@ -4,7 +4,7 @@
 // such as command help and configuration errors, at the version of the running binary.
 //
 // The site serves each version under a path of its own: /vX.Y/ for a minor version, from its newest stable release,
-// and /next/ for main. A page's URL mirrors the path of its document in the repository, as app/docs/src/published.ts
+// and /next/ for main. A page's URL mirrors the path of its document in the repository, as web/docs/src/published.ts
 // maps it: docs/operations/running.md is /<version>/operations/running/, with the document's #anchors.
 package docsite
 
@@ -25,7 +25,7 @@ const Next = "next"
 var stableRelease = regexp.MustCompile(`^(v(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*))\.(?:0|[1-9][0-9]*)$`)
 
 // sitePages are the files that are not Markdown documents but have a page of their own on the site, by repository path
-// and page slug: sitePages of app/docs/src/published.ts.
+// and page slug: sitePages of web/docs/src/published.ts.
 var sitePages = map[string]string{
 	"api/openapi.yaml": "api",
 }

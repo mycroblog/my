@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "//": "The features (src/, in the browser) and their tests (on Bun, against a fake transport, rendered to markup). The condition @mycroblog/source reads @mycroblog/mykit from its TypeScript sources, so that checking needs no build of it.",
+  "compilerOptions": {
+    "customConditions": ["@mycroblog/source"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "types": ["bun"]
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"]
+}

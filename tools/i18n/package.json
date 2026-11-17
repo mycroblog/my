@@ -3,6 +3,10 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
+  "exports": {
+    "./catalog": "./src/catalog.ts",
+    "./generate": "./src/generate.ts"
+  },
   "scripts": {
     "gen": "bun run src/gen.ts",
     "check": "bun run src/check.ts"
@@ -13,7 +17,6 @@
     "intl-messageformat": "12.1.4"
   },
   "devDependencies": {
-    "@types/bun": "1.4.4",
-    "typescript": "7.0.2"
+    "@types/bun": "1.4.4"
   }
 }

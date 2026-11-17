@@ -123,7 +123,9 @@ tags:
       is federated. The operations need a `read:events` or `write:events` scope, and answer 404
       for an event that the user does not see.
   - name: client-errors
-    description: The uncaught errors of the web client, which it reports to its own server.
+    description: |
+      The uncaught errors of the web client and the samples of how fast it responds, which it
+      reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -332,6 +334,8 @@ paths:
     $ref: ./paths/notifications.yaml
   /notifications/marker:
     $ref: ./paths/notifications_marker.yaml
+  /notifications/{id}:
+    $ref: ./paths/notifications_{id}.yaml
   /notifications/{id}/dismiss:
     $ref: ./paths/notifications_{id}_dismiss.yaml
   /notifications/requests:
@@ -548,6 +552,8 @@ paths:
     $ref: ./paths/events_{id}_candidates_{candidate_id}_confirm.yaml
   /client_errors:
     $ref: ./paths/client_errors.yaml
+  /client_measurements:
+    $ref: ./paths/client_measurements.yaml
   /admin/queue:
     $ref: ./paths/admin_queue.yaml
   /admin/jobs:
@@ -620,6 +626,8 @@ paths:
     $ref: ./paths/admin_error_groups_{id}_mute.yaml
   /admin/error_groups/{id}/unmute:
     $ref: ./paths/admin_error_groups_{id}_unmute.yaml
+  /admin/ux_measurements:
+    $ref: ./paths/admin_ux_measurements.yaml
   /admin/domain_actions/{id}/lift:
     $ref: ./paths/admin_domain_actions_{id}_lift.yaml
   /admin/reports:
@@ -670,6 +678,14 @@ paths:
     $ref: ./paths/admin_announcements_{id}_withdraw.yaml
   /admin/theme:
     $ref: ./paths/admin_theme.yaml
+  /admin/theme/draft:
+    $ref: ./paths/admin_theme_draft.yaml
+  /admin/theme/draft/stylesheet:
+    $ref: ./paths/admin_theme_draft_stylesheet.yaml
+  /admin/theme/publish:
+    $ref: ./paths/admin_theme_publish.yaml
+  /admin/theme/restore:
+    $ref: ./paths/admin_theme_restore.yaml
   /admin/instance/brand:
     $ref: ./paths/admin_instance_brand.yaml
   /admin/instance/brand/sanitize:
@@ -1158,6 +1174,8 @@ components:
       $ref: ./components/responses/AdminSupporterTips.yaml
     AdminTheme:
       $ref: ./components/responses/AdminTheme.yaml
+    ThemeProblem:
+      $ref: ./components/responses/ThemeProblem.yaml
     AdminServiceClosure:
       $ref: ./components/responses/AdminServiceClosure.yaml
     AdminServiceClosureCheck:
@@ -1635,6 +1653,8 @@ components:
       $ref: ./components/schemas/AdminSupporterSubscriptionPage.yaml
     AdminTheme:
       $ref: ./components/schemas/AdminTheme.yaml
+    AdminThemeRevision:
+      $ref: ./components/schemas/AdminThemeRevision.yaml
     AdminServiceClosure:
       $ref: ./components/schemas/AdminServiceClosure.yaml
     AdminServiceClosureCheck:
@@ -1645,6 +1665,10 @@ components:
       $ref: ./components/schemas/AdminServiceClosureProgress.yaml
     ClientErrorReport:
       $ref: ./components/schemas/ClientErrorReport.yaml
+    ClientMeasurement:
+      $ref: ./components/schemas/ClientMeasurement.yaml
+    ClientMeasurementReport:
+      $ref: ./components/schemas/ClientMeasurementReport.yaml
     CloseServiceRequest:
       $ref: ./components/schemas/CloseServiceRequest.yaml
     AnnounceServiceClosureRequest:
@@ -2463,6 +2487,10 @@ components:
       $ref: ./components/schemas/ThemeError.yaml
     ThemeProblem:
       $ref: ./components/schemas/ThemeProblem.yaml
+    ThemeSet:
+      $ref: ./components/schemas/ThemeSet.yaml
+    StaleThemeToken:
+      $ref: ./components/schemas/StaleThemeToken.yaml
     ThemeTokenValue:
       $ref: ./components/schemas/ThemeTokenValue.yaml
     TotpSetup:
@@ -2495,6 +2523,14 @@ components:
       $ref: ./components/schemas/UpdateRoleRequest.yaml
     UpdateWebhookRequest:
       $ref: ./components/schemas/UpdateWebhookRequest.yaml
+    UXMeasurementBucket:
+      $ref: ./components/schemas/UXMeasurementBucket.yaml
+    UXMeasurementList:
+      $ref: ./components/schemas/UXMeasurementList.yaml
+    UXMeasurementSummary:
+      $ref: ./components/schemas/UXMeasurementSummary.yaml
+    UXMetric:
+      $ref: ./components/schemas/UXMetric.yaml
     Visibility:
       $ref: ./components/schemas/Visibility.yaml
     VoiceEndReason:

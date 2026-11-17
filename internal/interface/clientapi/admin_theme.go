@@ -3,6 +3,7 @@
 package clientapi
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -13,20 +14,29 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
-// The instance theme (ADR-0059, FR-605): the admin operations that read and replace it
-// (manage_settings), and Instance.theme of GET /instance.
+// The instance theme (ADR-0059 §15, FR-605): the admin operations that read the draft and the
+// token set in effect, save the draft, preview it, publish it, and restore the set published
+// before (manage_settings), and Instance.theme of GET /instance.
 
-// ProblemTypeInvalidTheme is the problem type of a theme that breaks a rule (422), whose
+// ProblemTypeInvalidTheme is the problem type of a token set that breaks a rule (422), whose
 // theme_errors list every reason.
 const ProblemTypeInvalidTheme = "/api/v1/problems/invalid-theme"
 
 // Themes runs the use cases of the instance theme. *appinstance.Service implements it.
 type Themes interface {
-	// Theme returns the current theme revision, and false when it changes nothing (never saved:
-	// the zero revision; reset: an empty one).
+	// Theme returns the publication in effect, and false when there is none or it overrides
+	// nothing.
 	Theme(ctx context.Context) (instance.ThemeRevision, bool, error)
-	// SetTheme records a new theme revision, audited; it fails with an *instance.ThemeError.
-	SetTheme(ctx context.Context, in appinstance.SetThemeInput) (instance.ThemeRevision, error)
+	// ThemeDraft returns the draft, and false when no set was saved.
+	ThemeDraft(ctx context.Context) (instance.ThemeSet, bool, error)
+	// SaveThemeDraft records a set as the draft; it fails with an *instance.ThemeError.
+	SaveThemeDraft(ctx context.Context, in appinstance.SaveThemeDraftInput) (instance.ThemeSet, error)
+	// PublishTheme publishes the draft, audited; it fails with appinstance.ErrNotFound without a
+	// draft and with an *instance.ThemeError.
+	PublishTheme(ctx context.Context, publishedByUserID string) (instance.ThemeRevision, error)
+	// RestoreTheme publishes the set published before, audited; it fails with
+	// appinstance.ErrNotFound without one and with an *instance.ThemeError.
+	RestoreTheme(ctx context.Context, publishedByUserID string) (instance.ThemeRevision, error)
 }
 
 func themeTokenValues(tokens []instance.ThemeTokenValue) []ThemeTokenValue {
@@ -42,6 +52,23 @@ func themeTokenValues(tokens []instance.ThemeTokenValue) []ThemeTokenValue {
 	return out
 }
 
+// themeSet returns a set as the admin API shows it, with the overrides that no longer apply.
+func themeSet(set instance.ThemeSet) ThemeSet {
+	out := ThemeSet{Id: set.ID, Tokens: themeTokenValues(set.Tokens), StaleTokens: make([]StaleThemeToken, len(set.Stale)), SavedAt: set.SavedAt.UTC()}
+	opt := func(s string) *string {
+		if s == "" {
+			return nil
+		}
+		return &s
+	}
+	for i, o := range set.Stale {
+		out.StaleTokens[i] = StaleThemeToken{
+			Token: o.Token, Light: opt(o.Light), Dark: opt(o.Dark), Value: opt(o.Value), Reason: StaleThemeTokenReason(o.Reason),
+		}
+	}
+	return out
+}
+
 // themeStylesheetURL is the URL of a revision's stylesheet, or "" without Options.ThemeStylesheetPath.
 func (s *Server) themeStylesheetURL(revisionID string) string {
 	if s.o.ThemeStylesheetPath == nil {
@@ -50,16 +77,36 @@ func (s *Server) themeStylesheetURL(revisionID string) string {
 	return s.origin() + s.o.ThemeStylesheetPath(revisionID)
 }
 
-func (s *Server) adminTheme(rev instance.ThemeRevision, inEffect bool) AdminTheme {
-	out := AdminTheme{Tokens: themeTokenValues(rev.Tokens), CustomCss: rev.CustomCSS}
+// adminTheme reads the draft and the set in effect.
+func (s *Server) adminTheme(ctx context.Context) (AdminTheme, error) {
+	var out AdminTheme
+	draft, ok, err := s.o.Themes.ThemeDraft(ctx)
+	if err != nil {
+		return AdminTheme{}, fmt.Errorf("clientapi: theme draft: %w", err)
+	}
+	if ok {
+		d := themeSet(draft)
+		out.Draft = &d
+	}
+	rev, inEffect, err := s.o.Themes.Theme(ctx)
+	if err != nil {
+		return AdminTheme{}, fmt.Errorf("clientapi: theme: %w", err)
+	}
 	if rev.ID != "" {
-		id, at := rev.ID, rev.RevisedAt.UTC()
-		out.Revision, out.RevisedAt = &id, &at
+		p := AdminThemeRevision{Revision: rev.ID, Set: themeSet(rev.Set), PublishedAt: rev.PublishedAt.UTC()}
+		if u := s.themeStylesheetURL(rev.ID); inEffect && u != "" {
+			p.StylesheetUrl = &u
+		}
+		out.Published = &p
 	}
-	if u := s.themeStylesheetURL(rev.ID); inEffect && u != "" {
-		out.StylesheetUrl = &u
-	}
-	return out
+	return out, nil
+}
+
+// adminThemeResponse is the 200 of every theme operation: the theme as it now is.
+func (s *Server) adminThemeResponse(ctx context.Context) (AdminThemeJSONResponse, error) {
+	body, err := s.adminTheme(ctx)
+	cache := cacheNoStore
+	return AdminThemeJSONResponse{Body: body, Headers: AdminThemeResponseHeaders{CacheControl: &cache}}, err
 }
 
 // instanceTheme returns Instance.theme, or nil when the instance has no theme.
@@ -75,71 +122,150 @@ func (s *Server) instanceTheme(ctx context.Context) (*InstanceTheme, error) {
 	if !ok || u == "" {
 		return nil, nil
 	}
-	return &InstanceTheme{Revision: rev.ID, StylesheetUrl: u, Tokens: themeTokenValues(rev.Tokens)}, nil
+	return &InstanceTheme{Revision: rev.ID, StylesheetUrl: u, Tokens: themeTokenValues(rev.Set.Tokens)}, nil
+}
+
+// themeOperation checks the permission and that the server has a theme: a problem, or nil to go on.
+func (s *Server) themeOperation(ctx context.Context) (*problem, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageSettings); err != nil || p != nil {
+		return p, err
+	}
+	if s.o.Themes == nil {
+		p := s.notFoundResponse(ctx)
+		return &p, nil
+	}
+	return nil, nil
 }
 
 // GetAdminTheme serves GET /api/v1/admin/theme.
 func (s *Server) GetAdminTheme(ctx context.Context, _ GetAdminThemeRequestObject) (GetAdminThemeResponseObject, error) {
-	if p, err := s.requirePermission(ctx, identity.PermManageSettings); err != nil {
-		return nil, err
-	} else if p != nil {
-		return GetAdminThemedefaultApplicationProblemPlusJSONResponse(*p), nil
+	if p, err := s.themeOperation(ctx); err != nil || p != nil {
+		return problemOr[GetAdminThemedefaultApplicationProblemPlusJSONResponse](p, err)
 	}
-	if s.o.Themes == nil {
-		return GetAdminThemedefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
-	}
-	rev, ok, err := s.o.Themes.Theme(ctx)
+	res, err := s.adminThemeResponse(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("clientapi: admin theme: %w", err)
+		return nil, err
 	}
-	cache := cacheNoStore
-	return GetAdminTheme200JSONResponse{AdminThemeJSONResponse{
-		Body: s.adminTheme(rev, ok), Headers: AdminThemeResponseHeaders{CacheControl: &cache},
-	}}, nil
+	return GetAdminTheme200JSONResponse{res}, nil
 }
 
-// SetAdminTheme serves PUT /api/v1/admin/theme.
-func (s *Server) SetAdminTheme(ctx context.Context, req SetAdminThemeRequestObject) (SetAdminThemeResponseObject, error) {
-	if p, err := s.requirePermission(ctx, identity.PermManageSettings); err != nil {
-		return nil, err
-	} else if p != nil {
-		return SetAdminThemedefaultApplicationProblemPlusJSONResponse(*p), nil
-	}
-	if s.o.Themes == nil {
-		return SetAdminThemedefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+// SetAdminThemeDraft serves PUT /api/v1/admin/theme/draft.
+func (s *Server) SetAdminThemeDraft(ctx context.Context, req SetAdminThemeDraftRequestObject) (SetAdminThemeDraftResponseObject, error) {
+	if p, err := s.themeOperation(ctx); err != nil || p != nil {
+		return problemOr[SetAdminThemeDraftdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
 	v, err := requireViewer(ctx)
 	if err != nil {
 		return nil, err
 	}
 	if req.Body == nil {
-		return SetAdminThemedefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
+		return SetAdminThemeDraftdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	tokens := make([]instance.ThemeTokenValue, len(req.Body.Tokens))
-	deref := func(p *string) string {
-		if p == nil {
-			return ""
-		}
-		return *p
-	}
 	for i, t := range req.Body.Tokens {
 		tokens[i] = instance.ThemeTokenValue{Token: t.Token, Light: deref(t.Light), Dark: deref(t.Dark), Value: deref(t.Value)}
 	}
-	rev, err := s.o.Themes.SetTheme(ctx, appinstance.SetThemeInput{Tokens: tokens, CustomCSS: req.Body.CustomCss, RevisedByUserID: v.UserID})
+	_, err = s.o.Themes.SaveThemeDraft(ctx, appinstance.SaveThemeDraftInput{Tokens: tokens, SavedByUserID: v.UserID})
 	var te *instance.ThemeError
 	switch {
 	case errors.As(err, &te):
-		return s.themeProblem(ctx, te), nil
+		return SetAdminThemeDraft422ApplicationProblemPlusJSONResponse{s.themeProblem(ctx, te)}, nil
 	case err != nil:
-		return nil, fmt.Errorf("clientapi: set theme: %w", err)
+		return nil, fmt.Errorf("clientapi: save theme draft: %w", err)
 	}
-	cache := cacheNoStore
-	return SetAdminTheme200JSONResponse{AdminThemeJSONResponse{
-		Body: s.adminTheme(rev, !rev.Empty()), Headers: AdminThemeResponseHeaders{CacheControl: &cache},
-	}}, nil
+	res, err := s.adminThemeResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return SetAdminThemeDraft200JSONResponse{res}, nil
 }
 
-func (s *Server) themeProblem(ctx context.Context, te *instance.ThemeError) SetAdminTheme422ApplicationProblemPlusJSONResponse {
+// GetAdminThemeDraftStylesheet serves GET /api/v1/admin/theme/draft/stylesheet: the preview of the
+// draft, only for administrators and never cached.
+func (s *Server) GetAdminThemeDraftStylesheet(ctx context.Context, _ GetAdminThemeDraftStylesheetRequestObject) (GetAdminThemeDraftStylesheetResponseObject, error) {
+	if p, err := s.themeOperation(ctx); err != nil || p != nil {
+		return problemOr[GetAdminThemeDraftStylesheetdefaultApplicationProblemPlusJSONResponse](p, err)
+	}
+	draft, ok, err := s.o.Themes.ThemeDraft(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: theme draft: %w", err)
+	}
+	if !ok {
+		return GetAdminThemeDraftStylesheetdefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	}
+	body := draft.Stylesheet()
+	cache := cacheNoStore
+	return GetAdminThemeDraftStylesheet200TextcssResponse{
+		Body: bytes.NewReader(body), ContentLength: int64(len(body)),
+		Headers: GetAdminThemeDraftStylesheet200ResponseHeaders{CacheControl: &cache},
+	}, nil
+}
+
+// PublishAdminTheme serves POST /api/v1/admin/theme/publish.
+func (s *Server) PublishAdminTheme(ctx context.Context, _ PublishAdminThemeRequestObject) (PublishAdminThemeResponseObject, error) {
+	if p, err := s.themeOperation(ctx); err != nil || p != nil {
+		return problemOr[PublishAdminThemedefaultApplicationProblemPlusJSONResponse](p, err)
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.o.Themes.PublishTheme(ctx, v.UserID)
+	var te *instance.ThemeError
+	switch {
+	case errors.As(err, &te):
+		return PublishAdminTheme422ApplicationProblemPlusJSONResponse{s.themeProblem(ctx, te)}, nil
+	case errors.Is(err, appinstance.ErrNotFound):
+		return PublishAdminThemedefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: publish theme: %w", err)
+	}
+	res, err := s.adminThemeResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return PublishAdminTheme200JSONResponse{res}, nil
+}
+
+// RestoreAdminTheme serves POST /api/v1/admin/theme/restore.
+func (s *Server) RestoreAdminTheme(ctx context.Context, _ RestoreAdminThemeRequestObject) (RestoreAdminThemeResponseObject, error) {
+	if p, err := s.themeOperation(ctx); err != nil || p != nil {
+		return problemOr[RestoreAdminThemedefaultApplicationProblemPlusJSONResponse](p, err)
+	}
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	_, err = s.o.Themes.RestoreTheme(ctx, v.UserID)
+	var te *instance.ThemeError
+	switch {
+	case errors.As(err, &te):
+		return RestoreAdminTheme422ApplicationProblemPlusJSONResponse{s.themeProblem(ctx, te)}, nil
+	case errors.Is(err, appinstance.ErrNotFound):
+		return RestoreAdminThemedefaultApplicationProblemPlusJSONResponse(s.notFoundResponse(ctx)), nil
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: restore theme: %w", err)
+	}
+	res, err := s.adminThemeResponse(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return RestoreAdminTheme200JSONResponse{res}, nil
+}
+
+// problemOr returns the problem p as the response type R, or err.
+func problemOr[R ~struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}](p *problem, err error) (R, error) {
+	if err != nil {
+		return R{}, err
+	}
+	return R(*p), nil
+}
+
+func (s *Server) themeProblem(ctx context.Context, te *instance.ThemeError) ThemeProblemApplicationProblemPlusJSONResponse {
 	l := s.Localizer(ctx)
 	body, headers := s.NewProblem(ctx, http.StatusUnprocessableEntity, ProblemTypeInvalidTheme, l.ServerErrorsInvalidTheme(), "")
 	out := ThemeProblem{Type: body.Type, Title: body.Title, Status: body.Status, Detail: body.Detail, RequestId: body.RequestId}
@@ -159,14 +285,14 @@ func (s *Server) themeProblem(ctx context.Context, te *instance.ThemeError) SetA
 			e.Background, e.Ratio, e.Minimum = &p.Background, num(p.Ratio), num(p.Minimum)
 		case instance.ThemeOutOfRange:
 			e.Min, e.Max = num(p.Min), num(p.Max)
-		case instance.ThemeCSSTooLong:
+		case instance.ThemeTooManyOverrides:
 			e.Max = num(p.Max)
 		}
 		errs[i] = e
 	}
 	out.ThemeErrors = &errs
-	return SetAdminTheme422ApplicationProblemPlusJSONResponse{
+	return ThemeProblemApplicationProblemPlusJSONResponse{
 		Body:    out,
-		Headers: SetAdminTheme422ResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
+		Headers: ThemeProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
 	}
 }

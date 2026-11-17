@@ -77,10 +77,62 @@ func ArticleVisibility(v Visibility) bool { return v.Valid() && v != VisibilityD
 // first.
 const sentenceEnds = ".!?。．！？"
 
+// ArticleTextBlock is the text of one block of the rendered body of an article: a paragraph, an
+// item of a list, or a cell of a table.
+type ArticleTextBlock struct {
+	Text string
+	// Item is true for an item of a list or a cell of a table.
+	Item bool
+}
+
+// JoinArticleText returns the text of blocks as one text that reads block by block (ADR-0160 §6):
+// a block that does not end in punctuation is followed by a list separator when it and the next
+// block are items, else by a sentence end. Both are those of the block's script, "、" and "。"
+// after Chinese or Japanese, else ", " and ". "; a block that ends in punctuation is followed by
+// a space, or by nothing after a full-width mark. Blocks without text are left out.
+func JoinArticleText(blocks []ArticleTextBlock) string {
+	var b strings.Builder
+	var prev ArticleTextBlock
+	for _, block := range blocks {
+		block.Text = strings.TrimSpace(block.Text)
+		if block.Text == "" {
+			continue
+		}
+		if prev.Text != "" {
+			last, _ := utf8.DecodeLastRuneInString(prev.Text)
+			wide := wideScript(last)
+			switch {
+			case unicode.IsPunct(last) && wide:
+			case unicode.IsPunct(last):
+				b.WriteByte(' ')
+			case prev.Item && block.Item && wide:
+				b.WriteString("、")
+			case prev.Item && block.Item:
+				b.WriteString(", ")
+			case wide:
+				b.WriteString("。")
+			default:
+				b.WriteString(". ")
+			}
+		}
+		b.WriteString(block.Text)
+		prev = block
+	}
+	return b.String()
+}
+
+// wideScript reports whether r is of Chinese or Japanese, or a full-width mark, after which a text
+// has no spaces.
+func wideScript(r rune) bool {
+	return unicode.In(r, unicode.Han, unicode.Hiragana, unicode.Katakana) ||
+		(r >= 0x3000 && r <= 0x303f) || (r >= 0xff00 && r <= 0xffef)
+}
+
 // ArticleSummaryFromBody returns the summary of an article whose author left it empty, made from
 // text, the text of its rendered body (without headings, code, and the alt text of images): its
 // white space collapsed, and past ArticleSummaryLength characters cut at the last end of a
-// sentence or word in them, with "…" after it (ADR-0160 §6). A cut that would keep less than
+// sentence or word in them, without a list separator before the cut, with "…" after it (ADR-0160
+// §6). A cut that would keep less than
 // half of the length cuts at the length instead.
 func ArticleSummaryFromBody(text string) string {
 	text = strings.Join(strings.Fields(text), " ")
@@ -102,5 +154,5 @@ func ArticleSummaryFromBody(text string) string {
 	if cut == 0 {
 		cut = ArticleSummaryLength
 	}
-	return strings.TrimRightFunc(string(runes[:cut]), unicode.IsSpace) + "…"
+	return strings.TrimRight(strings.TrimRightFunc(string(runes[:cut]), unicode.IsSpace), ",、") + "…"
 }

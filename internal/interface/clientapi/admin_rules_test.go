@@ -265,8 +265,8 @@ func TestInstanceRuleProblems(t *testing.T) {
 	for _, tc := range []struct {
 		name, method, path, body string
 		status                   int
-		// detail is the property that the detail names (in alice's locale, ja).
-		detail string
+		// field is the property that the problem names.
+		field string
 	}{
 		{"too long", http.MethodPost, "/admin/rules", `{"text":"` + strings.Repeat("a", 301) + `","x":"invalid-on-purpose"}`, http.StatusUnprocessableEntity, "text"},
 		{"line break", http.MethodPost, "/admin/rules", `{"text":"a\nb"}`, http.StatusUnprocessableEntity, "text"},
@@ -286,8 +286,8 @@ func TestInstanceRuleProblems(t *testing.T) {
 			res = e.sendJSON(t, tc.method, tc.path, "admin", tc.body)
 		}
 		p := decodeProblem(t, res)
-		if res.StatusCode != tc.status || (tc.detail != "" && (p.Detail == nil || !strings.Contains(*p.Detail, tc.detail))) {
-			t.Errorf("%s: %d %+v, want %d %q", tc.name, res.StatusCode, p, tc.status, tc.detail)
+		if res.StatusCode != tc.status || (tc.field != "" && (p.Field == nil || *p.Field != tc.field)) {
+			t.Errorf("%s: %d %+v, want %d %q", tc.name, res.StatusCode, p, tc.status, tc.field)
 		}
 	}
 	if got, _ := f.Rule(t.Context(), r.ID); !reflect.DeepEqual(got, r) {

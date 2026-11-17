@@ -77,6 +77,9 @@ const (
 	// SettingLinkCardsIgnoreRobotsTxt is whether the fetches of link cards skip robots.txt
 	// (ADR-0062 §12).
 	SettingLinkCardsIgnoreRobotsTxt SettingKey = "link_cards_ignore_robots_txt"
+	// SettingUXMeasurement is whether the web client sends samples of how fast it responds and
+	// the server keeps them (ADR-0167 §3); off, the server takes none.
+	SettingUXMeasurement SettingKey = "ux_measurement"
 	// SettingDynamicClientRegistration is whether OAuth clients may register themselves
 	// without authentication at POST /oauth/register (RFC 7591, ADR-0090 §1).
 	SettingDynamicClientRegistration SettingKey = "dynamic_client_registration"
@@ -689,6 +692,10 @@ var definitions = []Definition{
 	{
 		Key: SettingLinkCardsIgnoreRobotsTxt, Kind: KindBool, Default: "false",
 		Doc: "Whether the fetches of link cards skip robots.txt, so that the linked sites cannot refuse them with it (ADR-0062).",
+	},
+	{
+		Key: SettingUXMeasurement, Kind: KindBool, Default: "false",
+		Doc: "Whether the web client sends samples of how fast it responds, with nothing that identifies a person, and the server keeps them for the operators (ADR-0167 §3); off, the server takes none.",
 	},
 	{
 		Key: SettingFinanceVisibility, Kind: KindEnum, Default: string(FinancePrivate),
@@ -1824,6 +1831,9 @@ func (s Settings) LinkCardsEnabled() bool { return s.boolValue(SettingLinkCards)
 func (s Settings) LinkCardsIgnoreRobotsTxt() bool {
 	return s.boolValue(SettingLinkCardsIgnoreRobotsTxt)
 }
+
+// UXMeasurement returns the value of SettingUXMeasurement.
+func (s Settings) UXMeasurement() bool { return s.boolValue(SettingUXMeasurement) }
 
 // UserAppRegistration returns the value of SettingUserAppRegistration.
 func (s Settings) UserAppRegistration() bool { return s.boolValue(SettingUserAppRegistration) }

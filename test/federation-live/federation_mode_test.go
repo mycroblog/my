@@ -358,7 +358,7 @@ type proxyEntry struct {
 // carries on.
 func (e *env) logPeerLookups(t *testing.T, p *peerClient, since time.Time) {
 	t.Helper()
-	entries, err := peerRequests(t.Context(), p, http.MethodGet, since)
+	entries, err := e.peerRequests(t.Context(), p, http.MethodGet, since)
 	if err != nil {
 		t.Logf("cannot read the access log of the proxy: %v", err)
 		return
@@ -383,9 +383,60 @@ func (en proxyEntry) time() time.Time {
 // peerRequests returns the requests with the method that the peer made to this server since a
 // time, oldest first, from the access log of the proxy (docker compose logs). A request is the
 // peer's when its User-Agent names the peer's host.
-func peerRequests(ctx context.Context, p *peerClient, method string, since time.Time) ([]proxyEntry, error) {
-	// The proxy writes the entry after the response; give the last one a moment.
-	time.Sleep(2 * time.Second)
+func (e *env) peerRequests(ctx context.Context, p *peerClient, method string, since time.Time) ([]proxyEntry, error) {
+	all, err := e.proxyLogThroughNow(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var entries []proxyEntry
+	for _, en := range all {
+		if en.Request.Host != localHost || en.Request.Method != method || en.time().Before(since) {
+			continue
+		}
+		if !strings.Contains(strings.ToLower(strings.Join(en.Request.Headers["User-Agent"], " ")), p.host) {
+			continue
+		}
+		entries = append(entries, en)
+	}
+	return entries, nil
+}
+
+// proxyLogThroughNow returns the entries of the access log of the proxy once it holds those of the
+// requests that ended before the call: the proxy writes an entry after its response, so the call
+// sends a request of its own through the proxy and reads the log again until that one's entry shows.
+func (e *env) proxyLogThroughNow(ctx context.Context) ([]proxyEntry, error) {
+	sentinel := fmt.Sprintf("/.well-known/nodeinfo?sentinel=%d", time.Now().UnixNano())
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://"+localHost+sentinel, nil)
+	if err != nil {
+		return nil, err
+	}
+	resp, err := e.http.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	_ = resp.Body.Close()
+	deadline := time.Now().Add(deliveryTimeout)
+	poll := time.NewTicker(500 * time.Millisecond)
+	defer poll.Stop()
+	for {
+		entries, err := readProxyLog(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, en := range entries {
+			if en.Request.URI == sentinel {
+				return entries, nil
+			}
+		}
+		if time.Now().After(deadline) {
+			return nil, fmt.Errorf("the access log of the proxy has no entry of %s after %s", sentinel, deliveryTimeout)
+		}
+		<-poll.C
+	}
+}
+
+// readProxyLog returns the entries of the access log of the proxy so far.
+func readProxyLog(ctx context.Context) ([]proxyEntry, error) {
 	out, err := exec.CommandContext(ctx, "docker", "compose", "-p", "my-federation-live",
 		"logs", "--no-log-prefix", "--no-color", "proxy").Output()
 	if err != nil {
@@ -396,16 +447,9 @@ func peerRequests(ctx context.Context, p *peerClient, method string, since time.
 	sc.Buffer(make([]byte, 1<<20), 1<<20)
 	for sc.Scan() {
 		var en proxyEntry
-		if json.Unmarshal(sc.Bytes(), &en) != nil || en.Request.Host != localHost || en.Request.Method != method {
-			continue
+		if json.Unmarshal(sc.Bytes(), &en) == nil {
+			entries = append(entries, en)
 		}
-		if en.time().Before(since) {
-			continue
-		}
-		if !strings.Contains(strings.ToLower(strings.Join(en.Request.Headers["User-Agent"], " ")), p.host) {
-			continue
-		}
-		entries = append(entries, en)
 	}
 	return entries, sc.Err()
 }

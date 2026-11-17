@@ -21,13 +21,12 @@ type Articles interface {
 }
 
 // articleProblem returns the problem of an error of the article use cases, or false for another
-// error.
-func (s *Server) articleProblem(ctx context.Context, err error) (problem, bool) {
+// error. article is the path of the article's members in the request (contentField).
+func (s *Server) articleProblem(ctx context.Context, err error, article string) (problem, bool) {
 	l := s.Localizer(ctx)
 	unprocessable := func(detail string) (problem, bool) {
-		return s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail), true
+		return s.fieldProblem(ctx, contentField(err, article), detail), true
 	}
-	var tooLong *appcontent.ArticleTooLongError
 	var tooManyImages *appcontent.TooManyArticleImagesError
 	switch {
 	case errors.Is(err, appcontent.ErrArticlesNotPermitted):
@@ -39,8 +38,9 @@ func (s *Server) articleProblem(ctx context.Context, err error) (problem, bool) 
 		return unprocessable(l.ServerErrorsStatusArticleTitleInvalid(content.MaxArticleTitle))
 	case errors.Is(err, appcontent.ErrInvalidArticleSummary):
 		return unprocessable(l.ServerErrorsStatusArticleSummaryInvalid(content.MaxArticleSummary))
-	case errors.As(err, &tooLong):
-		return unprocessable(l.ServerErrorsStatusArticleTooLong(tooLong.Max))
+	// The writer's words say the body is too long, not by how many bytes of HTML.
+	case errors.As(err, new(*appcontent.ArticleTooLongError)):
+		return unprocessable(l.ServerErrorsStatusArticleTooLong())
 	case errors.As(err, &tooManyImages):
 		return unprocessable(l.ServerErrorsStatusArticleTooManyImages(tooManyImages.Max))
 	case errors.Is(err, appcontent.ErrTooManyHashtags):

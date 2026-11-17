@@ -26,6 +26,8 @@ import (
 // *appnotification.Service implements it.
 type Notifications interface {
 	List(ctx context.Context, accountID string, q appnotification.Query) ([]notification.Notification, error)
+	// Get returns one of accountID's notifications as List would return it; ErrNotFound otherwise.
+	Get(ctx context.Context, accountID, id string, withoutModerator bool) (notification.Notification, error)
 	ReadMarker(ctx context.Context, accountID string) (notification.ReadMarker, error)
 	UnreadCount(ctx context.Context, accountID string, withoutModerator bool) (int64, error)
 	MarkRead(ctx context.Context, accountID, lastReadID string) (notification.ReadMarker, error)
@@ -762,6 +764,33 @@ func (s *Server) newNotificationMarker(ctx context.Context, v Viewer, m notifica
 		out.LastReadId = &id
 	}
 	return out, nil
+}
+
+// GetNotification serves GET /api/v1/notifications/{id}: one of the viewer's notifications, as
+// ListNotifications presents it. A notification that is not the viewer's, is dismissed, or that
+// the list leaves out (a moderator notification for a third-party client, or one whose post the
+// viewer may not see or a hide filter matches) is a 404.
+func (s *Server) GetNotification(ctx context.Context, req GetNotificationRequestObject) (GetNotificationResponseObject, error) {
+	v, err := requireViewer(ctx)
+	if err != nil {
+		return nil, err
+	}
+	n, err := s.o.Notifications.Get(ctx, v.AccountID, req.Id, !v.FirstParty)
+	if err != nil && !errors.Is(err, appnotification.ErrNotFound) {
+		return nil, fmt.Errorf("clientapi: notification %s of %s: %w", req.Id, v.AccountID, err)
+	}
+	var items []Notification
+	if err == nil {
+		if items, err = s.newNotifications(ctx, v, []notification.Notification{n}); err != nil {
+			return nil, err
+		}
+	}
+	if len(items) == 0 {
+		body, headers := s.notFound(ctx)
+		return GetNotificationdefaultApplicationProblemPlusJSONResponse{Body: body, Headers: headers, StatusCode: http.StatusNotFound}, nil
+	}
+	cache := cacheNoStore
+	return GetNotification200JSONResponse{Body: items[0], Headers: GetNotification200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // DismissNotification serves POST /api/v1/notifications/{id}/dismiss.

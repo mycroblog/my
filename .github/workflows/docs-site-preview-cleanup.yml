@@ -37,10 +37,11 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      # Wrangler does not run on Bun (#2954).
       - name: Set up Node
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
-          node-version-file: .tool-versions
+          node-version: "26.12.1"
       - name: Install wrangler
         run: scripts/docs-site.sh install
       - name: Delete the Previews of closed pull requests

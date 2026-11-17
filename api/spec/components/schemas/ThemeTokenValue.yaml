@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: MIT
 description: |
-  The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+  The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
   and `dark` for a color token, `value` for the others.
 type: object
 required: [token]

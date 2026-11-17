@@ -17,7 +17,7 @@ import (
 // The viewer's passkeys (FR-004): registering one after the password or another passkey,
 // listing, and removing them, and the confirmations with a passkey that the operations on the
 // viewer's own account take in place of the password. The identity module runs the WebAuthn
-// ceremonies; signing in with a passkey is the server-rendered sign-in page's.
+// ceremonies; signing in with a passkey is the sign-in screen's (authpages).
 
 // Problem types of passkeys.
 const (

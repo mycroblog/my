@@ -1,0 +1,175 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The data a post is drawn from: the part of the client API's Status (pkg/mykit/ts, `components["schemas"]["Status"]`)
+// that the post reads, with the API's own field names and types, so that a Status as the API sends it, or as
+// @my/app-data keeps it, is a PostStatus as it is. The package depends on no API client; the shapes are written here.
+
+import type { ContentEmoji } from "./post-content";
+
+/** Who may see a post (the API's Visibility). */
+export type PostVisibility = "public" | "local" | "unlisted" | "private" | "direct";
+
+/** An account, as a status embeds it (the API's Account). */
+export type PostAccount = {
+  id: string;
+  /** The username, without the domain; empty for a remote account without a confirmed handle. */
+  username: string;
+  /** The username for a local account, `username@domain` for a remote one. */
+  acct: string;
+  domain: string;
+  /** The display name; empty when the account has none. */
+  display_name: string;
+  /** The custom emoji of the display name. */
+  emojis: readonly ContentEmoji[];
+  /** The avatar's renditions; omitted when there is none. */
+  avatar?: { small: { url: string } } | undefined;
+};
+
+/** An attached media file (the API's MediaAttachment). */
+export type PostMedia = {
+  id: string;
+  type: "image" | "gifv" | "video" | "audio" | "unknown";
+  /** The alternative text; absent when there is none. */
+  description?: string | undefined;
+  url?: string | undefined;
+  preview_url?: string | undefined;
+  /** Its size and, for a video or a sound, its length in seconds. */
+  meta?: { width?: number | undefined; height?: number | undefined; duration?: number | undefined } | undefined;
+  /** The blurhash of its picture, drawn in its place while it is sensitive and covered. */
+  blurhash?: string | undefined;
+};
+
+/** The card of the first link in a status (the API's LinkCard, ADR-0062 §8). */
+type PostCard = {
+  url: string;
+  title: string;
+  /** Empty when the page has none. */
+  description: string;
+  /** The site's name, or the host of `url`. */
+  site_name: string;
+  language?: string | undefined;
+  /** The image through the media proxy, with the size of the original and its own description. */
+  image?:
+    | { url: string; width: number; height: number; blurhash?: string | undefined; description?: string | undefined }
+    | undefined;
+  /** The page's author, as their server confirms them. */
+  author?: PostAccount | undefined;
+};
+
+/** The reactions to a post with one emoji (the API's StatusReaction). */
+export type PostReaction = {
+  /** The Unicode emoji, or the name of a custom one. */
+  name: string;
+  /** The shortcode of a custom emoji; omitted for a Unicode emoji. */
+  shortcode?: string | undefined;
+  /** The custom emoji with its image; omitted for a Unicode emoji. */
+  emoji?: ContentEmoji | undefined;
+  count: number;
+  /** Whether the reader reacted with it. */
+  me?: boolean | undefined;
+};
+
+/** A poll of a status (the API's Poll). */
+export type PostPoll = {
+  id: string;
+  /** When it ends, as an ISO 8601 date-time; omitted when it has no end. */
+  expires_at?: string | undefined;
+  /** Whether it has ended: it takes no votes and shows its results. */
+  expired: boolean;
+  /** Whether a vote may choose several options. */
+  multiple: boolean;
+  /** The votes, one per chosen option. */
+  votes_count: number;
+  /** The accounts that voted; omitted when unknown. */
+  voters_count?: number | undefined;
+  /** The options in order, each with its votes, omitted while its author hides them until it ends. */
+  options: readonly { title: string; votes_count?: number | undefined }[];
+  /** Whether the reader voted. */
+  voted?: boolean | undefined;
+  /** The indexes of the options the reader voted for. */
+  own_votes?: readonly number[] | undefined;
+};
+
+/** An account a status mentions (the API's StatusMention). */
+export type PostMention = { id: string; username: string; acct: string };
+
+/** Whether the reader may interact with a status in one way (the API's InteractionPermission). */
+type PostPermission = "allowed" | "pending" | "denied";
+
+/** A status (the API's Status), as a post draws it. */
+export type PostStatus = {
+  id: string;
+  account: PostAccount;
+  /** The text as the server rendered and sanitized it. */
+  content: string;
+  /** The content warning; empty when there is none. */
+  spoiler_text: string;
+  /** The media are sensitive: covered until the reader shows them. */
+  sensitive?: boolean | undefined;
+  /** The card of its first link; none with media or a quote. */
+  card?: PostCard | undefined;
+  visibility: PostVisibility;
+  /** The BCP 47 tag of the text's language; `und` when it is unknown. */
+  language: string;
+  in_reply_to_account_id?: string | undefined;
+  /** When it was posted, as an ISO 8601 date-time. */
+  created_at: string;
+  /** When its author last edited it, as an ISO 8601 date-time; none for a post never edited. */
+  edited_at?: string | undefined;
+  /** The status this one boosts: what the post shows, `account` being who boosted it. */
+  boost?: PostStatus | undefined;
+  media_attachments: readonly PostMedia[];
+  mentions: readonly PostMention[];
+  /** The custom emoji of the text and the content warning. */
+  emojis: readonly ContentEmoji[];
+  replies_count: number;
+  boosts_count: number;
+  favourites_count: number;
+  reactions: readonly PostReaction[];
+  favourited?: boolean | undefined;
+  boosted?: boolean | undefined;
+  bookmarked?: boolean | undefined;
+  /** Whether the reader muted the thread the post is in (ADR-0158 §8); none for a reader without an account. */
+  muted?: boolean | undefined;
+  /**
+   * The approval of this reply, by the author of the post it replies to, while it is not given: given only to the
+   * reply's author, whom alone a `pending` reply shows to.
+   */
+  approval?: "pending" | "rejected" | undefined;
+  /** The approval of the reader's boost of it by its author, while it is not given. */
+  boost_approval?: "pending" | "rejected" | undefined;
+  /**
+   * What the reader may do with it, of each kind: at once (`allowed`), once its author approves (`pending`), or not;
+   * none for a reader without a session.
+   */
+  permissions?: { reply: PostPermission; announce: PostPermission; quote: PostPermission } | undefined;
+  /** The status it quotes, shown one level deep. */
+  quote?: { state: string; quoted_status?: PostStatus | undefined } | undefined;
+  /** Its poll, whose options may hold custom emoji of `emojis`. */
+  poll?: PostPoll | undefined;
+  /** What makes it an article (ADR-0160): its `content` is the article's text, empty in a list. */
+  article?: PostArticle | undefined;
+};
+
+/** An article's title, summary and cover (the API's StatusArticle); the summary is never a content warning. */
+export type PostArticle = {
+  /** Empty only for an article from another server that has none. */
+  title: string;
+  summary: string;
+  cover?: PostMedia | undefined;
+};
+
+/** A post in the reader's language (the API's StatusTranslation). */
+export type PostTranslation = {
+  /** The language of the translation. */
+  language: string;
+  /** The language translated from; `und` when it is not known. */
+  source_language: string;
+  content: string;
+  spoiler_text: string;
+  /** The alternative text of the media that has any, in the language of the translation. */
+  media_attachments: readonly { id: string; description: string }[];
+  /** The titles of the poll's options in order; empty when it has no poll. */
+  poll_options?: readonly string[] | undefined;
+  provider?: { name: string } | undefined;
+};

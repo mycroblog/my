@@ -69,8 +69,8 @@ func MaintenancePage(cfg *config.Config, overrides []instance.ThemeTokenValue) m
 	}
 }
 
-// maintenanceTheme fills the tokens of the maintenance page with the defaults of theme.css and
-// then the overrides.
+// maintenanceTheme fills the tokens of the maintenance page with the defaults of @my/design-tokens
+// and then the overrides.
 func maintenanceTheme(overrides []instance.ThemeTokenValue) maintenance.Theme {
 	t := maintenance.Theme{Light: map[string]string{}, Dark: map[string]string{}}
 	for _, name := range maintenance.TokenNames {

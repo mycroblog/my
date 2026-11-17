@@ -1,6 +1,6 @@
 ---
 name: translate-docs
-description: Translate the documents of the documentation site (docs/guide, docs/operations, the landing page) into a locale of app/docs/i18n, or translate again the sections that went stale. Use when asked to translate the docs or the documentation site, or to bring its translations up to date.
+description: Translate the documents of the documentation site (docs/guide, docs/operations, the landing page) into a locale of web/docs/i18n, or translate again the sections that went stale. Use when asked to translate the docs or the documentation site, or to bring its translations up to date.
 ---
 
 # Translate-docs skill
@@ -9,7 +9,7 @@ Arguments: the sources to translate (repository paths such as `docs/operations/b
 `--locale <locale>` (`ja` by default), by the tag of its catalog in `locales/`. Without sources, take what `status` lists.
 
 Policy: ADR-0150 §9. The English documents are authoritative: a translation never adds, drops, or corrects a fact.
-Translated: `docs/guide/`, `docs/operations/`, the landing page and the analytics notice of `app/docs/src/content/docs/`
+Translated: `docs/guide/`, `docs/operations/`, the landing page and the analytics notice of `web/docs/src/content/docs/`
 (one section each), and the headings of `docs/README.md` (`sidebar.json`). Not `docs/reference/`, `docs/developers/`,
 `docs/plugins/`. Read [reference.md](reference.md) for the style of each locale, the landing page, and adding a locale.
 
@@ -26,7 +26,7 @@ Translated: `docs/guide/`, `docs/operations/`, the landing page and the analytic
    - Name the UI by the text `glossary` prints; when it offers several, pick the one of the screen the sentence is
      about. Keep names of products, commands, settings, environment variables, metrics, and job types in English.
      A table keeps its columns and rows.
-4. Update `app/docs/i18n/<locale>/sidebar.json` (keys the English headings) when a document is new or a heading of
+4. Update `web/docs/i18n/<locale>/sidebar.json` (keys the English headings) when a document is new or a heading of
    `docs/README.md` changed.
 5. `scripts/task.sh docs:site-translations-check`, then `scripts/task.sh docs:site-build`; fix every error. When the
    layout matters (tables, lists, images, the landing page), read the pages with `scripts/task.sh docs:site-dev`.

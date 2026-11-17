@@ -6,8 +6,8 @@
 //
 // The catalog names each email by its job type and, for a job that sends several emails, the
 // variant; its draft is the module's own draft function (internal/app/<module>/mail_drafts.go)
-// with sample values, and Render composes it with the real kernel.MailComposer, the frame that
-// MJML compiles from app/mail/frame.mjml, and the embedded locale catalogs. A test fails when a
+// with sample values, and Render composes it with the real kernel.MailComposer, the committed
+// frame in the colors of the design tokens' defaults, and the embedded locale catalogs. A test fails when a
 // mail job type, a draft function, or a variant of one is missing from the catalog.
 //
 // The package is a development tool: nothing in the server imports it.
@@ -20,6 +20,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	appnotification "github.com/mycroblog/my/internal/app/notification"
 	"github.com/mycroblog/my/internal/domain/identity"
+	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/domain/notification"
 	"github.com/mycroblog/my/internal/domain/supporters"
 	"github.com/mycroblog/my/internal/i18n"
@@ -41,7 +42,9 @@ const (
 )
 
 // Site is the sample instance as its emails name it.
-var Site = kernel.MailSite{Name: sampleName, URL: sampleBaseURL, ContactEmail: sampleContact}
+var Site = kernel.MailSite{
+	Name: sampleName, URL: sampleBaseURL, ContactEmail: sampleContact, Colors: kernel.MailColorsFrom(instance.DefaultThemeColor),
+}
 
 // sampleClosure is the sample schedule of the service closure, with a message from the
 // administrators.
@@ -56,17 +59,13 @@ var sampleClosure = identity.ServiceClosureView{
 // sampleGraceEndsAt is the end of the grace period of the sample failed payment.
 var sampleGraceEndsAt = time.Date(2027, 2, 7, 9, 30, 0, 0, time.UTC)
 
-// sampleNotification is a notification of type t from a remote account to the sample
-// recipient, about one of the recipient's statuses.
+// sampleNotification is a notification of type t from a remote account to the sample recipient.
 func sampleNotification(t notification.Type) appnotification.Wording {
 	return appnotification.Wording{
 		NotificationID: "01JSAMPLE0NOTIFICATION00000", Type: t,
-		Source:    appnotification.PushAccount{DisplayName: "Bob", Acct: "bob@remote.example"},
-		Recipient: appnotification.PushAccount{DisplayName: "Alice", Acct: "alice"},
-		StatusID:  "01JSAMPLE0STATUS00000000000", ReportID: "01JSAMPLE0REPORT00000000000", AppealID: "01JSAMPLE0APPEAL00000000000",
-		VoiceRoomID:          "01JSAMPLE0VOICEROOM0000000",
+		Source:               appnotification.PushAccount{DisplayName: "Bob", Acct: "bob@remote.example"},
 		AutoDeleteMaxAgeDays: 90, AutoDeleteDaysLeft: 30,
-		GatheringID: "01JSAMPLE0EVENT000000000000", Event: &sampleEvent,
+		Event: &sampleEvent,
 	}
 }
 

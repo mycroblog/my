@@ -62,13 +62,13 @@ func (h *Handler) twoFactorPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) renderTwoFactor(w http.ResponseWriter, r *http.Request, status int, returnTo string, message func(*i18n.Localizer) string) {
-	p := h.newPage(r, (*i18n.Localizer).ServerAuthTwoFactorTitle)
+	p := h.newPage(r, screenTwoFactor)
 	p.CSRFToken = h.csrfToken(w, r)
 	p.ReturnTo = returnTo
 	if message != nil {
 		p.Error = message(p.L)
 	}
-	h.render(w, r, status, pageTwoFactor, p)
+	h.render(w, r, status, p)
 }
 
 // twoFactor handles the code form.

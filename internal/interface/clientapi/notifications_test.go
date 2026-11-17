@@ -68,6 +68,15 @@ func (f *fakeNotifications) List(_ context.Context, accountID string, q appnotif
 	return out, nil
 }
 
+func (f *fakeNotifications) Get(_ context.Context, accountID, id string, _ bool) (notification.Notification, error) {
+	for _, n := range f.visible(accountID) {
+		if n.ID == id {
+			return n, nil
+		}
+	}
+	return notification.Notification{}, appnotification.ErrNotFound
+}
+
 func (f *fakeNotifications) ReadMarker(_ context.Context, accountID string) (notification.ReadMarker, error) {
 	return notification.ReadMarker{AccountID: accountID, LastReadID: f.markers[accountID]}, nil
 }
@@ -525,6 +534,43 @@ func TestNotificationMarker(t *testing.T) {
 	}
 	if res := e.send(t, http.MethodPut, "/notifications/marker", "read", body(notificationID(3))); res.StatusCode != http.StatusForbidden {
 		t.Errorf("without write:notifications = %d, want 403", res.StatusCode)
+	}
+}
+
+// TestGetNotification checks that GET /notifications/{id} presents one of the viewer's
+// notifications as the list does, and that another account's, a dismissed, or a missing one is a 404.
+func TestGetNotification(t *testing.T) {
+	e, _ := newNotificationEnv(t)
+	res := e.send(t, http.MethodGet, "/notifications/"+notificationID(1), "read", "")
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("get = %d, want 200", res.StatusCode)
+	}
+	if got := res.Header.Get("Cache-Control"); got != "no-store" {
+		t.Errorf("Cache-Control = %q, want no-store", got)
+	}
+	got := decode[clientapi.Notification](t, res)
+	page := decode[clientapi.NotificationPage](t, e.send(t, http.MethodGet, "/notifications", "read", ""))
+	listed := page.Items[len(page.Items)-1]
+	if got.Id != notificationID(1) || got.Type != listed.Type || got.Account == nil || listed.Account == nil || got.Account.Id != listed.Account.Id {
+		t.Errorf("notification = %+v, want it as the list shows it: %+v", got, listed)
+	}
+
+	if res := e.send(t, http.MethodPost, "/notifications/"+notificationID(1)+"/dismiss", "write", ""); res.StatusCode != http.StatusNoContent {
+		t.Fatalf("dismiss = %d, want 204", res.StatusCode)
+	}
+	for name, id := range map[string]string{
+		"bob's":     notificationID(9),
+		"dismissed": notificationID(1),
+		"missing":   notificationID(99),
+	} {
+		res := e.send(t, http.MethodGet, "/notifications/"+id, "read", "")
+		if res.StatusCode != http.StatusNotFound {
+			t.Errorf("%s = %d, want 404", name, res.StatusCode)
+			continue
+		}
+		if p := decodeProblem(t, res); p.Type != clientapi.ProblemTypeBlank || p.Status != http.StatusNotFound {
+			t.Errorf("%s: problem = %+v", name, p)
+		}
 	}
 }
 

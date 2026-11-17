@@ -32,7 +32,7 @@ The sections below describe each step.
 
 Users register at `https://<host>/auth/sign_up` with a username, an email address and a password, unless [registration is limited to login providers](#registration-limited-to-login-providers).
 After registering, that browser is signed in right away.
-The page works without JavaScript and, like the sign-in page, is protected by a CSRF token and by rejecting cross-origin requests.
+Like the sign-in page, it is protected by a CSRF token and by rejecting cross-origin requests.
 When you choose CAPTCHA for bot protection, the sign-up and sign-in pages show its widget and need JavaScript ([CAPTCHA](captcha.md)).
 
 The registration mode is the instance setting `registration_mode`. Choose it with the CLI or in the web client on the "Registration" page of "Server settings" (`/admin/settings/registration`) ([instance settings](instance-settings.md)). A change applies from the next registration.

@@ -3,10 +3,11 @@
 // Package web serves the web client (ADR-0028): the HTML shell that starts the SPA, the
 // Vite build output, and the Web App Manifest generated from the instance settings.
 //
-// The build of app/web is embedded from dist/, which `scripts/task.sh web:build` fills with a copy of
-// app/web/dist (the Dockerfile mounts the build there instead). Only dist/.gitkeep is
-// committed, so the package compiles and its tests run without Bun; a binary built that way
-// serves a shell without scripts and logs a warning at start.
+// The Vite build of the web client is embedded from dist/, which `scripts/task.sh web:build` fills with the
+// build of web/app, the brand assets of web/brand, and the list of the ETags of those files. The server
+// reads the list, not the files, when it starts: a file of the build is first read by a request for it.
+// Only dist/.gitkeep is committed, so the package compiles and its tests run without Bun; a binary
+// built that way serves a shell without scripts and logs a warning at start.
 //
 // Requests for HTML are always treated as anonymous, so every shell is the same for every
 // visitor and is cached by shared caches. The generic shell is the same for every SPA route.

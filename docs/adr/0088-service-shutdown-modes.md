@@ -168,7 +168,7 @@
   `index.html` は `Accept-Language` で振り分けられない前段（CloudFront・Cloud Storage のエラーページなど）向けで、どの言語の読み手にも 1 枚で伝わるように全言語を並べる。
   `<lang>.html` は nginx などで振り分ける前段向け。
 - 値の出所: 設定の `maintenance_*` を使う。`-offline` でなく DB に届けば（短いタイムアウト）、インスタンスの名前（設定の `maintenance_server_name` が空のとき）・
-  既定ロケール（`-lang` が無いときの先頭）・テーマのトークンの上書き（ADR-0059 §2。任意の CSS は含めない）を DB から読んで焼き込む。
+  既定ロケール（`-lang` が無いときの先頭）・テーマのトークンの上書き（ADR-0059 §2）を DB から読んで焼き込む。
   届かなければ警告を出して設定と既定のテーマで書き出し、終了コードは 0 にする。
 - `my serve` を動かさずに実行でき、メンテナンスモードと同じテンプレートなので、どちらから出しても同じ見た目と文言になる。クローズ後のページ（§6）もこのテンプレートと書き出しを使う。
 
@@ -267,7 +267,7 @@
   - `GET /api/v1/instance` の `status_page_url`（未設定なら出さない）
   - サーバーの情報のページ（`/about`）と、サーバーが描画するサインインの画面
   - Web クライアント: 設定の画面のヘルプの区画と、エラー・オフラインの表示（G16・G17）。サーバーが答えないときは `GET /instance` を読めないので、
-    **Web クライアントは最後に読んだ `status_page_url` をアプリが残し（Service Worker は API に答えないので、オフラインのホームのタイムラインと同じくアプリが残す。web-client §11、ADR-0028）、そこから URL を出す**
+    **Web クライアントは最後に読んだ `status_page_url` をアプリが残し（Service Worker は API に答えないので、オフラインのホームのタイムラインと同じくアプリが残す。ADR-0028）、そこから URL を出す**
   - メンテナンスモードの応答と書き出したメンテナンスのページ（§10・§12）
   - DB の障害で返す HTML のエラーページ
 - NodeInfo の `metadata` には v0 では足さない。Mastodon の NodeInfo の `metadata` にはステータスページのキーがなく（[node_info/serializer.rb](https://github.com/mastodon/mastodon/blob/131aabcaf1f1f13e0615f8ad2748ab05f966e2c9/app/serializers/node_info/serializer.rb#L40-L47)、2026-10-23 確認）、

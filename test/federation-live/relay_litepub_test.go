@@ -111,14 +111,32 @@ func TestRelayLitePub(t *testing.T) {
 
 	// Leaving sends the Undo: Akkoma's relay stops announcing to this server.
 	var left adminRelay
+	leftAt := time.Now()
 	if err := e.local.api(ctx, http.MethodDelete, "/admin/relays/"+r.ID+"/follow", nil, &left); err != nil || left.State != "left" {
 		t.Fatalf("leaving the relay = %+v, %v", left, err)
 	}
-	time.Sleep(quietPeriod) // the Undo is delivered before kate posts again
+	// The Undo is delivered before kate posts again: the proxy logs this server's POST to Akkoma, answered.
+	eventually(t, deliveryTimeout, "Akkoma takes the Undo of the relay's Follow", func() (bool, string) {
+		entries, err := readProxyLog(ctx)
+		if err != nil {
+			return false, err.Error()
+		}
+		for _, en := range entries {
+			ua := strings.ToLower(strings.Join(en.Request.Headers["User-Agent"], " "))
+			if en.Request.Host == akkomaHost && en.Request.Method == http.MethodPost && strings.Contains(ua, localHost) &&
+				!en.time().Before(leftAt) && en.Status/100 == 2 {
+				return true, ""
+			}
+		}
+		return false, "no answered POST of " + localHost + " to " + akkomaHost + " since leaving"
+	})
 	after := unique("announced after leaving akkoma.test")
 	if _, err := kate.reply(ctx, after, "public", ""); err != nil {
 		t.Fatalf("posting as %s: %v", akkomaUser, err)
 	}
+	// What must not happen has no event to wait for: a relay that still announced would deliver kate's
+	// post within the quiet period, and nothing marks that it will not. This wait stays in
+	// scripts/go-test-sleep.baseline.
 	time.Sleep(quietPeriod)
 	if ok, _ := e.onFederatedTimeline(ctx, after); ok {
 		t.Fatalf("kate's post after leaving the relay reached the federated timeline")

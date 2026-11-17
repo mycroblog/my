@@ -1,6 +1,6 @@
 # CAPTCHA bot protection (Turnstile / hCaptcha / reCAPTCHA)
 
-CAPTCHA is off by default: the setting [`captcha`](../reference/configuration.md#captcha) is `none`. The sign-in, sign-up and password-reset pages then work without JavaScript and send nothing to third parties.
+CAPTCHA is off by default: the setting [`captcha`](../reference/configuration.md#captcha) is `none`. The sign-in, sign-up and password-reset pages then send nothing to third parties.
 When you pick a CAPTCHA service, the service's widget appears on three forms: sign-in (`/auth/sign_in`), sign-up (`/auth/sign_up`) and the request for a password-reset link
 (`/auth/forgot_password`, only on servers that send mail). The server verifies the token the widget produces with the service's siteverify API.
 You cannot protect only some of the forms.
@@ -73,7 +73,7 @@ The server cannot detect the excess, so check your usage in the Google Cloud con
   The Turnstile widget follows the color scheme itself. hCaptcha and reCAPTCHA are chosen with the client hint `Sec-CH-Prefers-Color-Scheme`, which the browser sends; browsers that do not send it get the light theme.
 - Next to the widget, the page says which service performs the check, that the service receives the IP address and browser information, and links to the service's privacy policy
   (and to the terms for hCaptcha and reCAPTCHA). For reCAPTCHA this also serves as the sentence Google requires: "This site is protected by reCAPTCHA and the Google Privacy Policy and Terms of Service apply."
-- In a browser without JavaScript, a `<noscript>` message says the check needs JavaScript. A user who cannot solve the CAPTCHA can neither sign up nor sign in,
+- A user who cannot solve the CAPTCHA can neither sign up nor sign in,
   and you can only help them by other means, such as creating the account with `my admin create` or setting `captcha = none` for a while.
 - The `Content-Security-Policy` (CSP) widens only on the sign-in, sign-up and password-reset request pages while CAPTCHA is enabled. `'unsafe-inline'` and `'unsafe-eval'` are never added.
   The CSP of the web client, the client API, the consent screen, the email confirmation and other pages does not change.

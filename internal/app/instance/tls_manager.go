@@ -100,8 +100,8 @@ type TLSManagerOptions struct {
 	// into the database and into its memory (the tls_certificate signal of ADR-0163 §6). It
 	// must not block.
 	Notify func(host, certificateID string)
-	// Meter, when set, receives the metrics of the orders (TLSOrderAttempts and
-	// TLSOrderConsecutiveFailures).
+	// Meter, when set, receives the metrics of the orders and the rounds (TLSOrderAttempts,
+	// TLSOrderConsecutiveFailures, and TLSRounds).
 	Meter kernel.Meter
 }
 
@@ -137,6 +137,7 @@ type TLSManager struct {
 	// none, as the last round or order saw it (TLSOrderConsecutiveFailures).
 	failures map[string]int
 	attempts kernel.Counter
+	rounds   kernel.Counter
 	// notices are the hosts to load again (Notice), all of them when noticeAll is set; wake
 	// tells the goroutine of Run that loads them.
 	notices   map[string]struct{}
@@ -469,7 +470,7 @@ func (m *TLSManager) Run(ctx context.Context) {
 }
 
 // Maintain runs one round for every host at once (see TLSManager) and returns when the next round
-// is due. It logs the failures.
+// is due. It logs the failures, and counts the round in TLSRounds once it ends.
 func (m *TLSManager) Maintain(ctx context.Context) time.Time {
 	nexts := make([]time.Time, len(m.opts.Hosts))
 	var wg sync.WaitGroup
@@ -483,6 +484,7 @@ func (m *TLSManager) Maintain(ctx context.Context) time.Time {
 		})
 	}
 	wg.Wait()
+	m.rounds.Add(ctx, 1, kernel.Labels{})
 	return slices.MinFunc(nexts, func(a, b time.Time) int { return a.Compare(b) })
 }
 
@@ -630,16 +632,11 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 		recErr := m.opts.Service.RecordTLSOrderFailure(context.WithoutCancel(ctx), attempt.ID, problem, detail)
 		return errors.Join(fmt.Errorf("instance: the TLS order of %s failed: %w", host, err), recErr)
 	}
-	// The CA issued it: keep it even when the lease ended meanwhile.
-	c, err := m.opts.Service.RecordTLSCertificate(context.WithoutCancel(ctx), attempt, chain, key)
-	if err != nil {
-		return err
-	}
-	m.opts.Logger.InfoContext(ctx, "obtained a TLS certificate", slog.String("host", host),
-		slog.String("serial", c.Serial), slog.Time("not_after", c.NotAfter), slog.Bool("renewal", replaces != ""))
+	// The loading lock of host is held from the record to the install: a Reload in between would
+	// find the new certificate current but not in memory, and load it again, unwrapping its key.
 	lock := m.loading[host]
 	lock.Lock()
-	err = m.install(host, c.ID, c.DirectoryURL, c.ChainPEM, key)
+	c, err := m.recordAndInstall(ctx, host, attempt, chain, key, replaces != "")
 	lock.Unlock()
 	if err != nil {
 		return err
@@ -648,6 +645,19 @@ func (m *TLSManager) order(ctx context.Context, host string) error {
 		m.opts.Notify(host, c.ID)
 	}
 	return nil
+}
+
+// recordAndInstall records the certificate that the CA issued for attempt, and installs it; the
+// caller holds the loading lock of host.
+func (m *TLSManager) recordAndInstall(ctx context.Context, host string, attempt instance.TLSOrderAttempt, chain string, key []byte, renewal bool) (instance.TLSCertificate, error) {
+	// The CA issued it: keep it even when the lease ended meanwhile.
+	c, err := m.opts.Service.RecordTLSCertificate(context.WithoutCancel(ctx), attempt, chain, key)
+	if err != nil {
+		return c, err
+	}
+	m.opts.Logger.InfoContext(ctx, "obtained a TLS certificate", slog.String("host", host),
+		slog.String("serial", c.Serial), slog.Time("not_after", c.NotAfter), slog.Bool("renewal", renewal))
+	return c, m.install(host, c.ID, c.DirectoryURL, c.ChainPEM, key)
 }
 
 // obtain orders the certificate of host with a new key, replacing the certificate replaces when

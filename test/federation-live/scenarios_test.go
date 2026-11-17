@@ -202,6 +202,8 @@ func peerSees(t *testing.T, p *peerClient, uri string) status {
 func never(t *testing.T, what string, check func() (bool, string)) {
 	t.Helper()
 	deadline := time.Now().Add(quietPeriod)
+	poll := time.NewTicker(pollInterval)
+	defer poll.Stop()
 	for {
 		if happened, state := check(); happened {
 			t.Errorf("%s: %s", what, state)
@@ -210,7 +212,7 @@ func never(t *testing.T, what string, check func() (bool, string)) {
 		if time.Now().After(deadline) {
 			return
 		}
-		time.Sleep(2 * time.Second)
+		<-poll.C
 	}
 }
 

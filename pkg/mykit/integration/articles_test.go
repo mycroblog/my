@@ -15,6 +15,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/platform/platformtest"
+	"github.com/mycroblog/my/pkg/testkit"
 
 	"github.com/mycroblog/my/pkg/mykit"
 )
@@ -28,17 +29,19 @@ func readyImage(t *testing.T, api *mykit.API) mykit.MediaAttachment {
 	if err != nil {
 		t.Fatalf("UploadMedia: %v", err)
 	}
-	deadline := time.Now().Add(30 * time.Second)
-	for media.State == mykit.MediaAttachmentStateProcessing {
-		if time.Now().After(deadline) {
-			t.Fatalf("media %s still processing after 30 seconds", media.Id)
+	processed := testkit.Eventually(t, 30*time.Second, func() bool {
+		if media.State != mykit.MediaAttachmentStateProcessing {
+			return true
 		}
-		time.Sleep(100 * time.Millisecond)
 		resp, err := api.GetMediaWithResponse(t.Context(), media.Id)
 		if err != nil || resp.JSON200 == nil {
 			t.Fatalf("GetMedia = %v", err)
 		}
 		media = resp.JSON200
+		return media.State != mykit.MediaAttachmentStateProcessing
+	})
+	if !processed {
+		t.Fatalf("media %s still processing after 30 seconds", media.Id)
 	}
 	if media.State != mykit.MediaAttachmentStateReady {
 		t.Fatalf("media state = %s, want ready", media.State)

@@ -53,7 +53,8 @@ CREATE TABLE instance_setting_revisions (
     'max_drafts', 'max_scheduled_posts', 'max_scheduled_posts_per_day', 'scheduled_post_min_lead_minutes', 'scheduled_post_max_lead_days',
     'article_authoring', 'max_article_bytes', 'max_article_images', 'auto_delete_default_keep_articles', 'auto_delete_max_allow_articles', 'event_creators',
     'event_records_retention_days',
-    'funding_meter_visibility', 'funding_meter_target_amount', 'funding_meter_target_currency', 'funding_meter_rail'
+    'funding_meter_visibility', 'funding_meter_target_amount', 'funding_meter_target_currency', 'funding_meter_rail',
+    'ux_measurement'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,
@@ -93,48 +94,39 @@ CREATE TABLE instance_texts (
 -- instance: theme (ADR-0059, FR-605). Owned by internal/app/instance.
 -- ---------------------------------------------------------------------------------------------
 
--- Event (revision): one version of the instance theme: the administrator's custom CSS, with its
--- token overrides in instance_theme_tokens. A revision without tokens and CSS resets the theme.
--- revised_by_user_id is NULL for a change from the CLI.
-CREATE TABLE instance_theme_revisions (
+-- Event: one saved token set of the theme (ADR-0059 §15), as a versioned JSON document of the
+-- overrides with their light and dark values, replaced as a whole by the next set. The token names
+-- are checked by the domain against the list generated from @my/design-tokens
+-- (internal/domain/instance/theme_tokens.gen.go), never by a constraint, so that a renamed or
+-- retired token needs no schema change. saved_by_user_id is NULL for the CLI and the data upgrade.
+CREATE TABLE instance_theme_sets (
   id uuid NOT NULL PRIMARY KEY,
-  custom_css text NOT NULL,
-  revised_by_user_id uuid,
-  revised_at timestamptz NOT NULL
+  document bytea NOT NULL,
+  saved_by_user_id uuid,
+  saved_at timestamptz NOT NULL
 );
 
--- Event (child of a revision): the value of one overridden design token in one color scheme
--- (light and dark for a color token, all for the others). The token list is generated from the
--- web client's theme.css (internal/domain/instance/theme_tokens.gen.go).
-CREATE TABLE instance_theme_tokens (
-  revision_id uuid NOT NULL,
-  token text COLLATE "C" NOT NULL CHECK (token IN (
-    'color-surface', 'color-surface-raised', 'color-surface-sunken', 'color-soft', 'color-fg',
-   'color-fg-muted', 'color-accent', 'color-accent-hover', 'color-accent-fg', 'color-accent-fill',
-   'color-accent-fill-hover', 'color-accent-fill-fg', 'color-danger', 'color-danger-fg',
-   'color-danger-bg', 'color-success', 'color-success-fg', 'color-success-bg', 'color-warning',
-   'color-warning-fg', 'color-warning-bg', 'color-border', 'color-border-strong', 'color-focus',
-   'color-toast', 'color-toast-fg', 'color-toast-action', 'color-toast-success',
-   'color-toast-danger', 'color-toast-muted', 'color-overlay', 'color-alt-overlay', 'color-highlight-mention', 'color-highlight-hashtag', 'color-highlight-url',
-   'color-highlight-shortcode', 'color-highlight-over', 'color-pressed', 'color-pressed-fg', 'color-media-chip', 'color-wave', 'color-spark', 'color-data-1', 'color-data-2', 'color-data-3', 'font-sans',
-   'font-mono', 'font-serif', 'text-xs', 'text-xs--line-height', 'text-sm', 'text-sm--line-height',
-   'text-base', 'text-base--line-height', 'text-lg', 'text-lg--line-height', 'text-xl',
-   'text-xl--line-height', 'text-2xl', 'text-2xl--line-height', 'text-3xl', 'text-3xl--line-height',
-   'text-4xl', 'text-4xl--line-height', 'text-5xl', 'text-5xl--line-height',
-   'spacing', 'radius-sm', 'radius-md', 'radius-lg', 'radius-xl', 'radius-2xl', 'elevation-card',
-   'elevation-sm', 'elevation-md', 'elevation-lg', 'elevation-soft-raised', 'elevation-soft-inset', 'ease-standard', 'ease-enter', 'ease-exit', 'ease-celebrate',
-   'transition-duration-fast', 'transition-duration-normal', 'transition-duration-slow',
-   'default-transition-duration', 'default-transition-timing-function'
-  )),
-  scheme text COLLATE "C" NOT NULL CHECK (scheme IN ('light', 'dark', 'all')),
-  value text NOT NULL,
-  PRIMARY KEY (revision_id, token, scheme)
+-- Event: one publication of a set, which makes it the theme in effect. Its ID is the theme's
+-- revision, which names the stylesheet. published_by_user_id is NULL for the CLI and the data
+-- upgrade.
+CREATE TABLE instance_theme_publications (
+  id uuid NOT NULL PRIMARY KEY,
+  set_id uuid NOT NULL,
+  published_by_user_id uuid,
+  published_at timestamptz NOT NULL
 );
 
--- Projection: the current theme revision, one row once a theme has been saved.
+-- Projection: the theme in effect, the publication with the greatest ID, one row once a set has
+-- been published.
 CREATE TABLE instance_theme (
   id integer NOT NULL PRIMARY KEY CHECK (id = 1),
   revision_id uuid NOT NULL
+);
+
+-- Projection: the draft, the set with the greatest ID, one row once a set has been saved.
+CREATE TABLE instance_theme_draft (
+  id integer NOT NULL PRIMARY KEY CHECK (id = 1),
+  set_id uuid NOT NULL
 );
 
 -- ---------------------------------------------------------------------------------------------

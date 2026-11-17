@@ -25,7 +25,9 @@ var (
 // {"v":1,"o":"<process id>","k":"notifications","a":"<account id>"} or
 // {"v":1,"o":"<process id>","k":"announcement","n":"<announcement id>"} or
 // {"v":1,"o":"<process id>","k":"public_entry","e":"<entry id>","tl":["local","federated"]}
-// ("tl" names the timelines that may list the post, at least one), and the signals of the
+// ("tl" names the timelines that may list the post, at least one), or
+// {"v":1,"o":"<process id>","k":"status_deleted","e":"<status id>","u":"<author>","d":"<author domain>","vis":"public"}
+// ("d" absent for a local author), and the signals of the
 // voice chat rooms (ADR-0101 §3), which carry the room as "r":
 // {"v":1,"o":…,"k":"voice_room","r":"<room>"},
 // {"v":1,"o":…,"k":"voice_signal","r":…,"m":"<message id>","t":"<session>"},
@@ -41,8 +43,12 @@ type signal struct {
 	// E is the entry of a home_entry signal, the conversation of a conversation one, and the
 	// emoji of a voice_reaction one.
 	E string `json:"e,omitempty"`
-	// Author is the "u" of a home_entry signal, the account of its entry.
+	// Author is the "u" of a home_entry signal, the account of its entry, and of a status_deleted
+	// one, the author of its status.
 	Author string `json:"u,omitempty"`
+	// Domain and Visibility are the "d" and the "vis" of a status_deleted signal.
+	Domain     string `json:"d,omitempty"`
+	Visibility string `json:"vis,omitempty"`
 	// AnnouncementID is the "n" of an announcement signal.
 	AnnouncementID string `json:"n,omitempty"`
 	RoomID         string `json:"r,omitempty"`
@@ -65,7 +71,7 @@ func encodeSignal(origin string, e Event) ([]byte, error) {
 	s := signal{
 		Version: signalVersion, Origin: origin, Kind: e.Kind, AccountID: e.AccountID, E: e.EntryID, Author: e.AuthorAccountID, AnnouncementID: e.AnnouncementID,
 		RoomID: e.RoomID, MessageID: e.MessageID, To: e.To, ParticipantID: e.ParticipantID, SessionID: e.SessionID, By: e.By,
-		Host: e.Host, CertificateID: e.CertificateID,
+		Host: e.Host, CertificateID: e.CertificateID, Domain: e.AuthorDomain, Visibility: e.Visibility,
 	}
 	switch e.Kind {
 	case KindPublicEntry:
@@ -121,6 +127,8 @@ func decodeSignal(payload []byte) (origin string, e Event, err error) {
 		return s.Origin, Event{Kind: KindTLSCertificate, Host: s.Host, CertificateID: s.CertificateID}, nil
 	case s.Kind == KindAnnouncement && s.AnnouncementID != "":
 		return s.Origin, Event{Kind: KindAnnouncement, AnnouncementID: s.AnnouncementID}, nil
+	case s.Kind == KindStatusDeleted && s.E != "" && s.Author != "" && s.Visibility != "":
+		return s.Origin, Event{Kind: KindStatusDeleted, EntryID: s.E, AuthorAccountID: s.Author, AuthorDomain: s.Domain, Visibility: s.Visibility}, nil
 	case s.Kind == KindPublicEntry && s.E != "":
 		e := Event{Kind: KindPublicEntry, EntryID: s.E}
 		for _, t := range s.Timelines {

@@ -38,8 +38,8 @@ func (TextRevised) EventType() string { return EventTextRevised }
 
 // RegisterProjectors registers the instance module's synchronous projectors:
 // instance_settings from setting revisions, instance_texts from text revisions,
-// instance_rule_heads from rule revisions and retirements, instance_theme from theme revisions,
-// instance_brands from brand revisions,
+// instance_rule_heads from rule revisions and retirements, instance_theme from theme publications,
+// instance_theme_draft from theme sets, instance_brands from brand revisions,
 // announcement_heads from announcement revisions and state changes, and service_closure_heads
 // from the service closure events. Each applies the same rule as RebuildProjections (the
 // revision with the greatest ID wins; a retired rule has no head; a withdrawn announcement stays
@@ -85,6 +85,7 @@ func RebuildProjections(ctx context.Context, u uow.UnitOfWork, repo Repository) 
 		{"instance_texts", func(tx uow.Tx) error { return rebuildTexts(ctx, tx, repo) }},
 		{"instance_rule_heads", func(tx uow.Tx) error { return rebuildRuleHeads(ctx, tx, repo) }},
 		{"instance_theme", func(tx uow.Tx) error { return rebuildThemeHead(ctx, tx, repo) }},
+		{"instance_theme_draft", func(tx uow.Tx) error { return rebuildThemeDraft(ctx, tx, repo) }},
 		{"instance_brands", func(tx uow.Tx) error { return rebuildBrandHeads(ctx, tx, repo) }},
 		{"announcement_heads", func(tx uow.Tx) error { return rebuildAnnouncementHeads(ctx, tx, repo) }},
 		{"service_closure_heads", func(tx uow.Tx) error { return rebuildClosureHead(ctx, tx, repo) }},

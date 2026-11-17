@@ -29,7 +29,7 @@ func TestInstanceNameAndDomain(t *testing.T) {
 		"assets/index-AAAA.js": {Data: []byte("export {}")},
 	}
 	var logs bytes.Buffer
-	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewJSONHandler(&logs, nil)), WebBuild: build})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.NewJSONHandler(&logs, nil)), WebBuild: webBuild(t, build)})
 	if err != nil {
 		t.Fatalf("NewApp: %v", err)
 	}
@@ -66,7 +66,7 @@ func TestInstanceNameAndDomain(t *testing.T) {
 		if err := json.Unmarshal([]byte(get("/nodeinfo/2.1", "")), &nodeInfo); err != nil || nodeInfo.Metadata.NodeName != en {
 			t.Errorf("NodeInfo nodeName = %q (%v), want %q", nodeInfo.Metadata.NodeName, err, en)
 		}
-		if body := get("/auth/sign_in", "ja"); !strings.Contains(body, `<p class="site-name" dir="auto">`+ja+`</p>`) || !strings.Contains(body, "– "+ja+"</title>") {
+		if body := get("/auth/sign_in", "ja"); authText(authData(t, body), "server.name") != ja || !strings.Contains(body, "<title>"+ja+"</title>") {
 			t.Errorf("sign-in page in ja, want the name %q:\n%s", ja, body)
 		}
 		var info struct{ Domain, Name string }

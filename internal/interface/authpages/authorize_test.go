@@ -4,7 +4,6 @@ package authpages_test
 
 import (
 	"context"
-	"html"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -119,8 +118,8 @@ func TestAuthorizeSendsUnsignedBrowsersToSignIn(t *testing.T) {
 	}
 	// Signing in returns to the authorization request, which then answers the client.
 	page := b.do(http.MethodGet, u.String(), nil, nil)
-	if !strings.Contains(page.Body.String(), `name="return_to"`) {
-		t.Fatalf("the sign-in form lost return_to:\n%s", page.Body.String())
+	if got := text(screenData(t, page), "returnTo"); got != target {
+		t.Fatalf("the sign-in form lost return_to: %q, want %q", got, target)
 	}
 	back := location(t, b.do(http.MethodPost, authpages.PathSignIn, b.form(page, "email", "alice@example.com", "password", "correct horse",
 		"return_to", target), nil))
@@ -171,7 +170,7 @@ func TestAuthorizeRefusesUnverifiedRedirects(t *testing.T) {
 	} {
 		w := b.do(http.MethodGet, target, nil, map[string]string{"Accept-Language": "en"})
 		if w.Code != http.StatusBadRequest || w.Header().Get("Location") != "" ||
-			!strings.Contains(w.Body.String(), "authorization request is invalid") {
+			!strings.Contains(w.Body.String(), "so you cannot allow it") {
 			t.Errorf("GET %s = %d → %q, want the 400 page without a redirect", target, w.Code, w.Header().Get("Location"))
 		}
 	}
@@ -188,9 +187,13 @@ func TestAuthorizeAsksConsentForThirdPartyClients(t *testing.T) {
 	b := signedIn(t, newOAuthServer(t, newFakeIdentity(), oauth))
 	page := b.do(http.MethodGet, authorizeQuery("app", appRedirect), nil, map[string]string{"Accept-Language": "en"})
 	body := page.Body.String()
-	if page.Code != http.StatusOK || !strings.Contains(body, "<h1>Authorize Example App</h1>") ||
-		!strings.Contains(body, "Read your account, posts, and timelines") || !strings.Contains(body, "app.example") {
+	data := screenData(t, page)
+	if page.Code != http.StatusOK || text(data, "screen") != "authorize" || text(data, "consent.clientName") != "Example App" ||
+		!strings.Contains(body, "Read your account, posts, and timelines") || text(data, "consent.redirectHost") != "app.example" {
 		t.Fatalf("consent page = %d\n%s", page.Code, body)
+	}
+	if at(data, "consent.account") != nil {
+		t.Errorf("consent.account = %v without Options.Accounts, want none", at(data, "consent.account"))
 	}
 	if csp := page.Header().Get("Content-Security-Policy"); !strings.Contains(csp, "form-action 'self' https://web.example https://app.example;") {
 		t.Errorf("consent CSP = %q, want the redirect origin in form-action", csp)
@@ -200,13 +203,15 @@ func TestAuthorizeAsksConsentForThirdPartyClients(t *testing.T) {
 	}
 	fields := func(decision string) url.Values {
 		v := b.form(page, "decision", decision)
-		for _, k := range []string{"response_type", "client_id", "redirect_uri", "scope", "state", "code_challenge", "code_challenge_method"} {
-			m := strings.SplitN(body, `name="`+k+`" value="`, 2)
-			if len(m) != 2 {
-				t.Fatalf("consent form has no %s", k)
+		for field, key := range map[string]string{
+			"response_type": "responseType", "client_id": "clientId", "redirect_uri": "redirectUri", "scope": "scope",
+			"state": "state", "code_challenge": "codeChallenge", "code_challenge_method": "codeChallengeMethod",
+		} {
+			s, ok := at(data, "consent."+key).(string)
+			if !ok {
+				t.Fatalf("consent form has no %s", key)
 			}
-			raw, _, _ := strings.Cut(m[1], `"`)
-			v.Set(k, html.UnescapeString(raw))
+			v.Set(field, s)
 		}
 		return v
 	}
@@ -242,6 +247,35 @@ const (
 	decisionDeny    = "deny"
 )
 
+// fakeAccounts names userAlice's account.
+type fakeAccounts struct{}
+
+func (fakeAccounts) SignedInAccount(_ context.Context, userID string) (authpages.SignedInAccount, error) {
+	if userID != userAlice {
+		return authpages.SignedInAccount{}, appidentity.ErrInvalidSession
+	}
+	return authpages.SignedInAccount{Username: "alice", DisplayName: "Alice <A>"}, nil
+}
+
+// TestConsentNamesTheSignedInAccount checks that the consent screen names the account that grants
+// the application.
+func TestConsentNamesTheSignedInAccount(t *testing.T) {
+	b, err := i18n.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
+	m := mux{http.NewServeMux()}
+	authpages.New(authpages.Options{
+		Identity: newFakeIdentity(), OAuth: &fakeOAuth{}, Issuer: "https://social.example", Locales: &i18n.Resolver{Bundle: b},
+		Accounts: fakeAccounts{}, AccountDomain: "social.example",
+	}).Register(m)
+	page := signedIn(t, m).do(http.MethodGet, authorizeQuery("app", appRedirect), nil, nil)
+	data := screenData(t, page)
+	if text(data, "consent.account.handle") != "@alice@social.example" || text(data, "consent.account.displayName") != "Alice <A>" {
+		t.Errorf("consent.account = %v, want alice's handle and display name", at(data, "consent.account"))
+	}
+}
+
 func TestConsentShowsProvenanceAndWarnsOfUnverifiedApps(t *testing.T) {
 	b := signedIn(t, newOAuthServer(t, newFakeIdentity(), &fakeOAuth{}))
 	get := func(clientID, redirect string) string {
@@ -252,11 +286,11 @@ func TestConsentShowsProvenanceAndWarnsOfUnverifiedApps(t *testing.T) {
 		}
 		return w.Body.String()
 	}
-	const unverified = "This server has not verified this application."
-	const impersonation = "which other apps on your device can also claim"
+	const unverified = "This server has not verified this app."
+	const impersonation = "an address that any app on your device can claim"
 
 	body := get("app", appRedirect)
-	for _, want := range []string{unverified, "An application registered by @carol", "Website it declared: https://app.example/about", "app.example",
+	for _, want := range []string{unverified, "An app registered by @carol", "Website it declared: https://app.example/about", "app.example",
 		"Can read your direct messages", "Can post, edit and delete posts as you", "Can change your profile"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("user-registered app: consent page lacks %q\n%s", want, body)

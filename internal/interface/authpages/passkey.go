@@ -4,6 +4,7 @@ package authpages
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"log/slog"
 	"net/http"
@@ -13,37 +14,36 @@ import (
 	"github.com/mycroblog/my/internal/i18n"
 )
 
-// Signing in with a passkey (FR-004). The sign-in page carries a second form, hidden, with the
-// options and the sealed challenge of a sign-in in its attributes; the web build's script
-// (Options.PasskeyScript) shows it in a browser with passkeys, asks the browser for a passkey
-// when it is sent, and sends the browser's answer in its credential field. The rest is a form
-// like the password's: the anti-forgery token, CrossOriginProtection, the session cookie of a
-// sign-in, and the code step for a user with two-factor authentication. Failures count against
-// the client's sign-in rate limit; the CAPTCHA belongs to the password, which a passkey does
-// not guess.
+// Signing in with a passkey (FR-004). The sign-in screen's data carries the options and the
+// sealed challenge of a sign-in; in a browser with passkeys, the entry offers them in the
+// autofill of the email field and behind a button, asks the browser for one, and posts the
+// browser's answer with the challenge to PathSignInPasskey. The rest is a form like the
+// password's: the anti-forgery token, CrossOriginProtection, the session cookie of a sign-in,
+// and the code step for a user with two-factor authentication. Failures count against the
+// client's sign-in rate limit; the CAPTCHA belongs to the password, which a passkey does not
+// guess.
 
-// Passkeys is what the sign-in page needs to sign in with passkeys; *identity.Service
+// Passkeys is what the sign-in screen needs to sign in with passkeys; *identity.Service
 // implements it.
 type Passkeys interface {
 	BeginPasskeySignIn(ctx context.Context) (appidentity.PasskeySignIn, error)
 	SignInWithPasskey(ctx context.Context, in appidentity.PasskeySignInInput) (appidentity.SignedIn, error)
 }
 
-// passkeyView is the passkey form of the sign-in page.
+// passkeyView is the passkey sign-in of the sign-in screen.
 type passkeyView struct {
-	// Options are the request options of the sign-in as JSON, and Challenge its sealed state.
-	Options   string
-	Challenge string
-	// Script is the URL of the script that runs the form.
-	Script string
-	// Error is an alert about the passkey form.
-	Error string
+	// Options are the request options of the sign-in (PublicKeyCredentialRequestOptionsJSON),
+	// and Challenge its sealed state, which the form posts back.
+	Options   json.RawMessage `json:"options"`
+	Challenge string          `json:"challenge"`
+	// Error is an alert about the passkey sign-in.
+	Error string `json:"error,omitempty"`
 }
 
-func (h *Handler) passkeysEnabled() bool { return h.o.Passkeys != nil && h.o.PasskeyScript != "" }
+func (h *Handler) passkeysEnabled() bool { return h.o.Passkeys != nil }
 
-// passkeyView starts a passkey sign-in for the sign-in page, or returns nil without passkeys.
-// A failure only leaves the passkey out of the page.
+// passkeyView starts a passkey sign-in for the sign-in screen, or returns nil without passkeys.
+// A failure only leaves the passkey out of the screen.
 func (h *Handler) passkeyView(r *http.Request) *passkeyView {
 	if !h.passkeysEnabled() {
 		return nil
@@ -53,7 +53,11 @@ func (h *Handler) passkeyView(r *http.Request) *passkeyView {
 		h.o.Logger.WarnContext(r.Context(), "start a passkey sign-in", slog.Any("error", err))
 		return nil
 	}
-	return &passkeyView{Options: string(begun.Options), Challenge: begun.Challenge, Script: h.o.PasskeyScript}
+	if !json.Valid(begun.Options) {
+		h.o.Logger.WarnContext(r.Context(), "start a passkey sign-in: the options are not JSON")
+		return nil
+	}
+	return &passkeyView{Options: begun.Options, Challenge: begun.Challenge}
 }
 
 // maxCredentialBytes bounds the browser's answer to a sign-in: base64url of the client data,

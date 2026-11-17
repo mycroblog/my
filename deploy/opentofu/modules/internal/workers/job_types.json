@@ -11,6 +11,7 @@
   "content.purge_remote_emojis",
   "content.purge_remote_statuses",
   "diagnostics.purge_error_counts",
+  "diagnostics.purge_ux_counts",
   "federation.deliver",
   "federation.fanout",
   "federation.fetch_featured",

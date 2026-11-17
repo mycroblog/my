@@ -1,326 +1,341 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# The web client and the client workspace (ADR-0025; the web context of scripts/changed-contexts.sh).
-# app/ is the Bun workspace of the TypeScript clients (app/ui = @my/ui, app/web). Bun installs the packages and runs
-# their scripts; Vite runs on Node.js from .tool-versions, because the scripts' `vite` is a `#!/usr/bin/env node`
-# bin. Do not add --bun (ADR-0025). The generated files the workspace reads are not committed (ADR-0081): every
-# task that reads them depends on web:generate, which skips the generators whose sources are unchanged.
+# The Bun workspace at the repository root (ADR-0025 §2, §10; the web context of scripts/changed-contexts.sh): its
+# members are the packages under web/, tools/i18n, pkg/mykit/ts, and pkg/mybot/ts, installed once from bun.lock.
+# Every tool runs on Bun alone (ADR-0025 §10). The checks of each member live with its area: web/docs in
+# tasks/docs.yml (site:check), tools/i18n and web/i18n in tasks/i18n.yml (web:lint lints web/i18n too, and the tasks
+# that read a package's compiled catalog compile it first), the published packages in tasks/mykit.yml, and the
+# development packages web/devtools (ADR-0168) and web/storybook, the one Storybook host of the stories (ADR-0165 §1),
+# the scenarios, demo and E2E tests of web/e2e (ADR-0015), the tokens of web/design-tokens (ADR-0059), the
+# components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the platform of
+# web/platform (ADR-0028 §17), the server data of web/app-data (ADR-0028 §6), the features of web/app-features and
+# the app of web/app (ADR-0025 §2) here.
 version: "3"
 
 vars:
-  # The packages of the client workspace that may have one license outside NPM_ALLOWED_LICENSES, each NAME=LICENSE
-  # (a NAME ending in `*` is a prefix; src/licenses.ts --exempt): any other package with that license still fails.
+  # The packages of the workspace that may have one license outside NPM_ALLOWED_LICENSES, each NAME=LICENSE
+  # (a NAME ending in `*` is a prefix; tools/i18n/src/licenses.ts --exempt): any other package with that license still
+  # fails.
   # - @img/sharp-libvips-*: the prebuilt libvips of sharp, the image library Astro uses when it builds the
-  #   documentation site (app/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
-  #   never shipped in the client or the server image.
-  NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later"
-  # internal/interface/web embeds the build from here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
-  # committed, so Go builds and tests need no Bun; go:bin embeds the real build.
+  #   documentation site (web/docs). The FSF lists LGPLv3 as compatible with AGPLv3, and the site is a build tool,
+  #   never shipped in the server image.
+  # - caniuse-lite: the browser data that browserslist reads at build time, under the @babel/core of TanStack Router's
+  #   route generator and Vite plugin (web/app); none of it is in the shipped bundle. The FSF lists CC BY 4.0 as
+  #   compatible with GPLv3. The check reads every installed package, so it cannot hold this to build time alone.
+  NPM_LICENSE_EXEMPTIONS: "@img/sharp-libvips-*=LGPL-3.0-or-later,caniuse-lite=CC-BY-4.0"
+  # internal/interface/web embeds what web:build places here with //go:embed all:dist (ADR-0028). Only its .gitkeep is
+  # committed, so Go builds and tests need no Bun; go:bin embeds what web:build placed.
   WEB_EMBED_DIR: internal/interface/web/dist
-  # The files bun fmt formats (web:fmt, web:fmt-check): the TypeScript and JavaScript of every TS package. The options
-  # are in the [fmt] section of the root bunfig.toml; .prettierignore lists the files it leaves alone, besides
-  # .gitignore's.
-  FMT_FILES: >-
-    'app/**/*.{ts,tsx,js,mjs}' 'pkg/mykit/ts/**/*.{ts,tsx,js,mjs}' 'pkg/mybot/ts/**/*.{ts,tsx,js,mjs}'
-    'tools/i18n/**/*.{ts,tsx,js,mjs}'
 
 tasks:
-  # web:lint-rules copies its violation fixtures into app/web/src while it runs, so the tasks that read app/web/src
-  # (tsc, Oxlint, knip, the build, Vitest, the token scan) run after it, never beside it.
   check:
-    desc: Run the offline checks of app/web and the workspace-wide client checks (Oxlint, knip, bun fmt, licenses, tokens), in parallel
-    deps: [lint-rules]
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
+    deps:
+      - fmt-check
+      - licenses
+      - typecheck
+      - lint
+      - direction
+      - knip
+      - { task: test, vars: { PACKAGES: "{{.PACKAGES}}" } }
+      - build
+      - build-check
+
+  # The app's Vite dev server on http://localhost:5173, which passes /api, /oauth and /auth on to the server of
+  # `docker compose up` (MY_SERVER=<origin> names another); `my serve -dev-vite-origin http://localhost:5173` loads the
+  # client from it instead of the build it embeds.
+  dev:
+    desc: Serve the app (web/app) on Vite's dev server at http://localhost:5173, talking to the server at MY_SERVER (https://my.localhost by default)
+    deps: [install, ":i18n:compile", routes]
+    dir: web/app
     cmds:
-      - task: check-after-lint-rules
+      - bun --bun vite {{.CLI_ARGS}}
 
-  # Without a desc, so `--list` leaves it out; not internal, so scripts/ci-coverage.sh can read it with --summary.
-  check-after-lint-rules:
-    deps: [static, fmt-check, lint-css, licenses, tokens, test, playwright-image-check]
+  # Its output is not committed (ADR-0081): the tasks that read the route tree depend on it.
+  routes:
+    desc: Generate the route tree of web/app (src/routeTree.gen.ts) from its file-based routes with TanStack Router's generator
+    deps: [install]
+    run: once
+    sources: [web/app/src/routes/**/*.tsx, web/app/scripts/routes.ts, bun.lock]
+    generates: [web/app/src/routeTree.gen.ts]
+    cmds:
+      - bun web/app/scripts/routes.ts
 
-  static:
-    desc: Run tsc on app/web, Oxlint, knip, and the Vite build in parallel (without web:lint-rules, which must not run beside them)
-    deps: [typecheck, oxlint, knip, dist]
+  # The stories of every layer in one Storybook (ADR-0165 §1), where the decider and an agent look at the tokens, the
+  # components and the screens. A worktree runs one dev server: while the one it recorded answers
+  # (`scripts/agentkit.sh feedback url`), this prints its URL and starts none.
+  storybook:
+    desc: Serve the Storybook host (web/storybook) on Storybook's dev server, unless the worktree's dev server already runs
+    deps: [install, ":i18n:compile", routes]
+    dir: web/storybook
+    cmds:
+      - |
+        if url=$("{{.ROOT_DIR}}/scripts/agentkit.sh" feedback url 2>/dev/null); then
+          echo "storybook: $url (already running in this worktree)"
+          exit 0
+        fi
+        bun --bun storybook dev --ci {{.CLI_ARGS}}
 
-  # It skips while app/node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
+  # The static build of the Storybook host (web/storybook/dist).
+  stories:
+    desc: Build the Storybook host (web/storybook) into web/storybook/dist
+    deps: [install, ":i18n:compile", routes]
+    dir: web/storybook
+    cmds:
+      - bun --bun storybook build -o dist --quiet
+
+  # The layout tests (ADR-0171 §1, §4): what only a layout engine decides of the design system's layout parts and
+  # overlays, on the stories of the built catalog, with the E2E tests' runner and no server
+  # (web/e2e/catalog/playwright.config.ts, the project `layout`). Chromium comes from
+  # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the stories context
+  # changes.
+  layout-test:
+    desc: Build the catalog (web:stories) and run the layout tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: layout-test-built
+
+  # CI builds the catalog once for the tests that open it.
+  layout-test-built:
+    desc: Run the layout tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project layout {{.CLI_ARGS}}
+
+  # The browser tests of the parts (the project `browser` of the same configuration): what a part does with an input
+  # only a browser has (an input method's composition, the caret's keys, the clipboard), on a story. No layout tests.
+  browser-test:
+    desc: Build the catalog (web:stories) and run the browser tests of web/e2e/catalog on its stories in Chromium (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: browser-test-built
+
+  browser-test-built:
+    desc: Run the browser tests of web/e2e/catalog on the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project browser {{.CLI_ARGS}}
+
+  # The check of every story at once (ADR-0171 §6, the project `stories` of the same configuration): each story of the
+  # built catalog at the minimum width, in both directions and, where its look depends on it, in the dark theme, for
+  # an error, sideways scrolling and axe. An upper layer: the slow suite runs it, no pull request and not `check`, and
+  # what it finds gets its test in the layer that missed it. It takes minutes, so its run has a limit of its own.
+  stories-check:
+    desc: Build the catalog (web:stories) and check every story of it in Chromium at 320 px, in en and right-to-left in ar-XB, for an error, sideways scrolling and axe (CLI_ARGS go to Playwright)
+    deps: [stories]
+    cmds:
+      - task: stories-check-built
+
+  stories-check-built:
+    desc: Check every story of the catalog that is already built in web/storybook/dist (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c catalog/playwright.config.ts --project stories --global-timeout 1800000 {{.CLI_ARGS}}
+
+  # What the visual evaluator sees (ADR-0169 §2): web/storybook/shot.ts prints the path of each shot.
+  shot:
+    desc: Screenshot a story of the running Storybook (its URL, or --section <story id>[#<element id>]) at the mobile, tablet and PC viewports in light and dark (--landscape rotates them, --lang <locale> shows it in a locale such as ar-XB), once per variant with --options <id>
+    deps: [install]
+    dir: web/storybook
+    cmds:
+      - bun --bun shot.ts {{.CLI_ARGS}}
+
+  # The demo server of web/e2e (ADR-0015 §8): the test build of bin/my with the web client, on a fresh database in
+  # .tmp/demo/ seeded with the scenario, at http://localhost:8787 (DEMO_PORT moves it) until Ctrl-C.
+  demo:
+    desc: Build the test build of bin/my (GO_TAGS=e2e_fakes) and run the demo server seeded with the scenario of web/e2e, printing its URL and the people's sign-ins
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    cmds:
+      - bun --conditions=@mycroblog/source web/e2e/src/server/main.ts
+
+  # The E2E tests (ADR-0015 §1), against the same demo server, which their global setup starts. Chromium comes from
+  # `bun --bun playwright install chromium` in web/e2e. Not a part of `check`: CI runs it when the e2e context changes.
+  e2e:
+    desc: Build the test build of bin/my (GO_TAGS=e2e_fakes) and run the Playwright tests of web/e2e against the demo server (CLI_ARGS go to Playwright)
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    cmds:
+      - task: e2e-built
+
+  # CI builds bin/my once and gives it to every job of the E2E tests (ADR-0079 §9), which run this.
+  e2e-built:
+    desc: Run the Playwright tests of web/e2e against the demo server, on the test build of bin/my that is already there (CLI_ARGS go to Playwright)
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test {{.CLI_ARGS}}
+
+  typecheck:
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e with tsc
+    deps: [install, ":i18n:compile", routes]
+    cmds:
+      - cd web/design-tokens && bun --bun tsc -p .
+      - cd web/design-system && bun --bun tsc -p .
+      - cd web/app-components && bun --bun tsc -p .
+      - cd web/platform && bun --bun tsc -p .
+      - cd web/app-data && bun --bun tsc -p .
+      - cd web/app-features && bun --bun tsc -p .
+      - cd web/app && bun --bun tsc -p .
+      - cd web/devtools && bun --bun tsc -p .
+      - cd web/storybook && bun --bun tsc -p .
+      - cd web/e2e && bun --bun tsc -p .
+
+  # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3), and
+  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17). The rules of the styles
+  # (ADR-0171 §2, §3) refuse a colour that is no token (restrict/token-colors, and colors.js for the CSS, which Oxlint
+  # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
+  # (restrict/layout-parts, restrict/viewport-breakpoints).
+  lint:
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
+    deps: [install, ":i18n:compile", routes]
+    cmds:
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+      - bun test ./web/devtools/src/restrictions.test.js
+      - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/app-data web/app-features web/app web/storybook web/i18n
+
+  # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
+  direction:
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
+    cmds:
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+
+  knip:
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
+    deps: [install, ":i18n:compile", routes]
+    cmds:
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
+
+  # A package's manifest says how its tests run (its `test` script) and what they depend on: scripts/changed-web-packages.sh
+  # reads there which packages there are and which a change reaches (ADR-0079 §18).
+  test:
+    desc: Run the tests of the packages under web/ (web/design-tokens' fail on a stale internal/domain/instance/theme_tokens.gen.go), side by side, each kind on its DOM - every package, or those of PACKAGES (PACKAGES=app,app-features; `none` for none)
+    deps: [install, ":i18n:compile", routes]
+    vars:
+      SELECTED:
+        sh: |
+          all="$(scripts/changed-web-packages.sh --all)"
+          case '{{.PACKAGES}}' in
+            "") echo "$all" ;;
+            none) ;;
+            *)
+              for p in $(echo '{{.PACKAGES}}' | tr ',' ' '); do
+                echo "$all" | grep -qx -- "$p" || { echo "web:test: web/$p is no package with tests: $(echo $all)" >&2; exit 1; }
+                echo "$p"
+              done
+              ;;
+          esac
+    cmds:
+      - task: test-packages
+        vars: { PACKAGES: "{{.SELECTED}}" }
+
+  # The packages side by side, as many at once as there are cores and no more: a test process uses one core, and a
+  # test that waits for a core takes that much longer and passes its limit (nine packages at once on a runner of four
+  # cores did). The packages' tests share nothing while they run. The packages whose tests run on a DOM share the
+  # cores: each one's `dom-tests` takes one of BESIDE parts of them, BESIDE being how many of them run at once.
+  test-packages:
+    internal: true
+    vars:
+      JOBS:
+        sh: |
+          n=$(echo '{{.PACKAGES}}' | wc -w)
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
+          echo "$n"
+      BESIDE:
+        sh: |
+          n=0
+          for p in $(echo '{{.PACKAGES}}' | tr '\n' ' '); do
+            if grep -q 'dom-tests' "web/$p/package.json"; then n=$((n + 1)); fi
+          done
+          cores=$(nproc)
+          if [ "$n" -gt "$cores" ]; then n=$cores; fi
+          echo "$n"
+    cmds:
+      - |
+        echo '{{.PACKAGES}}' | tr ' ' '\n' | grep -v '^$' | xargs -P {{.JOBS}} -I {} \
+          "{{.ROOT_DIR}}/scripts/task.sh" web:test-package PACKAGE={} BESIDE={{.BESIDE}}
+
+  # The package's `test` script runs the three kinds of test file (ADR-0171 §4), each kind in processes of its own:
+  # `*.test.ts(x)` with no DOM, `*.dom.test.tsx` on happy-dom and `*.jsdom.test.tsx`, which happy-dom cannot decide, on
+  # jsdom. `dom-tests` of @my/devtools, which a package with such tests depends on, runs the files of a DOM side by
+  # side, on a preload that registers the DOM before a test module loads. The condition of a package above
+  # @mycroblog/mykit reads it from its TypeScript sources, as tsconfig.json does.
+  # web/e2e's runs the unit tests of the fake API (ADR-0171 §5), under src alone: the Playwright specs beside it are
+  # the E2E tests, which web:e2e runs against a server.
+  test-package:
+    desc: Run the tests of one web package (PACKAGE=app; web:test runs the packages a change reaches, side by side)
+    requires: { vars: [PACKAGE] }
+    dir: web/{{.PACKAGE}}
+    env:
+      DOM_TESTS_BESIDE: "{{.BESIDE}}"
+    cmds:
+      - bun run test
+
+  # The tokens a server theme may override, for Go (ADR-0059, ADR-0081): committed, since Go reads it. Bun only: the
+  # generator reads no node_modules.
+  tokens-gen:
+    desc: Regenerate internal/domain/instance/theme_tokens.gen.go from @my/design-tokens (commit the result)
+    sources: [web/design-tokens/src/tokens.ts, web/design-tokens/src/theme-tokens.ts]
+    generates: [internal/domain/instance/theme_tokens.gen.go]
+    cmds:
+      - bun web/design-tokens/src/theme-tokens.ts
+
+  # The checks of what the production build holds (ADR-0171 §2), which need no browser and no server. The build is the
+  # app's (web/app), which this builds apart from web:build's, into .tmp/, so that the two can run at once. It fails
+  # when the output contains @my/devtools, which only the Storybook host loads, lacks the license notice of a font it
+  # ships, or holds the editor in a chunk that an entry loads with the page.
+  build-check:
+    desc: Build web/app for production into .tmp/build-check and fail if the build contains @my/devtools (ADR-0168 §3), ships a font without its license notice, or loads Lexical with an entry
+    deps: [install, ":i18n:compile", routes]
+    cmds:
+      - cd web/app && bun --bun vite build --logLevel warn --outDir ../../.tmp/build-check --emptyOutDir
+      - bun web/devtools/src/absent.ts .tmp/build-check
+      - bun web/app/scripts/build-check.ts .tmp/build-check
+
+  # It skips while node_modules exists and the manifests are unchanged, so that the tasks of several processes (the
   # parallel steps of a CI job, ADR-0079) never install at once after the job's first install.
   install:
-    desc: Install the pinned client workspace dependencies (app/bun.lock)
+    desc: Install the pinned dependencies of the workspace (bun.lock)
     run: once
-    dir: app
-    sources: [bun.lock, bunfig.toml, package.json, "*/package.json", ../pkg/mykit/ts/package.json, ../pkg/mybot/ts/package.json]
+    sources: [bun.lock, bunfig.toml, package.json, "web/*/package.json", tools/i18n/package.json, pkg/mykit/ts/package.json, pkg/mybot/ts/package.json]
     status:
       - test -d node_modules
     cmds:
       - bun install --frozen-lockfile
 
-  generate:
-    desc: Generate the uncommitted files the client workspace reads (route tree, i18n accessors and client pseudo-locales, theme tokens)
-    run: once
-    deps: [routes-gen, tokens-gen-ts, ":i18n:gen-ts"]
-
-  routes-gen:
-    desc: Generate app/web/src/routeTree.gen.ts from app/web/src/routes without Vite (app/web/scripts/routes.ts)
-    deps: [install]
-    run: once
-    sources:
-      - "app/web/src/routes/**/*"
-      - app/web/scripts/routes.ts
-      - app/bun.lock
-    generates:
-      - app/web/src/routeTree.gen.ts
-    cmds:
-      - cd app/web && node scripts/routes.ts
-
-  typecheck:
-    desc: Type-check app/web with tsc (incremental, node_modules/.cache/tsc)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run typecheck
-
-  # web:check builds into app/web/dist only, never into internal/interface/web/dist that the Go builds embed.
-  dist:
-    desc: Build app/web into app/web/dist (fails when React Compiler compiled nothing or skipped a function)
-    deps: [generate]
-    run: once
-    dir: app
-    cmds:
-      - bun run build
-
+  # What the server embeds (internal/interface/web): the Vite build of web/app, whose manifest the shell's tags come
+  # from (ADR-0028 §4), and the files of web/brand, whose icons the server serves at the root and lists in the Web App
+  # Manifest, and last the list of the ETags of those files, which the server reads instead of the files when it starts.
+  # The build fails when React Compiler skips a function (ADR-0025 §9). The Dockerfile's stage web and the root
+  # compose.yaml (scripts/dev-compose.sh) run it too.
   build:
-    desc: Build app/web and copy the build to internal/interface/web/dist for embedding
-    deps: [dist]
+    desc: Build web/app with Vite into internal/interface/web/dist, which the Go server embeds, with the brand assets of web/brand
+    deps: [install, ":i18n:compile", routes]
     cmds:
       - find {{.WEB_EMBED_DIR}} -mindepth 1 ! -name .gitkeep -delete
-      - cp -R app/web/dist/. {{.WEB_EMBED_DIR}}/
-
-  dev:
-    desc: Start the Vite dev server of app/web on http://localhost:5173 (give it to `my serve -dev-vite-origin`, CONTRIBUTING.md)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run dev
+      - cd web/app && bun --bun vite build --logLevel warn
+      - cp web/brand/* {{.WEB_EMBED_DIR}}/
+      - bun web/app/scripts/etags.ts {{.WEB_EMBED_DIR}}
 
   licenses:
-    desc: Fail on client npm dependency licenses incompatible with AGPL-3.0
-    deps: [install, ":i18n:install"]
+    desc: Fail on npm dependency licenses of the workspace incompatible with AGPL-3.0
+    deps: [install]
     dir: tools/i18n
     cmds:
-      - bun run src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../app/node_modules
+      - bun src/licenses.ts {{.NPM_ALLOWED_LICENSES}} --exempt {{shellQuote .NPM_LICENSE_EXEMPTIONS}} ../../node_modules
 
-  lint:
-    desc: Lint the client workspace, the tests of the Oxlint restrictions first, then Oxlint, knip, and no 100vh in CSS in parallel
-    deps: [lint-rules]
-    cmds:
-      - task: lint-after-lint-rules
-
-  lint-after-lint-rules:
-    deps: [oxlint, knip, lint-css]
-
-  oxlint:
-    desc: Run Oxlint on the client workspace (app/.oxlintrc.json)
-    deps: [generate]
-    dir: app
-    cmds:
-      - bun run lint
-
-  lint-rules:
-    desc: Test the Oxlint restrictions and their violation fixtures (app/oxlint), which it copies into app/web/src
-    deps: [generate]
-    run: once
-    dir: app
-    cmds:
-      - bun run lint:rules
-
-  knip:
-    desc: Find unused files, exports, and dependencies of the client workspace with knip
-    deps: [generate]
-    dir: app
-    cmds:
-      - bun run knip
-
-  # Bun only: it reads no node_modules, so it needs no install.
+  # Bun only: it reads no node_modules, so it needs no install. The [fmt] section of bunfig.toml holds the options and
+  # the files: a bare `bun fmt` at the root is the same command.
   fmt:
-    desc: Format the TypeScript and JavaScript of app/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (the preflight checks it, so run it before committing them)
+    desc: Format the TypeScript and JavaScript of web/, pkg/mykit/ts, pkg/mybot/ts, and tools/i18n with bun fmt (the preflight checks it, so run it before committing them)
     cmds:
-      - bun fmt {{.FMT_FILES}}
+      - bun fmt
 
-  # The i18n, mail, and mykit checks run it too, for their packages' files.
+  # The i18n, site, and mykit checks run it too, for their packages' files.
   fmt-check:
-    desc: Fail if bun fmt would change a TypeScript or JavaScript file of the TS packages (scripts/task.sh web:fmt fixes them)
+    desc: Fail if bun fmt would change a TypeScript or JavaScript file of the workspace (scripts/task.sh web:fmt fixes them)
     run: once
     cmds:
-      - bun fmt --check {{.FMT_FILES}}
-
-  lint-css:
-    desc: Fail when CSS uses 100vh (docs/architecture/web-client/README.md D5)
-    cmds:
-      - >-
-        ! grep -rn --include='*.css' '100vh' app/ui/src app/web/src
-        || { echo 'CSS must not use 100vh; use svh / dvh (docs/architecture/web-client/README.md D5)' >&2; exit 1; }
-
-  tokens:
-    desc: Check the @my/ui design tokens, WCAG AA contrast of every token pair, no palette / arbitrary colors or token values, motion only under motion-safe, the committed Go token list up to date
-    deps: [tokens-gen-ts]
-    dir: app/ui
-    cmds:
-      - bun run check-tokens
-
-  tokens-gen:
-    desc: Regenerate the list of the tokens a server theme may override (ADR-0059) from app/ui/src/theme.css and tokens.ts (commit the Go file)
-    deps: [install]
-    run: once
-    sources: &tokens-sources
-      - app/ui/src/theme.css
-      - app/ui/src/tokens.ts
-      - app/ui/src/color.ts
-      - app/ui/scripts/theme-tokens.ts
-      - app/ui/scripts/theme-source.ts
-    generates:
-      - app/ui/src/themeTokens.gen.ts
-      - internal/domain/instance/theme_tokens.gen.go
-    cmds:
-      - cd app/ui && bun run scripts/theme-tokens.ts
-
-  tokens-gen-ts:
-    desc: Generate app/ui/src/themeTokens.gen.ts, the token list the theme editor and the @my/ui checks read
-    deps: [install]
-    run: once
-    sources: *tokens-sources
-    generates:
-      - app/ui/src/themeTokens.gen.ts
-    cmds:
-      - cd app/ui && bun run scripts/theme-tokens.ts --ts
-
-  test:
-    desc: Run the app/web component tests with Vitest (jsdom + MSW); SHARD=1/2 runs one of two shards
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run test{{if .SHARD}} --shard={{.SHARD}}{{end}}
-
-  # Playwright runs against `vite preview` of the fresh build, and the server-rendered pages against `my serve` on
-  # SQLite from the fresh bin/my (app/web/e2e/server.ts). E2E_MATRIX=full also runs the width and locale
-  # projects (the slow suite); the default is the primary project alone (app/web/playwright.config.ts). It runs every test in one go; CI
-  # (web-e2e.yml) builds once and runs the tests as Playwright shards in the pinned Playwright image. Locally,
-  # install the browser once with web:e2e-install. Both servers listen on free ports picked per run
-  # (E2E_PREVIEW_PORT / E2E_SERVER_PORT fix them), so parallel runs in several worktrees stay apart;
-  # E2E_BASE_URL / E2E_SERVER_URL test servers started elsewhere instead.
-  # The screen stories (ADR-0165 §1): each renders the whole app at a route, with MSW in the browser playing the server
-  # with the features' default handlers. The Storybook composes the @my/ui Storybook: ui:storybook on port 6006 in
-  # development, and the static build of web:storybook-build carries the kit's build under ui/.
-  storybook:
-    desc: Start the app/web Storybook of the screens on http://localhost:6007 (start ui:storybook too for the components)
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run storybook
-
-  storybook-build:
-    desc: Build the static Storybook of the screens into app/web/storybook-static, with the @my/ui Storybook under ui/
-    deps: [generate, ":ui:storybook-build"]
-    cmds:
-      - cd app/web && bun run build-storybook
-      - rm -rf app/web/storybook-static/ui
-      - cp -R app/ui/storybook-static app/web/storybook-static/ui
-
-  story-test:
-    desc: Run the app/web screen stories in Chromium with their play functions and axe (no screenshots; ui:test-install installs it); SHARD=1/2 runs one of two shards
-    deps: [generate]
-    dir: app/web
-    cmds:
-      - bun run test:stories{{if .SHARD}} --shard={{.SHARD}}{{end}}
-
-  # The look of a change before its pull request (app/web/scripts/shot.ts): no Docker and no Storybook build. It
-  # starts the Storybook dev server of app/web or app/ui on a free port and leaves it for the next call (it stops
-  # after 30 minutes without one; `-- --stop` stops it). Standard output is the PNG paths, one a line, each followed
-  # by an `overflow: <selector>` line for whatever reaches past the viewport or scrolls sideways at that width;
-  # .tmp/agentkit/shots/manifest.json lists the shots for `agentkit pr open`. interactive, so that the lines carry
-  # no task prefix.
-  shot:
-    desc: Render stories to PNGs in .tmp/agentkit/shots and flag sideways overflow (`-- <story id | story file | route | L1 file> ... [--width 390,1440] [--theme light,dark] [--locale en,ja]`, or `-- --changed`)
-    deps: [generate]
-    dir: app/web
-    silent: true
-    interactive: true
-    cmds:
-      - node scripts/shot.ts {{.CLI_ARGS}}
-
-  # web:story-test holds every story to the budget of its screen's L1 file (app/web/l4/budget.ts). This fills in what
-  # is missing and never changes a budget or a baseline that exists: those are edited by hand, for the owner to review.
-  budget-init:
-    desc: Write a budget into the L1 files of the screens that have none, from what their stories show now (and app/web/l4/screenBaseline.json when missing)
-    deps: [generate]
-    dir: app/web
-    env:
-      BUDGET: init
-    cmds:
-      - bun run test:stories
-
-  e2e:
-    desc: Run the web E2E tests with Playwright (E2E_MATRIX=full adds the width and locale projects)
-    deps: [":go:bin"]
-    dir: app/web
-    cmds:
-      - bun run e2e
-
-  # The demo server (ADR-0015 §8): starts the development Mailpit, builds bin/my as the test build (GO_TAGS=e2e_fakes,
-  # the fake payment provider, the fake search index, and the fake push service), and runs `node e2e/server.ts demo` on a fresh database under
-  # .tmp/demo on every start, with Web Push on (a VAPID key generated on the spot, `my dev push-service` on
-  # https://localhost:8930 as its only push service), which applies the demo scenario (app/web/demo) and prints the URL,
-  # Mailpit's web UI, and the people's sign-ins. DEMO_PORT moves it from 8787, PUSH_SERVICE_PORT the fake push service
-  # from 8930. It runs until Ctrl-C, and needs Docker. bin/my stays the test build afterwards: never release it (go:bin
-  # without GO_TAGS builds the normal one again).
-  demo:
-    desc: Start a demo server with the demo scenario, the fake payment provider and push service, its email in Mailpit (needs Docker)
-    deps: [install]
-    cmds:
-      - task: :docker:mailpit
-      - task: :go:bin
-        vars: { GO_TAGS: e2e_fakes }
-      - cmd: >-
-          cd app/web && E2E_DEMO_SERVER_PORT={{.DEMO_PORT | default "8787"}} E2E_DEMO_SERVER_DIR="{{.ROOT_DIR}}/.tmp/demo"
-          E2E_PUSH_SERVICE_PORT={{.PUSH_SERVICE_PORT | default "8930"}} node e2e/server.ts demo
-        ignore_error: true
-
-  # The L4 task tests (ADR-0110 §7, ADR-0015; app/web/l4/run.ts): Claude Code, non-interactive, does the tasks of the
-  # screens' L1 files through the Playwright MCP server (ARIA snapshots only) against the demo server of web:demo
-  # (`node e2e/server.ts demo`: the test build with the demo scenario, its email in Mailpit), and the steps,
-  # backtracks, and lostness of each task go to .tmp/l4/results.json. SCREEN=<name>[,<name>] picks screens,
-  # SINCE=<commit> the screens changed since then, neither every screen; CAP bounds the tasks. DRY_RUN=1 does
-  # everything but call the agent. It starts Mailpit as web:demo does (needs Docker), unless MAILPIT_RUNNING=1 says
-  # that it already runs (the Nightly job starts it with .github/actions/start-mailpit). It needs `claude` on PATH,
-  # signed in or with the Workload Identity Federation variables (Nightly), and the Chromium of web:e2e-install.
-  l4:
-    desc: Run the L4 task tests of the screens' L1 with Claude Code on the demo server (SCREEN=<name>, DRY_RUN=1 without the agent; needs Docker for Mailpit)
-    deps: [install]
-    cmds:
-      - task: :docker:mailpit
-        if: '[ "{{.MAILPIT_RUNNING}}" != 1 ]'
-      - task: :go:bin
-        vars: { GO_TAGS: e2e_fakes }
-      - >-
-        cd app/web && node l4/run.ts --cap {{.CAP | default "10"}} --out "{{.ROOT_DIR}}/.tmp/l4/results.json"
-        {{if .SCREEN}}--screen {{.SCREEN}}{{end}} {{if .SINCE}}--since {{.SINCE}}{{end}} {{if .DRY_RUN}}--dry-run{{end}}
-
-  # Files or updates one issue per screen for the tasks of .tmp/l4/results.json over lostness 0.4 or not completed (app/web/l4/issues.ts),
-  # with `gh`; DRY_RUN=1 prints them instead.
-  l4-issues:
-    desc: File or update the issues of the last web:l4 run's tasks over lostness 0.4 or not completed (DRY_RUN=1 prints them)
-    dir: app/web
-    cmds:
-      - node l4/issues.ts --results "{{.ROOT_DIR}}/.tmp/l4/results.json" {{if .DRY_RUN}}--dry-run{{end}}
-
-  e2e-install:
-    desc: Download the Playwright browsers that web:e2e uses, Firefox and WebKit for the emoji font spec (local runs only)
-    deps: [install]
-    dir: app/web
-    cmds:
-      - bun run playwright install chromium firefox webkit
-
-  playwright-image-check:
-    desc: Fail if a workflow's Playwright image or a playwright package version differs from PLAYWRIGHT_IMAGE
-    env:
-      PLAYWRIGHT_IMAGE: "{{.PLAYWRIGHT_IMAGE}}"
-    cmds:
-      - scripts/playwright-image-check.sh
+      - bun fmt --check

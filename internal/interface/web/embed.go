@@ -7,12 +7,12 @@ import (
 	"io/fs"
 )
 
-// dist is the Vite build of app/web, including .vite/manifest.json (hence all:).
+// dist is the Vite build of the web client, including .vite/manifest.json (hence all:).
 //
 //go:embed all:dist
 var dist embed.FS
 
-// Embedded returns the build of app/web embedded in the binary. Without a build (only
+// Embedded returns the build of the web client embedded in the binary. Without a build (only
 // dist/.gitkeep) it has no .vite/manifest.json.
 func Embedded() fs.FS {
 	sub, err := fs.Sub(dist, "dist")

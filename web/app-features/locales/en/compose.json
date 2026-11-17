@@ -1,0 +1,810 @@
+{
+  "compose.title.new": {
+    "defaultMessage": "New post",
+    "description": "The title of the post composer when it writes a new post."
+  },
+  "compose.title.reply": {
+    "defaultMessage": "Reply",
+    "description": "The title of the post composer when it writes a reply to a post."
+  },
+  "compose.title.quote": {
+    "defaultMessage": "Quote",
+    "description": "The title of the post composer when it writes a post that quotes another."
+  },
+  "compose.title.edit": {
+    "defaultMessage": "Edit post",
+    "description": "The title of the post composer when it edits the reader's post."
+  },
+  "compose.edit.fixed": {
+    "defaultMessage": "{visibility} · An edit cannot change who can see it",
+    "description": "The one line at the top of the composer while it edits a post, naming what an edit cannot change; visibility is the post's visibility (compose.visibility.*)."
+  },
+  "compose.close": {
+    "defaultMessage": "Close",
+    "description": "The button at the end of the composer's head that leaves it; a written post is discarded, with Undo."
+  },
+  "compose.load_failed": {
+    "defaultMessage": "The post form could not be loaded.",
+    "description": "In place of the post composer when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.editor_failed": {
+    "defaultMessage": "The text field could not be loaded.",
+    "description": "In place of the composer's text or content warning field when its code could not be loaded (the network), beside compose.load_retry."
+  },
+  "compose.load_retry": {
+    "defaultMessage": "Try again",
+    "description": "After compose.load_failed or compose.editor_failed: loads the composer or its field again."
+  },
+  "compose.post": {
+    "defaultMessage": "Post",
+    "description": "The composer's primary button, which posts what is written."
+  },
+  "compose.save": {
+    "defaultMessage": "Save",
+    "description": "The composer's primary button while it edits the reader's post: it saves the edit."
+  },
+  "compose.saved": {
+    "defaultMessage": "Edit saved",
+    "description": "The notice at the bottom of the page after the composer saved an edit of the reader's post and closed; the post shows the edit everywhere."
+  },
+  "compose.save_failed": {
+    "defaultMessage": "Saving did not finish. Try again.",
+    "description": "The error before Save when an edit of the reader's post got no answer from the server (the network); pressing Save sends it again."
+  },
+  "compose.text.placeholder": {
+    "defaultMessage": "What's on your mind?",
+    "description": "The placeholder of the composer's empty text."
+  },
+  "compose.text.label": {
+    "defaultMessage": "Text",
+    "description": "The name of the composer's text field, for assistive technology."
+  },
+  "compose.cw.label": {
+    "defaultMessage": "Content warning",
+    "description": "The name of the content warning field, for assistive technology."
+  },
+  "compose.cw.placeholder": {
+    "defaultMessage": "What the reader is warned of",
+    "description": "The placeholder of the content warning field: the warning readers see before they open the post."
+  },
+  "compose.cw.on": {
+    "defaultMessage": "Add a content warning",
+    "description": "The tool of the composer's row that adds a content warning field."
+  },
+  "compose.cw.off": {
+    "defaultMessage": "Remove the content warning",
+    "description": "The same tool while the post has a content warning: it removes it."
+  },
+  "compose.emoji": {
+    "defaultMessage": "Add emoji",
+    "description": "The button at the end of the composer's text that opens the emoji picker, which writes the emoji picked at the caret; also the title of the picker's sheet on a phone."
+  },
+  "compose.suggest.list": {
+    "defaultMessage": "{kind, select, account {Accounts} hashtag {Hashtags} other {Emoji}}",
+    "description": "The name, for assistive technology, of the suggestions that open under the line of the composer's text for the word being typed at the caret: accounts for @, hashtags for #, emoji for :. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.account": {
+    "defaultMessage": "{name}, {handle}",
+    "description": "The name, for assistive technology, of an account among the composer's suggestions, which shows its avatar, name and handle on one row. name is its display name in words (custom emoji as their :shortcode:); handle is @user for a local account, @user@domain for another server's."
+  },
+  "compose.suggest.uses": {
+    "defaultMessage": "{count, plural, one {# post} other {# posts}}",
+    "description": "At the end of a hashtag's row among the composer's suggestions: how many posts carry the hashtag. count is how many."
+  },
+  "compose.suggest.hashtag": {
+    "defaultMessage": "#{name}, {count, plural, one {# post} other {# posts}}",
+    "description": "The name, for assistive technology, of a hashtag among the composer's suggestions: the tag with its # sign, and how many posts carry it. name is the tag without #; count is how many."
+  },
+  "compose.suggest.loading": {
+    "defaultMessage": "Loading suggestions…",
+    "description": "The one line in place of the composer's suggestions while they are asked for, after a moment; also announced."
+  },
+  "compose.suggest.none": {
+    "defaultMessage": "{kind, select, account {No matching accounts} hashtag {No matching hashtags} other {No matching emoji}}",
+    "description": "The one line in place of the composer's suggestions when none match the word being typed at the caret; also announced. The word can still be posted as typed. kind is account, hashtag or emoji."
+  },
+  "compose.suggest.count": {
+    "defaultMessage": "{count, plural, one {# suggestion} other {# suggestions}}",
+    "description": "Announced to assistive technology when the composer's suggestions open or change: how many there are (the text field cannot say it is expanded). count is how many, at least 1."
+  },
+  "compose.attach": {
+    "defaultMessage": "Add images",
+    "description": "The tool of the composer's row that opens the file picker to attach images (or a video or an audio file)."
+  },
+  "compose.poll.on": {
+    "defaultMessage": "Add a poll",
+    "description": "The tool of the composer's row that adds a poll to the post."
+  },
+  "compose.poll.off": {
+    "defaultMessage": "Remove the poll",
+    "description": "The same tool while the post has a poll, and the remove of the poll's card."
+  },
+  "compose.poll.option": {
+    "defaultMessage": "Option {n}",
+    "description": "The placeholder and the name of a poll's option. n is its place, from 1."
+  },
+  "compose.poll.remove_option": {
+    "defaultMessage": "Remove option {n}",
+    "description": "The button at the end of a poll's option that takes it out. n is its place, from 1."
+  },
+  "compose.poll.add": {
+    "defaultMessage": "Add an option",
+    "description": "The last line of a poll's options, which adds one."
+  },
+  "compose.poll.duration": {
+    "defaultMessage": "Ends in",
+    "description": "The name of the poll's duration choices."
+  },
+  "compose.poll.ends_in": {
+    "defaultMessage": "Ends in {duration}",
+    "description": "The poll's duration control, as it reads. duration is one of the choices (5 minutes, 1 day)."
+  },
+  "compose.poll.minutes": {
+    "defaultMessage": "{count, plural, one {# minute} other {# minutes}}",
+    "description": "A choice of the poll's duration, in minutes; also what the duration control reads."
+  },
+  "compose.poll.hours": {
+    "defaultMessage": "{count, plural, one {# hour} other {# hours}}",
+    "description": "A choice of the poll's duration, in hours."
+  },
+  "compose.poll.days": {
+    "defaultMessage": "{count, plural, one {# day} other {# days}}",
+    "description": "A choice of the poll's duration, in days."
+  },
+  "compose.poll.multiple": {
+    "defaultMessage": "Allow several choices",
+    "description": "The checkbox of the poll that lets a vote choose several options."
+  },
+  "compose.poll.hide_totals": {
+    "defaultMessage": "Hide the counts until it ends",
+    "description": "The checkbox of the poll that hides how many voted for each option until it ends."
+  },
+  "compose.poll.invalid": {
+    "defaultMessage": "A poll needs {min} to {max} different options of at most {length} characters each, and must last from 5 minutes to 30 days.",
+    "description": "The error before Post when the poll has a blank option or two the same; the server's own words (errors.status.poll_invalid)."
+  },
+  "compose.audience": {
+    "defaultMessage": "Who can see it",
+    "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
+  },
+  "compose.audience.tool": {
+    "defaultMessage": "{visibility, select, public {Who can see it: Public} local {Who can see it: Local} unlisted {Who can see it: Quiet public} private {Who can see it: Followers only} other {Who can see it: Direct}}{limited, select, yes {, replies, boosts or quotes limited} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Local, Quiet public, Followers only, Direct)."
+  },
+  "compose.audience.everyone": {
+    "defaultMessage": "Anyone",
+    "description": "A choice of the permissions submenu: anyone who may see the post."
+  },
+  "compose.audience.followers": {
+    "defaultMessage": "Followers",
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions."
+  },
+  "compose.audience.mentioned": {
+    "defaultMessage": "People you mention",
+    "description": "A choice of the permissions submenu: the accounts the post mentions."
+  },
+  "compose.audience.nobody": {
+    "defaultMessage": "Only you",
+    "description": "A choice of the permissions submenu: the author alone."
+  },
+  "compose.approval": {
+    "defaultMessage": "Allow others with your approval",
+    "description": "A checkbox under the audiences of reply, boost or quote in the permissions submenu: people outside the chosen audience may still do it, once the author approves."
+  },
+  "compose.permission.now": {
+    "defaultMessage": "{audience}{approval, select, yes {, others with your approval} other {}}",
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval)."
+  },
+  "compose.visibility.public": {
+    "defaultMessage": "Public",
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
+  },
+  "compose.visibility.local": {
+    "defaultMessage": "Local",
+    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere."
+  },
+  "compose.visibility.unlisted": {
+    "defaultMessage": "Quiet public",
+    "description": "A visibility in the audience menu: public, kept out of the public timelines."
+  },
+  "compose.visibility.private": {
+    "defaultMessage": "Followers only",
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions."
+  },
+  "compose.visibility.direct": {
+    "defaultMessage": "Direct",
+    "description": "A visibility in the audience menu: the accounts the post mentions alone."
+  },
+  "compose.visibility.public.about": {
+    "defaultMessage": "Anyone, on any server",
+    "description": "The line under Public in the audience menu: who sees the post."
+  },
+  "compose.visibility.local.about": {
+    "defaultMessage": "Everyone on {server}, and your followers elsewhere",
+    "description": "The line under Local in the audience menu. server is this server's domain."
+  },
+  "compose.visibility.unlisted.about": {
+    "defaultMessage": "Anyone, kept out of the local and federated timelines",
+    "description": "The line under Quiet public in the audience menu."
+  },
+  "compose.visibility.private.about": {
+    "defaultMessage": "Your followers and the people you mention",
+    "description": "The line under Followers only in the audience menu."
+  },
+  "compose.visibility.direct.about": {
+    "defaultMessage": "Only the people you mention",
+    "description": "The line under Direct in the audience menu."
+  },
+  "compose.interactions": {
+    "defaultMessage": "Who can reply, boost and quote",
+    "description": "The name of the audience menu's second group, apart from the visibilities, for assistive technology: who may reply to, boost and quote the post."
+  },
+  "compose.permissions": {
+    "defaultMessage": "Who can reply, boost and quote",
+    "description": "The row of the audience menu that opens the submenu of who may reply to, boost and quote the post, and the submenu's title beside its back button."
+  },
+  "compose.interaction.reply": {
+    "defaultMessage": "Who can reply",
+    "description": "A row of the permissions submenu, beside who may reply to the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.interaction.announce": {
+    "defaultMessage": "Who can boost",
+    "description": "A row of the permissions submenu, beside who may boost the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.interaction.quote": {
+    "defaultMessage": "Who can quote",
+    "description": "A row of the permissions submenu, beside who may quote the post now, and the title of the panel it opens (its audiences), beside its back button."
+  },
+  "compose.language": {
+    "defaultMessage": "Language",
+    "description": "The caption of the language menu of the composer, and the start of its tool's name for assistive technology."
+  },
+  "compose.language.tool": {
+    "defaultMessage": "Language: {language}",
+    "description": "The name of the composer's language tool for assistive technology. language is the post's language, by its name in its own words."
+  },
+  "compose.remaining": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What the composer's count says to assistive technology while the post is within its limit."
+  },
+  "compose.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What the composer's count says to assistive technology once the post is past its limit."
+  },
+  "compose.too_long": {
+    "defaultMessage": "{max, plural, one {The text and content warning must be at most # character.} other {The text and content warning must be at most # characters.}}",
+    "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
+  },
+  "compose.quote_remote": {
+    "defaultMessage": "To quote a post from another server, make this post Public or Quiet public.",
+    "description": "The note under the visibilities when the post quotes a post from another server, whose other visibilities are disabled: which ones to choose."
+  },
+  "compose.replying_to": {
+    "defaultMessage": "Replying to {handle}",
+    "description": "What the post replied to says to assistive technology, above the composer's text. handle is its author's, as @user@domain."
+  },
+  "compose.reply_waits": {
+    "defaultMessage": "Others see your reply once {handle} approves it",
+    "description": "A line over the send row while writing a reply to a post whose author approves replies by hand: until that author approves it, only the writer sees the reply. handle is the author's, as @user@domain."
+  },
+  "compose.quote.remove": {
+    "defaultMessage": "Remove the quote",
+    "description": "The button on the quoted post in the composer that takes it out of the post."
+  },
+  "compose.description": {
+    "defaultMessage": "Description",
+    "description": "The label of an image's description (alternative text) beside it in the composer."
+  },
+  "compose.description.hint": {
+    "defaultMessage": "What the image shows, for those who cannot see it",
+    "description": "The placeholder of an image's description in the composer."
+  },
+  "compose.description.missing": {
+    "defaultMessage": "No description yet",
+    "description": "The caution under an image's empty description in the composer."
+  },
+  "compose.description.required": {
+    "defaultMessage": "This server requires a description (alt text) for every image. Add one to each image before posting.",
+    "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
+  },
+  "compose.uploading": {
+    "defaultMessage": "Uploading…",
+    "description": "Beside an image while its file uploads."
+  },
+  "compose.processing": {
+    "defaultMessage": "Processing…",
+    "description": "Beside an image while the server processes the uploaded file."
+  },
+  "compose.upload_failed": {
+    "defaultMessage": "The upload did not finish.",
+    "description": "Beside an image whose upload failed, before its retry button."
+  },
+  "compose.media_failed": {
+    "defaultMessage": "The image could not be loaded.",
+    "description": "Beside an image of a draft opened from the server whose file could not be loaded, before the button that loads it again (compose.retry); the draft still keeps it."
+  },
+  "compose.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button that uploads a failed image again, or loads again a draft's image that could not be loaded."
+  },
+  "compose.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button at the end of an image's row that takes it out of the post."
+  },
+  "compose.wait_uploads": {
+    "defaultMessage": "Wait until every image has uploaded, or remove the ones that failed.",
+    "description": "The error before Post when it is pressed while an image uploads or failed to."
+  },
+  "compose.poll": {
+    "defaultMessage": "Poll",
+    "description": "The caption of the poll's card in the composer."
+  },
+  "compose.failed": {
+    "defaultMessage": "Posting did not finish. Try again.",
+    "description": "The error before Post when the post got no answer from the server (the network); pressing Post sends it again, once."
+  },
+  "compose.discarded": {
+    "defaultMessage": "Post discarded",
+    "description": "The notice at the bottom of the page after the composer was closed with a written post, beside Undo."
+  },
+  "compose.undo": {
+    "defaultMessage": "Undo",
+    "description": "The action of the discarded post's notice: it opens the composer again with the post."
+  },
+  "compose.later": {
+    "defaultMessage": "Drafts",
+    "description": "The name of the menu in the composer's head: keep this post as a draft, or open the drafts and scheduled posts."
+  },
+  "compose.schedule": {
+    "defaultMessage": "Schedule",
+    "description": "The caption of the form that sets the time a post goes out."
+  },
+  "compose.schedule.field": {
+    "defaultMessage": "Date and time",
+    "description": "The name, for assistive technology, of the field of the date and the time a post goes out."
+  },
+  "compose.schedule.limits": {
+    "defaultMessage": "From {minutes, plural, one {# minute} other {# minutes}} to {days, plural, one {# day} other {# days}} from now",
+    "description": "Under the schedule's field: the nearest and the farthest time the server takes."
+  },
+  "compose.schedule.invalid": {
+    "defaultMessage": "Choose a date and time.",
+    "description": "Under the schedule's field when it holds no whole date and time."
+  },
+  "compose.schedule.too_soon": {
+    "defaultMessage": "{minutes, plural, one {Schedule the post at least # minute from now.} other {Schedule the post at least # minutes from now.}}",
+    "description": "Under the schedule's field when the time is nearer than the server takes."
+  },
+  "compose.schedule.too_far": {
+    "defaultMessage": "{days, plural, one {Schedule the post at most # day from now.} other {Schedule the post at most # days from now.}}",
+    "description": "Under the schedule's field when the time is farther than the server takes."
+  },
+  "compose.schedule.set": {
+    "defaultMessage": "Set time",
+    "description": "The button of the schedule's form that sets the time the post goes out."
+  },
+  "compose.schedule.clear": {
+    "defaultMessage": "Don't schedule",
+    "description": "The neutral button of the schedule's form, while a time is set, that takes the time away, so that Post posts at once."
+  },
+  "compose.schedule.item": {
+    "defaultMessage": "Schedule…",
+    "description": "A menu item that opens the form of the time a post goes out."
+  },
+  "compose.schedule.change_item": {
+    "defaultMessage": "Change time…",
+    "description": "A menu item that opens the form of the time of a post already scheduled."
+  },
+  "compose.schedule.tool": {
+    "defaultMessage": "Schedule",
+    "description": "The name of the composer's tool that opens the form of the time a post goes out."
+  },
+  "compose.schedule.tool_set": {
+    "defaultMessage": "Change the scheduled time",
+    "description": "The name of the composer's schedule tool while the post has a time: it opens the form to change the time."
+  },
+  "compose.schedule.at": {
+    "defaultMessage": "Scheduled for {time}",
+    "description": "The line above the composer's Post while the post is scheduled and the form of its time is open, the form stating the zone; time is the weekday, date and time."
+  },
+  "compose.schedule.at_zone": {
+    "defaultMessage": "Scheduled for {time} ({zone})",
+    "description": "The line above the composer's Post while the post is scheduled, the one place the zone is stated; time is the weekday, date and time, zone the reader's time zone (Asia/Tokyo · GMT+9). Change time stands at the line's end."
+  },
+  "compose.schedule.change": {
+    "defaultMessage": "Change time",
+    "description": "The action at the end of the line of a scheduled post's time, which opens its form."
+  },
+  "compose.schedule.post": {
+    "defaultMessage": "Schedule",
+    "description": "The composer's primary button while the post has a time: it schedules the post."
+  },
+  "compose.schedule.failed": {
+    "defaultMessage": "Scheduled for {time}, not posted: {reason}",
+    "description": "A draft whose scheduled post failed: time is when it was to go out, reason one of compose.schedule.failed.*."
+  },
+  "compose.schedule.failed.restricted": {
+    "defaultMessage": "your account cannot post now",
+    "description": "Why a scheduled post failed: the account may not post (a moderation action or a suspension)."
+  },
+  "compose.schedule.failed.reply_unavailable": {
+    "defaultMessage": "the post it replies to is no longer available",
+    "description": "Why a scheduled post failed: the post it replies to is gone, hidden, or takes no reply."
+  },
+  "compose.schedule.failed.quote_unavailable": {
+    "defaultMessage": "the post it quotes is no longer available",
+    "description": "Why a scheduled post failed: the post it quotes is gone, hidden, or may not be quoted."
+  },
+  "compose.schedule.failed.media_unavailable": {
+    "defaultMessage": "an attached file is no longer available",
+    "description": "Why a scheduled post failed: an attached file is gone or failed processing."
+  },
+  "compose.schedule.failed.invalid": {
+    "defaultMessage": "it does not meet the requirements for a post",
+    "description": "Why a scheduled post failed: it does not pass the checks of a post, such as its length."
+  },
+  "compose.schedule.failed.rejected": {
+    "defaultMessage": "the server's automated review did not accept it",
+    "description": "Why a scheduled post failed: the server's automated review did not accept it."
+  },
+  "compose.schedule.failed.next": {
+    "defaultMessage": "{failure}. Edit it if needed, then post it or schedule it again.",
+    "description": "The composer's alert on a draft whose scheduled post failed: failure is compose.schedule.failed (when and why), followed by what the reader may do now."
+  },
+  "compose.conflict": {
+    "defaultMessage": "This draft was saved later on another device, so your changes here were not saved.",
+    "description": "The composer's error when a save of a draft is refused for a newer one saved elsewhere."
+  },
+  "compose.conflict.open": {
+    "defaultMessage": "Open the newer one",
+    "description": "The action after compose.conflict, which opens the newer draft in place of this one."
+  },
+  "compose.gone": {
+    "defaultMessage": "This draft is no longer on the server. It may have been posted; check your profile.",
+    "description": "The composer's error when the draft it posts or schedules is no longer on the server (deleted elsewhere, or posted already by its schedule or by a post whose answer was lost); what was written stays in the composer, and its Post button reads compose.gone.post."
+  },
+  "compose.gone.post": {
+    "defaultMessage": "Post as new",
+    "description": "The composer's Post button after compose.gone: lets the draft that is no longer on the server go, and posts what is written now as a new post."
+  },
+  "compose.drafts": {
+    "defaultMessage": "Drafts and scheduled posts",
+    "description": "The title of the composer's list of the reader's drafts and scheduled posts."
+  },
+  "compose.drafts.save": {
+    "defaultMessage": "Save as draft",
+    "description": "A menu item that keeps what is written as a draft and closes the composer."
+  },
+  "compose.drafts.open": {
+    "defaultMessage": "Drafts and scheduled posts",
+    "description": "A menu item that opens the list of the reader's drafts and scheduled posts."
+  },
+  "compose.drafts.back": {
+    "defaultMessage": "Back to the post",
+    "description": "At the top of the list of drafts: back to the post being written."
+  },
+  "compose.drafts.blank": {
+    "defaultMessage": "No text",
+    "description": "A draft's row in place of its text, when it has only media or a poll."
+  },
+  "compose.drafts.saved": {
+    "defaultMessage": "Saved {time}",
+    "description": "When a draft was last saved, on its row: time is how long ago, as the list's relative times read it (Saved 2h ago, 3時間前に保存), or the date after a week."
+  },
+  "compose.drafts.open_one": {
+    "defaultMessage": "Open this draft",
+    "description": "The name of a draft's row, which opens it in the composer."
+  },
+  "compose.drafts.more": {
+    "defaultMessage": "More",
+    "description": "The name of the menu at the end of a draft's row."
+  },
+  "compose.drafts.open_item": {
+    "defaultMessage": "Open",
+    "description": "A draft's menu item that opens it in the composer."
+  },
+  "compose.drafts.unschedule": {
+    "defaultMessage": "Return to drafts",
+    "description": "A scheduled post's menu item that takes its time away: it becomes a draft."
+  },
+  "compose.drafts.delete": {
+    "defaultMessage": "Delete…",
+    "description": "A draft's menu item that deletes it, after asking."
+  },
+  "compose.drafts.delete.title": {
+    "defaultMessage": "Delete this draft?",
+    "description": "The question before a draft is deleted."
+  },
+  "compose.drafts.delete.text": {
+    "defaultMessage": "It is deleted from every device. This cannot be undone.",
+    "description": "What follows deleting a draft."
+  },
+  "compose.drafts.delete.scheduled": {
+    "defaultMessage": "It will not be posted, and it is deleted from every device. This cannot be undone.",
+    "description": "What follows deleting a scheduled post."
+  },
+  "compose.drafts.delete.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The refusal of deleting a draft."
+  },
+  "compose.drafts.delete.confirm": {
+    "defaultMessage": "Delete",
+    "description": "The confirmation of deleting a draft."
+  },
+  "compose.drafts.mark.reply": {
+    "defaultMessage": "A reply",
+    "description": "A mark on a draft's row: it replies to a post."
+  },
+  "compose.drafts.mark.quote": {
+    "defaultMessage": "A quote",
+    "description": "A mark on a draft's row: it quotes a post."
+  },
+  "compose.drafts.mark.media": {
+    "defaultMessage": "{count, plural, one {# file} other {# files}}",
+    "description": "A mark on a draft's row: how many files it attaches."
+  },
+  "compose.drafts.mark.poll": {
+    "defaultMessage": "A poll",
+    "description": "A mark on a draft's row: it carries a poll."
+  },
+  "compose.drafts.mark.article": {
+    "defaultMessage": "An article",
+    "description": "A mark on a draft's row: it is the draft of an article."
+  },
+  "compose.drafts.zone": {
+    "defaultMessage": "Times in {zone}",
+    "description": "Over the scheduled posts: the reader's time zone, in which their times read."
+  },
+  "compose.drafts.empty.drafts": {
+    "defaultMessage": "No drafts yet. Save a post as a draft, and it shows here.",
+    "description": "The drafts' section of the list when it has none, while there are scheduled posts."
+  },
+  "compose.drafts.empty": {
+    "defaultMessage": "No drafts or scheduled posts yet. Save a post as a draft or schedule it, and it shows here.",
+    "description": "The list of drafts and scheduled posts when it has neither."
+  },
+  "compose.drafts.loading": {
+    "defaultMessage": "Loading drafts…",
+    "description": "The list of drafts while it loads."
+  },
+  "compose.drafts.failed": {
+    "defaultMessage": "The drafts could not be loaded.",
+    "description": "The list of drafts when it failed to load."
+  },
+  "compose.drafts.retry": {
+    "defaultMessage": "Try again",
+    "description": "After compose.drafts.failed: loads the list again."
+  },
+  "compose.drafts.tab.drafts": {
+    "defaultMessage": "Drafts {count}",
+    "description": "The tab, or the heading, of the drafts, with how many."
+  },
+  "compose.drafts.tab.scheduled": {
+    "defaultMessage": "Scheduled {count}",
+    "description": "The tab, or the heading, of the scheduled posts, with how many."
+  },
+  "compose.drafts.list.drafts": {
+    "defaultMessage": "Drafts",
+    "description": "The name of the list of drafts, for assistive technology."
+  },
+  "compose.drafts.list.scheduled": {
+    "defaultMessage": "Scheduled posts",
+    "description": "The name of the list of scheduled posts, for assistive technology."
+  },
+  "compose.article.title.new": {
+    "defaultMessage": "New article",
+    "description": "The title of the article editor, a screen of its own, while it writes a new article."
+  },
+  "compose.article.title.edit": {
+    "defaultMessage": "Edit article",
+    "description": "The title of the article editor while it edits the reader's published article."
+  },
+  "compose.article.mode": {
+    "defaultMessage": "Write or preview",
+    "description": "The name of the switch, on a narrow screen, between writing the article and its preview."
+  },
+  "compose.article.mode.write": {
+    "defaultMessage": "Write",
+    "description": "The choice of the switch that shows what is written of the article."
+  },
+  "compose.article.mode.preview": {
+    "defaultMessage": "Preview",
+    "description": "The choice of the switch that shows the article as it will be published."
+  },
+  "compose.article.preview.caption": {
+    "defaultMessage": "As it will be published",
+    "description": "The caption over the preview of the article, beside what is written on a wide screen."
+  },
+  "compose.article.preview.failed": {
+    "defaultMessage": "The preview could not be shown.",
+    "description": "In the preview's place when the server did not render the body; followed by Try again."
+  },
+  "compose.article.preview.empty": {
+    "defaultMessage": "Nothing written yet. Write the body, and its preview shows here.",
+    "description": "In the preview's place while the body is empty."
+  },
+  "compose.article.field.title": {
+    "defaultMessage": "Title",
+    "description": "The name of the article's title field, and its placeholder."
+  },
+  "compose.article.field.title.over": {
+    "defaultMessage": "The title must be at most {max, number} characters.",
+    "description": "Under the title when it is longer than the limit."
+  },
+  "compose.article.field.title.missing": {
+    "defaultMessage": "Give the article a title.",
+    "description": "Under the title when Publish was pressed without one."
+  },
+  "compose.article.field.left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What a count near a field's limit says to a screen reader: how many characters are left."
+  },
+  "compose.article.field.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What a count past a field's limit says to a screen reader: by how many characters it is over."
+  },
+  "compose.article.body": {
+    "defaultMessage": "Body",
+    "description": "The name of the article's body, written in Markdown."
+  },
+  "compose.article.body.placeholder": {
+    "defaultMessage": "Write in Markdown…",
+    "description": "The placeholder of the article's body."
+  },
+  "compose.article.body.missing": {
+    "defaultMessage": "Write the body of the article.",
+    "description": "Under the body when Publish was pressed with no body."
+  },
+  "compose.article.details": {
+    "defaultMessage": "About the article",
+    "description": "The heading of the article's summary, cover and hashtags, after its body."
+  },
+  "compose.article.summary": {
+    "defaultMessage": "Summary",
+    "description": "The name of the article's summary field."
+  },
+  "compose.article.summary.hint": {
+    "defaultMessage": "If left empty, the start of the body is used.",
+    "description": "Under the summary's label: what an empty summary becomes."
+  },
+  "compose.article.summary.placeholder": {
+    "defaultMessage": "What the article is about, in a line or two",
+    "description": "The placeholder of the summary field."
+  },
+  "compose.article.summary.over": {
+    "defaultMessage": "The summary must be at most {max, number} characters.",
+    "description": "Under the summary when it is longer than the limit."
+  },
+  "compose.article.cover": {
+    "defaultMessage": "Cover image",
+    "description": "The name of the article's cover image."
+  },
+  "compose.article.cover.add": {
+    "defaultMessage": "Add a cover image",
+    "description": "The button that picks the article's cover image."
+  },
+  "compose.article.cover.remove": {
+    "defaultMessage": "Remove the cover image",
+    "description": "The button that takes the cover image off the article."
+  },
+  "compose.article.cover.description": {
+    "defaultMessage": "Description",
+    "description": "The label of the cover image's description, for those who cannot see it."
+  },
+  "compose.article.cover.description.hint": {
+    "defaultMessage": "What the image shows, for those who cannot see it",
+    "description": "The placeholder of the cover image's description."
+  },
+  "compose.article.cover.waiting": {
+    "defaultMessage": "Wait until the cover image has uploaded, or remove it if the upload failed.",
+    "description": "Before Publish when Publish was pressed while the cover uploads or failed to."
+  },
+  "compose.article.tags": {
+    "defaultMessage": "Hashtags",
+    "description": "The name of the article's hashtags."
+  },
+  "compose.article.tags.placeholder": {
+    "defaultMessage": "Add a hashtag",
+    "description": "The placeholder of the field that adds a hashtag."
+  },
+  "compose.article.tags.full": {
+    "defaultMessage": "No more hashtags",
+    "description": "The placeholder of the hashtags' field once the article has as many as it can."
+  },
+  "compose.article.tags.remove": {
+    "defaultMessage": "Remove #{tag}",
+    "description": "The button on a hashtag that takes it off the article."
+  },
+  "compose.article.tags.left": {
+    "defaultMessage": "{count, plural, one {# more hashtag} other {# more hashtags}}",
+    "description": "Beside the hashtags' label once near their limit: how many more can be added."
+  },
+  "compose.article.limit.bytes": {
+    "defaultMessage": "Length: {ratio, number, percent} of the limit",
+    "description": "How much of the length limit of the article's body is used, as a percentage; past 100% the article is too long to publish."
+  },
+  "compose.article.limit.images": {
+    "defaultMessage": "{used, number} of {max, number} images",
+    "description": "How many images the article's body has, of the most it may have."
+  },
+  "compose.article.attach": {
+    "defaultMessage": "Add an image to the body",
+    "description": "The tool that uploads an image and puts it in the body."
+  },
+  "compose.article.attach.uploading": {
+    "defaultMessage": "{count, plural, one {Uploading an image…} other {Uploading # images…}}",
+    "description": "Under the body while images for it upload."
+  },
+  "compose.article.attach.failed": {
+    "defaultMessage": "An image could not be uploaded. Try adding it again.",
+    "description": "Under the body when an image for it could not be uploaded."
+  },
+  "compose.article.sensitive.on": {
+    "defaultMessage": "Mark as sensitive",
+    "description": "The tool that folds the article's body and cover behind its title and summary."
+  },
+  "compose.article.sensitive.off": {
+    "defaultMessage": "Unmark as sensitive",
+    "description": "The same tool while the article is marked sensitive."
+  },
+  "compose.article.publish": {
+    "defaultMessage": "Publish",
+    "description": "The button that publishes the article now."
+  },
+  "compose.article.gone.publish": {
+    "defaultMessage": "Publish as new",
+    "description": "The button that publishes what is written as a new article, once its draft is gone from the server."
+  },
+  "compose.article.over": {
+    "defaultMessage": "Part of the article is over its limit. Shorten it or take out images to publish.",
+    "description": "Before Publish when the article is over a limit."
+  },
+  "compose.article.missing": {
+    "defaultMessage": "Give the article a title and a body to publish.",
+    "description": "Before Publish when Publish was pressed without a title or a body."
+  },
+  "compose.article.failed": {
+    "defaultMessage": "Publishing did not finish. Try again.",
+    "description": "Before Publish when publishing failed with no word from the server."
+  },
+  "compose.article.not_allowed": {
+    "defaultMessage": "Your account cannot write new articles on this server. You can still edit the articles you wrote before.",
+    "description": "In place of the editor when the reader may not write new articles."
+  },
+  "compose.article.loading": {
+    "defaultMessage": "Loading the article…",
+    "description": "In place of the editor while the article or its draft is read from the server."
+  },
+  "compose.article.load_failed": {
+    "defaultMessage": "The article could not be loaded.",
+    "description": "In place of the editor when the article or its draft could not be read; followed by Try again."
+  },
+  "compose.in_place.to": {
+    "defaultMessage": "To {names}",
+    "description": "Over the reply in place at the end of a conversation of direct messages: whom it goes to. names lists the conversation's other people."
+  },
+  "compose.in_place.form": {
+    "defaultMessage": "Your message to {names}",
+    "description": "The name of the reply in place at the end of a conversation of direct messages, a form, for assistive technology. names lists the conversation's other people."
+  },
+  "compose.in_place.label": {
+    "defaultMessage": "Message",
+    "description": "The name of the text field of the reply in place at the end of a conversation of direct messages, for assistive technology."
+  },
+  "compose.in_place.placeholder": {
+    "defaultMessage": "Write a message",
+    "description": "The placeholder of the empty reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send": {
+    "defaultMessage": "Send",
+    "description": "The button that sends the reply in place at the end of a conversation of direct messages."
+  },
+  "compose.in_place.send_to": {
+    "defaultMessage": "Send to {names}",
+    "description": "The name of the button that sends the reply in place, for assistive technology, apart from every post's Reply; it starts with, or holds, the button's visible word (compose.in_place.send). names lists the conversation's other people."
+  },
+  "compose.audience_menu": {
+    "defaultMessage": "Who can see and reply",
+    "description": "The name of the audience menu of the composer and of the article editor, over its two items: who can see the post or the article, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
+  }
+}

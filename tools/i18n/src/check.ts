@@ -1,18 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Catalog checks run by `scripts/task.sh i18n:check` (ADR-0009 §1), and, for the keys of a change, by
-// `scripts/i18n.sh check --changed` and by the commands of cli.ts that write a message.
+// `scripts/i18n.sh check --changed` and by the commands of cli.ts that write a message. They cover the catalogs of
+// locales/ and those of the web packages (web/<package>/locales/) alike, but for the generated files Go reads.
 //   error: ICU syntax error, including a plural / select without `other`
 //   error: translation argument unknown to the source, or of a different type
 //   error: plural / selectordinal category the locale's CLDR rules do not have
 //   error: translation key absent from the source (obsolete)
-//   error: rich-text tag, number skeleton / style, or date / time argument in a namespace
-//          shared with Go (anything but client*)
+//   error: rich-text tag, number skeleton / style, or date / time argument (outside the subset Go formats)
 //   error: malformed locale directory, namespace, or key; two keys mapping to one accessor
 //   error: catalog file outside locales/<locale>/<namespace>/<area>.json, or a key outside its area's file (ADR-0081)
-//   error: generated files Go reads (server pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
-// The generated files only the TS clients read (client pseudo-locales, TS accessors) are not committed and not
-// checked here (ADR-0081): i18n:gen-ts writes them before the tasks that read them, maybe while this runs.
-//   error: copy outside the tone and punctuation rules (web-client/16-look-states-and-wording.md G19, G20): an exclamation mark
+//   error: generated files (pseudo-locales, Go accessors, golden) differ from `scripts/task.sh i18n:gen`
+//   error: a message of a web package's catalog that the pseudo-locales cannot be made from
+//   error: copy outside the tone and punctuation rules of its locale: an exclamation mark
 //          in any non-pseudo locale; a full-width colon, semicolon or parenthesis, or an ASCII comma, in Japanese text
 //          (use ":", ";", "()" and "、"); in Simplified Chinese, an ASCII comma, semicolon, colon, question mark or
 //          parenthesis next to a Han character, corner brackets 「」『』, or kana; in Traditional Chinese, the same ASCII
@@ -21,38 +20,75 @@
 //          Portuguese, ASCII double quotation marks (use “…”); in German, ASCII double quotation marks (use „…“); in
 //          French, ASCII double quotation marks (use « … »), ":", ";" or "?" without the narrow no-break space before
 //          it, or « » without the narrow no-break space inside them
-//   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the locale's text, in any namespace
+//   error: a variant the glossary (tools/i18n/glossary.json, G21) bans in the text of a machine-translated locale
 //   error: key of the source missing in ja, which is written in the same change as en (`scripts/i18n.sh set`)
-//   error: helper text of a client (a key ending in description / hint / help / note) longer than its budget, and
-//          an entry of tools/i18n/helper-text-baseline.json that no longer needs to be there (budget.ts)
+//   error, answer: the copy lint of en and ja (copy.ts): a finding of a blocking rule, or of a waivable rule that
+//          tools/i18n/waivers.json does not waive, is an error, a waiver it refuses too (waivers.ts); the rest is
+//          printed for the author to answer; an error with no next step that tools/i18n/no-step.json does not hold,
+//          and an entry of that list with nothing to hold, are errors (here, not in `scripts/i18n.sh set`, as an
+//          error and its detail are two keys)
 //   warn:  untranslated key in a machine-translated locale (falls back to en at runtime)
-//   warn:  translation drops a source argument (sometimes legitimate)
+//   warn:  a machine-translated locale drops a source argument (sometimes legitimate)
 //   warn:  key not referenced from code
 import { existsSync, readFileSync } from "node:fs";
-import { budgetFindings, loadBaseline } from "./budget";
 import {
   areaOf,
   type Catalog,
   type CatalogFile,
   catalogFile,
   formattingLocale,
-  isClientNamespace,
   isPseudo,
+  isTsNamespace,
   loadCatalog,
   loadCatalogFiles,
   rel,
   REQUIRED_LOCALES,
   SOURCE,
 } from "./catalog";
-import { generate, goName, pseudoPart } from "./generate";
+import {
+  ADMIN,
+  branchTexts,
+  COPY_LOCALES,
+  type CopyFinding,
+  copyFindings,
+  copyText,
+  type ErrorTexts,
+  errorOf,
+  loadNoStep,
+  loadWords,
+  nextStepErrors,
+  type Word,
+} from "./copy";
+import { generate, goName, pseudoCatalogs } from "./generate";
 import { glossaryFindings, loadGlossary } from "./glossary";
 import { type Args, extractArgs, literalText, outsideSharedSubset, parseMessage, pluralCategories } from "./icu";
 import { References } from "./refs";
+import { loadWaivers, type Waiver, WAIVERS, waiverErrors, waiverKey } from "./waivers";
 
-export type Finding = { level: "error" | "warn"; message: string };
+export type Finding = { level: "error" | "warn" | "answer"; message: string };
 let findings: Finding[] = [];
 const error = (m: string) => void findings.push({ level: "error", message: m });
 const warn = (m: string) => void findings.push({ level: "warn", message: m });
+const answer = (m: string) => void findings.push({ level: "answer", message: m });
+
+/** The word decisions, the waivers and the errors with no possible step of the copy lint, and why they could not be read. */
+const { words, waivers, noStep, unreadable } = (() => {
+  const unreadable: string[] = [];
+  const read = <T>(load: () => T[]): T[] => {
+    try {
+      return load();
+    } catch (e) {
+      unreadable.push((e as Error).message);
+      return [];
+    }
+  };
+  return {
+    words: read<Word>(loadWords),
+    waivers: read<Waiver>(loadWaivers),
+    noStep: new Map(read<[string, string]>(() => [...loadNoStep()])),
+    unreadable,
+  };
+})();
 
 export const NAMESPACE = /^[a-z][a-z0-9]*$/;
 /** "locales/<locale>/<namespace>/<area>.json <key>", where a finding about a key points. */
@@ -63,13 +99,17 @@ const glossary = loadGlossary();
 /**
  * The errors of one message on its own (ICU syntax, the shared subset, the copy rules, the plural categories of its
  * locale) and of its arguments against the source message `source`, without the path they are reported under.
- * `dropped` lists the source arguments it leaves out, which the catalog check only warns about.
+ * `dropped` lists the source arguments it leaves out. In en and ja, the errors include the findings of the copy lint
+ * that block, and the waivable ones tools/i18n/waivers.json does not waive for the key `key`, whose en description is
+ * `description`.
  */
 export function messageFindings(
   locale: string,
   ns: string,
   message: string,
   source?: string,
+  key = "",
+  description = "",
 ): { errors: string[]; dropped: string[] } {
   const collected = findings;
   findings = [];
@@ -83,10 +123,88 @@ export function messageFindings(
       } catch {}
       if (want) dropped.push(...compareArgs("", want, got));
     }
+    const waived = new Set(waivers.map(waiverKey));
+    for (const f of copyOf(locale, message, source, description)) {
+      // A dropped argument is the caller's to refuse (`--drop-args`).
+      if (f.tier === "block") error(f.message);
+      else if (
+        f.tier === "waive" &&
+        f.rule !== "placeholder" &&
+        !waived.has(waiverKey({ id: `${ns}:${key}`, locale, rule: f.rule }))
+      )
+        error(waivable(f));
+    }
     return { errors: findings.map((f) => f.message), dropped };
   } finally {
     findings = collected;
   }
+}
+
+const waivable = (f: CopyFinding): string =>
+  `${f.message} (${f.rule}: change the text, or waive it in ${WAIVERS} with the reason)`;
+
+/**
+ * The copy findings of an en or ja message; for ja, against the en message `source`. `description` is the en
+ * description, which tells a string only administrators read (ADMIN).
+ */
+function copyOf(locale: string, message: string, source?: string, description = ""): CopyFinding[] {
+  if (!COPY_LOCALES.includes(locale)) return [];
+  try {
+    const ast = parseMessage(message);
+    let en: { text: string; missing: string[] } | undefined;
+    if (locale !== SOURCE && source !== undefined) {
+      const sourceAst = parseMessage(source);
+      const got = extractArgs(ast);
+      en = { text: copyText(sourceAst), missing: [...extractArgs(sourceAst).keys()].filter((n) => !got.has(n)) };
+    }
+    return copyFindings(words, locale, copyText(ast), en, ADMIN.test(description));
+  } catch {
+    // analyze reports the syntax.
+    return [];
+  }
+}
+
+/**
+ * The copy lint of every en and ja message (or of the ids `only`), and the waivers against what it finds in all of
+ * them, so that a waiver of a message the change did not touch still has to waive something.
+ */
+function checkCopy(catalog: Catalog, only?: Set<string>, locales?: string[]) {
+  for (const message of unreadable) error(message);
+  const found = new Set<string>();
+  const waived = new Set(waivers.map(waiverKey));
+  const errors = new Map<string, ErrorTexts>();
+  for (const [ns, entries] of Object.entries(catalog[SOURCE] ?? {})) {
+    for (const [key, e] of Object.entries(entries)) {
+      const id = `${ns}:${key}`;
+      const err = errorOf(ns, key);
+      for (const locale of COPY_LOCALES) {
+        if (locale !== SOURCE && locales && !locales.includes(locale)) continue;
+        const message = locale === SOURCE ? e.defaultMessage : catalog[locale]?.[ns]?.[key]?.defaultMessage;
+        if (typeof message !== "string") continue;
+        if (err) {
+          const group = errors.get(err.group) ?? { texts: [], retry: err.retry, checked: false };
+          try {
+            group.texts.push({ locale, key, branches: branchTexts(parseMessage(message)) });
+          } catch {
+            // analyze reports the syntax.
+          }
+          group.checked ||= !only || only.has(id);
+          errors.set(err.group, group);
+        }
+        for (const f of copyOf(locale, message, locale === SOURCE ? undefined : e.defaultMessage, e.description)) {
+          const k = waiverKey({ id, locale, rule: f.rule });
+          if (f.tier === "waive") found.add(k);
+          if (only && !only.has(id)) continue;
+          const where = `${at(locale, ns, key)}: `;
+          if (f.tier === "block") error(`${where}${f.message}`);
+          else if (f.tier === "answer") answer(`${where}${f.message}`);
+          else if (!waived.has(k)) error(`${where}${waivable(f)}`);
+        }
+      }
+    }
+  }
+  for (const message of waiverErrors(waivers, found)) error(message);
+  for (const message of nextStepErrors(errors, noStep)) error(message);
 }
 
 /** Reports the arguments of a translation the source does not have or types differently; returns the ones it drops. */
@@ -112,11 +230,7 @@ function analyze(
   if (typeof message !== "string") return void error(`${where}defaultMessage must be a string`);
   try {
     const ast = parseMessage(message);
-    if (!isClientNamespace(ns)) {
-      for (const f of outsideSharedSubset(ast)) {
-        error(`${where}${f} is outside the Go/TS shared subset (allowed only in client* namespaces)`);
-      }
-    }
+    for (const f of outsideSharedSubset(ast)) error(`${where}${f} is outside the Go/TS shared subset`);
     const rules = {
       cardinal: new Set<string>(new Intl.PluralRules(formattingLocale(locale)).resolvedOptions().pluralCategories),
       ordinal: new Set<string>(
@@ -136,18 +250,17 @@ function analyze(
   }
 }
 
-/** The glossary variants (G21) and the punctuation that web-client/16-look-states-and-wording.md G19 / G20 rule out, found in the message's own text (not its ICU syntax). */
+/** The glossary variants and the punctuation of each locale, found in the message's own text (not its ICU syntax). */
 function copyStyleFindings(locale: string, text: string): string[] {
   if (isPseudo(locale)) return [];
   const out: string[] = glossaryFindings(glossary, locale, text);
-  if (/[!！¡]/.test(text)) out.push("no exclamation marks in UI copy (web-client/16-look-states-and-wording.md G19)");
+  if (/[!！¡]/.test(text)) out.push("no exclamation marks in UI copy");
   if (new Intl.Locale(locale).language === "ja") {
     if (/[：；（）]/u.test(text))
       out.push(
-        'use the ASCII colon, semicolon and parentheses (": ", "; ", " (…)") in Japanese, not "：", "；", "（）" (web-client/16-look-states-and-wording.md G20)',
+        'use the ASCII colon, semicolon and parentheses (": ", "; ", " (…)") in Japanese, not "：", "；", "（）"',
       );
-    if (text.includes(","))
-      out.push('use "、" instead of an ASCII comma in Japanese (web-client/16-look-states-and-wording.md G20)');
+    if (text.includes(",")) out.push('use "、" instead of an ASCII comma in Japanese');
   }
   if (isSimplifiedChinese(locale)) out.push(...simplifiedChineseFindings(text));
   if (isTraditionalChinese(locale)) out.push(...traditionalChineseFindings(text));
@@ -158,12 +271,10 @@ function copyStyleFindings(locale: string, text: string): string[] {
   return out;
 }
 
-/** The punctuation rules of German (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of German. */
 function germanFindings(text: string): string[] {
   if (!text.includes('"')) return [];
-  return [
-    'use "„…“" (and "‚…‘" inside them) as quotation marks in German, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-  ];
+  return ['use "„…“" (and "‚…‘" inside them) as quotation marks in German, not ASCII double quotation marks'];
 }
 
 /** A narrow no-break space (U+202F), which French puts before ":", ";", "?" and inside « ». */
@@ -172,41 +283,28 @@ const NNBSP = "\u202F";
 const FR_UNSPACED = new RegExp(`(?:^|[^${NNBSP}])(?:[;?]|:(?=\\s|$))`, "mu");
 const FR_GUILLEMETS = new RegExp(`«(?!${NNBSP})|(?<!${NNBSP})»`, "u");
 
-/** The punctuation rules of French (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of French. */
 function frenchFindings(text: string): string[] {
   const out: string[] = [];
-  if (text.includes('"'))
-    out.push(
-      'use "« … »" as quotation marks in French, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (FR_UNSPACED.test(text))
-    out.push(
-      'put a narrow no-break space (U+202F) before ":", ";" and "?" in French (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (FR_GUILLEMETS.test(text))
-    out.push(
-      "put a narrow no-break space (U+202F) inside « » in French (web-client/16-look-states-and-wording.md G20)",
-    );
+  if (text.includes('"')) out.push('use "« … »" as quotation marks in French, not ASCII double quotation marks');
+  if (FR_UNSPACED.test(text)) out.push('put a narrow no-break space (U+202F) before ":", ";" and "?" in French');
+  if (FR_GUILLEMETS.test(text)) out.push("put a narrow no-break space (U+202F) inside « » in French");
   return out;
 }
 
-/** The punctuation rules of Brazilian Portuguese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Brazilian Portuguese. */
 function portugueseFindings(text: string): string[] {
   if (!text.includes('"')) return [];
-  return [
-    'use "“…”" (and "‘…’" inside them) as quotation marks in Portuguese, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-  ];
+  return ['use "“…”" (and "‘…’" inside them) as quotation marks in Portuguese, not ASCII double quotation marks'];
 }
 
-/** The punctuation rules of Spanish (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Spanish. */
 function spanishFindings(text: string): string[] {
   const out: string[] = [];
   if ((text.match(/\?/g) ?? []).length !== (text.match(/¿/g) ?? []).length)
-    out.push('open each question with "¿" in Spanish (web-client/16-look-states-and-wording.md G20)');
+    out.push('open each question with "¿" in Spanish');
   if (text.includes('"'))
-    out.push(
-      'use "«…»" (and "“…”" inside them) as quotation marks in Spanish, not ASCII double quotation marks (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use "«…»" (and "“…”" inside them) as quotation marks in Spanish, not ASCII double quotation marks');
   return out;
 }
 
@@ -224,19 +322,14 @@ function isSimplifiedChinese(locale: string): boolean {
 const HAN = "\\p{Script=Han}";
 const ZH_ASCII_PUNCTUATION = new RegExp(`${HAN}[,;:?]|[,;?]${HAN}|${HAN}[()]|[()]${HAN}`, "u");
 
-/** The punctuation rules of Simplified Chinese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation rules of Simplified Chinese. */
 function simplifiedChineseFindings(text: string): string[] {
   const out: string[] = [];
   if (ZH_ASCII_PUNCTUATION.test(text))
-    out.push(
-      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Simplified Chinese (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Simplified Chinese');
   if (/[「」『』]/u.test(text))
-    out.push(
-      'use "“…”" and "‘…’" as quotation marks in Simplified Chinese, not "「」" or "『』" (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
-    out.push("no kana in Simplified Chinese (web-client/16-look-states-and-wording.md G20)");
+    out.push('use "“…”" and "‘…’" as quotation marks in Simplified Chinese, not "「」" or "『』"');
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) out.push("no kana in Simplified Chinese");
   return out;
 }
 
@@ -247,24 +340,16 @@ function simplifiedChineseFindings(text: string): string[] {
 const SIMPLIFIED_ONLY =
   /[们这个说发书设认关账号录图视频网络软据库应该对开从过还进选择删让请时间问题错误页动态码为务当将无与实现点击显户级员复帮览项织线绑权验证读写传输]/u;
 
-/** The punctuation and script rules of Traditional Chinese (web-client/16-look-states-and-wording.md G20). */
+/** The punctuation and script rules of Traditional Chinese. */
 function traditionalChineseFindings(text: string): string[] {
   const out: string[] = [];
   if (ZH_ASCII_PUNCTUATION.test(text))
-    out.push(
-      'use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Traditional Chinese (web-client/16-look-states-and-wording.md G20)',
-    );
+    out.push('use the full-width "，", "；", "：", "？" and "（）" next to Chinese text in Traditional Chinese');
   if (/[“”‘’]/u.test(text))
-    out.push(
-      'use "「…」" and "『…』" as quotation marks in Traditional Chinese, not "“”" or "‘’" (web-client/16-look-states-and-wording.md G20)',
-    );
-  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text))
-    out.push("no kana in Traditional Chinese (web-client/16-look-states-and-wording.md G20)");
+    out.push('use "「…」" and "『…』" as quotation marks in Traditional Chinese, not "“”" or "‘’"');
+  if (/[\p{Script=Hiragana}\p{Script=Katakana}]/u.test(text)) out.push("no kana in Traditional Chinese");
   const simplified = text.match(SIMPLIFIED_ONLY);
-  if (simplified)
-    out.push(
-      `"${simplified[0]}" is a Simplified Chinese character; write Traditional Chinese (web-client/16-look-states-and-wording.md G20)`,
-    );
+  if (simplified) out.push(`"${simplified[0]}" is a Simplified Chinese character; write Traditional Chinese`);
   return out;
 }
 
@@ -302,9 +387,9 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
   for (const [locale, namespaces] of Object.entries(catalog)) {
     if (locale === SOURCE || (locales && !locales.includes(locale))) continue;
     for (const id of sourceArgs.keys()) {
-      const [ns, key] = id.split(/:(.*)/s);
-      if (isPseudo(locale) && pseudoPart(ns) !== "go") continue;
-      if (namespaces[ns]?.[key]) continue;
+      const [ns = "", key = ""] = id.split(/:(.*)/s);
+      // The pseudo-locales of a web package's catalog are made when it is compiled, never written beside it.
+      if (namespaces[ns]?.[key] || (isPseudo(locale) && isTsNamespace(ns))) continue;
       if (REQUIRED_LOCALES.includes(locale))
         error(
           `${at(locale, ns, key)}: missing; ${locale} is written in the same change as ${SOURCE}: scripts/i18n.sh set ${id} --${locale} "<text>"`,
@@ -323,7 +408,9 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
         const got = analyze(locale, ns, key, e.defaultMessage);
         if (!want || !got) continue;
         for (const name of compareArgs(`${at(locale, ns, key)}: `, want, got)) {
-          if (!isPseudo(locale)) warn(`${at(locale, ns, key)}: drops argument {${name}}`);
+          // The copy lint holds en and ja to the arguments of the source.
+          if (!isPseudo(locale) && !COPY_LOCALES.includes(locale))
+            warn(`${at(locale, ns, key)}: drops argument {${name}}`);
         }
       }
     }
@@ -337,7 +424,7 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
  * nor by a TS key literal.
  */
 function checkUnused(catalog: Catalog, ids: string[]) {
-  const references = new References(Object.keys(catalog[SOURCE]));
+  const references = new References(Object.keys(catalog[SOURCE] ?? {}));
   for (const id of ids) {
     if (!references.used(id)) warn(`unused ${id}; refer to it, or remove it: scripts/i18n.sh rm ${id}`);
   }
@@ -356,8 +443,19 @@ function checkLayout(files: CatalogFile[]) {
   }
 }
 
+/** The pseudo-locales of the web packages' catalogs, which @my/i18n makes when it compiles them and never commits. */
+async function checkTsPseudo(catalog: Catalog) {
+  const source = Object.fromEntries(Object.entries(catalog[SOURCE] ?? {}).filter(([ns]) => isTsNamespace(ns)));
+  if (!Object.keys(source).length) return;
+  try {
+    await pseudoCatalogs({ [SOURCE]: source });
+  } catch (e) {
+    error(`the pseudo-locales of ${Object.keys(source).join(", ")}: ${(e as Error).message}`);
+  }
+}
+
 async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
-  const generated = await generate(catalog, ["go"]);
+  const generated = await generate(catalog);
   for (const [path, want] of generated) {
     const got = existsSync(path) ? readFileSync(path, "utf8") : undefined;
     if (got !== want)
@@ -372,28 +470,28 @@ async function checkGenerated(catalog: Catalog, files: CatalogFile[]) {
 
 export type CheckOptions = {
   /** Check only the messages of these ids (the keys of a change), in every locale. */
-  only?: Set<string>;
+  only?: Set<string> | undefined;
   /** Of the translations, check only these locales. */
-  locales?: string[];
+  locales?: string[] | undefined;
 };
 
 /** Runs every check and returns the findings; `options` narrow the messages, never the rules. */
 export async function runCheck({ only, locales }: CheckOptions = {}): Promise<Finding[]> {
   findings = [];
-  // The client pseudo-locales are generated, uncommitted files that may be missing or stale; leave them out.
-  const files = loadCatalogFiles().filter((f) => !isPseudo(f.locale) || (f.ns !== "" && pseudoPart(f.ns) === "go"));
+  const files = loadCatalogFiles();
   const catalog = loadCatalog(files);
   checkLayout(files);
   const ids = checkCatalog(catalog, only, locales);
   if (!findings.some((f) => f.level === "error")) {
-    for (const f of budgetFindings(catalog, loadBaseline(), only)) error(f);
     checkUnused(catalog, ids);
     await checkGenerated(catalog, files);
+    await checkTsPseudo(catalog);
   }
+  checkCopy(catalog, only, locales);
   return findings;
 }
 
-/** Prints the errors, the warnings `warnings` accepts, and the summary line; returns the number of errors. */
+/** Prints the errors, the answers, the warnings `warnings` accepts, and the summary line; returns the number of errors. */
 export function printFindings(
   all: Finding[],
   { warnings = () => true, seconds }: { warnings?: (message: string) => boolean; seconds?: number } = {},
@@ -401,10 +499,11 @@ export function printFindings(
   const count = (level: Finding["level"]) => all.filter((f) => f.level === level).length;
   for (const f of all) {
     if (f.level === "error") console.error(`error: ${f.message}`);
+    else if (f.level === "answer") console.warn(`answer: ${f.message}`);
     else if (warnings(f.message)) console.warn(`warn:  ${f.message}`);
   }
   console.log(
-    `i18n: ${count("error")} error(s), ${count("warn")} warning(s)${seconds === undefined ? "" : ` in ${seconds.toFixed(1)}s`}`,
+    `i18n: ${count("error")} error(s), ${count("answer")} to answer, ${count("warn")} warning(s)${seconds === undefined ? "" : ` in ${seconds.toFixed(1)}s`}`,
   );
   return count("error");
 }

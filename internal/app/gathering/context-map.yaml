@@ -1,3 +1,3 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 docs: ["internal/app/gathering/doc.go", "docs/adr/0161-events.md"]
-userdocs: ["docs/operations/instance-settings.md#events", "docs/reference/jobs.md#events", "docs/operations/running.md#how-late-periodic-jobs-run", "docs/operations/email.md"]
+userdocs: ["docs/guide/events.md", "docs/operations/instance-settings.md#events", "docs/reference/jobs.md#events", "docs/operations/running.md#how-late-periodic-jobs-run", "docs/operations/email.md"]

@@ -7,12 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 
 	appmoderation "github.com/mycroblog/my/internal/app/moderation"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/moderation"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The domain block list in Mastodon's CSV (FR-706, manage_domains): the export of the domain
@@ -55,8 +53,7 @@ func (s *Server) PreviewDomainBlockImport(ctx context.Context, req PreviewDomain
 	rows, err := s.o.Moderation.PreviewDomainBlocks(ctx, req.Body.Csv)
 	switch {
 	case errors.Is(err, moderation.ErrTooManyDomainBlocks):
-		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank,
-			l.ServerErrorsUnprocessable(), l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainBlockImport, Name: "csv"}))), nil
+		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, "csv", l.ServerErrorsTooMany(moderation.MaxDomainBlockImport))), nil
 	case errors.Is(err, moderation.ErrMalformedDomainBlockCSV):
 		return PreviewDomainBlockImportdefaultApplicationProblemPlusJSONResponse(s.unprocessableValue(ctx, "csv")), nil
 	case err != nil:
@@ -93,9 +90,9 @@ func (s *Server) ImportDomainBlocks(ctx context.Context, req ImportDomainBlocksR
 		return ImportDomainBlocksdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "blocks")), nil
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) (ImportDomainBlocksResponseObject, error) {
+	unprocessable := func(field, detail string) (ImportDomainBlocksResponseObject, error) {
 		return ImportDomainBlocksdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail)), nil
+			s.fieldProblem(ctx, field, detail)), nil
 	}
 	in := appmoderation.DomainBlockImportInput{
 		Blocks: make([]moderation.DomainBlock, len(req.Body.Blocks)), PrivateNote: deref(req.Body.PrivateNote), IssuedByUserID: v.UserID,
@@ -110,11 +107,11 @@ func (s *Server) ImportDomainBlocks(ctx context.Context, req ImportDomainBlocksR
 	var textErr *moderation.TextError
 	switch {
 	case errors.Is(err, moderation.ErrTooManyDomainBlocks):
-		return unprocessable(l.ServerErrorsTooMany(i18n.ServerErrorsTooManyArgs{Max: moderation.MaxDomainBlockImport, Name: "blocks"}))
+		return unprocessable("blocks", l.ServerErrorsTooMany(moderation.MaxDomainBlockImport))
 	case errors.As(err, &textErr) && textErr.Max > 0:
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: textErr.Max, Name: textErr.Field}))
+		return unprocessable(textErr.Field, l.ServerErrorsTooLong(textErr.Max))
 	case errors.As(err, &textErr):
-		return unprocessable(l.ServerErrorsInvalidValue(textErr.Field))
+		return unprocessable(textErr.Field, l.ServerErrorsInvalidValue())
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: import domain blocks: %w", err)
 	}

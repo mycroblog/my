@@ -6,14 +6,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"time"
 	"unicode/utf8"
 
 	appinstance "github.com/mycroblog/my/internal/app/instance"
 	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The instance texts (FR-705): the admin operations that read and write them (manage_settings),
@@ -82,8 +80,8 @@ func (s *Server) SetInstanceText(ctx context.Context, req SetInstanceTextRequest
 		return nil, err
 	}
 	l := s.Localizer(ctx)
-	unprocessable := func(detail string) SetInstanceTextResponseObject {
-		return SetInstanceTextdefaultApplicationProblemPlusJSONResponse(s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), detail))
+	unprocessable := func(field, detail string) SetInstanceTextResponseObject {
+		return SetInstanceTextdefaultApplicationProblemPlusJSONResponse(s.fieldProblem(ctx, field, detail))
 	}
 	def, err := instance.LookupText(instance.TextKey(req.Key))
 	if err != nil {
@@ -93,14 +91,14 @@ func (s *Server) SetInstanceText(ctx context.Context, req SetInstanceTextRequest
 		return SetInstanceTextdefaultApplicationProblemPlusJSONResponse(s.invalidParameterResponse(ctx, "body")), nil
 	}
 	if utf8.RuneCountInString(req.Body.Body) > def.MaxLength {
-		return unprocessable(l.ServerErrorsTooLong(i18n.ServerErrorsTooLongArgs{Max: def.MaxLength, Name: "body"})), nil
+		return unprocessable("body", l.ServerErrorsTooLong(def.MaxLength)), nil
 	}
 	rev, err := s.o.InstanceTexts.SetText(ctx, appinstance.SetTextInput{
 		Key: def.Key, Body: req.Body.Body, RevisedByUserID: v.UserID,
 	})
 	switch {
 	case errors.Is(err, instance.ErrInvalidValue):
-		return unprocessable(l.ServerErrorsInvalidValue("body")), nil
+		return unprocessable("body", l.ServerErrorsInvalidValue()), nil
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: set instance text %s: %w", req.Key, err)
 	}

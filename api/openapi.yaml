@@ -120,7 +120,9 @@ tags:
       is federated. The operations need a `read:events` or `write:events` scope, and answer 404
       for an event that the user does not see.
   - name: client-errors
-    description: The uncaught errors of the web client, which it reports to its own server.
+    description: |
+      The uncaught errors of the web client and the samples of how fast it responds, which it
+      reports to its own server.
   - name: admin-moderation
     description: |
       The staff's moderation: reports, appeals, accounts and the actions on them, registrations,
@@ -3898,6 +3900,37 @@ paths:
                 $ref: '#/components/schemas/NotificationMarker'
         default:
           $ref: '#/components/responses/Problem'
+  /notifications/{id}:
+    get:
+      operationId: getNotification
+      summary: Get a notification
+      description: |
+        One of the user's notifications, as the list shows it. A notification that is not the
+        user's, is dismissed, or that the list leaves out is a 404.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the notification.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The notification.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        default:
+          $ref: '#/components/responses/Problem'
   /notifications/{id}/dismiss:
     post:
       operationId: dismissNotification
@@ -5972,6 +6005,12 @@ paths:
           is an `Announcement`.
         - `announcement_removed`: an announcement no longer shows (it was withdrawn, or its
           window changed). `data` is `{"id": "<announcement id>"}`.
+        - `delete`: a status that the user may have seen was deleted by its author, a moderator,
+          or its remote server. `data` is `{"id": "<status id>"}`; remove the status, and the boosts
+          of it, wherever they show. It is sent to the users who may see the status now (its
+          visibility, their follows, and blocks apply), not to the recipients of a `direct` post
+          other than its author. Purges of many statuses at once (an account's deletion, the
+          automatic deletion of old posts) send none.
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the client does not keep up, and when it shuts
@@ -6037,6 +6076,8 @@ paths:
           their `local` posts; the federated timeline has the public posts of local and remote
           accounts, never `local` posts, and neither has boosts. A remote post arrives when the
           server stores it.
+        - `delete`: a status that the timeline may have listed for the user was deleted, as
+          `GET /api/v1/streaming` sends it. `data` is `{"id": "<status id>"}`.
 
         A comment line (`: heartbeat`) arrives every 30 seconds. The server ends the stream when
         the access token stops being valid, when the setting of the timeline becomes `off`, when
@@ -8042,6 +8083,38 @@ paths:
           description: The report was received, or ignored.
         default:
           $ref: '#/components/responses/Problem'
+  /client_measurements:
+    post:
+      operationId: reportClientMeasurements
+      summary: Report samples of how fast the web client responds
+      description: |
+        Reports samples of how fast the web client responded, for the operators of the server: up
+        to 50 of them in a body of at most 16 KiB of `application/json`. A report that reaches the
+        operation is answered 204, which never tells whether it was kept; the limit of requests per
+        client IP (429) and an unavailable server (503) answer as for every operation. The server
+        ignores a body of another content type or over the size, and a body it cannot read; it
+        drops each sample whose name is not one of its metric or whose value is out of range, keeps
+        at most 10 reports a minute from each client IP, and takes nothing while the instance
+        setting `ux_measurement` is off (`ux_measurement` of the instance).
+
+        The client sends a sample of its page views, and nothing that identifies a person: a sample
+        names a route by its ID, never by its URL. A report may be sent without an access token,
+        with `navigator.sendBeacon` while the page is left. An access token that is sent must be
+        valid, as for every operation.
+      tags:
+        - client-errors
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClientMeasurementReport'
+      responses:
+        '204':
+          description: The report was received, or ignored.
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/queue:
     get:
       operationId: getAdminQueue
@@ -9298,6 +9371,43 @@ paths:
           $ref: '#/components/responses/ErrorGroup'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/ux_measurements:
+    get:
+      operationId: listUXMeasurements
+      x-permission: manage_errors
+      summary: List the UX measurements
+      description: |
+        The samples of how fast the web client responded (`POST /client_measurements`), summed over
+        the last `hours` hours, the current one included, by metric and name, with their buckets and
+        75th percentile. The server keeps the hourly counts for 30 days. Needs the `manage_errors`
+        permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      parameters:
+        - name: hours
+          in: query
+          required: false
+          description: The hours of the window, 24 by default.
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 720
+            default: 24
+      responses:
+        '200':
+          description: The measurements of the window.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UXMeasurementList'
+        default:
+          $ref: '#/components/responses/Problem'
   /admin/domain_actions/{id}/lift:
     post:
       operationId: liftDomainAction
@@ -10148,9 +10258,11 @@ paths:
       x-permission: manage_settings
       summary: Read the instance theme
       description: |
-        The current theme of the web client: the overridden design tokens and the
-        custom CSS. A server that never saved a theme, or reset it, answers an empty theme. Needs the
-        `manage_settings` permission.
+        The theme of the web client as its administrators edit it: the draft token set and the set
+        in effect. Each omits what was never saved or published. A set lists the overrides that apply
+        in `tokens` and, in `stale_tokens`, those that no longer apply since an upgrade renamed or
+        retired their token or changed its bounds; the server leaves those out of the stylesheet and
+        the next save of the draft drops them. Needs the `manage_settings` permission.
       tags:
         - admin-server
       security:
@@ -10161,29 +10273,26 @@ paths:
           $ref: '#/components/responses/AdminTheme'
         default:
           $ref: '#/components/responses/Problem'
+  /admin/theme/draft:
     put:
-      operationId: setAdminTheme
+      operationId: setAdminThemeDraft
       x-permission: manage_settings
-      summary: Replace the instance theme
+      summary: Save the draft of the instance theme
       description: |
-        Records a revision of the theme, which every visitor's web client and the server-rendered
-        pages load as the stylesheet `stylesheet_url` (after the shell's shared cache of up to a
-        few minutes). `tokens` lists every overridden token; the tokens it leaves out go back to
-        their defaults, and no tokens and an empty `custom_css` reset the theme. The revision and the
-        change are kept (the audit log's `setting_changed` of `theme`).
+        Saves a token set as the draft, which replaces the previous draft as a whole. The theme in
+        effect does not change until the draft is published (`POST /admin/theme/publish`); the draft's
+        stylesheet can be previewed first (`GET /admin/theme/draft/stylesheet`). `tokens` lists every
+        overridden token; the tokens it leaves out keep their defaults, and no tokens make a draft that
+        resets the theme.
 
-        The overridable tokens are the web client's design tokens except the primitive palette
-        (the generated list of `@my/ui`). A color token takes `light` and `dark`, each `#rrggbb`
-        (`#rrggbbaa` for `color-overlay`); the other tokens take `value`: a length is `0` or a `rem`
-        / `px` value within the token's bounds, a line height a number, a duration `ms` / `s`, an
-        easing a keyword or `cubic-bezier()`, a font family a list of family names, and an
-        `elevation-*` shadow `none` or up to four `[inset] <x> <y> [<blur> [<spread>]] <#color>`
-        layers. Every contrast pair of the color tokens, with the defaults of the tokens not
-        overridden, must meet WCAG 2.2 AA (4.5:1 for text, 3:1 for controls) in both color schemes.
-        The custom CSS (at most 65,536 bytes) is served as it is after the token rules; the server
-        does not read it, it runs under the same Content-Security-Policy as the client (only
-        same-origin resources), and what it does to contrast, layout, and focus is the
-        administrator's responsibility. A theme that breaks any rule is a 422
+        The overridable tokens are the colors, the font, the type sizes and line heights, the radii,
+        and the spin duration of the web client's design tokens (the list generated from
+        `@my/design-tokens`); the shadows, the spacing, the component sizes, and the colors of the data
+        charts stay fixed. A color token takes `light` and `dark`, each `#rrggbb`; the other tokens
+        take `value`: a length is `0` or a `rem` / `px` value within the token's bounds, a line height
+        a number, a duration `ms` / `s`, and a font family a list of family names. Every contrast pair
+        of the color tokens, with the defaults of the tokens not overridden, must meet WCAG 2.2 AA
+        (4.5:1 for text, 3:1 for marks) in both color schemes. A set that breaks any rule is a 422
         `/api/v1/problems/invalid-theme` listing every problem in `theme_errors`. Needs the
         `manage_settings` permission.
       tags:
@@ -10201,18 +10310,82 @@ paths:
         '200':
           $ref: '#/components/responses/AdminTheme'
         '422':
-          description: The theme breaks a rule; nothing was saved.
+          $ref: '#/components/responses/ThemeProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/theme/draft/stylesheet:
+    get:
+      operationId: getAdminThemeDraftStylesheet
+      x-permission: manage_settings
+      summary: Preview the draft of the instance theme
+      description: |
+        The stylesheet that the draft would serve once published, for the administrator to apply
+        over the page and preview the draft. Only administrators see it; it is never cached. 404 when
+        no draft was saved. Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:read
+      responses:
+        '200':
+          description: The stylesheet of the draft.
           headers:
-            Content-Language:
-              description: The locale of `title` and `detail`.
-              schema:
-                type: string
             Cache-Control:
               $ref: '#/components/headers/CacheControl'
           content:
-            application/problem+json:
+            text/css:
               schema:
-                $ref: '#/components/schemas/ThemeProblem'
+                type: string
+                format: binary
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/theme/publish:
+    post:
+      operationId: publishAdminTheme
+      x-permission: manage_settings
+      summary: Publish the draft of the instance theme
+      description: |
+        Publishes the draft under a new revision, which every visitor's web client and the
+        server-rendered pages load as the stylesheet `stylesheet_url` (after the shell's shared cache
+        of up to a few minutes). The draft is checked again as a whole, since an upgrade may have
+        changed the defaults its contrast pairs are checked with; its stale overrides are left out. The
+        publication is kept (the audit log's `setting_changed` of `theme`). 404 when no draft was
+        saved; a 422 `/api/v1/problems/invalid-theme` when the draft no longer meets a rule. Needs the
+        `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTheme'
+        '422':
+          $ref: '#/components/responses/ThemeProblem'
+        default:
+          $ref: '#/components/responses/Problem'
+  /admin/theme/restore:
+    post:
+      operationId: restoreAdminTheme
+      x-permission: manage_settings
+      summary: Restore the previously published instance theme
+      description: |
+        Publishes again, under a new revision, the token set published before the one in effect; the
+        draft stays as it is. Restoring twice in a row goes back to the set in effect before the first
+        restore. The publication is kept (the audit log's `setting_changed` of `theme`). 404 when no
+        other set was ever published; a 422 `/api/v1/problems/invalid-theme` when that set no longer
+        meets a rule. Needs the `manage_settings` permission.
+      tags:
+        - admin-server
+      security:
+        - oauth2:
+            - admin:write
+      responses:
+        '200':
+          $ref: '#/components/responses/AdminTheme'
+        '422':
+          $ref: '#/components/responses/ThemeProblem'
         default:
           $ref: '#/components/responses/Problem'
   /admin/instance/brand:
@@ -14642,6 +14815,19 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/AdminTheme'
+    ThemeProblem:
+      description: The token set breaks a rule; nothing was saved or published.
+      headers:
+        Content-Language:
+          description: The locale of `title` and `detail`.
+          schema:
+            type: string
+        Cache-Control:
+          $ref: '#/components/headers/CacheControl'
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/ThemeProblem'
     AdminServiceClosure:
       description: The service closure.
       headers:
@@ -19994,27 +20180,29 @@ components:
     AdminTheme:
       description: The instance theme as its administrators edit it.
       type: object
+      properties:
+        draft:
+          $ref: '#/components/schemas/ThemeSet'
+        published:
+          $ref: '#/components/schemas/AdminThemeRevision'
+    AdminThemeRevision:
+      description: A publication of a token set, which made it the theme in effect.
+      type: object
       required:
-        - tokens
-        - custom_css
+        - revision
+        - set
+        - published_at
       properties:
         revision:
-          description: The ID of the current theme revision; omitted when no theme was ever saved.
+          description: The ID of the publication, which names its stylesheet.
           type: string
         stylesheet_url:
-          description: The stylesheet of the theme; omitted when the theme changes nothing.
+          description: The stylesheet of the theme; omitted when the set overrides nothing.
           type: string
           format: uri
-        tokens:
-          description: The overridden tokens, in the order of the token list.
-          type: array
-          items:
-            $ref: '#/components/schemas/ThemeTokenValue'
-        custom_css:
-          description: The custom CSS; empty for none.
-          type: string
-        revised_at:
-          description: When the current revision was recorded; omitted when no theme was ever saved.
+        set:
+          $ref: '#/components/schemas/ThemeSet'
+        published_at:
           type: string
           format: date-time
     AdminServiceClosure:
@@ -20187,6 +20375,36 @@ components:
             - boundary_error
             - uncaught
             - unhandledrejection
+    ClientMeasurement:
+      description: One sample of how fast the web client responded.
+      type: object
+      required:
+        - metric
+        - name
+        - value
+      properties:
+        metric:
+          $ref: '#/components/schemas/UXMetric'
+        name:
+          description: The route ID, interaction kind, action ID, or call transport that `metric` names.
+          type: string
+          maxLength: 128
+        value:
+          description: The value in milliseconds, or in percent for `call_packet_loss`.
+          type: number
+          format: double
+          minimum: 0
+    ClientMeasurementReport:
+      description: Samples of how fast the web client responded, sent together.
+      type: object
+      required:
+        - measurements
+      properties:
+        measurements:
+          type: array
+          maxItems: 50
+          items:
+            $ref: '#/components/schemas/ClientMeasurement'
     CloseServiceRequest:
       description: The confirmation of the closure of the server.
       type: object
@@ -24069,6 +24287,12 @@ components:
             Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
             link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
           type: boolean
+        ux_measurement:
+          description: |
+            Whether the server takes samples of how fast the web client responds
+            (`POST /client_measurements`). While it is false, the server takes none and the client sends
+            none.
+          type: boolean
         translation:
           $ref: '#/components/schemas/InstanceTranslation'
         auto_delete_limit:
@@ -24574,6 +24798,7 @@ components:
         - funding_meter_target_amount
         - funding_meter_target_currency
         - funding_meter_rail
+        - ux_measurement
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from
@@ -27127,8 +27352,9 @@ components:
           which.
         - `/api/v1/problems/invalid-relay` (422): a relay cannot be registered, joined, left, or
           deleted; `reason` says why.
-        - `/api/v1/problems/invalid-theme` (422): the theme breaks a rule; the problem lists every
-          reason in `theme_errors` (`PUT /admin/theme`).
+        - `/api/v1/problems/invalid-theme` (422): the theme's token set breaks a rule; the problem lists
+          every reason in `theme_errors` (`PUT /admin/theme/draft`, `POST /admin/theme/publish`,
+          `POST /admin/theme/restore`).
         - `/api/v1/problems/invalid-brand` (422): the brand image breaks a rule; `brand_error` says
           why (`/admin/instance/brand/...`).
         - `/api/v1/problems/service-closure-state` (409): the state of the service closure does not
@@ -27348,6 +27574,14 @@ components:
           type: string
         request_id:
           description: The request ID (the `X-Request-Id` response header), for reporting the problem.
+          type: string
+        field:
+          description: |
+            The member of the request that a 422 is about, by its name in the request: a property of
+            the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+            field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+            wrong with its value without naming it, for the client to show beside that field. Absent
+            when the problem is not about one member.
           type: string
     ProfileField:
       description: One metadata field of a profile.
@@ -28140,19 +28374,16 @@ components:
           type: string
           maxLength: 5000
     SetThemeRequest:
-      description: The whole theme; tokens left out go back to their defaults.
+      description: A whole token set; tokens left out keep their defaults.
       type: object
       required:
         - tokens
-        - custom_css
       properties:
         tokens:
           type: array
           maxItems: 200
           items:
             $ref: '#/components/schemas/ThemeTokenValue'
-        custom_css:
-          type: string
     SignupBlockImportResult:
       description: What an import of a list of sign-up blocks did.
       type: object
@@ -29300,11 +29531,11 @@ components:
           minimum: 1
     ThemeError:
       description: |
-        One reason a theme cannot be saved. `code` is `unknown_token`, `duplicate_token`,
-        `invalid_value` (the value does not have the token's shape; `scheme` names the color scheme
-        of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and ms for a
-        duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
-        `minimum`:1), `css_too_long` (`max` bytes), or `css_invalid` (not UTF-8 text).
+        One reason a token set cannot be saved or published. `code` is `unknown_token`,
+        `duplicate_token`, `invalid_value` (the value does not have the token's shape; `scheme` names the
+        color scheme of a color), `out_of_range` (`min` and `max` are the bounds, in rem for a length and
+        ms for a duration), `low_contrast` (`token` on `background` is `ratio`:1 in `scheme` and needs
+        `minimum`:1), or `too_many_overrides` (more than `max` tokens).
       type: object
       required:
         - code
@@ -29317,8 +29548,7 @@ components:
             - invalid_value
             - out_of_range
             - low_contrast
-            - css_too_long
-            - css_invalid
+            - too_many_overrides
         token:
           type: string
         scheme:
@@ -29338,8 +29568,8 @@ components:
           type: number
     ThemeProblem:
       description: |
-        A 422 of `PUT /admin/theme`. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
-        lists why the theme cannot be saved; another 422 (a malformed request) has none.
+        A 422 of the theme operations. For the type `/api/v1/problems/invalid-theme`, `theme_errors`
+        lists why the token set cannot be saved or published; another 422 (a malformed request) has none.
       allOf:
         - $ref: '#/components/schemas/Problem'
         - type: object
@@ -29348,9 +29578,58 @@ components:
               type: array
               items:
                 $ref: '#/components/schemas/ThemeError'
+    ThemeSet:
+      description: A saved token set of the instance theme.
+      type: object
+      required:
+        - id
+        - tokens
+        - stale_tokens
+        - saved_at
+      properties:
+        id:
+          type: string
+        tokens:
+          description: The overrides that apply, in the order of the token list.
+          type: array
+          items:
+            $ref: '#/components/schemas/ThemeTokenValue'
+        stale_tokens:
+          description: |
+            The overrides that no longer apply and are left out of the stylesheet: `reason` is
+            `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+            `out_of_range` (the token's kind or bounds changed).
+          type: array
+          items:
+            $ref: '#/components/schemas/StaleThemeToken'
+        saved_at:
+          type: string
+          format: date-time
+    StaleThemeToken:
+      description: A stored override that no longer applies, as it was saved, and why.
+      type: object
+      required:
+        - token
+        - reason
+      properties:
+        token:
+          type: string
+        light:
+          type: string
+        dark:
+          type: string
+        value:
+          type: string
+        reason:
+          type: string
+          enum:
+            - unknown_token
+            - duplicate_token
+            - invalid_value
+            - out_of_range
     ThemeTokenValue:
       description: |
-        The override of one design token, named without `--` (`color-accent`, `radius-md`): `light`
+        The override of one design token, named without `--` (`color-accent`, `radius-control`): `light`
         and `dark` for a color token, `value` for the others.
       type: object
       required:
@@ -29724,6 +30003,89 @@ components:
           minItems: 1
           items:
             $ref: '#/components/schemas/WebhookEventType'
+    UXMeasurementBucket:
+      description: |
+        The samples whose value is above the bound of the bucket before and at most `le`. The last
+        bucket has no `le`: it holds the samples above every bound.
+      type: object
+      required:
+        - samples
+      properties:
+        le:
+          description: The upper bound of the bucket, in the unit of the metric.
+          type: number
+          format: double
+        samples:
+          type: integer
+          format: int64
+    UXMeasurementList:
+      description: The UX measurements of a window of hours, by metric and then by most samples.
+      type: object
+      required:
+        - since
+        - items
+      properties:
+        since:
+          description: The start of the first hour of the window, in UTC.
+          type: string
+          format: date-time
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/UXMeasurementSummary'
+    UXMeasurementSummary:
+      description: The samples of one metric and name over the window.
+      type: object
+      required:
+        - metric
+        - name
+        - samples
+        - buckets
+      properties:
+        metric:
+          $ref: '#/components/schemas/UXMetric'
+        name:
+          description: |
+            The route ID, interaction kind, action ID, or call transport; `other` for the names past
+            the first 200 of the metric that a process of the server kept.
+          type: string
+        samples:
+          type: integer
+          format: int64
+        p75:
+          description: |
+            The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+            the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+          type: number
+          format: double
+        buckets:
+          description: The samples by bucket, from the lowest bound up.
+          type: array
+          items:
+            $ref: '#/components/schemas/UXMeasurementBucket'
+    UXMetric:
+      description: |
+        What a UX measurement of the web client measures, and so what its name names. The values are
+        milliseconds, except `call_packet_loss`, a percentage from 0 to 100.
+
+        - `lcp`, `inp`, `long_frame`: the largest contentful paint, the interaction to next paint, and
+          a long animation frame of a route, named by the route's ID (a pattern such as
+          `/_app/statuses/$id`, never the URL).
+        - `transition`: a navigation, named by its interaction kind (`push`, `pop`, `modal`,
+          `replace`, `none`).
+        - `press`: the time from a press to its response, named by the action ID (`post.reply`).
+        - `call_rtt`, `call_jitter`, `call_packet_loss`: the quality of a voice call, named by the
+          call transport (`p2p`, `livekit`, `sora`).
+      type: string
+      enum:
+        - lcp
+        - inp
+        - long_frame
+        - transition
+        - press
+        - call_rtt
+        - call_jitter
+        - call_packet_loss
     Visibility:
       description: |
         Who may see a status: `public` everyone, listed on public timelines;

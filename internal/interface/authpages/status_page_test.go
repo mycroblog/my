@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -22,7 +21,7 @@ func (unreachableIdentity) Authenticate(context.Context, string) (identity.Sessi
 }
 
 // TestStatusPageLink checks that the sign-in page and the error page of a database outage link to the status page
-// when status_page_url is set (ADR-0088 §20), in each locale, and that no page has the link otherwise.
+// when status_page_url is set (ADR-0088 §20), and that no page has the link otherwise.
 func TestStatusPageLink(t *testing.T) {
 	b, err := i18n.Load()
 	if err != nil {
@@ -42,15 +41,13 @@ func TestStatusPageLink(t *testing.T) {
 		{"sign-in", newFakeIdentity(), http.StatusOK},
 		{"database outage", unreachableIdentity{newFakeIdentity()}, http.StatusInternalServerError},
 	} {
-		for lang, text := range map[string]string{"en": "Service status", "ja": "稼働状況"} {
-			w := serve(tt.id, url).do(http.MethodGet, authpages.PathSignIn, nil, map[string]string{"Accept-Language": lang})
-			if w.Code != tt.code || !strings.Contains(w.Body.String(), `<a href="`+url+`" rel="noopener">`+text+`</a>`) {
-				t.Errorf("%s in %s = %d, lacks the status page link:\n%s", tt.name, lang, w.Code, w.Body)
-			}
+		w := serve(tt.id, url).do(http.MethodGet, authpages.PathSignIn, nil, nil)
+		if w.Code != tt.code || text(screenData(t, w), "statusPageUrl") != url {
+			t.Errorf("%s = %d, lacks the status page link:\n%s", tt.name, w.Code, w.Body)
 		}
-		w := serve(tt.id, "").do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		if body := w.Body.String(); strings.Contains(body, "<footer") || strings.Contains(body, "Service status") {
-			t.Errorf("%s without status_page_url has a footer:\n%s", tt.name, body)
+		w = serve(tt.id, "").do(http.MethodGet, authpages.PathSignIn, nil, nil)
+		if data := screenData(t, w); at(data, "statusPageUrl") != nil {
+			t.Errorf("%s without status_page_url links to a status page: %v", tt.name, data)
 		}
 	}
 }

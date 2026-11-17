@@ -94,6 +94,12 @@ The web client sends the errors its screens did not handle to `POST /api/v1/clie
 A report sent without a signed-in session is counted and logged but does not notify anyone by itself, so an anonymous script cannot fill your inbox. The group notifies when a signed-in person's browser reports it too.
 The stacks are those of the minified build and are not translated back to source, so read the route and the message first. The release is the version of the server that served the page. A page that opened offline, or after 3 seconds without an answer, comes from the browser's copy, which names the version from when the browser stored the web client: an older version with the same web client.
 
+## UX measurements
+
+The web client sends samples of how fast it responds to `POST /api/v1/client_measurements` on your own server, the same way as its errors: how long a screen takes to appear (LCP) and to answer a press (INP) on each route, its long frames, each navigation by kind, each action by its ID (`post.reply`), and the round trip, jitter, and packet loss of voice calls. A sample names only the route, the kind, the action, or the call transport; it carries no account, address, or URL. The server answers `204` to everything and keeps at most 10 requests a minute from one IP address.
+The server counts the samples by hour in the database, written once a minute, and deletes them after 30 days. `GET /api/v1/admin/ux_measurements` (`manage_errors`) sums the last 24 hours, or `hours` up to 720, with the 75th percentile of each name; the metrics `my.ux.duration` and `my.ux.call.packet_loss` export the same samples ([Metrics](running.md#metrics)). Each kind keeps its first 200 names in a process; the later ones count as `other`.
+It is off by default; the instance setting `ux_measurement` turns it on, and while it is off the server takes no sample ([Instance settings](instance-settings.md)).
+
 ## Sending reports to a service
 
 Set `errors_exporter` to send each report also to an error tracker. The log line and the groups in the database stay on. A report is sent once and never retried, and nothing waits for the service.

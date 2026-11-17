@@ -188,6 +188,6 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 - Words: the settings `maintenance_server_name`, `maintenance_message`, `maintenance_until`, and `status_page_url`
   ([configuration reference](../reference/configuration.md)).
 - Without `-offline`, it also reads the instance's name (when `maintenance_server_name` is unset), its default locale (when `-lang` is not given),
-  and the token overrides of its theme. The theme's custom CSS is never included. When the database cannot be read,
+  and the token overrides of its published theme. When the database cannot be read,
   it prints a warning, writes the pages from the configuration and the default theme, and exits 0.
 - Run it again whenever those settings or the theme change, and before each maintenance, so that the pages in the front end stay current.

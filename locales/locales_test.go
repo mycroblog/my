@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// TestFS checks that FS holds the catalogs of every namespace Go formats and none of a client* namespace.
+// TestFS checks that FS holds every catalog.
 func TestFS(t *testing.T) {
 	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || filepath.Ext(path) != ".json" {
@@ -23,12 +23,8 @@ func TestFS(t *testing.T) {
 				"(scripts/task.sh i18n:gen removes such files from the pseudo-locales)", path)
 			return nil
 		}
-		_, err = fs.Stat(FS, filepath.ToSlash(path))
-		switch client := strings.HasPrefix(segments[1], "client"); {
-		case client && err == nil:
-			t.Errorf("FS embeds %s, which only the TypeScript clients read", path)
-		case !client && err != nil:
-			t.Errorf("FS does not embed %s: add its namespace to the go:embed directive (%v)", path, err)
+		if _, statErr := fs.Stat(FS, filepath.ToSlash(path)); statErr != nil {
+			t.Errorf("FS does not embed %s: add its namespace to the go:embed directive (%v)", path, statErr)
 		}
 		return nil
 	})

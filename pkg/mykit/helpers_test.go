@@ -3,6 +3,7 @@
 package mykit
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"go/ast"
@@ -11,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -213,7 +215,18 @@ func TestUploadMediaCancelledWhileTheSourceBlocks(t *testing.T) {
 	case <-time.After(10 * time.Second):
 		t.Fatal("the Read of the source did not return after Close")
 	}
-	time.Sleep(50 * time.Millisecond)
+	// The goroutine that wrote the upload's body has ended: nothing is left to read the source.
+	deadline := time.NewTimer(10 * time.Second)
+	defer deadline.Stop()
+	tick := time.NewTicker(time.Millisecond)
+	defer tick.Stop()
+	for buf := make([]byte, 1<<20); bytes.Contains(buf[:runtime.Stack(buf, true)], []byte("mykit.writeMediaUpload")); {
+		select {
+		case <-deadline.C:
+			t.Fatal("the writer of the upload's body did not end after the Read returned")
+		case <-tick.C:
+		}
+	}
 	if n := src.calls.Load(); n != 1 {
 		t.Errorf("Read calls = %d, want no Read after the cancelled upload", n)
 	}

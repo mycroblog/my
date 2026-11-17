@@ -130,7 +130,7 @@
 | `author` | 省略可。§5 で検証できた作者の `Account` |
 
 Web クライアントは、カード全体を `url` へのリンク（`rel="noopener noreferrer nofollow"`、`target="_blank"`）にし、題名・説明・サイト名は `dir="auto"` と `lang` を付けて出す（ADR-0009）。
-カードの部品は独立して失敗し得る区画として `react-error-boundary` で囲む（[web-client](../architecture/web-client/README.md) の E1）。
+カードの部品は独立して失敗し得る区画として `react-error-boundary` で囲む。
 
 ### 9. `robots.txt` のトークンと User-Agent
 

@@ -85,6 +85,18 @@ func (e StatusDeleted) ByAccountErasure() bool {
 	return e.Deletion.Origin == content.DeletedByAccountDeletion
 }
 
+// Streamed reports whether the streams tell their viewers of the deletion (ADR-0013 §19): one by
+// the author, a moderator, or a remote Delete. The purges of many statuses at once (an account's
+// erasure, the automatic deletion, the retention) are not streamed; the clients drop those
+// statuses when they read again.
+func (e StatusDeleted) Streamed() bool {
+	switch e.Deletion.Origin {
+	case content.DeletedByAuthor, content.DeletedByModeration, content.DeletedByRemote:
+		return true
+	}
+	return false
+}
+
 // EventPollTallyObserved is emitted when new counts of a remote poll are recorded; the
 // poll_tallies projection follows the newest observation.
 const EventPollTallyObserved = "content.poll_tally_observed"

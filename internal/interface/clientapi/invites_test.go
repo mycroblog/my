@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"strings"
 	"testing"
 	"time"
 
@@ -139,7 +138,7 @@ func TestOwnInviteProblems(t *testing.T) {
 		body   string
 		status int
 		typ    string
-		detail string
+		field  string
 	}{
 		{appidentity.ErrInvitesNotAllowed, `{}`, http.StatusForbidden, clientapi.ProblemTypeInvitesNotAllowed, ""},
 		{appidentity.ErrTooManyInvites, `{}`, http.StatusConflict, clientapi.ProblemTypeTooManyInvites, ""},
@@ -149,7 +148,7 @@ func TestOwnInviteProblems(t *testing.T) {
 		f.err = tc.err
 		res := e.sendJSON(t, http.MethodPost, "/invites", "write", tc.body)
 		p := decodeProblem(t, res)
-		if res.StatusCode != tc.status || p.Type != tc.typ || (tc.detail != "" && (p.Detail == nil || !strings.Contains(*p.Detail, tc.detail))) {
+		if res.StatusCode != tc.status || p.Type != tc.typ || (tc.field != "" && (p.Field == nil || *p.Field != tc.field)) {
 			t.Errorf("%v = %d %+v, want %d %s", tc.err, res.StatusCode, p, tc.status, tc.typ)
 		}
 	}

@@ -1,0 +1,26 @@
+# SPDX-License-Identifier: MIT
+description: The samples of one metric and name over the window.
+type: object
+required: [metric, name, samples, buckets]
+properties:
+  metric:
+    $ref: ./UXMetric.yaml
+  name:
+    description: |
+      The route ID, interaction kind, action ID, or call transport; `other` for the names past
+      the first 200 of the metric that a process of the server kept.
+    type: string
+  samples:
+    type: integer
+    format: int64
+  p75:
+    description: |
+      The upper bound of the bucket that holds the 75th percentile: at least three quarters of
+      the samples are at most this value. Absent when the 75th percentile is in the last bucket.
+    type: number
+    format: double
+  buckets:
+    description: The samples by bucket, from the lowest bound up.
+    type: array
+    items:
+      $ref: ./UXMeasurementBucket.yaml

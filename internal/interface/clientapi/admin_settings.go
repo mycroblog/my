@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"slices"
 
 	appidentity "github.com/mycroblog/my/internal/app/identity"
@@ -140,7 +139,7 @@ func (s *Server) UpdateInstanceSettings(ctx context.Context, req UpdateInstanceS
 	l := s.Localizer(ctx)
 	unprocessable := func(name string) UpdateInstanceSettingsResponseObject {
 		return UpdateInstanceSettingsdefaultApplicationProblemPlusJSONResponse(
-			s.problem(ctx, http.StatusUnprocessableEntity, ProblemTypeBlank, l.ServerErrorsUnprocessable(), l.ServerErrorsInvalidValue(name)))
+			s.fieldProblem(ctx, name, l.ServerErrorsInvalidValue()))
 	}
 	if req.Body == nil || len(req.Body.Values) == 0 {
 		return unprocessable("values"), nil

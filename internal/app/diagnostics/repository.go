@@ -3,8 +3,10 @@
 // Package diagnostics holds the use cases of the error groups (ADR-0103 §4 (2), §7): the
 // Recorder that the ErrorReporter hands every report to, which groups the reports by their
 // fingerprint in the database, the resolve, mute, and unmute of a group, the regression of a
-// resolved group, and the daily prune of the hourly counts. The adapters of Repository live in
-// internal/adapter/db/*; their contract test suite is diagnosticstest.DiagnosticsRepositoryContract.
+// resolved group, and the daily prune of the hourly counts; and the UX measurements of the web
+// client (ADR-0167 §3, ux.go). The adapters of Repository and UXRepository live in
+// internal/adapter/db/*; their contract test suites are diagnosticstest.DiagnosticsRepositoryContract
+// and diagnosticstest.UXRepositoryContract.
 //
 // The projector of the groups' states is registered before the subscribers of notification and
 // webhook, so that they read a group's state in the transaction of its event. The counts and

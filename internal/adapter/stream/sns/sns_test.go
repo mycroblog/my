@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"testing"
+	"testing/synctest"
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -390,28 +391,30 @@ func (c slowDeleteQueue) DeleteQueue(ctx context.Context, in *sqs.DeleteQueueInp
 // A Listen whose subscription fails at its deadline returns by that deadline, and deletes the
 // queue it created afterwards.
 func TestListenReturnsByItsDeadlineWhenSubscribeFails(t *testing.T) {
-	b := fakeBroker(t)
-	const deadline, deleteDelay = 50 * time.Millisecond, 500 * time.Millisecond
-	bus, err := sns.New(stalledSubscribe{b.sns}, slowDeleteQueue{b.sqs, deleteDelay}, sns.Options{TopicARN: b.topic, QueuePrefix: b.prefix})
-	if err != nil {
-		t.Fatal(err)
-	}
-	ctx, cancel := context.WithTimeout(t.Context(), deadline)
-	defer cancel()
-	start := time.Now()
-	if l, err := bus.Listen(ctx, func([]byte) {}); err == nil {
-		_ = l.Close(t.Context())
-		t.Fatal("Listen with a stalled subscription succeeded")
-	}
-	if took := time.Since(start); took >= deleteDelay {
-		t.Errorf("Listen took %s, past its deadline %s", took, deadline)
-	}
-	for wait := time.Now().Add(5 * time.Second); len(b.queues(t)) != 0; {
-		if time.Now().After(wait) {
-			t.Fatalf("queues = %v, want none after the cleanup", b.queues(t))
+	synctest.Test(t, func(t *testing.T) {
+		b := fakeBroker(t)
+		const deadline, deleteDelay = 50 * time.Millisecond, 500 * time.Millisecond
+		bus, err := sns.New(stalledSubscribe{b.sns}, slowDeleteQueue{b.sqs, deleteDelay}, sns.Options{TopicARN: b.topic, QueuePrefix: b.prefix})
+		if err != nil {
+			t.Fatal(err)
 		}
-		time.Sleep(10 * time.Millisecond)
-	}
+		ctx, cancel := context.WithTimeout(t.Context(), deadline)
+		defer cancel()
+		start := time.Now()
+		if l, err := bus.Listen(ctx, func([]byte) {}); err == nil {
+			_ = l.Close(t.Context())
+			t.Fatal("Listen with a stalled subscription succeeded")
+		}
+		if took := time.Since(start); took >= deleteDelay {
+			t.Errorf("Listen took %s, past its deadline %s", took, deadline)
+		}
+		// The cleanup deletes the queue once its slow DeleteQueue returns.
+		<-time.After(deleteDelay)
+		synctest.Wait()
+		if q := b.queues(t); len(q) != 0 {
+			t.Fatalf("queues = %v, want none after the cleanup", q)
+		}
+	})
 }
 
 // A listener whose receives keep failing breaks.

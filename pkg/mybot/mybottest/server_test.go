@@ -5,8 +5,10 @@ package mybottest_test
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"net/http"
 	"slices"
+	"sync"
 	"testing"
 	"time"
 
@@ -37,6 +39,55 @@ func run(t *testing.T, bot *mybot.Bot) func() error {
 	}
 	t.Cleanup(func() { _ = stop() })
 	return stop
+}
+
+// botLog is a slog.Handler that records the bot's log at every level, for a test to wait for the debug lines
+// that mybot.Config.Logger documents. It drops the attributes of WithAttrs and the groups.
+type botLog struct {
+	mu    sync.Mutex
+	lines []slog.Record
+}
+
+func (l *botLog) Enabled(context.Context, slog.Level) bool { return true }
+
+func (l *botLog) Handle(_ context.Context, r slog.Record) error {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.lines = append(l.lines, r.Clone())
+	return nil
+}
+
+func (l *botLog) WithAttrs([]slog.Attr) slog.Handler { return l }
+func (l *botLog) WithGroup(string) slog.Handler      { return l }
+
+func (l *botLog) has(msg, key, value string) bool {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	for _, r := range l.lines {
+		found := false
+		r.Attrs(func(a slog.Attr) bool {
+			found = a.Key == key && a.Value.String() == value
+			return !found
+		})
+		if r.Message == msg && found {
+			return true
+		}
+	}
+	return false
+}
+
+// wait waits for a line with the message msg whose attribute key is value, failing t when ctx ends first.
+func (l *botLog) wait(ctx context.Context, t *testing.T, msg, key, value string) {
+	t.Helper()
+	tick := time.NewTicker(10 * time.Millisecond)
+	defer tick.Stop()
+	for !l.has(msg, key, value) {
+		select {
+		case <-ctx.Done():
+			t.Fatalf("the bot did not log %q with %s=%s", msg, key, value)
+		case <-tick.C:
+		}
+	}
 }
 
 func newServer(t *testing.T) *mybottest.Server {
@@ -79,7 +130,10 @@ func waitCtx(t *testing.T) context.Context {
 // and is answered once.
 func TestDisconnectCatchUp(t *testing.T) {
 	srv := newServer(t)
-	bot, err := mybot.New(srv.Config())
+	cfg := srv.Config()
+	log := &botLog{}
+	cfg.Logger = slog.New(log)
+	bot, err := mybot.New(cfg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -97,7 +151,9 @@ func TestDisconnectCatchUp(t *testing.T) {
 
 	srv.Disconnect()
 	missed := srv.Inject(srv.Mention(alice, "two", mykit.VisibilityPublic))
-	time.Sleep(50 * time.Millisecond)
+	if err := srv.WaitHeld(ctx, 1); err != nil {
+		t.Fatalf("the bot's stream was not held: %v", err)
+	}
 	if n := len(srv.Posted()); n != 1 {
 		t.Fatalf("posts while disconnected = %d, want 1", n)
 	}
@@ -112,8 +168,9 @@ func TestDisconnectCatchUp(t *testing.T) {
 	if err := srv.WaitStreams(ctx, 1); err != nil {
 		t.Fatal(err)
 	}
-	// The catch-up after the reconnection lists the first mention again; it is answered once all the same.
-	time.Sleep(100 * time.Millisecond)
+	// The first mention is answered once all the same: once the catch-up after the reconnection is over,
+	// nothing more is handed out.
+	log.wait(ctx, t, "mybot: every notification handed out is processed", "position", missed.Id)
 	if n := len(srv.Posted()); n != 2 {
 		t.Errorf("posts = %d, want 2", n)
 	}
@@ -123,7 +180,15 @@ func TestDisconnectCatchUp(t *testing.T) {
 // the catch-up has read the list, comes on the stream, however late the server goroutine runs.
 func TestStreamIsSubscribedWhenItOpens(t *testing.T) {
 	srv := newServer(t)
-	mybottest.SetOpened(srv, func() { time.Sleep(100 * time.Millisecond) })
+	// The server goroutine of the stream goes on only once the bot has seen the stream open and the notification
+	// was added.
+	added := make(chan struct{})
+	mybottest.SetOpened(srv, func() {
+		select {
+		case <-added:
+		case <-t.Context().Done():
+		}
+	})
 	api, err := mykit.New(mykit.Config{Server: srv.URL(), TokenSource: mykit.StaticToken(mybottest.Token)})
 	if err != nil {
 		t.Fatal(err)
@@ -132,9 +197,11 @@ func TestStreamIsSubscribedWhenItOpens(t *testing.T) {
 	defer cancel()
 	var injected mykit.Notification
 	got := make(chan string, 1)
+	var once sync.Once
 	err = api.Stream(ctx, mykit.StreamOptions{
 		OnOpen: func(bool) {
 			injected = srv.Inject(srv.Mention(srv.Account("alice"), "now", mykit.VisibilityPublic))
+			once.Do(func() { close(added) })
 		},
 		OnEvent: func(e mykit.StreamEvent) {
 			if n, ok := e.(*mykit.NotificationEvent); ok {
@@ -206,11 +273,14 @@ func TestHelpers(t *testing.T) {
 	alice := srv.Account("alice")
 	n := srv.Inject(srv.Mention(alice, "hello", mykit.VisibilityPublic))
 	ctx := waitCtx(t)
+	tick := time.NewTicker(10 * time.Millisecond)
+	defer tick.Stop()
 	for len(srv.Follows()) == 0 {
-		if ctx.Err() != nil {
+		select {
+		case <-ctx.Done():
 			t.Fatal("the bot did not follow")
+		case <-tick.C:
 		}
-		time.Sleep(10 * time.Millisecond)
 	}
 	if got, want := srv.Reactions(), []mybottest.Reaction{{StatusID: n.Status.Id, Emoji: "👍"}}; !slices.Equal(got, want) {
 		t.Errorf("reactions = %v, want %v", got, want)

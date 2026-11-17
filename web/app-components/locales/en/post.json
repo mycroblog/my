@@ -1,0 +1,322 @@
+{
+  "post.reply": {
+    "defaultMessage": "Reply",
+    "description": "The action of a post that replies to it."
+  },
+  "post.boost": {
+    "defaultMessage": "Boost",
+    "description": "The action of a post that boosts it, and the item of its boost menu that boosts it or takes the boost back."
+  },
+  "post.unboost": {
+    "defaultMessage": "Undo boost",
+    "description": "The item of a boosted post's boost menu that takes the reader's boost back."
+  },
+  "post.quote": {
+    "defaultMessage": "Quote",
+    "description": "The item of a post's boost menu that writes a post quoting it."
+  },
+  "post.boost_waits": {
+    "defaultMessage": "Your boost goes out once {handle} approves it",
+    "description": "The quiet line under Boost in a post's boost menu, read after it as part of its name, when the post's author approves the reader's boosts by hand: the boost is made only once that author approves it, and until then counts nowhere and no one sees it. handle is the author's, as @user@domain."
+  },
+  "post.quote_waits": {
+    "defaultMessage": "Your quote shows this post once {handle} approves it",
+    "description": "The quiet line under Quote in a post's boost menu, read after it as part of its name, when the post's author approves the reader's quotes by hand: the quote is posted, but shows the quoted post only once that author approves it. handle is the author's, as @user@domain."
+  },
+  "post.favourite": {
+    "defaultMessage": "Favourite",
+    "description": "The action of a post that favourites it, or takes the favourite back."
+  },
+  "post.react": {
+    "defaultMessage": "React",
+    "description": "The action of a post that reacts to it with an emoji."
+  },
+  "post.more": {
+    "defaultMessage": "More",
+    "description": "The button of a post that opens the menu of its other actions."
+  },
+  "post.more_shortcut": {
+    "defaultMessage": "Open more actions",
+    "description": "In the keyboard shortcuts dialog, the row of the key that opens a focused post's more menu; says what the key does, unlike the button's name More."
+  },
+  "post.boosted_by": {
+    "defaultMessage": "{name} boosted",
+    "description": "The context line over a post that someone boosted into the timeline; name is the display name of who boosted it."
+  },
+  "post.replying_to": {
+    "defaultMessage": "Replying to {handle}",
+    "description": "The context line over a reply; handle is the account it replies to, as @user."
+  },
+  "post.reactions": {
+    "defaultMessage": "Reactions",
+    "description": "The accessible name of the row of a post's emoji reactions."
+  },
+  "post.reaction": {
+    "defaultMessage": "{emoji}, {count, number}",
+    "description": "The accessible name of an emoji reaction chip: the emoji (a Unicode emoji or :shortcode:) and how many reacted with it."
+  },
+  "post.reaction_mine": {
+    "defaultMessage": "{emoji}, {count, number}, including yours",
+    "description": "The accessible name of the reader's own emoji reaction chip, a toggle that is on: the emoji, how many reacted with it, and that the reader is one of them; pressing it takes the reader's reaction back."
+  },
+  "post.translate": {
+    "defaultMessage": "Translate",
+    "description": "The action under a post in another language that shows it translated into the reader's language."
+  },
+  "post.translating": {
+    "defaultMessage": "Translating…",
+    "description": "The line under a post, heard by assistive technology, while its translation is on its way."
+  },
+  "post.translation_downloading": {
+    "defaultMessage": "Downloading what this browser needs to translate… {percent}",
+    "description": "The line under a post, heard by assistive technology, while the reader's browser downloads what it needs before translating the post; percent is how much has come, such as 40%."
+  },
+  "post.translation_limit": {
+    "defaultMessage": "This server's monthly translation limit is reached.",
+    "description": "The line under a post when this server refused to translate it because the reader or the whole server used up this month's characters; Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_visibility": {
+    "defaultMessage": "Only some people can see this post, so it cannot be sent to this server's translation service.",
+    "description": "The line under a post when this server may not send it to its translation service because of its visibility (followers only, a direct message, or an author's posts limited to followers); Try again may follow when the reader's browser can translate it instead."
+  },
+  "post.translation_language": {
+    "defaultMessage": "This server's translation service does not translate between these languages.",
+    "description": "The line under a post when this server's translation service does not translate between the post's language and the reader's language (or, when the post's language is not known, cannot tell it), and the reader's browser cannot translate it instead; nothing follows it."
+  },
+  "post.translation_failed": {
+    "defaultMessage": "This server's translation service is not answering.",
+    "description": "The line under a post when this server's translation service is down or did not answer in time; Try again follows."
+  },
+  "post.translation_browser": {
+    "defaultMessage": "This browser cannot translate this post.",
+    "description": "The line under a post when the reader's browser cannot translate it (its model could not be downloaded, or it does not translate between these languages)."
+  },
+  "post.translation_retry": {
+    "defaultMessage": "Try again",
+    "description": "The action after a failed translation's reason that asks this server for the translation again, when its translation service may answer now."
+  },
+  "post.translation_in_browser": {
+    "defaultMessage": "Translate in this browser",
+    "description": "The action after this server refused to translate a post, which asks the reader's browser to translate it instead; the browser sends the post's text nowhere."
+  },
+  "post.translation_next_month": {
+    "defaultMessage": "Translation is available again next month.",
+    "description": "The sentence after the monthly translation limit's reason, when nothing else can translate the post now."
+  },
+  "post.translated_from_by": {
+    "defaultMessage": "Post translated from {language} by {provider}",
+    "description": "The note under a translated post, heard by assistive technology when it appears; language is the name of the language it was written in, provider the name of this server's translation service, or of the reader's browser when the browser translated it. The reader learns from it who received the post's text."
+  },
+  "post.translated_by": {
+    "defaultMessage": "Post translated by {provider}",
+    "description": "The note under a translated post when the language it was written in is not known; provider is the name of this server's translation service, or of the reader's browser when the browser translated it."
+  },
+  "post.translated_from": {
+    "defaultMessage": "Post translated from {language}",
+    "description": "The note under a translated post when the translation service has no name; language is the name of the language it was written in."
+  },
+  "post.translated": {
+    "defaultMessage": "Post translated",
+    "description": "The note under a translated post when neither its language nor the translation service is known."
+  },
+  "post.original": {
+    "defaultMessage": "Show original",
+    "description": "The action under a translated post that shows it again as it was written."
+  },
+  "post.visibility.public": {
+    "defaultMessage": "Public",
+    "description": "What the visibility glyph of a public post says, beside its time."
+  },
+  "post.visibility.local": {
+    "defaultMessage": "Local",
+    "description": "What the visibility glyph of a local post says, beside its time: on its server's local timeline, and outside its server to the author's followers alone."
+  },
+  "post.visibility.unlisted": {
+    "defaultMessage": "Quiet public",
+    "description": "What the visibility glyph of a public post kept out of the public timelines says, beside its time."
+  },
+  "post.visibility.private": {
+    "defaultMessage": "Followers only",
+    "description": "What the visibility glyph of a post for its author's followers alone says, beside its time."
+  },
+  "post.visibility.direct": {
+    "defaultMessage": "Direct",
+    "description": "What the visibility glyph of a post for the accounts it mentions alone says, beside its time."
+  },
+  "post.copy_link": {
+    "defaultMessage": "Copy link",
+    "description": "The item of a post's more menu that copies the link to the post."
+  },
+  "post.open_original": {
+    "defaultMessage": "Open original page",
+    "description": "The item of a remote post's more menu that opens the post's page on its own server."
+  },
+  "post.share": {
+    "defaultMessage": "Share",
+    "description": "The item of a post's more menu that shares it through the device's share sheet."
+  },
+  "post.bookmark": {
+    "defaultMessage": "Bookmark",
+    "description": "The item of a post's more menu that bookmarks it."
+  },
+  "post.mute_thread": {
+    "defaultMessage": "Mute thread",
+    "description": "The item of a post's more menu that stops the notifications of the thread the post is in (replies, mentions, boosts, favourites, reactions and quotes in it); the posts still show in timelines."
+  },
+  "post.unmute_thread": {
+    "defaultMessage": "Unmute thread",
+    "description": "The item of a post's more menu, on while the thread the post is in is muted, that lets its notifications come again."
+  },
+  "post.unbookmark": {
+    "defaultMessage": "Remove bookmark",
+    "description": "The item of a bookmarked post's more menu that takes the bookmark back."
+  },
+  "post.edit": {
+    "defaultMessage": "Edit",
+    "description": "The item of the more menu of the reader's own post that edits it."
+  },
+  "post.redraft": {
+    "defaultMessage": "Delete and redraft…",
+    "description": "The item of the more menu of the reader's own post that deletes it and opens its text, images and poll in the composer, after a confirmation (hence the ellipsis)."
+  },
+  "post.edited_mark": {
+    "defaultMessage": "Edited, show history",
+    "description": "The name, for assistive technology, of the word \"edited\" after an edited post's time (post.edited), which opens its edit history."
+  },
+  "post.edited": {
+    "defaultMessage": "edited",
+    "description": "The word after an edited post's time, in its header, or in its details on its own page; it opens its edit history. Lowercase in English: it follows the time after a middle dot (3h ago · edited)."
+  },
+  "post.history.title": {
+    "defaultMessage": "Edit history",
+    "description": "The title of the dialog that lists every version of an edited post, newest first."
+  },
+  "post.history.close": {
+    "defaultMessage": "Close",
+    "description": "The name of the button that closes the edit history."
+  },
+  "post.history.current": {
+    "defaultMessage": "Current",
+    "description": "The label of the newest version in the edit history, the one the post shows."
+  },
+  "post.history.original": {
+    "defaultMessage": "Original",
+    "description": "The label of the oldest version in the edit history, as it was first posted."
+  },
+  "post.history.earlier": {
+    "defaultMessage": "Earlier edit",
+    "description": "The label of a version in the edit history between the original and the current one."
+  },
+  "post.history.added_start": {
+    "defaultMessage": "Start of addition",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version added to the one before it (shown on a tint); post.history.added_end follows the run."
+  },
+  "post.history.added_end": {
+    "defaultMessage": "End of addition",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version added (post.history.added_start)."
+  },
+  "post.history.removed_start": {
+    "defaultMessage": "Start of removal",
+    "description": "Heard by screen reader users, not shown: said before a run of words in the edit history that a version removed from the one before it (shown muted and struck through); post.history.removed_end follows the run."
+  },
+  "post.history.removed_end": {
+    "defaultMessage": "End of removal",
+    "description": "Heard by screen reader users, not shown: said after a run of words in the edit history that a version removed (post.history.removed_start)."
+  },
+  "post.history.added_image": {
+    "defaultMessage": "Added image",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version added (shown on a tint)."
+  },
+  "post.history.removed_image": {
+    "defaultMessage": "Removed image",
+    "description": "Heard by screen reader users, not shown: said before the description of an image in the edit history that a version removed (shown crossed out)."
+  },
+  "post.delete": {
+    "defaultMessage": "Delete…",
+    "description": "The item of the more menu of the reader's own post that deletes it after a confirmation (hence the ellipsis)."
+  },
+  "post.delete.title": {
+    "defaultMessage": "Delete this post?",
+    "description": "The question of the confirmation before the reader's post is deleted."
+  },
+  "post.delete.body": {
+    "defaultMessage": "Its boosts, favourites and reactions go with it, and other servers are asked to delete it too. This cannot be undone.",
+    "description": "What follows deleting the reader's post, under the confirmation's question."
+  },
+  "post.delete.confirm": {
+    "defaultMessage": "Delete",
+    "description": "The confirmation that deletes the reader's post."
+  },
+  "post.delete.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The refusal of the confirmation of deleting (or redrafting) a post: nothing is deleted."
+  },
+  "post.redraft.title": {
+    "defaultMessage": "Delete and redraft this post?",
+    "description": "The question of the confirmation before the reader's post is deleted and opened in the composer."
+  },
+  "post.redraft.body": {
+    "defaultMessage": "{poll, select, yes {Its boosts, favourites, reactions and the votes of its poll are lost, and replies lose their link to it. Its text and poll become the draft of a new post.} other {Its boosts, favourites and reactions are lost, and replies lose their link to it. Its text and images become the draft of a new post.}}",
+    "description": "What follows deleting and redrafting the reader's post, under the confirmation's question. poll is yes when the post has a poll (a post with a poll has no images), whose votes are lost, else no."
+  },
+  "post.redraft.confirm": {
+    "defaultMessage": "Delete and redraft",
+    "description": "The confirmation that deletes the reader's post and opens it in the composer."
+  },
+  "post.shortcuts": {
+    "defaultMessage": "When a post is focused",
+    "description": "The heading of the group of keyboard shortcuts that act on a post, in the keyboard shortcuts dialog."
+  },
+  "post.poll": {
+    "defaultMessage": "Poll",
+    "description": "The accessible name of a post's poll; the same word as the poll's card in the composer (compose.poll)."
+  },
+  "post.poll_options": {
+    "defaultMessage": "Options",
+    "description": "The accessible name of the options of a poll the reader can vote in, a radio group or, where several may be chosen, a group of checkboxes; the composer names one option 'Option {n}' (compose.poll.option)."
+  },
+  "post.poll_several": {
+    "defaultMessage": "Several choices allowed",
+    "description": "In the line under a poll the reader can vote in, where a vote may choose several options; the composer's checkbox that allows it reads 'Allow several choices' (compose.poll.multiple)."
+  },
+  "post.poll_vote": {
+    "defaultMessage": "Vote",
+    "description": "The button at the end of the line under a poll that sends the reader's chosen options; it waits for a choice, and a reader without an account who presses it is taken to sign in."
+  },
+  "post.poll_voters": {
+    "defaultMessage": "{count, plural, one {# person voted} other {# people voted}}",
+    "description": "In the line under a poll: how many accounts voted. count is how many."
+  },
+  "post.poll_votes": {
+    "defaultMessage": "{count, plural, one {# vote} other {# votes}}",
+    "description": "In the line under a poll whose number of voters is unknown (from some servers): how many votes it has, one per chosen option. count is how many."
+  },
+  "post.poll_ends": {
+    "defaultMessage": "Ends {time}",
+    "description": "In the line under a poll that has not ended: when it ends. time is a short relative time such as 'in 2d' / '2日後'. The same verb as the composer's duration (compose.poll.ends_in)."
+  },
+  "post.poll_ended": {
+    "defaultMessage": "Ended",
+    "description": "In the line under a poll that has ended and takes no more votes."
+  },
+  "post.poll_hidden": {
+    "defaultMessage": "Counts show when it ends",
+    "description": "In the line under a poll whose author hides how many voted for each option until it ends (the composer's 'Hide the counts until it ends', compose.poll.hide_totals), shown in place of each option's share."
+  },
+  "post.poll_mine": {
+    "defaultMessage": "your vote",
+    "description": "Read by assistive technology in parentheses after an option of a poll's results that the reader voted for, before its share; drawn as the option's filled mark."
+  },
+  "post.reacted_row": {
+    "defaultMessage": "{emoji} {count, plural, one {# person reacted} other {# people reacted}}",
+    "description": "The accessible name of the row under a post on its own page that opens the list of who reacted with one emoji. It starts with the emoji and the count, the row's visible text, in that order. emoji is a Unicode emoji or :shortcode:; count is how many."
+  },
+  "post.reacted_with": {
+    "defaultMessage": "Reacted with {emoji}",
+    "description": "The heading of the list of the accounts that reacted to a post with one emoji. emoji is a Unicode emoji or :shortcode:, which the heading draws as its image."
+  },
+  "post.article_sensitive": {
+    "defaultMessage": "Sensitive article",
+    "description": "The line on the page of a sensitive article, above its folded cover and text, with a Show button; its title and summary stay shown."
+  }
+}

@@ -89,7 +89,7 @@ func (s *Store) Paths(suffix string) ([]string, error) {
 }
 
 // DocDir returns the Markdown files in and below the shortest indexed directory whose path ends with dir (a
-// document split into one file per section, such as docs/architecture/web-client/ and its screens/), in
+// document split into one file per section, with its subdirectories), in
 // path order, and that directory.
 func (s *Store) DocDir(dir string) ([]string, string, error) {
 	dir = strings.Trim(dir, "/")

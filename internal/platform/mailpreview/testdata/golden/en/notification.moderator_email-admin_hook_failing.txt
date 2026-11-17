@@ -1,4 +1,4 @@
-Calls of an external review on the server Example Social keep failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
+An external review of Example Social keeps failing. Until it works again, what it reviews follows its failure behaviour: by default it goes through unreviewed.
 
 Open your notifications and see the automated reviews for what failed.
 

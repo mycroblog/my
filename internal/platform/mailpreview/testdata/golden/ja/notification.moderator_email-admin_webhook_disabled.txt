@@ -1,4 +1,4 @@
-Example Social の webhook のひとつを、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先がなくなったと答えました。
+Example Social の webhook を 1 つ、サーバーが無効にしました。宛先への送信が失敗し続けたか、宛先からもう存在しないと返されたためです。
 
 どの webhook かは通知で確認できます。宛先が直ったら、もう一度有効にしてください。
 
@@ -10,5 +10,5 @@ Example Social
 https://social.example
 連絡先: admin@social.example
 
-通知の設定で「止まった Webhook」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
+通知の設定で「無効になった webhook」のメールを受け取るようにしているため、このメールを送りました。設定から止められます。
 このメールを止める: https://social.example/mail/unsubscribe?token=sample-unsubscribe-token

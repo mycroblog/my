@@ -811,6 +811,10 @@
     "env": "MY_PLUGIN_TRANSLATOR_TOKEN",
     "secret": true
   },
+  "pprof_listen": {
+    "env": "MY_PPROF_LISTEN",
+    "secret": false
+  },
   "profile": {
     "env": "MY_PROFILE",
     "secret": false
@@ -1021,6 +1025,10 @@
   },
   "translator_deepl_url": {
     "env": "MY_TRANSLATOR_DEEPL_URL",
+    "secret": false
+  },
+  "translator_fake": {
+    "env": "MY_TRANSLATOR_FAKE",
     "secret": false
   },
   "translator_google_location": {

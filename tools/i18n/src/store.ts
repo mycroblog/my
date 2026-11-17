@@ -4,8 +4,8 @@
 import { existsSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
+  areaFile,
   areaOf,
-  type Catalog,
   type CatalogFile,
   catalogFile,
   type Entry,
@@ -17,12 +17,13 @@ import {
   removeCatalogFile,
   SOURCE,
   toJSON,
+  tsNamespaces,
   writeFileAtomic,
 } from "./catalog";
 
 export const splitId = (id: string): [ns: string, key: string] => {
-  const [ns, key] = id.split(/:(.*)/s);
-  return [ns, key ?? ""];
+  const [ns = "", key = ""] = id.split(/:(.*)/s);
+  return [ns, key];
 };
 
 /** Where a new key goes in a file: after the last key that shares the longest run of leading segments with it. */
@@ -61,10 +62,14 @@ export class Store {
     return file;
   }
 
+  /** The namespaces of locales/, then those of the web packages. */
   namespaces(): string[] {
-    return readdirSync(join(localesDir, SOURCE), { withFileTypes: true })
-      .filter((d) => d.isDirectory())
-      .map((d) => d.name);
+    return [
+      ...readdirSync(join(localesDir, SOURCE), { withFileTypes: true })
+        .filter((d) => d.isDirectory())
+        .map((d) => d.name),
+      ...tsNamespaces.keys(),
+    ];
   }
 
   get(locale: string, ns: string, key: string): Entry | undefined {
@@ -81,13 +86,6 @@ export class Store {
     return [...this.files.values()]
       .filter((f) => f.locale === SOURCE)
       .flatMap((f) => Object.keys(f.entries).map((key) => `${f.ns}:${key}`));
-  }
-
-  catalog(): Catalog {
-    const catalog: Catalog = {};
-    for (const { locale, ns, entries } of this.files.values())
-      Object.assign(((catalog[locale] ??= {})[ns] ??= {}), entries);
-    return catalog;
   }
 
   /**
@@ -109,8 +107,8 @@ export class Store {
     const previous = after ?? siblingOf(keys, key) ?? keys.at(-1);
     const next: Namespace = {};
     if (previous === undefined) next[key] = entry;
-    for (const k of keys) {
-      next[k] = file.entries[k];
+    for (const [k, e] of Object.entries(file.entries)) {
+      next[k] = e;
       if (k === previous) next[key] = entry;
     }
     file.entries = next;
@@ -149,16 +147,14 @@ export class Store {
       if (Object.keys(file.entries).length === 0) {
         this.files.delete(path);
         if (existsSync(path)) {
-          removeCatalogFile(path, file.locale);
+          removeCatalogFile(path, file.locale, file.ns);
           out.push(`removed ${rel(path)}`);
         }
         continue;
       }
       if (file.locale !== SOURCE) {
         // The order of the source file; a key the source lacks stays behind the others.
-        const order = Object.keys(
-          this.files.get(join(localesDir, SOURCE, file.ns, `${file.area}.json`))?.entries ?? {},
-        );
+        const order = Object.keys(this.files.get(areaFile(SOURCE, file.ns, file.area))?.entries ?? {});
         const ranks = new Map(order.map((key, i) => [key, i]));
         const rank = (key: string) => ranks.get(key) ?? order.length;
         file.entries = Object.fromEntries(Object.entries(file.entries).sort(([a], [b]) => rank(a) - rank(b)));

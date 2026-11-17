@@ -4,7 +4,7 @@
     "description": "Explanation under the heading of the maintenance page. {server} is the server's name, or its host name."
   },
   "maintenance.document_title": {
-    "defaultMessage": "メンテナンス中 – {server}",
+    "defaultMessage": "メンテナンス中 | {server}",
     "description": "<title> of the maintenance page. {server} is the server's name, or its host name."
   },
   "maintenance.notice": {

@@ -40,6 +40,11 @@ const (
 	// goes to the timeline subscriptions of the timelines it names (OnLocal, OnFederated), each
 	// of which decides whether its viewer's timeline lists the post.
 	KindPublicEntry Kind = "public_entry"
+	// KindStatusDeleted signals that the author, a moderator, or a remote Delete deleted the
+	// status EntryID of AuthorAccountID (ADR-0013 §19). It goes to every account and timeline
+	// subscription, each of which decides from AuthorDomain and Visibility whether its viewer may
+	// have seen the status: the status is no longer there to read back.
+	KindStatusDeleted Kind = "status_deleted"
 
 	// The signals of a voice chat room (ADR-0101 §3) go to the room subscriptions of their
 	// RoomID only. KindVoiceRoom signals that the room or its participants changed: each
@@ -104,11 +109,16 @@ type Event struct {
 	// ConversationID is the conversation of KindConversation.
 	ConversationID string
 	// EntryID is the ID of the new timeline entry (KindHomeEntry, KindPublicEntry): a status ID
-	// for a post, a boost ID for a boost.
+	// for a post, a boost ID for a boost; and the deleted status of KindStatusDeleted.
 	EntryID string
 	// AuthorAccountID is the account of a KindHomeEntry entry: the author of the post, or the
-	// booster. "" for a signal of a process that did not send it, which every stream checks.
+	// booster. "" for a signal of a process that did not send it, which every stream checks. It
+	// is the author of the status of KindStatusDeleted.
 	AuthorAccountID string
+	// AuthorDomain ("" for a local author) and Visibility are those of the status of
+	// KindStatusDeleted.
+	AuthorDomain string
+	Visibility   string
 	// OnLocal and OnFederated name the public timelines that may list the post of a
 	// KindPublicEntry signal; at least one is set.
 	OnLocal     bool

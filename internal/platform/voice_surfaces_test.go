@@ -232,7 +232,7 @@ func TestVoiceSurfacesThroughAPI(t *testing.T) {
 	if sum.Name == nil || *sum.Name != "Go talk" || sum.Description == nil || *sum.Description != "About Go" || sum.Host == nil || sum.Host.Id != alice.id {
 		t.Errorf("summary of a local room = %+v, want the name, the description, and the host", sum)
 	}
-	if body := page(); !strings.Contains(body, `<meta property="og:title" content="Go talk — a voice chat hosted by alice, open now">`) {
+	if body := page(); !strings.Contains(body, `<meta property="og:title" content="Go talk: a voice chat hosted by alice, open now">`) {
 		t.Errorf("the page of a local room has no preview of its summary:\n%s", body)
 	}
 	e.want(e.do(http.MethodDelete, "/voice/rooms/"+room, alice.token, nil, nil), http.StatusNoContent, "end")
@@ -241,7 +241,7 @@ func TestVoiceSurfacesThroughAPI(t *testing.T) {
 	if sum.State != clientapi.VoiceRoomSummaryStateEnded || sum.Name == nil || *sum.Name != "Go talk" || sum.Description != nil || sum.Host != nil {
 		t.Errorf("summary of an ended room = %+v, want only the name", sum)
 	}
-	if body := page(); !strings.Contains(body, `content="Go talk — this voice chat has ended"`) {
+	if body := page(); !strings.Contains(body, `content="Go talk: this voice chat has ended"`) {
 		t.Errorf("the page of an ended room does not say it ended:\n%s", body)
 	}
 	if got := notified(bob, clientapi.NotificationTypeVoiceRoomStarted); len(got) != 1 || got[0].VoiceRoom != nil {

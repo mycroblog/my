@@ -7,6 +7,8 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -123,18 +125,25 @@ func TestStatusOfARestrictedUser(t *testing.T) {
 	if w.Code != http.StatusOK || w.Header().Get("Content-Language") != "ja" {
 		t.Fatalf("status page = %d in %q, want 200 in the user's locale", w.Code, w.Header().Get("Content-Language"))
 	}
-	body := w.Body.String()
-	wantContains(t, body,
-		`<h1>アカウントは処分を受けています</h1>`,
-		`<strong>凍結 (アプリを使えず、プロフィールと投稿が隠れる)</strong> <span class="status-badge status-badge-warning">適用中</span>`,
-		`<p class="hint">理由: スパム</p>`,
-		`<p dir="auto">spam &lt;wave&gt;</p>`,
-		`<time datetime="`+ends.UTC().Format(time.RFC3339)+`">あと 3 日で終わります</time>`,
-		`<strong>ログインの停止</strong>`,
-		`<p>モデレーターが解除するまで続きます</p>`,
-		`action="/auth/sign_out"`,
-	)
-	wantLacks(t, body, "verify_email/resend", "承認待ち", "a warning")
+	data := screenData(t, w)
+	for key, want := range map[string]string{
+		"screen":                    "status",
+		"status.actions.0.kind":     "凍結 (アプリを使えず、プロフィールと投稿が隠れる)",
+		"status.actions.0.category": "理由: スパム",
+		"status.actions.0.reason":   "spam <wave>",
+		"status.actions.0.endsAt":   ends.UTC().Format(time.RFC3339),
+		"status.actions.0.ends":     "あと 3 日で終わります",
+		"status.actions.1.kind":     "ログインの停止",
+		"status.actions.1.ends":     "モデレーターが解除するまで続きます",
+	} {
+		if got := text(data, key); got != want {
+			t.Errorf("%s = %q, want %q", key, got, want)
+		}
+	}
+	if at(data, "status.restricted") != true || at(data, "status.pending") != nil || at(data, "status.verifyEmail") != nil ||
+		at(data, "status.actions.2") != nil || text(data, "csrfToken") == "" {
+		t.Errorf("status = %v, want the two restricting actions, nothing else, and a sign-out form", at(data, "status"))
+	}
 	if len(mod.filters) == 0 || !mod.filters[0].Active {
 		t.Errorf("filters = %+v, want the actions in effect", mod.filters)
 	}
@@ -144,7 +153,9 @@ func TestStatusOfARestrictedUser(t *testing.T) {
 	if w.Code != http.StatusForbidden || len(oauth.issued) != 0 {
 		t.Fatalf("authorize of a restricted user = %d with %d codes, want 403 and none", w.Code, len(oauth.issued))
 	}
-	wantContains(t, w.Body.String(), `<strong>ログインの停止</strong>`)
+	if data := screenData(t, w); text(data, "screen") != "status" || text(data, "status.actions.1.kind") != "ログインの停止" {
+		t.Errorf("authorize of a restricted user: %v, want the status screen", data)
+	}
 }
 
 // TestAppealFromTheStatusPage checks that a user whom moderation keeps out of the app appeals an
@@ -168,23 +179,23 @@ func TestAppealFromTheStatusPage(t *testing.T) {
 	br, _ := restrictedUser(t, mod)
 
 	page := br.do(http.MethodGet, authpages.PathSignIn, nil, en)
-	body := page.Body.String()
-	wantContains(t, body,
-		`<form class="form appeal-form" method="post" action="/auth/appeal">`,
-		`<input type="hidden" name="action_id" value="`+action3+`">`,
-		`<label for="appeal-`+action3+`">Appeal this action</label>`,
-		`<p id="appeal-`+action3+`-hint" class="hint">You can appeal once, within 2 days. Up to 2,000 characters.</p>`,
-		`<textarea id="appeal-`+action3+`" name="text" rows="4" required maxlength="2000" dir="auto" aria-describedby="appeal-`+action3+`-hint">`,
-		`<p class="hint">The time to appeal this action has passed.</p>`,
-		`<p><span class="status-badge">Action kept</span></p>`,
-		`<p>A moderator reviewed your appeal and kept the action.</p>`,
-		`<button class="button" type="submit">Send appeal</button>`,
-		`<p dir="auto">It was &lt;not&gt; me.</p>`,
-		`<p dir="auto">We checked the logs.</p>`,
-		`<p class="hint">This action cannot be appealed.</p>`,
-	)
-	if n := strings.Count(body, `action="/auth/appeal"`); n != 1 {
-		t.Errorf("the page has %d appeal forms, want 1 (for a3)", n)
+	data := screenData(t, page)
+	for key, want := range map[string]string{
+		"status.actions.0.id":                action3,
+		"status.actions.0.appealHint":        "You can appeal once, within 2 days. Up to 2,000 characters.",
+		"status.actions.1.noAppeal":          "The time to appeal this action has passed.",
+		"status.actions.2.appeal.stateLabel": "Action kept",
+		"status.actions.2.appeal.state":      "A moderator reviewed your appeal and kept the action.",
+		"status.actions.2.appeal.text":       "It was <not> me.",
+		"status.actions.2.appeal.answer":     "We checked the logs.",
+		"status.actions.3.noAppeal":          "This action cannot be appealed.",
+	} {
+		if got := text(data, key); got != want {
+			t.Errorf("%s = %q, want %q", key, got, want)
+		}
+	}
+	if got := appealForms(data); !slices.Equal(got, []string{action3}) || at(data, "status.actions.0.appealMax") != 2000.0 {
+		t.Errorf("appeal forms = %v (appealMax %v), want one for a3 of up to 2000 characters", got, at(data, "status.actions.0.appealMax"))
 	}
 
 	w := br.do(http.MethodPost, authpages.PathAppeal, br.form(page, "action_id", action3, "text", "I did not\r\nspam."), en)
@@ -194,12 +205,32 @@ func TestAppealFromTheStatusPage(t *testing.T) {
 	if len(mod.appeals) != 1 || mod.appeals[0] != (fakeAppeal{accountAlice, action3, "I did not\nspam."}) {
 		t.Errorf("appeals = %+v, want the account's of action 3 with LF line breaks", mod.appeals)
 	}
-	wantContains(t, w.Body.String(),
-		`<p class="notice" role="status">Your appeal was sent. A moderator will review it.</p>`,
-		`<p><span class="status-badge">Under review</span></p>`,
-		`<p>Your appeal is waiting for a moderator&#39;s review.</p>`,
-	)
-	wantLacks(t, w.Body.String(), `action="/auth/appeal"`)
+	data = screenData(t, w)
+	for key, want := range map[string]string{
+		"notice":                             "Your appeal was sent. A moderator will review it.",
+		"status.actions.0.appeal.stateLabel": "Under review",
+		"status.actions.0.appeal.state":      "Your appeal is waiting for a moderator's review.",
+	} {
+		if got := text(data, key); got != want {
+			t.Errorf("after the appeal: %s = %q, want %q", key, got, want)
+		}
+	}
+	if got := appealForms(data); len(got) != 0 {
+		t.Errorf("after the appeal, appeal forms = %v, want none", got)
+	}
+}
+
+// appealForms returns the IDs of the status screen's actions that offer the appeal form.
+func appealForms(data map[string]any) []string {
+	actions, _ := at(data, "status.actions").([]any)
+	var out []string
+	for i := range actions {
+		p := "status.actions." + strconv.Itoa(i) + "."
+		if at(data, p+"canAppeal") == true {
+			out = append(out, text(data, p+"id"))
+		}
+	}
+	return out
 }
 
 // TestAppealRefusals checks that the appeal form shows why an appeal was refused: a second
@@ -217,20 +248,22 @@ func TestAppealRefusals(t *testing.T) {
 		name   string
 		err    error
 		status int
-		want   []string
+		// want are fields of the screen's data; "error" is the alert, which every refusal has.
+		want map[string]string
 	}{
 		{"second appeal", appmoderation.ErrAlreadyAppealed, http.StatusUnprocessableEntity,
-			[]string{`<p class="alert" role="alert">You have already appealed this action.</p>`}},
+			map[string]string{"error": "You have already appealed this action."}},
 		{"window closed", appmoderation.ErrAppealWindowClosed, http.StatusUnprocessableEntity,
-			[]string{`<p class="alert" role="alert">The time to appeal this action has passed.</p>`}},
+			map[string]string{"error": "The time to appeal this action has passed."}},
 		{"ban", appmoderation.ErrNotAppealable, http.StatusUnprocessableEntity,
-			[]string{`<p class="alert" role="alert">This action cannot be appealed.</p>`}},
-		{"another account's action", appmoderation.ErrNotFound, http.StatusNotFound, []string{`role="alert"`}},
+			map[string]string{"error": "This action cannot be appealed."}},
+		{"another account's action", appmoderation.ErrNotFound, http.StatusNotFound, map[string]string{}},
 		{"too long", errors.Join(moderation.ErrInvalidAppeal, &moderation.TextError{Field: "text", Max: moderation.MaxAppealText}),
-			http.StatusUnprocessableEntity, []string{
-				`<p class="alert" role="alert">The appeal was not sent. Check the field marked below.</p>`,
-				`<p id="appeal-` + action1 + `-error" class="field-error">Write your appeal in up to 2,000 characters.</p>`,
-				`aria-describedby="appeal-` + action1 + `-hint appeal-` + action1 + `-error" aria-invalid="true">some &lt;text&gt;</textarea>`,
+			http.StatusUnprocessableEntity, map[string]string{
+				"error":                        "The appeal was not sent. Check the field marked below.",
+				"status.actions.0.id":          action1,
+				"status.actions.0.appealError": "Write your appeal in up to 2,000 characters.",
+				"status.actions.0.appealText":  "some <text>",
 			}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -242,8 +275,15 @@ func TestAppealRefusals(t *testing.T) {
 			if w.Code != c.status {
 				t.Fatalf("appeal = %d, want %d\n%s", w.Code, c.status, w.Body.String())
 			}
-			wantContains(t, w.Body.String(), c.want...)
-			wantContains(t, w.Body.String(), `<h1>Your account is restricted</h1>`)
+			data := screenData(t, w)
+			if text(data, "screen") != "status" || at(data, "status.restricted") != true || text(data, "error") == "" {
+				t.Errorf("refused appeal: %v, want the status screen of a restricted account with an alert", data)
+			}
+			for key, want := range c.want {
+				if got := text(data, key); got != want {
+					t.Errorf("%s = %q, want %q", key, got, want)
+				}
+			}
 		})
 	}
 

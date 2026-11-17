@@ -26,8 +26,8 @@ func fixture(t *testing.T) *repo.Repo {
 		"internal/app/note/service_test.go": "package note\n\nfunc TestCreate(t *testing.T) { Create() }\n",
 		"internal/app/note/zz.gen.go":       "package note\n\nfunc CreateGenerated() {}\n",
 		"api/openapi.yaml":                  "operationId: createNote\n",
-		"app/web/src/note.ts":               "export function createNote(): void {\n  call(\"Create\");\n}\n",
-		"app/web/src/note.test.ts":          "test(\"Create\", () => {});\n",
+		"web/client/src/note.ts":            "export function createNote(): void {\n  call(\"Create\");\n}\n",
+		"web/client/src/note.test.ts":       "test(\"Create\", () => {});\n",
 		"docs/notes.md":                     "# Notes\n\n## 連合\n\n投稿は連合先へ配送します。Create を送ります。\n\n## Other\n\n" + long + "\n",
 		"go.sum":                            "example.com/Create v1.0.0 h1:abc=\n",
 		"bin.dat":                           "Create\x00\x01\x02",
@@ -198,7 +198,7 @@ func TestRun(t *testing.T) {
 	}
 	has("sources", out,
 		"internal/app/note/service.go (3)\n", "  6: // Create makes a note.  [Service.Create 6-12]\n  7: func (s *Service) Create(text string) error {\n",
-		"  14: func helper() { _ = \"Create\" }  [helper 14]\n"[:20], "app/web/src/note.ts\n  2: call(\"Create\");  [createNote 1-3]\n",
+		"  14: func helper() { _ = \"Create\" }  [helper 14]\n"[:20], "web/client/src/note.ts\n  2: call(\"Create\");  [createNote 1-3]\n",
 		"note: 2 more in 2 test files (--tests)", "note: 1 more in 1 generated files (--gen)")
 	lacks("sources", out, "service_test.go", "zz.gen.go", "go.sum", "bin.dat", "node_modules", ".tmp/", "docs/")
 
@@ -219,8 +219,8 @@ func TestRun(t *testing.T) {
 	has("named files", out, "go.sum\n", ".tmp/out.txt\n  1: Create in scratch")
 	out, _ = grep(t, r, "internal/app", "-rn", "errEmpty", "note")
 	has("from a subdirectory", out, "internal/app/note/service.go\n  9: return errEmpty  [Service.Create 6-12]")
-	out, _ = grep(t, r, "app/web", "createNote")
-	has("the working directory", out, "app/web/src/note.ts")
+	out, _ = grep(t, r, "web/client", "createNote")
+	has("the working directory", out, "web/client/src/note.ts")
 	lacks("the working directory", out, "openapi")
 	out, found = grep(t, r, "", "Create", "nowhere")
 	if found {
@@ -233,7 +233,7 @@ func TestRun(t *testing.T) {
 	has("basic alternation", out, "  9: return errEmpty", "  14: func helper()", `note: read \| as alternation`)
 	out, _ = grep(t, r, "", "helper(", "internal")
 	has("not a regular expression", out, "  14: func helper()", "searched as a fixed string")
-	out, _ = grep(t, r, "", "-i", "-w", "create", "app/web/src/note.ts")
+	out, _ = grep(t, r, "", "-i", "-w", "create", "web/client/src/note.ts")
 	has("word", out, "  2: call(\"Create\");")
 	lacks("word", out, "createNote()")
 	out, _ = grep(t, r, "", "-F", "_ = \"Create\"")

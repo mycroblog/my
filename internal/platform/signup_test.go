@@ -3,7 +3,6 @@
 package platform_test
 
 import (
-	"html"
 	"net/http"
 	"regexp"
 	"slices"
@@ -17,6 +16,7 @@ import (
 	"github.com/mycroblog/my/internal/domain/instance"
 	"github.com/mycroblog/my/internal/interface/authpages"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 var loggedLink = regexp.MustCompile(`https://example\.test(/auth/verify_email\?token=[A-Za-z0-9_%-]+)`)
@@ -42,10 +42,11 @@ func TestSignUpScreens(t *testing.T) {
 		resp, _ := c.do(http.MethodPost, authpages.PathSignUp, c.formAt(authpages.PathSignUp, fields...), nil)
 		return c, resp
 	}
-	status := func(c *authClient) string {
+	// status returns the data of the screen that the sign-in path shows the user of c.
+	status := func(c *authClient) map[string]any {
 		t.Helper()
 		_, body := c.do(http.MethodGet, authpages.PathSignIn, nil, nil)
-		return body
+		return authData(t, body)
 	}
 	userID := func(email string) string {
 		t.Helper()
@@ -66,7 +67,7 @@ func TestSignUpScreens(t *testing.T) {
 	setMode(instance.RegistrationClosed)
 	c := &authClient{t: t, s: s, cookies: map[string]string{}}
 	if resp, body := c.do(http.MethodGet, authpages.PathSignUp, nil, nil); resp.StatusCode != http.StatusForbidden ||
-		!strings.Contains(body, "not accepting new accounts") {
+		authAt(authData(t, body), "signUp.closed") != true {
 		t.Fatalf("closed GET sign_up = %d\n%s", resp.StatusCode, body)
 	}
 
@@ -76,18 +77,19 @@ func TestSignUpScreens(t *testing.T) {
 	if resp.StatusCode != http.StatusSeeOther || alice.cookies[authpages.CookieSession] == "" {
 		t.Fatalf("open sign-up = %d", resp.StatusCode)
 	}
-	if body := status(alice); !strings.Contains(body, "waiting for a moderator") || strings.Contains(body, "verify_email/resend") {
-		t.Errorf("open sign-up status page:\n%s", body)
+	if data := status(alice); authAt(data, "status.pending") != true || authAt(data, "status.verifyEmail") != nil {
+		t.Errorf("open sign-up status page: %v, want waiting for a moderator and no email confirmation", data)
 	}
 
 	// The verification email went to the log from its job, and only there: the access log and
 	// the job's log have no token.
-	logs := s.logs.String()
-	m := loggedLink.FindStringSubmatch(logs)
-	for deadline := time.Now().Add(10 * time.Second); m == nil && time.Now().Before(deadline); m = loggedLink.FindStringSubmatch(logs) {
-		time.Sleep(20 * time.Millisecond)
+	var logs string
+	var m []string
+	testkit.Eventually(t, 10*time.Second, func() bool {
 		logs = s.logs.String()
-	}
+		m = loggedLink.FindStringSubmatch(logs)
+		return m != nil
+	})
 	if m == nil || !strings.Contains(logs, "mail not sent (mail = none)") {
 		t.Fatalf("no verification link in the log:\n%s", logs)
 	}
@@ -97,11 +99,11 @@ func TestSignUpScreens(t *testing.T) {
 		t.Errorf("the token appears %d times in the log", strings.Count(logs, token))
 	}
 	resp, body := alice.do(http.MethodGet, link, nil, nil)
-	if resp.StatusCode != http.StatusOK || !strings.Contains(body, `name="token" value="`+html.EscapeString(token)+`"`) {
+	if resp.StatusCode != http.StatusOK || authText(authData(t, body), "token") != token {
 		t.Fatalf("GET %s = %d\n%s", link, resp.StatusCode, body)
 	}
 	if resp, body := alice.do(http.MethodPost, authpages.PathVerifyEmail, alice.formAt(link, "token", token), nil); resp.StatusCode != http.StatusOK ||
-		!strings.Contains(body, "Your email address is confirmed.") {
+		authText(authData(t, body), "screen") != "verified" {
 		t.Fatalf("POST verify_email = %d\n%s", resp.StatusCode, body)
 	}
 	if resp, _ := alice.do(http.MethodPost, authpages.PathVerifyEmail, alice.formAt(link, "token", token), nil); resp.StatusCode != http.StatusUnprocessableEntity {
@@ -117,8 +119,8 @@ func TestSignUpScreens(t *testing.T) {
 	if resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("approval sign-up = %d", resp.StatusCode)
 	}
-	if body := status(bob); !strings.Contains(body, "waiting for a moderator") {
-		t.Errorf("approval sign-up status page:\n%s", body)
+	if data := status(bob); authAt(data, "status.pending") != true {
+		t.Errorf("approval sign-up status page: %v, want waiting for a moderator", data)
 	}
 	pending, err := s.app.Identity.ListRegistrations(ctx, domainidentity.RegistrationPending, 10)
 	if err != nil || len(pending) != 2 || pending[1].Username != "bob" || pending[1].Application.Reason != "Friend of alice" {
@@ -128,8 +130,8 @@ func TestSignUpScreens(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if body := status(bob); !strings.Contains(body, "You are signed in") {
-		t.Errorf("approved user's page:\n%s", body)
+	if data := status(bob); authText(data, "screen") != "signed_in" {
+		t.Errorf("approved user's page: %v, want the signed-in screen", data)
 	}
 
 	// invite: a valid invite admits the user at once.
@@ -146,8 +148,8 @@ func TestSignUpScreens(t *testing.T) {
 	if resp.StatusCode != http.StatusSeeOther {
 		t.Fatalf("invite sign-up = %d", resp.StatusCode)
 	}
-	if body := status(carol); !strings.Contains(body, "You are signed in") {
-		t.Errorf("invited user's page:\n%s", body)
+	if data := status(carol); authText(data, "screen") != "signed_in" {
+		t.Errorf("invited user's page: %v, want the signed-in screen", data)
 	}
 
 	// The fifth attempt from this address within the window is the last one allowed.

@@ -66,8 +66,10 @@ func TestMailUnsubscribe(t *testing.T) {
 	if w.Code != http.StatusOK || f.unsubscribes != 0 {
 		t.Fatalf("GET = %d with %d unsubscribes, want 200 and none", w.Code, f.unsubscribes)
 	}
-	wantContains(t, w.Body.String(), `action="/mail/unsubscribe?token=my_eut_good"`, `name="List-Unsubscribe" value="One-Click"`,
-		"emails of “New reports” notifications")
+	if data := screenData(t, w); text(data, "screen") != "mail_unsubscribe" || text(data, "token") != "my_eut_good" ||
+		!strings.Contains(text(data, "unsubscribe.prompt"), "emails of “New reports” notifications") {
+		t.Errorf("GET data = %v, want the prompt of the link's token", data)
+	}
 
 	// The one-click POST stops the emails, and again with the same token answers the same.
 	for i := 1; i <= 2; i++ {
@@ -75,7 +77,10 @@ func TestMailUnsubscribe(t *testing.T) {
 		if w.Code != http.StatusOK || f.unsubscribes != i {
 			t.Fatalf("POST %d = %d with %d unsubscribes, want 200", i, w.Code, f.unsubscribes)
 		}
-		wantContains(t, w.Body.String(), "You no longer get emails of “New reports” notifications.")
+		if data := screenData(t, w); text(data, "screen") != "mail_unsubscribed" ||
+			!strings.HasPrefix(text(data, "unsubscribe.done"), "You no longer get emails of “New reports” notifications.") {
+			t.Errorf("POST %d data = %v", i, data)
+		}
 	}
 
 	// The button of the page sends the same POST from the browser.

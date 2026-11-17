@@ -1,0 +1,4 @@
+# The uses of time.Sleep in the Go tests that predate scripts/go-test-sleep.sh (ADR-0170 §7), "<path> <count>" per
+# file. It only shrinks: lower a count or delete a line when a test stops sleeping; never add one.
+test/federation-live/relay_litepub_test.go 1
+test/federation-live/zz_closure_test.go 2

@@ -19,6 +19,7 @@ import (
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
 	"github.com/mycroblog/my/internal/platform"
+	"github.com/mycroblog/my/pkg/testkit"
 )
 
 // TestAnnouncements writes, publishes, revises, and withdraws an announcement through the admin
@@ -88,7 +89,7 @@ func TestAnnouncements(t *testing.T) {
 	for _, title := range []string{"", "  ", "Two\nlines", strings.Repeat("a", 101)} {
 		var p clientapi.Problem
 		if code := api(adminToken, http.MethodPost, "/admin/announcements", map[string]any{"title": title, "text": "ok"}, &p); code != http.StatusUnprocessableEntity ||
-			p.Detail == nil || !strings.Contains(*p.Detail, "title") {
+			p.Field == nil || *p.Field != "title" {
 			t.Errorf("POST an announcement titled %q = %d %+v, want 422 naming title", title, code, p)
 		}
 	}
@@ -148,12 +149,8 @@ func TestAnnouncements(t *testing.T) {
 		}
 		return nil
 	}
-	deadline := time.Now().Add(5 * time.Second)
-	for app.Streams.Len() == 0 {
-		if time.Now().After(deadline) {
-			t.Fatal("the stream did not subscribe")
-		}
-		time.Sleep(5 * time.Millisecond)
+	if !testkit.Eventually(t, 5*time.Second, func() bool { return app.Streams.Len() != 0 }) {
+		t.Fatal("the stream did not subscribe")
 	}
 
 	var published clientapi.AdminAnnouncement

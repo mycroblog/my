@@ -310,6 +310,9 @@ type Config struct {
 	// TranslatorAWSRegion is the region of Amazon Translate; set, it registers the translation
 	// provider aws (ADR-0148 §15).
 	TranslatorAWSRegion string
+	// TranslatorFake registers the fake translation provider fake, which only the test builds
+	// (build tag e2e_fakes) have and only with the development profile (ADR-0015 §6).
+	TranslatorFake bool
 	// Voice is how the voice chat rooms connect, "off" for no voice chat (ADR-0101 §1), and the
 	// Voice* limits bound the rooms; zero is no limit, except for VoiceP2PMaxParticipants.
 	Voice                   string
@@ -371,6 +374,8 @@ type Config struct {
 	ErrorsExporter    string
 	ErrorsSentryDSN   string
 	ErrorsEnvironment string
+	// PprofListen is the address of the listener of the Go runtime's profiles; empty serves none.
+	PprofListen string
 }
 
 // ServerOrigin returns the origin at which browsers reach the server itself: its sign-in screens,
@@ -523,6 +528,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("translator_google_project", c.TranslatorGoogleProject),
 		slog.String("translator_google_location", c.TranslatorGoogleLocation),
 		slog.String("translator_aws_region", c.TranslatorAWSRegion),
+		slog.Bool("translator_fake", c.TranslatorFake),
 		slog.String("payments", c.PaymentsProvider),
 		slog.String("payments_stripe_secret_key", redact(c.PaymentsStripeSecretKey != "")),
 		slog.String("payments_stripe_webhook_secret", redact(c.PaymentsStripeWebhookSecret != "")),
@@ -593,6 +599,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("errors_exporter", c.ErrorsExporter),
 		slog.String("errors_sentry_dsn", redact(c.ErrorsSentryDSN != "")),
 		slog.String("errors_environment", c.ErrorsEnvironment),
+		slog.String("pprof_listen", c.PprofListen),
 	)
 }
 

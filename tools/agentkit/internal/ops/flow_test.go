@@ -4,6 +4,7 @@ package ops
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -151,20 +152,22 @@ func TestGateHistory(t *testing.T) {
 	commit(t, merged.Root, "a.txt", "a\n", "feat: a")
 	advanceMain(t, main, "m.txt", "m\n")
 	git(t, merged.Root, "merge", "-q", "-m", "Merge origin/main", "origin/main")
-	err := gate(merged, "feat/1-merge", "origin/main")
-	wantRefusal(t, err, "origin/main..HEAD has 1 merge commit(s)", "Merge origin/main", "fix: git rebase origin/main")
+	if err := history(merged, "feat/1-merge", "origin/main"); err != nil {
+		t.Errorf("a merge of the trunk: %v, want none", err)
+	}
 
 	fix := addWorktree(t, main, "feat/2-fixup")
 	commit(t, fix.Root, "b.txt", "b\n", "feat: b")
 	commit(t, fix.Root, "b.txt", "bb\n", "fixup! feat: b")
-	err = gate(fix, "feat/2-fixup", "origin/main")
-	wantRefusal(t, err, `1 commit(s) to fold`, `"fixup! feat: b"`, "fix: GIT_SEQUENCE_EDITOR=true git rebase -i --autosquash origin/main")
+	if err := history(fix, "feat/2-fixup", "origin/main"); err != nil {
+		t.Errorf("a fixup commit: %v, want none", err)
+	}
 
 	conflict := addWorktree(t, main, "feat/3-conflict")
 	commit(t, conflict.Root, "c.txt", "mine\n", "feat: c")
 	advanceMain(t, main, "c.txt", "theirs\n")
-	err = gate(conflict, "feat/3-conflict", "origin/main")
-	wantRefusal(t, err, "feat/3-conflict conflicts with origin/main in c.txt", "fix: git rebase origin/main")
+	err := gate(conflict, "feat/3-conflict", "origin/main")
+	wantRefusal(t, err, "feat/3-conflict conflicts with origin/main in c.txt", "fix: git fetch origin && git merge origin/main")
 
 	// Behind main without a conflict, and nothing a quick check covers: the gate passes.
 	clean := addWorktree(t, main, "feat/4-clean")
@@ -251,7 +254,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	linkFromRepo(t, contextsScript, root)
-	for _, f := range []string{"docs/reference/configuration.md", "deploy/opentofu/m/main.tf", "app/web/src/a.tsx"} {
+	for _, f := range []string{"docs/reference/configuration.md", "deploy/opentofu/m/main.tf", "web/client/src/a.tsx"} {
 		write(t, filepath.Join(root, f), "x")
 	}
 	cases := []struct {
@@ -261,7 +264,7 @@ func TestFastPlanTofuContext(t *testing.T) {
 		{[]string{"docs/reference/configuration.md"}, append([]string{"docs:lint", "docs:rules", "agentkit:map-check"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/main.tf"}, append([]string{"tofu fmt"}, tofuConsistency...)},
 		{[]string{"deploy/opentofu/m/gone.json"}, tofuConsistency},
-		{[]string{"app/web/src/a.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
+		{[]string{"web/client/src/a.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
 	}
 	for _, c := range cases {
 		if got := names(fastPlan(root, c.changed)); !reflect.DeepEqual(got, c.want) {
@@ -282,8 +285,8 @@ func names(plan [][]fastStep) []string {
 
 func TestFastPlan(t *testing.T) {
 	root := t.TempDir()
-	for _, f := range []string{"go.mod", "internal/a/a.go", "internal/a/testdata/t.go", "tools/agentkit/go.mod", "tools/agentkit/x/x.go",
-		"app/web/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
+	for _, f := range []string{"go.mod", "internal/a/a.go", "internal/a/a_test.go", "internal/a/testdata/t.go", "tools/agentkit/go.mod", "tools/agentkit/x/x.go",
+		"web/client/src/a.tsx", "pkg/mykit/ts/src/b.ts", "docs/a.md", "scripts/a.sh", "locales/en/x.json",
 		"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/.terraform.lock.hcl", "deploy/other/x.tf"} {
 		write(t, filepath.Join(root, f), "x")
 	}
@@ -293,12 +296,16 @@ func TestFastPlan(t *testing.T) {
 	}{
 		{[]string{"internal/a/a.go", "internal/a/testdata/t.go", "internal/gone/g.go"}, []string{"gofmt", "go vet (1 packages)"}},
 		{[]string{"tools/agentkit/x/x.go"}, []string{"gofmt", "go vet tools/agentkit (1 packages)"}},
-		{[]string{"app/web/src/a.tsx", "app/web/src/gone.tsx"}, []string{"bun fmt", "tsc app/web", "oxlint (1 files)"}},
+		{[]string{"internal/a/a_test.go"}, []string{"gofmt", "go vet (1 packages)", sleepScript}},
+		{[]string{sleepBaseline}, []string{sleepScript}},
+		{[]string{"web/client/src/a.tsx", "web/client/src/gone.tsx"}, []string{"bun fmt", "oxlint (1 files)"}},
 		{[]string{"pkg/mykit/ts/src/b.ts"}, []string{"bun fmt"}},
 		{[]string{"docs/a.md"}, []string{"docs:lint", "docs:rules", "agentkit:map-check"}},
 		{[]string{"internal/app/x/context-map.yaml"}, []string{"agentkit:map-check"}},
 		{[]string{"scripts/a.sh"}, []string{"shellcheck"}},
 		{[]string{"locales/en/x.json"}, []string{"i18n:lint"}},
+		{[]string{".claude/knowledge/copy/decisions.md", "tools/i18n/waivers.json"},
+			[]string{"docs:lint", "docs:rules", "agentkit:map-check", "i18n:lint", "i18n:waivers"}},
 		{[]string{"schema/sqlite/01-a.sql", "queries/a.sql", "api/spec/a.yaml", "internal/platform/job_types.go"},
 			[]string{"gofmt", "generated: api:generate-check", "generated: go:sqlc-check", "generated: " + workersScript}},
 		{[]string{"deploy/opentofu/m/main.tf", "deploy/opentofu/m/tests/a.tftest.hcl", "deploy/opentofu/m/gone.tf"}, []string{"tofu fmt"}},
@@ -424,7 +431,7 @@ func TestOpenAsksForNoScreenshots(t *testing.T) {
 	main := sandbox(t)
 	log := fakeGH(t, ghIssues)
 	r := addWorktree(t, main, "feat/12-ui")
-	commit(t, r.Root, "app/web/src/a.css", "a{}\n", "feat: look (#12)")
+	commit(t, r.Root, "web/client/src/a.css", "a{}\n", "feat: look (#12)")
 	if _, err := Open(r, OpenOptions{}); err != nil {
 		t.Fatalf("a change of the web UI opens without screenshots, got %v", err)
 	}
@@ -448,6 +455,24 @@ esac`)
 	done := addWorktree(t, main, "feat/1-merged")
 	commit(t, done.Root, "a.txt", "a\n", "feat: a")
 	mergeToMain(t, main, "feat/1-merged")
+	// Its dev server runs, recorded in the ignored .tmp/feedback/server.json, as the plugin of @my/devtools records it.
+	write(t, filepath.Join(main, ".git", "info", "exclude"), "/.tmp/\n")
+	server := exec.Command("sleep", "30")
+	server.Dir = done.Root
+	if err := server.Start(); err != nil {
+		t.Fatal(err)
+	}
+	stopped := make(chan struct{})
+	go func() {
+		_ = server.Wait()
+		close(stopped)
+	}()
+	t.Cleanup(func() {
+		_ = server.Process.Kill()
+		<-stopped
+	})
+	pid := server.Process.Pid
+	write(t, filepath.Join(done.Root, ".tmp", "feedback", "server.json"), fmt.Sprintf(`{"url":"http://localhost:5173/","pid":%d}`, pid))
 
 	dirty := addWorktree(t, main, "feat/2-dirty")
 	commit(t, dirty.Root, "b.txt", "b\n", "feat: b")
@@ -485,13 +510,18 @@ esac`)
 	if _, err := os.Stat(done.Root); err != nil {
 		t.Fatal("a dry run removed a worktree")
 	}
+	select {
+	case <-stopped:
+		t.Fatal("a dry run stopped a dev server")
+	default:
+	}
 	lines, err := Tidy(r, false)
 	if err != nil {
 		t.Fatal(err)
 	}
 	out := strings.Join(lines, "\n")
 	for _, want := range []string{
-		"removed worktree " + done.Root + " and branch feat/1-merged (merged into origin/main)",
+		fmt.Sprintf("removed worktree %s with its dev server (pid %d) and branch feat/1-merged (merged into origin/main)", done.Root, pid),
 		"kept feat/2-dirty: 1 uncommitted files in " + dirty.Root,
 		"removed worktree " + closed.Root + " and branch feat/3-closed (PR #30 closed)",
 		"kept feat/4-ahead: it has commits that PR #40 closed does not hold",
@@ -500,6 +530,11 @@ esac`)
 		if !strings.Contains(out, want) {
 			t.Errorf("tidy lacks %q:\n%s", want, out)
 		}
+	}
+	select {
+	case <-stopped:
+	case <-time.After(5 * time.Second):
+		t.Error("tidy left the dev server of the worktree it removed running")
 	}
 	if strings.Contains(out, "feat/5-open") || strings.Contains(out, "feat/6-fresh") {
 		t.Errorf("a branch with an open pull request or none is not tidied:\n%s", out)
@@ -553,6 +588,7 @@ case "$1 $2" in
       *number=30) echo '{"data":{"repository":{"issue":{"number":30,"title":"Epic","state":"CLOSED","milestone":{"number":3,"title":"M5"},"parent":null}}}}' ;;
     esac ;;
   "issue close") ;;
+  "issue view") echo '{"state":"OPEN"}' ;;
   "api repos/mycroblog/my/milestones/3") cat "$STATE/milestone" 2>/dev/null || echo '{"open_issues":4,"closed_issues":9,"state":"open"}' ;;
   "api -X") [ "$*" = "api -X PATCH repos/mycroblog/my/milestones/3 -f state=closed" ] || { echo "unexpected: $*" >&2; exit 1; } ;;
   "api repos/mycroblog/my/actions/jobs/"*)
@@ -632,6 +668,35 @@ func TestLandMergesCleansUpAndReports(t *testing.T) {
 	}
 }
 
+// On an integration branch GitHub closes nothing by keyword: land closes the issues itself and leaves the parent
+// for the merge of the trunk into the default branch.
+func TestLandIntoIntegrationBranch(t *testing.T) {
+	main, _, state, log, head := landSetup(t)
+	withTrunk(t, "integration")
+	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", head, "", false))
+	write(t, filepath.Join(state, "completed"), "2")
+	write(t, filepath.Join(state, "sibling"), "CLOSED")
+	write(t, filepath.Join(state, "other"), "CLOSED")
+	mergeToMain(t, main, "feat/12-x")
+	git(t, main, "push", "-q", "origin", "main:integration")
+	code, out := land(t, main)
+	if code != 0 {
+		t.Fatalf("exit %d:\n%s", code, out)
+	}
+	if want := "#30 Epic: every sub-issue is closed; it closes with the merge of integration into main"; !strings.Contains(out, want) {
+		t.Errorf("output lacks %q:\n%s", want, out)
+	}
+	calls := readLog(t, log)
+	for _, n := range []string{"12", "13"} {
+		if !strings.Contains(calls, "issue close "+n+" -R mycroblog/my --comment Merged into integration by #20.") {
+			t.Errorf("#%s was not closed:\n%s", n, calls)
+		}
+	}
+	if strings.Contains(calls, "issue close 30") {
+		t.Errorf("the parent was closed before the trunk reached main:\n%s", calls)
+	}
+}
+
 func TestLandClosesFinishedParent(t *testing.T) {
 	main, wt, state, log, head := landSetup(t)
 	write(t, filepath.Join(state, "pr"), prJSON("MERGED", "UNKNOWN", head, "", false))
@@ -692,7 +757,7 @@ func TestLandFailures(t *testing.T) {
 	}{
 		{"conflict", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "CONFLICTING", head, "", false))
-		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git rebase origin/main"}},
+		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"ci failed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
 		}, 1, []string{"PR #20: CI failed: preflight\n", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
@@ -706,7 +771,7 @@ func TestLandFailures(t *testing.T) {
 		{"dropped by the queue", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, "", false))
 			write(t, filepath.Join(state, "pr2"), prJSON("OPEN", "MERGEABLE", head, "", true))
-		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing", "fix: in the branch's worktree: git fetch origin && git rebase origin/main"}},
+		}, LandDropped, []string{"PR #20 left the merge queue without merging", "== server-test (merge group", "--- FAIL: TestThing", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"closed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("CLOSED", "UNKNOWN", head, "", false))
 		}, 1, []string{"PR #20 is closed without merging"}},

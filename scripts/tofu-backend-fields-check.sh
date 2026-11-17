@@ -47,13 +47,14 @@ backends_fields() {
   ' "$1"
 }
 
-# The fields of the object of the network variable of a module, read from all its files.
+# The fields of the object of the network variable of a module, read from all its files. awk reads the files itself:
+# fed through a pipe, the writer would die of SIGPIPE when awk exits early, and pipefail would fail the script with it.
 network_fields() {
-  cat "$1"/*.tf | awk '
+  awk '
     /^variable "network"/ { in_var = 1; next }
     in_var && /^  }\)/ { exit }
     in_var && /^    [a-z_]+ +=/ { print $1 }
-  '
+  ' "$1"/*.tf
 }
 
 contract="$(mktemp)"
@@ -127,7 +128,7 @@ for module in "$dir"/*/; do
     fi
     ;;
   esac
-  platform="$(cat "$module"/*.tf | awk '/^output "platform"/ { in_output = 1; next } in_output && /^}/ { exit } in_output && /^  value +=/ { print $3 }' | tr -d '"')"
+  platform="$(awk '/^output "platform"/ { in_output = 1; next } in_output && /^}/ { exit } in_output && /^  value +=/ { print $3 }' "$module"/*.tf | tr -d '"')"
   if [ "$platform" != "$expected" ]; then
     echo "$name: its platform is \"$platform\", and its name says $expected: an app refuses a backend of another platform by this" >&2
     status=1
@@ -135,8 +136,9 @@ for module in "$dir"/*/; do
   case "$name" in network-*) continue ;; esac
   while IFS= read -r output; do
     grep -qxF "$output" "$contract" && continue
+    # A here-string, not a pipe: grep -q exits at the first match, and the writer of a pipe would die of SIGPIPE.
     # shellcheck disable=SC2086 # the list is words on purpose
-    printf '%s\n' $for_the_operator | grep -qxF "$output" && continue
+    grep -qxF "$output" <<< "$(printf '%s\n' $for_the_operator)" && continue
     echo "$name: the output $output is neither in the contract in README.md nor listed for the operator in $(basename "$0")" >&2
     status=1
   done < <(cat "$module"/*.tf | grep -oE '^output "[a-z_0-9]+"' | cut -d'"' -f2)

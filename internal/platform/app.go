@@ -12,10 +12,9 @@ import (
 	"net"
 	"net/http"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
-
-	"golang.org/x/sync/singleflight"
 
 	"github.com/mycroblog/my/internal/adapter/captcha/siteverify"
 	"github.com/mycroblog/my/internal/adapter/httpclient"
@@ -239,6 +238,8 @@ type App struct {
 	// Diagnostics groups the error reports in the database and changes the state of the groups
 	// (ADR-0103 §4 (2), §7).
 	Diagnostics *appdiagnostics.Service
+	// UXMeasurements counts the UX measurements of the web client (ADR-0167 §3).
+	UXMeasurements *appdiagnostics.UX
 	// Scheduler enqueues the periodic jobs for the worker role.
 	Scheduler *queue.Scheduler
 	// Projections rebuilds and verifies the projections (`my projection`).
@@ -346,11 +347,15 @@ type App struct {
 	http *httpMetrics
 	// readinessFailures counts the failed readiness checks (ADR-0055 §12).
 	readinessFailures kernel.Counter
+	// readinessShared counts the readiness requests that joined a running check (readyCheck).
+	readinessShared kernel.Counter
 	// originRefused counts the requests that the origin check refused; nil in the maintenance
 	// mode, which measures nothing.
 	originRefused kernel.Counter
-	// readyFlight runs one readiness check for the concurrent requests (readyCheck).
-	readyFlight singleflight.Group
+	// readyMu guards readyRunning, the readiness check that runs for the concurrent requests, nil
+	// between checks (readyCheck).
+	readyMu      sync.Mutex
+	readyRunning *readyRun
 	// metricsHandler serves the Prometheus scrape on metrics_listen; nil unless
 	// metrics_exporter = prometheus. closeMeter flushes and stops the exporter.
 	metricsHandler http.Handler
@@ -359,10 +364,6 @@ type App struct {
 	closeTracer func(ctx context.Context) error
 	// page serves the web client's HTML at the GET paths that no route serves.
 	page http.Handler
-	// webStylesheet is the URL of the server-rendered pages' stylesheet from the web build, empty without one.
-	webStylesheet string
-	// webPasskeyScript is the URL of the sign-in page's passkey script from the web build, empty without one.
-	webPasskeyScript string
 }
 
 type route struct {
@@ -384,7 +385,7 @@ type AppOptions struct {
 	// server at this origin (`my serve -dev-vite-origin`). Development only.
 	DevViteOrigin string
 	// PseudoLocales makes the pseudo-locales en-XA and ar-XB selectable on every surface
-	// (`my serve -pseudo-locales`), for the E2E of the server-rendered pages. Development and tests only.
+	// (`my serve -pseudo-locales`), for the E2E of the auth screens. Development and tests only.
 	PseudoLocales bool
 	// HTTPClient sends every outbound request; nil builds the SSRF-guarded client from the
 	// configuration. Tests only, to reach other test servers by their public hosts.
@@ -576,7 +577,7 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	a.setUpTimeline(repos.feeds, repos.statuses)
 	// The error groups' projector of their states runs before the notifications and the webhooks
 	// that read the states of the groups in the same transactions.
-	a.setUpDiagnostics(repos.diagnostics)
+	a.setUpDiagnostics(repos.diagnostics, repos.ux)
 	if err := a.setUpNotification(cfg, repos.notifs, repos.pushes); err != nil {
 		return nil, err
 	}
@@ -636,11 +637,12 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	}
 	// The web client comes after the link previews, which it serves.
 	a.setUpPreviews(repos.statuses)
-	if err := a.setUpWeb(opts); err != nil {
+	authEntry, err := a.setUpWeb(opts)
+	if err != nil {
 		return nil, err
 	}
 	a.setUpActivityPub(cfg, opts.Version)
-	a.setUpAuthPages(cfg)
+	a.setUpAuthPages(cfg, authEntry)
 	if err := a.setUpMailEvents(cfg); err != nil {
 		return nil, err
 	}
@@ -899,6 +901,7 @@ func (a *App) Close() error {
 	}
 	// The sinks of the error reports may write to the database and measure what they send.
 	a.closeErrorReporter()
+	a.closeUXMeasurements()
 	if a.closeMeter != nil {
 		ctx, cancel := context.WithTimeout(context.Background(), meterCloseTimeout)
 		_ = a.closeMeter(ctx) // the last measurements are lost when the collector is down

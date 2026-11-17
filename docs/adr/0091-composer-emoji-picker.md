@@ -16,7 +16,7 @@
   CLDR は `unicode-org/cldr-json` のリリースの JSON（`cldr-annotations-full/annotations/<ロケール>/annotations.json` と `cldr-annotations-derived-full/annotationsDerived/<ロケール>/annotations.json`）を取る。
   CLDR 49（cldr-json 49.0.0、2026-10-22 公開）は、Emoji 18.0 の `emoji-test.txt` の絵文字（`Component` を除く）すべてに `en` と `ja` の名前を持つ（2026-10-23 に両方を取得して突き合わせて確認）。
   CLDR の annotations は VS16（U+FE0F）を外した列を鍵にするので、生成器は fully-qualified の列と VS16 を外した列の両方で引く。
-- クライアントのデータは `app/web/src/features/emoji/unicode/` に生成してコミットする（`*.gen.json`）。
+- クライアントのデータは `features/emoji/unicode/` に生成してコミットする（`*.gen.json`）。
   - 基本のデータ（ロケールに依らない）: 書記素の列（fully-qualified）、グループ、並び順、絵文字の版、肌の色の異体の列。`Component` のグループ（肌の色の修飾子だけのものなど）は出さない。
   - ロケールごとのデータ: CLDR の短い名前とキーワード。`en` と `ja` を作り、`en-XA` / `ar-XB`（疑似ロケール）とほかのロケールは `en` に落とす。CLDR に名前が無い絵文字は `en`、それも無ければ `emoji-test.txt` の英語の名前を使う。
 - グループの名前（9 個）と肌の色の選択の文言は、メッセージカタログ（`client` の名前空間）に足す（ADR-0009）。肌の色の 5 段階の名前は CLDR の修飾子の annotations を使う。
@@ -53,14 +53,14 @@
 ### 4. 置き場所と開き方
 
 - 本文の `TextArea` の右上（書字方向の終わり側。論理プロパティ `inset-inline-end`）に、アイコンだけの絵文字のボタン（`aria-label` と同じ文言のツールチップ）を置く。カスタム絵文字の有無に関わらず出す。
-  本文の入力が右上のボタンの下に回り込まないように、入力欄の終わり側に余白を取る。道具の行に絵文字のボタンを置かないので、320 px のシートの道具の行が 1 つ短くなる（web-client §12 の「送信が最初の画面に入る」を楽にする）。
+  本文の入力が右上のボタンの下に回り込まないように、入力欄の終わり側に余白を取る。道具の行に絵文字のボタンを置かないので、320 px のシートの道具の行が 1 つ短くなる。
 - 同じボタンを、投稿の編集のダイアログの本文、プロフィールの編集の表示名と自己紹介に置く。CW と投票の選択肢には置かず、ADR-0092 の `:` からの補完と OS の入力に任せる（1 行の欄にボタンを並べると 320 px で欄が狭くなる）。
 - ピッカーは `@my/ui` の新しいデザインの `Popover`（#991）で開き、検索欄にフォーカスを移す。幅は画面の幅から余白を引いた幅と 22 rem の小さいほうにし、列の数は §14 の計算で決める。
   ADR-0110 の `md` 未満のシートの中で開くので、シートの上に重なるポップオーバーとして画面に収まることを E2E の 320 px で確かめる。
 
 ### 5. 入れ方
 
-- Unicode 絵文字はその文字（肌の色を付けたもの）を、カスタム絵文字は `:shortcode:` を、カーソルの位置（選択があればその範囲）に入れる。カスタム絵文字の前後の空白の規則は web-client §12 のとおり。Unicode 絵文字には空白を足さない。
+- Unicode 絵文字はその文字（肌の色を付けたもの）を、カスタム絵文字は `:shortcode:` を、カーソルの位置（選択があればその範囲）に入れる。Unicode 絵文字には空白を足さない。
 - 選ぶとピッカーを閉じて入力欄にフォーカスを戻す。Shift を押しながら選ぶ（Shift+Enter・Shift+クリック）と、閉じずに続けて選べ、フォーカスはグリッドに残る。
   タッチの端末には続けて選ぶ操作を設けず、1 つ選ぶごとに閉じる。
 
@@ -68,11 +68,11 @@
 
 - 各絵文字の名前は、Unicode 絵文字は表示中のロケールの CLDR の短い名前（肌の色の付いたものは CLDR の annotationsDerived の名前）、カスタム絵文字は `:shortcode:`。
 - グリッドは APG の grid の操作（Tab の順、矢印キーは書字方向に沿う、Home / End、Enter・Space・押下で選ぶ）を §17 のとおり持つ。
-- ADR-0110 の層（Testing Library のキー操作、Storybook の axe、3 幅 × ライト / ダーク × LTR / RTL のスクリーンショット、E2E の 320 px と 4 ロケール）を通す。
+- ADR-0110 の層（Testing Library のキー操作、Storybook の axe、E2E の 320 px と 4 ロケール）を通す。
 
 ### 7. リアクション
 
-リアクションのピッカー（ADR-0051 §10、web-client §13）も同じピッカーにし、全集合とよく使う・検索・肌の色を持つ。
+リアクションのピッカー（ADR-0051 §10）も同じピッカーにし、全集合とよく使う・検索・肌の色を持つ。
 データがサーバーと同じ `EMOJI_VERSION` から作られるので、選べる Unicode 絵文字はすべてサーバーが受け入れる。リモートのカスタム絵文字は出さない。
 
 ### 8. フォントの出所と版
@@ -107,11 +107,11 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 - **道具**: fontTools（MIT）、brotli（MIT）、SVG の部分集合に要る lxml（BSD-3-Clause）を、生成のときだけ使う。どれも AGPL-3.0 と両立する。
   リポジトリの道具に Python は無い（`.tool-versions`）。そこで、`scripts/emoji-fonts` を `uv` のロックファイルで版を固定した使い捨ての環境で動かす。
   生成した WOFF2 と `@font-face` の CSS はコミットする。`scripts/task.sh check` とビルドに Python は要らない。サーバーには何も足さない。
-- 置き場所は `@my/ui`（`app/ui/src/fonts/emoji/` と `app/ui/src/emoji.css`、`@my/ui/emoji.css` として公開）にする。タイポグラフィは `@my/ui` が持ち、Storybook のスクリーンショットも同じフォントで撮れる。
-  Vite が URL にハッシュを付けて `dist/assets/` に出す。
-- **`emoji.css` を読み込む場所**: Web クライアントの `app/web/src/index.css` と Storybook の `app/ui/src/storybook.css` が、`theme.css` の後に `emoji.css` を読み込む。
-  - `theme.css` は `emoji.css` を読み込まない。`--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置くのは `theme.css` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
-  - サーバーが描画する画面（`server-pages.css`）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。ファミリー名は `--font-sans` に残るが、face が無いので飛ばされる。
+- 置き場所は `@my/design-system`（`web/design-system/src/fonts/emoji/` と `web/design-system/src/emoji.css`、`@my/design-system/emoji.css` として公開）にする。タイポグラフィは `@my/design-system` が持ち、Storybook も同じフォントで描ける。
+  Vite が URL にハッシュを付けて、分割ごとに別のファイルとしてビルドの `assets/` に出す。
+- **`emoji.css` を読み込む場所**: Web クライアントの入口（`web/app/src/main.tsx` と `web/app/src/auth.tsx`）と Storybook の `web/storybook/.storybook/preview.tsx` が、`@my/design-system/styles.css` の後に `emoji.css` を読み込む。
+  - `styles.css` は `emoji.css` を読み込まない。`--font-sans` の先頭に `"my Noto Color Emoji"` を置くのは `@my/design-tokens` の `fontFamily` のままにする（§10）。フォントの並びとサーバー単位のテーマのトークンを 1 か所に保つため。
+  - Web クライアントの外の画面（メンテナンスの画面）は `emoji.css` を読み込まず、OS の絵文字のフォントで描く。
 
 ### 10. `@font-face` とフォントの並び
 
@@ -126,14 +126,12 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
   | COLRv1 | 98 | 107 | TP まで未対応 | iOS の Safari も 27.2 まで未対応。Android の Chrome・WebView は対応 |
 
 - **`unicode-range`**: 次の符号位置は、本文の文字として使われるので外す。`#`・`*`・`0`〜`9`（キーキャップの基）と、`©`・`®`・`™`・`‼`・`⁉`・`↔` など `emoji-test.txt` で既定がテキストの表示の記号のうち、本文の記号として使われるものである。
-  外した字の絵文字の表示（`#️⃣`、`©️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
+  外した字の絵文字の表示（`#️⃣`、`©️`）と、外した字を含む並び（`🙂‍↔️`）は、OS の絵文字のフォントで描く。外す字の一覧は、生成器の定数 `TEXT_CODE_POINTS` として 1 か所に置く。
 - **並び**: `--font-sans` と `--font-mono` の先頭に `"my Noto Color Emoji"` を置く。`unicode-range` が絵文字の符号位置だけなので、ほかの字には効かない。
   先頭に置かないと、`☀`・`♠`・`❤` のように CJK のフォントや Segoe UI が字形を持つ字が、そちらのフォントで描かれる。末尾の OS の絵文字のフォント（`"Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji"`）は、フォントを読めないときのために残す。
-  ADR-0009 の「フォントは OS フォントを優先し」は、絵文字の符号位置についてだけこの ADR が置き換える。本文の文字は OS のフォントのままにする。
+  その後ろに、サーバー単位のテーマのフォント（ADR-0059 §2）、本文の Noto Sans CJK と OS のフォント（ADR-0009 §5）が続く。並びは固定で、テーマは絵文字のフォントを落とせない。
 - **`font-display: swap`**: 読み込み中は OS の絵文字で描き、届いたら入れ替える。`block` にすると、遅い回線で絵文字が最大 3 秒見えない。
   入れ替えで行の高さが変わらないように、`@font-face` に `ascent-override`・`descent-override` を付けて OS の絵文字に近づける。
-- **キャッシュ**: Service Worker（ADR-0028）は `**/*.woff2` を precache するが、絵文字の WOFF2 を `globIgnores` で外す。2 つの形式の約 5.7 MB を、インストールのたびに取らないためである。
-  代わりに、実行時に cache-first で持つ。URL にハッシュが付くので、内容が変わらない限り再取得しない。ほかの WOFF2 の precache はそのままにする。
 - **使えないとき**: フォントを読めない場合は、OS の絵文字に落ちる。この場合、新しい絵文字が豆腐になり得る。
   Safari 16 以前（`tech()` を知らない）も OS の絵文字に落ちることを想定するが、振る舞いは要検証である（Open Questions）。
 
@@ -147,8 +145,7 @@ Noto Color Emoji を COLRv1 と OpenType-SVG の 2 つの形式で自前で分�
 
 ### 12. ADR-0092 の強調表示との関係
 
-ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字間・行の高さで文字を並べる。`--font-sans` の先頭の `@font-face` は両方に同じく効く。
-ただし、`font-display: swap` の入れ替えの前後で字の幅が変わる。このため、層の位置合わせは、フォントの読み込み（`document.fonts` の `loadingdone`）の後にも測り直す。
+ADR-0092 §4 の編集器は、文字を `--font-sans` で自分で描き、強調をその文字のノードと範囲に付ける。`font-display: swap` の入れ替えの前後で字の幅が変わっても強調は文字と一緒に動く。カーソルの行の下に出す補完の一覧だけは、フォントの読み込み（`document.fonts` の `loadingdone`）の後にも位置を測り直す。
 
 ### 13. フォントのライセンスと表示
 
@@ -160,7 +157,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
 
 - グリッドは 1 本の行の並びにする。節ごとに、見出しの行を 1 つと、その節の絵文字を N 個ずつに切った絵文字の行を続ける。検索中は「検索結果」の見出しの行と結果の絵文字の行だけになる（§3）。
 - 列の数 N は、グリッドの内側の幅から計算する。`ResizeObserver` でグリッドの幅と、画面に出さない見本のセル 2 つ（`aria-hidden`、同じクラス）の大きさと間隔を測り、`N = floor((幅 + 間隔) / (セルの大きさ + 間隔))`（1 以上）とする。
-  セルの大きさはフォントの大きさの設定と `pointer-coarse:` で変わる（§4・web-client D4 の 40 px / 44 px）ので、固定の値を使わずに測る。幅を測れない環境（jsdom）では N = 8（22 rem のポップオーバーの列の数）とする。
+  セルの大きさはフォントの大きさの設定と `pointer-coarse:` で変わる（§4 の 40 px / 44 px）ので、固定の値を使わずに測る。幅を測れない環境（jsdom）では N = 8（22 rem のポップオーバーの列の数）とする。
   ADR-0110 の「部品はコンテナクエリ」は、部品が画面ではなく自分の幅に応じることを求めるもので、この計算も部品の幅に応じる。
 - 行の高さは固定にする。絵文字の行はセルの高さと間隔、見出しの行は見本の見出しの高さで、どちらも同じ測り方で得る。行ごとの `measureElement` は使わない。
   高さが決まっているので、スクロールの位置から描く範囲と、見出しの位置が計算だけで決まる。
@@ -170,11 +167,11 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
 
 - `@tanstack/react-virtual` の `useVirtualizer` で、グリッドの要素をスクロールの要素にする。行は絶対配置（`translateY`）で、高さの合計を持つ入れ物の中に置く。
 - `overscan` は 4 行（`Feed` と同じ）。見える行（上限の高さで 6 行ほど）と前後の 4 行ずつを描く。
-- **フォーカスのあるセルの行は表示範囲の外でも描く**。`rangeExtractor` で、既定の範囲（`defaultRangeExtractor`）に今のセルの行を足す（`Feed` と同じ。web-client Y6 と同じ考え）。
+- **フォーカスのあるセルの行は表示範囲の外でも描く**。`rangeExtractor` で、既定の範囲（`defaultRangeExtractor`）に今のセルの行を足す（`Feed` と同じ）。
   ホイールやタッチでスクロールしてフォーカスのあるセルが見えなくなっても、その要素は DOM に残り、フォーカスは失われない。スクロールして戻ると同じ要素がそのまま見える。
-- 仮想化を読むフックは、`Feed` と同じく `"use no memo"` で React Compiler から外す（web-client R4）。仮想化の結果はそのフックの戻り値として読み、ほかのコードはコンパイラの対象のままにする。
+- 仮想化を読むフックは、`Feed` と同じく `"use no memo"` で React Compiler から外す。仮想化の結果はそのフックの戻り値として読み、ほかのコードはコンパイラの対象のままにする。
 - スクロールの滑らかさは CSS の `scroll-behavior` ではなく、TanStack Virtual の `scrollToIndex` の `behavior` で決める。CSS で滑らかにすると、仮想化の側が目標の位置に着いたかを確かめる処理と食い違うためである。
-  カテゴリのボタンによる移動だけを、`prefers-reduced-motion: no-preference` のときに `smooth` にする（web-client D6）。キー操作による移動は即座にスクロールする。
+  カテゴリのボタンによる移動だけを、`prefers-reduced-motion: no-preference` のときに `smooth` にする。キー操作による移動は即座にスクロールする。
 
 ### 16. ARIA の構造
 
@@ -190,7 +187,7 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
 ### 17. キー操作とフォーカス（roving tabindex）
 
 - グリッドの中で Tab で止まるのは 1 つのセルだけにする。初めは最初の絵文字、その後は最後にフォーカスのあったセルが `tabindex="0"` になる。Tab の順は 検索欄 → 肌の色 → カテゴリのボタンの列 → グリッド。
-- 今のセルは、節と絵文字の鍵で持つ。列の数が変わって行の切り方が変わっても、同じ絵文字に留まる。検索の文字列が変わって今のセルが結果に無くなったら、最初の絵文字を今のセルとみなす（state を Effect で直さず、描画の中で導く。web-client R6）。
+- 今のセルは、節と絵文字の鍵で持つ。列の数が変わって行の切り方が変わっても、同じ絵文字に留まる。検索の文字列が変わって今のセルが結果に無くなったら、最初の絵文字を今のセルとみなす（state を Effect で直さず、描画の中で導く）。
 - 矢印キーで DOM のフォーカスをセルに移す。移した先の行が描かれていなければ、今のセルを先に変えて（`rangeExtractor` がその行を描く）、描かれた後にフォーカスを移す。どちらも `focus({ preventScroll: true })` で移し、`scrollToIndex`（`align: "auto"`）でその行を見える位置に入れる。
 - キーと動き（左右は書字方向に沿う。RTL では入れ替わる。React Aria の `useLocale` の向きを使う）:
 
@@ -270,8 +267,8 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - サーバーとクライアントの絵文字の集合が 1 つの版でそろい、版の更新が 1 つの手順になる。
   - 新しい npm の依存を足さない。ADR-0092 の補完が同じデータと検索を使える。
   - 端末・OS の版に関わらず、絵文字が同じ形になる。古い OS でも `EMOJI_VERSION` の絵文字が豆腐にならない（`tech()` に対応するブラウザーでは）。
-  - Storybook と E2E のスクリーンショット（ADR-0110）が、CI のコンテナの OS の絵文字に左右されない。第三者のオリジンに閲覧を知らせない。
-  - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。トークンとフォントの並びは `theme.css` 1 か所で済む。
+  - Storybook と E2E が、CI のコンテナの OS の絵文字に左右されない。第三者のオリジンに閲覧を知らせない。
+  - サーバーが描画する画面は、絵文字のフォントを読み込まず、見た目も変わらない。トークンとフォントの並びは `@my/design-tokens` 1 か所で済む。
   - 開いたピッカーの要素の数が、全集合の大きさに依らず、見える行と前後の数行の分（百数十のセル）になる。描いていない行があっても、総数と位置が支援技術に伝わる。
 - 悪い影響・トレードオフ
   - 生成器と生成したデータ（ロケールごとの JSON）を自前で保守する。CLDR の構造が変わると生成器を直す。
@@ -284,10 +281,9 @@ ADR-0092 §4 の強調表示の層は、`textarea` と同じフォント・字�
   - フォントの出所が 2 つ（noto-emoji と google/fonts）あり、版（2.057 と 2.055）が違い得る。細部の形が形式によって違うことがある。
   - リポジトリに約 5.7 MB のバイナリが入り、Unicode の版を上げるたびに増える。生成に Python の道具（fontTools・brotli・lxml・uharfbuzz）が要る。
   - 通知（Web Push）・`document.title`・OS のネイティブの UI（`select` の一覧など）は OS のフォントで描かれ、Noto にならない。
-  - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/ui/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
-  - サーバー単位のテーマで `font-sans` / `font-mono` を上書きすると、`"my Noto Color Emoji"` を先頭に残さない限り、Web クライアントの絵文字も OS のフォントになる（[app/ui/README.md](../../app/ui/README.md#server-themes)・[運用の手引き](../operations/instance-settings.md#theme)）。
+  - Web クライアントの新しい入口（新しいエントリのスタイルシートや、別の Storybook）で Noto Color Emoji を使うには、そのスタイルシートが `@my/design-system/emoji.css` を読み込む必要がある。読み忘れても壊れはしないが、絵文字が OS のフォントになる。
   - グリッドのキー操作・フォーカスの移動・ARIA の属性を自前で持つ。`GridList` が持っていた細かな扱い（typeahead など）は持たない。テスト（Testing Library のキー操作と Storybook の実ブラウザ）で固める。
-  - React Compiler から外すフックが `Feed` のほかにもう 1 つある（web-client R4）。
+  - React Compiler から外すフックが `Feed` のほかにもう 1 つある。
   - ブラウザーのページ内検索（Ctrl+F）は、描いていない絵文字を見つけない。名前で探すのはピッカーの検索欄が受け持つ。
   - WKWebView で OpenType-SVG を、Android の WebView で COLRv1 を描く速さは実機で測っていない（#1150 は Playwright の計測で閉じ、Tauri のアプリは v0 の外）。ピッカーの分割の読み込みは、仮想化の後の本物の画面では計測しておらず（#1213 は必要になるまで閉じた）、§11 の値は静的なページでの計測で、WebKit は未計測である。Chromium は、仮想化しても初回に 11 分割のうち 9 分割を読む。
 

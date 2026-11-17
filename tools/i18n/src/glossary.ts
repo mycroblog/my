@@ -1,16 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
-// The glossary of the catalogs (tools/i18n/glossary.json, web-client/16-look-states-and-wording.md G21): per locale,
-// the preferred term of a thing and the variants check.ts rejects in the text of a message.
+// The glossary of the machine-translated catalogs (tools/i18n/glossary.json): per locale, the preferred term of a
+// thing and the variants check.ts rejects in the text of a message. The words of en and ja are decisions of the copy
+// role, which the copy lint reads (copy.ts).
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { toolDir } from "./catalog";
 
 /** One thing: the term to use and the variants (regular expressions over the message text) to avoid. */
-export type Term = { use: string; avoid: string[]; note?: string };
+type Term = { use: string; avoid: string[]; note?: string };
 /** locale -> terms. A locale matches its own entries only; pseudo-locales are generated and never checked. */
 export type Glossary = Record<string, Term[]>;
 
-export const glossaryPath = join(toolDir, "glossary.json");
+const glossaryPath = join(toolDir, "glossary.json");
 
 export const loadGlossary = (path: string = glossaryPath): Glossary => JSON.parse(readFileSync(path, "utf8"));
 

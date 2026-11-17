@@ -1,0 +1,22 @@
+{
+  "shortcuts.title": {
+    "defaultMessage": "Keyboard shortcuts",
+    "description": "The heading of the dialog that lists the keyboard shortcuts usable on the current screen."
+  },
+  "shortcuts.help": {
+    "defaultMessage": "Show keyboard shortcuts",
+    "description": "The action, listed in the keyboard shortcuts dialog itself, that opens that dialog."
+  },
+  "shortcuts.screen": {
+    "defaultMessage": "This screen",
+    "description": "The heading of the group of shortcuts that work anywhere on the current screen, in the keyboard shortcuts dialog."
+  },
+  "shortcuts.close": {
+    "defaultMessage": "Close",
+    "description": "The button that closes the keyboard shortcuts dialog."
+  },
+  "shortcuts.current": {
+    "defaultMessage": "Current",
+    "description": "A mark beside the heading of the group of keyboard shortcuts that act on what has focus now, in the keyboard shortcuts dialog."
+  }
+}

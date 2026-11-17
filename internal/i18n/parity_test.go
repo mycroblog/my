@@ -12,7 +12,7 @@ import (
 // testdata/golden.json holds FormatJS (intl-messageformat) outputs for the inputs in
 // testdata/cases.json and for CLDR probes; tools/i18n regenerates it and `scripts/task.sh i18n:check`
 // fails when it is stale. These tests require the Go engine to produce identical strings,
-// so the server and the TypeScript clients format shared messages the same way.
+// so the server and a FormatJS client format shared messages the same way.
 
 type parityCases struct {
 	Catalog []struct {
@@ -140,7 +140,7 @@ func TestCLDRDrift(t *testing.T) {
 }
 
 // TestSharedSubsetLimits pins where the Go engine diverges from FormatJS. tools/i18n
-// rejects these constructs outside client* namespaces; if one starts to match, the
+// rejects these constructs in every catalog; if one starts to match, the
 // shared subset can grow.
 func TestSharedSubsetLimits(t *testing.T) {
 	tests := []struct {

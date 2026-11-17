@@ -131,6 +131,8 @@ const bonfireDropsQuoteRequests = "Bonfire 1.0.7 records a received QuoteRequest
 func (b *bonfire) awaitQuoteRequest(t *testing.T, quoteURI, quotedID string) bool {
 	t.Helper()
 	deadline := time.Now().Add(deliveryTimeout)
+	poll := time.NewTicker(pollInterval)
+	defer poll.Stop()
 	for {
 		ok, err := b.quoteRequested(t.Context(), quoteURI, quotedID)
 		if err != nil {
@@ -142,7 +144,7 @@ func (b *bonfire) awaitQuoteRequest(t *testing.T, quoteURI, quotedID string) boo
 		if time.Now().After(deadline) {
 			return false
 		}
-		time.Sleep(2 * time.Second)
+		<-poll.C
 	}
 }
 

@@ -1,0 +1,23 @@
+# SPDX-License-Identifier: MIT
+description: A saved token set of the instance theme.
+type: object
+required: [id, tokens, stale_tokens, saved_at]
+properties:
+  id:
+    type: string
+  tokens:
+    description: The overrides that apply, in the order of the token list.
+    type: array
+    items:
+      $ref: ./ThemeTokenValue.yaml
+  stale_tokens:
+    description: |
+      The overrides that no longer apply and are left out of the stylesheet: `reason` is
+      `unknown_token` (the token was renamed or retired), `duplicate_token`, `invalid_value`, or
+      `out_of_range` (the token's kind or bounds changed).
+    type: array
+    items:
+      $ref: ./StaleThemeToken.yaml
+  saved_at:
+    type: string
+    format: date-time

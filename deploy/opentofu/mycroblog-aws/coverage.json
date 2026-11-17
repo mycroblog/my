@@ -105,6 +105,7 @@
     "origin_secret_previous",
     "payments*",
     "plugin_*",
+    "pprof_listen",
     "push_allowed_destinations",
     "relay_max_activities_per_hour",
     "remote_custom_emoji_max_bytes",
@@ -134,6 +135,7 @@
     "mail_ses_region": "the identity is in the region of the deployment, which AWS_REGION of the tasks names",
     "queue_cloudtasks_*": "Cloud Tasks, on Google Cloud",
     "stream_pubsub_*": "Pub/Sub, on Google Cloud",
+    "translator_fake": "only test builds have it, and the images are not test builds",
     "translator_google_*": "Google Cloud Translation needs Google credentials, which the tasks do not have"
   }
 }

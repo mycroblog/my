@@ -178,6 +178,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`translator_google_project`](#translator_google_project) | `MY_TRANSLATOR_GOOGLE_PROJECT` | none | no | no |
 | [`translator_google_location`](#translator_google_location) | `MY_TRANSLATOR_GOOGLE_LOCATION` | `global` | no | no |
 | [`translator_aws_region`](#translator_aws_region) | `MY_TRANSLATOR_AWS_REGION` | none | no | no |
+| [`translator_fake`](#translator_fake) | `MY_TRANSLATOR_FAKE` | `false` | no | no |
 | [`search`](#search) | `MY_SEARCH` | `none` | no | no |
 | [`search_elasticsearch_url`](#search_elasticsearch_url) | `MY_SEARCH_ELASTICSEARCH_URL` | none | when `search = elasticsearch` | no |
 | [`search_elasticsearch_api_key`](#search_elasticsearch_api_key) | `MY_SEARCH_ELASTICSEARCH_API_KEY` | none | no | yes |
@@ -238,6 +239,7 @@ An instance setting that has never been set reads as its default, which is defin
 | [`errors_exporter`](#errors_exporter) | `MY_ERRORS_EXPORTER` | `none` | no | no |
 | [`errors_sentry_dsn`](#errors_sentry_dsn) | `MY_ERRORS_SENTRY_DSN` | none | when `errors_exporter` is `sentry` | yes |
 | [`errors_environment`](#errors_environment) | `MY_ERRORS_ENVIRONMENT` | the value of `profile` | no | no |
+| [`pprof_listen`](#pprof_listen) | `MY_PPROF_LISTEN` | none | no | no |
 | [`plugin_translator_address`](#plugin_translator_address) | `MY_PLUGIN_TRANSLATOR_ADDRESS` | none | no | no |
 | [`plugin_translator_protocol`](#plugin_translator_protocol) | `MY_PLUGIN_TRANSLATOR_PROTOCOL` | `json` | no | no |
 | [`plugin_translator_token`](#plugin_translator_token) | `MY_PLUGIN_TRANSLATOR_TOKEN` | none | no | yes |
@@ -1521,6 +1523,19 @@ The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Am
 - Default: none
 - Required: no
 
+### `translator_fake`
+
+Test builds only: registers the stand-in translation provider `fake`, which the instance setting `translation_providers` then enables, for end-to-end tests and demonstrations. It calls no service: it puts the target language before each text, as `[ja] Hello`, and fails as a provider that is down when a text contains `[translation-fails]`.
+
+- Environment variable: `MY_TRANSLATOR_FAKE`
+- Default: `false`
+- Required: no
+
+| Value | Description |
+| --- | --- |
+| `false` | No such provider. |
+| `true` | The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). |
+
 ### `search`
 
 The search engine of the full-text search of statuses. The search of accounts and hashtags uses the database and does not depend on this setting.
@@ -2059,6 +2074,14 @@ Name of the environment that every error report carries, such as `staging`, to t
 
 - Environment variable: `MY_ERRORS_ENVIRONMENT`
 - Default: the value of `profile`
+- Required: no
+
+### `pprof_listen`
+
+TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.
+
+- Environment variable: `MY_PPROF_LISTEN`
+- Default: none
 - Required: no
 
 ### `plugin_translator_address`

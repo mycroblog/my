@@ -4,7 +4,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_account_moved": {
-    "defaultMessage": "‮∀u ɐɔɔonuʇ ʇɥɐʇ ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ʅıɯıʇ ɯoʌǝp ʇo ɐuoʇɥǝɹ ɐɔɔonuʇ‬",
+    "defaultMessage": "‮∀u ɐɔɔonuʇ ʅıɯıʇǝp ou {instance} ɯoʌǝp ʇo ɐuoʇɥǝɹ ɐɔɔonuʇ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_appeal": {
@@ -32,7 +32,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_hook_appeal": {
-    "defaultMessage": "‮∀ ɹǝɟnsǝp dosʇ ʍɐs ɐddǝɐʅǝp ʇo ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
+    "defaultMessage": "‮∀u ɐddǝɐʅ oɟ ɐ ɹǝɟnsǝp dosʇ ɐʍɐıʇs ʇɥǝ ɯopǝɹɐʇoɹs oɟ {instance}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.admin_hook_failing": {
@@ -60,7 +60,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.appeal_decided": {
-    "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} pǝɔıpǝp ʎonɹ ɐddǝɐʅ‬",
+    "defaultMessage": "‮⊥ɥǝ ɯopǝɹɐʇoɹs oɟ {instance} ɹǝʌıǝʍǝp ʎonɹ ɐddǝɐʅ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.auto_delete_limit": {
@@ -136,11 +136,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.interaction_accepted": {
-    "defaultMessage": "‮{name} ɐddɹoʌǝp ʎonɹ ıuʇǝɹɐɔʇıou ʍıʇɥ ʇɥǝıɹ dosʇ‬",
+    "defaultMessage": "‮{name} ɐddɹoʌǝp ʎonɹ ɹǝdʅʎ, qoosʇ, oɹ bnoʇǝ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.interaction_rejected": {
-    "defaultMessage": "‮{name} pǝɔʅıuǝp ʎonɹ ıuʇǝɹɐɔʇıou ʍıʇɥ ʇɥǝıɹ dosʇ‬",
+    "defaultMessage": "‮{name} pǝɔʅıuǝp ʎonɹ ɹǝdʅʎ, qoosʇ, oɹ bnoʇǝ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.mention": {
@@ -184,7 +184,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.scheduled_status_failed": {
-    "defaultMessage": "‮{instance}: ʎonɹ sɔɥǝpnʅǝp dosʇ ɔonʅp uoʇ qǝ dnqʅısɥǝp {reason,select,invalid{qǝɔɐnsǝ ıʇ poǝs uoʇ ɯǝǝʇ ʇɥǝ ɹǝbnıɹǝɯǝuʇs ɟoɹ ɐ dosʇ} media_unavailable{qǝɔɐnsǝ ɐu ɐʇʇɐɔɥǝp ɟıʅǝ ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} other{} quote_unavailable{qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ bnoʇǝs ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} rejected{qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ ɹǝɟnsǝp ıʇ} reply_unavailable{qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ ɹǝdʅıǝs ʇo ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} restricted{qǝɔɐnsǝ ʎonɹ ɐɔɔonuʇ ɔɐuuoʇ dosʇ uoʍ}}‬",
+    "defaultMessage": "‮{instance}: ʎonɹ sɔɥǝpnʅǝp dosʇ ɔonʅp uoʇ qǝ dnqʅısɥǝp{reason,select,invalid{ qǝɔɐnsǝ ıʇ poǝs uoʇ ɯǝǝʇ ʇɥǝ ɹǝbnıɹǝɯǝuʇs ɟoɹ ɐ dosʇ} media_unavailable{ qǝɔɐnsǝ ɐu ɐʇʇɐɔɥǝp ɟıʅǝ ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} other{} quote_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ bnoʇǝs ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} rejected{ qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ's ɐnʇoɯɐʇǝp ɹǝʌıǝʍ pıp uoʇ ɐɔɔǝdʇ ıʇ} reply_unavailable{ qǝɔɐnsǝ ʇɥǝ dosʇ ıʇ ɹǝdʅıǝs ʇo ıs uo ʅouƃǝɹ ɐʌɐıʅɐqʅǝ} restricted{ qǝɔɐnsǝ ʎonɹ ɐɔɔonuʇ ɔɐuuoʇ dosʇ uoʍ}}; ıʇ sʇɐʎs ıu ʎonɹ pɹɐɟʇs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_announced": {
@@ -196,7 +196,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.service_closure_withdrawn": {
-    "defaultMessage": "‮{instance} ʍıʅʅ uoʇ ɔʅosǝ: ʇɥǝ ɔʅosnɹǝ ʍɐs ʍıʇɥpɹɐʍu‬",
+    "defaultMessage": "‮⊥ɥǝ ɔʅosnɹǝ oɟ {instance} ʍɐs ʍıʇɥpɹɐʍu‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.status": {
@@ -212,7 +212,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_service_closure": {
-    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ snqsɔɹıdʇıou ou {instance} ǝups ʍıʇɥ ʇɥǝ ɔʅosnɹǝ oɟ ʇɥǝ sǝɹʌǝɹ‬",
+    "defaultMessage": "‮⅄onɹ snddoɹʇǝɹ snqsɔɹıdʇıou ou {instance} ıs ɔɐuɔǝʅʅǝp qǝɔɐnsǝ ʇɥǝ sǝɹʌǝɹ ɔʅosǝs‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "push.supporter_subscription_ended": {
