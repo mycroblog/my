@@ -7,7 +7,13 @@
 // after it signed up, it offers people to follow over its posts (people.tsx).
 
 import { Column } from "@my/app-components";
-import { homeTimelineQuery, useHomeTimeline, useViewer, type AppData } from "@my/app-data";
+import {
+  homeTimelineQuery,
+  loadHomeSuggestions,
+  useHomeSuggestions,
+  useHomeTimeline,
+  type AppData,
+} from "@my/app-data";
 import { ScreenStack, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { SuggestedPeople } from "../people/people";
@@ -20,7 +26,10 @@ import { useNewPostsColumn } from "./new-posts";
  * failure is left to the column, which shows it with a retry.
  */
 export async function loadHomeTimeline(data: AppData): Promise<void> {
-  await data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity }).catch(() => undefined);
+  await Promise.all([
+    data.queryClient.infiniteQuery({ ...homeTimelineQuery(data), staleTime: Infinity }).catch(() => undefined),
+    loadHomeSuggestions(data),
+  ]);
 }
 
 /** The home timeline's column. */
@@ -32,19 +41,22 @@ export function HomeTimeline() {
   const picker = usePostPicker();
   const newPosts = useNewPostsColumn("home");
   // A reader who follows no one yet (a new account) is offered people to follow over the column (FR-308), where the
-  // server suggests anyone; the suggestions are asked only for them.
-  const alone = useViewer()?.following_count === 0;
+  // server suggests anyone. The column waits, as in its loading, until that is known, so that nothing arrives over its
+  // posts once they show.
+  const offered = useHomeSuggestions();
+  const timeline = useHomeTimeline();
   const column = (
     <Column
       label={t("timeline.home")}
-      {...useHomeTimeline()}
+      {...timeline}
+      {...(offered === "pending" ? { statuses: [], status: "pending" as const } : {})}
       {...newPosts}
       onAction={onAction}
       postProps={(s) => ({ voting: votingOf(s), own: ownOf(s), picker })}
       postAs={TranslatablePost}
     />
   );
-  if (!alone) return column;
+  if (offered === "none") return column;
   return (
     <ScreenStack>
       <SuggestedPeople intro={t("people.home")} />
