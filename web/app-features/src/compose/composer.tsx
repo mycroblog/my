@@ -99,11 +99,7 @@ function Audience({
   setOpen: (o: AudiencePanel | undefined) => void;
 }) {
   const { draft, settings, answered } = c;
-  const remote =
-    draft.target.kind === "quote" &&
-    !draft.quoteRemoved &&
-    answered !== undefined &&
-    isRemote(answered);
+  const remote = draft.target.kind === "quote" && !draft.quoteRemoved && answered !== undefined && isRemote(answered);
   return (
     <AudienceTool
       visibility={draft.visibility}
@@ -111,9 +107,7 @@ function Audience({
       visibilities={visibilities}
       onChange={c.change}
       domain={settings.domain}
-      unavailable={
-        remote ? { why: t("compose.quote_remote"), of: (v) => !quotesRemote(v) } : undefined
-      }
+      unavailable={remote ? { why: t("compose.quote_remote"), of: (v) => !quotesRemote(v) } : undefined}
       t={t}
       open={open}
       setOpen={setOpen}
@@ -227,9 +221,7 @@ function alertOf(c: Composer, t: T, locale: string): string | undefined {
   if (c.phase.kind === "conflict") return t("compose.conflict");
   if (c.phase.kind === "gone") return t("compose.gone");
   if (c.phase.kind === "failed")
-    return (
-      c.phase.reason ?? t(c.draft.target.kind === "edit" ? "compose.save_failed" : "compose.failed")
-    );
+    return c.phase.reason ?? t(c.draft.target.kind === "edit" ? "compose.save_failed" : "compose.failed");
   if (c.draft.failure !== undefined && c.draft.scheduledAt === undefined)
     return t("compose.schedule.failed.next", { failure: failureOf(c.draft.failure, locale, t) });
   if (!c.checked) return undefined;
@@ -315,9 +307,7 @@ export function ComposerView({
   const left = settings.maxChars - usedChars(draft);
   // A redraft is a new post; a quote whose quoted post was taken out is one too.
   const kind = draft.target.kind;
-  const title = t(
-    `compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`,
-  );
+  const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
   const alert = alertOf(c, t, locale);
   const handle = answered ? `@${(answered.boost ?? answered).account.acct}` : "";
   // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
@@ -326,9 +316,7 @@ export function ComposerView({
   // What the server refused of an input it named, beside that input (field-errors.ts).
   const refused = c.phase.kind === "failed" ? c.phase : undefined;
   const textError =
-    over && !editorsDown
-      ? t("compose.too_long", { max: settings.maxChars })
-      : fieldError(refused, "text");
+    over && !editorsDown ? t("compose.too_long", { max: settings.maxChars }) : fieldError(refused, "text");
   const cwError = fieldError(refused, "cw");
   const roomy = draft.attachments.length === 0 && draft.poll === undefined;
   // The text completes accounts, hashtags and emoji; the content warning, emoji alone (ADR-0092 §5).
@@ -346,13 +334,7 @@ export function ComposerView({
   // The drafts, a place apart from sending this post, in the head: keep this one as a draft, or open the list. An edit
   // is no draft: it is saved at once, and never scheduled.
   const draftsMenu = !editing && (
-    <MenuButton
-      icon="drafts"
-      label={t("compose.later")}
-      align="end"
-      open={draftsOpen}
-      onOpenChange={setDraftsOpen}
-    >
+    <MenuButton icon="drafts" label={t("compose.later")} align="end" open={draftsOpen} onOpenChange={setDraftsOpen}>
       <MenuGroup>
         <MenuItem id="save" icon="saveDraft" onAction={onSaveDraft}>
           {t("compose.drafts.save")}
@@ -397,12 +379,7 @@ export function ComposerView({
               >
                 {/* The zone is stated once on the screen: by the form while it is open, else here. */}
                 {open === "schedule"
-                  ? formatParts(
-                      t,
-                      "compose.schedule.at",
-                      {},
-                      { time: <ScheduleTime date={scheduled} /> },
-                    )
+                  ? formatParts(t, "compose.schedule.at", {}, { time: <ScheduleTime date={scheduled} /> })
                   : formatParts(
                       t,
                       "compose.schedule.at_zone",
@@ -475,9 +452,7 @@ export function ComposerView({
               trigger={
                 <IconButton
                   icon="schedule"
-                  label={t(
-                    scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set",
-                  )}
+                  label={t(scheduled === undefined ? "compose.schedule.tool" : "compose.schedule.tool_set")}
                   pressed={scheduled !== undefined}
                 />
               }
@@ -503,22 +478,12 @@ export function ComposerView({
           <CharCount
             left={left}
             near={nearChars}
-            label={
-              left < 0
-                ? t("compose.over", { count: -left })
-                : t("compose.remaining", { count: left })
-            }
+            label={left < 0 ? t("compose.over", { count: -left }) : t("compose.remaining", { count: left })}
           />
         )
       }
       action={
-        <Button
-          kind="primary"
-          size="timeline"
-          busy={busy}
-          isDisabled={editorsDown}
-          onPress={c.submit}
-        >
+        <Button kind="primary" size="timeline" busy={busy} isDisabled={editorsDown} onPress={c.submit}>
           {t(
             editing
               ? "compose.save"
@@ -575,11 +540,7 @@ export function ComposerView({
         error={textError}
         errorId={errorId}
         roomy={roomy}
-        end={
-          editorsDown ? undefined : (
-            <ComposerEmoji text={textRef} sheet={pickerSheet} disabled={busy} />
-          )
-        }
+        end={editorsDown ? undefined : <ComposerEmoji text={textRef} sheet={pickerSheet} disabled={busy} />}
       >
         {editorsDown ? (
           <EditorFailed

@@ -55,8 +55,7 @@ import { ThreadReply } from "./thread";
 const longName = "Bartholomew-Maximilian-Featherstonehaugh-Cholmondeley-Warner";
 /** A word no line of a phone holds. */
 const longWord = "Donaudampfschifffahrtselektrizitätenhauptbetriebswerkbauunterbeamtengesellschaft";
-const longHandle =
-  "@bartholomew_maximilian_featherstonehaugh@a-very-long-subdomain.of.an.instance.example";
+const longHandle = "@bartholomew_maximilian_featherstonehaugh@a-very-long-subdomain.of.an.instance.example";
 const sentence =
   "A wide valley at first light, three ridges one behind the other, the nearest dark with pines and the farthest a pale blue line.";
 const nothing = () => undefined;
@@ -83,22 +82,7 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const reactions = [
-  "🍞",
-  "🌊",
-  "🌲",
-  "☕",
-  "📷",
-  "🎉",
-  "🙏",
-  "🔥",
-  "🌙",
-  "🍵",
-  "🚲",
-  "🎈",
-  "🧭",
-  "🪴",
-];
+const reactions = ["🍞", "🌊", "🌲", "☕", "📷", "🎉", "🙏", "🔥", "🌙", "🍵", "🚲", "🎈", "🧭", "🪴"];
 /** A second name as long, of who boosted. */
 const boosterName = "Wilhelmina-Alexandrina-Marjoribanks-Featherstonehaugh-Cholmondeley";
 
@@ -107,13 +91,7 @@ export const ChipRowWrapping: Story = {
   render: () => (
     <ChipRow label="Reactions">
       {reactions.map((glyph, i) => (
-        <Chip
-          key={glyph}
-          label={`${glyph} ${String(i + 1)}`}
-          glyph={glyph}
-          count={i + 1}
-          pressed={i === 2}
-        />
+        <Chip key={glyph} label={`${glyph} ${String(i + 1)}`} glyph={glyph} count={i + 1} pressed={i === 2} />
       ))}
     </ChipRow>
   ),
@@ -300,37 +278,19 @@ function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageA
         <FormText>{sentence}</FormText>
       </FormHead>
       <Form action="/layout-parts">
-        <TextField
-          id="layout-email"
-          name="email"
-          label="Email address"
-          type="email"
-          hint={sentence}
-        />
+        <TextField id="layout-email" name="email" label="Email address" type="email" hint={sentence} />
         <TextField id="layout-about" name="about" label="About you" multiline />
-        <CheckField
-          id="layout-agree"
-          name="agree"
-          value="yes"
-          label={`I agree to the rules. ${sentence}`}
-        />
+        <CheckField id="layout-agree" name="agree" value="yes" label={`I agree to the rules. ${sentence}`} />
         <FormActions>
           <Button kind="primary" type="submit">
-            {long === "label"
-              ? "Request an export of your data and of everything you wrote here"
-              : "Request an export"}
+            {long === "label" ? "Request an export of your data and of everything you wrote here" : "Request an export"}
           </Button>
           <Button>Download your follows as CSV</Button>
         </FormActions>
       </Form>
       <FormSection id="layout-permissions" heading="This app will be able to">
         <FormList
-          items={[
-            "Read your posts",
-            `Write posts as you. ${sentence}`,
-            app,
-            "Read who you follow",
-          ].map((item) => (
+          items={["Read your posts", `Write posts as you. ${sentence}`, app, "Read who you follow"].map((item) => (
             <span key={item}>{item}</span>
           ))}
         />
@@ -360,8 +320,7 @@ export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
     long: {
       control: "select",
       options: ["none", "word", "label"],
-      description:
-        "What is longer than a line of a phone: the app's name (one word), or the first action's label",
+      description: "What is longer than a line of a phone: the app's name (one word), or the first action's label",
     },
     server: {
       control: "boolean",
@@ -378,11 +337,7 @@ export const Versions: Story = {
   render: () => (
     <VersionList label="Versions">
       {["Current", "Edit", "Original"].map((label, i) => (
-        <Version
-          key={label}
-          label={label}
-          time={<time dateTime="2026-11-16T09:00">November 16, 2026, 9:0{i} AM</time>}
-        >
+        <Version key={label} label={label} time={<time dateTime="2026-11-16T09:00">November 16, 2026, 9:0{i} AM</time>}>
           <ContentBody lang="en">
             <p>
               {label}: {sentence} {longWord}
@@ -415,9 +370,7 @@ function ComposerSpecimen() {
             src={i === 0 ? images.dusk : images.snow}
             state={i === 0 ? "failed" : "ready"}
             status={
-              i === 0
-                ? "The upload failed: the file is larger than the server takes, which is 16 MB for an image."
-                : ""
+              i === 0 ? "The upload failed: the file is larger than the server takes, which is 16 MB for an image." : ""
             }
             retry={i === 0 ? { label: "Try again", onPress: nothing } : undefined}
             description={description}
@@ -426,11 +379,7 @@ function ComposerSpecimen() {
             }}
             descriptionLabel={`Description of image ${String(i + 1)}`}
             placeholder="Describe it for people who cannot see it"
-            missing={
-              i === 0
-                ? { text: "Add a description so that everyone can read it", required: false }
-                : undefined
-            }
+            missing={i === 0 ? { text: "Add a description so that everyone can read it", required: false } : undefined}
             removeLabel={`Remove image ${String(i + 1)}`}
             onRemove={nothing}
           />
@@ -496,11 +445,7 @@ export const LongFeed: StoryObj<Meta<FeedArgs>> = {
       busy={false}
       tight={tight}
       newItems={newItems ? { label: "12 new posts", onPress: nothing } : undefined}
-      end={
-        <FeedNotice action={<TextButton>Try again</TextButton>}>
-          No more posts could be loaded
-        </FeedNotice>
-      }
+      end={<FeedNotice action={<TextButton>Try again</TextButton>}>No more posts could be loaded</FeedNotice>}
     >
       {feedEntries.map((id, i) => (
         <FeedItem key={id} id={id} position={i + 1}>
@@ -539,10 +484,7 @@ export const WrittenText: Story = {
       </p>
       <p>
         A shortened address:{" "}
-        <ContentLink
-          href="https://example.com/a/very/long/path/to/a/page/that/goes/on?and=on"
-          kind="link"
-        >
+        <ContentLink href="https://example.com/a/very/long/path/to/a/page/that/goes/on?and=on" kind="link">
           <UrlPart part="hidden">https://</UrlPart>
           <UrlPart part="cut">example.com/a/very/long/path/to</UrlPart>
           <UrlPart part="hidden">/a/page/that/goes/on?and=on</UrlPart>
@@ -609,12 +551,7 @@ function Popups({ long, children }: { long: boolean; children?: ReactNode }) {
         </MenuButton>
       </div>
       <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap" }}>
-        <FormPopup
-          open={form}
-          onOpenChange={setForm}
-          label="Schedule"
-          trigger={<Button>Open the form</Button>}
-        >
+        <FormPopup open={form} onOpenChange={setForm} label="Schedule" trigger={<Button>Open the form</Button>}>
           <div style={{ padding: "1rem", display: "grid", gap: "1rem" }}>
             <TextField id="layout-popup-when" name="when" label="Date and time" />
             <Button
