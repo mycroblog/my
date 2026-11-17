@@ -45,6 +45,7 @@ func (a *App) openSQLite(ctx context.Context, cfg *config.Config, queueOpts queu
 	tables := schema.Tables(schema.SQLite)
 	a.UnitOfWork, a.closer = d, d.Close
 	a.ready = func(ctx context.Context) error { return d.Ready(ctx, tables) }
+	a.dbPoolMax = d.PoolMax()
 	d.RegisterMetrics(a.Meter)
 	a.dbSize = d
 	d.SetTracer(a.Tracer)

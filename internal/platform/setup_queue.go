@@ -94,10 +94,6 @@ func (a *App) setUpWorkerJobTypes(cfg *config.Config) error {
 // cannot serve.
 var ErrWorkerJobConcurrency = errors.New("worker_job_concurrency is too high for the database's pool")
 
-// sqliteJobConcurrencyWarning is the worker_job_concurrency above which a database without a pool
-// logs a warning: SQLite writes one at a time, and the throughput fell at 128 (ADR-0004 §34).
-const sqliteJobConcurrencyWarning = 32
-
 // setUpWorkerJobConcurrency makes the worker role run worker_job_concurrency jobs at once
 // (ADR-0004), after setUpWorkerJobTypes chose the runner's source. A process that does not poll the
 // table has nothing to check: the settings refuse more than one there.

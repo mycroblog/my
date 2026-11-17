@@ -9,7 +9,8 @@
 // Every connection uses WAL journaling and a busy timeout, and every transaction starts with
 // BEGIN IMMEDIATE, so that writers queue on the database lock instead of failing when a read
 // transaction upgrades to a write. UnitOfWork.Read is the exception: it begins deferred and
-// cannot write, so it takes no lock and, in WAL, waits for no writer.
+// cannot write, so it takes no lock and, in WAL, waits for no writer. The pool is bounded and keeps
+// every connection it opens (pool_max_conns).
 package sqlite
 
 import (
@@ -19,6 +20,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"runtime"
+	"strconv"
 	"strings"
 
 	msqlite "modernc.org/sqlite"
@@ -51,13 +54,19 @@ var _ uow.UnitOfWork = (*DB)(nil)
 
 // Open opens the SQLite database named by dsn, which is a file path or a "file:" URI with
 // query parameters (the database_url setting for database = "sqlite"). The file is created if it does
-// not exist. Open sets the parameters the adapter relies on: _txlock=immediate, and the pragmas
+// not exist. The pool is set by two parameters of dsn that the driver never sees: pool_max_conns,
+// how many connections may be open (PoolMaxDefault by default), and pool_max_idle_conns, how many at most are kept when idle
+// (the maximum by default). Open sets the parameters the adapter relies on: _txlock=immediate, and the pragmas
 // journal_mode(wal), synchronous(normal), foreign_keys(1), and busy_timeout unless dsn sets
 // them. In-memory databases are rejected: each connection would see its own database.
 //
 // Open does not apply the schema; Atlas does (ADR-0023).
 func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 	name, err := normalizeDSN(dsn)
+	if err != nil {
+		return nil, err
+	}
+	pool, err := poolOf(dsn)
 	if err != nil {
 		return nil, err
 	}
@@ -69,6 +78,13 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 		_ = db.Close()
 		return nil, fmt.Errorf("sqlite: open: %w", err)
 	}
+	db.SetMaxOpenConns(pool.max)
+	db.SetMaxIdleConns(pool.idle)
+	// Nothing closes a kept connection by time: the defaults of database/sql for both are "never", and
+	// they are set so that no later change of a default can. A quiet instance answers its next request
+	// on a connection it kept, which has parsed the schema, instead of opening one.
+	db.SetConnMaxIdleTime(0)
+	db.SetConnMaxLifetime(0)
 	return &DB{db: db, opts: opts, tracer: kernel.NopTracer{}}, nil
 }
 
@@ -85,6 +101,9 @@ func normalizeDSN(dsn string) (string, error) {
 	q, err := url.ParseQuery(rawQuery)
 	if err != nil {
 		return "", fmt.Errorf("sqlite: database_url: %w", err)
+	}
+	if _, err := takePool(q); err != nil {
+		return "", err
 	}
 	if path == ":memory:" || q.Get("mode") == "memory" {
 		return "", errors.New("sqlite: in-memory databases are not supported; use a file")
@@ -108,6 +127,69 @@ func normalizeDSN(dsn string) (string, error) {
 	q.Set("_txlock", "immediate")
 	return "file:" + path + "?" + q.Encode(), nil
 }
+
+// Parameters of the SQLite database_url that set the pool, named after those of PostgreSQL's.
+const (
+	// ParamPoolMaxConns is how many connections may be open (PostgreSQL's pool_max_conns).
+	ParamPoolMaxConns = "pool_max_conns"
+	// ParamPoolMaxIdleConns is the most idle connections kept (database/sql's MaxIdleConns). It is a
+	// ceiling, not the floor of pgxpool's pool_min_conns: connections are not opened ahead.
+	ParamPoolMaxIdleConns = "pool_max_idle_conns"
+)
+
+// PoolMaxDefault is how many connections may be open unless database_url sets pool_max_conns: the
+// greater of 4 and the number of processors, as the default of PostgreSQL's pool. A pool that keeps its
+// connections gave 2 to 6 times the throughput of database/sql's default of two idle and any number
+// open, whose extra connections are opened and closed per query and each parse the schema (#3181).
+func PoolMaxDefault() int { return max(4, runtime.GOMAXPROCS(0)) }
+
+type poolSize struct{ max, idle int }
+
+// poolOf reads the pool of dsn: pool_max_conns, by default PoolMaxDefault, and as many idle.
+func poolOf(dsn string) (poolSize, error) {
+	_, rawQuery, _ := strings.Cut(strings.TrimPrefix(dsn, "file:"), "?")
+	q, err := url.ParseQuery(rawQuery)
+	if err != nil {
+		return poolSize{}, fmt.Errorf("sqlite: database_url: %w", err)
+	}
+	return takePool(q)
+}
+
+// takePool removes the pool parameters from q and returns the pool they set.
+func takePool(q url.Values) (poolSize, error) {
+	p := poolSize{max: PoolMaxDefault()}
+	p.idle = -1
+	for _, name := range []string{ParamPoolMaxConns, ParamPoolMaxIdleConns} {
+		v := q.Get(name)
+		if !q.Has(name) {
+			continue
+		}
+		q.Del(name)
+		n, err := strconv.Atoi(v)
+		if err != nil || n < 0 || n == 0 && name == ParamPoolMaxConns {
+			want := "a whole number of 1 or more"
+			if name == ParamPoolMaxIdleConns {
+				want = "a whole number of 0 or more"
+			}
+			return poolSize{}, fmt.Errorf("sqlite: database_url: %s must be %s, not %q", name, want, v)
+		}
+		if name == ParamPoolMaxConns {
+			p.max = n
+		} else {
+			p.idle = n
+		}
+	}
+	if p.idle < 0 {
+		p.idle = p.max
+	}
+	if p.idle > p.max {
+		return poolSize{}, fmt.Errorf("sqlite: database_url: %s (%d) must not be above %s (%d)", ParamPoolMaxIdleConns, p.idle, ParamPoolMaxConns, p.max)
+	}
+	return p, nil
+}
+
+// PoolMax is how many connections may be open.
+func (d *DB) PoolMax() int { return d.db.Stats().MaxOpenConnections }
 
 // Close closes the database.
 func (d *DB) Close() error { return d.db.Close() }
