@@ -74,7 +74,8 @@ export function useHomeSuggestions(): HomeSuggestions {
   const alone = viewer.data?.following_count === 0;
   const instance = useQuery({ ...instanceQuery(data), enabled: alone });
   const suggested = alone && instance.data !== undefined && !instance.data.single_user;
-  const suggestions = useQuery({ ...suggestionsQuery(data), enabled: suggested });
+  // A read that failed in the loader stays failed for this visit: Home does without it, and does not wait for a retry.
+  const suggestions = useQuery({ ...suggestionsQuery(data), enabled: suggested, retryOnMount: false });
   if (viewer.status === "pending") return "pending";
   if (!alone) return "none";
   if (instance.status === "pending") return "pending";

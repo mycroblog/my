@@ -157,26 +157,23 @@ test("for a reader who follows no one, no post shows while the suggestions are o
   expect(screen.queryByText("Loading posts…")).toBeNull();
 });
 
-// Defect: Home's first paint waits for the suggestions' retry after a failed answer: the loader returns with the
-// request failed once, and the feed shows only when the retry fails too (two requests, not one).
-test.failing(
-  "for a reader who follows no one, suggestions that fail leave the feed alone, and the block is not added later",
-  async () => {
-    const { fake, data } = fakeData(newcomer);
-    const suggestions = fake.script("GET /accounts/suggestions", { fail: 500 });
-    await loadHomeTimeline(data);
-    renderFeature(data, <HomeTimeline />);
+// The first paint does not wait for a retry of the suggestions after a failed answer: the feed shows at once, with
+// one request seen.
+test("for a reader who follows no one, suggestions that fail leave the feed alone, and the block is not added later", async () => {
+  const { fake, data } = fakeData(newcomer);
+  const suggestions = fake.script("GET /accounts/suggestions", { fail: 500 });
+  await loadHomeTimeline(data);
+  renderFeature(data, <HomeTimeline />);
 
-    expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
-    expect(suggested()).toBeNull();
-    await waitFor(() => {
-      if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
-    });
-    expect(suggestions.seen).toHaveLength(1);
-    expect(suggested()).toBeNull();
-    expect(screen.queryAllByRole("alert")).toHaveLength(0);
-  },
-);
+  expect(screen.getAllByRole("article").length).toBeGreaterThan(0);
+  expect(suggested()).toBeNull();
+  await waitFor(() => {
+    if (data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
+  expect(suggestions.seen).toHaveLength(1);
+  expect(suggested()).toBeNull();
+  expect(screen.queryAllByRole("alert")).toHaveLength(0);
+});
 
 test("for a reader who follows no one, suggestions that name no one leave the feed alone", async () => {
   const { fake, data } = fakeData(newcomer);
