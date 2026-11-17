@@ -47,6 +47,9 @@ import {
 } from "@tanstack/react-virtual";
 import {
   memo,
+  type ComponentProps,
+  type CSSProperties,
+  type ReactNode,
   useDeferredValue,
   useEffect,
   useId,
@@ -69,6 +72,7 @@ import {
 import { tv } from "tailwind-variants/lite";
 import { heardPointerDown } from "./button";
 import { Icon, type IconName } from "./icons";
+import { Box, Column, Row } from "./layout";
 import { stringsIn, useReader } from "./locale";
 
 /** An emoji the picker offers: a Unicode one, with its skin tones if it has them, or a custom one, as its image. */
@@ -138,47 +142,34 @@ export type EmojiPickerProps = {
 
 const picker = tv({
   slots: {
-    root: "relative grid content-start gap-emoji-picker-gap font-sans text-body text-text",
-    top: "flex items-center gap-emoji-picker-gap",
-    searchBox: "relative min-w-0 flex-1",
-    searchGlyph:
-      "pointer-events-none absolute inset-y-0 start-control-timeline-inline inline-flex items-center text-muted-text",
+    root: "font-sans text-body text-text",
+    searchGlyph: "text-muted-text",
     search: [
-      "box-border h-control-form w-full rounded-control border-0 bg-surface-raised font-sans text-body text-text",
-      "ps-[calc(var(--control-timeline-padding-inline)*2+var(--icon-action))] pe-control-timeline-inline",
+      "box-border h-control-form rounded-control border-0 bg-surface-raised font-sans text-body text-text",
+      "ps-emoji-picker-search-start pe-control-timeline-inline",
       "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
       "[&::-webkit-search-cancel-button]:cursor-pointer",
     ],
     tone: [
-      "box-border inline-flex size-control-form flex-none cursor-pointer items-center justify-center rounded-control",
+      "box-border size-control-form cursor-pointer rounded-control",
       "border-0 bg-transparent p-0 text-[length:var(--emoji-picker-glyph)] leading-none outline-hidden",
       "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus",
     ],
-    tabs: "grid auto-cols-fr grid-flow-col",
     tab: [
-      "box-border inline-flex h-emoji-picker-tab min-w-0 cursor-pointer items-center justify-center rounded-control",
+      "box-border h-emoji-picker-tab cursor-pointer rounded-control",
       "border-0 bg-transparent p-0 text-muted-text outline-hidden",
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
       "aria-current:bg-surface-raised aria-current:text-text",
       "data-disabled:cursor-default data-disabled:opacity-disabled data-disabled:bg-transparent",
     ],
     // The grid is its own scroll; the rows are placed in it by the virtualizer (ADR-0091 §15), never by CSS scrolling.
-    grid: "-mx-emoji-picker-gap overflow-y-auto overscroll-contain px-emoji-picker-gap outline-hidden",
-    rows: "relative w-full",
+    grid: "outline-hidden",
     heading: [
-      "box-border m-0 flex items-end px-emoji-picker-heading-gap pt-emoji-picker-gap pb-emoji-picker-heading-gap",
+      "box-border px-emoji-picker-heading-gap pt-emoji-picker-gap pb-emoji-picker-heading-gap",
       "text-caption font-normal text-muted-text",
     ],
-    row: "grid",
-    // Copies of a heading and of the cells, never seen, that tell the sizes of the rows and the number of columns.
-    probe: [
-      "pointer-events-none invisible absolute inset-x-0 top-0",
-      "grid grid-cols-[repeat(auto-fill,minmax(var(--emoji-picker-cell),1fr))]",
-      "pointer-coarse:grid-cols-[repeat(auto-fill,minmax(var(--emoji-picker-cell-coarse),1fr))]",
-    ],
-    probeHeading: "col-span-full",
     cell: [
-      "box-border inline-flex h-emoji-picker-cell min-w-0 cursor-pointer items-center justify-center rounded-control",
+      "box-border h-emoji-picker-cell cursor-pointer rounded-control",
       "font-sans text-[length:var(--emoji-picker-glyph)] leading-none outline-hidden select-none",
       "pointer-coarse:h-emoji-picker-cell-coarse",
       "data-hovered:bg-surface-hover data-pressed:bg-surface-pressed data-focus-visible:shadow-focus-inset",
@@ -187,26 +178,110 @@ const picker = tv({
     ],
     // A custom emoji's image, as large against the cell's font size as a post draws one against its text.
     image: "size-content-emoji object-contain",
-    empty:
-      "m-0 grid min-h-emoji-picker-cell place-items-center py-emoji-picker-gap text-center text-caption text-muted-text",
+    empty: "min-h-emoji-picker-cell py-emoji-picker-gap text-center text-caption text-muted-text",
     status: "sr-only",
     menu: "box-border rounded-overlay bg-surface p-menu-padding shadow-overlay outline-hidden",
-    menuList: "flex flex-col outline-hidden",
+    menuList: "outline-hidden",
     menuItem: [
-      "box-border flex h-control-form cursor-default items-center gap-menu-icon-gap rounded-control",
+      "box-border h-control-form cursor-default rounded-control",
       "px-control-timeline-inline text-body whitespace-nowrap outline-hidden",
       "data-hovered:bg-surface-raised data-focused:bg-surface-raised data-focus-visible:shadow-focus-inset",
     ],
     menuGlyph: "w-emoji-picker-glyph text-[length:var(--emoji-picker-glyph)] leading-none",
-    menuCheck: "ms-auto text-muted-text",
-  },
-  variants: {
-    fill: {
-      true: { root: "h-full grid-rows-[auto_auto_minmax(0,1fr)]", grid: "min-h-0" },
-      false: { grid: "max-h-emoji-picker-height" },
-    },
+    menuCheck: "text-muted-text",
   },
 });
+
+/**
+ * The picker's frame: its search, its categories and its grid one under another, from the top; where it `fill`s the
+ * height it is given (a sheet's), the grid takes what the other two leave.
+ */
+function PickerFrame({ fill, children, ...rest }: { fill: boolean } & ComponentProps<"div">) {
+  return (
+    <div
+      {...rest}
+      className={`${rest.className ?? ""} relative grid content-start gap-emoji-picker-gap${fill ? " h-full grid-rows-[auto_auto_minmax(0,1fr)]" : ""}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The glyph of the search field, over its start, in the middle of its height. */
+function SearchGlyph({ className, children }: { className: string; children: ReactNode }) {
+  return (
+    <span
+      className={`${className} pointer-events-none absolute inset-y-0 start-control-timeline-inline inline-flex items-center`}
+    >
+      {children}
+    </span>
+  );
+}
+
+/**
+ * The grid's scroll, as wide as the picker with the picker's padding reaching to its edges: the height it is given
+ * where the picker `fill`s it, a popover's most otherwise.
+ */
+function PickerGrid({ fill, ...rest }: { fill: boolean } & ComponentProps<"div">) {
+  return (
+    <div
+      {...rest}
+      className={`${rest.className ?? ""} -mx-emoji-picker-gap overflow-y-auto overscroll-contain px-emoji-picker-gap ${fill ? "min-h-0" : "max-h-emoji-picker-height"}`}
+    />
+  );
+}
+
+/** What the rows are placed in: as wide as the grid, and as tall as the rows need together (`height`). */
+function PickerRows({ height, children, ...rest }: { height?: number | undefined } & ComponentProps<"div">) {
+  return (
+    <div {...rest} className="relative w-full" style={height === undefined ? undefined : { blockSize: height }}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * A row of the grid, placed by the virtualizer: `size` tall, `start` from the top of the rows, the width of them; a
+ * row of emoji (`columns`) holds that many cells alike.
+ */
+function PickerRow({
+  start,
+  size,
+  columns,
+  children,
+  ...rest
+}: { start: number; size: number; columns?: number | undefined } & ComponentProps<"div">) {
+  const style: CSSProperties = {
+    position: "absolute",
+    insetBlockStart: 0,
+    insetInline: 0,
+    blockSize: size,
+    transform: `translateY(${String(start)}px)`,
+    ...(columns === undefined
+      ? {}
+      : { display: "grid", gridTemplateColumns: `repeat(${String(columns)}, minmax(0, 1fr))` }),
+  };
+  return (
+    <div {...rest} style={style}>
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Copies of a heading and of two cells, never seen, over the grid's width: they tell the sizes of the rows and the
+ * number of columns the width holds, by the cell's least size (larger on a touch screen).
+ */
+function PickerProbe({ children, ...rest }: ComponentProps<"div">) {
+  return (
+    <div
+      {...rest}
+      className="pointer-events-none invisible absolute inset-x-0 top-0 grid grid-cols-[repeat(auto-fill,minmax(var(--emoji-picker-cell),1fr))] pointer-coarse:grid-cols-[repeat(auto-fill,minmax(var(--emoji-picker-cell-coarse),1fr))] [&>:first-child]:col-span-full"
+    >
+      {children}
+    </div>
+  );
+}
 
 // The classes of a cell, once: a grid draws hundreds of cells, each without computing its own.
 const base = picker();
@@ -438,22 +513,29 @@ const EmojiCell = memo(function EmojiCell({
   const { focusProps, isFocusVisible } = useFocusRing();
   const { hoverProps, isHovered } = useHover({});
   return (
-    <div
-      {...mergeProps(pressProps, focusProps, hoverProps, {
-        onFocus: () => {
-          onFocusCell(id);
-        },
-      })}
-      role="gridcell"
-      aria-colindex={column + 1}
-      aria-label={label}
-      tabIndex={tabbable ? 0 : -1}
+    <Row
+      as={
+        <div
+          {...mergeProps(pressProps, focusProps, hoverProps, {
+            onFocus: () => {
+              onFocusCell(id);
+            },
+          })}
+          role="gridcell"
+          aria-colindex={column + 1}
+          aria-label={label}
+          tabIndex={tabbable ? 0 : -1}
+          data-cell={id}
+          data-current={current || undefined}
+          data-focus-visible={isFocusVisible || undefined}
+          data-hovered={isHovered || undefined}
+          data-pressed={isPressed || undefined}
+        />
+      }
+      shrink
+      align="center"
+      justify="center"
       className={cellClass}
-      data-cell={id}
-      data-current={current || undefined}
-      data-focus-visible={isFocusVisible || undefined}
-      data-hovered={isHovered || undefined}
-      data-pressed={isPressed || undefined}
     >
       {"text" in emoji ? (
         <span aria-hidden="true">{shown}</span>
@@ -469,7 +551,7 @@ const EmojiCell = memo(function EmojiCell({
           draggable={false}
         />
       )}
-    </div>
+    </Row>
   );
 });
 
@@ -486,43 +568,62 @@ function ToneButton({
   const id = useId();
   return (
     <MenuTrigger>
-      <AriaButton className={s.tone()} aria-label={`${labels.tone}: ${labels.tones[tone] ?? ""}`}>
+      <Row
+        as={<AriaButton aria-label={`${labels.tone}: ${labels.tones[tone] ?? ""}`} />}
+        inline
+        rigid
+        align="center"
+        justify="center"
+        className={s.tone()}
+      >
         <span aria-hidden="true">{hands[tone]}</span>
-      </AriaButton>
+      </Row>
       <Popover placement="bottom end" offset={4} className="outline-hidden">
         <div className={s.menu()}>
           {/* React Aria names the menu by its button, whose name says the tone in use too: its own label names it. */}
           <span id={id} hidden>
             {labels.tone}
           </span>
-          <Menu
-            aria-label={labels.tone}
-            aria-labelledby={id}
+          <Column
+            as={
+              <Menu
+                aria-label={labels.tone}
+                aria-labelledby={id}
+                selectionMode="single"
+                selectedKeys={[String(tone)]}
+                onAction={(key) => {
+                  onChange(Number(key));
+                }}
+              />
+            }
             className={s.menuList()}
-            selectionMode="single"
-            selectedKeys={[String(tone)]}
-            onAction={(key) => {
-              onChange(Number(key));
-            }}
           >
             {hands.map((hand, i) => (
-              <AriaMenuItem key={hand} id={String(i)} textValue={labels.tones[i] ?? ""} className={s.menuItem()}>
-                {({ isSelected }) => (
-                  <>
-                    <span aria-hidden="true" className={s.menuGlyph()}>
-                      {hand}
-                    </span>
-                    <span>{labels.tones[i]}</span>
-                    {isSelected && (
-                      <span className={s.menuCheck()}>
-                        <Icon name="read" place="caption" />
-                      </span>
+              <Row
+                key={hand}
+                align="center"
+                gap="menu-icon-gap"
+                className={s.menuItem()}
+                as={
+                  <AriaMenuItem id={String(i)} textValue={labels.tones[i] ?? ""}>
+                    {({ isSelected }) => (
+                      <>
+                        <span aria-hidden="true" className={s.menuGlyph()}>
+                          {hand}
+                        </span>
+                        <span>{labels.tones[i]}</span>
+                        {isSelected && (
+                          <Box as="span" push="end" className={s.menuCheck()}>
+                            <Icon name="read" place="caption" />
+                          </Box>
+                        )}
+                      </>
                     )}
-                  </>
-                )}
-              </AriaMenuItem>
+                  </AriaMenuItem>
+                }
+              />
             ))}
-          </Menu>
+          </Column>
         </div>
       </Popover>
     </MenuTrigger>
@@ -544,7 +645,7 @@ export function EmojiPicker({
   fill = false,
   autoFocus = false,
 }: EmojiPickerProps) {
-  const s = picker({ fill });
+  const s = picker();
   const reader = useReader(undefined);
   const { direction } = reader;
   const { t, lang } = stringsIn(reader.lang);
@@ -747,27 +848,32 @@ export function EmojiPicker({
   }
 
   return (
-    <div className={s.root()} lang={lang} dir={direction}>
-      <div className={s.top()}>
-        <div className={s.searchBox()}>
-          <span className={s.searchGlyph()}>
+    <PickerFrame fill={fill} className={s.root()} lang={lang} dir={direction}>
+      <Row align="center" gap="emoji-picker-gap">
+        <Box anchor grow>
+          <SearchGlyph className={s.searchGlyph()}>
             <Icon name="search" place="action" />
-          </span>
-          <input
+          </SearchGlyph>
+          <Box
+            as={
+              <input
+                type="search"
+                value={query}
+                placeholder={t("emoji_picker.search")}
+                aria-label={t("emoji_picker.search")}
+                dir="auto"
+                autoFocus={autoFocus}
+                onChange={(e) => {
+                  setQuery(e.target.value);
+                  setJump(undefined);
+                  rows.scrollTo(0, "start", false);
+                }}
+              />
+            }
+            full
             className={s.search()}
-            type="search"
-            value={query}
-            placeholder={t("emoji_picker.search")}
-            aria-label={t("emoji_picker.search")}
-            dir="auto"
-            autoFocus={autoFocus}
-            onChange={(e) => {
-              setQuery(e.target.value);
-              setJump(undefined);
-              rows.scrollTo(0, "start", false);
-            }}
           />
-        </div>
+        </Box>
         <ToneButton
           tone={tone}
           labels={labels}
@@ -776,25 +882,32 @@ export function EmojiPicker({
             onToneChange?.(next);
           }}
         />
-      </div>
-      <Toolbar aria-label={t("emoji_picker.categories")} className={s.tabs()}>
+      </Row>
+      <Row as={<Toolbar aria-label={t("emoji_picker.categories")} />} even>
         {sections.map((section) => (
-          <AriaButton
+          <Row
             key={section.id}
+            as={
+              <AriaButton
+                aria-label={section.label}
+                {...(shown === section.id ? { "aria-current": "true" as const } : {})}
+                isDisabled={typed || (!searching && !layout.firstCellOf.has(section.id))}
+                render={(props) => <button {...props} onPointerDown={heardPointerDown(props)} />}
+                onPress={() => {
+                  go(section.id);
+                }}
+              />
+            }
+            align="center"
+            justify="center"
             className={s.tab()}
-            aria-label={section.label}
-            {...(shown === section.id ? { "aria-current": "true" as const } : {})}
-            isDisabled={typed || (!searching && !layout.firstCellOf.has(section.id))}
-            render={(props) => <button {...props} onPointerDown={heardPointerDown(props)} />}
-            onPress={() => {
-              go(section.id);
-            }}
           >
             <Icon name={section.icon} place="action" />
-          </AriaButton>
+          </Row>
         ))}
-      </Toolbar>
-      <div
+      </Row>
+      <PickerGrid
+        fill={fill}
         ref={scroller}
         role="grid"
         aria-label={t("emoji_picker.grid")}
@@ -803,22 +916,23 @@ export function EmojiPicker({
         className={s.grid()}
         onKeyDown={onKeyDown}
       >
-        <div
+        <PickerRows
           role="presentation"
-          className={s.rows()}
           // The line that none match flows in it; the rows are placed in the height they need together.
-          style={layout.rows.length === 0 ? undefined : { blockSize: rows.total }}
+          height={layout.rows.length === 0 ? undefined : rows.total}
         >
-          <div ref={probe} aria-hidden="true" className={s.probe()}>
-            <div className={`${s.heading()} ${s.probeHeading()}`}>&nbsp;</div>
+          <PickerProbe ref={probe} aria-hidden="true">
+            <Row align="end" className={s.heading()}>
+              &nbsp;
+            </Row>
             <div className={cellClass} />
             <div className={cellClass} />
-          </div>
+          </PickerProbe>
           {layout.rows.length === 0 ? (
             <div role="row" aria-rowindex={1}>
-              <div role="gridcell" aria-colspan={columns} className={s.empty()}>
+              <Row role="gridcell" aria-colspan={columns} align="center" justify="center" className={s.empty()}>
                 {t("emoji_picker.empty", { query: searched })}
-              </div>
+              </Row>
             </div>
           ) : (
             groups.map((group) => (
@@ -826,28 +940,28 @@ export function EmojiPicker({
                 {group.items.map((item) => {
                   const row = layout.rows[item.index];
                   if (row === undefined) return null;
-                  const style = {
-                    position: "absolute",
-                    insetBlockStart: 0,
-                    insetInline: 0,
-                    blockSize: item.size,
-                    transform: `translateY(${String(item.start)}px)`,
-                  } as const;
                   if (row.kind === "heading")
                     return (
-                      <div key={row.key} role="row" aria-rowindex={item.index + 1} style={style}>
-                        <div role="rowheader" aria-colspan={columns} className={s.heading()}>
+                      <PickerRow
+                        key={row.key}
+                        start={item.start}
+                        size={item.size}
+                        role="row"
+                        aria-rowindex={item.index + 1}
+                      >
+                        <Row role="rowheader" aria-colspan={columns} align="end" className={s.heading()}>
                           {row.label}
-                        </div>
-                      </div>
+                        </Row>
+                      </PickerRow>
                     );
                   return (
-                    <div
+                    <PickerRow
                       key={row.key}
+                      start={item.start}
+                      size={item.size}
+                      columns={columns}
                       role="row"
                       aria-rowindex={item.index + 1}
-                      className={s.row()}
-                      style={{ ...style, gridTemplateColumns: `repeat(${String(columns)}, minmax(0, 1fr))` }}
                     >
                       {layout.cells.slice(row.first, row.last + 1).map((cell, offset) => {
                         const own = cell.emoji.key === current;
@@ -866,17 +980,17 @@ export function EmojiPicker({
                           />
                         );
                       })}
-                    </div>
+                    </PickerRow>
                   );
                 })}
               </div>
             ))
           )}
-        </div>
-      </div>
+        </PickerRows>
+      </PickerGrid>
       <div role="status" className={s.status()}>
         {searching && announced?.query === searched ? t("emoji_picker.count", { count: announced.count }) : ""}
       </div>
-    </div>
+    </PickerFrame>
   );
 }

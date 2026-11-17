@@ -171,6 +171,13 @@ const theme = {
     ...Object.fromEntries(
       names(emojiPicker).map((name) => [`emoji-picker-${kebab(name)}`, ref(`--emoji-picker-${kebab(name)}`)]),
     ),
+    // The popover's width: the picker's, or the viewport less the dialog's margins.
+    "emoji-picker-popover": "min(var(--emoji-picker-width), calc(100vw - 2 * var(--dialog-margin)))",
+    // The sheet's height: its own, or the room it is in when that is less; its foot clears the device's safe area.
+    "emoji-picker-sheet-height": "min(100%, var(--emoji-picker-sheet))",
+    "emoji-picker-sheet-foot": "calc(var(--emoji-picker-gap) + env(safe-area-inset-bottom))",
+    // The search field's padding at its start: the glyph's, and the room it keeps on both sides.
+    "emoji-picker-search-start": "calc(var(--control-timeline-padding-inline) * 2 + var(--icon-action))",
     dialog: ref("--dialog-padding"),
     // The bottom padding of a sheet from the viewport's bottom edge: a dialog's, clear of the device's safe area.
     "dialog-safe-bottom": "calc(var(--dialog-padding) + env(safe-area-inset-bottom))",
