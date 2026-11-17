@@ -61,6 +61,7 @@ export function ConfirmDialog({
   const s = confirm();
   const { direction } = useReader(undefined);
   const titleId = useId();
+  const textId = useId();
   const body = (
     <>
       {layer ? (
@@ -72,7 +73,9 @@ export function ConfirmDialog({
           {title}
         </h2>
       )}
-      <p className={s.text()}>{children}</p>
+      <p id={textId} className={s.text()}>
+        {children}
+      </p>
       <div className={s.row()}>
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
@@ -85,13 +88,13 @@ export function ConfirmDialog({
   );
   if (!layer)
     return (
-      <div role="alertdialog" aria-labelledby={titleId} className={s.modal()} dir={direction}>
+      <div role="alertdialog" aria-labelledby={titleId} aria-describedby={textId} className={s.modal()} dir={direction}>
         <div className={s.dialog()}>{body}</div>
       </div>
     );
   return (
     <ModalLayer onDismiss={onCancel} overlay={s.overlay()} panel={s.modal()}>
-      <Dialog role="alertdialog" className={s.dialog()} dir={direction}>
+      <Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction}>
         {body}
       </Dialog>
     </ModalLayer>

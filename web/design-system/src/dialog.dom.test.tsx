@@ -56,7 +56,7 @@ test("a confirmation holds its question as a heading, what follows, then Cancel 
 });
 
 // WAI-ARIA's alert dialog pattern: aria-describedby names the element that holds the alert's message.
-test.failing("a confirmation is described by what follows its question", async () => {
+test("a confirmation is described by what follows its question", async () => {
   confirmation();
   await screen.findByRole("alertdialog", { name: "Delete this post?" });
 

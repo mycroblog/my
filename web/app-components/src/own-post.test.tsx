@@ -62,8 +62,8 @@ describe("the confirmation", () => {
     expect(html).toMatch(
       /^<div role="alertdialog" aria-labelledby="([^"]+)"[^>]*><div><h2 id="\1">Delete this post\?<\/h2>/,
     );
-    expect(html).toContain(
-      "<p>Its boosts, favourites and reactions go with it, and other servers are asked to delete it too.",
+    expect(html).toMatch(
+      /<p id="[^"]+">Its boosts, favourites and reactions go with it, and other servers are asked to delete it too\./,
     );
     expect(html).toMatch(/<span>Cancel<\/span><\/button><button [^>]*><span>Delete<\/span><\/button>/);
   });
