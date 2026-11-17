@@ -43,6 +43,7 @@ export const helpAction = "shortcuts.help";
 
 const StoreContext = createContext<Shortcuts<Element> | null>(null);
 const ScopeContext = createContext<RefObject<HTMLElement | null> | null>(null);
+const HeardContext = createContext<(() => void) | null>(null);
 
 // A layer over the screen: while focus is inside one, only the focus actions inside it act.
 const layers = '[role="dialog"], [role="alertdialog"], [role="menu"], [role="listbox"]';
@@ -118,6 +119,14 @@ export function ActionScope({ target, children }: { target: RefObject<HTMLElemen
 }
 
 /**
+ * Tells `onAct` each time an action declared inside it ran on its key (a post's reply, or more, which opens its menu),
+ * unless it did nothing. An action declared around it (the next entry of the feed, the screen's) is not its own.
+ */
+export function HeardShortcuts({ onAct, children }: { onAct: () => void; children: ReactNode }) {
+  return <HeardContext value={onAct}>{children}</HeardContext>;
+}
+
+/**
  * Declares an action this part handles: `run` runs on its keys in the keymap, within `scope`, and the help lists it
  * by `label` (from the part's catalog), told whether the key is held; when `run` returns `false` it did nothing, and
  * the key goes on to the page. A
@@ -139,9 +148,10 @@ export function useAction(
   const target = use(ScopeContext);
   if (store !== null && scope === "focus" && target === null)
     throw new Error(`${id} acts on the focused element, but no ActionScope holds it`);
-  const latest = useRef(run);
+  const heard = use(HeardContext);
+  const latest = useRef({ run, heard });
   useLayoutEffect(() => {
-    latest.current = run;
+    latest.current = { run, heard };
   });
   useEffect(() => {
     if (store === null) return undefined;
@@ -150,7 +160,11 @@ export function useAction(
       label,
       scope,
       owner: () => (scope === "focus" ? (target?.current ?? null) : null),
-      run: (press) => latest.current(press),
+      run: (press) => {
+        const did = latest.current.run(press);
+        if (did !== false) latest.current.heard?.();
+        return did;
+      },
       group,
       groupLabel,
     });

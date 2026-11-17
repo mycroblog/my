@@ -20,7 +20,6 @@ import {
   nameOf,
   notificationPath,
   PostContent,
-  type PostAction,
 } from "@my/app-components";
 import {
   notificationMarkerQuery,
@@ -218,22 +217,15 @@ export function NotificationRow({
   t,
   instance,
   held = false,
-  onActed,
 }: {
   n: NotificationItem;
   unread: boolean;
   t: T;
   instance: string;
   held?: boolean;
-  /** Told when the reader asks something of the post it shows, by a press or by a shortcut's key. */
-  onActed?: (() => void) | undefined;
 }) {
   const mark = unread ? t("notifications.unread") : undefined;
-  const act = usePostActions();
-  const onAction = (action: PostAction) => {
-    onActed?.();
-    act(action);
-  };
+  const onAction = usePostActions();
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
@@ -294,13 +286,13 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
       {(n) => {
         // The one place where a notification is read by what the reader does on it, whatever the row holds, now or
         // later: a press on it, the one that opens a menu or a picker included, or on an item of a menu of it, and
-        // what a shortcut's key asks of the post it shows. A press shows that the reader saw it.
+        // a shortcut's key that acts on it (reply, boost, favourite, more). Either shows that the reader saw it.
         const read = () => {
           reads.read(n.id);
         };
         return (
           <HeardActions onAct={read}>
-            <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} onActed={read} />
+            <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} />
           </HeardActions>
         );
       }}

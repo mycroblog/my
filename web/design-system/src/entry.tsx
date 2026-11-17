@@ -18,7 +18,7 @@ import { Icon, type IconName } from "./icons";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
 import { actionJoint } from "./sentence";
-import { ActionScope } from "./shortcuts";
+import { ActionScope, HeardShortcuts } from "./shortcuts";
 import { RelativeTime } from "./time";
 
 const entry = tv({
@@ -165,8 +165,9 @@ function acts(around: Element, on: Element): boolean {
  * Around an entry, with no box of its own: hears every press of the reader on it (a notification is read once the
  * reader has shown that they saw it), by a pointer or by Enter or Space, on its words or on a control of it, the one
  * that opens a menu or a picker included, and on an item of a menu it opened. It hears the press before the control
- * that takes it, where a feed's `onEntryClick` hears only a press no control took. It may hear one press twice. A
- * shortcut's key is no press: what it runs tells its owner itself.
+ * that takes it, where a feed's `onEntryClick` hears only a press no control took. It hears as well each action
+ * declared inside it that ran on its shortcut's key (`HeardShortcuts`): a post's reply, or more, which opens its menu;
+ * not one declared around it (the feed's next entry). It may hear one press twice.
  */
 export function HeardActions({ onAct, children }: { onAct: () => void; children: ReactNode }) {
   return (
@@ -181,7 +182,7 @@ export function HeardActions({ onAct, children }: { onAct: () => void; children:
         if (by !== undefined && !e.repeat && on.matches(by) && acts(e.currentTarget, on)) onAct();
       }}
     >
-      {children}
+      <HeardShortcuts onAct={onAct}>{children}</HeardShortcuts>
     </div>
   );
 }
