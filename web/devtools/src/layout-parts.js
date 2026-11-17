@@ -38,7 +38,7 @@ export const LAYOUT_PARTS = {
     "SectionList",
   ],
   "web/design-system/src/form-page.tsx": ["FormPage", "Form", "FormActions", "FormChoice", "FormLinks", "FormList"],
-  "web/design-system/src/list.tsx": ["ScreenStack", "ScreenHead", "RowList", "RowItem", "ButtonPair"],
+  "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
   "web/design-system/src/entry.tsx": ["Stack", "ActionRow"],
   "web/design-system/src/thread.tsx": ["ThreadReply"],
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],

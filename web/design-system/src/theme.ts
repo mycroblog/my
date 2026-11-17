@@ -125,6 +125,8 @@ const theme = {
     "entry-avatar": ref("--entry-avatar-gap"),
     "entry-name": ref("--entry-name-gap"),
     "entry-caption": ref("--entry-caption-gap"),
+    // Where a byline's name starts, past its avatar: what stands under the name starts there too.
+    "entry-name-start": "calc(var(--avatar-post) + var(--entry-avatar-gap))",
     "entry-action": ref("--entry-action-gap"),
     "entry-scroll": ref("--entry-scroll-margin"),
     feed: ref("--feed-gap"),
