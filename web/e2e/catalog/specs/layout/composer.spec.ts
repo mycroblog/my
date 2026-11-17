@@ -50,8 +50,8 @@ test("the rows of images stand one under another with remove at their end, and a
 });
 
 for (const [id, locale, page_, text] of [
-  ["design-system-composer--ended-left-to-right-text", "ar-XB", "right-to-left", "English"],
-  ["design-system-composer--ended-right-to-left-text", "en", "left-to-right", "Arabic"],
+  ["design-system-composer--ended-left-to-right-text", "ar-XB", "right to left", "English"],
+  ["design-system-composer--ended-right-to-left-text", "en", "left to right", "Arabic"],
 ] as const)
   test(`on a ${page_} page the emoji button at its end covers no character of the first line of a text in ${text}`, async ({
     page,

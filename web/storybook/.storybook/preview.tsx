@@ -114,9 +114,29 @@ const noSidewaysScroll = () => {
     );
 };
 
+/**
+ * In a test run, waits for a layer open over the page (a dialog, a menu's sheet) to move in, so that axe reads it at
+ * rest, not translucent halfway through its entrance. A story states no `play` of its own for it.
+ */
+const layersAtRest = async () => {
+  if (import.meta.env.MODE !== "test") return;
+  const atRest = () =>
+    [...document.querySelectorAll('[role="dialog"], [role="alertdialog"], [role="menu"]')].every((layer) => {
+      for (let el: Element | null = layer; el !== null; el = el.parentElement) {
+        const style = getComputedStyle(el);
+        if (style.opacity !== "1" || !["none", "matrix(1, 0, 0, 1, 0, 0)"].includes(style.transform)) return false;
+      }
+      return true;
+    });
+  for (const until = Date.now() + 5000; !atRest();) {
+    if (Date.now() > until) throw new Error("the layer over the page did not move in");
+    await new Promise((resolve) => requestAnimationFrame(resolve));
+  }
+};
+
 const preview: Preview = {
   decorators: [page],
-  afterEach: noSidewaysScroll,
+  afterEach: [layersAtRest, noSidewaysScroll],
   loaders: [() => ({ viewTransitions: supportsViewTransitions() })],
   globalTypes: {
     theme: {
