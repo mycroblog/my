@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The reader's bookmarks, a place of the navigation: a story per state every screen is shown in (app.samples.tsx),
-// with a few posts bookmarked besides the scenario's; and the minimum width and right to left.
+// with a few posts bookmarked besides the scenario's.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";

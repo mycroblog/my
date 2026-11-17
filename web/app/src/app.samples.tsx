@@ -5,7 +5,7 @@
 // the states every screen is shown in: normal, empty (every list answers no item), loading (the screen's requests never
 // answer), error (they fail) and long (every name and text runs long); and a thread folded (more ancestors and replies
 // than its page shows at once). A story names its screen and state in `parameters.fake`, no argument of the reader's;
-// right-to-left and the minimum width are the toolbar's locale and viewport, which a story may pin. The router keeps
+// right-to-left and the minimum width are the toolbar's locale and viewport, which no story pins. The router keeps
 // its own history, so a link inside the app moves the app alone. The host's Stream panel stands in for the stream
 // (`parameters.stream` names what it offers): its buttons hand new posts or a notification to the app as the stream
 // does, or report a reconnection, through Storybook's channel; the canvas shows the app alone.
