@@ -22,7 +22,7 @@
 #     command substitution and no redirection but to /dev/null or between streams: cd, ls, pwd, mkdir; head, tail, wc,
 #     sort, uniq and grep given no file, as filters of a pipe; git status, add,
 #     commit, rev-parse; gh issue view, list; go test, vet, doc (the exported API: not -u, not -src); gofmt; bun test,
-#     run; bunx or bun --bun vitest, playwright; scripts/task.sh; scripts/agentkit.sh outline (the declarations, not
+#     run; bunx or bun --bun playwright; scripts/task.sh; scripts/agentkit.sh outline (the declarations, not
 #     their bodies), check, grep --only-tests, show of open paths. Quoted strings and heredoc bodies are data. Any other
 #     tool is refused, Agent included.
 set -euo pipefail
@@ -80,8 +80,8 @@ command_ok() {
     *) return 1 ;;
     esac
     ;;
-  bun) [[ $sub =~ ^(test|run)$ || ($sub == --bun && ${w[2]:-} =~ ^(vitest|playwright)$) ]] ;;
-  bunx) [[ $sub =~ ^(vitest|playwright)$ ]] ;;
+  bun) [[ $sub =~ ^(test|run)$ || ($sub == --bun && ${w[2]:-} == playwright) ]] ;;
+  bunx) [[ $sub == playwright ]] ;;
   scripts/agentkit.sh)
     case $sub in
     outline | check) return 0 ;;
