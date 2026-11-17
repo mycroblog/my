@@ -140,11 +140,15 @@ export const fontWeight = { label: 600, strong: 700 } as const;
 /** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
 export const radius = { control: 0.375, overlay: 0.5 } as const;
 
-/** A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form. */
+/**
+ * A control's height and inline padding at each size, in rem: compact in a timeline, roomier in a form; and the block
+ * padding a button in words keeps once its label wraps onto more lines than its height holds, little enough that a
+ * glyph beside the label fits the height.
+ */
 export const control = {
-  timeline: { height: 2, paddingInline: 0.75 },
-  form: { height: 2.5, paddingInline: 1 },
-} as const satisfies Record<string, { height: number; paddingInline: number }>;
+  timeline: { height: 2, paddingInline: 0.75, paddingBlock: 0.25 },
+  form: { height: 2.5, paddingInline: 1, paddingBlock: 0.25 },
+} as const satisfies Record<string, { height: number; paddingInline: number; paddingBlock: number }>;
 
 /**
  * The icon button of a post's actions, in rem: its tile is a timeline control's height, with a narrow inline padding
@@ -596,6 +600,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ...Object.entries(control).flatMap(([size, c]): [string, string][] => [
     [`--control-${size}-height`, `${c.height}rem`],
     [`--control-${size}-padding-inline`, `${c.paddingInline}rem`],
+    [`--control-${size}-padding-block`, `${c.paddingBlock}rem`],
   ]),
   ["--icon-button-padding-inline", `${iconButton.paddingInline}rem`],
   ["--icon-button-gap", `${iconButton.gap}rem`],

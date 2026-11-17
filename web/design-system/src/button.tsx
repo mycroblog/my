@@ -43,7 +43,7 @@ export const markedSurface = (on: boolean): Record<typeof marked, "" | undefined
 const button = tv({
   slots: {
     base: [
-      "box-border whitespace-nowrap cursor-pointer rounded-control border-0 py-0 font-sans leading-none",
+      "box-border cursor-pointer rounded-control border-0 font-sans leading-none",
       "data-pressed:translate-y-press data-focus-visible:shadow-focus data-focus-visible:outline-hidden",
       "data-disabled:cursor-not-allowed data-disabled:opacity-disabled data-pending:cursor-progress",
     ],
@@ -84,17 +84,20 @@ const button = tv({
         ],
       },
     },
+    // A button in words is a control's height; a label longer than the room its container leaves it wraps, and once
+    // its lines are taller than the control the button grows with them, a little padding around them. A button of a
+    // glyph, of a count or of the frame keeps its height and its one line.
     size: {
-      timeline: { base: "h-control-timeline px-control-timeline-inline" },
-      form: { base: "h-control-form px-control-form-inline" },
-      icon: { base: "h-control-timeline px-icon-button-inline" },
-      chip: { base: "h-chip px-chip-inline" },
+      timeline: { base: "min-h-control-timeline px-control-timeline-inline py-control-timeline-block" },
+      form: { base: "min-h-control-form px-control-form-inline py-control-form-block" },
+      icon: { base: "h-control-timeline px-icon-button-inline py-0 whitespace-nowrap" },
+      chip: { base: "h-chip px-chip-inline py-0 whitespace-nowrap" },
       // The app frame's primary action (shell.tsx): the width of the rail or the sidebar, or floating over the tab bar.
-      side: { base: "h-shell-item px-0" },
-      float: { base: "size-shell-bar px-0" },
+      side: { base: "h-shell-item px-0 py-0 whitespace-nowrap" },
+      float: { base: "size-shell-bar px-0 py-0 whitespace-nowrap" },
       // A notice floating over a feed (the new entries' button): a timeline button's type and padding at the full
       // touch height, since it is pressed over moving content.
-      notice: { base: "h-icon-button-touch px-control-timeline-inline" },
+      notice: { base: "h-icon-button-touch px-control-timeline-inline py-0 whitespace-nowrap" },
     },
     busy: { true: { label: "text-transparent" } },
   },
@@ -105,7 +108,7 @@ type Size = ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
 
 /**
  * How a button places what it holds: its label in its middle, under the spinner while busy. It keeps its size, which
- * is its label's on one line. An icon button's press target reaches the touch height on a touch screen; the frame's
+ * is its label's on one line, up to the width of what holds it. An icon button's press target reaches the touch height on a touch screen; the frame's
  * action in the rail is as wide as the rail.
  */
 const arrangement = (kind: Kind, size: Size) =>

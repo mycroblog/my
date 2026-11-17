@@ -74,6 +74,7 @@ const theme = {
       names(control).flatMap((size) => [
         [`control-${size}`, ref(`--control-${size}-height`)],
         [`control-${size}-inline`, ref(`--control-${size}-padding-inline`)],
+        [`control-${size}-block`, ref(`--control-${size}-padding-block`)],
       ]),
     ),
     // The room above and below one line of text in a box as tall as a control, or as the least press target: the block

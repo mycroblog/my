@@ -164,7 +164,6 @@ test("a page keeps its width when a name in it is a word no line holds", async (
 });
 
 test("a page keeps its width when an action's label is longer than a line", async ({ page, open }) => {
-  test.fail(true, "FormActions: a button's label longer than the column does not wrap and widens the page at 320 px");
   await open(story, { args: { long: "label" } });
   const overflow = await atRest(() => sidewaysScroll(page));
   expect(overflow).toEqual([]);
