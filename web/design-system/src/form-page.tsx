@@ -12,10 +12,11 @@
 // reader is when they send it again; a field's sits under the field. Like the app's frame (shell.tsx), it reads the
 // viewport, and it carries the page's surface onto <html>.
 
-import type { ComponentProps, ReactNode, Ref } from "react";
+import type { ComponentProps, ReactElement, ReactNode, Ref } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Avatar } from "./avatar";
 import { Icon, type IconName } from "./icons";
+import { Box, Column, Row, Stack, type Gap } from "./layout";
 
 /** The server a page belongs to: its name, its own logo for light and dark (else the built-in wordmark), and its introduction. */
 export type FormPageServer = {
@@ -38,7 +39,7 @@ const page = tv({
       "hidden desktop:sticky desktop:top-0 desktop:box-border desktop:flex desktop:h-dvh desktop:justify-center",
       "desktop:overflow-y-auto desktop:bg-surface-raised desktop:px-form-page-intro-inline desktop:py-form-page-intro-block",
     ],
-    introBody: "flex w-full max-w-[var(--form-page-intro-width)] flex-col gap-form-page-intro-gap [&_p]:m-0",
+    introBody: "flex w-full max-w-[var(--form-page-intro-width)] flex-col gap-form-page-intro-gap",
     banner: "aspect-banner w-full rounded-overlay object-cover",
     summary: "grid gap-form-page-head-gap",
     column: [
@@ -48,14 +49,6 @@ const page = tv({
     ],
     header: "desktop:hidden",
     main: "flex flex-1 flex-col gap-form-page-screen-gap",
-    footer: "text-caption text-muted-text",
-    // A link's target reaches the minimum around its text without moving the line (WCAG 2.5.8), and wrapped rows
-    // stand far enough apart that the targets of two rows never overlap.
-    footerList: [
-      "m-0 flex list-none flex-wrap gap-x-form-page-gap p-0",
-      "gap-y-[max(var(--form-page-field-gap),calc(var(--target-minimum)-1lh))]",
-    ],
-    footerLink: "text-muted-text py-[calc((var(--target-minimum)-1em)/2)]",
   },
   variants: {
     banner: { false: { intro: "desktop:items-center" }, true: { intro: "desktop:items-start" } },
@@ -72,23 +65,25 @@ const page = tv({
   },
 });
 
+const footer = tv({
+  slots: {
+    root: "text-caption text-muted-text",
+    list: "list-none p-0",
+    // A link's target reaches the minimum around its text without moving the line (WCAG 2.5.8).
+    link: "text-muted-text py-target-em",
+  },
+});
+
 const mark = tv({
   slots: {
-    root: "flex items-center gap-form-page-mark-gap",
-    wordmarkLight: "block [:root[data-theme=dark]_&]:hidden dark:[:root:not([data-theme=light])_&]:hidden",
-    wordmarkDark: "hidden [:root[data-theme=dark]_&]:block dark:[:root:not([data-theme=light])_&]:block",
+    wordmark: "",
     logo: "rounded-control object-contain",
-    name: "m-0 text-muted-text",
+    name: "text-muted-text",
   },
   variants: {
     size: {
-      line: { wordmarkLight: "h-form-page-mark", wordmarkDark: "h-form-page-mark", logo: "size-form-page-logo" },
-      intro: {
-        wordmarkLight: "h-form-page-mark-intro",
-        wordmarkDark: "h-form-page-mark-intro",
-        logo: "size-form-page-logo-intro",
-        name: "text-title",
-      },
+      line: { wordmark: "h-form-page-mark", logo: "size-form-page-logo" },
+      intro: { wordmark: "h-form-page-mark-intro", logo: "size-form-page-logo-intro", name: "text-title" },
     },
     own: { true: { name: "text-text" } },
     // The name is the page's title, at the title's weight with any logo.
@@ -116,22 +111,27 @@ function Mark({
   const s = mark({ size, own, title });
   const Name = title ? "h1" : "span";
   return (
-    <div className={s.root()}>
+    <Row align="center" gap="form-page-mark-gap">
       {own ? (
-        <>
-          <img className={`${s.logo()} ${server.logoDark ? s.wordmarkLight() : ""}`} src={server.logo} alt="" />
-          {server.logoDark && <img className={`${s.logo()} ${s.wordmarkDark()}`} src={server.logoDark} alt="" />}
-        </>
+        server.logoDark ? (
+          // A logo drawn for each colour scheme: the one of the scheme shows.
+          <>
+            <Box only="light" as={<img className={`${s.logo()} ${s.wordmark()}`} src={server.logo} alt="" />} />
+            <Box only="dark" as={<img className={`${s.logo()} ${s.wordmark()}`} src={server.logoDark} alt="" />} />
+          </>
+        ) : (
+          <img className={s.logo()} src={server.logo} alt="" />
+        )
       ) : (
         <>
-          <img className={s.wordmarkLight()} src={wordmark.light} alt="" />
-          <img className={s.wordmarkDark()} src={wordmark.dark} alt="" />
+          <Box only="light" as={<img className={s.wordmark()} src={wordmark.light} alt="" />} />
+          <Box only="dark" as={<img className={s.wordmark()} src={wordmark.dark} alt="" />} />
         </>
       )}
       <Name className={s.name()} dir="auto">
         {server.name}
       </Name>
-    </div>
+    </Row>
   );
 }
 
@@ -198,20 +198,21 @@ export function FormPage({ server, wordmark, footer, front, children }: FormPage
 
 /** The footer of a page: links to the server's documents and its status page, under a name for assistive technology. */
 export function FormPageFooter({ label, links }: { label: string; links: { href: string; label: string }[] }) {
-  const s = page();
+  const s = footer();
   if (links.length === 0) return null;
   return (
-    <footer className={s.footer()}>
+    <footer className={s.root()}>
       <nav aria-label={label}>
-        <ul className={s.footerList()}>
+        {/* Wrapped rows stand far enough apart that the targets of two rows never overlap. */}
+        <Row as="ul" wrap gapX="form-page-gap" gapY="form-page-footer-rows" className={s.list()}>
           {links.map((link) => (
             <li key={link.href}>
-              <a className={s.footerLink()} href={link.href}>
+              <a className={s.link()} href={link.href}>
                 {link.label}
               </a>
             </li>
           ))}
-        </ul>
+        </Row>
       </nav>
     </footer>
   );
@@ -219,67 +220,86 @@ export function FormPageFooter({ label, links }: { label: string; links: { href:
 
 const form = tv({
   slots: {
-    head: "grid gap-form-page-head-gap [&_p]:m-0",
-    title: "m-0 text-title",
-    text: "m-0",
+    title: "text-title",
     // Wrapping between phrases, never inside a word of ja, as a field's error does.
-    hint: "m-0 text-caption text-muted-text [word-break:auto-phrase]",
-    form: "m-0 flex flex-col gap-form-page-form-gap",
-    field: "grid gap-form-page-field-gap",
-    labelLine: "flex items-baseline justify-between gap-form-page-alert-gap",
+    hint: "text-caption text-muted-text [word-break:auto-phrase]",
     label: "font-label",
     input: [
-      "box-border h-control-form w-full rounded-control border-0 bg-surface-raised px-control-timeline-inline font-sans",
+      "box-border rounded-control border-0 bg-surface-raised px-control-timeline-inline font-sans",
       "text-body text-text outline-hidden focus-visible:shadow-focus read-only:text-muted-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
-    textarea: "h-auto resize-y py-control-timeline-inline",
-    fieldError: "m-0 flex items-start gap-entry-caption font-label [word-break:auto-phrase] [&_svg]:mt-[0.2em]",
-    check: "flex items-start gap-form-page-alert-gap",
+    fieldError: "font-label [word-break:auto-phrase]",
     checkInput: [
-      "m-0 size-form-page-check flex-none accent-text",
+      "size-form-page-check accent-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
     alert: [
-      "m-0 flex items-start gap-form-page-alert-gap rounded-overlay bg-text p-form-page-alert-padding",
-      "text-surface outline-hidden focus-visible:shadow-focus [word-break:auto-phrase] [&_svg]:mt-[0.0625rem]",
+      "rounded-overlay bg-text p-form-page-alert-padding",
+      "text-surface outline-hidden focus-visible:shadow-focus [word-break:auto-phrase]",
     ],
-    actions: "grid gap-form-page-field-gap [&>a]:w-full [&>button]:w-full",
-    choice: "flex gap-form-page-field-gap [&>button]:flex-1",
-    others: "grid gap-form-page-field-gap",
-    othersHeading: "m-0 text-caption font-normal text-muted-text",
-    links: "m-0 flex flex-wrap gap-form-page-gap",
+    othersHeading: "text-caption font-normal text-muted-text",
     link: "text-accent-text",
-    section: "grid gap-form-page-list-gap [&_p]:m-0",
-    sectionHeading: "m-0 text-body font-label",
-    apart: "mt-form-page-gap grid gap-form-page-field-gap",
-    apartHeading: "m-0 text-title",
-    list: "m-0 grid gap-form-page-list-gap ps-form-page-indent",
-    badge: "ms-form-page-list-gap rounded-control bg-surface-raised px-form-page-list-gap text-caption font-normal",
-    caution: "m-0 flex items-start gap-entry-caption [&_svg]:mt-[0.1em]",
-    account: "m-0 flex items-center gap-form-page-alert-gap",
-    glyph: "inline-flex items-center gap-form-page-alert-gap",
+    sectionHeading: "text-body font-label",
+    apartHeading: "text-title",
+    list: "ps-form-page-indent",
+    badge: "rounded-control bg-surface-raised px-form-page-list-gap text-caption font-normal",
+    caution: "",
     widget: "min-h-form-page-widget",
   },
   variants: {
+    // A textarea starts at a control's height, and the reader may make it taller.
+    multiline: {
+      false: { input: "h-control-form" },
+      true: { input: "h-control-form resize-y py-control-timeline-inline" },
+    },
     strong: { true: { caution: "font-label" } },
     // A sentence that tells what happened rather than what is wrong (a draft gone): in the text's own weight.
     regular: { true: { alert: "font-normal" }, false: { alert: "font-label" } },
   },
 });
 
+/** How far down a glyph stands to sit on the first line of the text after it, by the glyph's size and the text's. */
+const NUDGE = {
+  error: "[&_svg]:mt-[0.2em]",
+  alert: "[&_svg]:mt-[0.0625rem]",
+  caution: "[&_svg]:mt-[0.1em]",
+} as const;
+
+/**
+ * A glyph and the text after it, as `as`: the text wraps beside the glyph, which stays on its first line, nudged down
+ * onto it.
+ */
+function GlyphLine({
+  as,
+  nudge,
+  gap,
+  children,
+}: {
+  as: ReactElement<{ className?: unknown }>;
+  nudge: keyof typeof NUDGE;
+  gap: Gap;
+  children: ReactNode;
+}) {
+  return (
+    <Row as={as} align="start" gap={gap} className={NUDGE[nudge]}>
+      {children}
+    </Row>
+  );
+}
+
 /** The title of a screen, its page's one h1, and the lines under it. */
 export function FormHead({ title, children }: { title: string; children?: ReactNode }) {
   const s = form();
   return (
-    <div className={s.head()}>
+    <Stack gap="form-page-head-gap">
       <h1 className={s.title()} dir="auto">
         {title}
       </h1>
       {children}
-    </div>
+    </Stack>
   );
 }
 
@@ -300,7 +320,7 @@ export function FormText({
 }) {
   const s = form();
   return (
-    <p className={muted ? s.hint() : s.text()} id={id} role={role} dir="auto">
+    <p className={muted ? s.hint() : undefined} id={id} role={role} dir="auto">
       {children}
     </p>
   );
@@ -322,9 +342,9 @@ export function Form({
   children: ReactNode;
 }) {
   return (
-    <form ref={ref} className={form().form()} method="post" action={action} onSubmit={onSubmit}>
+    <Column gap="form-page-form-gap" as={<form ref={ref} method="post" action={action} onSubmit={onSubmit} />}>
       {children}
-    </form>
+    </Column>
   );
 }
 
@@ -383,7 +403,7 @@ export function TextField({
   autoFocus,
   onChange,
 }: TextFieldProps) {
-  const s = form();
+  const s = form({ multiline });
   const described =
     [describedBy, hint && `${id}-hint`, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
   const common = {
@@ -405,44 +425,49 @@ export function TextField({
     "aria-describedby": described,
   };
   return (
-    <div className={s.field()}>
-      <div className={s.labelLine()}>
+    <Stack gap="form-page-field-gap">
+      <Row align="baseline" justify="between" gap="form-page-alert-gap">
         <label className={s.label()} htmlFor={id}>
           {label}
         </label>
         {end}
-      </div>
+      </Row>
       {hint && (
         <p id={`${id}-hint`} className={s.hint()}>
           {hint}
         </p>
       )}
       {multiline ? (
-        <textarea {...common} className={`${s.input()} ${s.textarea()}`} rows={4} dir="auto" />
+        <Box full as={<textarea {...common} className={s.input()} rows={4} dir="auto" />} />
       ) : (
-        <input
-          {...common}
-          className={s.input()}
-          type={type}
-          autoComplete={autoComplete}
-          inputMode={inputMode}
-          autoCapitalize={autoCapitalize}
-          minLength={minLength}
-          spellCheck={false}
+        <Box
+          full
+          as={
+            <input
+              {...common}
+              className={s.input()}
+              type={type}
+              autoComplete={autoComplete}
+              inputMode={inputMode}
+              autoCapitalize={autoCapitalize}
+              minLength={minLength}
+              spellCheck={false}
+            />
+          }
         />
       )}
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
-    </div>
+    </Stack>
   );
 }
 
 /** A field's error, right under what it is about. */
 export function FieldError({ id, children }: { id?: string | undefined; children: string }) {
   return (
-    <p id={id} className={form().fieldError()}>
+    <GlyphLine nudge="error" gap="entry-caption" as={<p id={id} className={form().fieldError()} />}>
       <Icon name="error" place="caption" />
       <span dir="auto">{children}</span>
-    </p>
+    </GlyphLine>
   );
 }
 
@@ -474,30 +499,35 @@ export function CheckField({
   const s = form();
   const described = [describedBy, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
   return (
-    <div className={s.field()}>
-      <label className={s.check()}>
-        <input
-          className={s.checkInput()}
-          id={id}
-          name={name}
-          value={value}
-          type="checkbox"
-          defaultChecked={defaultChecked}
-          checked={checked}
-          onChange={
-            onChange &&
-            ((e) => {
-              onChange(e.target.checked);
-            })
+    <Stack gap="form-page-field-gap">
+      <Row as="label" align="start" gap="form-page-alert-gap">
+        <Box
+          rigid
+          as={
+            <input
+              className={s.checkInput()}
+              id={id}
+              name={name}
+              value={value}
+              type="checkbox"
+              defaultChecked={defaultChecked}
+              checked={checked}
+              onChange={
+                onChange &&
+                ((e) => {
+                  onChange(e.target.checked);
+                })
+              }
+              required={required}
+              aria-invalid={error ? true : undefined}
+              aria-describedby={described}
+            />
           }
-          required={required}
-          aria-invalid={error ? true : undefined}
-          aria-describedby={described}
         />
         <span>{label}</span>
-      </label>
+      </Row>
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
-    </div>
+    </Stack>
   );
 }
 
@@ -524,11 +554,17 @@ export function FormAlert({
   children: string;
 }) {
   return (
-    <p
-      className={form({ regular }).alert()}
-      role="alert"
-      tabIndex={-1}
-      {...{ [focusOnLoadAttribute]: focus ? "" : undefined }}
+    <GlyphLine
+      nudge="alert"
+      gap="form-page-alert-gap"
+      as={
+        <p
+          className={form({ regular }).alert()}
+          role="alert"
+          tabIndex={-1}
+          {...{ [focusOnLoadAttribute]: focus ? "" : undefined }}
+        />
+      }
     >
       <Icon name="error" place="action" />
       <span dir="auto">
@@ -540,13 +576,13 @@ export function FormAlert({
           </>
         )}
       </span>
-    </p>
+    </GlyphLine>
   );
 }
 
 /** A column of full-width actions, the primary first, with a form's alert right before them. */
 export function FormActions({ children }: { children: ReactNode }) {
-  return <div className={form().actions()}>{children}</div>;
+  return <Stack gap="form-page-field-gap">{children}</Stack>;
 }
 
 /**
@@ -554,23 +590,31 @@ export function FormActions({ children }: { children: ReactNode }) {
  * confirmation at the end, so that the row mirrors in right-to-left text.
  */
 export function FormChoice({ children }: { children: ReactNode }) {
-  return <div className={form().choice()}>{children}</div>;
+  return (
+    <Row even gap="form-page-field-gap">
+      {children}
+    </Row>
+  );
 }
 
 /** Other ways to go on (a passkey, a login provider) under a quiet heading. */
 export function FormOthers({ heading, children }: { heading: string; children: ReactNode }) {
   const s = form();
   return (
-    <section className={s.others()} aria-label={heading}>
+    <Stack as="section" gap="form-page-field-gap" aria-label={heading}>
       <h2 className={s.othersHeading()}>{heading}</h2>
-      <div className={s.actions()}>{children}</div>
-    </section>
+      <FormActions>{children}</FormActions>
+    </Stack>
   );
 }
 
 /** The links that lead off the screen, at its end. */
 export function FormLinks({ children }: { children: ReactNode }) {
-  return <p className={form().links()}>{children}</p>;
+  return (
+    <Row as="p" wrap gap="form-page-gap">
+      {children}
+    </Row>
+  );
 }
 
 /** A link of a screen, in the links' color; `newTab` opens it in a new tab and says so to assistive technology. */
@@ -614,58 +658,67 @@ export function FormSection({
 }) {
   const s = form();
   return (
-    <section className={apart ? s.apart() : s.section()} aria-labelledby={id}>
+    <Stack
+      as="section"
+      gap={apart ? "form-page-field-gap" : "form-page-list-gap"}
+      spaceAbove={apart ? "form-page-gap" : undefined}
+      aria-labelledby={id}
+    >
       <h2 id={id} className={apart ? s.apartHeading() : s.sectionHeading()}>
         {heading}
       </h2>
       {children}
-    </section>
+    </Stack>
   );
 }
 
 /** A list of short items under a section's heading. */
 export function FormList({ items }: { items: ReactNode[] }) {
   return (
-    <ul className={form().list()}>
+    <Stack as="ul" gap="form-page-list-gap" className={form().list()}>
       {items.map((item, i) => (
         <li key={i}>{item}</li>
       ))}
-    </ul>
+    </Stack>
   );
 }
 
 /** A state in a word or two beside a heading (In effect), on the raised surface. */
 export function FormBadge({ children }: { children: string }) {
-  return <span className={form().badge()}>{children}</span>;
+  return (
+    <Box as="span" spaceBefore="form-page-list-gap" className={form().badge()}>
+      {children}
+    </Box>
+  );
 }
 
 /** A line that asks for care before agreeing, after a triangle: `strong` when it may mean another app altogether. */
 export function FormCaution({ strong = false, children }: { strong?: boolean; children: ReactNode }) {
   return (
-    <p className={form({ strong }).caution()}>
+    <GlyphLine nudge="caution" gap="entry-caption" as={<p className={form({ strong }).caution()} />}>
       <Icon name="caution" place="action" />
       <span dir="auto">{children}</span>
-    </p>
+    </GlyphLine>
   );
 }
 
 /** The account a choice is made as, its avatar beside the line that names it. */
 export function FormAccount({ name, children }: { name: string; children: ReactNode }) {
   return (
-    <p className={form().account()}>
+    <Row as="p" align="center" gap="form-page-alert-gap">
       <Avatar name={name} size="inline" decorative />
       <span dir="auto">{children}</span>
-    </p>
+    </Row>
   );
 }
 
 /** A button's label after its glyph (a passkey, a login provider's mark). */
 export function GlyphLabel({ icon, children }: { icon: IconName; children: ReactNode }) {
   return (
-    <span className={form().glyph()}>
+    <Row as="span" inline align="center" gap="form-page-alert-gap">
       <Icon name={icon} place="action" />
       <span dir="auto">{children}</span>
-    </span>
+    </Row>
   );
 }
 

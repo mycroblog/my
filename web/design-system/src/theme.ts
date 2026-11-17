@@ -82,6 +82,8 @@ const theme = {
       names(control).map((size) => [`control-${size}-line`, `calc((var(--control-${size}-height) - 1lh) / 2)`]),
     ),
     "target-line": "max(0px, calc((var(--target-minimum) - 1lh) / 2))",
+    // The same around a text as tall as its font's size (a link in a line that sets no leading of its own).
+    "target-em": "calc((var(--target-minimum) - 1em) / 2)",
     "icon-button-inline": ref("--icon-button-padding-inline"),
     "icon-button-gap": ref("--icon-button-gap"),
     "icon-button-touch": ref("--icon-button-touch"),
@@ -179,6 +181,8 @@ const theme = {
         .filter((name) => name !== "bannerRatio")
         .map((name) => [`form-page-${kebab(name)}`, ref(`--form-page-${kebab(name)}`)]),
     ),
+    // Between the rows of a footer's links that wrap, so that the targets of two rows never overlap.
+    "form-page-footer-rows": "max(var(--form-page-field-gap), calc(var(--target-minimum) - 1lh))",
   },
   // The widths of a container from which a part lays itself out otherwise: a thread's replies indent (`@reply:`).
   containers: { reply: `${screen.replyFrom}rem` },

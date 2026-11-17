@@ -41,7 +41,7 @@ export const LAYOUT_PARTS = {
     "NavList",
     "SectionList",
   ],
-  "web/design-system/src/form-page.tsx": ["FormPage", "Form", "FormActions", "FormChoice", "FormLinks", "FormList"],
+  "web/design-system/src/form-page.tsx": ["FormPage", "GlyphLine"],
   "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
   "web/design-system/src/modal.tsx": ["ModalFrame", "ModalPanel"],
   "web/design-system/src/dialog.tsx": ["PanelFrame"],
