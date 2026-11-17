@@ -170,6 +170,10 @@ test("a poll whose voters are unknown counts its votes instead", () => {
 });
 
 test("it reads in the reader's locale: the group, the options, the line and Vote", () => {
+  const single = shown({}, {}, "ja");
+  expect(single.words()).toMatch(/4人が投票\s*·\s*2日後に締切/);
+  expect(single.vote()).not.toBeNull();
+
   const open = shown({ multiple: true, voters_count: undefined }, {}, "ja");
   expect(open.part.getByRole("group", { name: "選択肢" })).not.toBeNull();
   expect(open.words()).toMatch(/複数選べます\s*·\s*4票\s*·\s*2日後に締切/);

@@ -188,3 +188,33 @@ test("the More menu offers a reader what they may do with the post: their own, t
   ]);
   expect(await menuOf("The first loaf.")).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
 });
+
+test("a vote that gets no answer holds the choice while it is in flight, shows the poll again, and Try again sends it", async () => {
+  const { fake, user, post } = await timeline();
+  const sent = fake.script("POST /statuses/{id}/poll/votes", { times: 1, hold: "request", fail: "network" });
+  const poll = within(post("Which loaves?").getByRole("group", { name: "Poll" }));
+  /** The results of the poll, an item per option. */
+  const results = () => poll.queryAllByRole("listitem").map((item) => item.textContent);
+
+  await user.click(poll.getByRole("checkbox", { name: "Rye" }));
+  await user.click(poll.getByRole("button", { name: "Vote" }));
+  await sent.arrived();
+  await waitFor(() => {
+    if (poll.getByRole("button", { name: "Vote" }).getAttribute("aria-busy") !== "true")
+      throw new Error("the poll does not say the vote is in flight");
+  });
+  expect(poll.getByRole<HTMLInputElement>("checkbox", { name: "Rye" }).checked).toBe(true);
+  expect(poll.getByRole<HTMLInputElement>("checkbox", { name: "Rye" }).disabled).toBe(true);
+  expect(results()).toEqual([]);
+
+  sent.release();
+  expect(await screen.findByText("The vote did not finish.")).not.toBeNull();
+  expect(results()).toEqual([]);
+  expect(poll.getByRole<HTMLInputElement>("checkbox", { name: "Rye" }).disabled).toBe(false);
+
+  await user.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => {
+    if (poll.queryAllByText(/your vote/).length !== 1) throw new Error("the poll shows no vote of the reader's");
+  });
+  expect(results()).toEqual(["Sourdough0%", "Rye (your vote)100%", "Focaccia0%"]);
+});
