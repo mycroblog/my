@@ -201,3 +201,31 @@ test("a vote in the poll of a post on the profile reaches the server", async () 
     if (poll.queryAllByText(/your vote/).length !== 1) throw new Error("the poll shows no vote of the reader's");
   });
 });
+
+test("a moved account says where it moved to, links to the new one, and offers no follow", async () => {
+  const { head, buttons } = await shown("sora@social.example", {}, () =>
+    screen.getByRole("link", { name: "Go to new account" }),
+  );
+
+  expect(head.getByRole("link", { name: "Go to new account" }).getAttribute("href")).toBe("/@sora@photos.example");
+  const line = head
+    .getAllByRole("paragraph")
+    .find((paragraph) => /^Moved to\s*⁨?@sora@photos\.example⁩?$/.test(paragraph.textContent.trim()));
+  if (line === undefined) throw new Error("test: no line says where the account moved to");
+  expect(within(line).getByRole("link", { name: "@sora@photos.example" }).getAttribute("href")).toBe(
+    "/@sora@photos.example",
+  );
+  expect(buttons().filter((name) => /^(Follow|Follow back|Request to follow|Following)$/.test(name))).toEqual([]);
+});
+
+test("the account it moved to can be followed from its profile", async () => {
+  const { fake, user, head } = await shown("sora@photos.example", {}, button("Follow back"));
+  const followed = fake.script("POST /accounts/{id}/follow");
+
+  await user.click(head.getByRole("button", { name: "Follow back" }));
+
+  expect((await followed.arrived()).url.pathname).toEndWith(
+    `/accounts/${fake.accountId("sora@photos.example")}/follow`,
+  );
+  expect(await head.findByRole("button", { name: "Following" })).not.toBeNull();
+});
