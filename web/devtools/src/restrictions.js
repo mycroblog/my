@@ -10,8 +10,8 @@
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
 //   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
 //   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake API
-//   (ADR-0171 §5), @my/e2e/fake/auth, the auth screens' page data, and @my/devtools/options, the live options the
-//   decider picks from (ADR-0168 §1), and nothing else of either package. A test (`*.test.ts(x)`) and a module of a
+//   (ADR-0171 §5), and @my/devtools/options, the live options the decider picks from (ADR-0168 §1), and nothing else
+//   of either package. A test (`*.test.ts(x)`) and a module of a
 //   package's `test/` directory, which only the test runner loads, may also import @my/e2e/fake, and nothing else of
 //   it.
 //
@@ -211,8 +211,8 @@ const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
 const TEST_FILE = /(?:\.test\.tsx?|\/test\/[^/]+\.tsx?)$/;
 /** The fake API (ADR-0171 §5), which a story and a test may import besides the layers below their own. */
 const FAKE_API = "@my/e2e/fake";
-/** What a story may import besides: the fake API, the auth screens' page data, and live options. */
-const STORY_FAKES = new Set([FAKE_API, "@my/e2e/fake/auth", "@my/devtools/options"]);
+/** What a story may import besides: the fake API, and live options. */
+const STORY_FAKES = new Set([FAKE_API, "@my/devtools/options"]);
 
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {

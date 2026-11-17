@@ -5,9 +5,8 @@
 
 import { useHomeTimeline } from "@my/app-data";
 import { createFakeApi } from "@my/e2e/fake";
-import { authScreens } from "@my/e2e/fake/auth"; // error: layers @my/e2e
 import { scenario } from "@my/e2e"; // error: layers @my/e2e
 import { Options } from "@my/devtools/options"; // error: layers @my/devtools
 import { AppRoot } from "@my/app"; // error: layers @my/app
 
-export const used = [useHomeTimeline, createFakeApi, authScreens, scenario, Options, AppRoot];
+export const used = [useHomeTimeline, createFakeApi, scenario, Options, AppRoot];

@@ -249,7 +249,6 @@
     "web/e2e": {
       "name": "@my/e2e",
       "dependencies": {
-        "@my/app-features": "workspace:*",
         "@mycroblog/mykit": "workspace:*",
       },
       "devDependencies": {

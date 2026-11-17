@@ -5,15 +5,13 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
-    "./fake": "./src/fake/index.ts",
-    "./fake/auth": "./src/fake/auth.ts"
+    "./fake": "./src/fake/index.ts"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p .",
     "test": "bun test --conditions=@mycroblog/source ./src"
   },
   "dependencies": {
-    "@my/app-features": "workspace:*",
     "@mycroblog/mykit": "workspace:*"
   },
   "devDependencies": {

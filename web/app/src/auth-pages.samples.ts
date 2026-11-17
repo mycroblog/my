@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the server's shell carries for each auth screen and state (internal/interface/authpages), for the screens'
-// stories: the scenario's server (its name and description), people (who signs in, who consents) and app (what they
-// consent to), and a server with its own logo and banner. What the server words (a form's outcome, the consent's
-// permissions, a moderation action) is sampled in en and ja.
+// stories (auth.samples.tsx): the scenario's server (its name and description), people (who signs in, who consents)
+// and app (what they consent to), as @my/e2e's fake server has them, and a server with its own logo and banner. What
+// the server words (a form's outcome, the consent's permissions, a moderation action) is sampled in en and ja.
 
 import type { AuthPage } from "@my/app-features";
-import { apps, instance, personOf } from "../scenario";
-import { fakeHost } from "./api";
+import { fakeHost, scenario, scenarioApps, scenarioInstance } from "@my/e2e/fake";
 
 const svg = (body: string, w: number, h: number) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}">${body}</svg>`)}`;
@@ -18,16 +17,17 @@ type Lang = "en" | "ja";
 type Worded = Record<Lang, string>;
 
 /** Who signs in and consents on the screens: the fake API's reader. */
-const reader = personOf("yuki");
+const found = scenario.people.find((p) => p.username === "yuki");
+const [firstApp] = scenarioApps;
+if (found === undefined || firstApp === undefined) throw new Error("samples: the scenario has no yuki, or no app");
+const reader = found;
 const email = reader.email;
-const firstApp = apps[0];
-if (firstApp === undefined) throw new Error("fake: the scenario has no app");
 const app = firstApp;
 const appHost = new URL(app.website).host;
 
 const plain = {
-  name: instance["name"] ?? fakeHost,
-  description: { en: instance["short_description"] ?? "", ja: instance["short_description"] ?? "" },
+  name: scenarioInstance["name"] ?? fakeHost,
+  description: { en: scenarioInstance["short_description"] ?? "", ja: scenarioInstance["short_description"] ?? "" },
 };
 
 const branded = {

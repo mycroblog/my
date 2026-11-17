@@ -30,9 +30,12 @@ expect() {
 }
 
 all="app app-components app-data app-features design-system design-tokens devtools e2e platform"
-# The packages that test on the fake API, and the fake API's own, @my/e2e, which depends on @my/app-features: a change
-# to one of them below the app, or to what one of them depends on, reaches them all.
+# The packages that test on the fake API, and the fake API's own, @my/e2e, which depends on the client library and the
+# tokens alone: a change to it, or to what it depends on, reaches them all; a change to a layer reaches that layer and
+# the layers above it.
 fake="app app-components app-data app-features e2e"
+# The design system and the layers above it.
+parts="app app-components app-features design-system"
 
 got="$("$script" --all | tr '\n' ' ')"
 if [ "${got% }" != "$all" ]; then
@@ -43,23 +46,23 @@ fi
 # A package and the packages above it in the layers (ADR-0025 §3).
 expect "the app, which nothing depends on" "app" web/app/src/main.tsx
 expect "the tokens" "$fake design-system design-tokens" web/design-tokens/src/tokens.ts
-expect "the design system" "$fake design-system" web/design-system/src/button.tsx
-expect "the shared components" "$fake" web/app-components/src/index.ts
-expect "the platform" "$fake platform" web/platform/src/index.ts
-expect "the server data" "$fake" web/app-data/src/index.ts
-expect "the features" "$fake" web/app-features/src/index.ts
-expect "two packages add up" "$fake design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
+expect "the design system" "$parts" web/design-system/src/button.tsx
+expect "the shared components" "app app-components app-features" web/app-components/src/index.ts
+expect "the platform" "app app-data app-features platform" web/platform/src/index.ts
+expect "the server data" "app app-data app-features" web/app-data/src/index.ts
+expect "the features" "app app-features" web/app-features/src/index.ts
+expect "two packages add up" "app app-components app-data app-features design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts
 
 # What a test depends on outside the layers, as its package's manifest declares it.
 expect "the fake API" "$fake" web/e2e/src/fake/api.ts
 expect "the scenario the fake API reads" "$fake" web/e2e/src/scenario.ts
 expect "the specs of the E2E tests, which are the fake API's package too" "$fake" web/e2e/specs/smoke.spec.ts
-expect "a DOM preload: the packages with tests on a DOM, what depends on them, and its own" "$fake design-system devtools" web/devtools/src/happy-dom.ts
+expect "a DOM preload: the packages with tests on a DOM, what depends on them, and its own" "$parts devtools" web/devtools/src/happy-dom.ts
 expect "the client library the server data is built on" "$fake" pkg/mykit/ts/src/client.ts
 expect "the spec its types are generated from" "$fake" api/openapi.yaml
-expect "a catalog of a package" "$fake design-system" web/design-system/locales/en/disclosure.json
-expect "the compiler of the catalogs: the packages that have some, and what depends on them" "$fake design-system" web/i18n/src/compile.ts
-expect "the tools the compiler is built on" "$fake design-system" tools/i18n/src/check.ts
+expect "a catalog of a package" "$parts" web/design-system/locales/en/disclosure.json
+expect "the compiler of the catalogs: the packages that have some, and what depends on them" "$parts" web/i18n/src/compile.ts
+expect "the tools the compiler is built on" "$parts" tools/i18n/src/check.ts
 
 # What every package shares, and what scripts/changed-contexts.sh gives the web context outside the packages.
 expect "the lockfile" "$all" bun.lock
@@ -119,7 +122,7 @@ cat > "$tmp/ws/web/added/package.json" <<'EOF'
 EOF
 script="$tmp/ws/scripts/changed-web-packages.sh"
 expect "an added package" "added" web/added/src/index.ts
-expect "what an added package depends on" "added $fake design-system" web/design-system/src/button.tsx
+expect "what an added package depends on" "added $parts" web/design-system/src/button.tsx
 expect "what every package shares, with an added package" "added $all" bun.lock
 
 if [ "$failed" -ne 0 ]; then
