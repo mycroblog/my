@@ -10,11 +10,12 @@ import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { ArticlePane } from "./article-editor";
 import { Avatar } from "./avatar";
-import { Button, TextButton } from "./button";
+import { Button, TextButton, TextLink } from "./button";
 import { Chip, ChipRow } from "./chip";
 import { AttachmentList, AttachmentRow, ChoiceSelect, PollSettings } from "./composer";
 import { ContentBody, ContentLink, UrlPart } from "./content";
 import { ConfirmDialog, PanelDialog } from "./dialog";
+import { Disclosure } from "./disclosure";
 import { DraftCount, DraftList, DraftRow, DraftSection, DraftSections } from "./drafts";
 import { ActionRow, Byline, CaptionLine, CaptionName, Entry, Stack, Stamp } from "./entry";
 import { Feed, FeedItem, FeedNotice } from "./feed";
@@ -536,7 +537,22 @@ export const WrittenText: Story = {
   ),
 };
 
-function Popups({ children }: { children?: ReactNode }) {
+/** A folded part that holds a link, between two buttons: what is folded is not shown and takes no focus. */
+export const FoldedDisclosure: Story = {
+  render: () => (
+    <div style={{ display: "grid", gap: "1rem", justifyItems: "start" }}>
+      <Button>Before the fold</Button>
+      <Disclosure summary="Spoilers for the season finale" icon="hidden">
+        <p className="m-0">
+          The ending, with <TextLink href="/finale">a link in the folded part</TextLink>.
+        </p>
+      </Disclosure>
+      <Button>After the fold</Button>
+    </div>
+  ),
+};
+
+function Popups({ long, children }: { long: boolean; children?: ReactNode }) {
   const [form, setForm] = useState(false);
   const [confirm, setConfirm] = useState(false);
   const [panel, setPanel] = useState(false);
@@ -549,7 +565,7 @@ function Popups({ children }: { children?: ReactNode }) {
         Share
       </MenuItem>
       <MenuItem id="long" icon="bookmark" about={sentence}>
-        {`Bookmark ${longWord}`}
+        {long ? `Bookmark ${longWord}` : "Bookmark"}
       </MenuItem>
     </MenuGroup>
   );
@@ -595,7 +611,7 @@ function Popups({ children }: { children?: ReactNode }) {
       {children}
       {confirm && (
         <ConfirmDialog
-          title={`Delete ${longWord}?`}
+          title={long ? `Delete ${longWord}?` : "Delete this list?"}
           cancel="Cancel"
           confirm="Delete"
           onCancel={() => {
@@ -629,11 +645,14 @@ function Popups({ children }: { children?: ReactNode }) {
 
 /**
  * What opens over a page, each from its button: a menu from a button at the row's start and one at its end, a small
- * form, a question and a panel to read; over a page longer than the view.
+ * form, a question and a panel to read; over a page longer than the view. `long` names what the menu and the question
+ * are about by a word no line holds.
  */
-export const Overlays: Story = {
-  render: () => (
-    <Popups>
+export const Overlays: StoryObj<Meta<{ long: boolean }>> = {
+  args: { long: false },
+  argTypes: { long: { control: "boolean", description: "A word no line holds in the menu and in the question" } },
+  render: ({ long }) => (
+    <Popups long={long}>
       {Array.from({ length: 12 }, (_, i) => (
         <p key={i} className="m-0">
           Line {i + 1} of the page under the overlays. {sentence}
