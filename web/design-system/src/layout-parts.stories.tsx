@@ -17,7 +17,7 @@ import { ContentBody, ContentLink, UrlPart } from "./content";
 import { ConfirmDialog, PanelDialog } from "./dialog";
 import { Disclosure } from "./disclosure";
 import { DraftCount, DraftList, DraftRow, DraftSection, DraftSections } from "./drafts";
-import { ActionRow, Byline, CaptionLine, CaptionName, Entry, Stack, Stamp } from "./entry";
+import { ActionRow, Byline, CaptionLine, CaptionName, Entry, Stamp } from "./entry";
 import { Feed, FeedItem, FeedNotice } from "./feed";
 import {
   CheckField,
@@ -36,6 +36,7 @@ import {
 } from "./form-page";
 import { Version, VersionList } from "./history";
 import { IconButton } from "./icon-button";
+import { Stack } from "./layout";
 import {
   AccountRow,
   BackButton,
@@ -115,10 +116,10 @@ export const EntryParts: StoryObj<Meta<{ counts: "small" | "large" }>> = {
         href="/@bartholomew"
         end={<Stamp glyph={{ icon: "public", label: "Public" }} date={ago(3_600_000)} />}
       />
-      <Stack>
+      <Stack gap="entry">
         <p className="m-0">First part: {sentence}</p>
         <p className="m-0">Second part: {sentence}</p>
-        <Stack gap="line">
+        <Stack gap="entry-line">
           <p className="m-0">First line of the third part.</p>
           <p className="m-0">Second line of the third part.</p>
         </Stack>
