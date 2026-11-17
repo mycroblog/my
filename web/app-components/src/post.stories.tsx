@@ -328,8 +328,8 @@ function EditedPosts() {
 const pickerTitle = { en: { title: "React", close: "Close" }, ja: { title: "リアクション", close: "閉じる" } } as const;
 
 /**
- * A post whose react action opens the emoji picker, as the app opens it: a sheet under the tablet width, which the app
- * decides by the viewport, else a popover under the button. It reacts as the server would answer.
+ * A post with the emoji picker of its react action open, as the app opens it: a sheet under the tablet width, which
+ * the app decides by the viewport, else a popover under the button. It reacts as the server would answer.
  */
 function Reacting({ post }: { post: TimelinePost }) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
@@ -346,6 +346,7 @@ function Reacting({ post }: { post: TimelinePost }) {
           sheet,
           title: pickerTitle[lang].title,
           closeLabel: pickerTitle[lang].close,
+          defaultOpen: true,
         }}
       />
     </Column>
@@ -370,17 +371,6 @@ function MenuOpen({ post }: { post: TimelinePost }) {
     </div>
   );
 }
-/** Opens the picker of the story's post, as a press on its react action does. */
-const openPicker = {
-  play: async ({ canvasElement }: { canvasElement: HTMLElement }) => {
-    const button = [...canvasElement.querySelectorAll("button")].find((b) =>
-      ["React", "リアクション"].includes(b.getAttribute("aria-label") ?? ""),
-    );
-    button?.click();
-    await new Promise((resolve) => setTimeout(resolve, 400));
-  },
-};
-
 /** A post in the other language than the reader's that translates into theirs, without images. */
 function foreignIn(lang: "en" | "ja"): TimelinePost {
   const foreign = posts.find((p) => p.lang !== lang && p.translation?.[lang] !== undefined && p.media === undefined);
@@ -544,12 +534,11 @@ export const Quoting: Story = { ...fixed, render: () => <Shown post={byId("ravi-
 export const Reactions: Story = { ...fixed, render: () => <Shown post={byId("hana-four")} /> };
 export const OwnReaction: Story = { ...fixed, render: () => <Shown post={ownReaction} /> };
 /**
- * The react action pressed: the emoji picker in a popover under it from the tablet width, in a sheet on a phone, the
+ * The emoji picker of the react action, open: in a popover under it from the tablet width, in a sheet on a phone, the
  * reader's own reaction (🎉) knocked out in it. Picking an emoji moves the reaction there, or adds its chip.
  */
 export const ReactPicker: Story = {
   ...fixed,
-  ...openPicker,
   render: () => (
     <Reacting
       post={{
@@ -566,7 +555,6 @@ export const ReactPicker: Story = {
 /** The same on a post with no reactions yet: the first pick adds the first chip. */
 export const ReactPickerFirst: Story = {
   ...fixed,
-  ...openPicker,
   render: () => <Reacting post={byId("lena-quiet")} />,
 };
 /** In the reader's language, with the language it came from and the provider that translated it. */

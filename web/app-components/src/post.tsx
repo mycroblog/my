@@ -163,6 +163,8 @@ export type PostPicker = Omit<EmojiPickerProps, "onSelect" | "current" | "fill" 
   preload?: (() => void) | undefined;
   /** Told when the picker opens. */
   onOpen?: (() => void) | undefined;
+  /** The picker is open at first, before any press, and `onOpen` is not told of it; closed by default. */
+  defaultOpen?: boolean | undefined;
 };
 
 /**
@@ -729,7 +731,7 @@ function ReactAction({
   act: Act;
   picker: PostPicker | undefined;
 }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(picker?.defaultOpen ?? false);
   if (picker === undefined)
     return (
       <IconButton
@@ -740,7 +742,7 @@ function ReactAction({
         }}
       />
     );
-  const { sheet, title, closeLabel, preload, onOpen, ...rest } = picker;
+  const { sheet, title, closeLabel, preload, onOpen, defaultOpen: _, ...rest } = picker;
   const show = (shown: boolean) => {
     if (shown) onOpen?.();
     setOpen(shown);
