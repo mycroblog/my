@@ -5,7 +5,16 @@
 // the server's introduction stands beside it and stays in view; its front page shows the introduction at every width.
 
 import { expectNoComputedViolations } from "../axe";
-import { boxesAtRest, boxOf, expectInside, expectMirrored, expectNoSidewaysScroll, viewportBox } from "../boxes";
+import {
+  atRest,
+  boxesAtRest,
+  boxOf,
+  expectInside,
+  expectMirrored,
+  expectNoSidewaysScroll,
+  sidewaysScroll,
+  viewportBox,
+} from "../boxes";
 import { expect, from, minimum, test } from "../test";
 
 const story = "design-system-layout-parts--form-page-screen";
@@ -151,11 +160,13 @@ test("the server's front page shows its introduction at every width, ended by it
 test("a page keeps its width when a name in it is a word no line holds", async ({ page, open }) => {
   test.fail(true, "FormHead, FormList, FormLink: a word no line holds does not wrap and widens the page at 320 px");
   await open(story, { args: { long: "word" } });
-  await expectNoSidewaysScroll(page);
+  const overflow = await atRest(() => sidewaysScroll(page));
+  expect(overflow).toEqual([]);
 });
 
 test("a page keeps its width when an action's label is longer than a line", async ({ page, open }) => {
   test.fail(true, "FormActions: a button's label longer than the column does not wrap and widens the page at 320 px");
   await open(story, { args: { long: "label" } });
-  await expectNoSidewaysScroll(page);
+  const overflow = await atRest(() => sidewaysScroll(page));
+  expect(overflow).toEqual([]);
 });

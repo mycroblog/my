@@ -27,12 +27,15 @@ export async function boxesOf<K extends string>(parts: Record<K, Locator>): Prom
   return Object.fromEntries(names.map((name, i) => [name, boxes[i]])) as Record<K, Box>;
 }
 
-/** The boxes of the named parts once two reads in a row agree: the page at rest. */
-export async function boxesAtRest<K extends string>(parts: Record<K, Locator>): Promise<Record<K, Box>> {
-  let last = await boxesOf(parts);
+/**
+ * What `read` reads of the page once two reads in a row agree: the page at rest. A test of a known defect asserts on
+ * it once, so that it fails at once and not after a retrying assertion gave up.
+ */
+export async function atRest<T>(read: () => Promise<T>): Promise<T> {
+  let last = await read();
   await expect
     .poll(async () => {
-      const now = await boxesOf(parts);
+      const now = await read();
       const same = JSON.stringify(now) === JSON.stringify(last);
       last = now;
       return same;
@@ -41,47 +44,49 @@ export async function boxesAtRest<K extends string>(parts: Record<K, Locator>): 
   return last;
 }
 
+/** The boxes of the named parts once two reads in a row agree: the page at rest. */
+export const boxesAtRest = <K extends string>(parts: Record<K, Locator>): Promise<Record<K, Box>> =>
+  atRest(() => boxesOf(parts));
+
 /** The width of the page's viewport without its scrollbar, in CSS px. */
 export const pageWidth = (page: Page): Promise<number> => page.evaluate(() => document.documentElement.clientWidth);
 
 /**
- * The page does not scroll sideways (ADR-0110 §10): it is no wider than its viewport. A failure names the innermost
- * elements that reach past an edge.
+ * How the page scrolls sideways: by how much it is wider than its viewport, then the innermost elements that reach
+ * past an edge; empty when it does not.
  */
+export const sidewaysScroll = (page: Page): Promise<string[]> =>
+  page.evaluate(() => {
+    const root = document.documentElement;
+    const over = root.scrollWidth - root.clientWidth;
+    if (over <= 0) return [];
+    const reaches = (element: Element) => {
+      const box = element.getBoundingClientRect();
+      return box.width > 0 && (box.right > root.clientWidth + 0.5 || box.left < -0.5);
+    };
+    // What an element inside the viewport clips does not widen the page.
+    const clipped = (element: Element) => {
+      for (let el = element.parentElement; el !== null && el !== document.body; el = el.parentElement)
+        if (getComputedStyle(el).overflowX !== "visible" && !reaches(el)) return true;
+      return false;
+    };
+    const past = [...document.body.querySelectorAll("*")].filter((element) => reaches(element) && !clipped(element));
+    const innermost = past.filter((element) => ![...element.children].some((child) => past.includes(child)));
+    const said = innermost.slice(0, 5).map((element) => {
+      const box = element.getBoundingClientRect();
+      const text = element.textContent.trim().replaceAll(/\s+/g, " ").slice(0, 60);
+      return `<${element.tagName.toLowerCase()}> "${text}" from ${String(Math.round(box.left))} to ${String(Math.round(box.right))}`;
+    });
+    return [`the page is ${String(over)} px wider than its ${String(root.clientWidth)} px viewport`, ...said];
+  });
+
+/** The page does not scroll sideways (ADR-0110 §10): it is no wider than its viewport. */
 export async function expectNoSidewaysScroll(page: Page): Promise<void> {
-  await expect
-    .poll(() =>
-      page.evaluate(() => {
-        const root = document.documentElement;
-        const over = root.scrollWidth - root.clientWidth;
-        if (over <= 0) return [];
-        const reaches = (element: Element) => {
-          const box = element.getBoundingClientRect();
-          return box.width > 0 && (box.right > root.clientWidth + 0.5 || box.left < -0.5);
-        };
-        // What an element inside the viewport clips does not widen the page.
-        const clipped = (element: Element) => {
-          for (let el = element.parentElement; el !== null && el !== document.body; el = el.parentElement)
-            if (getComputedStyle(el).overflowX !== "visible" && !reaches(el)) return true;
-          return false;
-        };
-        const past = [...document.body.querySelectorAll("*")].filter(
-          (element) => reaches(element) && !clipped(element),
-        );
-        const innermost = past.filter((element) => ![...element.children].some((child) => past.includes(child)));
-        const said = innermost.slice(0, 5).map((element) => {
-          const box = element.getBoundingClientRect();
-          const text = element.textContent.trim().replaceAll(/\s+/g, " ").slice(0, 60);
-          return `<${element.tagName.toLowerCase()}> "${text}" from ${String(Math.round(box.left))} to ${String(Math.round(box.right))}`;
-        });
-        return [`the page is ${String(over)} px wider than its ${String(root.clientWidth)} px viewport`, ...said];
-      }),
-    )
-    .toEqual([]);
+  await expect.poll(() => sidewaysScroll(page)).toEqual([]);
 }
 
 /** How `inner` reaches out of `outer`, by edge; empty when it is inside. */
-function outside(inner: Box, outer: Box): string[] {
+export function outside(inner: Box, outer: Box): string[] {
   const out: string[] = [];
   if (inner.left < outer.left - slack) out.push(`left ${String(inner.left)} < ${String(outer.left)}`);
   if (inner.right > outer.right + slack) out.push(`right ${String(inner.right)} > ${String(outer.right)}`);

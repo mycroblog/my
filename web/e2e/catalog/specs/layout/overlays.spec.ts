@@ -14,6 +14,7 @@ import {
   expectInside,
   expectInViewport,
   expectNoSidewaysScroll,
+  outside,
   viewportBox,
 } from "../boxes";
 import { expect, pc, test } from "../test";
@@ -232,8 +233,13 @@ test("a question keeps its words and its buttons inside it when its title holds 
   await open(story, { args: { long: true } });
   await trigger(page, "Open the question").click();
   const question = page.getByRole("alertdialog", { name: /^Delete .+\?$/ });
-  await expectInViewport(page, question.getByRole("heading"));
-  await expectInside(question.getByRole("button", { name: "Delete", exact: true }), question);
+  const at = await boxesAtRest({
+    question,
+    heading: question.getByRole("heading"),
+    confirm: question.getByRole("button", { name: "Delete", exact: true }),
+  });
+  expect(outside(at.heading, await viewportBox(page))).toEqual([]);
+  expect(outside(at.confirm, at.question)).toEqual([]);
 });
 
 test("a menu's sheet keeps an item inside it when its label holds a word no line holds", async ({ page, open }) => {
@@ -241,5 +247,6 @@ test("a menu's sheet keeps an item inside it when its label holds a word no line
   await open(story, { args: { long: true } });
   await trigger(page, "Menu at the end").click();
   const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
-  await expectInViewport(page, menu.getByText(/^Bookmark .+$/));
+  const at = await boxesAtRest({ label: menu.getByText(/^Bookmark .+$/) });
+  expect(outside(at.label, await viewportBox(page))).toEqual([]);
 });

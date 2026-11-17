@@ -4,7 +4,17 @@
 // byline and of a one-line caption: a long name is cut short on its one line, and what ends the line keeps its room.
 
 import { expectNoComputedViolations } from "../axe";
-import { boxesAtRest, cutShort, expectInside, expectMirrored, expectNoSidewaysScroll, linesOf } from "../boxes";
+import {
+  atRest,
+  boxesAtRest,
+  cutShort,
+  expectInside,
+  expectMirrored,
+  expectNoSidewaysScroll,
+  linesOf,
+  outside,
+  sidewaysScroll,
+} from "../boxes";
 import { expect, test } from "../test";
 
 const story = "design-system-layout-parts--entry-parts";
@@ -88,13 +98,15 @@ test("an entry's parts at the minimum width: a stack, the byline, a one-line cap
   });
 });
 
-test("the row of actions keeps inside the entry right to left, where the counts read longer", async ({
+test("the row of actions keeps inside the entry right to left, where large counts read longer", async ({
   page,
   open,
 }) => {
-  test.fail(true, "ActionRow: three counts as ar writes them (123.5 ألف) push More 3 px out of a 320 px page");
-  await open(story, { locale: "ar-XB" });
+  test.fail(true, "ActionRow: three counts as ar writes them (123.5 ألف) push More out of a 320 px page");
+  await open(story, { locale: "ar-XB", args: { counts: "large" } });
   const entry = page.getByRole("article", { name, exact: true });
-  await expectInside(entry.getByRole("button", { name: "More", exact: true }), entry);
-  await expectNoSidewaysScroll(page);
+  const at = await boxesAtRest({ entry, more: entry.getByRole("button", { name: "More", exact: true }) });
+  expect(outside(at.more, at.entry)).toEqual([]);
+  const overflow = await atRest(() => sidewaysScroll(page));
+  expect(overflow).toEqual([]);
 });

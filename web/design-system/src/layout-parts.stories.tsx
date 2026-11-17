@@ -6,7 +6,7 @@
 // truncates or runs over; the layout tests open the same stories (web/e2e/catalog). The frame of the app has its own
 // stories (Shell). The words are samples in English; what people wrote is in a `ContentBody`, as the app shows it.
 
-import type { Meta, StoryObj } from "@storybook/react-vite";
+import type { Decorator, Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { ArticlePane } from "./article-editor";
 import { Avatar } from "./avatar";
@@ -60,7 +60,20 @@ const sentence =
   "A wide valley at first light, three ridges one behind the other, the nearest dark with pines and the farthest a pale blue line.";
 const nothing = () => undefined;
 
-const meta = { title: "Layout parts" } satisfies Meta;
+/**
+ * The side margin of the app's column around a story, which an entry's and a row's surface reach into; a story of a
+ * whole page (`parameters.page`) has none.
+ */
+const column: Decorator = (Story, { parameters }) =>
+  parameters["page"] === true ? (
+    <Story />
+  ) : (
+    <div style={{ padding: "1rem" }}>
+      <Story />
+    </div>
+  );
+
+const meta = { title: "Layout parts", parameters: { layout: "fullscreen" }, decorators: [column] } satisfies Meta;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
@@ -80,9 +93,16 @@ export const ChipRowWrapping: Story = {
   ),
 };
 
-/** An entry's parts one under another, and its row of actions with More at its end. */
-export const EntryParts: Story = {
-  render: () => (
+/**
+ * An entry's parts one under another, and its row of actions with More at its end; `counts` gives three of the actions
+ * counts in the hundreds of thousands.
+ */
+export const EntryParts: StoryObj<Meta<{ counts: "small" | "large" }>> = {
+  args: { counts: "small" },
+  argTypes: {
+    counts: { control: "select", options: ["small", "large"], description: "How many replied, boosted and favourited" },
+  },
+  render: ({ counts }) => (
     <Entry labelledBy="layout-entry-name">
       <CaptionLine icon="boost" oneLine>
         <CaptionName>{boosterName}</CaptionName> boosted
@@ -104,9 +124,9 @@ export const EntryParts: Story = {
         </Stack>
       </Stack>
       <ActionRow end={<IconButton icon="more" label="More" />}>
-        <IconButton icon="reply" label="Reply" count={1_234} />
-        <IconButton icon="boost" label="Boost" count={56_789} />
-        <IconButton icon="favourite" label="Favourite" count={123_456} />
+        <IconButton icon="reply" label="Reply" count={counts === "large" ? 123_456 : 12} />
+        <IconButton icon="boost" label="Boost" count={counts === "large" ? 234_567 : 3} />
+        <IconButton icon="favourite" label="Favourite" count={counts === "large" ? 345_678 : 45} />
         <IconButton icon="bookmark" label="Bookmark" />
       </ActionRow>
     </Entry>
@@ -287,7 +307,7 @@ function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageA
  */
 export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
   args: { server: true, banner: true, front: false, long: "none" },
-  parameters: { layout: "fullscreen" },
+  parameters: { page: true },
   argTypes: {
     long: {
       control: "select",
@@ -570,7 +590,7 @@ function Popups({ long, children }: { long: boolean; children?: ReactNode }) {
     </MenuGroup>
   );
   return (
-    <div style={{ display: "grid", gap: "2rem", padding: "1rem" }}>
+    <div style={{ display: "grid", gap: "2rem" }}>
       <div style={{ display: "flex", justifyContent: "space-between" }}>
         <MenuButton icon="boost" label="Menu at the start" align="start">
           {items}
