@@ -183,14 +183,23 @@ describe("the context line", () => {
     expect(actions).toEqual([{ type: "favourite", id: "10" }]);
   });
 
-  const reply = () =>
+  /** A reply to mika, whom it mentions: of another server (mstdn.example.jp) unless `acct` says otherwise. */
+  const reply = (acct = "mika@mstdn.example.jp") =>
     status({
       in_reply_to_account_id: "3",
-      mentions: [{ id: "3", username: "mika", acct: "mika@mstdn.example.jp" }],
+      mentions: [{ id: "3", username: "mika", acct }],
     });
 
-  test("a reply says whom it replies to, the handle left to right", () => {
+  test("a reply says whom it replies to, an account of another server with its server, the handle left to right", () => {
     const { part } = post({ status: reply() });
+
+    const handle = part.getByText("@mika@mstdn.example.jp");
+    expect(handle.dir).toBe("ltr");
+    expect(handle.parentElement?.textContent).toBe("Replying to @mika@mstdn.example.jp");
+  });
+
+  test("a reply to an account of this server names it without a server", () => {
+    const { part } = post({ status: reply("mika") });
 
     const handle = part.getByText("@mika");
     expect(handle.dir).toBe("ltr");
@@ -200,7 +209,9 @@ describe("the context line", () => {
   test("the reply's line reads in the reader's locale", () => {
     const { part } = post({ status: reply() }, "ja");
 
-    expect(part.getByText("@mika").parentElement?.textContent).toBe("@mikaさんへの返信");
+    expect(part.getByText("@mika@mstdn.example.jp").parentElement?.textContent).toBe(
+      "@mika@mstdn.example.jpさんへの返信",
+    );
   });
 
   test("the reply's line is left out where the screen says it already", () => {
