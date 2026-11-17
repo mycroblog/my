@@ -11,6 +11,7 @@ import { MediaGrid, type MediaItem } from "./media";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
+/* oxlint-disable restrict/token-colors -- a sample picture is drawn in its own colours */
 const svg = (w: number, h: number, body: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 4}" height="${h * 4}">${body}</svg>`)}`;
 
@@ -28,6 +29,7 @@ const pictures = {
   forest: scene("#a9d0b0", "#e8f2df", "#4c7650"),
   night: scene("#1d2440", "#4b4f7a", "#2a2b45"),
 };
+/* oxlint-enable restrict/token-colors */
 
 /** Each picture's blurhash, as the server would give it: its sky, its light and its ridges, top to bottom. */
 const blurhashes = {

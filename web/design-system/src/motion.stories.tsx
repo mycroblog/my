@@ -103,7 +103,7 @@ function Motion({ viewTransitions }: { viewTransitions: boolean }) {
       </div>
       <div
         style={{
-          border: "1px solid #ccc",
+          border: "1px solid var(--color-surface-raised-pressed)",
           borderRadius: 8,
           boxSizing: "border-box",
           height: rem(280),

@@ -5,7 +5,7 @@
 import { Button } from "@my/design-system";
 
 export const Inside = () => (
-  <Button className="p-2" style={{}}>
+  <Button className="font-label" style={{}}>
     Go
   </Button>
 );

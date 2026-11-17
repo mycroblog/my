@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The Oxlint JS plugin `restrict` (ADR-0025 §8): the layer rules of ADR-0025 §3 and §4 that a type cannot hold, enabled
 // per path in .oxlintrc.json. restrictions.test.js lints the fixtures of web/devtools/fixtures/restrictions/ and of
-// the layers' fixtures/ with Oxlint and compares its findings with the ones each fixture expects.
+// the layers' fixtures/ with Oxlint and compares its findings with the ones each fixture expects. The rules of the
+// styles (token-colors, layout-parts, viewport-breakpoints) are in styles.js.
 //
 // - layer-imports: a layer imports only the layers below it (§3): design-tokens ← design-system ← app-components ←
 //   app-features ← app, with app-data beside app-components, under app-features, and platform and rtc under app-data;
@@ -40,6 +41,8 @@
 //   `setTimeout`, `setInterval`, `Date.now()`, `new Date()`), a `timeout` option and a forced action (`force: true`);
 //   the demo server and the seed of src/ poll for readiness and remove their files by force. It refuses the methods by
 //   name on any object, and sees a name or a RegExp written in the file, not one held in a variable.
+
+import { rules as styles } from "./styles.js";
 
 const DESIGN_SYSTEM = /^@my\/design-system(?:\/|$)/;
 const LAYOUT_PROPS = new Set(["className", "style"]);
@@ -632,6 +635,7 @@ function createE2EFlaky(context) {
 export default {
   meta: { name: "restrict" },
   rules: {
+    ...styles,
     "e2e-flaky": {
       meta: {
         type: "problem",

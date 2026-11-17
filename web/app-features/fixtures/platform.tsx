@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // A feature asks @my/platform what the browser can do, and checks nothing itself (ADR-0028 §17): the platform's
-// globals, a feature test on a global object and a media query of the platform are refused; the viewport, the
-// reader's preferences, a binding of the file and a type stay open.
+// globals, a feature test on a global object and a media query of the platform are refused; the reader's
+// preferences, a binding of the file and a type stay open. The viewport is the app's to read (ADR-0025 §4), which
+// restrict/viewport-breakpoints refuses here.
 
 import { getPasskey, supportsPasskeys } from "@my/platform";
 
@@ -28,7 +29,7 @@ export function open(navigator: { credentials: string }, query: string) {
     navigator.credentials,
     options,
     "key" in options,
-    window.matchMedia("(min-width: 40rem)"),
+    window.matchMedia("(min-width: 40rem)"), // error: viewport matchMedia(min-width)
     window.matchMedia("(prefers-reduced-motion: reduce)"),
     window.matchMedia(query),
   ];

@@ -28,6 +28,7 @@ const head = {
   ja: { title: "小さなサーバーを一年続けて", summary: "必要だったこと、かかった費用、もう一度やるならどうするか。" },
 } as const;
 
+/* oxlint-disable restrict/token-colors -- a sample picture is drawn in its own colours */
 const cover = {
   src: `data:image/svg+xml,${encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 90" width="640" height="360"><rect width="160" height="90" fill="#7fb3d5"/><circle cx="112" cy="34" r="12" fill="#fffbe8"/><path d="M0 60 L40 44 L80 56 L120 40 L160 52 V90 H0Z" fill="#3f6f86"/></svg>`,
@@ -37,6 +38,7 @@ const cover = {
   alt: "A blue sea under a pale sun",
   blurhash: "IxHWWH%h01",
 };
+/* oxlint-enable restrict/token-colors */
 
 function TextShown() {
   const lang = useLang();

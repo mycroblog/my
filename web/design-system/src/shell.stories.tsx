@@ -8,6 +8,7 @@
 // the main one with none of its sections but the notifications, which have none yet; the reader in their direct
 // messages, whose place counts the unread conversations; and the menu's sheet open. Its words are samples in English.
 
+import { color } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { userEvent, waitFor, within } from "storybook/test";
@@ -44,7 +45,7 @@ import {
 } from "./shell";
 import type { IconName } from "./icons";
 
-// A stand-in for the brand's wordmark, a short word about twice as wide as it is tall.
+// A stand-in for the brand's wordmark, a short word about twice as wide as it is tall, in the text's color of a scheme.
 const wordmark = (fill: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 24" width="44" height="24"><text x="2" y="19" font-family="system-ui, sans-serif" font-size="21" font-style="italic" font-weight="800" fill="${fill}">my</text></svg>`)}`;
 
@@ -522,8 +523,8 @@ function Shell(state: ShellState) {
         <FrameMark
           href="/"
           label="my.example"
-          light={wordmark("#111111")}
-          dark={wordmark("#f2e9e7")}
+          light={wordmark(color.text.light)}
+          dark={wordmark(color.text.dark)}
           logo={logo ? images.logo : undefined}
         />
         {primary}
@@ -658,7 +659,7 @@ const server = {
   name: "my.example",
   description: "A small server for people who like the sea, photography and slow mornings.",
 };
-const pageWordmark = { light: wordmark("#111111"), dark: wordmark("#f2e9e7") };
+const pageWordmark = { light: wordmark(color.text.light), dark: wordmark(color.text.dark) };
 const statusFooter = (
   <FormPageFooter
     label="This server"

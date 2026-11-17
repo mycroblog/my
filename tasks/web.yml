@@ -136,17 +136,21 @@ tasks:
       - cd web/e2e && bun --bun tsc -p .
 
   # restrict/layer-imports refuses an import against the direction of the layers (ADR-0025 §3), and
-  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17).
+  # restrict/platform-globals a check of the platform outside web/platform (ADR-0028 §17). The rules of the styles
+  # (ADR-0171 §2, §3) refuse a colour that is no token (restrict/token-colors, and colors.js for the CSS, which Oxlint
+  # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
+  # (restrict/layout-parts, restrict/viewport-breakpoints, each with its baseline in styles-baseline.json).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), and prove the rules of web/devtools/src/restrictions.js on their fixtures
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
     deps: [install, ":i18n:compile", routes]
     cmds:
       - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
+      - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/app-data web/app-features web/app web/storybook web/i18n
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…), a CSS declaration (margin-left, left, text-align left…) or a React style key (marginLeft, left in an inline style) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
     cmds:
       - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
 

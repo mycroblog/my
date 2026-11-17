@@ -10,6 +10,7 @@ import type { MediaItem } from "./media";
 import { modalShown } from "./preview";
 import { MediaViewer } from "./viewer";
 
+/* oxlint-disable restrict/token-colors -- a sample picture is drawn in its own colours */
 const svg = (w: number, h: number, body: string) =>
   `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w * 8}" height="${h * 8}">${body}</svg>`)}`;
 
@@ -28,6 +29,7 @@ const night = svg(
   100,
   `<rect width="160" height="100" fill="#1d2440"/><circle cx="40" cy="30" r="10" fill="#f3efd6"/><path d="M0 70 Q50 56 100 68 T160 64 V100 H0Z" fill="#2a2b45"/>`,
 );
+/* oxlint-enable restrict/token-colors */
 
 const items: MediaItem[] = [
   { id: "1", src: tall, alt: "A maple tree in autumn, its leaves orange and red against a warm sky" },
