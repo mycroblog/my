@@ -3,11 +3,11 @@
 // The plays of the Profile stories that press something before the story shows its state, in the story's locale: the
 // note's editor opened, the profile's menu open, a confirmation of it open, a post's menu open on another's post, and that post
 // once the reader muted or blocked its author or muted its server from it. They find what to press by the features'
-// words, in the locale the story renders.
+// words, in the locale the story renders, and assert nothing: what each state shows is held by the features' tests.
 
 import { featureStringsIn, type FeatureMessageId as MessageId } from "@my/app-features";
 import type { StoryContext } from "@storybook/react-vite";
-import { expect, screen, userEvent, waitFor, within } from "storybook/test";
+import { screen, userEvent, waitFor, within } from "storybook/test";
 import { screenMeta } from "./app.samples";
 
 /** What the story shows once the screen settled, and the features' strings in its locale. */
@@ -21,7 +21,7 @@ async function settled(context: StoryContext) {
 export async function noteEditing(context: StoryContext): Promise<void> {
   const { t, main } = await settled(context);
   await userEvent.click(await main.findByRole("button", { name: (n: string) => n.startsWith(t("profile.note_edit")) }));
-  await expect(await main.findByRole("textbox", { name: t("profile.note") })).toBeVisible();
+  await main.findByRole("textbox", { name: t("profile.note") });
 }
 
 /** Opens the profile's menu, and asks before the action of `item`, whose confirmation then shows. */
@@ -92,9 +92,8 @@ async function postMenu(context: StoryContext) {
 
 /** The menu of another's post, with its author's actions and its server's. */
 export async function postMenuOpen(context: StoryContext): Promise<void> {
-  const { t } = await postMenu(context);
-  await expect(await screen.findByRole("menuitem", { name: t("profile.mute_server") })).toBeVisible();
-  await risen(screen.getByRole("menu"));
+  await postMenu(context);
+  await risen(await screen.findByRole("menu"));
 }
 
 /** The post of another server once the reader did `item` from its menu: a line in its place, with its undoing. */
@@ -105,10 +104,12 @@ async function done(context: StoryContext, item: MessageId, undo: MessageId): Pr
     await userEvent.click(
       within(await screen.findByRole("alertdialog")).getByRole("button", { name: t("profile.block_confirm") }),
     );
-  await expect(await main.findByRole("button", { name: t(undo) })).toBeVisible();
+  await main.findByRole("button", { name: t(undo) });
   // The confirmation and the menu have left, so that the story shows the line alone.
-  await waitFor(() => expect(screen.queryByRole("alertdialog")).toBeNull());
-  await waitFor(() => expect(screen.queryByRole("menu")).toBeNull());
+  await waitFor(() => {
+    if (screen.queryByRole("alertdialog") !== null || screen.queryByRole("menu") !== null)
+      throw new Error("the confirmation or the menu is still open");
+  });
 }
 
 /** The post once the reader muted its author from it. */
@@ -119,103 +120,3 @@ export const blockedFromPost = (context: StoryContext) => done(context, "profile
 
 /** The post once the reader muted its author's server from it. */
 export const serverMutedFromPost = (context: StoryContext) => done(context, "profile.mute_server", "profile.undo");
-
-// The plays that check a state as the profile opened, pressing nothing, and the home timeline once the reader muted a
-// server from a post and came back to it.
-
-/** The text a reader reads, without the marks that isolate a name's direction (U+2068, U+2069). */
-const plain = (s: string | null) => (s ?? "").replaceAll(/[⁨⁩]/gu, "").trim();
-
-/** The profile's card: the region of the account. */
-async function card(context: StoryContext) {
-  const { t, main } = await settled(context);
-  const [region] = main.getAllByRole("region");
-  if (region === undefined) throw new Error("the profile shows no card");
-  return { t, main, card: within(region) };
-}
-
-/** The bell of an account the reader follows: off, or on once they asked to be notified of its posts. */
-async function bell(context: StoryContext, on: boolean): Promise<void> {
-  const { t, card: c } = await card(context);
-  await expect(c.getByRole("button", { name: t("profile.notify") })).toHaveAttribute("aria-pressed", String(on));
-}
-
-export const notifyOff = (context: StoryContext) => bell(context, false);
-export const notifyOn = (context: StoryContext) => bell(context, true);
-
-/** An account the reader does not follow offers no bell. */
-export async function noBell(context: StoryContext): Promise<void> {
-  const { t, card: c } = await card(context);
-  await expect(c.queryByRole("button", { name: t("profile.notify") })).toBeNull();
-}
-
-/** The profile of an account whose server the reader mutes says so, with the undoing. */
-export async function serverMuted(context: StoryContext): Promise<void> {
-  const { t, card: c } = await card(context);
-  const line = t("profile.server_muted", { domain: "photos.example" });
-  const button = c.getByRole("button", { name: t("profile.unmute_server") });
-  await expect(plain(button.closest("p")?.textContent ?? "")).toContain(line);
-}
-
-/** The reader's note shows on the profile, as the button that edits it. */
-export async function noteWritten(context: StoryContext): Promise<void> {
-  const { t, card: c } = await card(context);
-  const note = c.getByRole("button", { name: (n: string) => n.startsWith(t("profile.note_edit")) });
-  await expect(plain(note.textContent)).toContain("Ask about the rye starter.");
-}
-
-/**
- * The home timeline once the reader muted the server of a post sam boosted from its menu (ADR-0013 §30): the line in
- * the post's place says so; once the reader left home and came back, the boost has left it, and sam's own posts stay.
- */
-export async function homeAfterServerMute(context: StoryContext): Promise<void> {
-  await done(context, "profile.mute_server", "profile.undo");
-  const { t } = featureStringsIn(String(context.globals["locale"] ?? "en"));
-  const canvas = within(context.canvasElement);
-  const main = () => within(canvas.getByRole("main"));
-  const line = t("profile.server_muted_now", { domain: "photos.example" });
-  await expect(plain(canvas.getByRole("main").textContent)).toContain(line);
-  const heading = () => plain(main().getByRole("heading", { level: 1 }).textContent);
-  const home = heading();
-  const to = async (href: string) => {
-    const link = canvas.getAllByRole("link").find((a) => a.getAttribute("href") === href && a.closest("main") === null);
-    if (link === undefined) throw new Error(`the navigation offers no link to ${href}`);
-    await userEvent.click(link);
-  };
-  await to("/notifications");
-  await waitFor(() => expect(heading()).not.toBe(home));
-  await to("/");
-  await waitFor(
-    async () => {
-      const articles = main().getAllByRole("article");
-      await expect(articles.some((a) => a.textContent.includes("Sam Rivera"))).toBe(true);
-      await expect(articles.some((a) => a.textContent.includes(remotePost))).toBe(false);
-    },
-    { timeout: 5000 },
-  );
-}
-
-/**
- * The profile of an account that moved: its main action opens the new account, a line names it with a link, and it
- * offers no follow.
- */
-export async function moved(context: StoryContext): Promise<void> {
-  const { t, card: c } = await card(context);
-  const go = c.getByRole("link", { name: t("profile.go_to_new") });
-  await expect(go).toHaveAttribute("href", "/@sora@photos.example");
-  const line = t("profile.moved_to", { handle: "@sora@photos.example" });
-  const named = c.getByRole("link", { name: (n: string) => plain(n) === "@sora@photos.example" });
-  await expect(named).toHaveAttribute("href", "/@sora@photos.example");
-  await expect(plain(named.closest("p")?.textContent ?? "")).toBe(line);
-  for (const follow of ["profile.follow", "profile.follow_back", "profile.request_follow"] as const)
-    await expect(c.queryByRole("button", { name: t(follow) })).toBeNull();
-}
-
-/** The profile of an account that is not there (deactivated, as deleted): the not-found page, with a way back. */
-export async function notFound(context: StoryContext): Promise<void> {
-  const { t, main } = await settled(context);
-  await expect(main.getByRole("button", { name: t("profile.not_found_back") })).toBeEnabled();
-  const said = t("profile.not_found", { handle: "@nao" });
-  await expect(main.getAllByRole("status").map((s) => plain(s.textContent))).toContain(said);
-  await expect(main.queryByRole("region")).toBeNull();
-}
