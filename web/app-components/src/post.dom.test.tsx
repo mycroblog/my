@@ -5,7 +5,7 @@
 // actions, each with its name, its state and what a press asks for. What a menu's keys and a fold's button do is the
 // design system's; the poll is in post-poll.dom.test.tsx.
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { MenuGroup, MenuItem } from "@my/design-system";
 import { cleanup, isInaccessible, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -777,6 +777,26 @@ describe("the link card", () => {
     expect(asked("proxy/rye.webp")).toEqual([]);
     expect(shown?.contains(show)).toBe(false);
     expect(shown !== null && inOrder(show, shown)).toBe(true);
+  });
+
+  test("a card that cannot be drawn leaves its post drawn", () => {
+    // React reports what the card threw as it drew: the test reads it, and keeps it out of the run's output.
+    const reported = spyOn(console, "error").mockImplementation(() => undefined);
+    try {
+      // A title that is no text: the card throws as it draws.
+      const broken = { ...card, title: { broken: true } as unknown as string };
+      const { part } = post({ status: linked({ card: broken }) });
+
+      expect(cardOf(part)).toBeNull();
+      expect(part.getByText("this")).not.toBeNull();
+      expect(part.getByRole("button", { name: /^Favourite/ })).not.toBeNull();
+      // An object drawn as text: the card did throw, and its boundary caught it.
+      expect(
+        reported.mock.calls.flat().some((line) => /Objects are not valid as a React child/.test(String(line))),
+      ).toBe(true);
+    } finally {
+      reported.mockRestore();
+    }
   });
 
   test("behind a content warning, the card folds with the text", async () => {
