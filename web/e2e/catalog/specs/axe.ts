@@ -17,29 +17,34 @@ const computed = [
   "avoid-inline-spacing",
 ];
 
+/**
+ * Runs the computed rules with an axe of the test's own, and answers its violations, one line per element. The
+ * catalog's accessibility addon runs an axe of its own after a story is drawn, and each axe puts itself on
+ * `window.axe` as its code loads: an axe taken from there a moment later may be the addon's, in the middle of its
+ * run, which refuses a second one. So one script loads the test's axe, keeps it, puts back what the page had, and
+ * runs it: nothing of the page runs between those steps.
+ */
+const run = `(async () => {
+  const had = Object.getOwnPropertyDescriptor(window, "axe");
+  ${axe.source};
+  const own = window.axe;
+  if (had === undefined) delete window.axe;
+  else Object.defineProperty(window, "axe", had);
+  const result = await own.run(document, {
+    runOnly: { type: "rule", values: ${JSON.stringify(computed)} },
+    resultTypes: ["violations"],
+  });
+  return result.violations.flatMap((violation) =>
+    violation.nodes.map(
+      (node) =>
+        violation.id + ": " + node.target.join(" ") + ": " +
+        (node.failureSummary ?? "").replaceAll(/\\s+/g, " ").slice(0, 300),
+    ),
+  );
+})()`;
+
 /** The violations of the computed rules on the page as it is, one line per element. */
-async function violations(page: Page): Promise<string[]> {
-  await page.evaluate(`${axe.source}; undefined`);
-  return page.evaluate(async (rules) => {
-    const run = (
-      globalThis as unknown as {
-        axe: {
-          run: (
-            context: Document,
-            options: unknown,
-          ) => Promise<{ violations: { id: string; nodes: { target: unknown[]; failureSummary?: string }[] }[] }>;
-        };
-      }
-    ).axe.run;
-    const result = await run(document, { runOnly: { type: "rule", values: rules } });
-    return result.violations.flatMap((violation) =>
-      violation.nodes.map(
-        (node) =>
-          `${violation.id}: ${node.target.join(" ")}: ${(node.failureSummary ?? "").replaceAll(/\s+/g, " ").slice(0, 300)}`,
-      ),
-    );
-  }, computed);
-}
+const violations = (page: Page): Promise<string[]> => page.evaluate<string[]>(run);
 
 /** Sets the page's color scheme as the server's shell does, on <html>. */
 export async function setTheme(page: Page, theme: "light" | "dark"): Promise<void> {
