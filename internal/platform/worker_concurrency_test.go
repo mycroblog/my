@@ -231,20 +231,21 @@ func TestWorkerJobConcurrencyAgainstThePool(t *testing.T) {
 	})
 }
 
-func TestWorkerJobConcurrencyWarnsOnSQLite(t *testing.T) {
+func TestWorkerJobConcurrencyAgainstTheSQLitePool(t *testing.T) {
 	t.Parallel()
-	const warning = "many jobs at once"
 	for _, tc := range []struct {
-		concurrency string
-		want        bool
-	}{{"32", false}, {"33", true}} {
-		t.Run(tc.concurrency, func(t *testing.T) {
+		pool, concurrency string
+		wantErr           bool
+	}{{"4", "3", false}, {"4", "4", true}, {"2", "5", true}} {
+		t.Run(tc.pool+"/"+tc.concurrency, func(t *testing.T) {
 			t.Parallel()
-			cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_ROLE": "worker", "MY_WORKER_JOB_CONCURRENCY": tc.concurrency})
-			s := start(t, cfg, platform.ServeOptions{}, nil)
-			testkit.Eventually(t, 5*time.Second, func() bool { return strings.Contains(s.logs.String(), `"started"`) })
-			if got := strings.Contains(s.logs.String(), warning); got != tc.want {
-				t.Errorf("warning logged = %v, want %v:\n%s", got, tc.want, s.logs.String())
+			env := map[string]string{"MY_DATABASE_URL": newDatabase(t, true) + "?pool_max_conns=" + tc.pool, "MY_ROLE": "worker", "MY_WORKER_JOB_CONCURRENCY": tc.concurrency}
+			a, err := platform.NewApp(t.Context(), loadConfig(t, env), platform.AppOptions{})
+			if err == nil {
+				t.Cleanup(func() { _ = a.Close() })
+			}
+			if got := err != nil && strings.Contains(err.Error(), "must be below"); got != tc.wantErr {
+				t.Errorf("NewApp = %v, want an error = %v", err, tc.wantErr)
 			}
 		})
 	}

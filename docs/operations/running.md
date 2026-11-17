@@ -665,8 +665,8 @@ Raise it for jobs that spend their time waiting on other servers, such as `feder
 
 Keep these limits in mind:
 
-- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. With `database = postgres` the setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
-- **SQLite**: it writes one transaction at a time. Above 32 the server logs a warning, and in a local test SQLite ran slower at 128 than at 32.
+- **Database connections**: a job needs a connection to be claimed, for its own work, and to record its result. The setting must be below the pool maximum, or the server does not start. The maximum is `pool_max_conns` in `database_url`, by default the greater of 4 and the CPU count, so one vCPU allows 3 until you raise it. Check that your database or connection pooler accepts the connections of all your processes.
+- **SQLite**: it writes one transaction at a time, and in a local test it ran slower at 128 than at 32.
 - **CPU-heavy jobs**: slots share one process's CPU and memory. `media.process` waits for its turn at a limit of half the CPUs by default, and the wait counts against the job's 5-minute lease, so a process full of `media.process` can run past the lease and start over. Give such jobs a process with few slots.
 - **One server at a time**: a process makes at most 8 connections to any one host, so one process delivers to a single server no faster than 8 connections allow, however many slots it has. Where most deliveries go to a few large servers, more processes help where more slots do not.
 - **A stuck server holds slots**: slots waiting on a slow server are not free for other jobs, so keep deliveries apart from email and notifications.

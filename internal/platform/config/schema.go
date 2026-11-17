@@ -205,7 +205,7 @@ var schema = []field{
 	{
 		key:    "worker_job_concurrency",
 		defDoc: "`1`",
-		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. With `database = postgres` it must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. With `database = sqlite`, a value above 32 logs a warning. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
+		doc:    "How many jobs this process runs at once, from 1 to 128. Raise it for jobs that mostly wait on other servers, usually together with `worker_job_types`. It must be below the pool maximum (`pool_max_conns` of `database_url`, by default the greater of 4 and the CPU count), or the server does not start. A value of 2 or more needs `queue = db` and `role = all` or `worker`.",
 		check:  checkWorkerJobConcurrency,
 		set:    func(c *Config, v string) { c.WorkerJobConcurrency, _ = strconv.Atoi(v) },
 	},
@@ -324,7 +324,7 @@ var schema = []field{
 	},
 	{
 		key:      "database_url",
-		doc:      "Connection string passed to the `database` adapter, in that adapter's format.",
+		doc:      "Connection string passed to the `database` adapter, in that adapter's format. For `database = sqlite`, a path or a `file:` URI; `pool_max_conns` sets how many connections may be open (by default the greater of 4 and the CPU count, as for PostgreSQL) and `pool_min_idle_conns` how many idle ones are kept (by default all of them; none is closed by time).",
 		required: true,
 		secret:   true,
 		set:      func(c *Config, v string) { c.DatabaseURL = v },
