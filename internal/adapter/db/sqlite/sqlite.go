@@ -52,7 +52,7 @@ var _ uow.UnitOfWork = (*DB)(nil)
 // Open opens the SQLite database named by dsn, which is a file path or a "file:" URI with
 // query parameters (the database_url setting for database = "sqlite"). The file is created if it does
 // not exist. The pool is set by two parameters of dsn that the driver never sees: pool_max_conns,
-// how many connections may be open (PoolMaxDefault by default), and pool_min_idle_conns, how many are kept when idle
+// how many connections may be open (PoolMaxDefault by default), and pool_max_idle_conns, how many at most are kept when idle
 // (the maximum by default). Open sets the parameters the adapter relies on: _txlock=immediate, and the pragmas
 // journal_mode(wal), synchronous(normal), foreign_keys(1), and busy_timeout unless dsn sets
 // them. In-memory databases are rejected: each connection would see its own database.
@@ -129,10 +129,9 @@ func normalizeDSN(dsn string) (string, error) {
 const (
 	// ParamPoolMaxConns is how many connections may be open (PostgreSQL's pool_max_conns).
 	ParamPoolMaxConns = "pool_max_conns"
-	// ParamPoolMinIdleConns is how many idle connections are kept. It is the closest name in
-	// pgxpool, but not the same meaning: pgxpool opens connections to keep at least that many, and
-	// database/sql keeps at most that many of those it opened.
-	ParamPoolMinIdleConns = "pool_min_idle_conns"
+	// ParamPoolMaxIdleConns is the most idle connections kept (database/sql's MaxIdleConns). It is a
+	// ceiling, not the floor of pgxpool's pool_min_conns: connections are not opened ahead.
+	ParamPoolMaxIdleConns = "pool_max_idle_conns"
 )
 
 // PoolMaxDefault is how many connections may be open unless database_url sets pool_max_conns: the
@@ -157,7 +156,7 @@ func poolOf(dsn string) (poolSize, error) {
 func takePool(q url.Values) (poolSize, error) {
 	p := poolSize{max: PoolMaxDefault()}
 	p.idle = -1
-	for _, name := range []string{ParamPoolMaxConns, ParamPoolMinIdleConns} {
+	for _, name := range []string{ParamPoolMaxConns, ParamPoolMaxIdleConns} {
 		v := q.Get(name)
 		if !q.Has(name) {
 			continue
@@ -166,7 +165,7 @@ func takePool(q url.Values) (poolSize, error) {
 		n, err := strconv.Atoi(v)
 		if err != nil || n < 0 || n == 0 && name == ParamPoolMaxConns {
 			want := "a whole number of 1 or more"
-			if name == ParamPoolMinIdleConns {
+			if name == ParamPoolMaxIdleConns {
 				want = "a whole number of 0 or more"
 			}
 			return poolSize{}, fmt.Errorf("sqlite: database_url: %s must be %s, not %q", name, want, v)
@@ -181,7 +180,7 @@ func takePool(q url.Values) (poolSize, error) {
 		p.idle = p.max
 	}
 	if p.idle > p.max {
-		return poolSize{}, fmt.Errorf("sqlite: database_url: %s (%d) must not be above %s (%d)", ParamPoolMinIdleConns, p.idle, ParamPoolMaxConns, p.max)
+		return poolSize{}, fmt.Errorf("sqlite: database_url: %s (%d) must not be above %s (%d)", ParamPoolMaxIdleConns, p.idle, ParamPoolMaxConns, p.max)
 	}
 	return p, nil
 }

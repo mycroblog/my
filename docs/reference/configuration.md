@@ -617,7 +617,7 @@ Database adapter. The adapter is never inferred from `database_url`.
 
 ### `database_url`
 
-Connection string passed to the `database` adapter, in that adapter's format. For `database = sqlite`, a path or a `file:` URI; `pool_max_conns` sets how many connections may be open (by default the greater of 4 and the CPU count, as for PostgreSQL) and `pool_min_idle_conns` how many idle ones are kept (by default all of them; none is closed by time).
+Connection string passed to the `database` adapter, in that adapter's format. For `database = sqlite`, a path or a `file:` URI; `pool_max_conns` sets how many connections may be open (by default the greater of 4 and the CPU count, as for PostgreSQL) and `pool_max_idle_conns` how many idle ones are kept (by default all of them; none is closed by time).
 
 - Environment variable: `MY_DATABASE_URL` or `MY_DATABASE_URL_FILE`
 - Default: none

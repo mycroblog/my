@@ -85,7 +85,7 @@ docker run --rm -e MY_DATABASE=postgres -e MY_DATABASE_URL='postgres://my:...@db
 
 PostgreSQL's pool follows the `pool_*` parameters of `database_url`: `pool_max_conns` (by default the greater of 4 and the CPU count) and `pool_min_conns`, the connections it keeps when nothing is asked, with `pool_max_conn_idle_time` (30 minutes) closing the rest. Set `pool_min_conns` for an instance whose requests come far apart, or each one opens a connection.
 
-SQLite takes `pool_max_conns` too, by the same default, and `pool_min_idle_conns`, how many idle connections it keeps (by default all of them, and none is closed by time, so a quiet instance answers at once). A new connection parses the schema before its first query, which is why the pool keeps its connections.
+SQLite takes `pool_max_conns` too, by the same default, and `pool_max_idle_conns`, the most idle connections it keeps, a ceiling and not a floor like `pool_min_conns` (by default all of them, and none is closed by time, so a quiet instance answers at once). A new connection parses the schema before its first query, which is why the pool keeps its connections.
 
 ## Upgrading
 
