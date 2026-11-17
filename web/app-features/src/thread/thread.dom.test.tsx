@@ -95,19 +95,26 @@ test("between the thread's first post and the two closest, the ancestors fold, a
 });
 
 test("the replies follow under their heading, each in the feed's order, with its position in it", async () => {
-  await shown([by("sam", "f"), by("hana", "r1", { replyTo: "f" }), by("sam", "r2", { replyTo: "r1" })]);
+  // r3 was written before r2, which answers r1: an answer follows the reply it answers, then comes the next reply.
+  await shown([
+    by("sam", "f"),
+    by("hana", "r1", { replyTo: "f" }),
+    by("marco", "r3", { replyTo: "f" }),
+    by("sam", "r2", { replyTo: "r1" }),
+  ]);
   const heading = screen.getByRole("heading", { level: 2, name: "Replies" });
 
-  expect(texts()).toEqual(["Post f", "Post r1", "Post r2"]);
+  expect(texts()).toEqual(["Post f", "Post r1", "Post r2", "Post r3"]);
   // A feed holds articles alone: the heading stands at the head of the first reply, after the focused post.
   expect(post("f").compareDocumentPosition(heading) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   expect(heading.compareDocumentPosition(screen.getByText("Post r1")) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
   expect(
     posts().map((article) => [article.getAttribute("aria-posinset"), article.getAttribute("aria-setsize")]),
   ).toEqual([
-    ["1", "3"],
-    ["2", "3"],
-    ["3", "3"],
+    ["1", "4"],
+    ["2", "4"],
+    ["3", "4"],
+    ["4", "4"],
   ]);
 });
 
