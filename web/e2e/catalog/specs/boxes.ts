@@ -194,3 +194,38 @@ export const covered = (parts: Locator): Promise<string[]> =>
       for (const el of inert) el.inert = true;
     }
   });
+
+/** The text of the element line by line, as the page breaks it. */
+export const textLines = (text: Locator): Promise<string[]> =>
+  text.evaluate((element) => {
+    const lines: { middle: number; height: number; text: string }[] = [];
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+    const range = document.createRange();
+    for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+      const length = node.textContent?.length ?? 0;
+      for (let i = 0; i < length; i += 1) {
+        range.setStart(node, i);
+        range.setEnd(node, i + 1);
+        const [rect] = range.getClientRects();
+        if (rect === undefined || rect.width === 0) continue;
+        const middle = (rect.top + rect.bottom) / 2;
+        const line = lines.find((l) => Math.abs(l.middle - middle) < l.height / 2);
+        const character = node.textContent?.[i] ?? "";
+        if (line === undefined) lines.push({ middle, height: rect.height, text: character });
+        else line.text += character;
+      }
+    }
+    return lines.map((line) => line.text);
+  });
+
+/**
+ * The glyphs drawn inside the element, in the order of the page: each one's box, and whether it is drawn mirrored. A
+ * glyph has no role and no name, so it is found by what holds it.
+ */
+export const glyphsOf = (holder: Locator): Promise<(Box & { mirrored: boolean })[]> =>
+  holder.evaluate((element) =>
+    [...element.querySelectorAll("svg")].map((svg) => {
+      const { left, top, right, bottom, width, height } = svg.getBoundingClientRect();
+      return { left, top, right, bottom, width, height, mirrored: (svg.getScreenCTM()?.a ?? 1) < 0 };
+    }),
+  );
