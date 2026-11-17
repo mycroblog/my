@@ -374,6 +374,8 @@ type Config struct {
 	ErrorsExporter    string
 	ErrorsSentryDSN   string
 	ErrorsEnvironment string
+	// PprofListen is the address of the listener of the Go runtime's profiles; empty serves none.
+	PprofListen string
 }
 
 // ServerOrigin returns the origin at which browsers reach the server itself: its sign-in screens,
@@ -597,6 +599,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.String("errors_exporter", c.ErrorsExporter),
 		slog.String("errors_sentry_dsn", redact(c.ErrorsSentryDSN != "")),
 		slog.String("errors_environment", c.ErrorsEnvironment),
+		slog.String("pprof_listen", c.PprofListen),
 	)
 }
 

@@ -1590,6 +1590,27 @@ var schema = []field{
 		check:  checkEnvironmentName,
 		set:    func(c *Config, v string) { c.ErrorsEnvironment = v },
 	},
+	{
+		key:   "pprof_listen",
+		doc:   "TCP address, as `host:port`, of a listener that serves the Go runtime's profiles (heap, allocations, goroutines, CPU, execution trace) under `/debug/pprof/`, for `go tool pprof`, apart from `listen`. Empty opens no such listener. It has no authentication, and a profile shows the internals of the process and costs CPU while it is taken: keep it on loopback, and reach it through a tunnel.",
+		check: checkListen,
+		set:   func(c *Config, v string) { c.PprofListen = v },
+	},
+}
+
+// pprofChecks keeps the profiles off the other listeners of the process.
+func pprofChecks(vals map[string]string) []Issue {
+	l := vals["pprof_listen"]
+	switch {
+	case l == "":
+	case l == effectiveListen(vals):
+		return []Issue{{Key: "pprof_listen", Message: "must differ from listen: the profiles are never served on the public listener"}}
+	case l == vals["tls_http_listen"] && vals["tls"] != "" && vals["tls"] != TLSOff && vals["role"] != string(RoleWorker):
+		return []Issue{{Key: "pprof_listen", Message: "must differ from tls_http_listen"}}
+	case l == vals["metrics_listen"] && vals["metrics_exporter"] == "prometheus":
+		return []Issue{{Key: "pprof_listen", Message: "must differ from metrics_listen"}}
+	}
+	return nil
 }
 
 // crossChecks rejects missing conditional settings and contradictory combinations.
@@ -1741,6 +1762,7 @@ func crossChecks(vals map[string]string, present map[string]bool) []Issue {
 	if vals["metrics_exporter"] == "prometheus" && vals["metrics_listen"] != "" && vals["metrics_listen"] == effectiveListen(vals) {
 		issues = append(issues, Issue{Key: "metrics_listen", Message: "must differ from listen: the metrics are never served on the public listener"})
 	}
+	issues = append(issues, pprofChecks(vals)...)
 	if vals["queue"] == "inline" && vals["role"] != "" && vals["role"] != string(RoleAll) {
 		issues = append(issues, Issue{Key: "queue", Message: fmt.Sprintf("inline runs jobs in the enqueuing process and requires role = all, not %s", vals["role"])})
 	}
