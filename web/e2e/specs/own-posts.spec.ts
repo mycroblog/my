@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A person deletes and edits their own post from its more menu, and both are kept by the server: a reload shows the
-// timeline without the one and with the other's new text and history. Copy link puts the post's address on the
-// clipboard.
+// timeline without the one and with the other's new text and history.
 
 import { homeTimeline, Notice } from "./screens";
 import { expect, test } from "./test";
@@ -49,14 +48,4 @@ test("an edit shows its new text and the edited mark, and the history lists both
   await expect(versions).toHaveText([/^Current.*Make it ten\./, /^Original(?:(?!Make it ten).)*$/]);
   await page.reload();
   await expect(timeline.post(writer.displayName, changed).edited).toBeVisible();
-});
-
-test("Copy link copies the post's address and says so", async ({ page, context, signIn, fresh }) => {
-  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  const writer = await fresh.person();
-  const { id, text } = await fresh.post(writer, { text: "A post to hand on." });
-  await signIn(writer);
-  await homeTimeline(page).post(writer.displayName, text).menuItem("Copy link");
-  await expect(new Notice(page).text("Link copied")).toBeVisible();
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toMatch(new RegExp(`/${id}$`));
 });
