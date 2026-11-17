@@ -309,7 +309,7 @@ function shows(
       // A list of who reacted shows a row per account, each a link to its profile; the reader's lists, a row per list;
       // a screen of posts, its posts. An account's list of follows, the follow requests and a list's members show their
       // rows, or a line in their place.
-      if (at === "/lists") return settled && has('main a[href^="/lists/"]');
+      if (at === "/lists" || at.startsWith("/lists?")) return settled && has('main a[href^="/lists/"]');
       // The held-back notifications, a row per account that sent them, or a line in their place.
       if (at === "/notifications/requests")
         return settled && has('main a[href^="/notifications/requests/"], main p[role="status"]');
