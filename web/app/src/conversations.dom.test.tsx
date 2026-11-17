@@ -100,7 +100,7 @@ test("a conversation shows its posts oldest first, with the reply in place", asy
 // Defect: the list the shell reads for the count is asked before the read is sent and answered, unread, before the
 // read is; the read's answer does not correct it, and the navigation counts 1 unread until the list is read again.
 // Opened from the list, which is read by then, the count goes (the tests of the reads below).
-test.failing("a conversation opened by its address is read: the navigation counts none", async () => {
+test("a conversation opened by its address is read: the navigation counts none", async () => {
   const on = fakeApp();
   const reads = on.fake.script("POST /conversations/{id}/read");
   await renderApp(on.fake.conversationPath(1), { on });
