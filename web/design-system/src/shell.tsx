@@ -5,9 +5,9 @@
 // what goes in each region; the frame lays them out, with no visible page header, since the navigation shows where the
 // reader is:
 //
-// - under `tablet` (a phone): the main column at the full width, and the dock fixed at the bottom: the tab bar, the
-//   call's bar right above it while the reader is in a call, the primary action floating at the end above both, and
-//   the toasts above all, at the dock's width;
+// - under `tablet` (a phone): the main column at the full width, and the dock fixed at the bottom: the tab bar, its
+//   places as glyphs alone, the call's bar right above it while the reader is in a call, the primary action floating
+//   at the end above both, and the toasts above all, at the dock's width;
 // - from `tablet`: a rail of glyphs at the start, with the primary action under the mark and the call's bar ending it,
 //   beside the main column; the toasts at the bottom, in the middle;
 // - from `desktop`: the rail grows into a sidebar with the labels;
@@ -112,8 +112,8 @@ const nav = tv({
     item: "relative flex items-center",
     glyph: "relative inline-flex flex-none",
     label: "",
-    // The badge on the glyph's corner, where the label is not shown beside the glyph, and at the line's end, where it
-    // is; each place sets which shows. The corner's badge is cut out of the glyph by a ring of the surface under it, so
+    // The badge on the glyph's corner, where the label is not shown beside the glyph (the rail, the tab bar), and at
+    // the line's end, where it is; each place sets which shows. The corner's badge is cut out of the glyph by a ring of the surface under it, so
     // that it reads over a filled glyph (the current place's).
     corner: "absolute -top-[0.375rem] start-[calc(100%-0.5rem)] items-center justify-center shadow-face-cut",
     // The neutral mark in the corner's place.
@@ -137,15 +137,12 @@ const nav = tv({
         corner: "inline-flex desktop:hidden",
         end: "hidden desktop:inline-flex",
       },
-      // A label too long for 320 px wraps, inside a word if it must, and is never shortened (ADR-0110 §11). An item
-      // has no padding beside its label, a button's own neither: the room there is its share of what the labels
-      // leave, so that no label wraps while any of that room is left.
+      // In the tab bar a place is its glyph alone, as in the rail: a name too small to read is worse than none
+      // (ADR-0110 §11), and the label names the place for assistive technology. The item is the bar's height and its
+      // share of the bar's width, with no padding of a button's own, so that the whole of it takes a press.
       tabs: {
-        item: [
-          "min-h-shell-bar w-full flex-col justify-center gap-[0.125rem] px-0 py-shell-inset text-caption",
-          "pointer-coarse:data-pressed:bg-surface-pressed",
-        ],
-        label: "text-center [overflow-wrap:anywhere]",
+        item: "min-h-shell-bar w-full justify-center p-0 pointer-coarse:data-pressed:bg-surface-pressed",
+        label: "sr-only",
         corner: "inline-flex",
         end: "hidden",
       },
@@ -173,8 +170,8 @@ const badge = tv({
 });
 
 /**
- * The label of an entry of the frame where the frame puts it: beside the glyph in the sidebar, under it in the tab
- * bar, for assistive technology alone in the rail; `plain` where it always shows as it is.
+ * The label of an entry of the frame where the frame puts it: beside the glyph in the sidebar, for assistive
+ * technology alone in the rail and in the tab bar; `plain` where it always shows as it is.
  */
 function EntryLabel({
   place,
@@ -197,8 +194,8 @@ function EntryLabel({
 
 /**
  * A place of the navigation as the frame lays it out where it is, as `as` (its link, its button): in the rail its
- * glyph in the rail's middle with the count on the glyph's corner; in the sidebar the glyph, the label and the count
- * at the line's end; in the tab bar the glyph over the label.
+ * glyph in the rail's middle with the count on the glyph's corner, and so in the tab bar; in the sidebar the glyph,
+ * the label and the count at the line's end.
  */
 function NavEntry({
   place,
@@ -303,8 +300,8 @@ function along(el: HTMLElement): () => void {
 
 /**
  * Keeps `--shell-dock` on the document the height the dock covers at the bottom of the viewport on a phone, from the
- * top of the floating action (or of the bars, where no action floats) to the viewport's end: the tab bar's labels wrap
- * at a narrow width, so the bars' tokens alone do not tell it. It is unset while neither shows (from `tablet`).
+ * top of the floating action (or of the bars, where no action floats) to the viewport's end, which the bars' tokens
+ * alone do not tell where an action floats over them. It is unset while neither shows (from `tablet`).
  */
 function useDockHeight(
   float: RefObject<HTMLElement | null>,
@@ -980,7 +977,6 @@ export function FrameActions({ children }: { children: ReactNode }) {
 export function NavList({ children }: { children: ReactNode }) {
   const place = use(PlaceContext);
   if (place === "menu") return <MenuGroup>{children}</MenuGroup>;
-  // In the tab bar, the gap between the places stays; a label wraps before it goes.
   if (place === "tabs")
     return (
       <Row as="ul" align="stretch" gap="screen-tab-gap" className="list-none p-0 px-screen-tab-gap">
@@ -995,12 +991,13 @@ export function NavList({ children }: { children: ReactNode }) {
 }
 
 /**
- * A place's entry in the list of its bar: in the tab bar each starts from its label's width and shares what is left.
+ * A place's entry in the list of its bar: in the tab bar the places share the bar's width evenly, four of them as
+ * six, none narrower than the least target a finger takes.
  */
 function NavPlace({ children }: { children: ReactNode }) {
   if (use(PlaceContext) === "tabs")
     return (
-      <Row as="li" grow="content">
+      <Row as="li" grow className="min-w-icon-button-touch">
         {children}
       </Row>
     );
@@ -1015,8 +1012,8 @@ const countBadge = (shown: string) => (
 );
 
 /**
- * A place: its glyph, on where the reader is, and its label, which the rail shows as its name alone and the tab bar
- * under the glyph. `count` puts a badge on it (unread notifications, reports to handle), which `countLabel` names.
+ * A place: its glyph, on where the reader is, and its label, which the sidebar shows beside the glyph and which
+ * names the place for assistive technology alone in the rail and in the tab bar. `count` puts a badge on it (unread notifications, reports to handle), which `countLabel` names.
  */
 export function NavItem({
   href,

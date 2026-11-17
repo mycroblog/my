@@ -168,8 +168,6 @@ const GROW = {
   share: "flex-1",
   // A name over a handle beside what the reader may do: under this width, what follows goes on a next line.
   names: "flex-[1_1_12rem]",
-  // From the width of what it holds, with its share of what is left: a place of a bar whose label may be long.
-  content: "flex-[1_1_auto]",
 } as const;
 
 const FULL = { inline: "w-full", block: "h-full", both: "size-full" } as const;
