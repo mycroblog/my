@@ -4,11 +4,12 @@
 // with it, and what a press on one of its posts asks of the server or of the screen.
 
 import { expect, test } from "bun:test";
-import { homeTimelineQuery } from "@my/app-data";
+import { homeTimelineQuery, type FollowsList } from "@my/app-data";
 import { scenario, type FakeOptions } from "@my/e2e/fake";
-import { screen, waitFor, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { fakeData, renderFeature } from "../test/feature";
+import { Follows, loadFollows } from "./follows";
 import { loadProfile, Profile } from "./profile";
 
 const sora = "sora@photos.example";
@@ -229,3 +230,28 @@ test("the account it moved to can be followed from its profile", async () => {
   );
   expect(await head.findByRole("button", { name: "Following" })).not.toBeNull();
 });
+
+for (const [username, name, shown] of [
+  ["mio", "Mio 澪", "their followers"],
+  ["kai", "Kai", "nobody"],
+] as const)
+  test(`a list its owner shows to ${shown} says so to another, in each of its two tabs`, async () => {
+    const { data } = fakeData({ viewer: "sam" });
+    const refusal = new RegExp(`^⁨?${name}⁩? does not show this list to you\\.$`);
+    const asked: FollowsList[] = [];
+    for (const list of ["followers", "following"] as const) {
+      cleanup();
+      await loadFollows(data, username, list);
+      const user = renderFeature(
+        data,
+        <Follows acct={username} list={list} onList={(to) => asked.push(to)} onBack={() => undefined} />,
+      );
+      const panel = within(screen.getByRole("tabpanel"));
+
+      expect((await panel.findByRole("status")).textContent.replace(/\s+/g, " ").trim()).toMatch(refusal);
+      expect(panel.queryAllByRole("link")).toEqual([]);
+      await user.click(screen.getByRole("tab", { name: list === "followers" ? /^Following/ : /^Followers/ }));
+    }
+
+    expect(asked).toEqual(["following", "followers"]);
+  });

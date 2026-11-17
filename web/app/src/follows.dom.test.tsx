@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person's lists of follows and followers, opened from the counts of their profile: a tab replaces the address, and
-// a list its owner keeps from the reader says so (FR-311). On the fake's server Mio shows her lists to her followers
-// only and Kai to nobody; the reader follows neither. That a follow from a row stays is the E2E tests'
-// (web/e2e/specs/follows.spec.ts).
+// A person's lists of follows and followers, opened from the counts of their profile: a tab replaces the address. A
+// list its owner keeps from the reader says so (FR-311) in the feature (profile/profile.dom.test.tsx). That a follow
+// from a row stays is the E2E tests' (web/e2e/specs/follows.spec.ts).
 
 import { expect, test } from "bun:test";
 import { screen, within } from "@testing-library/react";
-import { main, renderApp, words } from "./test/app";
+import { main, renderApp } from "./test/app";
 
 /** The screen's heading of the profile of `name` (a display name): the name and the full handle. */
 const heading = (name: string) =>
@@ -44,20 +43,3 @@ test("a tab of the lists replaces the address, and Back returns to the profile",
   await app.user.click(main().getByRole("button", { name: "Back to the profile" }));
   expect(await heading("Sam Rivera")).toBeDefined();
 });
-
-for (const [username, name, shown] of [
-  ["mio", "Mio 澪", "their followers"],
-  ["kai", "Kai", "nobody"],
-] as const)
-  test(`a list its owner shows to ${shown} says so to another`, async () => {
-    const app = await renderApp(`/@${username}/followers`, { viewer: "sam" });
-    const refusal = new RegExp(`^⁨?${name}⁩? does not show this list to you\\.$`);
-
-    expect(words(await panel().findByRole("status"))).toMatch(refusal);
-    expect(panel().queryAllByRole("link")).toEqual([]);
-
-    await app.user.click(tab("Following"));
-    expect(app.path()).toBe(`/@${username}/following`);
-    expect(words(await panel().findByRole("status"))).toMatch(refusal);
-    expect(panel().queryAllByRole("link")).toEqual([]);
-  });
