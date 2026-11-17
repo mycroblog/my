@@ -604,6 +604,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   };
 
   const viewer = personOf(o.viewer ?? "yuki").username;
+  /** The reader has no session: the server answers them what anyone may read, with nothing of a reader's own. */
+  const visitor = o.visitor === true;
   const posts: readonly ApprovalPost[] = [...seed.posts, ...(o.approvals === true ? approvalPosts : [])];
   const interactions = [...seed.interactions, ...(o.approvals === true ? approvalInteractions : [])];
   const started = Date.now();
@@ -652,7 +654,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     mio: "followers",
     kai: "private",
   };
-  const hidden = (author: string) => blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`);
+  const hidden = (author: string) =>
+    !visitor && (blocking.has(`${viewer}>${author}`) || muting.has(`${viewer}>${author}`));
 
   // Every account the server answers is a whole one, as the client API's Account is: a post's author too, which the
   // client shows a profile from at once.
@@ -931,7 +934,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const ownVotes = new Map<string, readonly number[]>();
   for (const i of interactions) if (i.kind === "vote" && i.by === viewer) ownVotes.set(i.post, i.choices);
 
-  /** The poll of `p` as the reader sees it, open for the days the seed gives it from the start of the fake. */
+  /**
+   * The poll of `p` as the reader sees it, open for the days the seed gives it from the start of the fake; a visitor's
+   * says nothing of a vote of their own.
+   */
   function pollOf(p: Post): Schema<"Poll"> | undefined {
     if (p.poll === undefined) return undefined;
     const own = ownVotes.get(p.key);
@@ -939,7 +945,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...interactions.flatMap((i) => (i.kind === "vote" && i.post === p.key && i.by !== viewer ? [i.choices] : [])),
       ...(own === undefined ? [] : [own]),
     ];
-    return {
+    return exact<Schema<"Poll">>()({
       id: idAt(timeOf(postStep(p.key)), 60_000 + postStep(p.key)),
       expires_at: new Date(started + p.poll.days * day).toISOString(),
       expired: false,
@@ -947,9 +953,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       votes_count: votes.reduce((n, c) => n + c.length, 0),
       voters_count: votes.length,
       options: p.poll.options.map((title, i) => ({ title, votes_count: votes.filter((c) => c.includes(i)).length })),
-      voted: own !== undefined,
-      own_votes: [...(own ?? [])],
-    };
+      ...(visitor ? {} : { voted: own !== undefined, own_votes: [...(own ?? [])] }),
+    });
   }
 
   // The reader's own posts they deleted, by key, and the versions of each post: those of the seed (its `earlier`,
@@ -1041,16 +1046,20 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
     });
 
-  // A reply waiting for its approval, or refused it, shows to its author alone.
-  const visible = (p: Post) =>
-    !deleted.has(p.key) &&
-    (p.author === viewer || replyApproval(p.key) === undefined) &&
-    (p.author === viewer ||
-      p.visibility === "public" ||
-      p.visibility === "unlisted" ||
-      p.visibility === "local" ||
-      (p.visibility === "private" && follows_(viewer, p.author)) ||
-      (p.visibility === "direct" && mentioned(p.text).includes(viewer)));
+  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may.
+  const visible = (p: Post) => {
+    const own = !visitor && p.author === viewer;
+    return (
+      !deleted.has(p.key) &&
+      (own || replyApproval(p.key) === undefined) &&
+      (own ||
+        p.visibility === "public" ||
+        p.visibility === "unlisted" ||
+        p.visibility === "local" ||
+        (!visitor && p.visibility === "private" && follows_(viewer, p.author)) ||
+        (!visitor && p.visibility === "direct" && mentioned(p.text).includes(viewer)))
+    );
+  };
 
   /** The title, summary and hashtags of the seed's articles as the reader edited them, by the key of each. */
   const articleEdits = new Map<string, { title: string; summary: string; tags: readonly string[] }>();
@@ -1069,11 +1078,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   /**
    * A post as the API's Status; an article with its body only when `full`, as a status read alone gives it, and with
-   * none in a list (ADR-0160 §8).
+   * none in a list (ADR-0160 §8). A visitor's has none of a reader's own marks, as the server leaves them out of an
+   * anonymous answer: whether they favourited, boosted, bookmarked, muted, pinned or reacted, their approvals, and
+   * what they may do with it.
    */
   function statusOf(p: ApprovalPost, depth = 0, full = false): Status {
     const id = statusId.get(p.key) ?? "";
-    const approval = p.author === viewer ? replyApproval(p.key) : undefined;
+    const approval = !visitor && p.author === viewer ? replyApproval(p.key) : undefined;
     const quoteState = quoteApproval(p.key) ?? "accepted";
     const article = articleOf(p, id);
     const versions = versionsOf(p);
@@ -1114,12 +1125,22 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       favourites_count: favouriters.length,
       reactions: [...reactions]
         .toSorted(([, a], [, b]) => b.count - a.count)
-        .map(([emoji, r]) => ({ ...reactionEmojiOf(emoji), count: r.count, me: r.me })),
-      favourited: favouriters.includes(viewer),
-      boosted: boosters.includes(viewer),
-      bookmarked: bookmarks.includes(p.key),
-      ...(o.visitor === true ? {} : { muted: mutedThreads.has(threadOf(p.key)) }),
-      pinned: p.pinned === true && p.author === viewer,
+        .map(([emoji, r]) =>
+          exact<Schema<"StatusReaction">>()({
+            ...reactionEmojiOf(emoji),
+            count: r.count,
+            ...(visitor ? {} : { me: r.me }),
+          }),
+        ),
+      ...(visitor
+        ? {}
+        : {
+            favourited: favouriters.includes(viewer),
+            boosted: boosters.includes(viewer),
+            bookmarked: bookmarks.includes(p.key),
+            muted: mutedThreads.has(threadOf(p.key)),
+          }),
+      ...(!visitor && p.author === viewer ? { pinned: p.pinned === true } : {}),
       ...(poll === undefined ? {} : { poll }),
       ...(article === undefined ? {} : { article }),
       ...(p.quote === undefined || depth > 0
@@ -1131,11 +1152,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             }),
           }),
       ...(approval === undefined ? {} : { approval }),
-      ...(waitingBoosts.has(p.key) ||
-      interactions.some((i) => i.kind === "boost" && i.by === viewer && i.post === p.key && boostWaits(i))
+      ...(!visitor &&
+      (waitingBoosts.has(p.key) ||
+        interactions.some((i) => i.kind === "boost" && i.by === viewer && i.post === p.key && boostWaits(i)))
         ? { boost_approval: "pending" as const }
         : {}),
-      ...(p.policy === undefined
+      ...(p.policy === undefined || visitor
         ? {}
         : {
             permissions: {
