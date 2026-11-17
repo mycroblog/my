@@ -536,7 +536,8 @@ export function Meter({ value, label, caption }: { value: number; label: string;
   const s = meter();
   const { lang } = useReader(undefined);
   const shown = new Intl.NumberFormat(lang, { style: "percent", maximumFractionDigits: 0 }).format(value);
-  const width = `${String(Math.round(Math.min(1, Math.max(0, value)) * 100))}%`;
+  // The bar and the meter's value stay within its range, full at the goal and beyond; the figure says the share itself.
+  const filled = Math.round(Math.min(1, Math.max(0, value)) * 100);
   return (
     <div className={s.root()}>
       <span className={s.figure()} aria-hidden="true">
@@ -548,10 +549,10 @@ export function Meter({ value, label, caption }: { value: number; label: string;
         aria-label={label}
         aria-valuemin={0}
         aria-valuemax={100}
-        aria-valuenow={Math.round(value * 100)}
+        aria-valuenow={filled}
         aria-valuetext={shown}
       >
-        <div className={s.fill()} style={{ inlineSize: width }} />
+        <div className={s.fill()} style={{ inlineSize: `${String(filled)}%` }} />
       </div>
       <span className={s.caption()}>{caption}</span>
     </div>

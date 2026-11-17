@@ -395,7 +395,7 @@ test("a meter is a meter named by its label that reads the share, with what it m
   expect(screen.getByText("of November's costs covered")).not.toBeNull();
 });
 
-test.failing("a meter beyond its goal keeps its value inside its range and reads the share", () => {
+test("a meter beyond its goal keeps its value inside its range and reads the share", () => {
   // Defect: at 120% the meter says aria-valuenow="120" over aria-valuemax="100"; a meter's value lies within its range.
   render(<Meter value={1.2} label="Share of this month's costs covered" caption="of November's costs covered" />);
 
