@@ -149,7 +149,7 @@ describe("each kind of media", () => {
     expect(screen.queryByRole("button", { name: /^Play video/ })).toBeNull();
   });
 
-  test.failing("Enter on a video's play button leaves the focus in the video's place", async () => {
+  test("Enter on a video's play button leaves the focus in the video's place", async () => {
     // Defect: the play button goes as the player comes and nothing takes the focus it had: it falls to the page.
     const user = userEvent.setup();
     render(

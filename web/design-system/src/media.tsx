@@ -131,6 +131,11 @@ const isPicture = (m: MediaItem) => ["image", "gifv", "video"].includes(kindOf(m
 
 type T = ReturnType<typeof stringsIn>["t"];
 
+/** Gives the focus to a video's player, a tab stop, as it takes the place of the play button, which had it. */
+const takeFocus = (player: HTMLVideoElement | null) => {
+  player?.focus({ preventScroll: true });
+};
+
 /** One picture of the grid: what it draws, what pressing it does, and its marks. */
 function Cell({
   item,
@@ -168,6 +173,8 @@ function Cell({
     return (
       <div className={s.cell()}>
         <video
+          ref={takeFocus}
+          tabIndex={0}
           className={s.picture()}
           src={item.href}
           poster={item.src}
