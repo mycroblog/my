@@ -404,6 +404,8 @@ const stamp = tv({
       "rounded-control text-current no-underline outline-hidden",
       "data-hovered:underline data-focus-visible:shadow-focus",
     ],
+    // The time's link as a target a row of avatars tall, as the faces beside it are.
+    tall: "min-h-avatar-row",
     // The edited mark: a word after the time, muted as the time is, apart from it by a middle dot; it opens the
     // history. On a touch screen its hit area covers the time too, at the touch height.
     edited:
@@ -418,6 +420,8 @@ export type StampProps = {
   date: Date | string;
   /** Where the time leads: the entry on a page of its own. */
   href?: string | undefined;
+  /** The link is a target as tall as a row of avatars, where the time stands beside faces of that size. */
+  tall?: boolean | undefined;
   /**
    * The entry was edited: `text` (edited) after the time, named `label` for assistive technology, which opens its
    * history; on a touch screen a press on the time opens it too.
@@ -429,7 +433,7 @@ export type StampProps = {
  * A glyph and the relative time, kept together at the end of a byline's line. The time is isolated (<bdi>), so that
  * it keeps its own order beside the glyph in either direction, with words of an RTL locale reading right-to-left.
  */
-export function Stamp({ glyph, date, href, edited }: StampProps) {
+export function Stamp({ glyph, date, href, tall, edited }: StampProps) {
   const s = stamp();
   const time = (
     <bdi>
@@ -439,6 +443,10 @@ export function Stamp({ glyph, date, href, edited }: StampProps) {
   const linked =
     href === undefined ? (
       time
+    ) : tall ? (
+      <Row as={<Link href={href} className={s.link()} />} inline align="center" className={s.tall()}>
+        {time}
+      </Row>
     ) : (
       <Link href={href} className={s.link()}>
         {time}

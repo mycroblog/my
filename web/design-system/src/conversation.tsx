@@ -9,61 +9,17 @@
 // and truncates at its end.
 
 import type { ReactNode } from "react";
-import { tv } from "tailwind-variants/lite";
 import { Stamp } from "./entry";
+import { Faces } from "./faces";
 import { Icon } from "./icons";
-import { UnreadMark } from "./list";
+import { Box, Row, Stack } from "./layout";
+import { Excerpt, UnreadMark } from "./list";
 import { useReader } from "./locale";
-
-const faces = tv({
-  slots: {
-    // The ring that cuts a face out of the one before takes the surface under the entry, hovered or not.
-    root: [
-      "inline-flex flex-none items-center [--face-cut-color:var(--color-surface)]",
-      "in-data-surface-marked:[--face-cut-color:var(--color-surface-hover)]",
-    ],
-    // Each tucks a little under the one before, so that every face stays recognisable.
-    face: "inline-flex flex-none rounded-full shadow-face-cut [&+&]:-ms-screen-face-tuck",
-  },
-});
 
 /** The first three of a conversation's people as faces in a row (avatars at a row's size), each a little over the next. */
 export function ConversationFaces({ children }: { children: readonly ReactNode[] }) {
-  const s = faces();
-  return (
-    <span className={s.root()} aria-hidden="true">
-      {children.slice(0, 3).map((face, i) => (
-        <span key={i} className={s.face()}>
-          {face}
-        </span>
-      ))}
-    </span>
-  );
+  return <Faces limit={3}>{children}</Faces>;
 }
-
-const line = tv({
-  slots: {
-    // Tight inside the conversation: its line and its excerpt a line's gap apart; the feed keeps the space between.
-    root: "grid min-w-0 grid-cols-[minmax(0,1fr)] gap-entry-line",
-    head: "flex min-w-0 items-center gap-entry-name",
-    names: "min-w-0 flex-1 truncate leading-entry",
-    // The time's link is a target a row's height tall, as the line is.
-    end: "flex flex-none items-center gap-entry-caption [&_a]:inline-flex [&_a]:min-h-avatar-row [&_a]:items-center",
-    more: "-my-icon-button-inline -me-icon-button-inline inline-flex flex-none",
-    // A post's body (`ContentBody`) runs on after its author, in the excerpt's color.
-    excerpt: [
-      "line-clamp-2 min-w-0 [&_p]:inline [&_p+p]:before:content-['_']",
-      "[&_div]:inline [&_div]:text-[inherit]",
-    ],
-  },
-  variants: {
-    // Unread, the names are strong and the excerpt in the text's color; read, the names regular and the excerpt muted.
-    read: {
-      true: { names: "font-normal", excerpt: "text-muted-text" },
-      false: { names: "font-strong", excerpt: "text-text" },
-    },
-  },
-});
 
 export type ConversationLineProps = {
   /** The people's avatars at a row's size, the first of them first; the first three show. */
@@ -105,36 +61,49 @@ export function ConversationLine({
   children,
   more,
 }: ConversationLineProps) {
-  const s = line({ read: unread === undefined });
+  const read = unread === undefined;
   const { direction } = useReader(undefined);
   return (
-    <div className={s.root()}>
-      <div className={s.head()}>
+    // Tight inside the conversation: its line and its excerpt a line's gap apart; the feed keeps the space between.
+    <Stack shrink gap="entry-line">
+      <Row shrink align="center" gap="entry-name">
         <ConversationFaces>{people}</ConversationFaces>
-        <span id={namesId} dir={direction} className={s.names()}>
+        {/* Unread, the names are strong and the excerpt in the text's color; read, the names regular and it muted. */}
+        <Box as="span" id={namesId} dir={direction} grow lines={1} leading="entry" weight={read ? "normal" : "strong"}>
           {names}
-        </span>
-        <span
-          className={s.end()}
+        </Box>
+        <Row
+          as="span"
+          rigid
+          align="center"
+          gap="entry-caption"
           onClick={(e) => {
             e.stopPropagation();
           }}
         >
           {unread !== undefined && <UnreadMark label={unread} />}
-          <Stamp date={date} href={href} />
-          {more !== undefined && <span className={s.more()}>{more}</span>}
-        </span>
-      </div>
-      <div className={s.excerpt()}>{children}</div>
-    </div>
+          <Stamp date={date} href={href} tall />
+          {more !== undefined && (
+            <Row as="span" inline rigid bleedBlock="icon-button-inline" bleedEnd="icon-button-inline">
+              {more}
+            </Row>
+          )}
+        </Row>
+      </Row>
+      <Excerpt lines={2} tone={read ? "muted" : "text"} body>
+        {children}
+      </Excerpt>
+    </Stack>
   );
 }
 
-const author = tv({ base: "font-strong" });
-
 /** Who wrote a conversation's latest post, in its excerpt: strong, and isolated ("You", "みか"). */
 export function ConversationAuthor({ children }: { children: ReactNode }) {
-  return <bdi className={author()}>{children}</bdi>;
+  return (
+    <Box as="bdi" weight="strong">
+      {children}
+    </Box>
+  );
 }
 
 /** A conversation's latest post's text, in its excerpt, in its own language and direction. */
@@ -145,16 +114,6 @@ export function ConversationText({ lang, children }: { lang?: string | undefined
     </span>
   );
 }
-
-const head = tv({
-  slots: {
-    root: "grid gap-screen-name-gap",
-    row: "flex min-w-0 items-center gap-entry-name",
-    title: "m-0 min-w-0 flex-1 truncate text-title font-normal",
-    // More's glyph on the column of the posts' more, as an action row reaches past the body.
-    more: "-me-icon-button-inline inline-flex flex-none",
-  },
-});
 
 /**
  * The head of a conversation under its back button: the people's faces and names, which truncate at their end as
@@ -174,32 +133,24 @@ export function ConversationHead({
   /** The people's names, each in a <bdi> of its own, as the list shows them. */
   children: ReactNode;
 }) {
-  const s = head();
   const { direction } = useReader(undefined);
   return (
-    <div className={s.root()}>
+    <Stack gap="screen-name-gap">
       {back}
-      <div className={s.row()}>
+      <Row align="center" gap="entry-name" shrink>
         <ConversationFaces>{people}</ConversationFaces>
-        <h2 className={s.title()} dir={direction}>
+        <Box as="h2" dir={direction} grow lines={1} text="title" weight="normal">
           {children}
-        </h2>
-        {more !== undefined && <span className={s.more()}>{more}</span>}
-      </div>
-    </div>
+        </Box>
+        {more !== undefined && (
+          <Row as="span" inline rigid bleedEnd="icon-button-inline">
+            {more}
+          </Row>
+        )}
+      </Row>
+    </Stack>
   );
 }
-
-const reply = tv({
-  slots: {
-    root: "grid grid-cols-[minmax(0,1fr)] gap-entry rounded-entry bg-surface-raised p-embed",
-    to: "m-0 flex min-w-0 items-center gap-entry-caption text-caption text-muted-text",
-    glyph: "inline-flex flex-none",
-    people: "min-w-0 truncate",
-    row: "flex items-center gap-entry-caption",
-    tools: "-ms-icon-button-inline flex min-w-0 flex-1 items-center",
-  },
-});
 
 /**
  * The reply in place at the end of a conversation, on the raised surface: to whom it goes, with the direct glyph (it
@@ -226,27 +177,34 @@ export function ConversationReply({
   action: ReactNode;
   children: ReactNode;
 }) {
-  const s = reply();
   return (
-    <form
+    <Stack
+      as="form"
+      gap="entry"
+      surface="raised"
+      radius="entry"
+      pad="embed"
       aria-label={label}
-      className={s.root()}
       onSubmit={(e) => {
         e.preventDefault();
       }}
     >
-      <p className={s.to()}>
-        <span role="img" aria-label={visibility} className={s.glyph()}>
+      <Row as="p" shrink align="center" gap="entry-caption" text="caption" tone="muted">
+        <Row as="span" inline rigid role="img" aria-label={visibility}>
           <Icon name="direct" place="caption" />
-        </span>
-        <bdi className={s.people()}>{to}</bdi>
-      </p>
+        </Row>
+        <Box as="bdi" shrink lines={1}>
+          {to}
+        </Box>
+      </Row>
       {children}
-      <div className={s.row()}>
-        <div className={s.tools()}>{tools}</div>
+      <Row align="center" gap="entry-caption">
+        <Row grow shrink align="center" bleedStart="icon-button-inline">
+          {tools}
+        </Row>
         {count}
         {action}
-      </div>
-    </form>
+      </Row>
+    </Stack>
   );
 }

@@ -303,15 +303,32 @@ export function SentenceName({ children }: { children: ReactNode }) {
 }
 
 // Wrapping between phrases, never inside a word of ja, as the sentence over it does.
-const excerpt = tv({ base: "text-muted-text [word-break:auto-phrase] [&_p+p]:before:content-['_']" });
+const excerpt = tv({
+  base: "[&_p+p]:before:content-['_']",
+  variants: {
+    // A post's body (`ContentBody`) runs on in the excerpt's tone, not in the text colour of its own.
+    body: { true: "[&_div]:text-[inherit]", false: "[word-break:auto-phrase]" },
+  },
+});
+
+type ExcerptProps = {
+  lang?: string | undefined;
+  /** How many lines show before it ends in an ellipsis. */
+  lines?: 1 | 2 | 3 | undefined;
+  /** Its colour: muted, or the text's own for what is unread. */
+  tone?: "muted" | "text" | undefined;
+  /** What it holds is a post's body (`ContentBody`), whose blocks all run on as one text, in the excerpt's tone. */
+  body?: boolean | undefined;
+  children: ReactNode;
+};
 
 /**
- * The first words of something a line is about (the reader's post a notice is about): muted, its paragraphs run on,
- * on two lines at most.
+ * The first words of something a line is about (the reader's post a notice is about): its paragraphs run on, on two
+ * lines at most, muted unless its tone says the text's own.
  */
-export function Excerpt({ lang, children }: { lang?: string | undefined; children: ReactNode }) {
+export function Excerpt({ lang, lines = 2, tone = "muted", body = false, children }: ExcerptProps) {
   return (
-    <Box lines={2} run className={excerpt()} lang={lang}>
+    <Box lines={lines} run={body ? "all" : true} tone={tone} className={excerpt({ body })} lang={lang}>
       {children}
     </Box>
   );
