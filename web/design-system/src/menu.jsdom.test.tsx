@@ -245,7 +245,7 @@ function visibilityMenu({ stay = false }: { stay?: boolean } = {}) {
 const value = (name: string, checked: boolean) => screen.getByRole("menuitemradio", { name, checked });
 
 // MenuSurface's own words: "The focus goes to its first item (its chosen one)". It goes to the first, chosen or not.
-test.failing("a menu of values opens with the focus on the chosen one", async () => {
+test("a menu of values opens with the focus on the chosen one", async () => {
   const user = userEvent.setup();
   visibilityMenu();
 

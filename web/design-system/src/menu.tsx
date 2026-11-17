@@ -13,7 +13,18 @@
 // its glyph on. Its groups stand apart by space; a group of actions on another account goes under a caption naming it;
 // destructive items sit last and apart, with no color of their own.
 
-import { createContext, use, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
+import {
+  createContext,
+  use,
+  useEffect,
+  useEffectEvent,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactElement,
+  type ReactNode,
+} from "react";
 import {
   Dialog,
   DialogTrigger,
@@ -21,6 +32,7 @@ import {
   Menu,
   MenuItem as AriaMenuItem,
   MenuSection,
+  MenuStateContext,
   MenuTrigger,
   Popover,
   type Selection,
@@ -241,6 +253,28 @@ export function MenuGroup({
 }
 
 /**
+ * Gives the menu's focus to the item it is drawn in, the value chosen among a group's: React Aria opens a menu with
+ * the focus on the key chosen in the menu's own selection, and a group's selection is the group's own.
+ */
+function ChosenFocus({ id }: { id: string }) {
+  const state = use(MenuStateContext);
+  const take = useEffectEvent(() => {
+    state?.selectionManager.setFocusedKey(id);
+  });
+  // React Aria names an opening menu's first item in an effect of the menu, which runs after those of its items, and
+  // that item takes the focus in an effect of the render that follows. This asks for that render too, and names its
+  // own item in a layout effect of it: after the menu's effect, and before any item takes the focus.
+  const [drawn, setDrawn] = useState(false);
+  useEffect(() => {
+    setDrawn(true);
+  }, []);
+  useLayoutEffect(() => {
+    if (drawn) take();
+  }, [drawn]);
+  return null;
+}
+
+/**
  * An item: a glyph and its label; `on` draws a toggle's glyph on. A label whose action asks for a confirmation ends
  * in "…". `about` is a quiet line under the label, read with it as the item's name (what the action will do: wait
  * for an approval). With `href` it is a link to a place (the Menu's), `current` where the reader is, its glyph on,
@@ -325,6 +359,7 @@ export function MenuItem({
         const opens = disabled ? undefined : opensValue;
         return (
           <>
+            {selectionMode === "single" && isSelected && <ChosenFocus id={id} />}
             <span className={s.glyph()}>
               <Icon name={icon} place="action" on={on || current || (selectionMode === "multiple" && isSelected)} />
             </span>
