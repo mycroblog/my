@@ -8,7 +8,7 @@ import { expect, test } from "bun:test";
 import { defaultComposeSettings, defaultDraftLimits, useComposeSettings, type ServerDraft } from "@my/app-data";
 import { readerZone, scheduleTime } from "@my/design-system";
 import type { BoundFunctions, queries } from "@testing-library/dom";
-import { cleanup, screen, within } from "@testing-library/react";
+import { cleanup, screen, waitFor, within } from "@testing-library/react";
 import { stringsIn } from "../locale";
 import { fakeData, renderFeature } from "../test/feature";
 import { ComposerView } from "./composer";
@@ -322,6 +322,34 @@ test("a custom emoji in the text shows as its image and copies as its shortcode,
   expect(warning.getAttribute("aria-multiline")).not.toBe("true");
   expect(screen.getByRole("dialog", { name: "New post" }) === dialog).toBe(true);
   expect(within(warning).queryAllByRole("img", { name: ":wave:" })).toHaveLength(1);
+});
+
+test("while a post is sent, Close stays in its place disabled and Escape leaves the composer open, and once posted it tells the screen", async () => {
+  const text = "In-flight check: the ferry leaves at noon.";
+  const posted: Draft[] = [];
+  const { fake, user, dialog, part } = await composer({ text }, { onPosted: (sent) => posted.push(sent) });
+  const sent = fake.script("POST /statuses", { hold: "response" });
+  const post = part.getByRole("button", { name: "Post" });
+  const close = part.getByRole<HTMLButtonElement>("button", { name: "Close" });
+  expect(close.disabled).toBe(false);
+
+  await user.click(post);
+  expect((await sent.arrived()).body).toMatchObject({ text });
+  // Close stays in its place, disabled, so that it cannot be pressed; Post alone shows it is sending.
+  expect(part.getByRole("button", { name: "Close" }) === close).toBe(true);
+  expect(close.disabled).toBe(true);
+  expect(post.getAttribute("aria-busy")).toBe("true");
+  await user.keyboard("{Escape}");
+  expect(screen.getByRole("dialog", { name: "New post" }) === dialog).toBe(true);
+  expect(posted).toHaveLength(0);
+
+  sent.release();
+  await waitFor(() => {
+    if (posted.length !== 1) throw new Error("the composer did not tell the screen it posted");
+  });
+  expect(sent.seen).toHaveLength(1);
+  // Nothing was discarded: no Undo is offered.
+  expect(screen.queryByRole("button", { name: "Undo" })).toBeNull();
 });
 
 test("a new post has the drafts' menu in its head and the schedule tool off, and posts with Post", async () => {
