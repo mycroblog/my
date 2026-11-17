@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // A person's lists of follows and followers (/@username/following, /@username/followers): one screen whose two tabs
-// each hold a list, a row per account with a link to its profile and its follow button, or the owner's refusal; and
-// the counts of the profile that open them.
+// each hold a list, a row per account with a link to its profile and its follow button; and the counts of the profile
+// that open them.
 
 import type { Locator, Page } from "@playwright/test";
 import type { Person } from "../../src/scenario";
@@ -53,18 +53,6 @@ export class Follows {
   /** The follow buttons of the open list's rows: of the accounts the reader does not follow. */
   get followButtons(): Locator {
     return this.panel.getByRole("button", { name: /^Follow( back)?$/ });
-  }
-
-  /** What the list says in place of its accounts when the owner keeps it from the reader. */
-  get hidden(): Locator {
-    return this.panel
-      .getByRole("status")
-      .filter({ hasText: new RegExp(`^⁨?${escape(this.person.displayName)}⁩? does not show this list to you\\.$`) });
-  }
-
-  /** The button over the lists that goes back to the profile. */
-  get back(): Locator {
-    return this.page.getByRole("main").getByRole("button", { name: "Back to the profile", exact: true });
   }
 
   /** Follows the account of the one row that offers a follow, and returns once the server has answered. */
