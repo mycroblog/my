@@ -1,0 +1,5 @@
+env.sh
+out/
+out-*.log
+my
+my.*
