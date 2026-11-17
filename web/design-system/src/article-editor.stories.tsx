@@ -507,7 +507,3 @@ export const Edit: Story = { render: () => <Article state="edit" /> };
 export const NotAllowed: Story = {
   render: () => <Article state="not-allowed" />,
 };
-/** Written, as the toolbar's ar-XB reads it, from right to left. */
-export const RightToLeft: Story = { render: () => <Article state="writing" /> };
-/** Written, as the toolbar's minimum width shows it. */
-export const MinimumWidth: Story = { render: () => <Article state="writing" /> };
