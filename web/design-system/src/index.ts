@@ -196,6 +196,7 @@ export {
   NoticeCaption,
   NoticeLine,
   OpenRow,
+  ScreenHead,
   ScreenStack,
   ScreenTitle,
   SentenceName,

@@ -44,13 +44,14 @@ function GlyphSheet() {
             gridTemplateColumns: `${rem(112)} ${rem(64)} minmax(0, 1fr)`,
           }}
         >
-          <code>{name}</code>
+          {/* Long names (roomUnavailable, IconCalendarExclamation) wrap in their column, never past the viewport. */}
+          <code style={{ minWidth: 0, overflowWrap: "anywhere" }}>{name}</code>
           <span style={{ alignItems: "center", display: "flex", gap: rem(8) }}>
             <Icon name={name} place="action" />
             {entry.on !== undefined && <Icon name={name} place="action" on />}
             <Icon name={name} place="caption" />
           </span>
-          <span style={caption}>{about(entry)}</span>
+          <span style={{ ...caption, minWidth: 0, overflowWrap: "anywhere" }}>{about(entry)}</span>
         </div>
       ))}
     </div>

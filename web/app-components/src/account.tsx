@@ -77,8 +77,19 @@ export function AccountFollow({
   );
 }
 
-/** An account on a row of its own, what the reader may do with it at the end. */
-export function AccountLine({ account, end }: { account: PostAccount; end?: ReactNode }) {
+/**
+ * An account on a row of its own, what the reader may do with it at the end; `heading` makes its name the heading of
+ * the screen it heads.
+ */
+export function AccountLine({
+  account,
+  end,
+  heading = false,
+}: {
+  account: PostAccount;
+  end?: ReactNode;
+  heading?: boolean;
+}) {
   return (
     <Row
       avatar={<Avatar name={nameOf(account)} src={account.avatar?.small.url} size="post" decorative />}
@@ -86,6 +97,7 @@ export function AccountLine({ account, end }: { account: PostAccount; end?: Reac
       handle={handleOf(account)}
       href={accountPath(account)}
       end={end}
+      heading={heading}
     />
   );
 }

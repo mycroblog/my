@@ -20,6 +20,9 @@
 //   - `fresh.reaction(by, post, emoji)` the emoji reaction of `by` to a fresh post: a Unicode emoji, or a custom one's
 //     shortcode without colons.
 //   - `fresh.deletion(author, post)` the deletion of a fresh post by its author.
+//   - `fresh.favourite(by, post)` the favourite of `by` on a fresh post.
+//   - `fresh.notificationPolicy(p, policy)` what `p`'s notification policy does with the sources that meet each
+//     condition given (`not_following`, `not_follower`, `new_account`): accept, filter (hold back) or drop.
 //   - `fresh.source(author, id)` the text and content warning of the author's post `id` as the server keeps them.
 //   - `fresh.draft(author, { text, inSeconds? })` a new draft of `author` whose text is `text` and a word unique to it,
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.

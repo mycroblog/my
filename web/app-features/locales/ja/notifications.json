@@ -13,7 +13,7 @@
   },
   "notifications.mentions": {
     "defaultMessage": "メンション",
-    "description": "The tab that shows only the notifications that speak to the reader: mentions and quotes."
+    "description": "The tab that shows only the notifications that speak to the reader: mentions, quotes and new posts of the accounts they asked to be notified of."
   },
   "notifications.waiting": {
     "defaultMessage": "承認待ち",
@@ -54,6 +54,14 @@
   "notifications.read_all": {
     "defaultMessage": "すべて既読にする",
     "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.dismiss": {
+    "defaultMessage": "この通知を消す",
+    "description": "The button or menu item at the end of a notification that takes it out of the list for good."
+  },
+  "notifications.dismiss_failed": {
+    "defaultMessage": "通知を消せませんでした。",
+    "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
   },
   "notifications.approve": {
     "defaultMessage": "承認",
@@ -136,7 +144,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {title} is the announcement's title, as the administrators wrote it. {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.auto_delete_limit": {
-    "defaultMessage": "{instance}: 公開から{days, plural, other {# 日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {# 日後から}}自動で削除されます",
+    "defaultMessage": "{instance}: 公開から{days, plural, other {#日}}を過ぎた投稿が{daysLeft, plural, =0 {これから} other {#日後から}}自動で削除されます",
     "description": "The sentence of a notification in the reader's list of notifications: {days} is the most days after its publication that a post is kept; {daysLeft} is the days of the grace period until the maximum applies (0 when it applies at once). {instance} is the server's display name, or its domain name when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.scheduled_status_failed": {
@@ -156,7 +164,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that boosted the user's post. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.favourite": {
-    "defaultMessage": "{name}さんがあなたの投稿をお気に入りに登録しました",
+    "defaultMessage": "{name}さんがあなたの投稿をお気に⁠入りに登録しました",
     "description": "The sentence of a notification in the reader's list of notifications: {name} is the display name, or the @handle, of the account that favourited the user's post. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.follow": {
@@ -312,7 +320,7 @@
     "description": "The sentence of a notification in the reader's list of notifications: {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.event_reminder": {
-    "defaultMessage": "{unit, select, day {「{title}」は{count, plural, other {# 日}}後に始まります} hour {「{title}」は{count, plural, other {# 時間}}後に始まります} other {「{title}」は{count, plural, other {# 分}}後に始まります}}",
+    "defaultMessage": "{unit, select, day {「{title}」は{count, plural, other {#日}}後に始まります} hour {「{title}」は{count, plural, other {#時間}}後に始まります} other {「{title}」は{count, plural, other {#分}}後に始まります}}",
     "description": "The sentence of a notification in the reader's list of notifications: {unit} is day, hour, or minute, and {count} how many of them before the start. {title} is the title of the event, as its organizers wrote it, or the words of push.event_untitled when it has none. Its words are those of the Web Push notification of the same kind."
   },
   "notifications.kind.event_started": {
@@ -346,5 +354,53 @@
   "notifications.follow_requests_failed": {
     "defaultMessage": "フォローリクエストを読み込めませんでした。",
     "description": "When the follow requests failed to load; Try again follows it."
+  },
+  "notifications.held": {
+    "defaultMessage": "保留中の通知",
+    "description": "The title of the screen of the notifications the reader's notification policy held back, one row per account that sent them, and of the screen of one account's."
+  },
+  "notifications.held_about": {
+    "defaultMessage": "受け入れると、その人の通知が通知一覧に移り、これからの通知も保留されません。消すと、これらの通知は削除されます。",
+    "description": "The line under the title of the held-back notifications (notifications.held), over the accounts, that says what accepting and dismissing do."
+  },
+  "notifications.held_count": {
+    "defaultMessage": "{count, plural, other {通知 #件}}",
+    "description": "Under an account on the screen of the held-back notifications: how many of its notifications are held back. count is how many."
+  },
+  "notifications.held_accept": {
+    "defaultMessage": "受け入れる",
+    "description": "The button of an account's held-back notifications that moves them into the notifications and lets its later ones through."
+  },
+  "notifications.held_dismiss": {
+    "defaultMessage": "消す",
+    "description": "The button of an account's held-back notifications that drops them; later ones are held back again."
+  },
+  "notifications.held_accepted": {
+    "defaultMessage": "受け入れました",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader accepted them (notifications.held_accept); focus moves to it."
+  },
+  "notifications.held_dismissed": {
+    "defaultMessage": "消しました",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader dismissed them (notifications.held_dismiss); focus moves to it."
+  },
+  "notifications.held_loading": {
+    "defaultMessage": "保留中の通知を読み込んでいます…",
+    "description": "What the screens of the held-back notifications say while the first of them load."
+  },
+  "notifications.held_failed": {
+    "defaultMessage": "保留中の通知を読み込めませんでした。",
+    "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
+  },
+  "notifications.held_empty": {
+    "defaultMessage": "保留中の通知はありません。通知の設定で保留にした通知は、ここに表示されます。",
+    "description": "What the screen of the held-back notifications says when none is held back."
+  },
+  "notifications.held_none": {
+    "defaultMessage": "この人からの保留中の通知は、いまはありません。",
+    "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
+  },
+  "notifications.held_gone": {
+    "defaultMessage": "この人からの保留中の通知は、いまはありません。",
+    "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
   }
 }

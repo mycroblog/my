@@ -137,6 +137,8 @@ export function markOf(action: PostAction, status: Status | undefined): StatusMa
       return { type: "boost", on: !(status.boosted ?? false) };
     case "bookmark":
       return { type: "bookmark", on: !(status.bookmarked ?? false) };
+    case "mute-thread":
+      return { type: "mute", on: !(status.muted ?? false) };
     case "reaction":
       return {
         type: "reaction",

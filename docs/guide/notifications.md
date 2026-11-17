@@ -25,9 +25,10 @@ Each notification links to what it is about, for example "Open post" or "Open th
 
 ## Reading and filtering
 
-The page "All" lists everything, newest first. The tabs "Mentions", "Favourites", "Boosts", "Follows", and "New posts"
-show one kind. Opening the page with "All" marks the notifications on screen as read; a filtered list does not. New
-notifications join the list while the page is open.
+"All" lists everything, newest first; "Mentions" lists mentions, quotes, and new posts you asked for. Opening "All"
+marks the notifications on screen as read; "Mentions" does not. New notifications join the list while the page is open.
+"Dismiss notification" in a notification's menu removes it. "Mute thread" in a post's menu stops the notifications of
+its thread.
 
 ## Choosing how they reach you
 
@@ -51,15 +52,15 @@ days ago), "Unrequested private mentions" (direct posts that mention you without
 "Accounts limited by the moderators". For each condition you choose:
 
 - **Accept**: the notification appears and reaches you the ways you chose above. Every condition accepts until you change it.
-- **Hold**: the notification stays out of your notifications and the unread count, and sends no push notification, email, or sound. It waits in a request.
+- **Hold**: the notification stays out of your notifications and the unread count, and sends no push notification, email, or sound. It waits to be answered.
 - **Drop**: no notification is made. What the person did still happens; a follow still follows you.
 
-A notification that meets several conditions gets the strictest choice. People you follow, and people whose requests you
+A notification that meets several conditions gets the strictest choice. People you follow, and people whose notifications you
 accepted, meet none of the conditions but "Accounts limited by the moderators". Notifications from the moderators and
 from the server itself are never held or dropped. A change applies to the notifications that come after it.
 
-When notifications are held, the top of the notifications page shows "Notification requests from 2 people". It opens the
-list of requests, one per person who sent them. "View the notifications" shows what a person's request holds.
+When notifications are held, the top of the notifications page shows "3 held-back notifications · from 2 people". It
+opens "Held-back notifications", a row per person; a row opens that person's held notifications.
 
 - **Accept** moves the held notifications into your notifications and lets that person's later notifications through, whatever the policy says. It cannot be undone; mute or block the person to stop them again.
-- **Dismiss** removes the held notifications. The person is not accepted: a notification held later makes a new request.
+- **Dismiss** removes the held notifications. The person is not accepted: their later notifications are held again.

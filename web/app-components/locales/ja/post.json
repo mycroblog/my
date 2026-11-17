@@ -159,6 +159,14 @@
     "defaultMessage": "ブックマーク",
     "description": "The item of a post's more menu that bookmarks it."
   },
+  "post.mute_thread": {
+    "defaultMessage": "スレッドをミュート",
+    "description": "The item of a post's more menu that stops the notifications of the thread the post is in (replies, mentions, boosts, favourites, reactions and quotes in it); the posts still show in timelines."
+  },
+  "post.unmute_thread": {
+    "defaultMessage": "スレッドのミュートを解除",
+    "description": "The item of a post's more menu, on while the thread the post is in is muted, that lets its notifications come again."
+  },
   "post.unbookmark": {
     "defaultMessage": "ブックマークを外す",
     "description": "The item of a bookmarked post's more menu that takes the bookmark back."

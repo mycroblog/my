@@ -30,6 +30,25 @@ export class Notifications {
       .filter({ hasText: text });
   }
 
+  /** Opens what the notification named `what` tells of, by its line's link. */
+  async open(what: string): Promise<void> {
+    await this.notification(what).getByRole("link", { name: what, exact: true }).click();
+  }
+
+  /** Opens the post by `author` that mentions the reader and holds `text`, by its time ("2m ago"), a link to it. */
+  async openMention(author: string, text: string): Promise<void> {
+    await this.mention(author, text)
+      .getByRole("link", { name: /^(?:.+ ago|now)$/ })
+      .click();
+  }
+
+  /** Dismisses the notification named `what`, and returns once the server has answered. */
+  async dismiss(what: string): Promise<void> {
+    await answered(this.page, { methods: ["POST"], path: /\/notifications\/[^/]+\/dismiss$/ }, async () => {
+      await this.notification(what).getByRole("button", { name: "Dismiss notification", exact: true }).click();
+    });
+  }
+
   /** The follow request of `from` (a display name). */
   followRequest(from: string): Locator {
     return this.notification(`${from} requested to follow you`);
@@ -56,6 +75,22 @@ export class Notifications {
     return this.page
       .getByRole("main")
       .getByRole("link", { name: `${String(count)} waiting for your approval`, exact: true });
+  }
+
+  /**
+   * The row over the notifications that counts those the notification policy holds back ("2 held-back notifications ·
+   * from 1 person"), a link to their screen.
+   */
+  heldRow(count: number, people: number): Locator {
+    const notes = `${String(count)} held-back ${count === 1 ? "notification" : "notifications"}`;
+    const from = `from ${String(people)} ${people === 1 ? "person" : "people"}`;
+    return this.page.getByRole("main").getByRole("link", { name: new RegExp(`^${notes} · ${from}.*$`) });
+  }
+
+  /** Opens the screen of the held-back notifications from the row that counts them. */
+  async openHeld(count: number, people: number): Promise<Held> {
+    await this.heldRow(count, people).click();
+    return new Held(this.page);
   }
 
   /** Opens the screen of what waits for the reader's approval from the row that counts `count` of them. */
@@ -133,5 +168,55 @@ export class WaitingRequests {
     await answered(this.page, { methods: ["POST"], path: answer }, async () => {
       await article.getByRole("button", { name: button, exact: true }).click();
     });
+  }
+}
+
+/** The write of an answer to the held-back notifications of an account. */
+const heldAnswer = /\/notifications\/requests\/[^/]+\/(?:accept|dismiss)$/;
+
+/**
+ * The screen of the notifications the reader's notification policy holds back, under Notifications: a row per account
+ * that sent them, its name a link to them, with Dismiss and Accept until it is answered, and its answer after.
+ */
+export class Held {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  /** Opens the held-back notifications of `name` (a display name) from its row. */
+  async open(name: string): Promise<HeldOf> {
+    await this.page.getByRole("main").getByRole("link", { name, exact: true }).click();
+    return new HeldOf(this.page);
+  }
+}
+
+/** The screen of one account's held-back notifications: the account with its answer, over its notifications. */
+export class HeldOf {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  /** The held-back notification named `what`, as the screen says it ("Fresh 1a2b3c4d favourited your post"). */
+  notification(what: string): Locator {
+    return this.page.getByRole("feed", { name: "Held-back notifications", exact: true }).getByRole("article", {
+      name: what,
+      exact: true,
+    });
+  }
+
+  /** Accepts (`Accept`) or dismisses (`Dismiss`) the account's notifications, once the server has answered. */
+  async answer(button: "Accept" | "Dismiss"): Promise<void> {
+    await answered(this.page, { methods: ["POST"], path: heldAnswer }, async () => {
+      await this.page.getByRole("main").getByRole("button", { name: button, exact: true }).click();
+    });
+  }
+
+  /** What the reader answered, in place of the buttons. */
+  said(answer: "Accepted" | "Dismissed"): Locator {
+    return this.page.getByRole("main").getByText(answer, { exact: true });
   }
 }

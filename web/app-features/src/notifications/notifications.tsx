@@ -11,11 +11,21 @@
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
-import { AccountLine, excerptHtml, ListColumn, nameOf, PostContent } from "@my/app-components";
+import {
+  AccountLine,
+  excerptHtml,
+  heldPath,
+  ListColumn,
+  nameOf,
+  notificationPath,
+  PostContent,
+} from "@my/app-components";
 import {
   notificationMarkerQuery,
   notificationRequestSummaryQuery,
   notificationsQuery,
+  refusalDetail,
+  useDismissNotification,
   useNotificationReads,
   useNotificationRequestSummary,
   useNotifications,
@@ -38,10 +48,10 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
-import { useId, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
-import { useCompose, usePostActions, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { useCompose, usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
 import { glyphOf, sentenceOf, shapeOf } from "./kinds";
@@ -49,9 +59,6 @@ import { FollowRequestsRow, loadFollowRequestCount } from "./follow-requests";
 import { loadWaitingCount, WaitingRow } from "./waiting";
 
 type T = ReturnType<typeof stringsIn>["t"];
-
-/** Where the row of the requests leads: their screen. */
-const requestsPath = "/notifications/requests";
 
 /**
  * What the route's loader waits for: the first page of all the notifications, the read marker and the count of the
@@ -115,27 +122,96 @@ function emojiOf(n: NotificationItem): ReactNode {
   return r.shortcode === undefined ? r.name : undefined;
 }
 
-function Line({ n, unread, t, instance }: { n: NotificationItem; unread: string | undefined; t: T; instance: string }) {
+/**
+ * Dismisses the notification by its button at the line's end: it leaves the list at once; a failure puts it back and says so, with Try again. A second
+ * press while the first is in flight does nothing.
+ */
+function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
+  const dismiss = useDismissNotification();
+  const failed = usePostNotice();
+  const flying = useRef(false);
+  const run = () => {
+    if (flying.current) return;
+    flying.current = true;
+    dismiss(n.id)
+      .catch((error: unknown) => {
+        // The server's own reason where it gives one; never a bare HTTP title.
+        failed(undefined, refusalDetail(error) ?? t("notifications.dismiss_failed"), run);
+      })
+      .finally(() => {
+        flying.current = false;
+      });
+  };
+  return <IconButton icon="close" label={t("notifications.dismiss")} onPress={run} />;
+}
+
+/** Where a notification's line leads, when it leads elsewhere than the notifications themselves. */
+function targetOf(n: NotificationItem): string | undefined {
+  const path = notificationPath(n);
+  return path === "/notifications" ? undefined : path;
+}
+
+function Line({
+  n,
+  unread,
+  t,
+  instance,
+  held,
+}: {
+  n: NotificationItem;
+  unread: string | undefined;
+  t: T;
+  instance: string;
+  held: boolean;
+}) {
   const id = useId();
   const avatar = n.account && (
     <Avatar name={nameOf(n.account)} src={n.account.avatar?.small.url} size="inline" decorative />
   );
   return (
     <Entry labelledBy={id}>
-      <NoticeLine icon={glyphOf(n.type)} emoji={emojiOf(n)} avatar={avatar} date={n.created_at} id={id} unread={unread}>
+      <NoticeLine
+        icon={glyphOf(n.type)}
+        emoji={emojiOf(n)}
+        avatar={avatar}
+        date={n.created_at}
+        id={id}
+        unread={unread}
+        href={targetOf(n)}
+        action={held ? undefined : <Dismiss n={n} t={t} />}
+        excerpt={
+          n.status !== undefined && (
+            <Excerpt>
+              <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
+            </Excerpt>
+          )
+        }
+      >
         {sentenceOf(n, t, instance, known)}
       </NoticeLine>
-      {n.status !== undefined && (
-        <Excerpt>
-          <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
-        </Excerpt>
-      )}
       <Act n={n} t={t} />
     </Entry>
   );
 }
 
-function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean; t: T; instance: string }) {
+/**
+ * A notification of the list: the post it is about whole, under the sentence of its kind, for a mention, a quote or a
+ * new post; else the line of its kind. `held` draws one the notification policy holds back, which is answered with its
+ * account's request, never dismissed alone.
+ */
+export function NotificationRow({
+  n,
+  unread,
+  t,
+  instance,
+  held = false,
+}: {
+  n: NotificationItem;
+  unread: boolean;
+  t: T;
+  instance: string;
+  held?: boolean;
+}) {
   const mark = unread ? t("notifications.unread") : undefined;
   const onAction = usePostActions();
   const votingOf = usePostVoting();
@@ -146,7 +222,7 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
       <Post
         status={n.status}
         context={
-          <NoticeCaption icon={glyphOf(n.type)} unread={mark}>
+          <NoticeCaption icon={glyphOf(n.type)} unread={mark} action={held ? undefined : <Dismiss n={n} t={t} />}>
             {sentenceOf(n, t, instance, known)}
           </NoticeCaption>
         }
@@ -156,7 +232,7 @@ function Row({ n, unread, t, instance }: { n: NotificationItem; unread: boolean;
         picker={picker}
       />
     );
-  return <Line n={n} unread={mark} t={t} instance={instance} />;
+  return <Line n={n} unread={mark} t={t} instance={instance} held={held} />;
 }
 
 function ReadAll({ t, onPress }: { t: T; onPress: () => void }) {
@@ -169,7 +245,7 @@ function Requests({ t }: { t: T }) {
   if (summary === undefined || summary.accounts_count === 0) return null;
   return (
     <OpenRow
-      href={requestsPath}
+      href={heldPath}
       icon="followers"
       title={t("notifications.requests", { people: summary.accounts_count, count: summary.notifications_count })}
       hint={t("notifications.requests_hint")}
@@ -196,7 +272,7 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
       onPassed={reads.read}
       onEntryClick={reads.read}
     >
-      {(n) => <Row n={n} unread={reads.unread(n.id)} t={t} instance={instance} />}
+      {(n) => <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} />}
     </ListColumn>
   );
 }

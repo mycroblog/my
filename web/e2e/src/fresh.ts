@@ -253,6 +253,26 @@ export class Fresh {
     if (error !== undefined) throw new Error(`fresh: ${by.username} could not react to ${post.id}`);
   }
 
+  /** `by` favourites the post `post`. */
+  async favourite(by: Person, post: FreshPost): Promise<void> {
+    const { error } = await (
+      await this.#api(by)
+    ).POST("/statuses/{id}/favourite", { params: { path: { id: post.id } } });
+    if (error !== undefined) throw new Error(`fresh: ${by.username} could not favourite ${post.id}`);
+  }
+
+  /**
+   * The notification policy of `p` (ADR-0158): what happens to the notifications of the sources that meet each
+   * condition given; the others keep theirs.
+   */
+  async notificationPolicy(
+    p: Person,
+    policy: Partial<Record<"not_following" | "not_follower" | "new_account", "accept" | "filter" | "drop">>,
+  ): Promise<void> {
+    const { error } = await (await this.#api(p)).PATCH("/preferences/notification_policy", { body: policy });
+    if (error !== undefined) throw new Error(`fresh: the notification policy of ${p.username} was refused`);
+  }
+
   /** `by` boosts the post `post`: at once, or as a request where its author approves `by`'s boosts by hand. */
   async boost(by: Person, post: FreshPost): Promise<void> {
     const { error } = await (await this.#api(by)).POST("/statuses/{id}/boost", { params: { path: { id: post.id } } });

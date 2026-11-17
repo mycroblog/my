@@ -10,7 +10,7 @@
 // account. The writes of those screens (follow, block, mute, a private note, being notified
 // of a person's posts, a follower removed, a server muted as ADR-0013 §30 hides it, the
 // answers of follow requests, the read marker, the announcements read, the conversations of the direct messages read
-// and hidden, the reader's bookmarks and followed hashtags, the reader's edits and deletions of their own posts, the
+// and hidden, the reader's bookmarks, the threads they mute and followed hashtags, the reader's edits and deletions of their own posts, the
 // reader's drafts and their schedules, a draft published, the reader's articles posted and edited and the images they
 // upload) are kept in memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An
 // article's body comes only with the status read alone, as the server's does, and its preview renders as publishing
@@ -253,6 +253,18 @@ export type FakeOptions = {
   subscriptions?: readonly string[];
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
+  /**
+   * In place of the scenario's notifications, one of each kind of a group the server sends: from people (`people`), the
+   * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
+   */
+  everyKind?: "people" | "notices" | "moderators";
+  /**
+   * The notifications the reader's notification policy holds back (ADR-0158 §7), by account: a boost and a favourite
+   * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
+   */
+  held?: boolean;
+  /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
+  dismissFails?: boolean;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -356,6 +368,8 @@ export type FakeApi = {
   idOf: (key: string) => string;
   /** The app's address of the reader's conversation at `index` of their direct messages, newest first. */
   conversationPath: (index: number) => string;
+  /** The app's address of the held-back notifications of the person of `username` (`held`). */
+  heldPath: (username: string) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -633,6 +647,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const ownFavourite = new Map<string, boolean>();
   const ownReaction = new Map<string, string | null>();
   const mineSet = (key: string) => ownFavourite.has(key) || ownReaction.has(key);
+  /** The threads the reader muted (ADR-0158 §8), by the key of the post that starts each. */
+  const mutedThreads = new Set<string>();
+  const threadOf = (key: string): string => {
+    const parent = postOf(key).replyTo;
+    return parent === undefined || !posts.some((p) => p.key === parent) ? key : threadOf(parent);
+  };
   /** The keys of the posts the reader bookmarked, the newest bookmark first: the options', then the scenario's. */
   const bookmarks: string[] = [
     ...new Set([
@@ -907,6 +927,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       favourited: favouriters.includes(viewer),
       boosted: on(p.key, "boost").some((i) => i.by === viewer),
       bookmarked: bookmarks.includes(p.key),
+      ...(o.visitor === true ? {} : { muted: mutedThreads.has(threadOf(p.key)) }),
       pinned: p.pinned === true && p.author === viewer,
       ...(p.poll === undefined ? {} : { poll: pollOf(p) }),
       ...(article === undefined ? {} : { article }),
@@ -1681,6 +1702,132 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     };
   };
 
+  // With `everyKind`, a notification of each kind of its group in place of the scenario's, an hour apart: from people
+  // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
+  // target read.
+  if (o.everyKind !== undefined) {
+    const own = posts.find((p) => p.author === viewer);
+    const status = own === undefined ? {} : { status: statusOf(own) };
+    // A post of `from`: one that mentions the reader, else any of theirs, else the reader's own.
+    const postBy = (from: string): Json => {
+      const p =
+        posts.find((x) => x.author === from && mentioned(x.text).includes(viewer)) ??
+        posts.find((x) => x.author === from);
+      return p === undefined ? status : { status: statusOf(p) };
+    };
+    const event = scenarioEvents[0] === undefined ? undefined : eventOf(scenarioEvents[0], 0);
+    const about = event === undefined ? {} : { event_id: event["id"], event };
+    const room = rooms[0];
+    const people: [string, string | undefined, Json][] = [
+      ["follow", "kobo@bread.example", {}],
+      ["follow_request", "kiri@far.example", {}],
+      ["mention", "sam", postBy("sam")],
+      ["quote", "mio", postBy("mio")],
+      ["favourite", "marco", status],
+      ["boost", "hana", status],
+      ["reaction", "layla", { ...status, reaction: { name: "🎉" } }],
+      ["reply_request", "marco", status],
+      ["boost_request", "mio", status],
+      ["quote_request", "sam", status],
+      ["status", "hana", postBy("hana")],
+      ["follow_accepted", "hana", {}],
+      ["poll_closed", undefined, status],
+      ["interaction_accepted", "layla", status],
+      ["interaction_rejected", "marco", status],
+      ["account_moved", "sora@social.example", { account_move: { target: accountOf("sora@photos.example") } }],
+      ["voice_room_started", "hana", room === undefined ? {} : { voice_room_id: room.id, voice_room: room }],
+      ["voice_room_invited", "sam", room === undefined ? {} : { voice_room_id: room.id }],
+      ["event_invited", "mio", about],
+    ];
+    const notices: [string, string | undefined, Json][] = [
+      ["event_schedule_confirmed", undefined, about],
+      ["event_changed", undefined, about],
+      ["event_cancelled", undefined, about],
+      ["event_reminder", undefined, about],
+      ["event_started", undefined, about],
+      ["event_room_unavailable", undefined, about],
+      ["announcement", undefined, { announcement: announcementOf(scenarioAnnouncements[0]?.key ?? "") }],
+      ["moderation_notice", undefined, {}],
+      ["report_resolved", undefined, {}],
+      ["appeal_decided", undefined, {}],
+      ["hook_appeal_decided", undefined, {}],
+      ["relationships_severed", undefined, {}],
+      ["custom_emoji_request_decided", undefined, {}],
+      ["supporter_payment_failed", undefined, {}],
+      ["supporter_subscription_ended", undefined, {}],
+      ["supporter_plan_retired", undefined, {}],
+      ["service_closure", undefined, { service_closure: { change: "announced" } }],
+      ["supporter_service_closure", undefined, { service_closure: { change: "announced" } }],
+      [
+        "auto_delete_limit",
+        undefined,
+        { auto_delete_limit: { max_age_days: 365, enforce_from: new Date(started + 30 * day).toISOString() } },
+      ],
+    ];
+    const moderators: [string, string | undefined, Json][] = [
+      ["admin_report", undefined, { report_id: idAt(started, 60_000) }],
+      ["admin_sign_up", "kiri@far.example", {}],
+      ["admin_appeal", undefined, { appeal_id: idAt(started, 60_001) }],
+      ["admin_webhook_disabled", undefined, {}],
+      ["admin_hook_failing", undefined, {}],
+      ["admin_domain_list_failing", undefined, {}],
+      ["admin_custom_emoji_request", "mio", {}],
+      ["admin_account_moved", undefined, { account_move: { target: accountOf("sora@photos.example") } }],
+      ["admin_service_closure_due", undefined, { service_closure: { change: "announced" } }],
+      ["admin_error_group", undefined, { error_group: { change: "created" } }],
+      ["admin_hook_appeal", undefined, { hook_appeal_id: idAt(started, 60_002) }],
+    ];
+    const kinds = { people, notices, moderators }[o.everyKind];
+    notifications.length = 0;
+    kinds.forEach(([type, from, more], i) => {
+      const at = started - (i + 1) * 60 * minute;
+      notifications.push({
+        id: idAt(at, 11_000 + i),
+        type,
+        created_at: new Date(at).toISOString(),
+        ...(from === undefined ? {} : { account: accountOf(from) }),
+        ...more,
+      });
+    });
+    notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+    // The reader read all but the three newest, as of the scenario's.
+    lastRead = notifications[3]?.["id"] as string | undefined;
+  }
+
+  // With `dismissFails`, the dismissals of a notification still to fail before one is kept.
+  let dismissFailures = o.dismissFails === true ? 1 : 0;
+
+  // With `held`, the notifications the policy holds back, by the account that sent them, the newest account first.
+  const held = new Map<string, Json[]>();
+  if (o.held === true) {
+    const own = posts.find((p) => p.author === viewer);
+    const about = own === undefined ? {} : { status: statusOf(own) };
+    const hold = (from: string, type: string, minutesAgo: number, n: number, more: Json = {}) => {
+      const at = started - minutesAgo * minute;
+      const list = held.get(from) ?? [];
+      list.push({
+        id: idAt(at, 12_000 + n),
+        type,
+        created_at: new Date(at).toISOString(),
+        account: accountOf(from),
+        ...more,
+      });
+      held.set(from, list);
+    };
+    hold("kiri@far.example", "favourite", 20, 0, about);
+    hold("kiri@far.example", "boost", 45, 1, about);
+    hold("kobo@bread.example", "follow", 90, 2);
+  }
+  const heldRequestOf = (username: string): Json => {
+    const list = held.get(username) ?? [];
+    return {
+      id: idOf(username),
+      account: accountOf(username),
+      notifications_count: list.length,
+      ...(list[0] === undefined ? {} : { last_notification: list[0] }),
+    };
+  };
+
   // ---- Answers ---------------------------------------------------------------------------------------------------
 
   /** The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list. */
@@ -1912,6 +2059,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const { from, body } = page(shown, q);
       if (from > 0) await late();
       return json(body);
+    }
+    if ((match = m(/^\/statuses\/([^/]+)\/mute$/)) && request.method !== "GET") {
+      const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
+      const p = key === undefined ? undefined : postOf(key);
+      if (p === undefined || !visible(p)) return problem(404, "Not Found");
+      if (request.method === "POST") mutedThreads.add(threadOf(p.key));
+      else mutedThreads.delete(threadOf(p.key));
+      return json(statusOf(p));
     }
     if ((match = m(/^\/statuses\/([^/]+)\/bookmark$/)) && request.method !== "GET") {
       const key = keyOf.get(decodeURIComponent(match[1] ?? ""));
@@ -2398,6 +2553,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (from > 0) await late();
       return json(body);
     }
+    if ((match = m(/^\/notifications\/([^/]+)\/dismiss$/)) && request.method === "POST") {
+      if (dismissFailures > 0) {
+        dismissFailures -= 1;
+        return problem(500, "Internal Server Error");
+      }
+      const at = notifications.findIndex((n) => n["id"] === decodeURIComponent(match?.[1] ?? ""));
+      if (at < 0) return problem(404, "Not Found");
+      notifications.splice(at, 1);
+      return new Response(null, { status: 204 });
+    }
     if (path === "/notifications/marker") {
       if (request.method === "PUT") {
         const { last_read_id: id } = (await request.json()) as { last_read_id: string };
@@ -2430,7 +2595,34 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       }
       return problem(405, "Method Not Allowed");
     }
-    if (path === "/notifications/requests/summary") return json({ accounts_count: 0, notifications_count: 0 });
+    if (path === "/notifications/requests/summary")
+      return json({
+        accounts_count: held.size,
+        notifications_count: [...held.values()].reduce((sum, list) => sum + list.length, 0),
+      });
+    if (path === "/notifications/requests" && request.method === "GET") {
+      const { from, body } = page([...held.keys()].map(heldRequestOf), q);
+      if (from > 0) await late();
+      return json(body);
+    }
+    if ((match = m(/^\/notifications\/requests\/([^/]+)(\/notifications|\/accept|\/dismiss)?$/))) {
+      const username = usernameOf.get(decodeURIComponent(match[1] ?? ""));
+      const list = username === undefined ? undefined : held.get(username);
+      if (username === undefined || list === undefined) return problem(404, "Not Found");
+      if (match[2] === undefined && request.method === "GET") return json(heldRequestOf(username));
+      if (match[2] === "/notifications" && request.method === "GET") return json(page(list, q).body);
+      if (match[2] === "/accept" && request.method === "POST") {
+        notifications.push(...list);
+        notifications.sort((a, b) => ((b["id"] as string) > (a["id"] as string) ? 1 : -1));
+        held.delete(username);
+        return new Response(null, { status: 204 });
+      }
+      if (match[2] === "/dismiss" && request.method === "POST") {
+        held.delete(username);
+        return new Response(null, { status: 204 });
+      }
+      return problem(405, "Method Not Allowed");
+    }
     if (path === "/interaction_requests" && request.method === "GET") {
       // Those of the reader's posts that wait, newest first, of one kind when it is asked.
       const kind = q.get("kind");
@@ -2681,5 +2873,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return `/conversations/${typeof id === "string" ? id : "none"}`;
   };
 
-  return { serve, newPosts, newNotification, postPath, announcementPath, listPath, idOf: keyedId, conversationPath };
+  const heldPath = (username: string) => `/notifications/requests/${idOf(username)}`;
+
+  return {
+    serve,
+    newPosts,
+    newNotification,
+    postPath,
+    announcementPath,
+    listPath,
+    idOf: keyedId,
+    conversationPath,
+    heldPath,
+  };
 }

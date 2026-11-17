@@ -303,6 +303,13 @@ export class Post {
     });
   }
 
+  /** Mutes the thread of the post (`Mute thread`) or unmutes it from its more menu, once the server has answered. */
+  async muteThread(item: "Mute thread" | "Unmute thread" = "Mute thread"): Promise<void> {
+    await answered(this.page, { methods: ["POST", "DELETE"], path: /\/statuses\/[^/]+\/mute$/ }, async () => {
+      await this.menuItem(item);
+    });
+  }
+
   /** The link of the hashtag `#name` in the post's text. */
   hashtag(name: string): Locator {
     return this.article.getByRole("link", { name: `#${name}`, exact: true });

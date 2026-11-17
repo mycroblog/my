@@ -130,7 +130,7 @@ async function postOf(main: Queries, text: string): Promise<HTMLElement> {
 
 /**
  * Over the notifications, in both tabs, a row counts the three requests and opens their screen; the requests'
- * notifications are lines without buttons.
+ * notifications are lines without Approve and Decline, which their screen holds.
  */
 async function counted(context: StoryContext, lang: Lang) {
   const { w, main } = await settled(context, lang);
@@ -139,8 +139,12 @@ async function counted(context: StoryContext, lang: Lang) {
   const [first] = feed.getAllByRole("article");
   if (first === undefined) throw new Error("the notifications show none");
   await expect(row.compareDocumentPosition(first) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-  for (const asked of [w.askedReply, w.askedBoost, w.askedQuote])
-    await expect(within(await feed.findByRole("article", { name: asked })).queryAllByRole("button")).toHaveLength(0);
+  // Answered on their own screen alone: no Approve nor Decline on a request's line (its dismissal stays).
+  for (const asked of [w.askedReply, w.askedBoost, w.askedQuote]) {
+    const line = within(await feed.findByRole("article", { name: asked }));
+    for (const answer of [w.approve, w.decline])
+      await expect(line.queryAllByRole("button", { name: answer })).toHaveLength(0);
+  }
   await userEvent.click(main.getByRole("tab", { name: w.mentions }));
   await waitingRow(main, w, 3);
   await userEvent.click(main.getByRole("tab", { name: w.all }));

@@ -13,7 +13,7 @@
   },
   "notifications.mentions": {
     "defaultMessage": "Mentions",
-    "description": "The tab that shows only the notifications that speak to the reader: mentions and quotes."
+    "description": "The tab that shows only the notifications that speak to the reader: mentions, quotes and new posts of the accounts they asked to be notified of."
   },
   "notifications.waiting": {
     "defaultMessage": "Waiting for approval",
@@ -54,6 +54,14 @@
   "notifications.read_all": {
     "defaultMessage": "Mark all as read",
     "description": "The button over the notifications that marks every notification read."
+  },
+  "notifications.dismiss": {
+    "defaultMessage": "Dismiss notification",
+    "description": "The button or menu item at the end of a notification that takes it out of the list for good."
+  },
+  "notifications.dismiss_failed": {
+    "defaultMessage": "The notification could not be dismissed.",
+    "description": "The notice at the bottom of the page when dismissing a notification failed; it is back in the list, and Try again follows."
   },
   "notifications.approve": {
     "defaultMessage": "Approve",
@@ -346,5 +354,53 @@
   "notifications.follow_requests_failed": {
     "defaultMessage": "The follow requests could not be loaded.",
     "description": "When the follow requests failed to load; Try again follows it."
+  },
+  "notifications.held": {
+    "defaultMessage": "Held-back notifications",
+    "description": "The title of the screen of the notifications the reader's notification policy held back, one row per account that sent them, and of the screen of one account's."
+  },
+  "notifications.held_about": {
+    "defaultMessage": "Accept moves a person's notifications into your notifications and lets their later ones through. Dismiss deletes them.",
+    "description": "The line under the title of the held-back notifications (notifications.held), over the accounts, that says what accepting and dismissing do."
+  },
+  "notifications.held_count": {
+    "defaultMessage": "{count, plural, one {# notification} other {# notifications}}",
+    "description": "Under an account on the screen of the held-back notifications: how many of its notifications are held back. count is how many."
+  },
+  "notifications.held_accept": {
+    "defaultMessage": "Accept",
+    "description": "The button of an account's held-back notifications that moves them into the notifications and lets its later ones through."
+  },
+  "notifications.held_dismiss": {
+    "defaultMessage": "Dismiss",
+    "description": "The button of an account's held-back notifications that drops them; later ones are held back again."
+  },
+  "notifications.held_accepted": {
+    "defaultMessage": "Accepted",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader accepted them (notifications.held_accept); focus moves to it."
+  },
+  "notifications.held_dismissed": {
+    "defaultMessage": "Dismissed",
+    "description": "What an account's held-back notifications say in place of the buttons once the reader dismissed them (notifications.held_dismiss); focus moves to it."
+  },
+  "notifications.held_loading": {
+    "defaultMessage": "Loading held-back notifications…",
+    "description": "What the screens of the held-back notifications say while the first of them load."
+  },
+  "notifications.held_failed": {
+    "defaultMessage": "Held-back notifications could not be loaded.",
+    "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
+  },
+  "notifications.held_empty": {
+    "defaultMessage": "No notifications are held back. Notifications your notification settings hold back show here.",
+    "description": "What the screen of the held-back notifications says when none is held back."
+  },
+  "notifications.held_none": {
+    "defaultMessage": "None of this person's notifications is held back now.",
+    "description": "What the screen of one account's held-back notifications says when it holds none (they were answered elsewhere, or about posts gone)."
+  },
+  "notifications.held_gone": {
+    "defaultMessage": "This person has no held-back notifications now.",
+    "description": "What the screen of one account's held-back notifications says when the server no longer lists its request (answered elsewhere)."
   }
 }

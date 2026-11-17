@@ -127,7 +127,8 @@ const notice = tv({
     root: "relative flex items-start gap-entry-caption",
     // The glyph and the avatar stand on the text's first line, so that a sentence that wraps keeps them at its start.
     glyph: [
-      "inline-flex h-[1lh] min-w-icon-action flex-none items-center justify-center text-muted-text",
+      // At the icon's width whatever it holds (a reaction's emoji too), so that every sentence starts in one column.
+      "inline-flex h-[1lh] w-icon-action flex-none items-center justify-center text-muted-text",
       "text-[length:var(--icon-action)] leading-none",
     ],
     // Held empty where no account acted (a notice of the server), so that every sentence starts in one column.
@@ -136,7 +137,10 @@ const notice = tv({
     // A sentence that wraps breaks between phrases, never inside a word of ja (求めています, お気に入り), its lines
     // kept even; the time floats at its first line's end, and the lines under it run to the column's end.
     text: "m-0 [text-wrap:pretty] [word-break:auto-phrase]",
-    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-entry-caption",
+    // The unread mark, the time and the control stand close, so that the first line keeps more of its measure.
+    end: "float-end ms-entry-caption inline-flex h-[1lh] items-center gap-chip-gap",
+    // A control at the end, over the line's link, at a timeline control's height on the first line's.
+    action: "relative z-1 -my-[calc((var(--control-timeline-height)-1lh)/2)] -me-icon-button-inline inline-flex",
     // The sentence as the link to what it tells of, in the line's own color, underlined while hovered; it reaches over
     // the whole line, so that a press anywhere on it follows the link.
     link: [
@@ -168,6 +172,8 @@ export type NoticeLineProps = {
   children: ReactNode;
   /** What it is about, under the sentence in its column (an `Excerpt` of the reader's post). */
   excerpt?: ReactNode;
+  /** A control at the line's end, after the time (dismissing it). */
+  action?: ReactNode;
   /** Where it leads: what it tells of (the post, the account, the follow requests). */
   href?: string | undefined;
   /** What runs as its link is followed (it is read). */
@@ -187,6 +193,7 @@ export function NoticeLine({
   unread: mark,
   children,
   excerpt,
+  action,
   href,
   onFollow,
 }: NoticeLineProps) {
@@ -200,6 +207,7 @@ export function NoticeLine({
           <span className={s.end()}>
             {mark !== undefined && <UnreadMark label={mark} />}
             <Stamp date={date} />
+            {action !== undefined && <span className={s.action()}>{action}</span>}
           </span>
           {/* The sentence alone names the entry, not the time before it. */}
           <span id={id}>
@@ -223,21 +231,27 @@ const noticeCaption = tv({
     root: "flex items-center gap-entry-avatar text-caption",
     text: "m-0 flex min-w-0 flex-1 items-start gap-entry-caption [word-break:auto-phrase]",
     glyph: "inline-flex h-[1lh] flex-none items-center text-muted-text",
+    // A control at the end, its whole height in the line, so that it keeps clear of the post's byline under it.
+    action: "-me-icon-button-inline inline-flex flex-none",
   },
   variants: { read: { true: { text: "text-muted-text" }, false: { text: "text-text" } } },
 });
 
 /**
  * A notice's kind over the entry it is about, inside it (a post that mentions the reader): a caption's glyph and
- * sentence, in the text's color with the unread mark at the line's end while unread, muted once read.
+ * sentence, in the text's color with the unread mark at the line's end while unread, muted once read, and a control
+ * after the mark.
  */
 export function NoticeCaption({
   icon,
   unread: mark,
+  action,
   children,
 }: {
   icon: IconName;
   unread?: string | undefined;
+  /** A control at the line's end (dismissing it). */
+  action?: ReactNode;
   children: ReactNode;
 }) {
   const s = noticeCaption({ read: mark === undefined });
@@ -250,6 +264,7 @@ export function NoticeCaption({
         <span>{children}</span>
       </p>
       {mark !== undefined && <UnreadMark label={mark} />}
+      {action !== undefined && <span className={s.action()}>{action}</span>}
     </div>
   );
 }
@@ -261,7 +276,10 @@ export function SentenceName({ children }: { children: ReactNode }) {
   return <bdi className={name()}>{children}</bdi>;
 }
 
-const excerpt = tv({ base: "line-clamp-2 text-muted-text [&_p]:inline [&_p+p]:before:content-['_']" });
+// Wrapping between phrases, never inside a word of ja, as the sentence over it does.
+const excerpt = tv({
+  base: "line-clamp-2 text-muted-text [word-break:auto-phrase] [&_p]:inline [&_p+p]:before:content-['_']",
+});
 
 /**
  * The first words of something a line is about (the reader's post a notice is about): muted, its paragraphs run on,
@@ -361,31 +379,53 @@ export function RowItem({ children }: { children: ReactNode }) {
 }
 
 const account = tv({
-  slots: { root: "flex items-center gap-screen-row-gap", who: "min-w-0 flex-1" },
+  slots: {
+    // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
+    // than 12rem (a 320 px row with two buttons), so that the handle stays readable.
+    root: "flex flex-wrap items-center gap-screen-row-gap",
+    who: "grid min-w-0 flex-[1_1_12rem] gap-entry-line",
+    end: "ms-auto",
+    // A line under the byline at the name's start (how many notifications an account's request holds).
+    note: "m-0 ps-[calc(var(--avatar-post)+var(--entry-avatar-gap))] text-caption text-muted-text",
+  },
 });
 
-/** An account on a row of its own: its avatar, its name over its handle, and what the reader may do at the end. */
+/**
+ * An account on a row of its own: its avatar, its name over its handle, a note under them, and what the reader may do
+ * at the end.
+ */
 export function AccountRow({
   avatar,
   name: accountName,
   handle,
   href,
+  note,
+  heading = false,
   end,
 }: {
   avatar: ReactNode;
   name: ReactNode;
   handle: string;
-  /** Where the name leads: the account's profile. */
+  /** Where the name leads: the account's profile, or what is of it elsewhere (its held-back notifications). */
   href?: string | undefined;
+  /** A line under the name and the handle. */
+  note?: ReactNode;
+  /** The name is the heading of the screen the row heads (`ScreenHead`). */
+  heading?: boolean | undefined;
   end?: ReactNode;
 }) {
   const s = account();
   return (
     <div className={s.root()}>
       <div className={s.who()}>
-        <Byline avatar={avatar} name={accountName} handle={handle} href={href} />
+        <Byline avatar={avatar} name={accountName} handle={handle} href={href} heading={heading} />
+        {note !== undefined && <p className={s.note()}>{note}</p>}
       </div>
-      {end !== undefined && <ButtonPair>{end}</ButtonPair>}
+      {end !== undefined && (
+        <div className={s.end()}>
+          <ButtonPair>{end}</ButtonPair>
+        </div>
+      )}
     </div>
   );
 }
@@ -517,6 +557,19 @@ export function ListTitle({ glyph, count, children }: { glyph?: ReactNode; count
       <span>{children}</span>
       {count !== undefined && <span className={s.count()}>{count}</span>}
     </h2>
+  );
+}
+
+/**
+ * The head of a screen of one account's things (its held-back notifications): its back button close over the account's
+ * row, whose name is the screen's heading (an `AccountRow` with `heading`), as a screen's title stands under it.
+ */
+export function ScreenHead({ back, children }: { back: ReactNode; children: ReactNode }) {
+  return (
+    <div className={screenTitle().root()}>
+      {back}
+      {children}
+    </div>
   );
 }
 
