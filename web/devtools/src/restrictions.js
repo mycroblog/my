@@ -8,9 +8,11 @@
 //   @my/i18n reaches the app alone. The layer of a file is the package of web/ it is in. It sees `import`, `export …
 //   from` and `import()` of a package of the workspace by its name, and a relative path into another package of
 //   web/ (web/brand, which holds files and no package, is open to all). A story (`*.stories.tsx`) and a sample module
-//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake server
-//   that exists for the stories (ADR-0165 §1), and @my/devtools/options, the live options the decider picks from
-//   (ADR-0168 §1), and nothing else of either package.
+//   beside it (`*.samples.ts(x)`), which only the Storybook host loads, may also import @my/e2e/fake, the fake API
+//   (ADR-0171 §5), @my/e2e/fake/auth, the auth screens' page data, and @my/devtools/options, the live options the
+//   decider picks from (ADR-0168 §1), and nothing else of either package. A test (`*.test.ts(x)`) and a module of a
+//   package's `test/` directory, which only the test runner loads, may also import @my/e2e/fake, and nothing else of
+//   it.
 //
 // - design-system-props: outside @my/design-system, no element of one of its components gets a `className` or a
 //   `style` (§4). The `Omit` of each component's props refuses them only while the types hold; this also refuses them
@@ -202,8 +204,12 @@ const SHARED_FILES = "brand";
 
 /** A story, or a sample module beside it: what only the Storybook host loads. */
 const STORY_FILE = /\.(?:stories\.tsx|samples\.tsx?)$/;
-/** What a story may import besides the layers below its own: the fake server of the stories, and live options. */
-const STORY_FAKES = new Set(["@my/e2e/fake", "@my/devtools/options"]);
+/** A test, or a module of a `test/` directory: what only the test runner loads. */
+const TEST_FILE = /(?:\.test\.tsx?|\/test\/[^/]+\.tsx?)$/;
+/** The fake API (ADR-0171 §5), which a story and a test may import besides the layers below their own. */
+const FAKE_API = "@my/e2e/fake";
+/** What a story may import besides: the fake API, the auth screens' page data, and live options. */
+const STORY_FAKES = new Set([FAKE_API, "@my/e2e/fake/auth", "@my/devtools/options"]);
 
 /** The directory under web/ of a path (`app` of `/…/web/app/src/main.tsx`), or undefined outside web/. */
 function webDir(/** @type {string} */ path) {
@@ -228,11 +234,13 @@ function createLayerImports(context) {
   if (own === undefined || !Object.hasOwn(BELOW, own)) return {};
   const below = new Set(BELOW[/** @type {keyof typeof BELOW} */ (own)]);
   const story = STORY_FILE.test(filename);
+  const test = TEST_FILE.test(filename);
 
   function check(/** @type {Node | null | undefined} */ source) {
     if (source?.type !== "Literal" || typeof source.value !== "string") return;
     const specifier = source.value;
     if (story && STORY_FAKES.has(specifier)) return;
+    if (test && specifier === FAKE_API) return;
     let target;
     let relative = false;
     if (specifier.startsWith("@my/")) target = specifier.slice("@my/".length).split("/")[0];

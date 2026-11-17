@@ -4,14 +4,14 @@
 // itself, where New post (or `n`), a post's Reply and the boost menu's Quote open the composer over the home timeline,
 // and what is posted tops it. The language is the toolbar's locale (ja, else en).
 //
-// The server is the fake of @my/e2e, which answers the reads from the scenario and keeps the reader's drafts and their
-// schedules; this file's own fake takes the other writes: posts and uploads (a file whose name has "fail" is refused,
-// so that the retry shows; the others are processed for a moment); a post whose text has "#fail" is refused with the
-// server's words, so that a failed post shows. Leaving the composer: close and Escape discard a written post, with
-// Undo; the backdrop saves it as a draft, which New post opens again. The drafts' menu in the head saves it as a draft,
-// or opens the drafts and scheduled posts, from which one opens in the composer.
+// The server is the fake of @my/e2e, which answers from the scenario and keeps what the reader writes; this file stages
+// it for the composer: a post takes a moment, and one whose text has "#fail" is refused with the server's words, so
+// that a failed post shows; an upload is processed for a moment, and a file whose name has "fail" is refused, so that
+// the retry shows. Leaving the composer: close and Escape discard a written post, with Undo; the backdrop saves it as a
+// draft, which New post opens again. The drafts' menu in the head saves it as a draft, or opens the drafts and
+// scheduled posts, from which one opens in the composer.
 
-import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource, type Status } from "@my/app-data";
+import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource } from "@my/app-data";
 import {
   ComposeLayer,
   emptyComposeDraft,
@@ -31,145 +31,58 @@ import { minimumWidth, rightToLeft } from "./app.samples";
 import { createAppRouter } from "./router";
 import { useNarrowViewport } from "./shell/viewport";
 
-const json = (body: unknown, status = 200) =>
-  new Response(JSON.stringify(body), {
+const problem = (status: number, title: string, more: Record<string, string> = {}) =>
+  new Response(JSON.stringify({ type: "about:blank", title, status, ...more }), {
     status,
-    headers: { "Content-Type": status >= 400 ? "application/problem+json" : "application/json", ETag: '"1"' },
+    headers: { "Content-Type": "application/problem+json" },
   });
-const notFound = () => json({ type: "about:blank", title: "Not Found", status: 404 }, 404);
-const refused = (detail: string) =>
-  json({ type: "/api/v1/problems/status-rejected", title: "Unprocessable Content", status: 422, detail }, 422);
 
 /** A file's metadata, centered. */
 const centered = { focus: { x: 0, y: 0 } };
 
-const escape = (s: string) => s.replace(/[&<>"]/g, (c) => `&#${String(c.charCodeAt(0))};`);
-const str = (v: unknown, fallback = "") => (typeof v === "string" ? v : fallback);
+/** How long a post takes, and an upload's processing, so that each shows. */
+const postMs = 800;
+const processingMs = 1500;
 
-/** The fake of @my/e2e, with the composer's writes kept in memory and its settings answered. */
-function composeFake(fake: FakeApi): (request: Request) => Promise<Response> {
-  const uploads = new Map<string, { url: string; ready: number }>();
-  const posted: Status[] = [];
-  let made = 0;
-
-  const read = async (path: string): Promise<unknown> =>
-    (await fake.serve(new Request(`${fakeOrigin}/api/v1${path}`))).json();
-
-  /** The status a post makes, from a status of the home timeline and what was sent. */
-  async function post(body: Record<string, unknown>): Promise<Status> {
-    made += 1;
-    const home = (await read("/timelines/home")) as { items: Status[] };
-    const me = (await read("/accounts/verify_credentials")) as Status["account"];
-    const base = home.items.find((s) => s.boost === undefined);
-    if (base === undefined) throw new Error("the fake's home timeline holds no post of its own");
-    const media = (body["media"] as { id: string; description?: string }[] | undefined) ?? [];
-    const quotedId = str(body["quoted_status_id"]);
-    const quoted = quotedId === "" ? undefined : ((await read(`/statuses/${quotedId}`)) as Status);
-    return {
-      ...base,
-      id: `posted-${String(made)}`,
-      account: me,
-      created_at: new Date().toISOString(),
-      content: str(body["text"])
-        .split("\n")
-        .map((line) => `<p>${escape(line)}</p>`)
-        .join(""),
-      spoiler_text: str(body["spoiler_text"]),
-      visibility: body["visibility"] as Status["visibility"],
-      language: str(body["language"], "en"),
-      media_attachments: media.map((m) => {
-        const url = uploads.get(m.id)?.url ?? "";
-        return {
-          id: m.id,
-          type: "image",
-          state: "ready",
-          meta: centered,
-          url,
-          preview_url: url,
-          ...(m.description ? { description: m.description } : {}),
-        };
-      }),
-      replies_count: 0,
-      boosts_count: 0,
-      favourites_count: 0,
-      reactions: [],
-      favourited: false,
-      boosted: false,
-      ...(typeof body["in_reply_to_id"] === "string" ? { in_reply_to_id: body["in_reply_to_id"] } : {}),
-      quote: quoted === undefined ? undefined : { state: "accepted", quoted_status: quoted },
-    } as Status;
-  }
-
+/** The fake of @my/e2e as the composer's stories stage it: its posts late or refused, its uploads processed late. */
+function staged(fake: FakeApi): (request: Request) => Promise<Response> {
+  /** The uploads still processed, by their IDs: until when, and what the server answers of each meanwhile. */
+  const uploads = new Map<string, { until: number; body: string }>();
+  // The limits as the composer's states are written for: a post's length alone.
+  fake.script("GET /instance", {
+    change: (instance) => ({ ...instance, limits: { max_post_characters: 500, require_media_description: false } }),
+  });
   return async (request) => {
-    const url = new URL(request.url);
-    const path = url.pathname.replace("/api/v1", "");
-    const method = request.method;
-    if (path === "/timelines/home" && url.searchParams.get("cursor") === null && posted.length > 0) {
-      const page = (await (await fake.serve(request)).json()) as { items: Status[] };
-      return json({ ...page, items: [...posted, ...page.items] });
+    const path = new URL(request.url).pathname.replace("/api/v1", "");
+    if (path === "/statuses" && request.method === "POST") {
+      const { text = "" } = (await request.clone().json()) as { text?: string };
+      await new Promise((resolve) => setTimeout(resolve, postMs));
+      if (text.includes("#fail"))
+        return problem(422, "Unprocessable Content", {
+          type: "/api/v1/problems/status-rejected",
+          detail: document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.",
+        });
+      return fake.serve(request);
     }
-    if (path === "/preferences")
-      return json({
-        default_visibility: "public",
-        default_interaction_policy: {
-          reply: { automatic: "everyone" },
-          announce: { automatic: "everyone" },
-          quote: { automatic: "everyone" },
-        },
-        default_post_language: "und",
-        require_media_description: false,
-      });
-    if (path === "/instance") {
-      const instance = (await read("/instance")) as Record<string, unknown>;
-      return json({ ...instance, limits: { max_post_characters: 500, require_media_description: false } });
+    if (path === "/media" && request.method === "POST") {
+      const file = (await request.clone().formData()).get("file");
+      if (!(file instanceof File) || file.name.includes("fail")) return problem(415, "Unsupported Media Type");
+      const response = await fake.serve(request);
+      const body = await response.clone().text();
+      uploads.set((JSON.parse(body) as { id: string }).id, { until: Date.now() + processingMs, body });
+      return response;
     }
-    if (path === "/statuses" && method === "POST") {
-      const body = (await request.json()) as Record<string, unknown>;
-      await new Promise((resolve) => setTimeout(resolve, 800));
-      if (str(body["text"]).includes("#fail"))
-        return refused(
-          document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.",
-        );
-      const status = await post(body);
-      posted.unshift(status);
-      return json(status, 201);
-    }
-    const own = /^\/statuses\/(posted-[^/]+)$/.exec(path);
-    if (own && method === "GET") {
-      const found = posted.find((s) => s.id === own[1]);
-      return found ? json(found) : notFound();
-    }
-    if (path === "/media" && method === "POST") {
-      const file = (await request.formData()).get("file");
-      if (!(file instanceof File) || file.name.includes("fail"))
-        return json({ type: "about:blank", title: "Unsupported Media Type", status: 415 }, 415);
-      made += 1;
-      const id = `media-${String(made)}`;
-      uploads.set(id, { url: URL.createObjectURL(file), ready: Date.now() + 1500 });
-      return json({ id, type: "image", state: "processing", meta: centered }, 202);
-    }
-    const media = /^\/media\/([^/]+)$/.exec(path);
-    if (media?.[1]) {
-      const upload = uploads.get(media[1]);
-      // Not uploaded here: a file of a draft, which the fake of @my/e2e holds.
-      if (!upload) return fake.serve(request);
-      const ready = Date.now() >= upload.ready;
-      return json({
-        id: media[1],
-        type: "image",
-        state: ready ? "ready" : "processing",
-        meta: centered,
-        ...(ready ? { url: upload.url, preview_url: upload.url } : {}),
-      });
-    }
+    const upload = uploads.get(/^\/media\/([^/]+)$/.exec(path)?.[1] ?? "");
+    if (upload !== undefined && request.method === "GET" && Date.now() < upload.until)
+      return new Response(upload.body, { headers: { "Content-Type": "application/json" } });
     return fake.serve(request);
   };
 }
 
 /** A new app on a new fake server, as the composer's stories use it; with posts that approve by hand, `approvals`. */
 function createComposeApp(approvals = false) {
-  const fake = createFakeApi({ approvals });
-  const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: composeFake(fake) }));
+  const fake = createFakeApi({ approvals, uploads: "processing" });
+  const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: staged(fake) }));
   return { fake, data };
 }
 

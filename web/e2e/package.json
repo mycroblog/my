@@ -5,7 +5,8 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
-    "./fake": "./src/fake/index.ts"
+    "./fake": "./src/fake/index.ts",
+    "./fake/auth": "./src/fake/auth.ts"
   },
   "scripts": {
     "typecheck": "bun --bun tsc -p ."

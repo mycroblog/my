@@ -17,7 +17,6 @@ import {
   receiveNotification,
   watchServer,
   type AppData,
-  type NotificationItem,
 } from "@my/app-data";
 import { enterCall, leaveCall, type Call } from "@my/app-features";
 import { createFakeApi, fakeHost, fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
@@ -183,7 +182,7 @@ function useStream(data: AppData, fake: FakeApi, stream: Stream | undefined) {
       if (event.kind === "posts" && stream === "home") void post(data, fake, event.count);
       if (event.kind === "reconnect" && stream === "home") receiveHomeGap(data);
       if (event.kind === "notification" && stream === "notifications")
-        receiveNotification(data, fake.newNotification() as NotificationItem);
+        receiveNotification(data, fake.newNotification());
     };
     channel.on(streamEvent, on);
     return () => {

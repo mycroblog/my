@@ -7,7 +7,7 @@
 
 import { AuthScreen } from "@my/app-features";
 import { useLocale } from "@my/design-system";
-import { authScreens } from "@my/e2e/fake";
+import { authScreens } from "@my/e2e/fake/auth";
 import type { StoryObj } from "@storybook/react-vite";
 import wordmarkDark from "../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../brand/Wordmark-Primary-Color.svg";
