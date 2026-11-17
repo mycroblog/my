@@ -2,47 +2,51 @@
 
 import { expect, test } from "bun:test";
 import { viewerQuery } from "./accounts";
-import { moderationCountsQuery, useModerationCount, useRights, type Permission } from "./rights";
-import { fakeAppData, json } from "./test/fake";
+import { moderationCountsQuery, useModerationCount, useRights } from "./rights";
+import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 
-/** The data of a viewer with `permissions`, once the server answered who they are and what awaits the moderators. */
-async function viewer(permissions: Permission[], counts: Record<string, number>) {
-  const { data, requests } = fakeAppData((request) => {
-    const path = new URL(request.url).pathname;
-    if (path === "/api/v1/accounts/verify_credentials")
-      return json(200, { id: "1", username: "hana", acct: "hana", permissions });
-    if (path === "/api/v1/admin/counts") return json(200, counts);
-    return json(404, { status: 404, title: "Not Found" });
-  });
+/**
+ * The data of a person of the scenario, once the server answered who they are and what awaits the moderators: hana
+ * administers the server, marco moderates it, yuki does neither. For marco the server counts 3 open reports, 2
+ * registrations to approve and 1 appeal to decide.
+ */
+async function viewer(username: "hana" | "marco" | "yuki", reportsOnly = false) {
+  const { fake, data } = fakeData({ viewer: username });
+  // A moderator whose role manages the reports alone: the server leaves the other counts out.
+  if (reportsOnly) {
+    fake.script("GET /accounts/verify_credentials", {
+      change: (account) => ({ ...account, permissions: ["manage_reports"] }),
+    });
+    fake.script("GET /admin/counts", {
+      change: ({ open_reports }) => (open_reports === undefined ? {} : { open_reports }),
+    });
+  }
   await data.queryClient.query(viewerQuery(data));
   await data.queryClient.query(moderationCountsQuery(data));
-  return { data, requests };
+  return data;
 }
 
 test("the viewer's rights are those of their permissions, and none for a reader without a session", async () => {
-  const { data } = await viewer(["manage_reports", "manage_settings", "view_finance"], {});
+  const data = await viewer("hana");
   expect(probe(data, () => useRights(true))).toEqual({ moderation: true, admin: true, finance: true });
   expect(probe(data, () => useRights(false))).toEqual({ moderation: false, admin: false, finance: false });
+  expect(probe(await viewer("marco"), () => useRights(true))).toEqual({
+    moderation: true,
+    admin: false,
+    finance: false,
+  });
 });
 
 test("Moderation counts the open reports, the registrations to approve and the appeals to decide together", async () => {
-  const { data } = await viewer(["manage_reports", "manage_accounts"], {
-    open_reports: 2,
-    pending_registrations: 3,
-    pending_appeals: 4,
-  });
-  expect(probe(data, () => useModerationCount(true))).toBe(9);
+  expect(probe(await viewer("marco"), () => useModerationCount(true))).toBe(6);
 });
 
 test("a count the moderator's permissions do not show is left out of the sum", async () => {
-  const { data } = await viewer(["manage_reports"], { open_reports: 5 });
-  expect(probe(data, () => useModerationCount(true))).toBe(5);
+  expect(probe(await viewer("marco", true), () => useModerationCount(true))).toBe(3);
 });
 
 test("a reader without the rights of moderation, or without a session, has no count", async () => {
-  const { data } = await viewer(["manage_settings"], { open_reports: 5 });
-  expect(probe(data, () => useModerationCount(true))).toBeUndefined();
-  const { data: moderator } = await viewer(["manage_reports"], { open_reports: 5 });
-  expect(probe(moderator, () => useModerationCount(false))).toBeUndefined();
+  expect(probe(await viewer("yuki"), () => useModerationCount(true))).toBeUndefined();
+  expect(probe(await viewer("marco"), () => useModerationCount(false))).toBeUndefined();
 });

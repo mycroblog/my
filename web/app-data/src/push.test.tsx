@@ -10,45 +10,24 @@ import {
   useRegisterPush,
   type PushSubscription,
 } from "./push";
-import { fakeAppData, json, type Handler } from "./test/fake";
+import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
-
-const subscription: PushSubscription = {
-  id: "0190a5d0-0000-7000-8000-000000000070",
-  endpoint: "https://push.example/s/1",
-  alerts: ["mention", "follow"],
-  server_key: "BAECAwQFBgcICQ",
-};
-
-const row = (group: string, types: string[]) => ({
-  group,
-  section: "ordinary",
-  types,
-  in_app: { enabled: true, fixed: false },
-});
-
-/** A server whose subscription and settings answer as `handler` does at their paths. */
-const at = (answers: Record<string, () => Response>): Handler => {
-  return (request) => {
-    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
-    return answers[`${request.method} ${path}`]?.() ?? json(404, { status: 404, title: "Not Found" });
-  };
-};
 
 describe("usePushSubscription", () => {
   test("is undefined until it is read, the server's once read, and null when the server has none (a 404)", async () => {
-    const found = fakeAppData(at({ "GET /push/subscription": () => json(200, subscription) })).data;
+    const found = fakeData({ push: true, pushState: "subscribed" }).data;
     expect(probe(found, usePushSubscription)).toBeUndefined();
-    await found.queryClient.query(pushSubscriptionQuery(found));
+    const subscription = await found.queryClient.query(pushSubscriptionQuery(found));
+    expect(subscription).toMatchObject({ endpoint: "https://push.example/s/held", alerts: ["mention"] });
     expect(probe(found, usePushSubscription)).toEqual(subscription);
 
-    const none = fakeAppData(at({})).data;
+    const none = fakeData({ push: true }).data;
     await none.queryClient.query(pushSubscriptionQuery(none));
     expect(probe(none, usePushSubscription)).toBeNull();
   });
 
   test("is undefined when it could not be read, never null", async () => {
-    const { data } = fakeAppData(at({ "GET /push/subscription": () => json(500, { status: 500, title: "Oops" }) }));
+    const { data } = fakeData({ push: true, pushState: "subscription-fails" });
     await data.queryClient.query(pushSubscriptionQuery(data)).catch(() => undefined);
     expect(probe(data, usePushSubscription)).toBeUndefined();
   });
@@ -56,24 +35,29 @@ describe("usePushSubscription", () => {
 
 describe("useNotificationKinds", () => {
   test("is every kind of the reader's rows, each once, and undefined until the rows are read", async () => {
-    const { data } = fakeAppData(
-      at({
-        "GET /preferences/notifications": () =>
-          json(200, {
-            rows: [row("mention", ["mention"]), row("boost", ["boost", "quote"]), row("again", ["quote", "follow"])],
-          }),
+    const { fake, data } = fakeData({ push: true });
+    // The server lists the quotes with the boosts, in one row of two kinds, and in a row of their own.
+    fake.script("GET /preferences/notifications", {
+      change: (settings) => ({
+        rows: settings.rows.map((row) => (row.group === "boost" ? { ...row, types: ["boost", "quote"] } : row)),
       }),
-    );
+    });
     expect(probe(data, useNotificationKinds)).toBeUndefined();
     await data.queryClient.query(notificationSettingsQuery(data));
     const kinds = probe(data, useNotificationKinds);
-    expect([...(kinds ?? [])].sort()).toEqual(["boost", "follow", "mention", "quote"]);
+    expect([...(kinds ?? [])].sort()).toEqual([
+      "boost",
+      "favourite",
+      "follow",
+      "follow_request",
+      "mention",
+      "quote",
+      "reaction",
+    ]);
   });
 
   test("stays undefined when the rows could not be read", async () => {
-    const { data } = fakeAppData(
-      at({ "GET /preferences/notifications": () => json(500, { status: 500, title: "Oops" }) }),
-    );
+    const { data } = fakeData({ push: true, pushState: "settings-fail" });
     await data.queryClient.query(notificationSettingsQuery(data)).catch(() => undefined);
     expect(probe(data, useNotificationKinds)).toBeUndefined();
   });
@@ -83,25 +67,21 @@ describe("useRegisterPush", () => {
   const browser = { endpoint: "https://push.example/s/1", keys: { p256dh: "-_8B", auth: "_gI" } };
 
   test("puts this browser's subscription for the kinds given, and the server's answer is the subscription then", async () => {
-    let body: unknown;
-    const { data } = fakeAppData(async (request) => {
-      const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
-      if (path === "/push/subscription" && request.method === "PUT") {
-        body = await request.json();
-        return json(200, subscription);
-      }
-      return json(404, { status: 404, title: "Not Found" });
-    });
+    const { fake, data } = fakeData({ push: true });
+    const sent = fake.script("PUT /push/subscription");
     await data.queryClient.query(pushSubscriptionQuery(data));
     expect(probe(data, usePushSubscription)).toBeNull();
     const register = probe(data, useRegisterPush);
     await register(browser, ["mention", "follow"]);
-    expect(body).toEqual({ ...browser, alerts: ["mention", "follow"] });
-    expect(probe(data, usePushSubscription)).toEqual(subscription);
+    expect(sent.seen.map((s) => s.body)).toEqual([{ ...browser, alerts: ["mention", "follow"] }]);
+    const { data: kept } = await data.api.GET("/push/subscription");
+    expect(kept).toMatchObject({ endpoint: browser.endpoint, alerts: ["mention", "follow"] });
+    expect(probe(data, usePushSubscription)).toEqual(kept as PushSubscription);
   });
 
   test("rejects when the server refuses, and the grant still has none", async () => {
-    const { data } = fakeAppData(at({ "PUT /push/subscription": () => json(422, { status: 422, title: "Bad" }) }));
+    const { fake, data } = fakeData({ push: true });
+    fake.script("PUT /push/subscription", { fail: 422 });
     await data.queryClient.query(pushSubscriptionQuery(data));
     let refused: unknown;
     await probe(data, useRegisterPush)(browser, ["mention"]).catch((e: unknown) => {

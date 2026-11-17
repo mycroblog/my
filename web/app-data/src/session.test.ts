@@ -1,13 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { TabGroup } from "@my/platform";
 import { openSession, SessionTokenSource } from "./session";
-import { json, page } from "./test/fake";
 import { fakeBrowser } from "./test/tabs";
 
-const server = "https://example.com";
+const server = fakeOrigin;
+
+// The trade of the session's cookie for an access token (POST /oauth/token/refresh, ADR-0090 §16) is no operation of
+// the client API, which the fake API answers: these tests answer it themselves, as RFC 6749 words a token and its
+// refusal, and hand every other request to a fake API.
+const json = (status: number, body: unknown) => Response.json(body, { status });
 
 test("without a session the server refuses the cookie as an invalid grant, and there is no session", async () => {
   const requests: Request[] = [];
@@ -21,11 +26,12 @@ test("without a session the server refuses the cookie as an invalid grant, and t
   expect(data).toBeNull();
   expect(requests).toHaveLength(1);
   expect(requests[0]?.method).toBe("POST");
-  expect(requests[0]?.url).toBe("https://example.com/oauth/token/refresh");
+  expect(requests[0]?.url).toBe(`${server}/oauth/token/refresh`);
   expect(requests[0]?.headers.get("X-My-Token-Refresh")).toBe("1");
 });
 
 test("with a session the client API gets the access token the cookie traded for", async () => {
+  const api = createFakeApi();
   const authorizations: (string | null)[] = [];
   const data = await openSession({
     server,
@@ -35,7 +41,7 @@ test("with a session the client API gets the access token the cookie traded for"
           json(200, { access_token: "a1", token_type: "Bearer", expires_in: 3600, scope: "read" }),
         );
       authorizations.push(request.headers.get("Authorization"));
-      return Promise.resolve(json(200, page(["1"])));
+      return api.serve(request);
     },
   });
   expect(data).not.toBeNull();
@@ -78,6 +84,8 @@ test("the token is traded again once it expires, and once for the requests that 
  * (ADR-0090 §16), and the client API refuses a revoked token with a 401.
  */
 function rotatingServer() {
+  const api = createFakeApi();
+  const refusing = createFakeApi({ visitor: true });
   let refreshes = 0;
   let valid: string | null = null;
   let ended = false;
@@ -89,7 +97,7 @@ function rotatingServer() {
       return Promise.resolve(json(200, { access_token: valid, token_type: "Bearer", expires_in: 3600 }));
     }
     const token = request.headers.get("Authorization")?.replace("Bearer ", "");
-    return Promise.resolve(token === valid ? json(200, page(["1"])) : json(401, { status: 401 }));
+    return (token === valid ? api : refusing).serve(request);
   };
   return {
     fetch,

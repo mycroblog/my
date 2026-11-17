@@ -1128,7 +1128,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         ? {}
         : { in_reply_to_id: statusId.get(parent.key) ?? "", in_reply_to_account_id: idOf(parent.author) }),
       media_attachments: mediaOf(p, id, now),
-      ...(p.card === undefined ? {} : { card: cardOf(p.card, now.text) }),
+      // A card is of the text's first link: an edit that takes the link out takes the card with it.
+      ...(p.card === undefined || !/https?:\/\/\S+/.test(now.text) ? {} : { card: cardOf(p.card, now.text) }),
       mentions: mentionsOf(now.text),
       tags: statusTags(now.text, articleEdits.get(p.key)?.tags),
       filtered: [],
@@ -1620,7 +1621,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     });
   };
   /** What the reader wrote of each article the fake made, by its ID: its body and its article's part. */
-  const madeSources = new Map<string, { text: string; article: WrittenArticle }>();
+  const madeSources = new Map<string, { text: string; spoiler: string; article?: WrittenArticle }>();
   /** A status by its ID as it reads now: one the fake made, or a post of the seed the reader may see. */
   const statusById = (id: string): Status | undefined => {
     const p = shownPost(id);
@@ -1687,7 +1688,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     });
     made.set(id, status);
     if (parent !== undefined && !waits) countReply(parent.id, 1);
-    if (article !== undefined) madeSources.set(id, { text, article });
+    madeSources.set(id, { text, spoiler: w.spoiler_text ?? "", ...(article === undefined ? {} : { article }) });
     // A list holds no article's body (ADR-0160 §8).
     home.unshift(article === undefined ? status : { ...status, content: "" });
     return status;
@@ -1736,7 +1737,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       article: madeArticle(article, text),
     };
     made.set(id, after);
-    madeSources.set(id, { text, article });
+    madeSources.set(id, { text, spoiler: "", article });
     const at = home.findIndex((s) => s.id === id);
     if (at >= 0) home.splice(at, 1, { ...after, content: "" });
     return after;
@@ -2760,19 +2761,20 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const own = made.get(params.id);
       if (own !== undefined) {
         const source = madeSources.get(params.id);
+        const article = source?.article;
         const body = exact<Schema<"StatusSource">>()({
           id: params.id,
           text: source?.text ?? "",
-          spoiler_text: "",
+          spoiler_text: source?.spoiler ?? "",
           language: own.language,
-          ...(source === undefined
+          ...(article === undefined
             ? {}
             : {
                 article: exact<Schema<"ArticleSource">>()({
-                  title: source.article.title,
-                  summary: source.article.summary ?? "",
-                  tags: [...(source.article.tags ?? [])],
-                  ...(source.article.cover === undefined ? {} : { cover: source.article.cover }),
+                  title: article.title,
+                  summary: article.summary ?? "",
+                  tags: [...(article.tags ?? [])],
+                  ...(article.cover === undefined ? {} : { cover: article.cover }),
                 }),
               }),
         });
