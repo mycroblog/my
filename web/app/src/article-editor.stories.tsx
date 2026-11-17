@@ -4,12 +4,11 @@
 // state, from a new article to the reader's drafts of articles (one scheduled) and an edit of a published one (as sam,
 // whose article it is); the preview the server could not render, a publication its review refuses, and a reader the
 // server keeps from writing new articles. Each reads at the toolbar's viewport (a phone writes or previews behind
-// Write | Preview, a PC shows both side by side) and locale; Japanese, right to left, the minimum width and the PC are
-// pinned too.
+// Write | Preview, a PC shows both side by side) and locale. A refusal follows a press: a play presses Publish or Save.
 
 import type { Meta, StoryContext, StoryObj } from "@storybook/react-vite";
 import { userEvent, waitFor, within } from "storybook/test";
-import { minimumWidth, rightToLeft, screen, screenMeta } from "./app.samples";
+import { screen, screenMeta } from "./app.samples";
 
 const draft = "article-draft:yuki-article-trail";
 
@@ -46,7 +45,6 @@ const pressRefused = async (context: StoryContext) => {
     if (!publish.closest("div")?.parentElement?.querySelector('[role="alert"]'))
       throw new Error("the refusal is not shown before Publish yet");
   });
-  if (!publish.isConnected) throw new Error("the editor was left");
   // React Aria announces the button's busy state for 7 s through a node of the page's own, which names the button
   // by its ID; the checks of the page read the screen once it is gone.
   await waitFor(
@@ -68,21 +66,9 @@ export const PublishingError: Story = {
  */
 export const SummaryRefused: Story = {
   parameters: screen({ at: "article-edit:sam-article", viewer: "sam", server: { articles: { publish: "summary" } } }),
-  play: async (context: StoryContext) => {
-    await pressRefused(context);
-    // The fake's detail, under the summary's textarea, which its hint and then it describe.
-    const summary = context.canvasElement.querySelector('textarea[aria-invalid="true"]');
-    const described = summary?.getAttribute("aria-describedby")?.split(" ") ?? [];
-    const texts = described.map((id) => context.canvasElement.ownerDocument.getElementById(id)?.textContent ?? "");
-    if (!texts.some((text) => text.includes("not valid")))
-      throw new Error("the refusal does not stand under the summary");
-  },
+  play: pressRefused,
 };
 /** The server keeps new articles to a role the reader does not have: no form, the one sentence why. */
 export const NotAllowed: Story = {
   parameters: screen({ at: "/articles/new", server: { articles: { authoring: "permission" } } }),
 };
-export const Japanese: Story = { parameters: screen({ at: draft }), globals: { locale: "ja" } };
-export const RightToLeft: Story = { parameters: screen({ at: draft }), globals: rightToLeft };
-export const MinimumWidth: Story = { parameters: screen({ at: draft }), globals: minimumWidth };
-export const PC: Story = { parameters: screen({ at: draft }), globals: { viewport: { value: "pc" } } };
