@@ -109,10 +109,29 @@ func TestPushRechecksAtSend(t *testing.T) {
 	}
 }
 
-func TestAnnouncementPath(t *testing.T) {
+// TestPushPathOfEveryType checks that the Web Push message and the email of every notification
+// type lead to the notification's own page of the web client, which decides from the
+// notification where it leads.
+func TestPushPathOfEveryType(t *testing.T) {
 	const id = "01a18bbc-4663-71ea-a2b8-f3f169979c0a"
-	if got, want := AnnouncementPath(id), "/announcements/"+id; got != want {
-		t.Errorf("AnnouncementPath = %q, want %q", got, want)
+	d := describer{audience: stubAudience{}, host: "example.com"}
+	for _, typ := range notification.Types {
+		t.Run(string(typ), func(t *testing.T) {
+			p, _, err := d.describe(t.Context(), pushJob{
+				NotificationID: id, AccountID: "alice", Type: typ, SourceAccountID: "bob@remote.example",
+				StatusID: "s", ReportID: "r", AppealID: "a", VoiceRoomID: "v", ErrorGroupID: "e", HookAppealID: "h",
+				AnnouncementID: "n", GatheringID: "g",
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want := "/notifications/" + id; p.Path != want || p.NotificationID != id {
+				t.Errorf("path = %q, notification_id = %q; want %q, %q", p.Path, p.NotificationID, want, id)
+			}
+		})
+	}
+	if got := PagePath(id); got != "/notifications/"+id {
+		t.Errorf("PagePath = %q", got)
 	}
 }
 
@@ -129,8 +148,8 @@ func TestDescribeScheduledStatusFailed(t *testing.T) {
 		// The reasons of content.DraftFailureReason.
 		for _, reason := range []string{"restricted", "reply_unavailable", "quote_unavailable", "media_unavailable", "invalid", "rejected"} {
 			p := DescribeNotification(l, Wording{Type: notification.TypeScheduledStatusFailed, DraftFailureReason: reason}, "example.com")
-			if !strings.HasPrefix(p.Title, "example.com") || seen[p.Title] || p.Path != "/notifications" {
-				t.Errorf("%s, %s: %+v; want a title of its own that names the server, to the notifications", loc, reason, p)
+			if !strings.HasPrefix(p.Title, "example.com") || seen[p.Title] {
+				t.Errorf("%s, %s: %+v; want a title of its own that names the server", loc, reason, p)
 			}
 			seen[p.Title] = true
 		}

@@ -520,5 +520,34 @@ export const DismissFailed: Story = {
     });
   },
 };
+/**
+ * Where a push or an email about one notification leads, /notifications/{id}: a favourite of the reader's post opens
+ * that post, the address replaced. It reads in en, whatever the toolbar's locale.
+ */
+export const OpenedByItsLink: Story = {
+  parameters: screen({ at: "notification:favourite" }, "notifications"),
+  globals: { locale: "en" },
+  play: async (context) => {
+    await screenMeta.play(context);
+    const canvas = within(context.canvasElement);
+    // The post's page, in place of the notifications: no line that it opens, no list of the notifications.
+    await waitFor(async () => {
+      await expect(canvas.queryByText("Opening the notification…", { exact: true })).toBeNull();
+      await expect(canvas.queryByRole("feed", { name: "Notifications" })).toBeNull();
+    });
+    await expect((await canvas.findAllByRole("article"))[0]).toBeVisible();
+  },
+};
+/** The link of a notification the reader no longer has: the notifications, with a line that it is gone. */
+export const GoneByItsLink: Story = {
+  parameters: screen({ at: "/notifications/0190a5d0-0000-7000-8000-000000000999" }, "notifications"),
+  globals: { locale: "en" },
+  play: async (context) => {
+    await screenMeta.play(context);
+    await expect(
+      await within(context.canvasElement).findByText("That notification is no longer there.", { exact: true }),
+    ).toBeVisible();
+  },
+};
 export const RightToLeft: Story = { globals: rightToLeft };
 export const MinimumWidth: Story = { globals: minimumWidth };

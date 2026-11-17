@@ -7,7 +7,7 @@ Organized by Bob
 Co-organized by Carol
 
 Open
-https://social.example/events/01JSAMPLE0EVENT000000000000
+https://social.example/notifications/01JSAMPLE0NOTIFICATION00000
 
 -- 
 Example Social

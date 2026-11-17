@@ -3900,6 +3900,37 @@ paths:
                 $ref: '#/components/schemas/NotificationMarker'
         default:
           $ref: '#/components/responses/Problem'
+  /notifications/{id}:
+    get:
+      operationId: getNotification
+      summary: Get a notification
+      description: |
+        One of the user's notifications, as the list shows it. A notification that is not the
+        user's, is dismissed, or that the list leaves out is a 404.
+      tags:
+        - notifications
+      security:
+        - oauth2:
+            - read:notifications
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: The ID of the notification.
+          schema:
+            $ref: '#/components/schemas/Id'
+      responses:
+        '200':
+          description: The notification.
+          headers:
+            Cache-Control:
+              $ref: '#/components/headers/CacheControl'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+        default:
+          $ref: '#/components/responses/Problem'
   /notifications/{id}/dismiss:
     post:
       operationId: dismissNotification

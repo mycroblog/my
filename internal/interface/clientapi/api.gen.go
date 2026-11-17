@@ -20731,6 +20731,9 @@ type ServerInterface interface {
 	// ListNotificationRequestNotifications List the notifications of a notification request
 	// (GET /notifications/requests/{id}/notifications)
 	ListNotificationRequestNotifications(w http.ResponseWriter, r *http.Request, id AccountId, params ListNotificationRequestNotificationsParams)
+	// GetNotification Get a notification
+	// (GET /notifications/{id})
+	GetNotification(w http.ResponseWriter, r *http.Request, id Id)
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(w http.ResponseWriter, r *http.Request, id Id)
@@ -31509,6 +31512,32 @@ func (siw *ServerInterfaceWrapper) ListNotificationRequestNotifications(w http.R
 	handler.ServeHTTP(w, r)
 }
 
+// GetNotification operation middleware
+func (siw *ServerInterfaceWrapper) GetNotification(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+	_ = err
+
+	// ------------- Path parameter "id" -------------
+	var id Id
+
+	err = runtime.BindStyledParameterWithOptions("simple", "id", r.PathValue("id"), &id, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true, Type: "string", Format: "uuid", ValueIsUnescaped: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "id", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetNotification(w, r, id)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // DismissNotification operation middleware
 func (siw *ServerInterfaceWrapper) DismissNotification(w http.ResponseWriter, r *http.Request) {
 
@@ -34804,6 +34833,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications", wrapper.ListNotifications)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/marker", wrapper.GetNotificationMarker)
 	m.HandleFunc(http.MethodPut+" "+options.BaseURL+"/notifications/marker", wrapper.UpdateNotificationMarker)
+	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/{id}", wrapper.GetNotification)
 	m.HandleFunc(http.MethodPost+" "+options.BaseURL+"/notifications/{id}/dismiss", wrapper.DismissNotification)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests", wrapper.ListNotificationRequests)
 	m.HandleFunc(http.MethodGet+" "+options.BaseURL+"/notifications/requests/summary", wrapper.GetNotificationRequestSummary)
@@ -56671,6 +56701,68 @@ func (response ListNotificationRequestNotificationsdefaultApplicationProblemPlus
 	return err
 }
 
+type GetNotificationRequestObject struct {
+	Id Id `json:"id"`
+}
+
+type GetNotificationResponseObject interface {
+	VisitGetNotificationResponse(w http.ResponseWriter) error
+}
+
+type GetNotification200ResponseHeaders struct {
+	CacheControl *string
+}
+
+type GetNotification200JSONResponse struct {
+	Body    Notification
+	Headers GetNotification200ResponseHeaders
+}
+
+func (response GetNotification200JSONResponse) VisitGetNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	w.WriteHeader(200)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type GetNotificationdefaultApplicationProblemPlusJSONResponse struct {
+	Body       Problem
+	Headers    ProblemResponseHeaders
+	StatusCode int
+}
+
+func (response GetNotificationdefaultApplicationProblemPlusJSONResponse) VisitGetNotificationResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	if response.Headers.RetryAfter != nil {
+		w.Header().Set("Retry-After", fmt.Sprint(*response.Headers.RetryAfter))
+	}
+	if response.Headers.WWWAuthenticate != nil {
+		w.Header().Set("WWW-Authenticate", fmt.Sprint(*response.Headers.WWWAuthenticate))
+	}
+	w.WriteHeader(response.StatusCode)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
 type DismissNotificationRequestObject struct {
 	Id Id `json:"id"`
 }
@@ -64567,6 +64659,9 @@ type StrictServerInterface interface {
 	// ListNotificationRequestNotifications List the notifications of a notification request
 	// (GET /notifications/requests/{id}/notifications)
 	ListNotificationRequestNotifications(ctx context.Context, request ListNotificationRequestNotificationsRequestObject) (ListNotificationRequestNotificationsResponseObject, error)
+	// GetNotification Get a notification
+	// (GET /notifications/{id})
+	GetNotification(ctx context.Context, request GetNotificationRequestObject) (GetNotificationResponseObject, error)
 	// DismissNotification Dismiss a notification
 	// (POST /notifications/{id}/dismiss)
 	DismissNotification(ctx context.Context, request DismissNotificationRequestObject) (DismissNotificationResponseObject, error)
@@ -74663,6 +74758,32 @@ func (sh *strictHandler) ListNotificationRequestNotifications(w http.ResponseWri
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ListNotificationRequestNotificationsResponseObject); ok {
 		if err := validResponse.VisitListNotificationRequestNotificationsResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetNotification operation middleware
+func (sh *strictHandler) GetNotification(w http.ResponseWriter, r *http.Request, id Id) {
+	var request GetNotificationRequestObject
+
+	request.Id = id
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetNotification(ctx, request.(GetNotificationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetNotification")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetNotificationResponseObject); ok {
+		if err := validResponse.VisitGetNotificationResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

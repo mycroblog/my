@@ -334,6 +334,8 @@ paths:
     $ref: ./paths/notifications.yaml
   /notifications/marker:
     $ref: ./paths/notifications_marker.yaml
+  /notifications/{id}:
+    $ref: ./paths/notifications_{id}.yaml
   /notifications/{id}/dismiss:
     $ref: ./paths/notifications_{id}_dismiss.yaml
   /notifications/requests:

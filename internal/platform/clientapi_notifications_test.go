@@ -49,7 +49,7 @@ func issueAccessToken(t *testing.T, app *platform.App, userID, scope string) str
 
 // TestClientAPINotifications drives the notification endpoints on the real database: the
 // notifications that a follow and a favourite create, with their source account, the type
-// filter, the read marker and unread count, and dismissal.
+// filter, the read marker and unread count, one notification, and dismissal.
 func TestClientAPINotifications(t *testing.T) {
 	t.Parallel()
 	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin})
@@ -151,8 +151,27 @@ func TestClientAPINotifications(t *testing.T) {
 		t.Errorf("marker moved back to %s", *m.LastReadId)
 	}
 
+	// One notification reads as the list shows it.
+	if res := send(http.MethodGet, "/api/v1/notifications/"+fav.Id, ""); res.StatusCode != http.StatusOK {
+		t.Errorf("GET the favourite = %d, want 200", res.StatusCode)
+	} else {
+		var got clientapi.Notification
+		if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+			t.Fatal(err)
+		}
+		if got.Id != fav.Id || got.Type != "favourite" || got.Status == nil || got.Status.Id != p.Status.ID || got.Account == nil || got.Account.Id != bob.AccountID {
+			t.Errorf("favourite = %+v", got)
+		}
+	}
+
 	if res := send(http.MethodPost, "/api/v1/notifications/"+follow.Id+"/dismiss", ""); res.StatusCode != http.StatusNoContent {
 		t.Fatalf("dismiss = %d", res.StatusCode)
+	}
+	if res := send(http.MethodGet, "/api/v1/notifications/"+follow.Id, ""); res.StatusCode != http.StatusNotFound {
+		t.Errorf("GET the dismissed follow = %d, want 404", res.StatusCode)
+	}
+	if res := send(http.MethodGet, "/api/v1/notifications/"+p.Status.ID, ""); res.StatusCode != http.StatusNotFound {
+		t.Errorf("GET an unknown notification = %d, want 404", res.StatusCode)
 	}
 	if page := list("/api/v1/notifications"); len(page.Items) != 1 || page.Items[0].Id != fav.Id {
 		t.Errorf("notifications after dismissing the follow = %+v", page)

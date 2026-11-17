@@ -40,6 +40,7 @@ import {
   CustomEmoji,
   Entry,
   Excerpt,
+  FeedNotice,
   IconButton,
   NoticeCaption,
   NoticeLine,
@@ -286,13 +287,17 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
   );
 }
 
-/** The reader's notifications; `instance` is the server's name, which the notices of the server say. */
-export function Notifications({ instance }: { instance: string }) {
+/**
+ * The reader's notifications; `instance` is the server's name, which the notices of the server say. `gone` says over
+ * them that a notification a link led to is no longer there (dismissed, or never the reader's).
+ */
+export function Notifications({ instance, gone = false }: { instance: string; gone?: boolean }) {
   const { t } = stringsIn(useLocale().locale);
   const [filter, setFilter] = useState<NotificationFilter>("all");
   const reads = useNotificationReads();
   return (
     <ScreenStack>
+      {gone && <FeedNotice start>{t("notifications.gone")}</FeedNotice>}
       <PushPrompt t={t} />
       <TabRow
         label={t("notifications.filters")}

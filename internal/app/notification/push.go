@@ -554,15 +554,9 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 	}
 	users := &i18n.Resolver{Bundle: bundle, UserLocale: func(context.Context) string { return locale }}
 	l := users.Localizer(ctx, "")
-	var source, recipient PushAccount
+	var source PushAccount
 	if job.SourceAccountID != "" {
 		if source, err = d.audience.Account(ctx, job.SourceAccountID); err != nil {
-			return PushPayload{}, nil, err
-		}
-	}
-	if job.Type == notification.TypeBoost || job.Type == notification.TypeFavourite || job.Type == notification.TypeReaction ||
-		(job.Type == notification.TypePollClosed && job.SourceAccountID == "") {
-		if recipient, err = d.audience.Account(ctx, job.AccountID); err != nil {
 			return PushPayload{}, nil, err
 		}
 	}
@@ -573,123 +567,104 @@ func (d describer) describe(ctx context.Context, job pushJob) (PushPayload, *i18
 		}
 	}
 	return DescribeNotification(l, Wording{
-		NotificationID: job.NotificationID, Type: job.Type, Source: source, Recipient: recipient,
-		StatusID: job.StatusID, ReportID: job.ReportID, AppealID: job.AppealID, VoiceRoomID: job.VoiceRoomID,
-		HookAppealID:         job.HookAppealID,
-		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange, ErrorGroupID: job.ErrorGroupID,
-		AnnouncementID: job.AnnouncementID, AnnouncementTitle: job.AnnouncementTitle,
+		NotificationID: job.NotificationID, Type: job.Type, Source: source,
+		ServiceClosureChange: job.ServiceClosureChange, ErrorGroupChange: job.ErrorGroupChange,
+		AnnouncementTitle:    job.AnnouncementTitle,
 		AutoDeleteMaxAgeDays: job.AutoDeleteMaxAgeDays, AutoDeleteDaysLeft: job.AutoDeleteDaysLeft,
-		DraftFailureReason: job.DraftFailureReason, GatheringID: job.GatheringID, Event: job.Event,
+		DraftFailureReason: job.DraftFailureReason, Event: job.Event,
 	}, instance), l, nil
 }
 
-// Wording is what words a notification: its type, the accounts it names, and the
-// objects it links to.
+// Wording is what words a notification: its ID, which its page names, its type, the account it
+// is from, and what its title tells of.
 type Wording struct {
 	NotificationID string
 	Type           notification.Type
-	// Source is the account the notification is from, zero for none. Recipient is the
-	// recipient's account, which the notifications about the recipient's statuses link to.
-	Source, Recipient                         PushAccount
-	StatusID, ReportID, AppealID, VoiceRoomID string
-	// HookAppealID is the appeal of a refused post of an admin_hook_appeal or a hook_appeal_decided.
-	HookAppealID string
+	// Source is the account the notification is from, zero for none.
+	Source PushAccount
 	// ServiceClosureChange is what a service_closure tells of.
 	ServiceClosureChange notification.ClosureChange
-	// ErrorGroupChange and ErrorGroupID are what an admin_error_group tells of and its group.
+	// ErrorGroupChange is what an admin_error_group tells of.
 	ErrorGroupChange notification.ErrorGroupChange
-	ErrorGroupID     string
-	// AnnouncementID and AnnouncementTitle are the announcement of an announcement and its
-	// title.
-	AnnouncementID, AnnouncementTitle string
+	// AnnouncementTitle is the title of the announcement of an announcement.
+	AnnouncementTitle string
 	// AutoDeleteMaxAgeDays and AutoDeleteDaysLeft are the maximum of an auto_delete_limit and the
 	// days until it applies to the recipient's posts.
 	AutoDeleteMaxAgeDays, AutoDeleteDaysLeft int
 	// DraftFailureReason is why the scheduled post of a scheduled_status_failed was not published
 	// (content.DraftFailureReason).
 	DraftFailureReason string
-	// GatheringID is the event of an event_* notification and Event what words it; nil words it
-	// without its title.
-	GatheringID string
-	Event       *EventMail
+	// Event is what words an event_* notification; nil words it without its title.
+	Event *EventMail
 }
 
 // DescribeNotification words n in the locale of l for the instance named instance: the title
 // and the page of its Web Push message, which are also the subject and the link of its email.
+// The page is the notification's own (PagePath), from which the web client leads to
+// what the notification is about.
 func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPayload {
-	source, recipient := n.Source, n.Recipient
+	source := n.Source
 	name := source.DisplayName
 	if name == "" && source.Acct != "" {
 		name = "@" + source.Acct
 	}
-	p := PushPayload{NotificationID: n.NotificationID, Type: n.Type, Lang: l.RequestedLocale(), Path: "/notifications"}
+	p := PushPayload{NotificationID: n.NotificationID, Type: n.Type, Lang: l.RequestedLocale(), Path: PagePath(n.NotificationID)}
 	switch n.Type {
 	case notification.TypeFollow:
-		p.Title, p.Path = l.ServerPushFollow(name), "/@"+source.Acct
+		p.Title = l.ServerPushFollow(name)
 	case notification.TypeFollowRequest:
-		p.Title, p.Path = l.ServerPushFollowRequest(name), "/settings/follow-requests"
+		p.Title = l.ServerPushFollowRequest(name)
 	case notification.TypeFollowAccepted:
-		p.Title, p.Path = l.ServerPushFollowAccepted(name), "/@"+source.Acct
+		p.Title = l.ServerPushFollowAccepted(name)
 	case notification.TypeMention:
-		p.Title, p.Path = l.ServerPushMention(name), statusPath(source.Acct, n.StatusID)
+		p.Title = l.ServerPushMention(name)
 	case notification.TypeStatus:
-		p.Title, p.Path = l.ServerPushStatus(name), statusPath(source.Acct, n.StatusID)
+		p.Title = l.ServerPushStatus(name)
 	case notification.TypeBoost:
-		p.Title, p.Path = l.ServerPushBoost(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushBoost(name)
 	case notification.TypeFavourite:
-		p.Title, p.Path = l.ServerPushFavourite(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushFavourite(name)
 	case notification.TypeReaction:
-		p.Title, p.Path = l.ServerPushReaction(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushReaction(name)
 	case notification.TypeQuote:
-		p.Title, p.Path = l.ServerPushQuote(name), statusPath(source.Acct, n.StatusID)
+		p.Title = l.ServerPushQuote(name)
 	case notification.TypeReplyRequest:
-		p.Title, p.Path = l.ServerPushReplyRequest(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushReplyRequest(name)
 	case notification.TypeBoostRequest:
-		p.Title, p.Path = l.ServerPushBoostRequest(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushBoostRequest(name)
 	case notification.TypeQuoteRequest:
-		p.Title, p.Path = l.ServerPushQuoteRequest(name), statusPath(recipient.Acct, n.StatusID)
+		p.Title = l.ServerPushQuoteRequest(name)
 	case notification.TypeInteractionAccepted:
-		p.Title, p.Path = l.ServerPushInteractionAccepted(name), statusPath(source.Acct, n.StatusID)
+		p.Title = l.ServerPushInteractionAccepted(name)
 	case notification.TypeInteractionRejected:
-		p.Title, p.Path = l.ServerPushInteractionRejected(name), statusPath(source.Acct, n.StatusID)
+		p.Title = l.ServerPushInteractionRejected(name)
 	case notification.TypePollClosed:
-		// The voters' notifications are from the poll's author; the author's own has no source.
-		author := source.Acct
-		if source.Acct == "" {
-			author = recipient.Acct
-		}
-		p.Title, p.Path = l.ServerPushPollClosed(), statusPath(author, n.StatusID)
+		p.Title = l.ServerPushPollClosed()
 	case notification.TypeModerationNotice:
-		p.Title, p.Path = l.ServerPushModerationNotice(instance), "/settings/account-status"
+		p.Title = l.ServerPushModerationNotice(instance)
 	case notification.TypeAppealDecided:
-		p.Title, p.Path = l.ServerPushAppealDecided(instance), "/settings/account-status"
+		p.Title = l.ServerPushAppealDecided(instance)
 	case notification.TypeAdminReport:
-		p.Title, p.Path = l.ServerPushAdminReport(instance), "/moderation/reports/"+n.ReportID
+		p.Title = l.ServerPushAdminReport(instance)
 	case notification.TypeAdminSignUp:
-		p.Title, p.Path = l.ServerPushAdminSignUp(instance), "/moderation/registrations"
+		p.Title = l.ServerPushAdminSignUp(instance)
 	case notification.TypeAdminAppeal:
-		p.Title, p.Path = l.ServerPushAdminAppeal(instance), "/moderation/appeals/"+n.AppealID
+		p.Title = l.ServerPushAdminAppeal(instance)
 	case notification.TypeAdminWebhookDisabled:
-		p.Title, p.Path = l.ServerPushAdminWebhookDisabled(instance), "/admin/webhooks"
+		p.Title = l.ServerPushAdminWebhookDisabled(instance)
 	case notification.TypeAdminHookFailing:
-		p.Title, p.Path = l.ServerPushAdminHookFailing(instance), "/moderation/hook-decisions"
+		p.Title = l.ServerPushAdminHookFailing(instance)
 	case notification.TypeAdminDomainListFailing:
-		p.Title, p.Path = l.ServerPushAdminDomainListFailing(instance), "/moderation/domain-actions/subscriptions"
+		p.Title = l.ServerPushAdminDomainListFailing(instance)
 	case notification.TypeAdminHookAppeal:
-		p.Title, p.Path = l.ServerPushAdminHookAppeal(instance), "/moderation/hook-decisions/appeals"
-		if n.HookAppealID != "" {
-			p.Path += "/" + n.HookAppealID
-		}
+		p.Title = l.ServerPushAdminHookAppeal(instance)
 	case notification.TypeHookAppealDecided:
-		// The author has no page of refused posts: the notification itself says how it ended.
 		p.Title = l.ServerPushHookAppealDecided(instance)
 	case notification.TypeAdminCustomEmojiRequest:
-		p.Title, p.Path = l.ServerPushAdminCustomEmojiRequest(instance), "/admin/custom-emojis/requests"
+		p.Title = l.ServerPushAdminCustomEmojiRequest(instance)
 	case notification.TypeCustomEmojiRequestDecided:
-		p.Title, p.Path = l.ServerPushCustomEmojiRequestDecided(instance), "/settings/custom-emojis"
+		p.Title = l.ServerPushCustomEmojiRequestDecided(instance)
 	case notification.TypeSupporterPaymentFailed:
-		// The supporter notifications open the notifications, never the subscription screen,
-		// which the Tauri app does not show (ADR-0072 §14).
 		p.Title = l.ServerPushSupporterPaymentFailed(instance)
 	case notification.TypeSupporterSubscriptionEnded:
 		p.Title = l.ServerPushSupporterSubscriptionEnded(instance)
@@ -700,7 +675,7 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 	case notification.TypeRelationshipsSevered:
 		p.Title = l.ServerPushRelationshipsSevered(instance)
 	case notification.TypeAccountMoved:
-		p.Title, p.Path = l.ServerPushAccountMoved(name), "/@"+source.Acct
+		p.Title = l.ServerPushAccountMoved(name)
 	case notification.TypeAdminAccountMoved:
 		p.Title = l.ServerPushAdminAccountMoved(instance)
 	case notification.TypeServiceClosure:
@@ -715,47 +690,38 @@ func DescribeNotification(l *i18n.Localizer, n Wording, instance string) PushPay
 	case notification.TypeAdminServiceClosureDue:
 		p.Title = l.ServerPushAdminServiceClosureDue(instance)
 	case notification.TypeAdminErrorGroup:
-		p.Path = "/admin/errors"
 		switch n.ErrorGroupChange {
 		case notification.ErrorGroupCreated:
-			p.Title, p.Path = l.ServerPushAdminErrorGroupCreated(instance), "/admin/errors/"+n.ErrorGroupID
+			p.Title = l.ServerPushAdminErrorGroupCreated(instance)
 		case notification.ErrorGroupRegressed:
-			p.Title, p.Path = l.ServerPushAdminErrorGroupRegressed(instance), "/admin/errors/"+n.ErrorGroupID
+			p.Title = l.ServerPushAdminErrorGroupRegressed(instance)
 		default:
 			p.Title = l.ServerPushAdminErrorGroupOthers(instance)
 		}
 	case notification.TypeSupporterServiceClosure:
 		p.Title = l.ServerPushSupporterServiceClosure(instance)
 	case notification.TypeVoiceRoomStarted:
-		p.Title, p.Path = l.ServerPushVoiceRoomStarted(name), "/voice/"+n.VoiceRoomID
+		p.Title = l.ServerPushVoiceRoomStarted(name)
 	case notification.TypeVoiceRoomInvited:
-		p.Title, p.Path = l.ServerPushVoiceRoomInvited(name), "/voice/"+n.VoiceRoomID
+		p.Title = l.ServerPushVoiceRoomInvited(name)
 	case notification.TypeAnnouncement:
 		p.Title = l.ServerPushAnnouncement(i18n.ServerPushAnnouncementArgs{Instance: instance, Title: n.AnnouncementTitle})
-		p.Path = AnnouncementPath(n.AnnouncementID)
 	case notification.TypeAutoDeleteLimit:
-		// The settings of the automatic deletion show the maximum and preview what goes.
 		p.Title = l.ServerPushAutoDeleteLimit(i18n.ServerPushAutoDeleteLimitArgs{
 			Instance: instance, Days: n.AutoDeleteMaxAgeDays, DaysLeft: n.AutoDeleteDaysLeft,
 		})
-		p.Path = AutoDeleteSettingsPath
 	case notification.TypeScheduledStatusFailed:
 		p.Title = l.ServerPushScheduledStatusFailed(i18n.ServerPushScheduledStatusFailedArgs{Instance: instance, Reason: n.DraftFailureReason})
 	case notification.TypeEventInvited, notification.TypeEventScheduleConfirmed, notification.TypeEventChanged,
 		notification.TypeEventCancelled, notification.TypeEventReminder, notification.TypeEventStarted,
 		notification.TypeEventRoomUnavailable:
-		p.Title, p.Path = describeEvent(l, n, name), EventPath(n.GatheringID)
+		p.Title = describeEvent(l, n, name)
 	default:
 		p.Title = l.ServerPushOther(instance)
 	}
 	return p
 }
 
-// AutoDeleteSettingsPath is the web client's page of the automatic deletion of old posts.
-const AutoDeleteSettingsPath = "/settings/auto-delete"
-
-// AnnouncementPath is the web client's page of an announcement.
-func AnnouncementPath(id string) string { return "/announcements/" + id }
-
-// statusPath is the web client's page of a status by the account acct (ADR-0018).
-func statusPath(acct, statusID string) string { return "/@" + acct + "/status/" + statusID }
+// PagePath is the web client's page of the notification id, which leads to what it is
+// about.
+func PagePath(id string) string { return "/notifications/" + id }

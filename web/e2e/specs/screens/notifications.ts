@@ -93,6 +93,11 @@ export class Notifications {
     return new Held(this.page);
   }
 
+  /** The line over the notifications that the notification a link led to is no longer there. */
+  get gone(): Locator {
+    return this.page.getByRole("main").getByText("That notification is no longer there.", { exact: true });
+  }
+
   /** The prompt to turn Web Push on over the tabs, a region named by its text. */
   get pushPrompt(): Locator {
     return this.page.getByRole("main").getByRole("region", { name: /^Get your notifications on this device.*$/ });

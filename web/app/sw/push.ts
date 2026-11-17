@@ -2,11 +2,11 @@
 
 // What the Service Worker shows of a Web Push message (FR-206) and where a click on it leads. The server encrypts one
 // document per notification (internal/app/notification PushPayload): its ID, its kind, its title in the reader's
-// language, and a page. The notification shows the title, tagged with the ID so that a message sent twice replaces
-// itself, and keeps the page this client opens for it (pushTargetPath), on the worker's own origin only. A message the
-// worker cannot read still shows, as the server's host, and leads to the notifications: a push must show something.
-
-import { pushTargetPath } from "@my/app-components/paths";
+// language, and the notification's own page. The notification shows the title, tagged with the ID so that a message
+// sent twice replaces itself, and a click opens the notification's page of this client, /notifications/{id}, which reads
+// it and goes on to what it tells of (src/routes/notifications_.$id.tsx): the client alone decides where a notification
+// leads. A message the worker cannot read still shows, as the server's host, and leads to the notifications: a push
+// must show something.
 
 /** A notification to show: its title and its options. */
 export type Shown = { title: string; options: NotificationOptions & { data: { url: string } } };
@@ -19,13 +19,9 @@ const isPayload = (value: unknown): value is Payload => {
   return ["notification_id", "type", "title", "lang", "path"].every((k) => typeof v[k] === "string");
 };
 
-/** The address of `path` on `origin`; the notifications for a path that leads off it. */
-function targetURL(path: string, origin: string): string {
-  const fallback = new URL("/notifications", origin).href;
-  if (!path.startsWith("/") || path.startsWith("//") || path.startsWith("/\\")) return fallback;
-  const url = new URL(path, origin);
-  return url.origin === origin ? url.href : fallback;
-}
+/** The address of the notification of `id` on `origin`, its page of this client. */
+const notificationURL = (id: string, origin: string) =>
+  new URL(`/notifications/${encodeURIComponent(id)}`, origin).href;
 
 /** What to show of the message `text` (null when it carries nothing), on the worker's `origin`. */
 export function notificationFor(text: string | null, origin: string): Shown {
@@ -36,14 +32,14 @@ export function notificationFor(text: string | null, origin: string): Shown {
     payload = null;
   }
   if (!isPayload(payload))
-    return { title: new URL(origin).host, options: { data: { url: targetURL("/notifications", origin) } } };
+    return { title: new URL(origin).host, options: { data: { url: new URL("/notifications", origin).href } } };
   return {
     title: payload.title,
     options: {
       tag: payload.notification_id,
       lang: payload.lang,
       dir: "auto",
-      data: { url: targetURL(pushTargetPath(payload), origin) },
+      data: { url: notificationURL(payload.notification_id, origin) },
     },
   };
 }

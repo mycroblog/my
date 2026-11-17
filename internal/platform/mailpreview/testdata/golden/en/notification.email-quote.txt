@@ -1,7 +1,7 @@
 You have a notification on Example Social that you have not read yet.
 
 Open
-https://social.example/@bob@remote.example/status/01JSAMPLE0STATUS00000000000
+https://social.example/notifications/01JSAMPLE0NOTIFICATION00000
 
 -- 
 Example Social
