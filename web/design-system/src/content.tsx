@@ -9,14 +9,16 @@
 import type { ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { Box, Pin } from "./layout";
 
+// The body is a layout part, the flow of a text people wrote: it places the blocks of a renderer that writes them without
+// a class, so that its rules for the elements inside it (the gap of a nested quote, the indent of a list) are its own.
 // A quote is marked by a bar at its start and muted text, never by a surface, which means code or a quoted post; its
 // blocks sit a paragraph's gap apart, a nested quote as close as the lines around it. Code sits on the raised surface,
 // inline as a chip; a code block wraps and never scrolls, a wrapped line's continuation indented.
 const body = tv({
   base: [
     "grid grid-cols-[minmax(0,1fr)] gap-content-paragraph text-body text-text wrap-anywhere",
-    "[&_blockquote]:m-0 [&_ol]:m-0 [&_p]:m-0 [&_pre]:m-0 [&_ul]:m-0",
     "[&_blockquote]:border-s-content-quote [&_blockquote]:border-s-quote-bar",
     "[&_blockquote]:[border-inline-start-style:solid] [&_blockquote]:ps-content-quote [&_blockquote]:text-muted-text",
     "[&_blockquote>*+*]:mt-content-paragraph [&_blockquote>blockquote]:mt-0 [&_blockquote>blockquote+*]:mt-0",
@@ -51,7 +53,7 @@ export type ContentLinkKind = "link" | "mention" | "hashtag";
 // around it without its color (WCAG 1.4.1); its target reaches the minimum around its text without moving the line
 // (WCAG 2.5.8); a mention or a hashtag breaks only around it, never inside.
 const link = tv({
-  base: "text-accent-text underline underline-offset-[0.15em] py-[calc((var(--target-minimum)-1em)/2)]",
+  base: "text-accent-text underline underline-offset-[0.15em] py-content-link-reach",
   variants: { kind: { link: "", mention: "whitespace-nowrap", hashtag: "whitespace-nowrap" } },
 });
 
@@ -96,15 +98,6 @@ export function ContentLink({ href, kind, children, lang, translate, inApp = fal
 // hidden, and the shown part ends in an ellipsis when the rest is cut. A hidden part takes no room but stays in the
 // text, so that copying the link copies the whole URL. The shown part of a cut URL never breaks (after a hyphen or a
 // slash): it moves whole to the next line, and on a line narrower than itself it ends in the ellipsis there.
-const urlPart = tv({
-  variants: {
-    part: {
-      hidden: "absolute inline-block size-0 overflow-hidden text-[0px] leading-[0]",
-      cut: "inline-block max-w-full truncate align-bottom after:content-['…']",
-    },
-  },
-});
-
 export type UrlPartProps = {
   /** `hidden` for a part that is not shown, `cut` for the shown part that the rest follows. */
   part: "hidden" | "cut";
@@ -113,7 +106,17 @@ export type UrlPartProps = {
 
 /** A part of a shortened URL in a link's text. */
 export function UrlPart({ part, children }: UrlPartProps) {
-  return <span className={urlPart({ part })}>{children}</span>;
+  if (part === "hidden")
+    return (
+      <Pin as="span" clip className="size-0 text-[0px] leading-[0]">
+        {children}
+      </Pin>
+    );
+  return (
+    <Box as="span" display="inline-block" max="full" lines={1} baseline="bottom" className="after:content-['…']">
+      {children}
+    </Box>
+  );
 }
 
 export type CustomEmojiProps = {
@@ -134,12 +137,15 @@ export function CustomEmoji({ shortcode, url, staticUrl }: CustomEmojiProps) {
   return (
     <picture>
       {url !== staticUrl && <source media="(prefers-reduced-motion: no-preference)" srcSet={url} />}
-      <img
-        className="mx-[0.05em] my-[calc((1em-var(--content-emoji))/2)] inline size-content-emoji align-middle"
-        src={staticUrl}
-        alt={code}
-        title={code}
-        draggable={false}
+      <Box
+        as={<img src={staticUrl} alt={code} title={code} draggable={false} />}
+        display="inline"
+        baseline="middle"
+        spaceBefore="content-emoji-side"
+        spaceAfter="content-emoji-side"
+        spaceAbove="content-emoji-line"
+        spaceBelow="content-emoji-line"
+        className="size-content-emoji"
       />
     </picture>
   );

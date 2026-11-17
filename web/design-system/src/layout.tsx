@@ -226,20 +226,24 @@ const SPACE_ABOVE = {
   "screen-group-gap": "mt-screen-group-gap",
 } as const;
 const SPACE_BELOW = {
+  "content-emoji-line": "mt-content-emoji-line",
   "menu-group-gap": "mb-menu-group-gap",
   "shell-edge": "mb-shell-edge",
   "shell-gap": "mb-shell-gap",
 } as const;
 const SPACE_BEFORE = {
+  "content-emoji-line": "mb-content-emoji-line",
   "entry-caption": "ms-entry-caption",
   "form-page-list-gap": "ms-form-page-list-gap",
   "screen-avatar-inset": "ms-screen-avatar-inset",
 } as const;
 const SPACE_AFTER = {
+  "content-emoji-side": "ms-content-emoji-side",
   "entry-caption": "me-entry-caption",
   "shell-edge": "me-shell-edge",
 } as const;
 
+  "content-emoji-side": "me-content-emoji-side",
 /** How the box of a part sits in the part that holds it. */
 type Placement = {
   /**
