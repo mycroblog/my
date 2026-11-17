@@ -10,7 +10,7 @@ import { renderApp, withoutWaitsOf } from "./test/app";
 import { paste } from "./test/composer";
 import { chooseFiles, imageFile } from "./test/files";
 import { feedOf, postOf } from "./test/posts";
-import { onAPhone, rail } from "./test/viewport";
+import { onAPhone, rail, tabBar } from "./test/viewport";
 
 /** The texts of `elements`, in their order. */
 const texts = (elements: HTMLElement[]) => elements.map((element) => element.textContent);
@@ -153,6 +153,8 @@ test("without a session, the editor asks the visitor to sign in", async () => {
 
 test("New article under New post in the main navigation opens the editor, and Close goes back", async () => {
   const app = await renderApp("/lists", { viewer: "yuki" });
+  // With New article beside it, New post holds no menu of what to write.
+  expect(within(rail()).getByRole("button", { name: "New post" }).getAttribute("aria-haspopup")).toBeNull();
   await app.user.click(within(rail()).getByRole("button", { name: "New article" }));
 
   expect(await screen.findByRole("heading", { level: 1, name: "New article" })).toBeDefined();
@@ -168,17 +170,56 @@ test("on a phone the floating New post's menu offers New article, which opens th
   onAPhone();
   // The new post floats on the timelines and the profiles: the local timeline is the one that shows least.
   const app = await renderApp("/local", { viewer: "yuki" });
-  // The floating New post is the one outside the rail, the last of the two that render without a layout; a right
-  // click opens its menu, as a long press does.
-  const floating = screen.getAllByRole("button", { name: "New post" }).at(-1);
-  if (floating === undefined || rail().contains(floating))
-    throw new Error("test: the shell shows no floating New post");
+  // The floating New post says that it holds a menu; a right click opens it, as a long press does.
+  const floating = floatingNewPost();
+  expect(floating.getAttribute("aria-haspopup")).not.toBeNull();
 
   await app.user.pointer({ keys: "[MouseRight]", target: floating });
   const menu = await screen.findByRole("menu", { name: "New" });
   expect(screen.queryByRole("dialog", { name: "New post" })).toBeNull();
+  expect(texts(within(menu).getAllByRole("menuitem"))).toEqual(["New post", "New article"]);
   await app.user.click(within(menu).getByRole("menuitem", { name: "New article" }));
 
   expect(await screen.findByRole("heading", { level: 1, name: "New article" })).toBeDefined();
   expect(app.path()).toBe("/articles/new");
+});
+
+/** The floating New post: the one outside the rail, the last of the two that render without a layout. */
+function floatingNewPost(): HTMLElement {
+  const floating = screen.getAllByRole("button", { name: "New post" }).at(-1);
+  if (floating === undefined || rail().contains(floating))
+    throw new Error("test: the shell shows no floating New post");
+  return floating;
+}
+
+/** Opens the Menu from the tab bar, and returns it once it is open. */
+async function openMenu(app: { user: { click: (element: Element) => Promise<void> } }): Promise<HTMLElement> {
+  await app.user.click(within(tabBar()).getByRole("button", { name: /^Menu(?: \d+ unread in direct messages)?$/ }));
+  return screen.findByRole("menu", { name: "Menu" });
+}
+
+test("on a phone the Menu's sheet starts with New article, which opens the editor", async () => {
+  onAPhone();
+  const app = await renderApp("/lists", { viewer: "yuki" });
+
+  const menu = await openMenu(app);
+  const [first] = within(menu).getAllByRole("menuitem");
+  expect(first?.textContent).toBe("New article");
+  await app.user.click(within(menu).getByRole("menuitem", { name: "New article" }));
+
+  expect(await screen.findByRole("heading", { level: 1, name: "New article" })).toBeDefined();
+  expect(app.path()).toBe("/articles/new");
+});
+
+test("a reader the server keeps from writing new articles is offered none: not in the navigation, not by New post, not in the Menu", async () => {
+  onAPhone();
+  const app = await renderApp("/local", { viewer: "yuki", articles: { authoring: "permission" } });
+
+  expect(within(rail()).getByRole("button", { name: "New post" })).toBeDefined();
+  expect(screen.queryAllByRole("button", { name: "New article" })).toHaveLength(0);
+  // The floating New post holds no menu of what to write.
+  expect(floatingNewPost().getAttribute("aria-haspopup")).toBeNull();
+  const menu = await openMenu(app);
+  expect(within(menu).getAllByRole("menuitem").length).toBeGreaterThan(0);
+  expect(within(menu).queryAllByRole("menuitem", { name: "New article" })).toHaveLength(0);
 });
