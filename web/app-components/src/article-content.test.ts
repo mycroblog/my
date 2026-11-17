@@ -1,22 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// An article's text (ADR-0160 §4, §10, #3089): the article's allowlist, which a post's never keeps, and the blocks it
-// draws as long reading; and the excerpt of an article, its title.
+// An article's text (ADR-0160 §4, §10, #3089): the article's allowlist, which a post's never keeps (html.test.ts), as
+// the parser reads it; and the excerpt of an article, its title. The blocks it draws are in post-content.dom.test.tsx.
 
 import { describe, expect, test } from "bun:test";
-import { renderToStaticMarkup } from "react-dom/server";
 import { articleBlockTags, blockTags, parseContent, type ContentNode } from "./html";
-import { excerptHtml, PostContent, type ContentEmoji } from "./post-content";
-
-/** The article's text as PostContent draws it, without the design system's classes. */
-const article = (html: string, emojis?: ContentEmoji[]) =>
-  renderToStaticMarkup(<PostContent html={html} emojis={emojis} lang="en" article />).replace(/ class="[^"]*"/g, "");
-
-/** A post's text as PostContent draws it, without the design system's classes and the body around it. */
-const post = (html: string) =>
-  renderToStaticMarkup(<PostContent html={html} lang="en" />)
-    .replace(/ class="[^"]*"/g, "")
-    .replace(/^<div lang="en">|<\/div>$/g, "");
+import { excerptHtml } from "./post-content";
 
 /** The one element of an article's text `html`, a block. */
 const only = (html: string): ContentNode => {
@@ -36,26 +25,6 @@ const imageOf = (nodes: ContentNode[]): ContentNode | undefined => {
   return undefined;
 };
 
-const blobcat: ContentEmoji = {
-  shortcode: "blobcat",
-  url: "https://m.example/blobcat.gif",
-  static_url: "https://m.example/blobcat.png",
-};
-
-// What the server renders of the scenario's article (internal/adapter/markdown), the shape every test reads.
-const local =
-  "<p>Seven days ago I mixed flour and water in a jar.</p>" +
-  "<h2>The first three days</h2>" +
-  "<p>A smell like <strong>old cheese</strong>.</p>" +
-  "<ul><li>Day 1: 50 g flour</li><li>Day 2: the same</li></ul>" +
-  "<blockquote><p>A starter is ready when it doubles.</p></blockquote>" +
-  '<table><thead><tr><th>Day</th><th align="right">Flour</th></tr></thead><tbody><tr><td>1</td><td align="right">50 g</td></tr></tbody></table>' +
-  "<h3>The mistakes</h3>" +
-  '<p><img src="https://my.example/media/large/loaf.webp" alt="A loaf" width="1200" height="800" loading="lazy"></p>' +
-  "<pre><code>feed: 1 starter : 1 flour</code></pre>" +
-  "<hr>" +
-  "<p>Next week: the first loaf.</p>";
-
 describe("an article's allowlist", () => {
   test("headings h2 to h6, a rule, an image and a table are kept", () => {
     const tags = parseContent(
@@ -63,16 +32,6 @@ describe("an article's allowlist", () => {
       "article",
     ).map((n) => (typeof n === "string" ? n : n.tag));
     expect(tags).toEqual(["h2", "h3", "h4", "h5", "h6", "hr", "p", "table"]);
-  });
-
-  test("a post's text never keeps them: headings and cells are their text, a rule and an image are nothing", () => {
-    expect(post('<h2>Title</h2><hr><p>a<img src="https://my.example/a.png" alt="pic">b</p>')).toBe(
-      '<p dir="auto">Title</p><p dir="auto">ab</p>',
-    );
-    expect(
-      post('<table><thead><tr><th align="right">h</th></tr></thead><tbody><tr><td>c</td></tr></tbody></table>'),
-    ).toBe('<p dir="auto">hc</p>');
-    expect(parseContent("<h3>x</h3><hr>")).toEqual(["x"]);
   });
 
   test("an image keeps an http or https src, its alt, a positive integer size and when it loads", () => {
@@ -124,10 +83,7 @@ describe("an article's allowlist", () => {
       "",
     ]) {
       const nodes = parseContent(`<p>see <img src="${src}" alt="the shop on a map"> here</p>`, "article");
-      expect(imageOf(nodes)).toBeUndefined();
-      expect(article(`<p>see <img src="${src}" alt="the shop on a map"> here</p>`)).toBe(
-        '<p dir="auto">see the shop on a map here</p>',
-      );
+      expect([src, nodes]).toEqual([src, [{ tag: "p", attrs: {}, children: ["see the shop on a map here"] }]]);
     }
     expect(imageOf(parseContent('<p><img alt="no src"></p>', "article"))).toBeUndefined();
   });
@@ -195,10 +151,11 @@ describe("an article's allowlist", () => {
 
   test("what neither allowlist keeps goes as in a post: a script with its text, an iframe, a link of another scheme", () => {
     expect(
-      article(
+      parseContent(
         '<p>a<script>alert(1)</script>b<iframe src="https://evil.example/">f</iframe>c<a href="javascript:x">d</a></p>',
+        "article",
       ),
-    ).toBe('<p dir="auto">abcd</p>');
+    ).toEqual([{ tag: "p", attrs: {}, children: ["abcd"] }]);
   });
 
   test("the article's blocks are a post's, its headings, its rule and its table", () => {
@@ -210,61 +167,6 @@ describe("an article's allowlist", () => {
       { tag: "p", attrs: {}, children: ["a"] },
       { tag: "h2", attrs: {}, children: ["b"] },
     ]);
-  });
-});
-
-describe("an article's text as PostContent draws it", () => {
-  test("its blocks, each in its own direction, with no body of a post around them", () => {
-    const html = article(local);
-    expect(html).toStartWith('<p dir="auto">Seven days ago');
-    expect(html).not.toContain('<div lang="en">');
-    expect(html).toContain('<h2 dir="auto">The first three days</h2>');
-    expect(html).toContain('<h3 dir="auto">The mistakes</h3>');
-    expect(html).toContain('<p dir="auto">A smell like <strong>old cheese</strong>.</p>');
-    expect(html).toContain('<ul dir="auto"><li dir="auto">Day 1: 50 g flour</li>');
-    expect(html).toContain('<blockquote dir="auto"><p dir="auto">A starter is ready when it doubles.</p></blockquote>');
-    expect(html).toContain("<hr");
-    expect(html).toEndWith('<p dir="auto">Next week: the first loaf.</p>');
-  });
-
-  test("a table in a box that scrolls and takes the focus, read in its own direction, its alignment kept", () => {
-    // Its language is the holder's, ArticleText's, as the rest of the text's.
-    const html = article(local);
-    expect(html).toMatch(/<div tabindex="0"><table dir="auto"><thead><tr><th>Day<\/th><th align="right">Flour<\/th>/);
-    expect(html).toContain('<td align="right">50 g</td>');
-  });
-
-  test("an image with its source, size and description", () => {
-    const html = article(local);
-    expect(html).toMatch(
-      /<img [^>]*src="https:\/\/my.example\/media\/large\/loaf.webp"[^>]*alt="A loaf"[^>]*width="1200"[^>]*height="800"[^>]*loading="lazy"/,
-    );
-  });
-
-  test("code breaks as in a post, and a custom emoji draws in its line but not in code", () => {
-    expect(article("<pre><code>a://b?c|d/</code></pre>")).toBe(
-      '<pre dir="auto"><code>a://<wbr/>b?<wbr/>c<wbr/>|d/</code></pre>',
-    );
-    const html = article("<h2>:blobcat: day</h2><p><code>:blobcat:</code></p>", [blobcat]);
-    expect(html).toMatch(/^<h2 dir="auto"><picture>.*<\/picture> day<\/h2>/);
-    expect(html).toContain("<code>:blobcat:</code>");
-  });
-
-  test("a hashtag and a mention are links as in a post", () => {
-    const html = article(
-      '<p><a href="https://my.example/tags/bread" class="mention hashtag" rel="tag">#<span>bread</span></a> <span class="h-card"><a href="https://my.example/@sam" class="u-url mention">@<span>sam</span></a></span></p>',
-    );
-    expect(html).toContain(
-      '<a href="https://my.example/tags/bread" rel="nofollow noopener noreferrer" target="_blank">#<span>bread</span></a>',
-    );
-    expect(html).toContain(
-      '<a href="https://my.example/@sam" rel="nofollow noopener noreferrer" target="_blank">@<span>sam</span></a>',
-    );
-  });
-
-  test("text outside a block is a paragraph, and an empty text is nothing", () => {
-    expect(article("just text")).toBe('<p dir="auto">just text</p>');
-    expect(article("")).toBe("");
   });
 });
 
