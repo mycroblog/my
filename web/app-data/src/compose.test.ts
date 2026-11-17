@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, test } from "bun:test";
+import { expect, jest, test } from "bun:test";
 import { scenario, type FakeOptions, type FakeSeed } from "@my/e2e/fake";
 import { NetworkError, type components } from "@mycroblog/mykit";
 import type { AppData } from "./app-data";
@@ -115,20 +115,45 @@ test("a 422 that names a member gives the member, what is wrong with its value, 
   expect(refusedField(new Error("text"))).toBeUndefined();
 });
 
+/**
+ * What `upload` settles with, with the test's clock in place of the second the app waits before it looks at a file
+ * the server still processes.
+ */
+async function processed<T>(upload: () => Promise<T>): Promise<T | Error> {
+  jest.useFakeTimers();
+  try {
+    let outcome: { value: T | Error } | undefined;
+    upload().then(
+      (value) => (outcome = { value }),
+      (error: unknown) => (outcome = { value: error instanceof Error ? error : new Error(String(error)) }),
+    );
+    for (let turn = 0; turn < 100 && outcome === undefined; turn += 1) {
+      await new Promise((next) => setImmediate(next));
+      jest.advanceTimersByTime(250);
+    }
+    if (outcome === undefined) throw new Error("test: the upload did not settle");
+    return outcome.value;
+  } finally {
+    jest.useRealTimers();
+  }
+}
+
 test("an upload waits until the server has processed the file, and a file it could not process fails", async () => {
   const { data } = fakeData({ uploads: "processing" });
   let processing = false;
-  const media = await uploadAttachment(data, new File(["x"], "a.png", { type: "image/png" }), {
-    onProcessing: () => {
-      processing = true;
-    },
-  });
+  const media = await processed(() =>
+    uploadAttachment(data, new File(["x"], "a.png", { type: "image/png" }), {
+      onProcessing: () => {
+        processing = true;
+      },
+    }),
+  );
   expect(processing).toBe(true);
-  expect(media.state).toBe("ready");
+  expect(media).toMatchObject({ state: "ready" });
 
   const failing = fakeData({ uploads: "processing" });
   failing.fake.script("GET /media/{id}", { change: (file) => ({ ...file, state: "failed" as const }) });
-  const error = await uploadAttachment(failing.data, new File(["x"], "a.png")).catch((e: unknown) => e);
+  const error = await processed(() => uploadAttachment(failing.data, new File(["x"], "a.png")));
   expect((error as Error).name).toBe("MediaFailedError");
 });
 
