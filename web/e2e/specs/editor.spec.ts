@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The composer's text and content warning are a Lexical editor (#3097, ADR-0092 §4): a writer types, edits, pastes,
-// copies, undoes and composes with a Japanese input method in them, a custom emoji shows as its image and is one unit,
-// hashtags, mentions and URLs never break inside, and what is sent is the same plain text the server keeps and counts.
+// The composer's text and content warning are a Lexical editor (#3097, ADR-0092 §4), and this is what of it needs a
+// browser or the server: a writer types and edits at the caret and composes with a Japanese input method, a custom
+// emoji is one unit for the caret, hashtags, mentions and URLs never break inside, the editor's code is fetched again
+// after it failed to come, and what is sent is the same plain text the server keeps and counts.
 // Android's input (Gboard) cannot run here: it is checked on a device or an emulator, and stated in the pull request.
 
 import { Frame } from "./screens";
@@ -88,67 +89,14 @@ test("a custom emoji shows as its image, is one unit for the caret and Backspace
   await composer.holds("Tea x:teacup:");
 });
 
-test("a paste writes its plain text with its line breaks and ignores its HTML, and undo takes it back", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  await signIn(await fresh.person());
-  const composer = await new Frame(page).newPost();
-  await composer.write("Start ");
-  await composer.paste({
-    plain: "line one\nline two",
-    html: '<p><b>Bold</b> <a href="https://example.com/">link</a></p><img src="https://example.com/x.png" alt="pic">',
-  });
-  await composer.holds("Start line one\nline two");
-  await expect(composer.text.getByRole("img")).toHaveCount(0);
-  await expect(composer.text.getByRole("link")).toHaveCount(0);
-
-  await page.keyboard.press("ControlOrMeta+z");
-  await composer.holds("Start ");
-  await page.keyboard.press("ControlOrMeta+Shift+z");
-  await composer.holds("Start line one\nline two");
-});
-
-test("a copy gives the plain text: a custom emoji as its shortcode, and a line break as a newline", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  await signIn(await fresh.person());
-  const composer = await new Frame(page).newPost();
-  await composer.write("Tea :teacup: time\nnext line");
-  await expect(composer.text.getByRole("img", { name: ":teacup:", exact: true })).toBeVisible();
-  await composer.text.press("ControlOrMeta+a");
-  await expect.poll(() => composer.copy()).toBe("Tea :teacup: time\nnext line");
-});
-
-test("the content warning is one line: Enter writes nothing, a pasted newline is taken out, an emoji shows as its image", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
+test("an input method composes in the content warning too", async ({ page, signIn, fresh }) => {
   await signIn(await fresh.person());
   const composer = await new Frame(page).newPost();
   await composer.addWarning();
-  await expect(composer.warning).not.toHaveAttribute("aria-multiline", "true");
-
-  await page.keyboard.type("Spoilers");
-  await page.keyboard.press("Enter");
-  await composer.warningHolds("Spoilers");
-  await expect(composer.dialog).toBeVisible();
-
-  await composer.paste({ plain: " for\nthe finale" });
-  await composer.warningHolds("Spoilers forthe finale");
-
-  await page.keyboard.type(" :wave:");
-  await expect(composer.warning.getByRole("img", { name: ":wave:", exact: true })).toBeVisible();
-  await composer.warningHolds("Spoilers forthe finale :wave:");
-
-  // An input method composes in it too.
+  await page.keyboard.type("Spoilers ");
   await composer.compose(["ね", "ねた", "ネタ"]);
   await composer.commit("ネタ");
-  await composer.warningHolds("Spoilers forthe finale :wave:ネタ");
+  await composer.warningHolds("Spoilers ネタ");
 });
 
 test("a Japanese input method composes in the text, also inside a hashtag, and the caret stays after what it wrote", async ({
