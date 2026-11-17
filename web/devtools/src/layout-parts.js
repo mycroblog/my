@@ -49,7 +49,6 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/dialog.tsx": ["PanelFrame"],
   "web/design-system/src/card.tsx": ["AuthorLine"],
   "web/design-system/src/content.tsx": ["ContentBody"],
-  "web/design-system/src/entry.tsx": ["Stack", "ActionRow"],
   "web/design-system/src/thread.tsx": ["ThreadReply"],
   "web/design-system/src/drafts.tsx": ["DraftSections", "DraftList"],
   "web/design-system/src/history.tsx": ["VersionList"],

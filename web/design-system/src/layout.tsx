@@ -211,6 +211,7 @@ const BLEED_INLINE = {
   "icon-button-inline": "-mx-icon-button-inline",
   "screen-row-inline": "-mx-screen-row-inline",
   "shell-edge": "-mx-shell-edge",
+  "entry-reach": "-mx-entry-reach",
 } as const;
 /** Past its line above and below: a control taller than the line it stands on leaves the line its height. */
 const BLEED_BLOCK = {
@@ -218,6 +219,7 @@ const BLEED_BLOCK = {
   "icon-button-inline": "-my-icon-button-inline",
   "control-timeline-line": "-my-control-timeline-line",
   "target-line": "-my-target-line",
+  "entry-reach": "-my-entry-reach",
 } as const;
 
 /** The space a box keeps on one side, where its container sets no gap: the children of a line of text, a float. */
