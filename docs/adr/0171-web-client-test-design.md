@@ -1,6 +1,6 @@
 # ADR-0171: Web クライアントのテスト設計: 各性質は検証できる最下層で 1 回だけ検証する
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-17
 - Deciders: @rosylilly
 - Issue: #3161
