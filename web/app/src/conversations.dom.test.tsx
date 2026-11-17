@@ -97,9 +97,8 @@ test("a conversation shows its posts oldest first, with the reply in place", asy
   expect(await within(form).findByRole("textbox", { name: "Message" })).toBeDefined();
 });
 
-// Defect: the list the shell reads for the count is asked before the read is sent and answered, unread, before the
-// read is; the read's answer does not correct it, and the navigation counts 1 unread until the list is read again.
-// Opened from the list, which is read by then, the count goes (the tests of the reads below).
+// The list the shell reads for the count is asked before the read is sent and answered, unread, before the read is:
+// the read holds over that answer. Opened from the list, which is read by then, the count goes (the tests below).
 test("a conversation opened by its address is read: the navigation counts none", async () => {
   const on = fakeApp();
   const reads = on.fake.script("POST /conversations/{id}/read");
