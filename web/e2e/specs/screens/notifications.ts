@@ -93,6 +93,23 @@ export class Notifications {
     return new Held(this.page);
   }
 
+  /** The prompt to turn Web Push on over the tabs, a region named by its text. */
+  get pushPrompt(): Locator {
+    return this.page.getByRole("main").getByRole("region", { name: /^Get your notifications on this device.*$/ });
+  }
+
+  /** Turns Web Push on from the prompt, and returns once the server registered the subscription. */
+  async turnOnPush(): Promise<void> {
+    await answered(this.page, { methods: ["PUT"], path: /\/push\/subscription$/ }, async () => {
+      await this.pushPrompt.getByRole("button", { name: "Turn on", exact: true }).click();
+    });
+  }
+
+  /** Closes the Web Push prompt with Not now, which only this browser keeps. */
+  async closePush(): Promise<void> {
+    await this.pushPrompt.getByRole("button", { name: "Not now", exact: true }).click();
+  }
+
   /** Opens the screen of what waits for the reader's approval from the row that counts `count` of them. */
   async openWaiting(count: number): Promise<WaitingRequests> {
     await this.waitingRow(count).click();

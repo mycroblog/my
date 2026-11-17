@@ -39,8 +39,15 @@
       "project": ["src/**/*.{ts,tsx}"]
     },
     "web/app": {
-      "entry": ["src/routes/**/*.tsx", "src/**/*.test.{ts,tsx}", "src/**/*.stories.tsx", "vite-plugins/**/*.test.ts"],
-      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "vite-plugins/**/*.ts"]
+      "entry": [
+        "src/routes/**/*.tsx",
+        "src/**/*.test.{ts,tsx}",
+        "src/**/*.stories.tsx",
+        "vite-plugins/**/*.test.ts",
+        "sw/sw.ts",
+        "sw/**/*.test.ts"
+      ],
+      "project": ["src/**/*.{ts,tsx}", "scripts/**/*.ts", "vite-plugins/**/*.ts", "sw/**/*.ts"]
     },
     "web/storybook": {
       "entry": ["shot.ts"],

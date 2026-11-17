@@ -45,8 +45,9 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
+import { showAppBadge } from "@my/platform";
 import { useRouter } from "@tanstack/react-router";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 import { useStrings } from "../locale";
 import { signInPath } from "../sign-in";
 import { editArticlePath, newArticlePath } from "./article";
@@ -58,6 +59,22 @@ import { useNarrowViewport } from "./viewport";
 
 /** The article editor, first in the menu's sheet on a phone, where New post floats alone. */
 const articlePlace: Place = { href: "/articles/new", icon: "article", label: "app.compose.article" };
+
+/**
+ * The app's badge, where the platform has one (an installed app): the reader's unread notifications, cleared at none
+ * and on leaving. It draws nothing.
+ */
+function AppBadge() {
+  const count = useUnreadNotifications();
+  useEffect(() => {
+    if (count === undefined) return;
+    showAppBadge(count);
+    return () => {
+      showAppBadge(0);
+    };
+  }, [count]);
+  return null;
+}
 
 /** A place whose badge counts the reader's unread notifications. */
 function NotificationsPlace({ place, current }: { place: Place; current: boolean }) {
@@ -273,6 +290,7 @@ export function Shell({
   const footer = <ServerFooter instance={instance} />;
   return (
     <MenuSheet sheet={narrow}>
+      {signedIn && <AppBadge />}
       <Frame>
         <FrameSide label={t("app.navigation")}>
           <Mark instance={instance} serverName={serverName} />

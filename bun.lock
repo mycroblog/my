@@ -54,6 +54,7 @@
       "name": "@my/app",
       "dependencies": {
         "@lingui/core": "6.12.0",
+        "@my/app-components": "workspace:*",
         "@my/app-data": "workspace:*",
         "@my/app-features": "workspace:*",
         "@my/design-system": "workspace:*",

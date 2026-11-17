@@ -32,7 +32,7 @@ async function shown(locale = "en") {
   return { html: render(data, <Notifications instance="my.example" />, locale), requests };
 }
 
-test("the loader reads the notifications, the read marker, the count of the requests, what waits for approval and the follow requests", async () => {
+test("the loader reads the notifications, the read marker, the count of the requests, what waits for approval and the follow requests, then what the prompt of Web Push reads", async () => {
   const { requests } = await shown();
   expect(requests).toEqual([
     "GET /notifications",
@@ -40,6 +40,8 @@ test("the loader reads the notifications, the read marker, the count of the requ
     "GET /notifications/requests/summary",
     "GET /interaction_requests",
     "GET /follow_requests",
+    "GET /push/subscription",
+    "GET /preferences/notifications",
   ]);
 });
 

@@ -263,6 +263,17 @@ export type FakeOptions = {
    * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
    */
   held?: boolean;
+  /**
+   * Web Push (FR-206): the server sends it (its application key), the reader has no subscription until they register
+   * one, and their notification settings list the rows of the ordinary kinds; none by default, as a server without
+   * a VAPID key.
+   */
+  push?: boolean;
+  /**
+   * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
+   * their notification settings (`settings-fail`) fails with a 500.
+   */
+  pushState?: "subscribed" | "subscription-fails" | "settings-fail";
   /** The first dismissal of a notification fails (a 500); the next is kept, as a try again finds it. */
   dismissFails?: boolean;
 };
@@ -1539,6 +1550,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     timelines,
     federation: { mode: "off" },
     sends_email: false,
+    // An uncompressed P-256 point, as a server's VAPID key is: a key of no server, which no push service is asked for.
+    ...(o.push === true
+      ? {
+          push_server_key: "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM",
+        }
+      : {}),
     rules: [],
     search_indexing: "allow",
     ai_usage: "allow",
@@ -1827,6 +1844,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(list[0] === undefined ? {} : { last_notification: list[0] }),
     };
   };
+
+  /** The reader's Web Push subscription, once they registered one (`push`). */
+  let pushSubscription: Json | undefined =
+    o.pushState === "subscribed"
+      ? {
+          id: idAt(0, 70_000),
+          endpoint: "https://push.example/s/held",
+          alerts: ["mention"],
+          server_key: instanceBody["push_server_key"],
+        }
+      : undefined;
 
   // ---- Answers ---------------------------------------------------------------------------------------------------
 
@@ -2563,6 +2591,31 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       notifications.splice(at, 1);
       return new Response(null, { status: 204 });
     }
+    if (path === "/push/subscription") {
+      if (o.push !== true) return problem(404, "Not Found");
+      if (request.method === "GET" && o.pushState === "subscription-fails")
+        return problem(500, "Internal Server Error");
+      if (request.method === "PUT") {
+        const body = (await request.json()) as { endpoint: string; alerts: string[] };
+        pushSubscription = {
+          id: idAt(Date.now(), 70_000),
+          endpoint: body.endpoint,
+          alerts: body.alerts,
+          server_key: instanceBody["push_server_key"],
+        };
+      }
+      if (request.method === "DELETE") pushSubscription = undefined;
+      if (request.method === "DELETE") return new Response(null, { status: 204 });
+      return pushSubscription === undefined ? problem(404, "Not Found") : json(pushSubscription);
+    }
+    if (path === "/preferences/notifications" && request.method === "GET" && o.pushState === "settings-fail")
+      return problem(500, "Internal Server Error");
+    if (path === "/preferences/notifications" && request.method === "GET")
+      return json({
+        rows: (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
+          (type) => ({ group: type, section: "ordinary", types: [type], in_app: { enabled: true, fixed: false } }),
+        ),
+      });
     if (path === "/notifications/marker") {
       if (request.method === "PUT") {
         const { last_read_id: id } = (await request.json()) as { last_read_id: string };

@@ -6,6 +6,7 @@
 // session with the server (ADR-0090 §16), with a session its stream (ADR-0028 §18), and starts the router. A server
 // that cannot say whether there is a session leaves the app signed out, as when there is none. Every request goes
 // through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028 §12).
+// The build registers its Service Worker (ADR-0028 §3).
 
 import "@my/design-system/styles.css";
 import "@my/design-system/emoji.css";
@@ -13,7 +14,7 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider, useLocale } from "@my/design-system";
-import { browserLanguages } from "@my/platform";
+import { browserLanguages, registerServiceWorker } from "@my/platform";
 import { StrictMode, useLayoutEffect, type ReactNode } from "react";
 import { createRoot } from "react-dom/client";
 import { AppRoot } from "./app";
@@ -30,6 +31,8 @@ const server = {
 };
 const data = await openSession(server).catch(() => null);
 if (data !== null) startStream(data);
+// The Service Worker of the build, which shows Web Push messages (sw/sw.ts); the dev server has none.
+if (import.meta.env.PROD) registerServiceWorker("/sw.js");
 const visitor = visitorData(server);
 const router = createAppRouter({ data, config });
 

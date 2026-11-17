@@ -2,7 +2,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { renderToStaticMarkup } from "react-dom/server";
-import { hashtagPath, notificationPath, tagPath, type NotificationTarget } from "./paths";
+import { hashtagPath, notificationPath, pushTargetPath, tagPath, type NotificationTarget } from "./paths";
 import { PostContent, ServerDomain } from "./post-content";
 
 describe("tagPath", () => {
@@ -131,5 +131,63 @@ describe("notificationPath", () => {
       "admin_webhook_disabled",
     ])
       expect([type, of(type)]).toEqual([type, "/notifications"]);
+  });
+});
+
+describe("pushTargetPath", () => {
+  const of = (type: string, path: string) => pushTargetPath({ type, path });
+
+  test("a request to reply, boost or quote opens what waits for approval, whatever page the server names", () => {
+    for (const type of ["reply_request", "boost_request", "quote_request"])
+      expect([type, of(type, "/@yuki/status/9")]).toEqual([type, "/notifications/waiting"]);
+  });
+
+  test("a follow request opens the follow requests, even where the server names the page of the client before", () => {
+    expect(of("follow_request", "/settings/follow-requests")).toBe("/notifications/follow_requests");
+    expect(of("follow_request", "/@sora@photos.example")).toBe("/notifications/follow_requests");
+  });
+
+  test("an event's and a voice chat room's open the notifications, even with a page of an account or a post", () => {
+    for (const type of [
+      "event_invited",
+      "event_schedule_confirmed",
+      "event_changed",
+      "event_cancelled",
+      "event_reminder",
+      "event_started",
+      "event_room_unavailable",
+      "voice_room_started",
+      "voice_room_invited",
+      "voice_room_ended",
+    ])
+      expect([type, of(type, "/@yuki/status/9")]).toEqual([type, "/notifications"]);
+  });
+
+  test("any other kind opens the server's page when it is an account's, a post's or an announcement's", () => {
+    expect(of("mention", "/@sora@photos.example/status/9")).toBe("/@sora@photos.example/status/9");
+    expect(of("favourite", "/@yuki/status/9")).toBe("/@yuki/status/9");
+    expect(of("follow", "/@sora@photos.example")).toBe("/@sora@photos.example");
+    expect(of("announcement", "/announcements/a1")).toBe("/announcements/a1");
+    expect(of("some_new_kind", "/@yuki")).toBe("/@yuki");
+  });
+
+  test("a page this client has no screen for, or one off this client, opens the notifications", () => {
+    for (const path of [
+      "",
+      "/",
+      "/moderation/reports/1",
+      "/settings/preferences",
+      "/@yuki/followers",
+      "/@yuki/status/9/reactions",
+      "/@yuki?tab=media",
+      "/@yuki#top",
+      "/announcements/",
+      "/announcements/a1/extra",
+      "https://evil.example/@yuki",
+      "//evil.example/@yuki",
+      "/@yuki\\@evil.example",
+      "javascript:alert(1)",
+    ])
+      expect([path, of("mention", path)]).toEqual([path, "/notifications"]);
   });
 });
