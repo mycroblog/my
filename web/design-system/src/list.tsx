@@ -516,7 +516,13 @@ export function FacesRow({ href, label, glyph, count, faces: items }: FacesRowPr
   const s = faces();
   const { lang } = useReader(undefined);
   return (
-    <Link href={href} className={s.root()} aria-label={label} {...{ title: label }}>
+    // React Aria passes no title through: the link says its label on hover on the element itself.
+    <Link
+      href={href}
+      className={s.root()}
+      aria-label={label}
+      render={(props: object) => <a {...props} title={label} />}
+    >
       <span className={s.lead()} aria-hidden="true">
         <span className={s.glyph()}>{glyph}</span>{" "}
         <bdi dir="ltr" lang={lang} className={s.count()}>
