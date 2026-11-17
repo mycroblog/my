@@ -151,6 +151,43 @@ export function LivePart({ children }: { children: ReactNode }) {
   );
 }
 
+// What a press of Enter or Space acts on. React Aria runs such a press of its controls itself, with no click.
+const pressed = 'a[href], button, summary, [role="button"], [role="link"], [role^="menuitem"]';
+const pressedBySpace = 'button, summary, [role="button"], [role^="menuitem"]';
+
+/** Whether a press on `on` acts on the entry of `around`: see `HeardActions`. */
+function acts(around: Element, on: Element): boolean {
+  if (on.closest("[aria-haspopup]") !== null) return false;
+  // A press in what the entry opened reaches it through React's tree, from outside its own elements.
+  return around.contains(on) || on.closest('[role^="menuitem"]:not([aria-disabled="true"])') !== null;
+}
+
+/**
+ * Around an entry, with no box of its own: hears every press by which the reader acts on it (a notification, read once
+ * the reader acts on it), by a pointer or by Enter or Space, on its words or on a control of it, and on an item of a
+ * menu it opened. It hears the press before the control that takes it, where a feed's `onEntryClick` hears only a
+ * press no control took. A press that only opens a menu or a submenu is not yet an action, and neither is one that
+ * leaves a menu without a choice (its close, its back, the page behind it) or lands on an item that cannot be chosen.
+ * It may hear one action twice. A shortcut's key is no press: what it runs tells its owner itself.
+ */
+export function HeardActions({ onAct, children }: { onAct: () => void; children: ReactNode }) {
+  return (
+    <div
+      className="contents"
+      onClickCapture={(e) => {
+        if (acts(e.currentTarget, e.target as Element)) onAct();
+      }}
+      onKeyDownCapture={(e) => {
+        const on = e.target as Element;
+        const by = e.key === "Enter" ? pressed : e.key === " " ? pressedBySpace : undefined;
+        if (by !== undefined && !e.repeat && on.matches(by) && acts(e.currentTarget, on)) onAct();
+      }}
+    >
+      {children}
+    </div>
+  );
+}
+
 /**
  * A name inside a one-line caption (who boosted a post): isolated (<bdi>), and the part that truncates first, so the
  * line keeps the words around it, the verb at its end.

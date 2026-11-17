@@ -3,7 +3,8 @@
 // The reader's notifications (FR-205, ADR-0158 §7, the rough of #3047), newest first, one entry each: over them the
 // tabs (all, or the mentions) with mark-all-read at the row's end, then, under all, the row of the requests the
 // notification policy holds back. Each unread notification (newer than the read marker) carries its own mark, and is
-// read once the reader clicks it or it goes out above the view (@my/app-data moves the marker). Over them all, a row
+// read once the reader acts on it or it goes out above the view (@my/app-data moves the marker): a press on its words,
+// on a control or a link of it, or on an item of a menu of it; opening a menu is not yet an action. Over them all, a row
 // counts the follow requests and opens their screen (follow-requests.tsx), and one under it what waits for the reader's
 // approval (waiting.tsx), where those are answered: their notifications here are plain lines. A notification that
 // asks for an answer of its own (follow back) has it as the primary button; that of a scheduled post that could not be
@@ -19,6 +20,7 @@ import {
   nameOf,
   notificationPath,
   PostContent,
+  type PostAction,
 } from "@my/app-components";
 import {
   notificationMarkerQuery,
@@ -41,6 +43,7 @@ import {
   Entry,
   Excerpt,
   FeedNotice,
+  HeardActions,
   IconButton,
   NoticeCaption,
   NoticeLine,
@@ -215,15 +218,22 @@ export function NotificationRow({
   t,
   instance,
   held = false,
+  onActed,
 }: {
   n: NotificationItem;
   unread: boolean;
   t: T;
   instance: string;
   held?: boolean;
+  /** Told when the reader asks something of the post it shows, by a press or by a shortcut's key. */
+  onActed?: (() => void) | undefined;
 }) {
   const mark = unread ? t("notifications.unread") : undefined;
-  const onAction = usePostActions();
+  const act = usePostActions();
+  const onAction = (action: PostAction) => {
+    onActed?.();
+    act(action);
+  };
   const votingOf = usePostVoting();
   const ownOf = usePostOwn();
   const picker = usePostPicker();
@@ -280,9 +290,19 @@ function List({ filter, t, instance }: { filter: NotificationFilter; t: T; insta
         empty: t("notifications.empty"),
       }}
       onPassed={reads.read}
-      onEntryClick={reads.read}
     >
-      {(n) => <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} />}
+      {(n) => {
+        // The one place where an action reads its notification, whatever the row holds, now or later: a press on
+        // it or on an item of a menu of it, and what a shortcut's key asks of the post it shows.
+        const read = () => {
+          reads.read(n.id);
+        };
+        return (
+          <HeardActions onAct={read}>
+            <NotificationRow n={n} unread={reads.unread(n.id)} t={t} instance={instance} onActed={read} />
+          </HeardActions>
+        );
+      }}
     </ListColumn>
   );
 }

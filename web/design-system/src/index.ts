@@ -109,6 +109,7 @@ export {
   CaptionName,
   Embed,
   Entry,
+  HeardActions,
   LivePart,
   Stack,
   Stamp,

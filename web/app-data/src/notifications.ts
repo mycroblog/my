@@ -154,7 +154,7 @@ function advance(data: AppData): Promise<void> {
   return store.moving;
 }
 
-/** Counts the notification of `id` as read (clicked, or scrolled out above the view), and moves the marker. */
+/** Counts the notification of `id` as read (acted on, or scrolled out above the view), and moves the marker. */
 function readNotification(data: AppData, id: string): Promise<void> {
   const store = storeOf(data);
   const marker = markerOf(data);
@@ -207,6 +207,10 @@ async function dismissNotification(data: AppData, id: string): Promise<void> {
     putBack();
     throw e;
   }
+  // The server counts it no more, so it is no longer one the reader read after the marker: the press that dismissed
+  // it read it, and it would be taken off the unread count twice.
+  const store = storeOf(data);
+  if (store.seen.has(id)) setSeen(store, new Set([...store.seen].filter((seen) => seen !== id)));
   void data.queryClient.invalidateQueries({ queryKey: notificationMarkerQuery(data).queryKey, exact: true });
 }
 
@@ -320,7 +324,7 @@ export function useNotifications(filter: NotificationFilter): PagedList<Notifica
 export type NotificationReads = {
   /** Whether the notification of `id` is unread; false until the marker is known. */
   readonly unread: (id: string) => boolean;
-  /** Reads the notification of `id`: it was clicked, or scrolled out above the view. */
+  /** Reads the notification of `id`: the reader acted on it, or it scrolled out above the view. */
   readonly read: (id: string) => void;
   /** Reads every notification; it resolves once the server moved the marker, and rejects with its problem. */
   readonly readAll: () => Promise<void>;
