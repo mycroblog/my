@@ -39,14 +39,6 @@ export function postOf(scope: HTMLElement, author: string, text: string): HTMLEl
 export const findPost = (author: string, text: string): Promise<HTMLElement> =>
   waitFor(() => postOf(screen.getByRole("main"), author, text));
 
-/** The boost by `booster` of the post of `author` in `scope` that holds `text`. */
-export function boostOf(scope: HTMLElement, booster: string, author: string, text: string): HTMLElement {
-  return one(
-    articlesOf(scope, author, text).filter((post) => post.textContent.includes(`${booster} boosted`)),
-    `${booster}'s boost of ${author}'s "${text}"`,
-  );
-}
-
 /** Opens the More menu of `post`, and returns the menu once it is open. */
 export async function openMore(app: TestApp, post: HTMLElement): Promise<HTMLElement> {
   await app.user.click(within(post).getByRole("button", { name: "More" }));
