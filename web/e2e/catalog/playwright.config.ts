@@ -8,8 +8,9 @@
 // - `layout` (specs/layout, `scripts/task.sh web:layout-test`): what only a layout engine decides of the design
 //   system's layout parts and overlay surfaces, and the few things above them that only a browser draws (which font
 //   draws a script, the axe rules that need computed style).
-// - `browser` (specs/browser, `scripts/task.sh web:browser-test`): what a part does with a browser's own input, which
-//   no DOM simulation has (an input method's composition, the caret's keys, the clipboard). They are no layout tests.
+// - `browser` (specs/browser, `scripts/task.sh web:browser-test`): what a part does with what only a browser has, and
+//   no DOM simulation (an input method's composition, the caret's keys, the clipboard, a highlight over text, the
+//   fetch of a chunk of the app's code). They are no layout tests.
 
 import { defineConfig, devices } from "@playwright/test";
 
