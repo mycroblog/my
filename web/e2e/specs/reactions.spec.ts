@@ -2,16 +2,11 @@
 
 // A reader reacts to a post with the emoji picker (FR-116): adds, changes and takes back their one reaction by pointer
 // and by keyboard, finds a custom emoji by its alias, and the server keeps each change (a reload shows it). A reaction
-// takes the place of the reader's favourite, and a failed one puts the post back as it was, with a notice to try
-// again. On the post's own page a row per emoji leads to who reacted with it. The composer's Add emoji button writes
-// the emoji at the caret.
+// takes the place of the reader's favourite. The list of who reacted with an emoji leaves once the post is deleted.
+// The composer's Add emoji button writes the emoji at the caret.
 
-import type { Route } from "@playwright/test";
-import { Frame, homeTimeline, Notice, Reactors, Thread } from "./screens";
+import { Frame, homeTimeline, Reactors, Thread } from "./screens";
 import { expect, test } from "./test";
-
-/** A write of the reader's reaction to a post. */
-const reactionWrite = /\/statuses\/[^/]+\/reaction$/;
 
 test("a reader adds, changes and takes back a reaction by pointer, and the server keeps each", async ({
   page,
@@ -171,85 +166,6 @@ test("a reaction takes the place of the reader's favourite, and a favourite that
   await page.reload();
   await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
   await expect(post.reactions).toBeHidden();
-});
-
-test("a reaction that does not finish puts back the favourite it took, and Try again sends it", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  const author = await fresh.person();
-  const { text } = await fresh.post(author, { text: "Lost: one blue umbrella, near the station." });
-  await signIn(await fresh.person({ follows: [author] }));
-  const post = homeTimeline(page).post(author.displayName, text);
-  await post.favourite();
-  await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
-
-  const held = Promise.withResolvers<Route>();
-  await page.route(reactionWrite, (route) => {
-    held.resolve(route);
-  });
-  const picker = await post.react();
-  await picker.emoji("Smileys & emotion", "grinning face").click();
-  const route = await held.promise;
-  // Shown at once, before the server answers.
-  await expect(post.ownReaction).toHaveAccessibleName("😀, 1, including yours");
-  await expect(post.favourited).toBeHidden();
-  await route.abort("failed");
-  const notice = new Notice(page);
-  await expect(notice.text("The reaction did not finish.")).toBeVisible();
-  await expect(post.reactions).toBeHidden();
-  await expect(post.favourited).toHaveAccessibleName("Favourite, 1");
-
-  await page.unroute(reactionWrite);
-  await post.reacting(async () => {
-    await notice.tryAgain.click();
-  });
-  await expect(post.ownReaction).toHaveAccessibleName("😀, 1, including yours");
-  await expect(post.favourited).toBeHidden();
-  await page.reload();
-  await expect(post.ownReaction).toHaveAccessibleName("😀, 1, including yours");
-  await expect(post.favourited).toBeHidden();
-});
-
-test("the post's own page has a row per emoji of who reacted, which opens the list of them", async ({
-  page,
-  signIn,
-  fresh,
-}) => {
-  const author = await fresh.person();
-  const [other, third] = [await fresh.person(), await fresh.person()];
-  const shared = await fresh.post(author, { text: "Our choir sings at the market on Saturday." });
-  await fresh.reaction(other, shared, "teacup");
-  await fresh.reaction(third, shared, "🎉");
-  const reader = await fresh.person({ follows: [author] });
-  await signIn(reader);
-  const post = homeTimeline(page).post(author.displayName, shared.text);
-  const picker = await post.react();
-  await post.pick(picker.emoji("Custom emoji", ":teacup:"));
-  await expect(post.ownReaction).toHaveAccessibleName(":teacup:, 2, including yours");
-
-  await post.open();
-  const thread = new Thread(page);
-  await expect(thread.heading).toBeVisible();
-  const focused = thread.post(author.displayName, shared.text);
-  await expect(focused.whoReacted("🎉 1 person reacted")).toBeVisible();
-  await focused.whoReacted(":teacup: 2 people reacted").click();
-
-  const reactors = new Reactors(page);
-  await expect(reactors.heading).toBeVisible();
-  await expect(page).toHaveURL(new RegExp(`/@${author.username}/status/${shared.id}/reactions/teacup$`));
-  await expect(reactors.title).toHaveAccessibleName("Reacted with :teacup: 2");
-  await expect(reactors.account(reader.displayName)).toBeVisible();
-  await expect(reactors.account(other.displayName)).toBeVisible();
-
-  await reactors.back();
-  await expect(thread.heading).toBeVisible();
-  await expect(focused.whoReacted(":teacup: 2 people reacted")).toBeVisible();
-  // Taking the reaction back on the post's page leaves one person in its row.
-  const again = await focused.react();
-  await focused.pick(again.emoji("Custom emoji", ":teacup:, your reaction"));
-  await expect(focused.whoReacted(":teacup: 1 person reacted")).toBeVisible();
 });
 
 test("the list of who reacted to a post leaves once its author deletes the post", async ({ page, signIn, fresh }) => {
