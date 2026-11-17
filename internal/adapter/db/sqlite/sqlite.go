@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"os"
+	"strconv"
 	"strings"
 
 	msqlite "modernc.org/sqlite"
@@ -62,6 +64,16 @@ func Open(ctx context.Context, dsn string, opts uow.Options) (*DB, error) {
 	db, err := sql.Open("sqlite", name)
 	if err != nil {
 		return nil, fmt.Errorf("sqlite: open: %w", err)
+	}
+	// Spike #3177: database/sql keeps two idle connections by default, so a third concurrent query opens a
+	// connection and closes it after, and every new connection parses the whole schema again.
+	if n, _ := strconv.Atoi(os.Getenv("SPIKE_SQLITE_CONNS")); n > 0 {
+		db.SetMaxOpenConns(n)
+		db.SetMaxIdleConns(n)
+	}
+	// Idle connections alone: as many may open as are asked for, and up to n stay.
+	if n, _ := strconv.Atoi(os.Getenv("SPIKE_SQLITE_IDLE")); n > 0 {
+		db.SetMaxIdleConns(n)
 	}
 	if err := db.PingContext(ctx); err != nil {
 		_ = db.Close()

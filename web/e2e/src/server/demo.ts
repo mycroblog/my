@@ -85,6 +85,14 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     // test sends an address of its own (specs/test.ts), as each person comes from their own, so that the tests do not
     // share one sign-in limit.
     MY_TRUSTED_PROXIES: "127.0.0.1",
+    // Spike #3177: the Go runtime's profiles of the server under the suite's load.
+    ...(process.env["E2E_PPROF_LISTEN"] ? { MY_PPROF_LISTEN: process.env["E2E_PPROF_LISTEN"] } : {}),
+    ...(process.env["SPIKE_SQLITE_CONNS"] ? { SPIKE_SQLITE_CONNS: process.env["SPIKE_SQLITE_CONNS"] } : {}),
+    // A local PostgreSQL that trusts every connection (docker run -e POSTGRES_HOST_AUTH_METHOD=trust), for the
+    // comparison of the spike.
+    ...(process.env["SPIKE_PG"]
+      ? { MY_DATABASE: "postgres", MY_DATABASE_URL: "postgres://my@127.0.0.1:55432/my?sslmode=disable" }
+      : {}),
   };
 }
 
