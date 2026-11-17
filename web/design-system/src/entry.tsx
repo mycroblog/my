@@ -15,7 +15,7 @@ import { tv } from "tailwind-variants/lite";
 import { markedSurface } from "./button";
 import { useFeedPosition } from "./feed";
 import { Icon, type IconName } from "./icons";
-import { Box, Row, Stack as Rows } from "./layout";
+import { Box, Row, Stack } from "./layout";
 import { useReader } from "./locale";
 import { Preview, usePreviewState } from "./preview";
 import { actionJoint } from "./sentence";
@@ -56,7 +56,7 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
   const focus = focused || preview === "focus-visible";
   const marked = hovered || focus || preview === "hover";
   return (
-    <Rows
+    <Stack
       as={
         <article
           ref={ref}
@@ -92,24 +92,7 @@ export function Entry({ lang, labelledBy, children }: EntryProps) {
       <ActionScope target={ref}>
         <Preview state={undefined}>{children}</Preview>
       </ActionScope>
-    </Rows>
-  );
-}
-
-/** Parts one under another at the full width: an entry's gap apart (`part`), or a line's (`line`). */
-export function Stack({
-  gap = "part",
-  lang,
-  children,
-}: {
-  gap?: "part" | "line";
-  lang?: string | undefined;
-  children: ReactNode;
-}) {
-  return (
-    <Rows gap={gap === "part" ? "entry" : "entry-line"} lang={lang}>
-      {children}
-    </Rows>
+    </Stack>
   );
 }
 
@@ -385,13 +368,13 @@ export function Byline({
           {endEl}
         </Row>
       ) : (
-        <Rows grow>
+        <Stack grow>
           <Row shrink align="baseline" gap="entry-name" className={s.line()}>
             {nameEl}
             {endEl}
           </Row>
           {handleEl}
-        </Rows>
+        </Stack>
       )}
     </Row>
   );
@@ -525,8 +508,8 @@ export function Embed({
   children: ReactNode;
 }) {
   return (
-    <Rows gap="embed-gap" className={embed({ clear })} lang={lang}>
+    <Stack gap="embed-gap" className={embed({ clear })} lang={lang}>
       {children}
-    </Rows>
+    </Stack>
   );
 }

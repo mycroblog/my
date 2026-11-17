@@ -6,8 +6,9 @@ import userEvent from "@testing-library/user-event";
 import { I18nProvider, RouterProvider } from "react-aria-components";
 import { Avatar } from "./avatar";
 import { TextButton } from "./button";
-import { ActionRow, Byline, CaptionLine, CaptionName, Embed, Entry, LivePart, Stack, Stamp } from "./entry";
+import { ActionRow, Byline, CaptionLine, CaptionName, Embed, Entry, LivePart, Stamp } from "./entry";
 import { IconButton } from "./icon-button";
+import { Stack } from "./layout";
 
 /** Whether `later` comes after `earlier` in the reading order. */
 const follows = (later: Element, earlier: Element) =>
@@ -242,13 +243,13 @@ test("an action row keeps its order: Tab reaches its buttons, then what ends it"
 test("a stack and an embed mark what they hold with its language", () => {
   render(
     <>
-      <Stack gap="line" lang="de">
+      <Stack gap="entry-line" lang="de">
         <p>Guten Morgen</p>
       </Stack>
       <Embed lang="ja">
         <p>おはよう</p>
       </Embed>
-      <Stack>
+      <Stack gap="entry">
         <p>Good morning</p>
       </Stack>
     </>,
