@@ -114,8 +114,8 @@ function deviceStorage(kept = new Map<string, string>()): Storage {
   };
 }
 
-// What usePushPromptClosed answers, account by account, the screen's stories check in a browser (Notifications,
-// PushClosedBefore and PushClosedByAnother): a render without a DOM reads no device.
+// What usePushPromptClosed answers, account by account, the prompt's tests check on a DOM
+// (web/app-features/src/notifications/push-prompt.dom.test.tsx): a render without a DOM reads no device.
 describe("rememberPushPromptClosed", () => {
   const key = "my:push-prompt-closed";
   let kept: Map<string, string>;
