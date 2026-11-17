@@ -7,3 +7,11 @@ body {
   background: var(--color-surface);
   color: var(--color-text);
 }
+
+/* What the app's frame says to the parts on a phone (under `tablet`, shell.tsx), for a story that renders a part
+   without that frame: a disclosure's toggle is its label's width and little more. */
+@media (width < 40rem) {
+  html {
+    --disclosure-toggle-inline: var(--disclosure-padding);
+  }
+}

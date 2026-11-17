@@ -49,12 +49,15 @@ const PlaceContext = createContext<Place>("side");
 const frame = tv({
   slots: {
     // On a phone, `--shell-call` is the room the call's bar takes above the tab bar while there is one.
+    // On a phone, a disclosure's toggle is its label's width and little more, wherever on the page it stands, what
+    // lies over the frame too (`--disclosure-toggle-inline` on the page, which disclosure.tsx reads).
     // On a phone, the page's scroller keeps what it scrolls into view (the focus, a match of find in page) clear of the
     // dock: its scroll padding at the end is `--shell-dock`, the height the dock covers (useDockHeight).
     root: [
       "box-border min-h-dvh bg-surface font-sans text-text [body:has(&)]:m-0 [html:has(&)]:bg-surface",
       "[--shell-call:0rem] has-[[data-frame-call]]:[--shell-call:var(--shell-call-bar)]",
       "max-tablet:[html:has(&)]:scroll-pb-[var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))]",
+      "max-tablet:[html:has(&)]:[--disclosure-toggle-inline:var(--disclosure-padding)]",
       "tablet:flex tablet:justify-center tablet:gap-shell-gap tablet:px-shell-edge desktop:gap-shell-gap-wide",
     ],
     // The rail and the column beside the main one scroll with the page, with no scrollbar of their own (useAlong).

@@ -32,12 +32,12 @@ export type DisclosureProps = {
 
 const disclosure = tv({
   slots: {
-    // On a narrow screen (under 40rem, mobile) the toggle's column is its label's width and little more, so the warning
-    // wraps less.
+    // Beside the toggle's label, what the frame of the page gives it: on a phone the app's frame makes the toggle's
+    // column its label's width and little more, so that the warning wraps less (`--disclosure-toggle-inline`, shell.tsx).
     summary: [
       "rounded-control bg-surface-raised",
       "py-disclosure-padding ps-disclosure-start pe-disclosure-padding",
-      "max-[40rem]:[&>button]:px-disclosure-padding",
+      "[&>button]:px-disclosure-toggle",
     ],
     glyph: "h-control-timeline text-muted-text",
     // Centred on the toggle's height: its first line sits level with the glyph and the label.

@@ -116,6 +116,9 @@ const theme = {
     "disclosure-gap": ref("--disclosure-gap"),
     "disclosure-padding": ref("--disclosure-padding"),
     "disclosure-start": ref("--disclosure-padding-start"),
+    // Beside the label of the summary's toggle: a timeline button's own, unless the frame of the page says otherwise
+    // (`--disclosure-toggle-inline`, which the app's frame sets on a phone, shell.tsx).
+    "disclosure-toggle": "var(--disclosure-toggle-inline, var(--control-timeline-padding-inline))",
     // Above and below the summary's text, so that its first line is level with the toggle's label.
     "disclosure-text": "calc((var(--control-timeline-height) - 1lh) / 2)",
     // The search field's input, past its glyph at the start.
