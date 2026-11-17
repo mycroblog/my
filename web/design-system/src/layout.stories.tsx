@@ -2,7 +2,9 @@
 
 // The generic layout parts (layout.tsx), one story each: the part placing plain blocks, which stand for whatever a
 // part of the design system gives it, with the props that say how. The blocks' own look (a tone, a padding, a size)
-// is the story's; the placement is the part's alone.
+// is the story's; the placement is the part's alone. Then each part that arranges children with what it was not
+// written for, and no prop that asks for anything: a word of 200 letters with no place to break, fifty children, a
+// text four times its size. None of them makes its page wider than the viewport.
 
 import { rootPx, text } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -29,6 +31,11 @@ const frame: CSSProperties = {
 };
 
 const long = "A sentence long enough to run past the room its row leaves it, at any width a story is shown at";
+/** A word of 200 letters with no place to break. */
+const word = "Anunbrokenwordwithnoplacetobreak".repeat(7).slice(0, 200);
+const many = Array.from({ length: 50 }, (_, i) => i + 1);
+/** A text four times the size of the body's, as a reader who zooms to 400% sees it at the minimum width. */
+const large: CSSProperties = { fontSize: `${text.body.size * 4}rem`, lineHeight: 1.2 };
 
 /** What a part of the design system would give: a plain block, named by what it stands for. */
 const Block = ({ children, style }: { children: ReactNode; style?: CSSProperties }) => (
@@ -120,25 +127,23 @@ export const StackOfBlocks: Story = {
     <div style={frame}>
       <Stack gap="entry-line">
         <Block>One</Block>
-        <Block style={{ ...quiet, overflowWrap: "anywhere" }}>
-          Averyverylongwordwithnoplacetobreakthatwouldpushacolumnpastitscontainer
-        </Block>
+        <Block style={quiet}>Averyverylongwordwithnoplacetobreakthatwouldpushacolumnpastitscontainer</Block>
         <Block>Three</Block>
       </Stack>
     </div>
   ),
 };
 
-/** Columns of a template: the first takes the room, the last is as wide as what it holds. */
-export const GridTrailing: Story = {
+/** Two columns alike, row after row: each cell as wide as its column, whatever it holds. */
+export const GridOfTwo: Story = {
   name: "Grid",
   render: () => (
     <div style={frame}>
-      <Grid columns="trail" gap="entry-line" align="center">
+      <Grid columns={2} gap="entry-line" align="start">
         <Block>{long}</Block>
-        <Block style={quiet}>End</Block>
+        <Block style={quiet}>Beside it</Block>
         <Block>Short</Block>
-        <Block style={quiet}>A longer end</Block>
+        <Block style={quiet}>Under it</Block>
       </Grid>
     </div>
   ),
@@ -190,6 +195,191 @@ export const StickyBar: Story = {
             <Block key={i}>Line {i + 1}</Block>
           ))}
         </Stack>
+      </Box>
+    </div>
+  ),
+};
+
+/** A child with one long word gives way to the row's width and the word breaks inside it; the rigid one keeps its size. */
+export const RowLongWord: Story = {
+  name: "Row, a long word",
+  render: () => (
+    <div style={frame}>
+      <Row align="start" gap="entry-caption">
+        <Block>{word}</Block>
+        <Box rigid>
+          <Block style={quiet}>End</Block>
+        </Box>
+      </Row>
+    </div>
+  ),
+};
+
+/** A short label that keeps its words whole beside a text that wraps: the text gives way first. */
+export const RowWords: Story = {
+  name: "Row, a label's words kept whole",
+  render: () => (
+    <div style={frame}>
+      <Row align="start" gap="entry-caption">
+        <Block>{long}</Block>
+        <Box words>
+          <Block style={quiet}>A value</Block>
+        </Box>
+      </Row>
+    </div>
+  ),
+};
+
+/** More children than a line holds, in a row that may wrap: they go on as many lines as they need. */
+export const RowManyChildren: Story = {
+  name: "Row, many children, wrapping",
+  render: () => (
+    <div style={frame}>
+      <Row wrap gap="chip-spacing">
+        {many.map((n) => (
+          <Block key={n}>{n}</Block>
+        ))}
+      </Row>
+    </div>
+  ),
+};
+
+/** More rigid children than a line holds, in a row that may scroll: they keep their size and the row scrolls. */
+export const RowManyChildrenScrolling: Story = {
+  name: "Row, many children, scrolling",
+  render: () => (
+    <div style={frame}>
+      <Row scroll="x" gap="chip-spacing" tabIndex={0} role="group" aria-label="Numbers">
+        {many.map((n) => (
+          <Box key={n} rigid>
+            <Block>{n}</Block>
+          </Box>
+        ))}
+      </Row>
+    </div>
+  ),
+};
+
+/** A text four times its size: its words wrap, and one wider than the row breaks. */
+export const RowLargeText: Story = {
+  name: "Row, large text",
+  render: () => (
+    <div style={frame}>
+      <Row align="start" gap="entry-caption">
+        <Block style={large}>Large text beside a neighbour</Block>
+        <Box rigid>
+          <Block style={quiet}>End</Block>
+        </Box>
+      </Row>
+    </div>
+  ),
+};
+
+/** Inside a line of text, a row is no wider than the line: its long word breaks. */
+export const RowInlineLongWord: Story = {
+  name: "Row, inline, a long word",
+  render: () => (
+    <p style={{ ...type, margin: 0 }}>
+      A line of text with{" "}
+      <Row as="span" inline align="center" gap="chip-gap" className="rounded-control bg-surface-raised px-chip-inline">
+        <span aria-hidden="true">●</span>
+        <span>{word}</span>
+      </Row>{" "}
+      inside it.
+    </p>
+  ),
+};
+
+/** A child that stands at the start of its column is no wider than the column: its long word breaks. */
+export const ColumnLongWord: Story = {
+  name: "Column, a long word",
+  render: () => (
+    <div style={frame}>
+      <Column align="start" gap="entry-line">
+        <Block style={quiet}>Head</Block>
+        <Block>{word}</Block>
+      </Column>
+    </div>
+  ),
+};
+
+/** Fifty children one under another: the stack grows down, never sideways. */
+export const StackManyChildren: Story = {
+  name: "Stack, many children",
+  render: () => (
+    <div style={frame}>
+      <Stack gap="entry-line">
+        {many.map((n) => (
+          <Block key={n}>Line {n}</Block>
+        ))}
+      </Stack>
+    </div>
+  ),
+};
+
+/** A text four times its size in a stack: it wraps at the stack's width. */
+export const StackLargeText: Story = {
+  name: "Stack, large text",
+  render: () => (
+    <div style={frame}>
+      <Stack gap="entry-line">
+        <Block style={large}>Large text in a stack</Block>
+        <Block style={quiet}>Under it</Block>
+      </Stack>
+    </div>
+  ),
+};
+
+/** A long word in one of two columns alike: the column keeps its width and the word breaks. */
+export const GridLongWord: Story = {
+  name: "Grid, a long word",
+  render: () => (
+    <div style={frame}>
+      <Grid columns={2} gap="entry-line" align="start">
+        <Block style={quiet}>{word}</Block>
+        <Block>Beside it</Block>
+      </Grid>
+    </div>
+  ),
+};
+
+/** Fifty children in two columns alike: each cell as wide as its column. */
+export const GridManyChildren: Story = {
+  name: "Grid, many children",
+  render: () => (
+    <div style={frame}>
+      <Grid columns={2} gap="entry-line">
+        {many.map((n) => (
+          <Block key={n}>Cell {n}</Block>
+        ))}
+      </Grid>
+    </div>
+  ),
+};
+
+/** A long word in the middle of its cell: no wider than the cell, it breaks. */
+export const LayersLongWord: Story = {
+  name: "Layers, a long word",
+  render: () => (
+    <div style={frame}>
+      <Layers center>
+        <Block style={{ ...quiet, boxSizing: "border-box", inlineSize: "100%", blockSize: rem(96) }}>{""}</Block>
+        <Block>{word}</Block>
+      </Layers>
+    </div>
+  ),
+};
+
+/** A pinned box with a long word: no wider than what it is held against, its word breaks. */
+export const PinLongWord: Story = {
+  name: "Pin, a long word",
+  render: () => (
+    <div style={frame}>
+      <Box anchor>
+        <Block style={{ ...quiet, blockSize: rem(192) }}>Anchor</Block>
+        <Pin top="0" end="0">
+          <Block>{word}</Block>
+        </Pin>
       </Box>
     </div>
   ),

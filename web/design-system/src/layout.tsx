@@ -14,7 +14,7 @@
 // - `Column`: its children one under another, sharing its height (a flex column): a head that keeps its height over a
 //   body that takes the rest and scrolls.
 // - `Stack`: its children one under another, each as wide as the stack and never wider (a grid of one column).
-// - `Grid`: its children in columns, or in rows, of a named template.
+// - `Grid`: its children in columns alike, row after row, or in the rows of a named template.
 // - `Layers`: its children over one another, in one cell as large as the largest.
 // - `Pin`: a box taken out of the flow and held against the edges of the nearest `anchor` (a badge on a corner, a
 //   spinner over a label), or of the viewport.
@@ -24,14 +24,26 @@
 // the room left or keeps its size, where it stands across the row, how far it reaches past an edge, what it does with
 // what does not fit. A part that only fills a row is a `Box` with `grow`.
 //
+// What a part does unasked is what cannot push a page past the viewport, so that no composite overflows by leaving a
+// prop out. Every child of a `Row`, a `Stack`, a `Grid` or `Layers` may be narrower than what it holds, whatever
+// element it is but a picture, and a word longer than its line breaks inside its box (styles.css, for every text):
+// the child that must keep its size says so (`rigid`), and that is for what has a size of its own (an avatar, a
+// button, a tab), never for a text someone wrote; a short label of the interface that must keep its words whole
+// beside a text that wraps says `words`. Beside a child that takes the room left (`grow`), not one as wide
+// as the row (`full`), the others keep their width. A child that does not fill its `Column`, its `Stack` or its `Layers`, and a pinned
+// box, are no wider than what holds them. Three things these defaults cannot hold, which their author must ask for:
+// a text that may not wrap (`whitespace-nowrap`, a `rigid` child) is cut only by `lines`; a `Row` of more children
+// than fit, or of rigid children wider together than the row, overflows unless it may `wrap` or `scroll`; and what a
+// child lays out by itself, in classes of its own that are not these parts, keeps the browser's defaults.
+//
 // A part renders one element and adds none, so that composing these costs a function call and no node: `as` names its
 // tag ("div" unless said), or is the element to lay out, for a component that renders its own (a React Aria
 // Components' Button, a Motion element, an element that takes a ref): the part clones it with its classes after the
 // element's own, which may be a function of the component's state, as React Aria's are; children that are such a
 // function stay on that element. The caller's `className` is the part's paint (colour, type, radius, its own padding
 // and fixed size from tokens): the lint (restrict/layout-parts) refuses layout in it. The other attributes reach the
-// element in the order the caller wrote them. A part that renders a block of text (a paragraph, a heading, a list, a
-// figure) takes the browser's margin off it: where a box stands is its container's to say.
+// element in the order the caller wrote them. A block of text (a paragraph, a heading, a list, a figure) has no margin
+// of its own anywhere in the design system (styles.css): where a box stands is its container's to say.
 //
 // What these props cannot say is not written beside them in a class: it becomes a prop here when it is an arrangement
 // of its own (and a line of the story that shows it), or a layout part named in its own file when only one part of
@@ -103,6 +115,7 @@ const GAP_X = {
 /** A gap between the lines of a row that wraps, or the rows of a grid, alone. */
 const GAP_Y = {
   "0": "gap-y-0",
+  "form-page-footer-rows": "gap-y-form-page-footer-rows",
   "screen-tab-gap": "gap-y-screen-tab-gap",
 } as const;
 
@@ -145,6 +158,8 @@ const GROW = {
   share: "flex-1",
   // A name over a handle beside what the reader may do: under this width, what follows goes on a next line.
   names: "flex-[1_1_12rem]",
+  // From the width of what it holds, with its share of what is left: a place of a bar whose label may be long.
+  content: "flex-[1_1_auto]",
 } as const;
 
 const FULL = { inline: "w-full", block: "h-full", both: "size-full" } as const;
@@ -159,6 +174,8 @@ const MAX = {
   "menu-about": "max-w-[16rem]",
   // A sheet from the viewport's bottom edge leaves the page in sight above it.
   sheet: "max-h-[85dvh]",
+  // An article's cover is never taller than this, whatever its width.
+  "article-cover": "max-h-article-cover-max",
 } as const;
 
 const CLIP = { both: "overflow-hidden", x: "overflow-x-hidden", y: "overflow-y-hidden" } as const;
@@ -222,12 +239,22 @@ type Placement = {
    */
   grow?: boolean | Exclude<keyof typeof GROW, "share"> | undefined;
   /**
-   * It may be narrower than what it holds (`block`: shorter), so that the text inside it wraps or truncates, or the
-   * region inside it scrolls, in place of pushing its row or column past the container.
+   * It may be narrower than what it holds, as every child of a part that arranges children already may: for a part
+   * in an element that is none of these parts. `block`: it may be shorter, so that the region inside it scrolls in
+   * place of pushing its column past the container.
    */
   shrink?: boolean | "block" | undefined;
-  /** It keeps its size: it neither grows nor gives way. */
+  /**
+   * It keeps its size: it neither grows nor gives way. For what has a size of its own (an icon, an avatar, a
+   * button), which would be drawn over its neighbours if it gave way; a text someone wrote wraps instead.
+   */
   rigid?: boolean | undefined;
+  /**
+   * It gives way down to its longest word and no further, so that its words stay whole while the text beside it
+   * wraps: for a short label of the interface (a setting's value). Never for a text someone wrote, whose one long
+   * word would push the row past its container.
+   */
+  words?: boolean | undefined;
   /** Where it stands across its row or column, when not where the others do. */
   self?: keyof typeof SELF | undefined;
   /** Where it goes with the room left beside it: to the `end` of its row, to the `bottom` of its column. */
@@ -279,9 +306,6 @@ const BASELINE = {
   glyph: "align-[-0.125em]",
 } as const;
 
-/** The elements whose margin the browser sets: a layout part takes it off. */
-const RESET = new Set(["p", "h1", "h2", "h3", "h4", "h5", "h6", "ul", "ol", "dl", "dd", "figure", "blockquote", "pre"]);
-
 type Tag = keyof JSX.IntrinsicElements;
 
 /** What every layout part takes beside its arrangement. */
@@ -289,23 +313,18 @@ export type PartProps = Placement &
   Omit<HTMLAttributes<HTMLElement>, "className" | "style" | "children"> & {
     /** The tag it renders, or the element it lays out (a component that renders its own element). */
     as?: Tag | ReactElement<{ className?: unknown }> | undefined;
-    /**
-     * The element that `as` renders is one whose margin the browser sets (a heading a component renders), to take
-     * off; a tag named in `as` needs no saying.
-     */
-    reset?: boolean | undefined;
     /** Its paint: no layout. */
     className?: string | undefined;
     children?: ReactNode;
   };
 
 /** The props of a part that say where its box sits, which the element it renders does not take. */
-const PLACEMENT: Record<keyof Placement | "as" | "reset", true> = {
+const PLACEMENT: Record<keyof Placement | "as", true> = {
   as: true,
-  reset: true,
   grow: true,
   shrink: true,
   rigid: true,
+  words: true,
   self: true,
   push: true,
   full: true,
@@ -335,10 +354,10 @@ const PLACEMENT: Record<keyof Placement | "as" | "reset", true> = {
 function part(layoutClassName: string, props: PartProps, style?: Record<string, string>) {
   const as = props.as ?? "div";
   let c = layoutClassName;
-  if (props.reset || (typeof as === "string" && RESET.has(as))) c += " m-0";
   if (props.grow) c += ` ${GROW[props.grow === true ? "share" : props.grow]}`;
   if (props.shrink) c += props.shrink === "block" ? " min-h-0" : " min-w-0";
   if (props.rigid) c += " flex-none";
+  if (props.words) c += " min-w-auto";
   if (props.self) c += ` ${SELF[props.self]}`;
   if (props.push) c += ` ${PUSH[props.push]}`;
   if (props.full) c += ` ${FULL[props.full === true ? "inline" : props.full]}`;
@@ -389,9 +408,17 @@ function part(layoutClassName: string, props: PartProps, style?: Record<string, 
 
 const DISPLAY = { block: "block", inline: "inline", "inline-block": "inline-block" } as const;
 
+/** A block shown in one of the two colour schemes alone: the reader's, or the one the page's theme sets. */
+const ONLY = {
+  light: "block [:root[data-theme=dark]_&]:hidden dark:[:root:not([data-theme=light])_&]:hidden",
+  dark: "hidden [:root[data-theme=dark]_&]:block dark:[:root:not([data-theme=light])_&]:block",
+} as const;
+
 export type BoxProps = PartProps & {
   /** In the flow as a block, or inside a line of text. */
   display?: keyof typeof DISPLAY | undefined;
+  /** A block that shows in the light colour scheme alone, or in the dark one (a mark drawn for each). */
+  only?: keyof typeof ONLY | undefined;
   /**
    * The paragraphs inside it run on as one text, in place of standing one under another (an excerpt of a post);
    * `all`: its blocks too.
@@ -404,8 +431,8 @@ export type BoxProps = PartProps & {
 };
 
 /** One box, and how it sits where it is put: it arranges nothing inside itself. */
-export function Box({ display, run, share, reach, ...rest }: BoxProps) {
-  let c = display ? DISPLAY[display] : "";
+export function Box({ display, only, run, share, reach, ...rest }: BoxProps) {
+  let c = display ? DISPLAY[display] : only ? ONLY[only] : "";
   if (run) c += run === "all" ? " [&_p]:inline [&_div]:inline" : " [&_p]:inline";
   if (reach) c += " after:absolute after:inset-0 after:content-['']";
   return part(c, rest, share === undefined ? undefined : { inlineSize: `${String(Math.round(share * 1000) / 10)}%` });
@@ -428,6 +455,16 @@ function flow(className: string, { align, justify, gap }: Flow) {
   return out;
 }
 
+/**
+ * What a part that places children side by side gives each of them unasked: it may be narrower than what it holds.
+ * A picture (an image, a glyph, a video, a canvas) is no box of text: it keeps the size it has, which squeezing would
+ * distort. Without specificity, so that a child's own least width is heard.
+ */
+const SHRINKS = "[:where(&)>:where(:not(img,svg,video,canvas,picture))]:min-w-0";
+
+/** A child that does not fill what holds it is no wider than it, its padding counted. */
+const FITS = "[:where(&)>*]:box-border [:where(&)>*]:max-w-full";
+
 /** How far each child of a row lies over the one before it: faces in a strip. */
 const OVERLAP = {
   "screen-face-overlap": "[&>*+*]:-ms-screen-face-overlap",
@@ -446,6 +483,8 @@ export type RowProps = PartProps &
     gapY?: keyof typeof GAP_Y | undefined;
     /** Each child lies this far over the one before it. */
     overlap?: keyof typeof OVERLAP | undefined;
+    /** Its children share its width alike, whatever each holds (a refusal beside its confirmation). */
+    even?: boolean | undefined;
     /**
      * On a touch screen, its press target reaches the touch height above and below it, whatever its own height (an
      * icon button in a row of text); it is its own `anchor`.
@@ -454,15 +493,18 @@ export type RowProps = PartProps &
   };
 
 /** Its children side by side, in the reader's direction. */
-export function Row({ inline, wrap, align, justify, gap, gapX, gapY, overlap, touch, ...rest }: RowProps) {
+export function Row({ inline, wrap, align, justify, gap, gapX, gapY, overlap, even, touch, ...rest }: RowProps) {
   let c = flow(wrap ? (inline ? "inline-flex flex-wrap" : "flex flex-wrap") : inline ? "inline-flex" : "flex", {
     align,
     justify,
     gap,
   });
+  // A box inside a line is as wide as what it holds: no wider than the line, its padding counted.
+  c += inline ? ` box-border max-w-full ${SHRINKS}` : ` ${SHRINKS}`;
   if (gapX) c += ` ${GAP_X[gapX]}`;
   if (gapY) c += ` ${GAP_Y[gapY]}`;
   if (overlap) c += ` ${OVERLAP[overlap]}`;
+  if (even) c += " [&>*]:flex-1";
   if (touch)
     c +=
       " pointer-coarse:before:absolute pointer-coarse:before:inset-x-0 pointer-coarse:before:top-1/2" +
@@ -477,7 +519,9 @@ export type ColumnProps = PartProps & Flow;
  * rest (and scrolls what does not fit, with `shrink="block"` and `scroll`).
  */
 export function Column({ align, justify, gap, ...rest }: ColumnProps) {
-  return part(flow("flex flex-col", { align, justify, gap }), rest);
+  // Across a column a child is as wide as the column, or, where it stands at one side of it, no wider.
+  const c = flow("flex flex-col", { align, justify, gap });
+  return part(align === undefined || align === "stretch" ? c : `${c} ${FITS}`, rest);
 }
 
 const CONTENT = { start: "content-start", center: "content-center" } as const;
@@ -496,19 +540,19 @@ export type StackProps = PartProps & {
 export function Stack({ gap, justify, pack, ...rest }: StackProps) {
   let c = "grid grid-cols-[minmax(0,1fr)]";
   if (gap) c += ` ${GAP[gap]}`;
-  if (justify) c += ` ${JUSTIFY_ITEMS[justify]}`;
+  if (justify) c += ` ${JUSTIFY_ITEMS[justify]} ${FITS}`;
   if (pack) c += ` ${CONTENT[pack]}`;
   return part(c, rest);
 }
 
 /**
- * The templates of a grid's columns: so many alike, or one that takes the room beside one as wide as what it holds
- * (`lead`: the first is the one that hugs; `trail`: the last).
+ * The templates of a grid's columns: so many alike, none with a least width. A column as wide as what it holds would
+ * take the whole grid for one long word and leave the others none: a grid whose columns differ is its part's own
+ * arrangement, named in its file.
  */
 const COLUMNS = {
+  1: "grid-cols-[minmax(0,1fr)]",
   2: "grid-cols-2",
-  lead: "grid-cols-[auto_minmax(0,1fr)]",
-  trail: "grid-cols-[minmax(0,1fr)_auto]",
 } as const;
 
 /** The templates of a grid's rows: a `head` as tall as what it holds over a body that takes the rest. */
@@ -525,10 +569,9 @@ export type GridProps = PartProps & {
   align?: keyof typeof ALIGN | undefined;
 };
 
-/** Its children in the cells of a template, row after row. */
-export function Grid({ columns, rows, gap, gapX, gapY, align, ...rest }: GridProps) {
-  let c = "grid";
-  if (columns) c += ` ${COLUMNS[columns]}`;
+/** Its children in columns alike, row after row. */
+export function Grid({ columns = 1, rows, gap, gapX, gapY, align, ...rest }: GridProps) {
+  let c = `grid ${COLUMNS[columns]}`;
   if (rows) c += ` ${ROWS[rows]}`;
   if (gap) c += ` ${GAP[gap]}`;
   if (gapX) c += ` ${GAP_X[gapX]}`;
@@ -547,7 +590,8 @@ export type LayersProps = PartProps & {
  * its badge, a text under its placeholder.
  */
 export function Layers({ center, ...rest }: LayersProps) {
-  return part(center ? "grid place-items-center [&>*]:[grid-area:1/1]" : "grid [&>*]:[grid-area:1/1]", rest);
+  const cell = "grid grid-cols-[minmax(0,1fr)] [&>*]:[grid-area:1/1]";
+  return part(center ? `${cell} place-items-center ${FITS}` : cell, rest);
 }
 
 /** How far from an edge a pinned or a sticky box is held: on it, or a token of the theme's spacing away. */
@@ -616,6 +660,8 @@ export function Pin({ viewport, cover, center, top, bottom, start, end, insetInl
   let c = viewport ? "fixed" : "absolute";
   if (cover || center) c += " inset-0";
   if (center) c += " m-auto";
+  // As wide as what it holds, and no wider than what it is held against, its padding counted.
+  else if (!cover) c += " box-border max-w-full";
   return part(edges(c, { top, bottom, start, end, insetInline, insetBlock }), rest);
 }
 

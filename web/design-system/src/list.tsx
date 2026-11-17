@@ -75,7 +75,6 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
             out; the tabs that do not fit scroll sideways. */}
         <Row
           grow
-          shrink
           gap="screen-tab-gap"
           bleedStart="control-timeline-inline"
           scroll="x"
@@ -83,7 +82,7 @@ export function TabRow<T extends string>({ label, tabs: items, current, onChange
           as={<TabList aria-label={label} />}
         >
           {items.map((tab) => (
-            <Row key={tab.id} align="center" as={<Tab id={tab.id} className={s.tab()} />}>
+            <Row key={tab.id} rigid align="center" as={<Tab id={tab.id} className={s.tab()} />}>
               {tab.name}
             </Row>
           ))}
@@ -111,9 +110,9 @@ const group = tv({ base: "text-caption font-normal text-muted-text" });
  */
 function GroupPlace({ id, className, children }: { id?: string | undefined; className: string; children: string }) {
   return (
-    <Box as="h2" id={id} className={`${className} [[data-entry]>&]:mt-screen-group-gap`}>
+    <h2 id={id} className={`${className} [[data-entry]>&]:mt-screen-group-gap`}>
       {children}
-    </Box>
+    </h2>
   );
 }
 
@@ -126,11 +125,7 @@ const fold = tv({ base: "text-caption" });
 
 /** A fold of what a list does not show yet: a `TextButton` that shows it, at the start of the column. */
 export function Fold({ children }: { children: ReactNode }) {
-  return (
-    <Box as="p" className={fold()}>
-      {children}
-    </Box>
-  );
+  return <p className={fold()}>{children}</p>;
 }
 
 const unread = tv({ base: "size-screen-unread rounded-full bg-text" });
@@ -217,8 +212,8 @@ export function NoticeLine({
       <Row as="span" inline line rigid align="center" className={s.avatar()}>
         {avatar}
       </Row>
-      <Stack grow shrink gap="entry-line">
-        <Box as="p" className={s.text()}>
+      <Stack grow gap="entry-line">
+        <p className={s.text()}>
           {/* The unread mark, the time and the control stand close, so that the first line keeps more of its measure:
               they float at its end, and the lines under it run to the column's end. */}
           <Row as="span" inline line align="center" gap="chip-gap" float="end" spaceBefore="entry-caption">
@@ -247,7 +242,7 @@ export function NoticeLine({
               </Box>
             )}
           </span>
-        </Box>
+        </p>
         {excerpt}
       </Stack>
     </Row>
@@ -283,7 +278,7 @@ export function NoticeCaption({
   const s = noticeCaption({ read: mark === undefined });
   return (
     <Row align="center" gap="entry-avatar" className={s.root()}>
-      <Row as="p" grow shrink align="start" gap="entry-caption" className={s.text()}>
+      <Row as="p" grow align="start" gap="entry-caption" className={s.text()}>
         <Row as="span" inline line rigid align="center" className={s.glyph()}>
           <Icon name={icon} place="caption" />
         </Row>
@@ -455,13 +450,9 @@ export function AccountRow({
     // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
     // than their least width (a 320 px row with two buttons), so that the handle stays readable.
     <Row wrap align="center" gap="screen-row-gap">
-      <Stack grow="names" shrink gap="entry-line">
+      <Stack grow="names" gap="entry-line">
         <Byline avatar={avatar} name={accountName} handle={handle} href={href} heading={heading} />
-        {note !== undefined && (
-          <Box as="p" className={s.note()}>
-            {note}
-          </Box>
-        )}
+        {note !== undefined && <p className={s.note()}>{note}</p>}
       </Stack>
       {end !== undefined && (
         <Box push="end">
@@ -514,7 +505,7 @@ export function OpenRow({
       <Row as="span" inline rigid>
         <Icon name={icon} place="action" />
       </Row>
-      <Stack as="span" grow shrink>
+      <Stack as="span" grow>
         <span className={s.title()}>{title}</span>
         {hint !== undefined && <span className={s.hint()}>{hint}</span>}
       </Stack>
@@ -588,7 +579,7 @@ export function FacesRow({ href, label, glyph, count, faces: items }: FacesRowPr
       </Row>
       {/* As many faces as fit: a face that does not wraps to a second line, which the strip's height hides, so that
           faces drop from the end whole, never shrink or scroll. */}
-      <Row as="span" wrap grow shrink clip overlap="screen-face-overlap" className={s.strip()} aria-hidden="true">
+      <Row as="span" wrap grow clip overlap="screen-face-overlap" className={s.strip()} aria-hidden="true">
         {items.map((face, i) => (
           <Row key={i} as="span" inline rigid className={s.face()}>
             {face}
@@ -687,7 +678,7 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
       {back}
       {/* The title at the start, what the reader may do at the end, on the baseline of the title's first line. */}
       <Row align="baseline" gap="screen-head-room">
-        <Box as="h2" grow shrink className={s.title()}>
+        <Box as="h2" grow className={s.title()}>
           {glyph !== undefined && (
             <Row as="span" inline baseline="glyph" spaceAfter="entry-caption" className={s.glyph()}>
               <Icon name={glyph} place="action" />
@@ -727,11 +718,11 @@ const back = tv({
 export function BackButton({ onPress, children }: { onPress: () => void; children: string }) {
   const s = back();
   return (
-    <Box as="p" className={s.root()}>
+    <p className={s.root()}>
       <Row inline align="center" gap="entry-caption" as={<Button className={s.button()} onPress={onPress} />}>
         <Icon name="back" place="caption" />
         {children}
       </Row>
-    </Box>
+    </p>
   );
 }

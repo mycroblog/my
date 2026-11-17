@@ -155,7 +155,7 @@ export function MenuHead({
       {back !== undefined && (
         <IconButton icon="back" label={back.label} {...(back.onPress ? { onPress: back.onPress } : {})} />
       )}
-      <Box as="h2" grow shrink className={back === undefined ? `${s.title()} ${s.start()}` : s.title()}>
+      <Box as="h2" grow className={back === undefined ? `${s.title()} ${s.start()}` : s.title()}>
         {title}
       </Box>
       {close !== undefined && (
@@ -408,7 +408,14 @@ export function MenuItem({
                 {(trail?.from === undefined ? selectionMode === "single" && isSelected : trail.from === id) && (
                   <TakesFocus id={id} />
                 )}
-                <Row as="span" inline line={described} align={described ? "center" : undefined} className={s.glyph()}>
+                <Row
+                  as="span"
+                  inline
+                  rigid
+                  line={described}
+                  align={described ? "center" : undefined}
+                  className={s.glyph()}
+                >
                   <Icon name={icon} place="action" on={on || current || (selectionMode === "multiple" && isSelected)} />
                 </Row>
                 {described ? (
@@ -424,7 +431,7 @@ export function MenuItem({
                   <span>{children}</span>
                 )}
                 {(checked || opens !== undefined || badge !== undefined) && (
-                  <Row as="span" inline align="center" gap="menu-icon-gap" push="end" className={s.end()}>
+                  <Row as="span" inline words align="center" gap="menu-icon-gap" push="end" className={s.end()}>
                     {opens !== undefined && opens !== "" && <span>{opens}</span>}
                     {badge}
                     {(checked || opens !== undefined) && <Icon name={checked ? "chosen" : "onward"} place="action" />}

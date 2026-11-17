@@ -322,7 +322,7 @@ function TabMenu() {
   return (
     <Frame>
       <FrameMain>
-        <p>Home</p>
+        <p style={{ marginBlock: "1em" }}>Home</p>
       </FrameMain>
       <FrameDock
         label="Main"

@@ -152,7 +152,7 @@ export function PollChoices({
             <MarkPlace>
               <PollMark multiple={multiple} on={on} />
             </MarkPlace>
-            <Box as="span" grow shrink className={s.label()} dir="auto">
+            <Box as="span" grow className={s.label()} dir="auto">
               {item.label}
             </Box>
           </Row>
@@ -201,7 +201,7 @@ export function PollResults({
                   <PollMark multiple={multiple} on={item.mine} plain />
                 </MarkPlace>
               )}
-              <Box as="span" grow shrink className={r.label()} dir="auto">
+              <Box as="span" grow className={r.label()} dir="auto">
                 {item.label}
                 {item.mine && <span className="sr-only">{` (${mineLabel})`}</span>}
               </Box>
@@ -238,7 +238,7 @@ export function PollFoot({
   return (
     <Row align="center" gap="entry-caption">
       {/* Its line wraps beside Vote, which stays at the end. */}
-      <Box as="p" grow shrink className={s.meta()}>
+      <Box as="p" grow className={s.meta()}>
         {parts.map((part, i) => (
           <span key={i}>
             {i > 0 && " · "}

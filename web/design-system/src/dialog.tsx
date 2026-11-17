@@ -61,17 +61,17 @@ export function ConfirmDialog({
   const body = (
     <>
       {layer ? (
-        <Box reset as={<Heading slot="title" className={s.title()} />}>
+        <Heading slot="title" className={s.title()}>
           {title}
-        </Box>
+        </Heading>
       ) : (
-        <Box as="h2" id={titleId} className={s.title()}>
+        <h2 id={titleId} className={s.title()}>
           {title}
-        </Box>
+        </h2>
       )}
-      <Box as="p" id={textId} className={s.text()}>
+      <p id={textId} className={s.text()}>
         {children}
-      </Box>
+      </p>
       <Row wrap align="center" justify="end" gap="dialog-row">
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
@@ -169,13 +169,13 @@ export function PanelDialog({ title, closeLabel, onClose, layer = true, children
   const head = (
     <>
       {layer ? (
-        <Box reset as={<Heading slot="title" className={s.title()} />}>
+        <Heading slot="title" className={s.title()}>
           {title}
-        </Box>
+        </Heading>
       ) : (
-        <Box as="h2" id={titleId} className={s.title()}>
+        <h2 id={titleId} className={s.title()}>
           {title}
-        </Box>
+        </h2>
       )}
       <Row as="span" inline bleedEnd="icon-button-inline">
         <IconButton icon="close" label={closeLabel} onPress={onClose} />

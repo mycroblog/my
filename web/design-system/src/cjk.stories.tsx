@@ -170,7 +170,7 @@ export const Code: StoryObj = {
 /** Running text in Latin alone, which draws with Noto Sans and loads no slice of Noto Sans CJK. */
 export const LatinOnly: StoryObj = {
   render: () => (
-    <p style={body}>
+    <p style={{ ...body, marginBlock: "1em" }}>
       A post in English draws its Latin letters with Noto Sans and loads no Han. Zażółć gęślą jaźń. Їжак.
     </p>
   ),

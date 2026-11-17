@@ -104,8 +104,9 @@ type Kind = ButtonKind | "icon" | "chip";
 type Size = ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
 
 /**
- * How a button places what it holds: its label in its middle, under the spinner while busy. An icon button's press
- * target reaches the touch height on a touch screen; the frame's action in the rail is as wide as the rail.
+ * How a button places what it holds: its label in its middle, under the spinner while busy. It keeps its size, which
+ * is its label's on one line. An icon button's press target reaches the touch height on a touch screen; the frame's
+ * action in the rail is as wide as the rail.
  */
 const arrangement = (kind: Kind, size: Size) =>
   ({
@@ -113,6 +114,7 @@ const arrangement = (kind: Kind, size: Size) =>
     align: "center",
     justify: "center",
     anchor: true,
+    rigid: true,
     touch: kind === "icon",
     full: size === "side",
   }) satisfies RowProps;
