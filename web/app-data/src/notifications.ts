@@ -140,11 +140,28 @@ function readUpTo(data: AppData, seen: ReadonlySet<string>): string | undefined 
   return upTo;
 }
 
+/**
+ * Reads from the server what a read goes by and the cache does not hold: the marker, which says whether a notification
+ * is unread, and the first page of the full list, by which the marker moves. The address a push opens starts the app
+ * with neither. A failure leaves them unknown.
+ */
+async function learn(data: AppData): Promise<void> {
+  const { queryClient } = data;
+  const list = notificationsQuery(data, "all");
+  await Promise.all([
+    markerOf(data) === undefined ? queryClient.query({ ...notificationMarkerQuery(data), staleTime: Infinity }) : null,
+    queryClient.getQueryData(list.queryKey) === undefined
+      ? queryClient.infiniteQuery({ ...list, staleTime: Infinity })
+      : null,
+  ]).catch(() => undefined);
+}
+
 /** Moves the marker as far as what the reader read allows, one move after another. */
 function advance(data: AppData): Promise<void> {
   const store = storeOf(data);
   store.moving = store.moving
     .then(async () => {
+      await learn(data);
       const upTo = readUpTo(data, store.seen);
       if (upTo !== undefined) await putMarker(data, upTo);
     })
@@ -158,7 +175,10 @@ function advance(data: AppData): Promise<void> {
 function readNotification(data: AppData, id: string): Promise<void> {
   const store = storeOf(data);
   const marker = markerOf(data);
-  if (marker === undefined || store.seen.has(id) || !newer(id, marker.last_read_id)) return Promise.resolve();
+  // Without the marker nothing says whether it is unread: it is read once the server said where the marker is.
+  if (marker === undefined)
+    return learn(data).then(() => (markerOf(data) === undefined ? undefined : readNotification(data, id)));
+  if (store.seen.has(id) || !newer(id, marker.last_read_id)) return Promise.resolve();
   setSeen(store, new Set([...store.seen, id]));
   return advance(data);
 }

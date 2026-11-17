@@ -4,7 +4,7 @@
 // client): it reads the notification and goes on to what it tells of (notificationPath), in place of this address in
 // the history, and counts it as read. One that leads nowhere else opens the notifications; one the server no longer has
 // (dismissed, or never the reader's) opens them with a line that says so. While it is read, and when that failed (with
-// Try again), a line says so. Without a session it asks the reader to sign in.
+// Try again), a line says so. Without a session it asks the reader to sign in, and the sign-in comes back here.
 
 import { notificationPath } from "@my/app-components";
 import { notificationQuery, useNotification, useNotificationReads } from "@my/app-data";
@@ -66,7 +66,7 @@ function NotificationScreen() {
   return (
     <>
       <ScreenHeading>{t("app.notifications")}</ScreenHeading>
-      {data === null ? <SignedOut /> : <Open key={id} id={id} />}
+      {data === null ? <SignedOut returnTo={`/notifications/${encodeURIComponent(id)}`} /> : <Open key={id} id={id} />}
     </>
   );
 }

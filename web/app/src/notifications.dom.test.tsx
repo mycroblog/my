@@ -342,21 +342,18 @@ test("reading newer notifications while an older one is unread sends nothing, an
 // The notification a push or an email opens.
 
 // Defect: the app lands on the post, but the notification stays unread and no marker is sent.
-test.failing(
-  "the address of a notification a push opens reads it, and the reader goes on to what it tells of",
-  async () => {
-    const on = fakeApp({ viewer: "sam" });
-    const marker = on.fake.script("PUT /notifications/marker");
-    const { data: page } = await on.data.api.GET("/notifications");
-    // The oldest of the three unread: the favourite of Hana.
-    const oldest = page?.items[2]?.id ?? "none";
-    const app = await renderApp(`/notifications/${oldest}`, { on });
-    await waitFor(() => {
-      if (!/^\/@sam\/status\/[^/]+$/.test(app.path())) throw new Error(`test: the app is at ${app.path()}`);
-    });
-    await waitFor(() => {
-      expect(unreadCount()).toBe(2);
-    });
-    expect(marker.seen.map((s) => s.body.last_read_id)).toEqual([oldest]);
-  },
-);
+test("the address of a notification a push opens reads it, and the reader goes on to what it tells of", async () => {
+  const on = fakeApp({ viewer: "sam" });
+  const marker = on.fake.script("PUT /notifications/marker");
+  const { data: page } = await on.data.api.GET("/notifications");
+  // The oldest of the three unread: the favourite of Hana.
+  const oldest = page?.items[2]?.id ?? "none";
+  const app = await renderApp(`/notifications/${oldest}`, { on });
+  await waitFor(() => {
+    if (!/^\/@sam\/status\/[^/]+$/.test(app.path())) throw new Error(`test: the app is at ${app.path()}`);
+  });
+  await waitFor(() => {
+    expect(unreadCount()).toBe(2);
+  });
+  expect(marker.seen.map((s) => s.body.last_read_id)).toEqual([oldest]);
+});
