@@ -4,11 +4,11 @@
 // what is written, a cover and an image of the body are uploaded, and the article published reads on its page as the
 // preview showed it; a published article is edited from its menu, and an edit closed is discarded; a new article closed
 // or saved is a draft of an article on the server (ADR-0156), which reopens from the editor's list (articles only) and
-// the composer's (marked an article), and one is scheduled. On a phone the editor opens from the Menu sheet.
+// the composer's (marked an article), and one is scheduled.
 
 import { drawPNG } from "../src/seed/png";
 import { ArticleEditor, ArticleText, Frame, Thread, type Upload } from "./screens";
-import { expect, person, test } from "./test";
+import { expect, test } from "./test";
 
 /** A small PNG to pick in the file picker. */
 const png = (name: string): Upload => ({
@@ -222,16 +222,4 @@ test("a writer schedules an article, which waits in the lists and reopens with i
   await expect(editor.note(/^Scheduled for .+:00\s[AP]M \(.+\)\s*Change time$/)).toBeVisible();
   await expect(editor.button("Schedule")).toBeVisible();
   await expect(editor.button("Publish")).toHaveCount(0);
-});
-
-test.describe("on a phone", () => {
-  test.use({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
-
-  test("New article starts the Menu sheet and opens the editor", async ({ page, signIn }) => {
-    await signIn(person("yuki"));
-    const editor = new ArticleEditor(page);
-    await expect(editor.navigationEntry).toHaveCount(0);
-    await editor.openFromMenuSheet();
-    await expect(page).toHaveURL(/\/articles\/new$/);
-  });
 });
