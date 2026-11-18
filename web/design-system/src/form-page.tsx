@@ -237,7 +237,8 @@ const form = tv({
     // there is (the line about a setting, its save state), at the caption's own weight: its glyph and the text's
     // color tell it from a hint.
     fieldError: [
-      "font-label [word-break:auto-phrase]",
+      // Brought into view (focusRefusedField), it keeps a little air to what is held at the viewport's bottom.
+      "scroll-mb-shell-inset font-label [word-break:auto-phrase]",
       "[[data-surface-raised]_&]:text-caption [[data-surface-raised]_&]:font-(--text-caption--font-weight)",
     ],
     // A statement under a field, no error: the text's color, a caption on a raised surface, at its own weight.
@@ -495,6 +496,23 @@ export function TextField({
       {error && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </Stack>
   );
+}
+
+/**
+ * Puts the focus on the `TextField` of `id` that was refused, and brings its error, right under it, into view with
+ * it: a browser scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which
+ * grows as it says that nothing was sent), and the error under the field would stay behind it. The error comes into
+ * view once the page has measured that bar again, a frame after the one that drew the refusal.
+ */
+export function focusRefusedField(id: string): void {
+  document.getElementById(id)?.focus();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const error = document.getElementById(`${id}-error`);
+      // A DOM that lays nothing out (a test's) has nothing to scroll.
+      if (error !== null && "scrollIntoView" in error) error.scrollIntoView({ block: "nearest" });
+    });
+  });
 }
 
 /** A field's error, right under what it is about. */

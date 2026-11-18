@@ -1132,8 +1132,8 @@
     "description": "The heading of the summary at the top of the settings page Account and data while moderators' actions are in effect on the reader's account (a limit, a restriction of posting). count is how many, 1 or more. A heading: no full stop."
   },
   "settings.account.status.in_effect.about": {
-    "defaultMessage": "{appealable, select, yes {Account status says what each action does, why, and when it ends. You can appeal an action once.} other {Account status says what each action does, why, when it ends, and where your appeal stands.}}",
-    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is yes while the reader can still appeal one of the actions, no once every action is appealed or its time to appeal has passed."
+    "defaultMessage": "{appealable, select, deadline {Account status says what each action does, why, and when it ends. You can appeal until {date}.} yes {Account status says what each action does, why, and when it ends. You can appeal an action once.} other {Account status says what each action does, why, when it ends, and where your appeal stands.}}",
+    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is deadline while the reader can still appeal one of the actions and the server says until when (date is the nearest last day, as the reader's locale writes a date), yes while they can and no last day is known, and anything else once every action is appealed or its time to appeal has passed."
   },
   "settings.account.status.open": {
     "defaultMessage": "See account status",
@@ -1232,15 +1232,15 @@
     "description": "A heading on the page of one moderators' action on the reader's account, over the form in which the reader asks the moderators to reconsider the action, or over the appeal they sent and its result. A heading: no full stop."
   },
   "settings.account.appeal.about": {
-    "defaultMessage": "{deadline, select, yes {You can appeal this action once, until {date}. A moderator reads your appeal and decides.} other {You can appeal this action once. A moderator reads your appeal and decides.}}",
-    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
+    "defaultMessage": "{deadline, select, yes {You can appeal this action once, until {date}, and you cannot change your appeal after you send it. A moderator reads it and decides.} other {You can appeal this action once, and you cannot change your appeal after you send it. A moderator reads it and decides.}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once and the appeal cannot be changed, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
   },
   "settings.account.appeal.label": {
     "defaultMessage": "Your appeal",
     "description": "The label of the field in which the reader writes their appeal of a moderators' action on their account (why the moderators should reconsider it), on the action's page in the settings; also the label over the appeal they sent, once it is sent."
   },
   "settings.account.appeal.hint": {
-    "defaultMessage": "Say why the moderators should reconsider this action, in up to {max, number} characters. You cannot change your appeal after you send it.",
+    "defaultMessage": "Say why the moderators should reconsider this action, in up to {max, number} characters.",
     "description": "The hint of the field settings.account.appeal.label. max is the longest appeal the server takes, in characters."
   },
   "settings.account.appeal.missing": {
@@ -1260,20 +1260,36 @@
     "description": "In the bar at the bottom of the page of a moderators' action in the settings, beside Send appeal, when the appeal was not sent. reason is field when what the reader wrote was refused (what is wrong stands under the field), other when the server could not be reached or answered with nothing the app knows."
   },
   "settings.account.appeal.sent": {
-    "defaultMessage": "Your appeal was sent. A moderator will review it, and you will be notified of the result.",
-    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal. The page of an account kept out of the app says the first two sentences' words (auth.status.appeal_sent)."
+    "defaultMessage": "Your appeal was sent.",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal; where the appeal stands follows it (settings.account.appeal.state)."
   },
   "settings.account.appeal.refused": {
-    "defaultMessage": "{reason, select, appealed {You have already appealed this action, and an action can be appealed once. Your appeal and where it stands are shown here.} closed {The time to appeal this action has passed, so your appeal was not sent. To reach the moderators, see the contact on this server's About page.} not_appealable {This action can no longer be appealed, so your appeal was not sent. To reach the moderators, see the contact on this server's About page.} other {This action is no longer listed on your account, so your appeal was not sent. Go back to Account status to see the actions on your account.}}",
-    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent. reason is appealed (the action was appealed already, from another browser; the appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). About is the server's page of that name (app.footer_about); Account status is settings.account.status."
+    "defaultMessage": "{reason, select, appealed {You have already appealed this action, and an action can be appealed once. Your earlier appeal and where it stands are shown here.} closed {The time to appeal this action has passed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} not_appealable {This action can no longer be appealed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} other {This action is no longer listed on your account, so your appeal was not sent. Go back to Account status to see the actions on your account.}}",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent; the form is then gone. reason is appealed (the action was appealed already, from another browser; that appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). about is the link to the server's About page, whose words are settings.account.appeal.about_page; Account status is settings.account.status."
+  },
+  "settings.account.appeal.about_page": {
+    "defaultMessage": "this server's About page",
+    "description": "The words of the link in settings.account.appeal.refused (its about) that leads to the server's About page (app.footer_about), where the server's contact is. It stands inside a sentence: no capital, no full stop."
+  },
+  "settings.account.appeal.unsent": {
+    "defaultMessage": "What you wrote, not sent",
+    "description": "The label over the text of the appeal the reader wrote, on the page of a moderators' action in the settings, after the server refused the appeal because the action can no longer be appealed: the text stays to be read and copied."
+  },
+  "settings.account.appeal.unsent.about": {
+    "defaultMessage": "Copy it if you want to send it to the moderators another way. It is not kept after you leave this page.",
+    "description": "Under the text of the appeal that was not sent (settings.account.appeal.unsent): what the reader can do with it, and that it is gone once they leave the page."
   },
   "settings.account.appeal.state": {
-    "defaultMessage": "{state, select, pending {Your appeal is waiting for a moderator's review.} upheld {A moderator reviewed your appeal and kept the action.} overturned {A moderator reviewed your appeal and lifted the action.} other {You appealed this action.}}",
-    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands. state is pending, upheld (the action stays), or overturned (the action is lifted). The page of an account kept out of the app says the same words (server:auth.status.appeal_state)."
+    "defaultMessage": "{state, select, pending {Your appeal is waiting for a moderator's review. You will be notified of the result.} upheld {A moderator reviewed your appeal and kept the action.} overturned {A moderator reviewed your appeal and lifted the action.} other {You appealed this action.}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands, read alone when the page is opened later. state is pending, upheld (the action stays), or overturned (the action is lifted). The first sentence of each is the page of an account kept out of the app's (server:auth.status.appeal_state)."
   },
-  "settings.account.appeal.dates": {
-    "defaultMessage": "{decided, select, yes {Sent on {sent}, decided on {date}} other {Sent on {sent}}}",
-    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it (sent) and, once the moderators decided it (decided is yes), when they did (date). Both are a date and a time as the reader's locale writes them. No full stop."
+  "settings.account.appeal.sent_on": {
+    "defaultMessage": "Sent on {date}",
+    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.decided_on": {
+    "defaultMessage": "Decided on {date}",
+    "description": "A line under settings.account.appeal.sent_on, once the moderators decided the reader's appeal: when they did. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.appeal.answer": {
     "defaultMessage": "The moderators' answer",

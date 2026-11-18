@@ -3,25 +3,30 @@
 // One moderators' action on the reader's account, the screen under Account status at /settings/account/status/<id>
 // (FR-715, ADR-0058 §9, §10): where the reader reads an action whole and appeals it.
 //
-// - What it does, in the server's words for its kind, when the moderators took it, and when it ends, ended or was
-//   lifted.
+// - What it does, in the server's words for its kind; under it, in the text's color, where it stands (when it ends,
+//   ended or was lifted), then when the moderators took it.
 // - The moderators' reason: its kind, and their explanation to the reader where they gave one. Neither who reported
 //   the account nor the moderators' own notes: the server does not send them.
 // - The posts it is about, for an action on posts: each a link to its page where the server still shows it to the
 //   reader, and how many it no longer does.
 // - Its appeal. While it can be appealed, a form saved as a whole by the submit bar: what the reader wants the
 //   moderators to know, up to the server's limit, with that it is sent once and the last moment to send it said over
-//   the field. Once appealed, where the appeal stands, when it was sent and decided, what the reader wrote, and the
-//   moderators' answer. Never appealed and no longer appealable, that it is so, with the day the time passed.
+//   the field. Once appealed, where the appeal stands, in a sentence that reads whole by itself, when it was sent and
+//   decided, a line each, what the reader wrote, and the moderators' answer. Never appealed and no longer appealable,
+//   that it is so, with the day the time passed.
 //
 // What came of sending is said in the appeal's status, a polite live region there from the start, which takes the
-// focus: the form is gone once the appeal is sent, and the cache holds the action as the server answered it, so the
-// lists and the menu's count follow. What is wrong with what the reader wrote (nothing, too much, what the server
-// refuses of it) stands under the field, which takes the focus, the submit bar saying only that nothing was sent; a
-// server that refuses the appeal itself (appealed from elsewhere meanwhile, the time passed, the action gone) says so
-// in the status, with what to do, and the action is read again; one that could not be reached says so in the submit
-// bar, and what was written stays. Leaving with an appeal written and not sent is the app's to notice (`onUnsaved`):
-// it holds the reader back and gives `leaving`, and the screen asks whether to leave.
+// focus: the form is gone once the appeal is sent, the status says only that it was, and the cache holds the action as
+// the server answered it, so the lists and the menu's count follow. What is wrong with what the reader wrote (nothing,
+// too much, what the server refuses of it) stands under the field, which takes the focus and comes into view with it,
+// the submit bar saying only that nothing was sent. A server that refuses the appeal itself (the time passed, the
+// action no longer appealable, appealed from elsewhere meanwhile, the action gone) ends the form: no field, no submit
+// bar, no last day; the status says what happened and what to do, with the link to the server's About page where
+// that is where to turn, and what the reader wrote stays under it to be read and copied; the cache holds the action
+// as no longer appealable, or the action is read again where the server has more to say of it. A server that could
+// not be reached says so in the submit bar, and the form stays as it was. Leaving with an appeal written that can
+// still be sent is the app's to notice (`onUnsaved`): it holds the reader back and gives `leaving`, and the screen
+// asks whether to leave.
 
 import { plainText, statusPath } from "@my/app-components";
 import {
@@ -33,6 +38,7 @@ import {
   useAppeals,
   useOwnModerationAction,
   type AppData,
+  type AppealRefusal,
   type ModerationAction,
 } from "@my/app-data";
 import {
@@ -41,6 +47,7 @@ import {
   Button,
   ConfirmDialog,
   FeedNotice,
+  focusRefusedField,
   FormAlert,
   ModalPresence,
   SettingsEmpty,
@@ -57,11 +64,15 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
-import { accountStatusPath } from "./account";
-import { appealPassed, endsLine, useActionDate } from "./account-status";
+import { formatParts } from "../slots";
+import { accountStatusPath, useActionDate } from "./account";
+import { appealPassed, endsLine, useStatusWords } from "./account-status";
 import { ReadingNotice } from "./controls";
 
 type T = ReturnType<typeof stringsIn>["t"];
+
+/** The address of the server's About page, where its contact is: the one the frame's footer leads to. */
+const aboutPath = "/about";
 
 /** What the route's loader waits for: the newest of the actions on the account, from the cache when it has them. */
 export async function loadModerationAction(data: AppData): Promise<void> {
@@ -163,21 +174,26 @@ function ActionView({
   const appeals = useAppeals();
   const [text, setText] = useState("");
   const [sent, setSent] = useState<Sent>({ kind: "idle" });
-  // What came of sending, each a new element of the status, which takes the focus.
-  const [said, setSaid] = useState<{ readonly text: string; readonly n: number } | undefined>(undefined);
+  // What came of sending (that it was sent, or why the server refused it), each a new element of the status, which
+  // takes the focus.
+  const [said, setSaid] = useState<{ readonly what: "sent" | AppealRefusal; readonly n: number } | undefined>(
+    undefined,
+  );
   const count = useRef(0);
   // What takes the focus once the screen is drawn again: the status, or the field that was refused.
-  const focusNext = useRef<string | undefined>(undefined);
+  const focusNext = useRef<"status" | "field" | undefined>(undefined);
+  const fieldId = `${id}-appeal`;
+  const statusId = `${id}-status`;
   useEffect(() => {
-    if (focusNext.current === undefined) return;
-    document.getElementById(focusNext.current)?.focus();
+    if (focusNext.current === "field") focusRefusedField(fieldId);
+    else if (focusNext.current === "status") document.getElementById(statusId)?.focus();
     focusNext.current = undefined;
   });
 
-  const fieldId = `${id}-appeal`;
-  const statusId = `${id}-status`;
   const { appeal } = action;
-  const open = action.appealable && appeal === undefined;
+  // A refusal of the appeal itself ends the form, whatever the action read before it says.
+  const ended = said !== undefined && said.what !== "sent";
+  const open = action.appealable && appeal === undefined && !ended;
   const busy = sent.kind === "sending";
   const unsaved = open && text.trim() !== "";
   useEffect(() => {
@@ -190,15 +206,15 @@ function ActionView({
     [onUnsaved],
   );
 
-  const say = (words: string) => {
+  const say = (what: "sent" | AppealRefusal) => {
     count.current += 1;
-    setSaid({ text: words, n: count.current });
+    setSaid({ what, n: count.current });
     setSent({ kind: "idle" });
-    focusNext.current = statusId;
+    focusNext.current = "status";
   };
   const refuse = (field: string | undefined) => {
     setSent({ kind: "refused", field });
-    if (field !== undefined) focusNext.current = fieldId;
+    if (field !== undefined) focusNext.current = "field";
   };
   const left = appealLimits.text - Array.from(text.trim()).length;
   const send = () => {
@@ -217,14 +233,15 @@ function ActionView({
       () => {
         // The cache holds the action with its appeal: the form is gone, and the status says what came of it.
         onUnsaved?.(false);
-        say(t("settings.account.appeal.sent"));
+        say("sent");
       },
       (error: unknown) => {
         const reason = appealRefusalOf(error);
         if (reason !== undefined) {
-          // The action is no longer as the screen has it: it is read again, and the status says what the server said.
-          reread();
-          say(t("settings.account.appeal.refused", { reason: reason === "gone" ? "other" : reason }));
+          // The form ends, and the status says what the server said. An action that can no longer be appealed is
+          // held so in the cache; one appealed from elsewhere, or gone, is read again for what the server has of it.
+          if (reason === "appealed" || reason === "gone") reread();
+          say(reason);
           return;
         }
         const named = refusedField(error);
@@ -236,7 +253,18 @@ function ActionView({
   const deadline = action.appeal_deadline === undefined ? "" : date(action.appeal_deadline);
   const status = (
     <Box as="p" id={statusId} role="status" tabIndex={-1} breaks="phrase">
-      {said !== undefined && <span key={said.n}>{said.text}</span>}
+      {said !== undefined && (
+        <span key={said.n}>
+          {said.what === "sent"
+            ? t("settings.account.appeal.sent")
+            : formatParts(
+                t,
+                "settings.account.appeal.refused",
+                { reason: said.what === "gone" ? "other" : said.what },
+                { about: <TextLink href={aboutPath}>{t("settings.account.appeal.about_page")}</TextLink> },
+              )}
+        </span>
+      )}
     </Box>
   );
   return (
@@ -268,11 +296,11 @@ function ActionView({
             <Box as="p" breaks="phrase">
               {action.kind_label}
             </Box>
-            <Box as="p" text="caption" tone="muted">
-              {t("settings.account.action.issued", { date: date(action.issued_at) })}
+            <Box as="p" breaks="phrase">
+              {endsLine(action, date, t)}
             </Box>
             <Box as="p" text="caption" tone="muted">
-              {endsLine(action, date, t)}
+              {t("settings.account.action.issued", { date: date(action.issued_at) })}
             </Box>
           </Stack>
         </SettingsSection>
@@ -311,12 +339,13 @@ function ActionView({
                     {t("settings.account.appeal.state", { state: appeal.state })}
                   </Box>
                   <Box as="p" text="caption" tone="muted">
-                    {t("settings.account.appeal.dates", {
-                      decided: appeal.decided_at === undefined ? "no" : "yes",
-                      sent: date(appeal.submitted_at),
-                      date: appeal.decided_at === undefined ? "" : date(appeal.decided_at),
-                    })}
+                    {t("settings.account.appeal.sent_on", { date: date(appeal.submitted_at) })}
                   </Box>
+                  {appeal.decided_at !== undefined && (
+                    <Box as="p" text="caption" tone="muted">
+                      {t("settings.account.appeal.decided_on", { date: date(appeal.decided_at) })}
+                    </Box>
+                  )}
                 </Stack>
                 <Written label={t("settings.account.appeal.label")}>{appeal.text}</Written>
                 {appeal.decision_reason !== undefined && appeal.decision_reason !== "" && (
@@ -340,6 +369,16 @@ function ActionView({
                 end={<LimitCount left={left} near={100} />}
                 error={sent.kind === "refused" ? sent.field : undefined}
               />
+            ) : ended ? (
+              // The status said why nothing was sent: what the reader wrote stays, to be read and copied.
+              text.trim() !== "" && (
+                <Stack gap="hair">
+                  <Written label={t("settings.account.appeal.unsent")}>{text.trim()}</Written>
+                  <Box as="p" text="caption" tone="muted" breaks="phrase">
+                    {t("settings.account.appeal.unsent.about")}
+                  </Box>
+                </Stack>
+              )
             ) : (
               <Box as="p" tone="muted" breaks="phrase">
                 {t("settings.account.appeal.closed", { deadline: appealPassed(action) ? "yes" : "no", date: deadline })}
@@ -369,6 +408,7 @@ function ActionView({
 /** The screen: the action once it is found among the reader's, and until then that it loads. */
 export function ModerationActionScreen({ id, onBack, onUnsaved, leaving }: ModerationActionProps) {
   const { t } = stringsIn(useLocale().locale);
+  const words = useStatusWords();
   const { action, status, retry, reread } = useOwnModerationAction(id);
   if (action !== undefined)
     return <ActionView action={action} reread={reread} onBack={onBack} onUnsaved={onUnsaved} leaving={leaving} />;
@@ -383,7 +423,7 @@ export function ModerationActionScreen({ id, onBack, onUnsaved, leaving }: Moder
             {t("settings.account.action.not_found")}
           </FeedNotice>
         ) : (
-          <ReadingNotice failed={status === "error"} onRetry={retry} />
+          <ReadingNotice words={words} failed={status === "error"} onRetry={retry} />
         )
       }
     />

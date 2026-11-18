@@ -140,27 +140,38 @@ export function useActionStatuses(ids: readonly string[]): {
 /**
  * Appeals the action of `id` with `text` (why the moderators should reconsider it), and resolves with the action as
  * the server answered, which carries the appeal, once the cache holds it in the lists. It rejects with the server's
- * problem (an action that cannot be appealed now).
+ * problem (an action that cannot be appealed now); when the server says the action can no longer be appealed (the time
+ * has passed, or it is not appealable), the cached lists hold it so from then on, whatever they said before.
  */
 export async function appealModerationAction(data: AppData, id: string, text: string): Promise<ModerationAction> {
-  const { data: action } = await data.api.POST("/moderation/actions/{id}/appeal", {
-    params: { path: { id } },
-    body: { text },
-  });
-  if (action === undefined) throw new Error("app-data: the appeal came without an answer");
-  const base = ownModerationActionsQuery(data).queryKey;
-  data.queryClient.setQueriesData<Pages<ModerationAction>>({ queryKey: base.slice(0, 2) }, (now) =>
-    now === undefined
-      ? now
-      : {
-          ...now,
-          pages: now.pages.map((p): Page<ModerationAction> => ({
-            ...p,
-            items: p.items.map((a) => (a.id === action.id ? action : a)),
-          })),
-        },
-  );
-  return action;
+  /** Puts what `change` makes of the action of `id` in every cached list of the actions. */
+  const cache = (change: (old: ModerationAction) => ModerationAction) => {
+    const base = ownModerationActionsQuery(data).queryKey;
+    data.queryClient.setQueriesData<Pages<ModerationAction>>({ queryKey: base.slice(0, 2) }, (now) =>
+      now === undefined
+        ? now
+        : {
+            ...now,
+            pages: now.pages.map((p): Page<ModerationAction> => ({
+              ...p,
+              items: p.items.map((a) => (a.id === id ? change(a) : a)),
+            })),
+          },
+    );
+  };
+  try {
+    const { data: action } = await data.api.POST("/moderation/actions/{id}/appeal", {
+      params: { path: { id } },
+      body: { text },
+    });
+    if (action === undefined) throw new Error("app-data: the appeal came without an answer");
+    cache(() => action);
+    return action;
+  } catch (error) {
+    const refusal = appealRefusalOf(error);
+    if (refusal === "closed" || refusal === "not_appealable") cache((old) => ({ ...old, appealable: false }));
+    throw error;
+  }
 }
 
 /** The appeal of the hook decision of `id`: the refusal's `hook_decision_id`. */
@@ -183,9 +194,12 @@ export function hookAppealQuery(data: AppData, id: string) {
   };
 }
 
-/** The viewer's appeal of the hook decision of `id`: null when they made none, undefined until the server answered. */
-export function useHookAppeal(id: string): HookAppeal | null | undefined {
-  return useQuery(hookAppealQuery(useAppData(), id)).data;
+/**
+ * The viewer's appeal of the hook decision of `id`: null when they made none, undefined until the server answered,
+ * and while there is no decision to ask about (`enabled` false).
+ */
+export function useHookAppeal(id: string, enabled = true): HookAppeal | null | undefined {
+  return useQuery({ ...hookAppealQuery(useAppData(), id), enabled }).data;
 }
 
 /**

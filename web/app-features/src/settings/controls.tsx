@@ -108,9 +108,18 @@ export function Choice({
 /**
  * What a settings screen says in its sections' place (`notice` of a `SettingsScreen`) until what it shows is read, as
  * the screen's text reads, at its start: that it loads, or that it could not be read, with Try again after it, a
- * button whose target is a finger's on a touch screen.
+ * button whose target is a finger's on a touch screen. A screen that reads one thing says it by name (`words`: the
+ * account's status), as the part of its entry that reads the same does; without them, the settings.
  */
-export function ReadingNotice({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
+export function ReadingNotice({
+  failed,
+  onRetry,
+  words,
+}: {
+  failed: boolean;
+  onRetry: () => void;
+  words?: { readonly loading: string; readonly failed: string } | undefined;
+}) {
   const { t } = stringsIn(useLocale().locale);
   return failed ? (
     <FeedNotice
@@ -122,9 +131,9 @@ export function ReadingNotice({ failed, onRetry }: { failed: boolean; onRetry: (
         </Button>
       }
     >
-      {t("settings.failed")}
+      {words?.failed ?? t("settings.failed")}
     </FeedNotice>
   ) : (
-    <FeedNotice lead>{t("settings.loading")}</FeedNotice>
+    <FeedNotice lead>{words?.loading ?? t("settings.loading")}</FeedNotice>
   );
 }

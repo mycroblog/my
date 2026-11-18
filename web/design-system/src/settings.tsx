@@ -634,6 +634,8 @@ const list = tv({
     end: "min-h-avatar-post",
     // An account's line under its name, set in to the name's start.
     note: "ps-entry-name-start text-caption text-muted-text [word-break:auto-phrase]",
+    // Where it stands: the one line of the row in the text's color under its title, which the reader comes back for.
+    standing: "text-caption text-text [word-break:auto-phrase]",
     // A state at the row's end: words alone, muted, with no surface, which is a button's.
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
@@ -702,7 +704,8 @@ function FactLine({ line }: { line: SettingsFactLine }) {
 
 /**
  * A row of a section's list: its glyph, a title over a caption or over the facts known of it, a line each (`facts`:
- * a fact, or several joined by a middle dot that the line breaks between first), a state in a word or two (`state`,
+ * a fact, or several joined by a middle dot that the line breaks between first), then where it stands, the one line
+ * in the text's color (`standing`), a state in a word or two (`state`,
  * muted words with no surface: at the row's end, or on the title's line where the row has facts, so that every
  * row's facts keep one column), and what the reader may do with it (`end`: one or two buttons, a group named by the
  * row's title, so that one Remove is told from the next). With `result`, what came of the reader's action stands in
@@ -714,6 +717,7 @@ export function SettingsListRow({
   title,
   caption,
   facts,
+  standing,
   state,
   href,
   end,
@@ -727,6 +731,11 @@ export function SettingsListRow({
    * long for the row breaks between its facts, then between its words, never inside one, in ja too.
    */
   facts?: readonly SettingsFactLine[] | undefined;
+  /**
+   * Where it stands, a line after its facts in the text's own color: what the reader comes back to the row for, and
+   * what changes while the rest stays (an appeal that waits, then what was decided of it).
+   */
+  standing?: string | undefined;
   state?: string | undefined;
   href?: string | undefined;
   end?: ReactNode;
@@ -784,6 +793,12 @@ export function SettingsListRow({
             <FactLine line={line} />
           </Fragment>
         ))}
+        {standing !== undefined && (
+          <>
+            {" "}
+            <span className={s.standing()}>{standing}</span>
+          </>
+        )}
       </Stack>
       {facts === undefined && stated}
     </>

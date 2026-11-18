@@ -1128,12 +1128,12 @@
     "description": "A heading on the settings page Account and data, over what the moderators did to the reader's account; also the title of the page under it that lists the moderation actions on the account, the link after settings.account.action.not_found that leads there, and the button at the top of one action's page that goes back to it. A heading: no full stop."
   },
   "settings.account.status.in_effect": {
-    "defaultMessage": "{count, plural, other {このアカウントに適用中のモデレーションの処分が # 件あります}}",
+    "defaultMessage": "{count, plural, other {このアカウントに適用中のモデレーションの処分が # 件あります}}",
     "description": "The heading of the summary at the top of the settings page Account and data while moderators' actions are in effect on the reader's account (a limit, a restriction of posting). count is how many, 1 or more. A heading: no full stop."
   },
   "settings.account.status.in_effect.about": {
-    "defaultMessage": "{appealable, select, yes {「アカウントの状態」で、処分の内容、理由、終わる時期を確認できます。異議申し立ては 1 つの処分につき 1 回できます。} other {「アカウントの状態」で、処分の内容、理由、終わる時期と、異議申し立ての状況を確認できます。}}",
-    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is yes while the reader can still appeal one of the actions, no once every action is appealed or its time to appeal has passed."
+    "defaultMessage": "{appealable, select, deadline {「アカウントの状態」で、処分の内容、理由、終わる時期を確認できます。{date} まで異議を申し立てられます。} yes {「アカウントの状態」で、処分の内容、理由、終わる時期を確認できます。異議申し立ては処分 1 件につき 1 回できます。} other {「アカウントの状態」で、処分の内容、理由、終わる時期と、異議申し立ての状況を確認できます。}}",
+    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is deadline while the reader can still appeal one of the actions and the server says until when (date is the nearest last day, as the reader's locale writes a date), yes while they can and no last day is known, and anything else once every action is appealed or its time to appeal has passed."
   },
   "settings.account.status.open": {
     "defaultMessage": "アカウントの状態を確認する",
@@ -1220,7 +1220,7 @@
     "description": "In place of the list Posts this action is about, on the page of a moderators' action in the settings, while the posts are read from the server."
   },
   "settings.account.action.posts.gone": {
-    "defaultMessage": "{count, plural, other {# 件の投稿はこのサーバーにもうないため、開けません。}}",
+    "defaultMessage": "{count, plural, other {# 件の投稿はこのサーバーにもうないため、開けません。}}",
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
   },
   "settings.account.action.not_found": {
@@ -1232,15 +1232,15 @@
     "description": "A heading on the page of one moderators' action on the reader's account, over the form in which the reader asks the moderators to reconsider the action, or over the appeal they sent and its result. A heading: no full stop."
   },
   "settings.account.appeal.about": {
-    "defaultMessage": "{deadline, select, yes {この処分への異議申し立ては 1 回だけ、{date} までできます。モデレーターが内容を読んで審査します。} other {この処分への異議申し立ては 1 回だけできます。モデレーターが内容を読んで審査します。}}",
-    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
+    "defaultMessage": "{deadline, select, yes {この処分への異議申し立ては 1 回だけ、{date} までできます。送ったあとは内容を変更できません。モデレーターが内容を読んで審査します。} other {この処分への異議申し立ては 1 回だけできます。送ったあとは内容を変更できません。モデレーターが内容を読んで審査します。}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once and the appeal cannot be changed, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
   },
   "settings.account.appeal.label": {
     "defaultMessage": "異議申し立ての内容",
     "description": "The label of the field in which the reader writes their appeal of a moderators' action on their account (why the moderators should reconsider it), on the action's page in the settings; also the label over the appeal they sent, once it is sent."
   },
   "settings.account.appeal.hint": {
-    "defaultMessage": "モデレーターにこの処分を見直してほしい理由を、{max, number} 文字以内で書いてください。送ったあとは内容を変更できません。",
+    "defaultMessage": "モデレーターにこの処分を見直してほしい理由を、{max, number} 文字以内で書いてください。",
     "description": "The hint of the field settings.account.appeal.label. max is the longest appeal the server takes, in characters."
   },
   "settings.account.appeal.missing": {
@@ -1248,7 +1248,7 @@
     "description": "The error under the appeal field of a moderators' action, in the settings, when the reader sends it empty."
   },
   "settings.account.appeal.over": {
-    "defaultMessage": "異議申し立ての内容を {max, number} 文字以内に短くしてください。",
+    "defaultMessage": "異議申し立ての内容を {max, number} 文字以内に短くしてください。",
     "description": "The error under the appeal field of a moderators' action, in the settings, when what the reader wrote is longer than the server takes. max is the most characters."
   },
   "settings.account.appeal.submit": {
@@ -1260,20 +1260,36 @@
     "description": "In the bar at the bottom of the page of a moderators' action in the settings, beside Send appeal, when the appeal was not sent. reason is field when what the reader wrote was refused (what is wrong stands under the field), other when the server could not be reached or answered with nothing the app knows."
   },
   "settings.account.appeal.sent": {
-    "defaultMessage": "異議申し立てを送りました。モデレーターが審査し、結果は通知でお知らせします。",
-    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal. The page of an account kept out of the app says the first two sentences' words (auth.status.appeal_sent)."
+    "defaultMessage": "異議申し立てを送りました。",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal; where the appeal stands follows it (settings.account.appeal.state)."
   },
   "settings.account.appeal.refused": {
-    "defaultMessage": "{reason, select, appealed {この処分にはすでに異議を申し立てています。異議申し立ては 1 つの処分につき 1 回だけです。申し立ての内容と状況はここで確認できます。} closed {この処分に異議を申し立てられる期間が過ぎているため、送れませんでした。モデレーターに連絡するには、「このサーバーについて」のページにある連絡先を確認してください。} not_appealable {この処分にはもう異議を申し立てられないため、送れませんでした。モデレーターに連絡するには、「このサーバーについて」のページにある連絡先を確認してください。} other {この処分はこのアカウントの処分の一覧からなくなったため、送れませんでした。「アカウントの状態」に戻って、処分の一覧を確認してください。}}",
-    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent. reason is appealed (the action was appealed already, from another browser; the appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). About is the server's page of that name (app.footer_about); Account status is settings.account.status."
+    "defaultMessage": "{reason, select, appealed {この処分にはすでに異議を申し立てています。異議申し立ては処分 1 件につき 1 回だけです。前に送った内容と状況はここで確認できます。} closed {この処分に異議を申し立てられる期間が過ぎているため、送れませんでした。モデレーターに連絡するには、{about}にある連絡先を確認してください。} not_appealable {この処分にはもう異議を申し立てられないため、送れませんでした。モデレーターに連絡するには、{about}にある連絡先を確認してください。} other {この処分はこのアカウントの処分の一覧からなくなったため、送れませんでした。「アカウントの状態」に戻って、処分の一覧を確認してください。}}",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent; the form is then gone. reason is appealed (the action was appealed already, from another browser; that appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). about is the link to the server's About page, whose words are settings.account.appeal.about_page; Account status is settings.account.status."
+  },
+  "settings.account.appeal.about_page": {
+    "defaultMessage": "「このサーバーについて」のページ",
+    "description": "The words of the link in settings.account.appeal.refused (its about) that leads to the server's About page (app.footer_about), where the server's contact is. It stands inside a sentence: no capital, no full stop."
+  },
+  "settings.account.appeal.unsent": {
+    "defaultMessage": "書いた内容 (送られていません)",
+    "description": "The label over the text of the appeal the reader wrote, on the page of a moderators' action in the settings, after the server refused the appeal because the action can no longer be appealed: the text stays to be read and copied."
+  },
+  "settings.account.appeal.unsent.about": {
+    "defaultMessage": "別の方法でモデレーターに伝えるときは、コピーしてください。このページを離れると消えます。",
+    "description": "Under the text of the appeal that was not sent (settings.account.appeal.unsent): what the reader can do with it, and that it is gone once they leave the page."
   },
   "settings.account.appeal.state": {
-    "defaultMessage": "{state, select, pending {異議申し立てはモデレーターの審査待ちです。} upheld {モデレーターが異議申し立てを審査し、処分を維持しました。} overturned {モデレーターが異議申し立てを審査し、処分を解除しました。} other {この処分に異議を申し立てました。}}",
-    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands. state is pending, upheld (the action stays), or overturned (the action is lifted). The page of an account kept out of the app says the same words (server:auth.status.appeal_state)."
+    "defaultMessage": "{state, select, pending {異議申し立てはモデレーターの審査待ちです。結果は通知でお知らせします。} upheld {モデレーターが異議申し立てを審査し、処分を維持しました。} overturned {モデレーターが異議申し立てを審査し、処分を解除しました。} other {この処分に異議を申し立てました。}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands, read alone when the page is opened later. state is pending, upheld (the action stays), or overturned (the action is lifted). The first sentence of each is the page of an account kept out of the app's (server:auth.status.appeal_state)."
   },
-  "settings.account.appeal.dates": {
-    "defaultMessage": "{decided, select, yes {{sent} に送信、{date} に審査} other {{sent} に送信}}",
-    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it (sent) and, once the moderators decided it (decided is yes), when they did (date). Both are a date and a time as the reader's locale writes them. No full stop."
+  "settings.account.appeal.sent_on": {
+    "defaultMessage": "{date} に送信",
+    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.decided_on": {
+    "defaultMessage": "{date} に審査",
+    "description": "A line under settings.account.appeal.sent_on, once the moderators decided the reader's appeal: when they did. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.appeal.answer": {
     "defaultMessage": "モデレーターからの回答",

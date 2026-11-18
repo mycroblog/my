@@ -5,28 +5,27 @@
 // section: the actions in effect now, and the past ones (ended, or lifted), newest first, a page at a time. A row
 // says what is known of an action, the whole of it a link to the action's own screen (account-action.tsx), where its
 // posts are and where it is appealed: what it does, in the server's words for its kind; the moderators' explanation
-// to the reader, where they gave one; when it ends, ended or was lifted; and where its appeal stands (it can be
-// appealed until a day, it no longer can, the appeal waits, or what the moderators decided). Neither who reported the
-// account nor the moderators' own notes are shown: the server does not send them. An empty list says what would stand
-// there.
+// to the reader, where they gave one; the day it ends, ended or was lifted; and, in the text's color, where its appeal
+// stands (it can be appealed until a day, it no longer can, the appeal waits, or what the moderators decided). A past
+// action that was never appealed and no longer can be says nothing of an appeal: its own screen does. Neither who
+// reported the account nor the moderators' own notes are shown: the server does not send them. An empty list says
+// what would stand there, and until the lists are read the screen says that the account's status loads or could not
+// be read.
 
 import { ownModerationActionsQuery, useOwnModerationActions, type AppData, type ModerationAction } from "@my/app-data";
 import {
   BackButton,
   Button,
-  dateFormat,
   Row,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
-  TextButton,
   useLocale,
-  useTimeZone,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { moderationActionPath } from "./account";
+import { moderationActionPath, useActionDate } from "./account";
 import { ReadingNotice } from "./controls";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -44,12 +43,10 @@ export function useAccountStatusTitle(): string {
   return stringsIn(useLocale().locale).t("settings.account.status");
 }
 
-/** A moment of an action (when it ends, when it was appealed), as the reader's locale and zone write it. */
-export function useActionDate(): (at: string) => string {
-  const { locale } = useLocale();
-  const zone = useTimeZone();
-  const format = dateFormat(locale, zone, { dateStyle: "medium", timeStyle: "short" });
-  return (at) => format.format(new Date(at));
+/** What a screen under the entry says until the actions are read: that the account's status loads, or could not be read. */
+export function useStatusWords(): { loading: string; failed: string } {
+  const { t } = stringsIn(useLocale().locale);
+  return { loading: t("settings.account.status.loading"), failed: t("settings.account.status.failed") };
 }
 
 /** When `action` ends, ended or was lifted, as a line. */
@@ -67,8 +64,11 @@ export function endsLine(action: ModerationAction, date: (at: string) => string,
 export const appealPassed = (action: ModerationAction): boolean =>
   action.appeal_deadline !== undefined && Date.parse(action.appeal_deadline) <= Date.now();
 
-/** Where the appeal of `action` stands, as a line: what the moderators decided, that it waits, or whether it can be made. */
-function appealLine(action: ModerationAction, date: (at: string) => string, t: T): string {
+/**
+ * Where the appeal of `action` stands, as a line: what the moderators decided, that it waits, or whether it can be
+ * made; none for a past action that was never appealed and no longer can be, of which a list has nothing to say.
+ */
+function appealLine(action: ModerationAction, date: (at: string) => string, t: T): string | undefined {
   const deadline = action.appeal_deadline === undefined ? "" : date(action.appeal_deadline);
   if (action.appeal !== undefined)
     return t("settings.account.action.appeal_state", { state: action.appeal.state, date: "" });
@@ -77,6 +77,7 @@ function appealLine(action: ModerationAction, date: (at: string) => string, t: T
       state: deadline === "" ? "open_always" : "open",
       date: deadline,
     });
+  if (action.state !== "active") return undefined;
   return t("settings.account.action.appeal_state", {
     state: appealPassed(action) ? "passed" : "closed",
     date: deadline,
@@ -85,7 +86,7 @@ function appealLine(action: ModerationAction, date: (at: string) => string, t: T
 
 /** The rows of `actions`, each the door to its action's screen. */
 function ActionList({ label, actions, t }: { label: string; actions: readonly ModerationAction[]; t: T }) {
-  const date = useActionDate();
+  const date = useActionDate(false);
   return (
     <SettingsList label={label}>
       {actions.map((action) => (
@@ -93,7 +94,8 @@ function ActionList({ label, actions, t }: { label: string; actions: readonly Mo
           key={action.id}
           title={action.kind_label}
           caption={action.public_reason}
-          facts={[endsLine(action, date, t), appealLine(action, date, t)]}
+          facts={[endsLine(action, date, t)]}
+          standing={appealLine(action, date, t)}
           href={moderationActionPath(action.id)}
         />
       ))}
@@ -106,6 +108,7 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
   const { t, lang } = stringsIn(useLocale().locale);
   const active = useOwnModerationActions(true);
   const all = useOwnModerationActions();
+  const words = useStatusWords();
   const title = t("settings.account.status");
   const back = <BackButton onPress={onBack}>{t("settings.entry.account")}</BackButton>;
   const pending = active.status === "pending" || all.status === "pending";
@@ -117,6 +120,7 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
         back={back}
         notice={
           <ReadingNotice
+            words={words}
             failed={!pending}
             onRetry={() => {
               active.refetch();
@@ -147,13 +151,19 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
           !all.hasNextPage && <SettingsEmpty>{t("settings.account.actions.past.empty")}</SettingsEmpty>
         )}
         {failedMore && !all.isFetchingNextPage ? (
-          <SettingsEmpty action={<TextButton onPress={all.fetchNextPage}>{t("settings.retry")}</TextButton>}>
+          <SettingsEmpty
+            action={
+              <Button size="timeline" touch onPress={all.fetchNextPage}>
+                {t("settings.retry")}
+              </Button>
+            }
+          >
             {t("settings.account.actions.failed_more")}
           </SettingsEmpty>
         ) : (
           all.hasNextPage && (
             <Row justify="start">
-              <Button size="timeline" busy={all.isFetchingNextPage} onPress={all.fetchNextPage}>
+              <Button size="timeline" touch busy={all.isFetchingNextPage} onPress={all.fetchNextPage}>
                 {t("settings.account.actions.more")}
               </Button>
             </Row>

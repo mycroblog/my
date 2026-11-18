@@ -9,8 +9,9 @@
 // failed. One action: the appeal form, empty (what the reader types there fills it; a shot of it filled is taken by a
 // script that types); an action whose appeal waits; one the moderators kept, with their answer; one they lifted; one
 // whose time to appeal has passed; one about posts, two that open and one that is gone; on a server that refuses the
-// appeal because the time has passed, which Send appeal then says in the appeal's status; on one that never answers,
-// where Send appeal stays busy; and an address that names no action.
+// appeal because the time has passed, where Send appeal ends the form: the appeal's status says so with the way to the
+// moderators, and what was written stays to be copied; on one that never answers, where Send appeal stays busy; and an
+// address that names no action.
 
 import type { FakeOptions } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -180,8 +181,9 @@ export const ActionDeadlinePassed: Story = { parameters: screen({ at: "action:0"
 /** A warning with no explanation of the moderators. */
 export const ActionNoExplanation: Story = { parameters: screen({ at: "action:0", server: only(warning) }) };
 /**
- * On a server that refuses the appeal because the time to appeal has passed: after Send appeal, the appeal's status
- * says so, with what to do.
+ * On a server that refuses the appeal because the time to appeal has passed: after Send appeal, the field and the
+ * submit bar are gone, the appeal's status says so with the link to the server's About page, and what was written
+ * stays under it.
  */
 export const ActionRefused: Story = {
   parameters: screen({ at: "action:0", server: { settings: { moderation: [noPosting], appealSave: "closed" } } }),
