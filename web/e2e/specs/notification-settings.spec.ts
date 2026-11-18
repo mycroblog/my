@@ -11,6 +11,9 @@ import { installPushShim } from "../src/web-push";
 import { NotificationSettings } from "./screens";
 import { expect, test } from "./test";
 
+// Notifications show in Chromium's new headless mode alone (src/web-push.ts), and a channel is a file's, not a group's.
+test.use({ channel: "chromium" });
+
 test("a kind turned on and off in the settings is kept across reloads: its email on a server that sends email, the app otherwise", async ({
   page,
   signIn,
@@ -61,9 +64,6 @@ test("a choice of the policy for notifications from people the reader may not kn
 });
 
 test.describe("Web Push on this device", () => {
-  // Notifications show in Chromium's new headless mode alone (src/web-push.ts).
-  test.use({ channel: "chromium" });
-
   test("turned on in the settings it registers this device's subscription, turned off it deletes it, and a reload finds each", async ({
     page,
     context,
