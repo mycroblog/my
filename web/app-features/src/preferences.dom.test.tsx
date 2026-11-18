@@ -96,10 +96,16 @@ describe("a change the server refuses", () => {
     });
 });
 
+// The writes go to the server one at a time, in the order they were made: two answers out of their order would
+// leave the cache at the older one. What the reader sees does not wait: every change shows from the moment it is made.
 describe("two changes on their way", () => {
-  /** A reader who held new posts back, then chose small cards, each change held at the server. */
+  /**
+   * A reader who held new posts back, then chose small cards, at once: both show, and the first alone has reached the
+   * server, which holds its answer. `sent` is every request the server got, `scripts` hold each change's answer.
+   */
   async function both(first: "refused" | "kept", second: "refused" | "kept") {
     const made = await reading();
+    const sent = made.fake.script("PATCH /preferences");
     const script = (outcome: "refused" | "kept") =>
       made.fake.script("PATCH /preferences", {
         times: 1,
@@ -110,46 +116,60 @@ describe("two changes on their way", () => {
     const scripts = [script(first), script(second)] as const;
     const settles = [made.change({ timeline_auto_insert: false }), made.change({ link_card_size: "small" })] as const;
     expect(made.shown()).toEqual({ ...made.read, timeline_auto_insert: false, link_card_size: "small" });
-    await scripts[1].arrived(2);
-    return { ...made, scripts, settles };
+    await scripts[0].arrived();
+    // A turn of the event loop later the second has still not left: it waits for the first one's answer.
+    await new Promise((turn) => setTimeout(turn, 0));
+    expect(sent.seen.map((request) => request.body)).toEqual([{ timeline_auto_insert: false }]);
+    expect(made.shown()).toEqual({ ...made.read, timeline_auto_insert: false, link_card_size: "small" });
+    return { ...made, sent, scripts, settles };
   }
 
-  test("the one refused first leaves the other showing", async () => {
-    const { read, shown, scripts, settles } = await both("refused", "kept");
-
-    scripts[0].release();
-    expect(await settled(settles[0])).toBeInstanceOf(ProblemError);
-    expect(shown()).toEqual({ ...read, link_card_size: "small" });
-
-    scripts[1].release();
-    const answered = await settled(settles[1]);
-    expect(answered).toEqual({ ...read, link_card_size: "small" });
-    expect(shown()).toEqual({ ...read, link_card_size: "small" });
-  });
-
-  test("the one refused last leaves the other as the server answered it", async () => {
-    const { read, shown, scripts, settles } = await both("kept", "refused");
+  test("the second leaves once the first is answered, and each resolves with the server's answer to it", async () => {
+    const { read, shown, sent, scripts, settles } = await both("kept", "kept");
 
     scripts[0].release();
     expect(await settled(settles[0])).toEqual({ ...read, timeline_auto_insert: false });
     // The answer of the first took the cache's place, and the second still shows over it.
     expect(shown()).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
+    await scripts[1].arrived(2);
+    expect(sent.seen.map((request) => request.body)).toEqual([
+      { timeline_auto_insert: false },
+      { link_card_size: "small" },
+    ]);
+
+    scripts[1].release();
+    expect(await settled(settles[1])).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
+    expect(shown()).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
+  });
+
+  test("a first the server refuses rejects, and still lets the second through, which it does not undo", async () => {
+    const { read, shown, sent, scripts, settles } = await both("refused", "kept");
+
+    scripts[0].release();
+    expect(await settled(settles[0])).toBeInstanceOf(ProblemError);
+    expect(shown()).toEqual({ ...read, link_card_size: "small" });
+    await scripts[1].arrived(2);
+    expect(sent.seen.map((request) => request.body)).toEqual([
+      { timeline_auto_insert: false },
+      { link_card_size: "small" },
+    ]);
+
+    scripts[1].release();
+    expect(await settled(settles[1])).toEqual({ ...read, link_card_size: "small" });
+    expect(shown()).toEqual({ ...read, link_card_size: "small" });
+  });
+
+  test("a second the server refuses rejects, and leaves the first as the server answered it", async () => {
+    const { read, shown, scripts, settles } = await both("kept", "refused");
+
+    scripts[0].release();
+    expect(await settled(settles[0])).toEqual({ ...read, timeline_auto_insert: false });
+    await scripts[1].arrived(2);
+    expect(shown()).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
 
     scripts[1].release();
     expect(await settled(settles[1])).toBeInstanceOf(ProblemError);
     expect(shown()).toEqual({ ...read, timeline_auto_insert: false });
-  });
-
-  test("answered out of their order, each shows until its own answer came", async () => {
-    const { read, shown, scripts, settles } = await both("kept", "kept");
-
-    scripts[1].release();
-    expect(await settled(settles[1])).toMatchObject({ link_card_size: "small" });
-    expect(shown()).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
-
-    scripts[0].release();
-    await settled(settles[0]);
-    expect(shown()).toEqual({ ...read, timeline_auto_insert: false, link_card_size: "small" });
   });
 });
 
