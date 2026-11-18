@@ -55,11 +55,9 @@ After signing in you may see a page instead of the app:
 
 ## Signing out
 
-Choose "Sign out" in the "Account" section of the app. The "Signed-in browsers" page of the settings lists the browsers
-signed in to your account and signs them out.
+Choose "Sign out…", the last row of the settings, and confirm with "Sign out". It signs this browser out; your other
+browsers and apps stay signed in.
 
 ## Settings
 
-The settings are grouped as "Profile and community", "Display and notifications", "Relationships", "Security", "Apps",
-and "Account and data". Under "Security" you manage your password, two-factor authentication, passkeys, linked accounts,
-and signed-in browsers.
+"Settings" in the navigation opens the settings. They hold "Display and posting".

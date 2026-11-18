@@ -342,6 +342,11 @@ export type FakeOptions = {
    */
   preferencesFail?: "read" | "save";
   /**
+   * The server itself requires a description of every media before it is posted (its limit
+   * `require_media_description`), whatever the reader's own preference; it does not by default.
+   */
+  requiresDescriptions?: boolean;
+  /**
    * In place of the seed's notifications, one of each kind of a group the server sends: from people (`people`), the
    * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
    */
@@ -1946,7 +1951,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     login_providers_only: false,
     limits: {
       max_post_characters: 500,
-      require_media_description: false,
+      require_media_description: o.requiresDescriptions === true,
       drafts: draftLimits,
       articles: articleLimits,
     },

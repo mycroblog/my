@@ -5,7 +5,7 @@
 Choose "Write a post" to open the form "New post". Type in "Your post" and choose "Post". The form shows how many
 characters are left. Besides text you can:
 
-- Attach images, video, or audio with "Add images, video, or audio". Describe each attachment for people who cannot see or hear it; some servers require a description for every attachment. Location and other metadata are removed from the files.
+- Attach images, video, or audio with "Add images, video, or audio". Describe each attachment for people who cannot see or hear it; some servers require a description for every attachment, and "Require media descriptions" in the "Display and posting" settings requires it of your own posts. Location and other metadata are removed from the files.
 - "Add a poll", with options and a duration, and the choices "Allow choosing several options" and "Hide the votes until the poll ends".
 - "Add a content warning". Readers see the warning first and choose "Show content".
 - Choose "Hide the images until readers show them" to mark the media as sensitive.
@@ -39,8 +39,8 @@ schedule it again.
 
 ## Who can see a post
 
-The tool "Who can see it" of the form opens the choices for that post. The default for new posts is the setting "Who
-sees your posts by default" under "Display, posting, and timelines" in the settings.
+The tool "Who can see it" of the form opens the choices for that post. The default for new posts is "Who can see it"
+under "New posts" in the "Display and posting" settings.
 
 | Choice | Who can see it |
 | --- | --- |
@@ -94,7 +94,7 @@ who can do it at once: "Anyone", "Followers", "People you mention", or "Only you
 approval" lets everyone else ask instead of being refused.
 
 - The people a post mentions can always reply to it. A "Followers only" post can be boosted and quoted only by you, and a "Direct" post by no one, whatever you choose.
-- The defaults for new posts are under "Who can reply to, boost, and quote your new posts" in "Display, posting, and timelines" in the settings.
+- The defaults for new posts, with the same choices, are under "Who can reply, boost and quote" in the "Display and posting" settings.
 - Requests that wait for you are listed in "Waiting for approval", opened by the row at the top of the notifications. "Approve" adds the reply, boost, or quote to your post, and the conversation under it shows an approved reply at once; "Decline" keeps it off.
 - On someone else's post, "Reply" is not shown and "Boost" cannot be pressed when its author does not let you. When the author approves them by hand, the form says so before you reply, and after you boost, the post says "Boost waiting for approval".
 
@@ -162,8 +162,7 @@ have not read yet; each of them has a dot before its names.
 
 Choose the start of a post to open the conversation's thread; this marks the conversation read on all your devices. A
 reply to a "Direct" post is always "Direct" too, so it reaches no one the conversation did not. On
-phones, "Direct messages" is in "Menu" unless you move it into the tab bar under "Display, posting, and timelines" in
-the settings.
+phones, "Direct messages" is in "Menu".
 
 ## Deleting old posts automatically
 

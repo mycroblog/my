@@ -2,9 +2,11 @@
 
 // Display and posting, the entry of the settings at /settings/display (FR-007, FR-110, FR-114, FR-208): the language
 // and the time zone the app shows, each the account's choice or the browser's; how large a link's preview is; what a
-// new post starts with (who can see it, who can quote it, its language, whether media needs a description); and what
-// the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Every control saves at
-// once and says so in the line under its name (saving.ts): the change shows at once, as the account's preferences show
+// new post starts with (who can see it, its language, whether media needs a description, and who can reply to, boost
+// and quote it, each with the choices the composer offers for one post); and what
+// the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Where the server itself
+// requires a description of media, the switch of it stands on and cannot be changed. Every control saves at
+// once and says so in the line under its name (saving.tsx): the change shows at once, as the account's preferences show
 // it everywhere (app-data), and goes back to what the server has when the server does not take it. The language
 // changes the whole app without a reload (the app's reader).
 
@@ -12,12 +14,14 @@ import {
   choiceOf,
   instanceQuery,
   preferencesQuery,
+  ruleOf,
   useInstance,
   usePreferences,
   usePreferencesRead,
   useUpdatePreferences,
   type AppData,
-  type Audience,
+  type Interaction,
+  type InteractionChoice,
   type LinkCardSize,
   type Preferences,
   type PreferencesChange,
@@ -35,11 +39,11 @@ import {
   Switch,
   TextButton,
   useLocale,
-  useSaveState,
   type SelectGroup,
   type SelectOption,
 } from "@my/design-system";
 import { useId } from "react";
+import { asksApproval, choiceText, interactionChoices, interactions } from "../interactions";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
 import type { SettingsEntryProps } from "./entries";
@@ -61,9 +65,6 @@ export async function loadDisplaySettings(data: AppData): Promise<void> {
 const browser = "";
 const undetermined = "und";
 
-/** A value that is none of a choice's own options, kept as it is until the reader chooses one of them. */
-const kept = "kept";
-
 /** A choice from a list that saves at once: its name over the line about it, the picker at the row's end. */
 function Choice({
   label,
@@ -80,12 +81,10 @@ function Choice({
   onChoose: (value: string) => Promise<unknown>;
 }) {
   const id = useId();
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   return (
     <SettingRow id={id} label={label} about={about} save={state}>
       <Select
-        labelledBy={id}
         options={options}
         value={value}
         onChange={(chosen) => {
@@ -96,26 +95,30 @@ function Choice({
   );
 }
 
-/** A setting on or off that saves at once. */
+/** A setting on or off that saves at once; `fixed`, it cannot be changed, and the line under it says why. */
 function Toggle({
   label,
   about,
   on,
+  fixed,
   onChange,
 }: {
   label: string;
   about?: string | undefined;
   on: boolean;
+  /** Why the reader cannot change it (the server decides it). */
+  fixed?: string | undefined;
   /** Saves the state chosen. */
   onChange: (on: boolean) => Promise<unknown>;
 }) {
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   return (
     <Switch
       label={label}
       description={about}
       isSelected={on}
+      isDisabled={fixed !== undefined}
+      reason={fixed}
       onChange={(next) => {
         save(() => onChange(next));
       }}
@@ -153,27 +156,51 @@ function visibilityOptions(current: Visibility, single: boolean, t: T): readonly
   }));
 }
 
-/** Who may quote a new post, as the settings offer it: anyone, the followers, or the author alone. */
-const quoteAudiences: readonly Audience[] = ["everyone", "followers", "nobody"];
+/** The name of the choice of who may do each kind of interaction with a new post, in the composer's words. */
+const interactionLabel = {
+  reply: "settings.display.reply",
+  announce: "settings.display.boost",
+  quote: "settings.display.quote",
+} as const satisfies Record<Interaction, MessageId>;
+
+/** A choice of who may interact as the value of an option: its audience, and whether others may ask for approval. */
+const choiceValue = (choice: InteractionChoice): string =>
+  asksApproval(choice) ? `${choice.audience}+approval` : choice.audience;
 
 /**
- * The choice of who may quote: its options and the one the account's default is. A default the three audiences do not
- * say (the people mentioned, or others with the author's approval, set from another app) is an option of its own, in
- * the composer's words, kept until the reader chooses one of the three.
+ * Who may reply to, boost and quote a new post by default: a choice a kind, each with every choice the composer
+ * offers for one post, in the composer's words (../interactions.ts): an audience at once, alone or with everyone else
+ * by the author's approval. A default set elsewhere reads as the composer reads it (any approval is everyone else's).
  */
-function quoteChoice(preferences: Preferences, t: T): { options: readonly SelectOption[]; value: string } {
-  const { audience, approval } = choiceOf(preferences.default_interaction_policy.quote);
-  const asks = approval && audience !== "everyone";
-  const options = quoteAudiences.map((value) => ({ value: value as string, label: t(`compose.audience.${value}`) }));
-  if (quoteAudiences.includes(audience) && !asks) return { options, value: audience };
-  const label = t("compose.permission.now", {
-    audience: t(`compose.audience.${audience}`),
-    approval: asks ? "yes" : "no",
-  });
-  return { options: [...options, { value: kept, label }], value: kept };
+function InteractionDefaults({
+  policy,
+  onChange,
+  t,
+}: {
+  policy: Preferences["default_interaction_policy"];
+  /** Saves the default of one kind. */
+  onChange: (kind: Interaction, choice: InteractionChoice) => Promise<unknown>;
+  t: T;
+}) {
+  const options = interactionChoices.map((choice) => ({ value: choiceValue(choice), label: choiceText(choice, t) }));
+  return interactions.map((kind) => (
+    <Choice
+      key={kind}
+      label={t(interactionLabel[kind])}
+      options={options}
+      value={choiceValue(choiceOf(policy[kind]))}
+      onChoose={(value) => {
+        const chosen = interactionChoices.find((choice) => choiceValue(choice) === value);
+        return chosen === undefined ? Promise.resolve() : onChange(kind, chosen);
+      }}
+    />
+  ));
 }
 
-/** The languages the timelines show: the choice that adds one, and under it the ones chosen, each with Remove. */
+/**
+ * The languages the timelines show: the choice that adds one, and close under it, as the setting's own, the ones
+ * chosen, each with Remove.
+ */
 function TimelineLanguages({
   chosen,
   onChange,
@@ -187,47 +214,50 @@ function TimelineLanguages({
   t: T;
 }) {
   const id = useId();
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   const name = t("settings.display.timeline_languages");
   // The choice holds no language: what it says is that all show, or that one more can be added.
   const first = t(
     chosen.length === 0 ? "settings.display.timeline_languages.all" : "settings.display.timeline_languages.add",
   );
   return (
-    <>
-      <SettingRow id={id} label={name} about={t("settings.display.timeline_languages.about")} save={state}>
-        <Select
-          labelledBy={id}
-          options={[{ value: "", label: first }, ...languageOptions(lang).filter((o) => !chosen.includes(o.value))]}
-          value=""
-          onChange={(tag) => {
-            if (tag !== "") save(() => onChange([...chosen, tag]));
-          }}
-        />
-      </SettingRow>
-      {chosen.length > 0 && (
-        <SettingsList label={name}>
-          {chosen.map((tag) => (
-            <SettingsListRow
-              key={tag}
-              title={ownName(tag)}
-              end={
-                <Button
-                  size="timeline"
-                  aria-label={t("settings.display.timeline_languages.remove.name", { language: ownName(tag) })}
-                  onPress={() => {
-                    save(() => onChange(chosen.filter((other) => other !== tag)));
-                  }}
-                >
-                  {t("settings.display.timeline_languages.remove")}
-                </Button>
-              }
-            />
-          ))}
-        </SettingsList>
-      )}
-    </>
+    <SettingRow
+      id={id}
+      label={name}
+      about={t("settings.display.timeline_languages.about")}
+      save={state}
+      values={
+        chosen.length > 0 && (
+          <SettingsList label={name}>
+            {chosen.map((tag) => (
+              <SettingsListRow
+                key={tag}
+                title={ownName(tag)}
+                end={
+                  <Button
+                    size="timeline"
+                    aria-label={t("settings.display.timeline_languages.remove.name", { language: ownName(tag) })}
+                    onPress={() => {
+                      save(() => onChange(chosen.filter((other) => other !== tag)));
+                    }}
+                  >
+                    {t("settings.display.timeline_languages.remove")}
+                  </Button>
+                }
+              />
+            ))}
+          </SettingsList>
+        )
+      }
+    >
+      <Select
+        options={[{ value: "", label: first }, ...languageOptions(lang).filter((o) => !chosen.includes(o.value))]}
+        value=""
+        onChange={(tag) => {
+          if (tag !== "") save(() => onChange([...chosen, tag]));
+        }}
+      />
+    </SettingRow>
   );
 }
 
@@ -239,9 +269,10 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
   const update = useUpdatePreferences();
   const change = (c: PreferencesChange) => update(c);
   const follows = t("settings.display.browser");
-  const quote = quoteChoice(preferences, t);
   const visibility = preferences.default_visibility;
   const postLanguage = preferences.default_post_language;
+  // Where the server itself requires a description of media, the account's own switch decides nothing.
+  const serverRequires = instance?.limits.require_media_description === true;
   return (
     <>
       <SettingsSection heading={t("settings.display.section.region")}>
@@ -289,17 +320,6 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
           onChoose={(value) => change({ default_visibility: value as Visibility })}
         />
         <Choice
-          label={t("settings.display.quote")}
-          options={quote.options}
-          value={quote.value}
-          onChoose={(value) => {
-            const automatic = quoteAudiences.find((audience) => audience === value);
-            return automatic === undefined
-              ? Promise.resolve()
-              : change({ default_interaction_policy: { quote: { automatic } } });
-          }}
-        />
-        <Choice
           label={t("settings.display.post_language")}
           options={[
             { value: undetermined, label: t("settings.display.post_language.display") },
@@ -312,8 +332,20 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
         />
         <Toggle
           label={t("settings.display.media_description")}
-          on={preferences.require_media_description}
+          about={t("settings.display.media_description.about")}
+          on={serverRequires || preferences.require_media_description}
+          fixed={serverRequires ? t("settings.display.media_description.server") : undefined}
           onChange={(on) => change({ require_media_description: on })}
+        />
+      </SettingsSection>
+      <SettingsSection
+        heading={t("settings.display.section.interactions")}
+        about={t("settings.display.section.interactions.about")}
+      >
+        <InteractionDefaults
+          policy={preferences.default_interaction_policy}
+          onChange={(kind, choice) => change({ default_interaction_policy: { [kind]: ruleOf(choice) } })}
+          t={t}
         />
       </SettingsSection>
       <SettingsSection heading={t("settings.display.section.timelines")}>
@@ -340,16 +372,21 @@ export function DisplaySettings({ back, languages }: SettingsEntryProps) {
   const preferences = usePreferences();
   const { status, retry } = usePreferencesRead();
   return (
-    <SettingsScreen icon="display" title={t("settings.entry.display")} back={back}>
-      {preferences !== undefined ? (
-        <Sections preferences={preferences} languages={languages} />
-      ) : status === "failed" ? (
-        <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-          {t("settings.failed")}
-        </FeedNotice>
-      ) : (
-        <FeedNotice>{t("settings.loading")}</FeedNotice>
-      )}
+    <SettingsScreen
+      icon="display"
+      title={t("settings.entry.display")}
+      back={back}
+      notice={
+        preferences !== undefined ? undefined : status === "failed" ? (
+          <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
+            {t("settings.failed")}
+          </FeedNotice>
+        ) : (
+          <FeedNotice>{t("settings.loading")}</FeedNotice>
+        )
+      }
+    >
+      {preferences !== undefined && <Sections preferences={preferences} languages={languages} />}
     </SettingsScreen>
   );
 }

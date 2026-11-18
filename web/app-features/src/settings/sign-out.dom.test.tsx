@@ -25,24 +25,26 @@ test("it asks whether to sign out of this browser, and says what stays and what 
 
   expect(dialog.textContent).toContain("Your other browsers and apps stay signed in.");
   expect(dialog.textContent).toContain("Drafts you saved stay.");
+  // Close in its head, then the way out and the confirmation.
   expect(
     within(dialog)
       .getAllByRole("button")
-      .map((button) => button.textContent),
-  ).toEqual(["Cancel", "Sign out"]);
+      .map((button) => button.getAttribute("aria-label") ?? button.textContent),
+  ).toEqual(["Close", "Cancel", "Sign out"]);
   expect(within(dialog).queryAllByRole("alert")).toHaveLength(0);
   // Nothing ends before the reader answers.
   expect(signOut).toHaveBeenCalledTimes(0);
 });
 
-test("Cancel tells the page, and signs nobody out", async () => {
-  const { user, dialog, onCancel, signOut } = asking();
+for (const button of ["Cancel", "Close"])
+  test(`${button} tells the page, and signs nobody out`, async () => {
+    const { user, dialog, onCancel, signOut } = asking();
 
-  await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+    await user.click(within(dialog).getByRole("button", { name: button }));
 
-  expect(onCancel).toHaveBeenCalledTimes(1);
-  expect(signOut).toHaveBeenCalledTimes(0);
-});
+    expect(onCancel).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(0);
+  });
 
 test("Sign out signs out, once", async () => {
   const { user, dialog, onCancel, signOut } = asking("finishes");

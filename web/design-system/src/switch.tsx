@@ -3,12 +3,13 @@
 // The switch (React Aria Components' SwitchField and SwitchButton): a setting that is on or off and takes effect as it
 // is pressed, with no form to send. Its label and a line that describes it stand at the row's start, the track at its
 // end beside both, in the page's direction, as every word of the interface; the label and the track press it. On differs from off by shape and fill, with no hue (the accent
-// is the primary action's and the links'): off, a muted thumb at the track's start on the raised surface; on, the
+// is the primary action's and the links'): off, a muted thumb at the track's start on a track a step off its surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
 // why; assistive technology reads the line as the switch's description. A switch saves as it is pressed, so it
 // always takes its save state (`save`, ADR-0110 §6): it stands in the description's place while it has something to
-// say, the description keeping its room, and the row is a finger's target tall, so that nothing under it moves. The
+// say, the description keeping its room, or under a label that has none, and the row is a finger's target tall, which
+// holds a label and one line under it, so that the track and what is under the switch do not move. The
 // state's place is a polite live region from the start, and the state there describes the switch: assistive
 // technology hears it as it comes, and again with the switch.
 
@@ -31,9 +32,20 @@ const toggle = tv({
     // The description while the save state stands in its place: it keeps its room.
     covered: "invisible",
     track: [
-      "box-border h-toggle-height w-toggle-width",
-      "rounded-[calc(var(--toggle-height)/2)] bg-surface-raised-hover group-data-hovered:bg-surface-raised-pressed",
-      "group-data-selected:bg-text group-data-selected:group-data-hovered:bg-text",
+      "box-border h-toggle-height w-toggle-width rounded-[calc(var(--toggle-height)/2)]",
+      // Off, the track is a step off the surface it stands on: a control's neutral surface on the page and, on a
+      // raised surface (a section of the settings), the page's own, as every neutral control there, so that it shows
+      // on either in both schemes. The step is held in a property, which on never reads.
+      "bg-(--toggle-track) [--toggle-track:var(--color-surface-raised-hover)]",
+      "group-data-hovered:[--toggle-track:var(--color-surface-raised-pressed)]",
+      "[[data-surface-raised]_&]:[--toggle-track:var(--color-surface)]",
+      "[[data-surface-raised]_&]:group-data-hovered:[--toggle-track:var(--color-surface-hover)]",
+      "group-data-selected:bg-text",
+      // The track's edge is a line of the muted text's color, which keeps 3:1 on every surface (ADR-0110 §12, §13):
+      // the step alone is too faint to bound a control. On, the line is the fill's; with forced colors it is what
+      // shows of the track.
+      "outline-1 -outline-offset-1 outline-muted-text group-data-selected:outline-text",
+      "group-data-disabled:group-data-selected:outline-muted-text",
       "group-data-focus-visible:shadow-focus",
       // Disabled, it keeps its surface, so that it shows in either scheme: on turns muted, and the thumb dims.
       "group-data-disabled:group-data-selected:bg-muted-text",
@@ -45,12 +57,16 @@ const toggle = tv({
   },
 });
 
-/** The switch's own grid: two columns, the label over its description and the track beside both. */
+/**
+ * The switch's own grid: two columns, the label over its description and the track beside both, the rows as tall as
+ * what they hold and together at the middle of the switch's height: a label alone stands level with the track, and a
+ * line that comes under it (the save state) takes the room the height holds, the track staying where it is.
+ */
 function ToggleFrame({ className, ...rest }: ComponentProps<typeof SwitchField> & { className: string }) {
   return (
     <SwitchField
       {...rest}
-      className={`${className} grid w-full grid-cols-[minmax(0,1fr)_auto] items-center gap-x-toggle-gap`}
+      className={`${className} grid w-full grid-cols-[minmax(0,1fr)_auto] content-center items-center gap-x-toggle-gap`}
     />
   );
 }

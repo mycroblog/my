@@ -9,6 +9,8 @@ import { expect, onTestFinished, test } from "bun:test";
 import { defaultComposeSettings } from "@my/app-data";
 import type { FakeOptions } from "@my/e2e/fake";
 import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { asksApproval, choiceText, interactionChoices } from "../interactions";
+import { stringsIn } from "../locale";
 import { fakeData, renderFeature } from "../test/feature";
 import { ComposeLayer } from "./layer";
 import { emptyDraft } from "./model";
@@ -151,11 +153,11 @@ test("the audience's menu chooses, for replies, boosts and quotes each, who may 
   expect(holds("quote")).toBe(w.nobody);
 });
 
-test("in ja, the permissions read who may and that others may ask, and the tool says the post is limited", async () => {
-  const w = words.ja;
-  const { data } = fakeData();
-  // What the composer reads on its first draw (the instance, the reader's preferences, the custom emoji) reaches it
-  // when it comes, as a server's answers do, not inside an act() of the test: React is told so until the test ends.
+/**
+ * What the composer reads on its first draw (the instance, the reader's preferences, the custom emoji) reaches it
+ * when it comes, as a server's answers do, not inside an act() of the test: React is told so until the test ends.
+ */
+function answersOutsideAct() {
   const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = false;
@@ -163,6 +165,40 @@ test("in ja, the permissions read who may and that others may ask, and the tool 
     if (wrapped === undefined) delete environment.IS_REACT_ACT_ENVIRONMENT;
     else environment.IS_REACT_ACT_ENVIRONMENT = wrapped;
   });
+}
+
+test("the panel of a kind offers the audiences of the list the settings' defaults are chosen from, each once, in its order", async () => {
+  const { data } = fakeData();
+  answersOutsideAct();
+  const target = { kind: "new" as const };
+  renderFeature(
+    data,
+    <ComposeLayer
+      target={target}
+      initial={emptyDraft(target, defaultComposeSettings, "k")}
+      inline
+      specimen={{ opened: "reply" }}
+      onOpen={none}
+      onClose={none}
+    />,
+  );
+  await screen.findAllByRole("textbox", { hidden: true });
+
+  const panel = within(await screen.findByRole("menu", { name: words.en.kind.reply }));
+  const { t } = stringsIn("en");
+  // The list's choices without approval are its audiences; with it, the same audience and the panel's check.
+  const audiences = interactionChoices.filter((one) => !asksApproval(one)).map((one) => choiceText(one, t));
+  expect(audiences).toEqual(["Anyone", "Followers", "People you mention", "Only you"]);
+  expect(panel.getAllByRole("menuitemradio").map((radio) => radio.textContent)).toEqual(audiences);
+  expect(interactionChoices.filter(asksApproval).map((one) => choiceText(one, t))).toEqual(
+    audiences.slice(1).map(words.en.withApproval),
+  );
+});
+
+test("in ja, the permissions read who may and that others may ask, and the tool says the post is limited", async () => {
+  const w = words.ja;
+  const { data } = fakeData();
+  answersOutsideAct();
   const target = { kind: "new" as const };
   /** Anyone replies, followers boost and others ask for approval, the author alone quotes. */
   const initial = {
