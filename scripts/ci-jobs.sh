@@ -222,6 +222,8 @@ job web-static full ctx web
 job web-build full ctx web
 # The tests of the web packages the change reaches (scripts/changed-web-packages.sh).
 job web-test full web_packages_selected
+# Not a check: the image the two browser jobs below run in.
+job web-browser-image full ctx stories e2e
 job web-stories-test full ctx stories
 job web-e2e-build full ctx e2e
 job web-e2e full ctx e2e

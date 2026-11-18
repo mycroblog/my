@@ -88,10 +88,11 @@ jobs:
     needs: select
     if: needs.select.outputs.run == 'true' && inputs.jobs != 'image-scan'
     uses: ./.github/workflows/slow-suite.yml
-    # The permissions of slow-suite.yml's CodeQL job.
+    # The permissions of slow-suite.yml's CodeQL job, and of its browser jobs, which pull their image.
     permissions:
       actions: read
       contents: read
+      packages: read
       security-events: write
 
   # A red Nightly stops the line (ADR-0079 §8): on a full run of main, opens the issue of the failing Nightly or comments

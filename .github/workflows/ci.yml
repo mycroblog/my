@@ -51,6 +51,7 @@ name: CI
 #     tofu-static, shell-test                       the OpenTofu modules; the tests of the scripts
 #     web-static, web-build, web-test               the web client
 #     web-stories-test, web-e2e-build, web-e2e      its catalog in a browser; its E2E tests
+#     web-browser-image                             not a check: the image those two run in
 #   gate              the required status check: every job above passed or was not needed
 #
 # How a job is built (ADR-0079 §11):
@@ -65,7 +66,8 @@ name: CI
 # - What takes minutes and uses every core gets runners of its own, by layer (server-test), by package
 #   (web-test), by contract (server-contract), or by shard (web-e2e).
 # - A job sets up only what its checks need. The Go and Bun caches come from main.yml (ADR-0079 §7), which builds them
-#   with the same tasks: a job that builds with other flags finds nothing there.
+#   with the same tasks: a job that builds with other flags finds nothing there. The browser and Bun of the browser
+#   jobs come in an image (web-browser-image).
 #
 # To add a check, first find where it goes:
 #
@@ -1003,23 +1005,68 @@ jobs:
           PACKAGE: ${{ matrix.package }}
         run: scripts/task.sh web:test PACKAGES="$PACKAGE"
 
+  web-browser-image:
+    # Not a check: the image the browser tests run in (.github/images/playwright), which holds Chromium, its system
+    # packages and fonts, and Bun, so that no job installs them with apt on the runner, which took from 15 seconds to
+    # over six minutes with the state of the package mirrors. The image is named after what it is made of
+    # (scripts/browser-image.sh): this job finds it in the registry, or builds and pushes it when the Playwright or
+    # the Bun of the tree is new. A pull request from a fork or from Dependabot may not push: the job then gives no
+    # name, and the browser jobs install the browser as before. It alone may write packages.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-browser-image')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Find or build the image
+        id: image
+        run: echo "image=$(scripts/browser-image.sh ensure)" >> "$GITHUB_OUTPUT"
+
   web-stories-test:
     # The tests in a browser on the built catalog of the Storybook host (ADR-0171 §1, §4), with the E2E tests' runner
     # and no server: the layout tests of the design system's layout parts and overlays, and the browser tests of the
-    # parts. Chromium comes from Playwright's CLI, run on Bun.
-    needs: select
+    # parts.
+    needs: [select, web-browser-image]
     if: contains(fromJSON(needs.select.outputs.jobs), 'web-stories-test')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # The image of web-browser-image, which holds the browser, its system packages, and Bun. With no image (an empty
+    # name) the job runs on the runner and installs them, in the two steps below.
+    container:
+      image: ${{ needs.web-browser-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # As Playwright's documentation runs its image: an init process, the host's shared memory, which Chromium needs,
+      # and the runner's user, who owns the checkout.
+      options: --init --ipc=host --user 1001
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun
+        if: needs.web-browser-image.outputs.image == ''
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
+      # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
+      # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
       - name: Install Chromium
+        if: needs.web-browser-image.outputs.image == ''
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       # The catalog, built once for the two tests that open it.
@@ -1061,25 +1108,40 @@ jobs:
     # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
     # build of web-e2e-build. Four jobs side by side, each with a server of its own and a quarter of the spec files
     # (Playwright's --shard): the tests take most of the time, and the queue waits for the slowest job.
-    needs: [select, web-e2e-build]
+    needs: [select, web-e2e-build, web-browser-image]
     if: contains(fromJSON(needs.select.outputs.jobs), 'web-e2e')
     strategy:
       fail-fast: false
       matrix:
         shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # The image of web-browser-image, which holds the browser, its system packages, and Bun. With no image (an empty
+    # name) the job runs on the runner and installs them, in the two steps below.
+    container:
+      image: ${{ needs.web-browser-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # As Playwright's documentation runs its image: an init process, the host's shared memory, which Chromium needs,
+      # and the runner's user, who owns the checkout.
+      options: --init --ipc=host --user 1001
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun
+        if: needs.web-browser-image.outputs.image == ''
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
+      # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
+      # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
       - name: Install Chromium
-        # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
-        # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
+        if: needs.web-browser-image.outputs.image == ''
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       - name: Fetch bin/my
@@ -1105,7 +1167,7 @@ jobs:
     # A required check is matched by its name alone, whatever workflow reports it: no other workflow may have a job
     # named `gate`, or a run of it on the same commit would answer for this one (ADR-0079 §11).
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [select, go-format, ts-format, tofu-format, source-license, deps-license, docs-lint, docs-change, i18n-change, schema-change, schema-test, shell-lint, go-tests-lint, docker-static, docker-smoke, monitoring-test, server-static, server-test, server-contract, schema-static, api-test, docs-static, ci-static, agentkit-test, mykit-test, mykit-ts-test, i18n-test, site-test, site-build, tofu-static, shell-test, web-static, web-build, web-test, web-stories-test, web-e2e-build, web-e2e]
+    needs: [select, go-format, ts-format, tofu-format, source-license, deps-license, docs-lint, docs-change, i18n-change, schema-change, schema-test, shell-lint, go-tests-lint, docker-static, docker-smoke, monitoring-test, server-static, server-test, server-contract, schema-static, api-test, docs-static, ci-static, agentkit-test, mykit-test, mykit-ts-test, i18n-test, site-test, site-build, tofu-static, shell-test, web-static, web-build, web-test, web-browser-image, web-stories-test, web-e2e-build, web-e2e]
     runs-on: ubuntu-latest
     steps:
       - name: Fail if a job failed or was cancelled

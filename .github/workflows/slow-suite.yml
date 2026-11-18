@@ -26,6 +26,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #   web-test                                 the tests of every web package, where ci.yml runs those a change reaches
 #   web-stories-scan                         every story of the catalog, for an error, sideways scrolling and axe
 #   web-e2e-build, web-e2e                   the E2E tests twice over, never run again when they fail
+#   web-browser-image                        not a check: the image the browser jobs run in, when the registry has it
 #   code-scan                                CodeQL (codeql.yml)
 #   result                                   the one result of the suite, for the callers
 #
@@ -389,23 +390,65 @@ jobs:
       - name: web:test
         run: scripts/task.sh web:test
 
+  web-browser-image:
+    if: inputs.scope == 'all'
+    # Not a check: the name of the image the browser tests run in, when the registry has it (ci.yml's
+    # web-browser-image builds it; scripts/browser-image.sh). With no image the two jobs below install the browser on
+    # the runner. It only reads: a called workflow gets no more than its caller grants.
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Find the image
+        id: image
+        run: echo "image=$(scripts/browser-image.sh find)" >> "$GITHUB_OUTPUT"
+
   web-stories-scan:
+    needs: web-browser-image
     if: inputs.scope == 'all'
     # The check of every story at once (ADR-0171 §6): each story of the built catalog at the minimum width, in both
     # directions and in the dark theme, for an error, sideways scrolling and axe, with the E2E tests' runner and no
     # server. No pull request runs it: it finds what the tests of the lower layers missed, and the fix adds a test
-    # there. Chromium comes from Playwright's CLI, run on Bun.
+    # there.
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # The image of web-browser-image, which holds the browser, its system packages, and Bun. With no image (an empty
+    # name) the job runs on the runner and installs them, in the two steps below.
+    container:
+      image: ${{ needs.web-browser-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # As Playwright's documentation runs its image: an init process, the host's shared memory, which Chromium needs,
+      # and the runner's user, who owns the checkout.
+      options: --init --ipc=host --user 1001
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun
+        if: needs.web-browser-image.outputs.image == ''
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
+      # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
+      # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
       - name: Install Chromium
+        if: needs.web-browser-image.outputs.image == ''
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       - name: Build the catalog
@@ -438,7 +481,7 @@ jobs:
           retention-days: 1
 
   web-e2e:
-    needs: web-e2e-build
+    needs: [web-e2e-build, web-browser-image]
     if: inputs.scope == 'all'
     # The E2E tests of the web client, each twice on one seeded server and never run again when they fail: a test
     # that passes only sometimes, or only before its own writes are there, fails here, while ci.yml's web-e2e runs
@@ -450,17 +493,33 @@ jobs:
       matrix:
         shard: [1, 2, 3, 4]
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    # The image of web-browser-image, which holds the browser, its system packages, and Bun. With no image (an empty
+    # name) the job runs on the runner and installs them, in the two steps below.
+    container:
+      image: ${{ needs.web-browser-image.outputs.image }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      # As Playwright's documentation runs its image: an init process, the host's shared memory, which Chromium needs,
+      # and the runner's user, who owns the checkout.
+      options: --init --ipc=host --user 1001
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Bun
+        if: needs.web-browser-image.outputs.image == ''
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
+      # The whole browser, not the headless shell alone: the Web Push spec shows notifications, which the headless
+      # shell refuses whatever is granted, so it runs in the new headless mode (web/e2e/src/web-push.ts).
       - name: Install Chromium
-        # The whole browser, as in ci.yml's web-e2e.
+        if: needs.web-browser-image.outputs.image == ''
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       - name: Fetch bin/my
@@ -501,7 +560,7 @@ jobs:
   # (ADR-0079 §11).
   result:
     if: always()
-    needs: [federation-live, server-contract, server-lint, agentkit-lint, mykit-lint, server-fakes-test, deps-license, docker-smoke, docker-arm64-build, image-upgrade, image-restore, tofu-test, web-test, web-stories-scan, web-e2e-build, web-e2e, code-scan]
+    needs: [federation-live, server-contract, server-lint, agentkit-lint, mykit-lint, server-fakes-test, deps-license, docker-smoke, docker-arm64-build, image-upgrade, image-restore, tofu-test, web-test, web-browser-image, web-stories-scan, web-e2e-build, web-e2e, code-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

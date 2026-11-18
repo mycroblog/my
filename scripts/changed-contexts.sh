@@ -200,6 +200,11 @@ classify() {
       select_task_area "$(basename "$path" .yml)"
       return
       ;;
+    # The image the browser tests run in, and what names and builds it.
+    .github/images/* | scripts/browser-image.sh)
+      select_contexts shell e2e stories
+      return
+      ;;
     # The other workflows (the slow suite, the Nightly, the release, the previews, the deploys) run no check of a pull
     # request or a merge group.
     .github/workflows/*)

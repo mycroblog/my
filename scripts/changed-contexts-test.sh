@@ -43,6 +43,7 @@ expect "the tasks of db" "docs schema" tasks/db.yml
 expect "the tasks of the emoji tables, which no check runs" "docs" tasks/emoji.yml
 expect "the tasks of the email previews" "docs go" tasks/mail.yml
 expect "the Nightly" "docs" .github/workflows/nightly.yml
+expect "the image of the browser tests" "docs shell e2e stories" .github/images/playwright/Dockerfile
 expect "the ignore list of git, which no check reads" "docs" .gitignore
 expect "the tasks of the workspace, which the other areas call (web:install)" "docs go i18n api web mykit site e2e stories" tasks/web.yml
 

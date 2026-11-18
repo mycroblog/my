@@ -175,10 +175,11 @@ jobs:
       previous: ${{ inputs.previous }}
       scope: ${{ needs.find-suite.outputs.scope }}
       allow_destructive: ${{ inputs.allow_destructive }}
-    # The permissions of slow-suite.yml's CodeQL job.
+    # The permissions of slow-suite.yml's CodeQL job, and of its browser jobs, which pull their image.
     permissions:
       actions: read
       contents: read
+      packages: read
       security-events: write
 
   release:
