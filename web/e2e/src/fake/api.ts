@@ -28,7 +28,7 @@
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
-// How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are settings.ts's.
+// How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are access.ts's.
 //
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
 // `newNotification` make one. A test scripts an operation with `script` (script.ts).
@@ -66,7 +66,7 @@ import {
 } from "../scenario";
 import { articleHtml, serverHtml } from "./html";
 import { createScripts, type Script, type Scripted } from "./script";
-import { settingsHandlers, type SettingsOptions } from "./settings";
+import { accessHandlers, type AccessOptions } from "./access";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
 type Account = Schema<"Account">;
@@ -348,10 +348,10 @@ export type FakeOptions = {
    */
   uploads?: "processing";
   /**
-   * How the reader's account stands in the settings (settings.ts): its password, passkeys, two-factor authentication,
+   * How the reader's account stands in the settings (access.ts): its password, passkeys, two-factor authentication,
    * linked accounts, signed-in browsers, authorized apps, own OAuth apps and invites; a typical account by default.
    */
-  settings?: SettingsOptions;
+  access?: AccessOptions;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -3227,8 +3227,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
-    ...settingsHandlers({
-      options: o.settings ?? {},
+    ...accessHandlers({
+      options: o.access ?? {},
       viewer: { username: viewer, password: personOf(viewer).password },
       started,
       origin: fakeOrigin,

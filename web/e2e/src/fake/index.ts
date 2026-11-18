@@ -18,7 +18,7 @@ export {
   type FakeSeed,
   type FakeStreamEvent,
 } from "./api";
-export { fakeExternalConfirmation, fakeTotpCode, type SettingsOptions } from "./settings";
+export { fakeExternalConfirmation, fakeTotpCode, type AccessOptions } from "./access";
 export { apps as scenarioApps, instance as scenarioInstance } from "../scenario";
 export { serverHtml } from "./html";
 export type { Failure, Script, Scripted, Seen } from "./script";

@@ -3,7 +3,7 @@
 // The fake's operations of the reader's account settings (FR-002, FR-004, FR-005, FR-010, FR-012; ADR-0090, ADR-0106):
 // how they sign in (the password, passkeys, two-factor authentication, linked accounts), the browsers and apps signed
 // in to the account, the apps they register, and the invites they create. The state is the fake's own, in memory, and
-// the sample data is the reader's at the start; `SettingsOptions` changes it. The server decides the codes and
+// the sample data is the reader's at the start; `AccessOptions` changes it. The server decides the codes and
 // tokens for real; here the authenticator's code is `fakeTotpCode`, and the confirmation a linked provider gives
 // `fakeExternalConfirmation`, since a link leaves the page for the provider and no test can make it come back with one.
 
@@ -20,7 +20,7 @@ const maxPasskeys = 20;
 const maxOAuthApps = 25;
 
 /** How the reader's account stands at the start. */
-export type SettingsOptions = {
+export type AccessOptions = {
   /** Whether the reader signs in with a password; they do by default. Without one a passkey confirms. */
   password?: boolean;
   /** How many passkeys they hold, 3 by default (a laptop, a phone and a security key); at most 20. */
@@ -44,8 +44,8 @@ export type SettingsOptions = {
 };
 
 /** What the handlers need of the fake that holds them. */
-export type SettingsContext = {
-  options: SettingsOptions;
+export type AccessContext = {
+  options: AccessOptions;
   /** The username and password of the reader. */
   viewer: { username: string; password: string };
   /** When the fake started, the origin it answers as, and whether the instance is a one-person server. */
@@ -85,7 +85,7 @@ const recoveryCodes = (round: number) =>
   );
 
 /** The handlers of the operations of the reader's account settings, and nothing else of the fake. */
-export function settingsHandlers(c: SettingsContext): Handlers {
+export function accessHandlers(c: AccessContext): Handlers {
   const { options: o, started, origin, problem, notFound, idAt } = c;
   const time = (ago: number) => new Date(started - ago).toISOString();
   let counter = 0;
