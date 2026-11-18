@@ -1549,7 +1549,8 @@ export interface paths {
         };
         /**
          * List the OAuth apps that the authenticated user registered
-         * @description The apps that the user registered and has not deleted, oldest first.
+         * @description The apps that the user registered and has not deleted, oldest first, and whether the user
+         *     may register one now (`can_create`).
          */
         get: operations["listOAuthApps"];
         put?: never;
@@ -16865,6 +16866,13 @@ export interface components {
         /** @description The OAuth apps that the authenticated user registered, oldest first; there are at most 25. */
         OAuthAppList: {
             items: components["schemas"]["OAuthApp"][];
+            /**
+             * @description Whether the user may register an app now: the instance setting `user_app_registration`
+             *     is on. When it is false, `POST /oauth_apps` answers 403
+             *     `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+             *     apps (the length of `items`) or the rate limit of registrations.
+             */
+            can_create: boolean;
         };
         /** @description A new secret of a confidential OAuth app. */
         OAuthAppSecret: {

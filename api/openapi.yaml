@@ -2364,7 +2364,9 @@ paths:
       operationId: listOAuthApps
       x-first-party-only: true
       summary: List the OAuth apps that the authenticated user registered
-      description: The apps that the user registered and has not deleted, oldest first.
+      description: |
+        The apps that the user registered and has not deleted, oldest first, and whether the user
+        may register one now (`can_create`).
       tags:
         - oauth-apps
       security:
@@ -26520,11 +26522,19 @@ components:
       type: object
       required:
         - items
+        - can_create
       properties:
         items:
           type: array
           items:
             $ref: '#/components/schemas/OAuthApp'
+        can_create:
+          description: |
+            Whether the user may register an app now: the instance setting `user_app_registration`
+            is on. When it is false, `POST /oauth_apps` answers 403
+            `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+            apps (the length of `items`) or the rate limit of registrations.
+          type: boolean
     OAuthAppSecret:
       description: A new secret of a confidential OAuth app.
       type: object

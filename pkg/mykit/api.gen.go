@@ -14780,7 +14780,12 @@ type OAuthAppCreated struct {
 
 // OAuthAppList The OAuth apps that the authenticated user registered, oldest first; there are at most 25.
 type OAuthAppList struct {
-	Items []OAuthApp `json:"items"`
+	// CanCreate Whether the user may register an app now: the instance setting `user_app_registration`
+	// is on. When it is false, `POST /oauth_apps` answers 403
+	// `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+	// apps (the length of `items`) or the rate limit of registrations.
+	CanCreate bool       `json:"can_create"`
+	Items     []OAuthApp `json:"items"`
 }
 
 // OAuthAppSecret A new secret of a confidential OAuth app.
@@ -27558,7 +27563,8 @@ type ClientInterface interface {
 
 	// ListOAuthApps List the OAuth apps that the authenticated user registered
 	//
-	// The apps that the user registered and has not deleted, oldest first.
+	// The apps that the user registered and has not deleted, oldest first, and whether the user
+	// may register one now (`can_create`).
 	//
 	// Corresponds with GET /oauth_apps (the `ListOAuthApps` operationId).
 	ListOAuthApps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -39593,7 +39599,8 @@ func (c *Client) DismissNotification(ctx context.Context, id Id, reqEditors ...R
 
 // ListOAuthApps List the OAuth apps that the authenticated user registered
 //
-// The apps that the user registered and has not deleted, oldest first.
+// The apps that the user registered and has not deleted, oldest first, and whether the user
+// may register one now (`can_create`).
 //
 // Corresponds with GET /oauth_apps (the `ListOAuthApps` operationId).
 func (c *Client) ListOAuthApps(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -69552,7 +69559,8 @@ type ClientWithResponsesInterface interface {
 
 	// ListOAuthAppsWithResponse List the OAuth apps that the authenticated user registered
 	//
-	// The apps that the user registered and has not deleted, oldest first.
+	// The apps that the user registered and has not deleted, oldest first, and whether the user
+	// may register one now (`can_create`).
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -110600,7 +110608,8 @@ func (c *ClientWithResponses) DismissNotificationWithResponse(ctx context.Contex
 
 // ListOAuthAppsWithResponse List the OAuth apps that the authenticated user registered
 //
-// The apps that the user registered and has not deleted, oldest first.
+// The apps that the user registered and has not deleted, oldest first, and whether the user
+// may register one now (`can_create`).
 //
 // Returns a wrapper object for the known response body format(s).
 //

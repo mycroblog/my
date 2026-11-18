@@ -14777,7 +14777,12 @@ type OAuthAppCreated struct {
 
 // OAuthAppList The OAuth apps that the authenticated user registered, oldest first; there are at most 25.
 type OAuthAppList struct {
-	Items []OAuthApp `json:"items"`
+	// CanCreate Whether the user may register an app now: the instance setting `user_app_registration`
+	// is on. When it is false, `POST /oauth_apps` answers 403
+	// `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+	// apps (the length of `items`) or the rate limit of registrations.
+	CanCreate bool       `json:"can_create"`
+	Items     []OAuthApp `json:"items"`
 }
 
 // OAuthAppSecret A new secret of a confidential OAuth app.

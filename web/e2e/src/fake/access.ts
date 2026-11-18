@@ -656,7 +656,10 @@ export function accessHandlers(c: AccessContext): Handlers {
     },
 
     // The reader's OAuth apps
-    "GET /oauth_apps": () => ({ status: 200, body: { items: ownApps } }),
+    "GET /oauth_apps": () => ({
+      status: 200,
+      body: { items: ownApps, can_create: o.oauthApps !== "disabled" },
+    }),
     "POST /oauth_apps": ({ body }) => {
       if (o.oauthApps === "disabled")
         return problem(403, "Users may not register apps here", {

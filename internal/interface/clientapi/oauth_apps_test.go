@@ -4,6 +4,7 @@ package clientapi_test
 
 import (
 	"context"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -44,6 +45,11 @@ func (f *fakeOAuthApps) OAuthApps(_ context.Context, userID string) ([]appidenti
 		}
 	}
 	return out, nil
+}
+
+// MayRegisterOAuthApps reports false while err is the refusal of the instance setting.
+func (f *fakeOAuthApps) MayRegisterOAuthApps(context.Context) (bool, error) {
+	return !errors.Is(f.err, appidentity.ErrOAuthAppRegistrationDisabled), nil
 }
 
 func (f *fakeOAuthApps) OAuthApp(_ context.Context, userID, id string) (appidentity.OAuthApp, error) {
