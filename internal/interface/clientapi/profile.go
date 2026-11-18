@@ -63,8 +63,8 @@ func (s *Server) newCredentialAccount(ctx context.Context, userID string, a appa
 		return CredentialAccount{}, fmt.Errorf("clientapi: follow request count of %s: %w", a.Account.ID, err)
 	}
 	out := CredentialAccount{
-		Id: base.Id, Username: base.Username, Acct: base.Acct, DisplayName: base.DisplayName, Note: base.Note,
-		Url: base.Url, Locked: base.Locked, Bot: base.Bot, CreatedAt: base.CreatedAt, Fields: base.Fields, Emojis: base.Emojis,
+		Id: base.Id, Username: base.Username, Acct: base.Acct, Domain: base.Domain, DisplayName: base.DisplayName,
+		Note: base.Note, Uri: base.Uri, Url: base.Url, Moved: base.Moved, Locked: base.Locked, Bot: base.Bot, CreatedAt: base.CreatedAt, Fields: base.Fields, Emojis: base.Emojis,
 		Badges: base.Badges,
 		Avatar: base.Avatar, Header: base.Header,
 		FollowersCount: base.FollowersCount, FollowingCount: base.FollowingCount,

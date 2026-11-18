@@ -112,8 +112,8 @@ func TestVerifyAccountCredentialsHasTheSource(t *testing.T) {
 	}
 	avatar, mediaID, followers, following := processedVariants(avatarID), avatarID, 2, 1
 	want := clientapi.CredentialAccount{
-		Id: aliceAccountID, Username: "alice", Acct: "alice", DisplayName: "Alice", Note: "<p>hi</p>",
-		Url: "https://social.example/@alice", Locked: true, Discoverable: true, FeedFollowsIndexable: true, FollowsVisibility: clientapi.FollowsVisibilityPublic, CreatedAt: createdAt, Avatar: &avatar,
+		Id: aliceAccountID, Username: "alice", Acct: "alice", Domain: "social.example", DisplayName: "Alice", Note: "<p>hi</p>",
+		Uri: "https://social.example/ap/actors/" + aliceAccountID, Url: "https://social.example/@alice", Locked: true, Discoverable: true, FeedFollowsIndexable: true, FollowsVisibility: clientapi.FollowsVisibilityPublic, CreatedAt: createdAt, Avatar: &avatar,
 		FollowersCount: &followers, FollowingCount: &following, Emojis: []clientapi.CustomEmoji{}, Badges: []clientapi.AccountBadge{},
 		Fields: []clientapi.ProfileField{{Name: "web", Value: `<p><a href="https://alice.example">alice.example</a></p>`}},
 		Source: clientapi.AccountSource{

@@ -219,9 +219,9 @@ func TestVerifyAccountCredentials(t *testing.T) {
 		}
 		followers, following := 2, 1
 		want := clientapi.Account{
-			Id: aliceAccountID, Username: "alice", Acct: "alice", DisplayName: "Alice", Note: "<p>hi</p>",
+			Id: aliceAccountID, Username: "alice", Acct: "alice", Domain: "social.example", DisplayName: "Alice", Note: "<p>hi</p>",
 			Fields: []clientapi.ProfileField{}, Emojis: []clientapi.CustomEmoji{}, Badges: []clientapi.AccountBadge{},
-			Url: "https://social.example/@alice", Locked: true, CreatedAt: createdAt, FollowersCount: &followers, FollowingCount: &following,
+			Uri: "https://social.example/ap/actors/" + aliceAccountID, Url: "https://social.example/@alice", Locked: true, CreatedAt: createdAt, FollowersCount: &followers, FollowingCount: &following,
 		}
 		if !reflect.DeepEqual(got, want) {
 			t.Errorf("%s: account = %+v, want %+v", token, got, want)
