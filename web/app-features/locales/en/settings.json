@@ -465,11 +465,11 @@
   },
   "settings.security.password.change.confirm": {
     "defaultMessage": "To change your password, confirm it's you.",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader changes their password."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader changes their password."
   },
   "settings.security.password.set.confirm": {
     "defaultMessage": "To set a password, confirm it's you.",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when a reader without a password sets one."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when a reader without a password sets one."
   },
   "settings.security.password.set.done": {
     "defaultMessage": "Your password is set, and your other browsers and apps are signed out.",
@@ -501,7 +501,7 @@
   },
   "settings.security.password.remove.confirm": {
     "defaultMessage": "To remove your password, confirm it's you.",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader removes their password. The password itself is not a way to confirm this."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader removes their password. The password itself is not a way to confirm this."
   },
   "settings.security.password.removed": {
     "defaultMessage": "Your password is removed, and your other browsers and apps are signed out.",
@@ -569,7 +569,7 @@
   },
   "settings.security.passkeys.add.confirm": {
     "defaultMessage": "To add a passkey, confirm it's you. Your browser then asks you to create it.",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader adds a passkey."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader adds a passkey."
   },
   "settings.security.passkeys.add.failed": {
     "defaultMessage": "{reason, select, cancelled {The passkey was not added: the browser's dialog was closed or timed out. Try again.} exists {This device already has a passkey of your account. Use that one, or add a passkey on another device.} unsupported {This browser cannot use passkeys. Try another browser or device.} other {The passkey could not be added. Try again.}}",
@@ -613,17 +613,17 @@
   },
   "settings.security.linked.confirm": {
     "defaultMessage": "To link an account, confirm it's you. You then sign in at the other service and come back here.",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
   },
   "settings.security.linked.done": {
-    "defaultMessage": "Your account at {provider} is linked. You can sign in with it now.",
-    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it, or settings.security.external.service when the page does not know it."
+    "defaultMessage": "Your {provider} account is linked. You can sign in with it now.",
+    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.security.linked.done.unknown."
   },
-  "settings.security.external.service": {
-    "defaultMessage": "the other service",
-    "description": "Stands in for the name of another service (an external login provider) in settings.security.linked.done and settings.security.confirm.returned when the page does not know which service the browser came back from. Lower case in en: it is used inside a sentence."
+  "settings.security.linked.done.unknown": {
+    "defaultMessage": "Your account at the other service is linked. You can sign in with it now.",
+    "description": "As settings.security.linked.done, when the page does not know the name of the service the browser came back from."
   },
-  "settings.security.external.error": {
+  "settings.confirm.external.error": {
     "defaultMessage": "{reason, select, denied {This server does not accept that account of the other service. Try another account there, or ask the administrators.} linked_elsewhere {That account of the other service is linked to another account on this server. Unlink it there first, or link a different one.} already_linked {You have already linked an account of that service. Unlink it first to link another.} mismatch {The account you signed in with at the other service is not linked to yours. Try again with the linked account.} unavailable {That service cannot be used now. Try again later, or use another way.} rate_limited {Too many attempts. Wait a while, then try again.} expired {That took too long. Try again.} other {The sign-in with the other service did not complete. Try again.}}",
     "description": "An alert on a page of the settings when the browser comes back from another service (an external login provider) without the link or the confirmation the reader went there for. reason says why: denied (the server's conditions refuse that account), linked_elsewhere (another user of this server links it), already_linked, mismatch (the reader signed in at the service with an account other than the linked one), unavailable (the service is turned off), rate_limited, expired, other (anything else)."
   },
@@ -665,7 +665,11 @@
   },
   "settings.security.browsers.sign_out.title": {
     "defaultMessage": "Sign out {browser}?",
-    "description": "The question of the confirmation before one browser is signed out. browser is the browser's name as the list shows it (settings.security.browsers.name: Firefox on macOS; or Unknown browser)."
+    "description": "The question of the confirmation before one browser is signed out. browser is the browser's name as the list shows it (settings.security.browsers.name: Firefox on macOS), or the text it sent of itself. A browser the list names Unknown browser gets settings.security.browsers.sign_out.title.unknown."
+  },
+  "settings.security.browsers.sign_out.title.unknown": {
+    "defaultMessage": "Sign out this unknown browser?",
+    "description": "The question of the confirmation before one browser is signed out, in place of settings.security.browsers.sign_out.title, for a browser the list names Unknown browser (settings.security.browsers.unknown)."
   },
   "settings.security.browsers.sign_out.text": {
     "defaultMessage": "That browser has to sign in again to use your account. Your password, two-factor authentication and apps stay as they are.",
@@ -689,7 +693,11 @@
   },
   "settings.security.browsers.advice": {
     "defaultMessage": "If you do not recognize a sign-in, sign that browser out, change your password, and check which apps can use your account.",
-    "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps."
+    "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize, for an account that can change its password. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps. An account that cannot gets settings.security.browsers.advice.no_password."
+  },
+  "settings.security.browsers.advice.no_password": {
+    "defaultMessage": "If you do not recognize a sign-in, sign that browser out and check which apps can use your account.",
+    "description": "As settings.security.browsers.advice, for an account that has no password, or cannot change it on this server: it does not speak of changing the password, and only the link settings.security.browsers.advice.apps follows it."
   },
   "settings.security.browsers.advice.password": {
     "defaultMessage": "Change password",
@@ -699,63 +707,67 @@
     "defaultMessage": "Check your apps",
     "description": "A link after settings.security.browsers.advice that opens the Apps page of the settings, which lists the apps the reader allowed to use their account."
   },
-  "settings.security.confirm.title": {
+  "settings.confirm.title": {
     "defaultMessage": "Confirm it's you",
     "description": "The title of the dialog that asks the reader to authenticate again before something only they may do in the settings (changing the password, adding a passkey, linking an account, deleting the account)."
   },
-  "settings.security.confirm.close": {
+  "settings.confirm.close": {
     "defaultMessage": "Close",
     "description": "The name of the close button of the dialog Confirm it's you and of the dialog Enter a code; it cancels. Also the one button of the dialog Confirm it's you when the account has no way to confirm in this browser."
   },
-  "settings.security.confirm.cancel": {
+  "settings.confirm.cancel": {
     "defaultMessage": "Cancel",
     "description": "The button that cancels, in the dialog Confirm it's you, in the dialog Enter a code, and in the confirmations of the Security page (removing a passkey, unlinking an account, signing a browser out)."
   },
-  "settings.security.confirm.password": {
+  "settings.confirm.password": {
     "defaultMessage": "Current password",
     "description": "The label of the password field in the dialog Confirm it's you."
   },
-  "settings.security.confirm.submit": {
+  "settings.confirm.submit": {
     "defaultMessage": "Confirm",
     "description": "The button of the dialog Confirm it's you that sends the password the reader entered."
   },
-  "settings.security.confirm.passkey": {
+  "settings.confirm.passkey": {
     "defaultMessage": "Use a passkey",
     "description": "The button of the dialog Confirm it's you when the reader confirms with a passkey: the browser then asks for one."
   },
-  "settings.security.confirm.provider": {
+  "settings.confirm.provider": {
     "defaultMessage": "Continue with {provider}",
     "description": "The button of the dialog Confirm it's you when the reader confirms by signing in again at another service they linked. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
-  "settings.security.confirm.provider.about": {
+  "settings.confirm.provider.about": {
     "defaultMessage": "To confirm it's you, sign in to {provider} again. You then come back here and repeat what you started.",
-    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.security.confirm.returned). provider is the name of the service; it is not translated."
+    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
   },
-  "settings.security.confirm.other.password": {
+  "settings.confirm.other.password": {
     "defaultMessage": "Use your password instead",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
   },
-  "settings.security.confirm.other.passkey": {
+  "settings.confirm.other.passkey": {
     "defaultMessage": "Use a passkey instead",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to a passkey."
   },
-  "settings.security.confirm.other.provider": {
+  "settings.confirm.other.provider": {
     "defaultMessage": "Continue with {provider} instead",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to signing in again at another service the reader linked. provider is the name of the service; it is not translated."
   },
-  "settings.security.confirm.passkey.failed": {
+  "settings.confirm.passkey.failed": {
     "defaultMessage": "{reason, select, cancelled {The passkey was not used. Try again, or confirm another way.} unsupported {This browser cannot use passkeys. Confirm another way, or try another browser.} other {The passkey could not be checked. Try again, or confirm another way.}}",
     "description": "An alert in the dialog Confirm it's you when the browser gave no passkey. reason says why: cancelled (the reader closed the browser's own dialog, or it timed out), unsupported (the browser has no passkeys), other (anything else)."
   },
-  "settings.security.confirm.none": {
+  "settings.confirm.none": {
     "defaultMessage": "This browser has no way to confirm it's you. Try a browser or device that can use one of your passkeys.",
     "description": "An alert in the dialog Confirm it's you for an account that can confirm with nothing in this browser (it has no password and no linked account, and the browser cannot use its passkeys)."
   },
-  "settings.security.confirm.returned": {
+  "settings.confirm.returned": {
     "defaultMessage": "You confirmed it's you with {provider}. Repeat what you started: this time you are not asked to confirm.",
-    "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service, or settings.security.external.service when the page does not know it."
+    "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.confirm.returned.unknown."
   },
-  "settings.security.failed": {
+  "settings.confirm.returned.unknown": {
+    "defaultMessage": "You confirmed it's you with the other service. Repeat what you started: this time you are not asked to confirm.",
+    "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.failed": {
     "defaultMessage": "This did not finish: the server could not be reached. Check your connection, then try again.",
     "description": "An alert on the Security pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
   }

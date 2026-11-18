@@ -105,7 +105,7 @@ export function Asking({
   return (
     <ConfirmDialog
       title={title}
-      cancel={t("settings.security.confirm.cancel")}
+      cancel={t("settings.confirm.cancel")}
       confirm={confirm}
       busy={busy}
       onCancel={onClose}
@@ -153,8 +153,8 @@ export function CodeDialog({
     <ReauthDialog
       title={t("settings.security.two_factor.code.title")}
       about={about}
-      closeLabel={t("settings.security.confirm.close")}
-      cancel={t("settings.security.confirm.cancel")}
+      closeLabel={t("settings.confirm.close")}
+      cancel={t("settings.confirm.cancel")}
       confirm={confirm}
       busy={busy}
       onCancel={onClose}

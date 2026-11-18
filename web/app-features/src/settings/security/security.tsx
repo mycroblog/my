@@ -309,12 +309,16 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
       },
     );
   };
+  /** The name of the provider the browser came back from with a link made; none for one the server no longer lists. */
+  const linkedAt = returned?.kind === "linked" ? nameOf(returned.provider) : undefined;
   return (
     <>
       <SettingsSection heading={t("settings.security.linked")} about={t("settings.security.linked.about")}>
         {returned?.kind === "linked" && (
           <SaveState state="saved">
-            {t("settings.security.linked.done", { provider: nameOf(returned.provider) })}
+            {linkedAt === undefined
+              ? t("settings.security.linked.done.unknown")
+              : t("settings.security.linked.done", { provider: linkedAt })}
           </SaveState>
         )}
         {/* What a confirmation came to is the confirmation's to say, where its operation is asked from. */}
@@ -385,16 +389,22 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
   );
 }
 
+/** Whether the server kept nothing of which browser signed in. */
+const unknownBrowser = (session: BrowserSession) =>
+  session.user_agent === undefined || session.user_agent.trim() === "";
+
 /** The name of a browser of the list: its browser and operating system, the string it sent, or that none is known. */
 function browserName(session: BrowserSession, t: T): string {
-  if (session.user_agent === undefined || session.user_agent.trim() === "")
-    return t("settings.security.browsers.unknown");
+  if (session.user_agent === undefined || unknownBrowser(session)) return t("settings.security.browsers.unknown");
   const named = browserOf(session.user_agent);
   return named === undefined ? session.user_agent : t("settings.security.browsers.name", named);
 }
 
-/** Signed-in browsers: each with where and when it signed in, and the way to sign it out, or all the others. */
-function Browsers() {
+/**
+ * Signed-in browsers: each with where and when it signed in, and the way to sign it out, or all the others. The
+ * advice under them names changing the password only for an account that can (`changesPassword`).
+ */
+function Browsers({ changesPassword }: { changesPassword: boolean }) {
   const { locale } = useLocale();
   const { t } = stringsIn(locale);
   const { day, hour } = useDates();
@@ -458,11 +468,13 @@ function Browsers() {
         </SettingsList>
         <SettingsNote
           links={[
-            { href: securityPaths.password, label: t("settings.security.browsers.advice.password") },
+            ...(changesPassword
+              ? [{ href: securityPaths.password, label: t("settings.security.browsers.advice.password") }]
+              : []),
             { href: "/settings/apps", label: t("settings.security.browsers.advice.apps") },
           ]}
         >
-          {t("settings.security.browsers.advice")}
+          {t(changesPassword ? "settings.security.browsers.advice" : "settings.security.browsers.advice.no_password")}
         </SettingsNote>
       </SettingsSection>
       <ModalPresence>
@@ -482,7 +494,11 @@ function Browsers() {
           asking !== undefined && (
             <Asking
               key={asking.id}
-              title={t("settings.security.browsers.sign_out.title", { browser: browserName(asking, t) })}
+              title={
+                unknownBrowser(asking)
+                  ? t("settings.security.browsers.sign_out.title.unknown")
+                  : t("settings.security.browsers.sign_out.title", { browser: browserName(asking, t) })
+              }
               confirm={t("settings.security.browsers.sign_out.confirm")}
               run={() => revoke(asking.id)}
               onClose={() => {
@@ -530,7 +546,7 @@ function Sections({ fragment, onFragmentRead, leave }: SettingsAddress) {
       <SignIn limited={limited} returned={returned} leave={leave} />
       <Passkeys limited={limited} />
       <Linked returned={returned} leave={leave} />
-      <Browsers />
+      <Browsers changesPassword={hasPassword && !limited} />
     </>
   );
 }

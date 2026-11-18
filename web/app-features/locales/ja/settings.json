@@ -465,11 +465,11 @@
   },
   "settings.security.password.change.confirm": {
     "defaultMessage": "パスワードを変更するには、本人確認が必要です。",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader changes their password."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader changes their password."
   },
   "settings.security.password.set.confirm": {
     "defaultMessage": "パスワードを設定するには、本人確認が必要です。",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when a reader without a password sets one."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when a reader without a password sets one."
   },
   "settings.security.password.set.done": {
     "defaultMessage": "パスワードを設定し、ほかのブラウザとアプリからログアウトしました。",
@@ -501,7 +501,7 @@
   },
   "settings.security.password.remove.confirm": {
     "defaultMessage": "パスワードを削除するには、本人確認が必要です。",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader removes their password. The password itself is not a way to confirm this."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader removes their password. The password itself is not a way to confirm this."
   },
   "settings.security.password.removed": {
     "defaultMessage": "パスワードを削除し、ほかのブラウザとアプリからログアウトしました。",
@@ -569,7 +569,7 @@
   },
   "settings.security.passkeys.add.confirm": {
     "defaultMessage": "パスキーを追加するには、本人確認が必要です。確認のあと、ブラウザがパスキーの作成を求めます。",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader adds a passkey."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader adds a passkey."
   },
   "settings.security.passkeys.add.failed": {
     "defaultMessage": "{reason, select, cancelled {パスキーを追加できませんでした。ブラウザのダイアログが閉じられたか、時間切れになりました。もう一度試してください。} exists {この端末には、このアカウントのパスキーがすでにあります。そのパスキーを使うか、別の端末でパスキーを追加してください。} unsupported {このブラウザではパスキーを使えません。別のブラウザか端末で試してください。} other {パスキーを追加できませんでした。もう一度試してください。}}",
@@ -613,17 +613,17 @@
   },
   "settings.security.linked.confirm": {
     "defaultMessage": "アカウントを連携するには、本人確認が必要です。確認のあと、ほかのサービスでログインして、ここに戻ります。",
-    "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
   },
   "settings.security.linked.done": {
     "defaultMessage": "{provider} のアカウントを連携しました。このアカウントでログインできます。",
-    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it, or settings.security.external.service when the page does not know it."
+    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.security.linked.done.unknown."
   },
-  "settings.security.external.service": {
-    "defaultMessage": "ほかのサービス",
-    "description": "Stands in for the name of another service (an external login provider) in settings.security.linked.done and settings.security.confirm.returned when the page does not know which service the browser came back from. Lower case in en: it is used inside a sentence."
+  "settings.security.linked.done.unknown": {
+    "defaultMessage": "ほかのサービスのアカウントを連携しました。このアカウントでログインできます。",
+    "description": "As settings.security.linked.done, when the page does not know the name of the service the browser came back from."
   },
-  "settings.security.external.error": {
+  "settings.confirm.external.error": {
     "defaultMessage": "{reason, select, denied {このサーバーでは、ほかのサービスのそのアカウントは使えません。別のアカウントで試すか、管理者に問い合わせてください。} linked_elsewhere {ほかのサービスのそのアカウントは、このサーバーの別のアカウントと連携しています。先にそちらで連携を解除するか、ほかのサービスの別のアカウントを連携してください。} already_linked {そのサービスのアカウントはすでに連携しています。別のアカウントを連携するには、先に連携を解除してください。} mismatch {ほかのサービスでログインしたアカウントは、このアカウントと連携していません。連携したアカウントでもう一度試してください。} unavailable {そのサービスはいま使えません。あとでもう一度試すか、別の方法を使ってください。} rate_limited {試行回数が多すぎます。しばらく待ってから、もう一度試してください。} expired {時間がかかりすぎました。もう一度試してください。} other {ほかのサービスでのログインが完了しませんでした。もう一度試してください。}}",
     "description": "An alert on a page of the settings when the browser comes back from another service (an external login provider) without the link or the confirmation the reader went there for. reason says why: denied (the server's conditions refuse that account), linked_elsewhere (another user of this server links it), already_linked, mismatch (the reader signed in at the service with an account other than the linked one), unavailable (the service is turned off), rate_limited, expired, other (anything else)."
   },
@@ -665,7 +665,11 @@
   },
   "settings.security.browsers.sign_out.title": {
     "defaultMessage": "{browser} をログアウトしますか？",
-    "description": "The question of the confirmation before one browser is signed out. browser is the browser's name as the list shows it (settings.security.browsers.name: Firefox on macOS; or Unknown browser)."
+    "description": "The question of the confirmation before one browser is signed out. browser is the browser's name as the list shows it (settings.security.browsers.name: Firefox on macOS), or the text it sent of itself. A browser the list names Unknown browser gets settings.security.browsers.sign_out.title.unknown."
+  },
+  "settings.security.browsers.sign_out.title.unknown": {
+    "defaultMessage": "この不明なブラウザをログアウトしますか？",
+    "description": "The question of the confirmation before one browser is signed out, in place of settings.security.browsers.sign_out.title, for a browser the list names Unknown browser (settings.security.browsers.unknown)."
   },
   "settings.security.browsers.sign_out.text": {
     "defaultMessage": "そのブラウザでアカウントを使うには、もう一度ログインが必要になります。パスワード、二要素認証、アプリはそのまま残ります。",
@@ -689,7 +693,11 @@
   },
   "settings.security.browsers.advice": {
     "defaultMessage": "心当たりのないログインがあるときは、そのブラウザをログアウトし、パスワードを変更して、アカウントを使えるアプリを確認してください。",
-    "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps."
+    "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize, for an account that can change its password. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps. An account that cannot gets settings.security.browsers.advice.no_password."
+  },
+  "settings.security.browsers.advice.no_password": {
+    "defaultMessage": "心当たりのないログインがあるときは、そのブラウザをログアウトし、アカウントを使えるアプリを確認してください。",
+    "description": "As settings.security.browsers.advice, for an account that has no password, or cannot change it on this server: it does not speak of changing the password, and only the link settings.security.browsers.advice.apps follows it."
   },
   "settings.security.browsers.advice.password": {
     "defaultMessage": "パスワードを変更",
@@ -699,63 +707,67 @@
     "defaultMessage": "アプリを確認",
     "description": "A link after settings.security.browsers.advice that opens the Apps page of the settings, which lists the apps the reader allowed to use their account."
   },
-  "settings.security.confirm.title": {
+  "settings.confirm.title": {
     "defaultMessage": "本人確認",
     "description": "The title of the dialog that asks the reader to authenticate again before something only they may do in the settings (changing the password, adding a passkey, linking an account, deleting the account)."
   },
-  "settings.security.confirm.close": {
+  "settings.confirm.close": {
     "defaultMessage": "閉じる",
     "description": "The name of the close button of the dialog Confirm it's you and of the dialog Enter a code; it cancels. Also the one button of the dialog Confirm it's you when the account has no way to confirm in this browser."
   },
-  "settings.security.confirm.cancel": {
+  "settings.confirm.cancel": {
     "defaultMessage": "キャンセル",
     "description": "The button that cancels, in the dialog Confirm it's you, in the dialog Enter a code, and in the confirmations of the Security page (removing a passkey, unlinking an account, signing a browser out)."
   },
-  "settings.security.confirm.password": {
+  "settings.confirm.password": {
     "defaultMessage": "現在のパスワード",
     "description": "The label of the password field in the dialog Confirm it's you."
   },
-  "settings.security.confirm.submit": {
+  "settings.confirm.submit": {
     "defaultMessage": "確認",
     "description": "The button of the dialog Confirm it's you that sends the password the reader entered."
   },
-  "settings.security.confirm.passkey": {
+  "settings.confirm.passkey": {
     "defaultMessage": "パスキーを使う",
     "description": "The button of the dialog Confirm it's you when the reader confirms with a passkey: the browser then asks for one."
   },
-  "settings.security.confirm.provider": {
+  "settings.confirm.provider": {
     "defaultMessage": "{provider} で続ける",
     "description": "The button of the dialog Confirm it's you when the reader confirms by signing in again at another service they linked. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
-  "settings.security.confirm.provider.about": {
+  "settings.confirm.provider.about": {
     "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻り、始めた操作をもう一度行います。",
-    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.security.confirm.returned). provider is the name of the service; it is not translated."
+    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
   },
-  "settings.security.confirm.other.password": {
+  "settings.confirm.other.password": {
     "defaultMessage": "代わりにパスワードを使う",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
   },
-  "settings.security.confirm.other.passkey": {
+  "settings.confirm.other.passkey": {
     "defaultMessage": "代わりにパスキーを使う",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to a passkey."
   },
-  "settings.security.confirm.other.provider": {
+  "settings.confirm.other.provider": {
     "defaultMessage": "代わりに {provider} で続ける",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to signing in again at another service the reader linked. provider is the name of the service; it is not translated."
   },
-  "settings.security.confirm.passkey.failed": {
+  "settings.confirm.passkey.failed": {
     "defaultMessage": "{reason, select, cancelled {パスキーを使えませんでした。もう一度試すか、別の方法で確認してください。} unsupported {このブラウザではパスキーを使えません。別の方法で確認するか、別のブラウザで試してください。} other {パスキーを確認できませんでした。もう一度試すか、別の方法で確認してください。}}",
     "description": "An alert in the dialog Confirm it's you when the browser gave no passkey. reason says why: cancelled (the reader closed the browser's own dialog, or it timed out), unsupported (the browser has no passkeys), other (anything else)."
   },
-  "settings.security.confirm.none": {
+  "settings.confirm.none": {
     "defaultMessage": "このブラウザには本人確認の手段がありません。パスキーを使えるブラウザか端末で試してください。",
     "description": "An alert in the dialog Confirm it's you for an account that can confirm with nothing in this browser (it has no password and no linked account, and the browser cannot use its passkeys)."
   },
-  "settings.security.confirm.returned": {
+  "settings.confirm.returned": {
     "defaultMessage": "{provider} で本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
-    "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service, or settings.security.external.service when the page does not know it."
+    "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.confirm.returned.unknown."
   },
-  "settings.security.failed": {
+  "settings.confirm.returned.unknown": {
+    "defaultMessage": "ほかのサービスで本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
+    "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.failed": {
     "defaultMessage": "サーバーに接続できなかったため、完了できませんでした。接続を確かめてから、もう一度試してください。",
     "description": "An alert on the Security pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
   }

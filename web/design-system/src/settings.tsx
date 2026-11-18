@@ -709,6 +709,7 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
 const note = tv({
   slots: {
     root: "text-caption text-muted-text [word-break:auto-phrase]",
+    link: "whitespace-nowrap",
     // The values to copy, on the page's surface, in the code's face; a long one breaks anywhere.
     values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
     value: "wrap-anywhere tabular-nums",
@@ -739,7 +740,10 @@ export function SettingsNote({
       {links?.map((link, i) => (
         <Fragment key={link.href}>
           {i === 0 ? actionJoint(children) : actionJoint(link.label)}
-          <TextLink href={link.href}>{link.label}</TextLink>
+          {/* A link's few words hold together: the line wraps before it, never inside it. */}
+          <span className={note().link()}>
+            <TextLink href={link.href}>{link.label}</TextLink>
+          </span>
         </Fragment>
       ))}
     </p>

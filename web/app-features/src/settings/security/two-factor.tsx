@@ -6,7 +6,7 @@
 //   the screen opens (nothing is kept until the code is taken), then the code the app makes from it, and Turn on. A
 //   wrong code says so under its field; a setup that expired is replaced by a new one, and the screen says so.
 // - Turned on, or the recovery codes made again: the recovery codes, shown this once, with Copy and the plain statement
-//   that they are not shown again; I saved them goes back to Security.
+//   that they are not shown again; Finish goes back to Security.
 // - On, it says since when and how many recovery codes are left (and to make new ones where few are), with the way to
 //   make them again; and last, in a section of its own, apart, the way to turn it off. Each asks first for a code of
 //   the app or an unused recovery code, in a dialog.

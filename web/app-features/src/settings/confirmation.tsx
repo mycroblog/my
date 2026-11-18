@@ -70,12 +70,12 @@ export function useProviderReturn({
 
 /** What the server said of a write it refused, in the reader's language; the settings' own words for no answer. */
 export function saidOf(error: unknown, t: T): string {
-  return refusal(error) ?? t("settings.security.failed");
+  return refusal(error) ?? t("settings.confirm.failed");
 }
 
 /** Why a link or a confirmation at a login provider did not happen, as a sentence. */
 export function providerFailure(outcome: Extract<ExternalOutcome, { kind: "error" }>, t: T): string {
-  return t("settings.security.external.error", { reason: outcome.reason });
+  return t("settings.confirm.external.error", { reason: outcome.reason });
 }
 
 /** A way to confirm: the password, a passkey, or a linked account at its provider. */
@@ -136,9 +136,9 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
   const way = ways.find((w) => w.key === chosen) ?? ways[0];
 
   const cancel = {
-    title: t("settings.security.confirm.title"),
-    closeLabel: t("settings.security.confirm.close"),
-    cancel: t("settings.security.confirm.cancel"),
+    title: t("settings.confirm.title"),
+    closeLabel: t("settings.confirm.close"),
+    cancel: t("settings.confirm.cancel"),
     onCancel: onClose,
   };
   // An account that can prove nothing here (its passkeys alone, in a browser without them): the dialog says so.
@@ -147,9 +147,9 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
       <ReauthDialog
         {...cancel}
         about={about}
-        confirm={t("settings.security.confirm.close")}
+        confirm={t("settings.confirm.close")}
         onConfirm={onClose}
-        error={<FormAlert>{t("settings.security.confirm.none")}</FormAlert>}
+        error={<FormAlert>{t("settings.confirm.none")}</FormAlert>}
       />
     );
 
@@ -166,8 +166,7 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
       } catch (error) {
         const reason = error instanceof PasskeyError ? error.reason : undefined;
         if (reason === "aborted") setBusy(false);
-        else
-          refuse(reason === undefined ? saidOf(error, t) : t("settings.security.confirm.passkey.failed", { reason }));
+        else refuse(reason === undefined ? saidOf(error, t) : t("settings.confirm.passkey.failed", { reason }));
         return undefined;
       }
     }
@@ -208,13 +207,13 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
   return (
     <ReauthDialog
       {...cancel}
-      about={provider === undefined ? about : t("settings.security.confirm.provider.about", { provider })}
+      about={provider === undefined ? about : t("settings.confirm.provider.about", { provider })}
       confirm={
         provider !== undefined
-          ? t("settings.security.confirm.provider", { provider })
+          ? t("settings.confirm.provider", { provider })
           : way.key === "passkey"
-            ? t("settings.security.confirm.passkey")
-            : t("settings.security.confirm.submit")
+            ? t("settings.confirm.passkey")
+            : t("settings.confirm.submit")
       }
       onConfirm={confirm}
       busy={busy}
@@ -232,10 +231,10 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
                 }}
               >
                 {"identity" in w
-                  ? t("settings.security.confirm.other.provider", { provider: w.identity.provider_name })
+                  ? t("settings.confirm.other.provider", { provider: w.identity.provider_name })
                   : w.key === "password"
-                    ? t("settings.security.confirm.other.password")
-                    : t("settings.security.confirm.other.passkey")}
+                    ? t("settings.confirm.other.password")
+                    : t("settings.confirm.other.passkey")}
               </TextButton>
             ))}
           </Stack>
@@ -248,7 +247,7 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
           id={fieldId}
           name="password"
           type="password"
-          label={t("settings.security.confirm.password")}
+          label={t("settings.confirm.password")}
           autoComplete="current-password"
           required
           onChange={setTyped}
@@ -292,14 +291,15 @@ export type Confirmed = {
   notice: ReactNode;
 };
 
-/** The name of the provider of `id` among the account's links, or the settings' words for a service not listed. */
-export function useProviderName(): (id: string | undefined) => string {
-  const { t } = stringsIn(useLocale().locale);
+/**
+ * The name of the provider of `id`, as the administrators wrote it, among the server's providers and the account's
+ * links; undefined for one neither lists, of which a screen then speaks in a sentence of its own, with no name.
+ */
+export function useProviderName(): (id: string | undefined) => string | undefined {
   const linked = useLinkedIdentities();
   return (id) =>
     linked?.providers.find((provider) => provider.id === id)?.display_name ??
-    linked?.items.find((identity) => identity.provider_id === id)?.provider_name ??
-    t("settings.security.external.service");
+    linked?.items.find((identity) => identity.provider_id === id)?.provider_name;
 }
 
 /** The confirmation of `operation` for a screen of the settings (see the head of this file). */
@@ -341,12 +341,13 @@ export function useConfirmation({
     );
   };
 
+  const provider = nameOf(own?.provider);
   const notice =
     own?.kind === "error" ? (
       <FormAlert>{providerFailure(own, t)}</FormAlert>
     ) : token !== undefined ? (
       <SaveState state="saved">
-        {t("settings.security.confirm.returned", { provider: nameOf(own?.provider) })}
+        {provider === undefined ? t("settings.confirm.returned.unknown") : t("settings.confirm.returned", { provider })}
       </SaveState>
     ) : null;
 

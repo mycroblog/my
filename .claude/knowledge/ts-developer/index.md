@@ -10,6 +10,7 @@ then the areas your work touches, each `decisions/<area>.md`, and `exemplars.md`
 - `overlays`: modals and layers over the page, how they open and move.
 - `accessibility`: what a screen reader hears, and what loads before the reader asks.
 - `forms`: how a control saves, and the checks of a settings screen.
+- `strings`: what a message of the catalog holds, and how its key is named.
 
 - The OpenAPI spec is the contract with the server: when an issue crosses into it, the spec is fixed first, and you
   build against it as given (ADR-0170 §4).
