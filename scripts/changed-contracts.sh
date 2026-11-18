@@ -7,6 +7,7 @@
 # (go.mod and go.sum select none here).
 #
 #   scripts/changed-contracts.sh FILE
+#   scripts/changed-contracts.sh --all   every contract (the test compares it with the workflows and the tasks)
 #
 # A contract is selected by its adapter and by the contract suite and the test server of pkg/testkit it uses; a change
 # to the tasks that define them (tasks/go.yml), to the workflow that runs them (contract.yml), or to what selects and
@@ -14,11 +15,15 @@
 set -euo pipefail
 
 [ "$#" -eq 1 ] || {
-  echo "usage: scripts/changed-contracts.sh FILE" >&2
+  echo "usage: scripts/changed-contracts.sh FILE | --all" >&2
   exit 2
 }
 
 ALL=(postgres stream mail blob voice search acme)
+if [ "$1" = --all ]; then
+  printf '%s\n' "${ALL[@]}"
+  exit 0
+fi
 declare -A selected=()
 
 while IFS= read -r path; do

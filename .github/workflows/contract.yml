@@ -19,8 +19,11 @@ run-name: Contract (${{ inputs.contract }})
 # `gh workflow run contract.yml --ref <branch> -f contract=postgres`. A contract a runner: their containers do not
 # start in time side by side.
 #
-# To add a contract: a task `go:test-<name>` in tasks/go.yml, its name here (the list above and the choice below), in
-# ALL of scripts/changed-contracts.sh with the paths that select it, and in the matrix of slow-suite.yml.
+# To add a contract: a task `go:test-<name>` in tasks/go.yml, which makes a missing Docker fail the tests; its name
+# here (the list above and the options below), in the matrix of slow-suite.yml's server-contract, and in the list
+# `ALL` of scripts/changed-contracts.sh, with a `case` there of the paths that select it (its adapter, its contract
+# suite, its test server). scripts/changed-contracts-test.sh fails while the four lists differ. ci.yml needs no
+# change: its server-contract runs whatever contracts that script prints for a merge group.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context.
 

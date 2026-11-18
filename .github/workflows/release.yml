@@ -274,8 +274,7 @@ jobs:
           retention-days: 7
 
   # Writes the prose of the notes (scripts/release-notes.sh prose). Claude's API is reached by Workload Identity
-  # Federation (ADR-0079) in the environment `release-notes`, as the L4 job of nightly.yml does in its own: only here
-  # and in that job. Only `main` deploys to the environment, so a trial on a branch keeps the facts alone. The job reads
+  # Federation (ADR-0079) in the environment `release-notes`: only here. Only `main` deploys to the environment, so a trial on a branch keeps the facts alone. The job reads
   # PR and issue text, which is untrusted input, with no permission to write: the model gets no tool, and the output is
   # an artifact that a program checked and that the next job puts in a draft for the decider to read.
   #

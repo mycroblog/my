@@ -13,9 +13,10 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 # The jobs, each named `<subject>-<kind>` as in ci.yml (ADR-0079 §11); a job with the name of a job of ci.yml checks
 # the same thing, on everything:
 #
-#   federation-live                          this server with Mastodon, GoToSocial, Misskey, Akkoma, and a relay
+#   federation-live                          this server with Mastodon, GoToSocial, Misskey, Akkoma, and Bonfire Social
 #   server-contract                          every contract of the adapters on its real service (contract.yml)
 #   server-lint, agentkit-lint, mykit-lint   golangci-lint on every module, where a pull request lints after its change
+#                                            (the lint step of ci.yml's server-test, agentkit-test, and mykit-test)
 #   server-fakes-test                        go vet and the tests of the test build (the build tag e2e_fakes)
 #   deps-license                             the licenses of every dependency, where a pull request checks them when a
 #                                            manifest changes
@@ -28,14 +29,24 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #   code-scan                                CodeQL (codeql.yml)
 #   result                                   the one result of the suite, for the callers
 #
+# Two subjects name the image: `docker` is the Dockerfile and the Compose files, built and started as a deployment
+# starts them; `image` is the built image as what a release ships, upgraded to and restored from. The kinds are those
+# of ci.yml, and three of this suite: `live`, against other servers; `scan`, which walks everything for one class of
+# defect; `upgrade` and `restore`, a release's data carried over.
+#
 # `scope` picks the jobs: `all`; `release`, only the jobs that check the commit's images against a release
 # (image-upgrade, image-restore), for a commit whose suite already passed; `none`, which runs nothing, for a
 # pre-release released without the suite in an emergency (`skip_slow_suite`). Every job checks out the commit of the
 # run (github.sha), so a caller tests the commit it was started on.
 #
-# To add a check: a job here with `if: inputs.scope == 'all'` (or `!= 'none'` when a release must run it on its own
-# commit's images), its name in `needs` of `result`, and a line in the list above. Its steps are named after the tasks
-# they run, one after another: what uses every core does not share a runner (ADR-0079 §11).
+# To add a check: a step in the job with its subject and kind, or, when none fits, a job with
+# `if: inputs.scope == 'all'`, its name in `needs` of `result`, and a line in the list above;
+# scripts/ci-jobs-test.sh fails when `result` does not need a job. A job has `!= 'none'` instead only when its result
+# depends on the release being made and not on the commit alone (the version to upgrade from; the image a release
+# builds from the commit), so that a release runs it even when the suite already passed on the commit (ADR-0079 §8).
+# Its steps are named after the tasks they run, one after another: what uses every core does not share a runner
+# (ADR-0079 §11). A job here gates the releases and the nightly image, and a failure of it opens the Nightly's issue:
+# a check that only informs does not belong here.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
 # a nightly run on the same commit must not cancel each other. The callers set their own groups.

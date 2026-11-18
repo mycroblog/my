@@ -95,18 +95,17 @@ jobs:
           version: v${{ steps.go.outputs.golangci-lint }}
           install-only: true
           skip-cache: true
-      # As server-static, api-static and schema-static, agentkit-static and agentkit-test, mykit-static and mykit-test
-      # build.
+      # As server-static, api-test and schema-static, agentkit-test, and mykit-test build.
       - name: Build the packages and the Go tools
         run: scripts/task.sh go:build go:tools agentkit:warm mykit:warm
-      # As server-static, agentkit-static, and mykit-static vet.
+      # As server-static, agentkit-test, and mykit-test vet.
       - name: Run go vet
         run: scripts/task.sh go:vet agentkit:vet mykit:vet mykit:integration-vet mykit:mybot-vet mykit:mybot-integration-vet
       # As web-e2e-build builds the server of the test build; the client it embeds is built there.
       - name: Build the test build of the server
         run: go build -tags e2e_fakes ./...
-      # As server-lint, agentkit-lint, and mykit-lint lint: the analysis of each package, which a pull request reads
-      # for the packages its change does not reach.
+      # As server-test, agentkit-test, and mykit-test lint on a pull request: the analysis of each package, which a
+      # pull request reads for the packages its change does not reach.
       - name: Run golangci-lint for its cache
         run: |
           golangci-lint run --issues-exit-code=0 ./...

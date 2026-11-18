@@ -16,6 +16,9 @@
 #         request has: its base and its labels.
 #   full  the merge queue, and a pull request labelled `allow:full-ci` (--full). What compares files across the tree,
 #         compiles, or runs tests: two pull requests can pass it apart and fail it together (ADR-0079 §1).
+#   both  a pull request and the merge queue: the lint and the tests of a Go module (ADR-0079 §3). A pull request
+#         runs them so that a change that fails does not enter the queue, and the queue runs the tests again on the
+#         merged tree; the job itself skips the lint there.
 #
 # Within its stage a job runs when the change can change its result:
 #
@@ -108,6 +111,7 @@ job() {
   case "$stage" in
     pr) [ "$event" = pull_request ] || return 0 ;;
     full) [ "$full" = true ] || return 0 ;;
+    both) ;;
     *) echo "ci-jobs.sh: $name has the unknown stage $stage" >&2 && exit 1 ;;
   esac
   if [ "$everything" = 1 ] || "$@"; then echo "$name"; fi
@@ -172,43 +176,39 @@ job schema-test pr changed scripts/db-lint.sh scripts/db-lint-test.sh 'schema/te
 job shell-lint pr ctx shell
 # time.Sleep in a Go test of any module, against the baseline, which may only shrink from the pull request's base.
 job go-tests-lint pr changed '*_test.go' scripts/go-test-sleep.sh scripts/go-test-sleep.baseline tasks/go.yml
-# golangci-lint, on pull requests alone (ADR-0079 §3), a module each.
-job server-lint pr ctx go
-job agentkit-lint pr ctx agentkit
-job mykit-lint pr ctx mykit
 # The image (ADR-0079 §4): what builds it, what it starts from, and what the smoke test runs.
 job docker-static pr changed Dockerfile .tool-versions tasks/docker.yml
 job docker-smoke pr changed Dockerfile .dockerignore 'deploy/docker/*' 'web/brand/*' scripts/docker-smoke.sh \
   scripts/web-sign-in.sh scripts/check-release-build.sh tasks/docker.yml
 job monitoring-test pr changed 'deploy/monitoring/*' tasks/docker.yml
 
+# --- both: a Go module's lint, static checks, and tests ------------------------------------------------------------
+
+job server-test both ctx go
+# Its tests read the rules of the documents (docs/lint.yaml) too.
+job agentkit-test both either ctx agentkit -- changed docs/lint.yaml
+job mykit-test both ctx mykit
+
 # --- full: what the merged tree decides -----------------------------------------------------------------------------
 
 # go:mod-check also reads go.work and the go line of every module it lists, which are outside the go context.
 job server-static full either ctx go -- changed go.work '*/go.mod'
-job server-test full ctx go
 # The contracts of the adapters the change touches, on the real service (scripts/changed-contracts.sh).
 job server-contract full contracts_selected
 # The schema applies and leaves no diff, applies on top of the base, and the sqlc code is current: the schema, the
 # queries, and the code that applies the schema.
 job schema-static full either ctx schema -- changed 'queries/*' sqlc.yaml scripts/sqlc.sh scripts/schema-files.sh \
   'internal/adapter/db/*' 'internal/adapter/queue/db/*' 'internal/adapter/kv/db/*' 'cmd/my/schema*' tasks/go.yml
-# The spec and the code generated from it; api:live-calls also reads the scenarios and scripts that call the API.
-job api-static full either ctx api -- changed 'test/federation-live/*' scripts/upgrade-test.sh scripts/restore-drill.sh \
-  scripts/docker-smoke.sh
-job api-test full either ctx api -- changed 'tools/protodoc/*'
+# The spec and the code generated from it; api:live-calls also reads the scenarios and scripts that call the API, and
+# api:plugin-docs-test tests the generator of the plugin protocol's reference.
+job api-test full either ctx api -- changed 'test/federation-live/*' scripts/upgrade-test.sh scripts/restore-drill.sh \
+  scripts/docker-smoke.sh 'tools/protodoc/*'
 # What the documents say of the tree: any change can make a link, a context map, or an inventory wrong.
 job docs-static full always
 # That every check of `scripts/task.sh check` runs in a step: the tasks and the workflows.
 job ci-static full changed Taskfile.yml 'tasks/*' '.github/workflows/*' scripts/ci-coverage.sh scripts/task.sh
-job agentkit-static full ctx agentkit
-# Its tests read the rules of the documents (docs/lint.yaml) too.
-job agentkit-test full either ctx agentkit -- changed docs/lint.yaml
-job mykit-static full ctx mykit
-job mykit-test full ctx mykit
-job i18n-static full ctx i18n
+job mykit-ts-test full ctx mykit
 job i18n-test full ctx i18n
-job site-static full ctx site
 job site-test full ctx site
 job site-build full ctx site
 job tofu-static full ctx tofu

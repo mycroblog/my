@@ -52,6 +52,27 @@ expect "a dependency update" "" go.mod go.sum
 expect "two adapters" "mail blob" internal/adapter/blob/s3/s3.go internal/adapter/mail/smtp/smtp.go
 expect "an in-memory fake beside the adapters" "" internal/adapter/blob/fs/fs.go
 
+# A contract is named in four places, which must agree: ALL of the script, the options of contract.yml, the matrix of
+# the slow suite, and a task go:test-<name> for each.
+all="$("$script" --all | sort | tr '\n' ' ')"
+names() { tr -d ' ' | tr ',' '\n' | sort | tr '\n' ' '; }
+options="$(sed -n -E 's/^ +options: \[(.*)\]$/\1/p' "$root/.github/workflows/contract.yml" | names)"
+matrix="$(sed -n '/^  server-contract:/,/^  [a-z]/p' "$root/.github/workflows/slow-suite.yml" | sed -n -E 's/^ +contract: \[(.*)\]$/\1/p' | names)"
+if [ "$options" != "$all" ]; then
+  echo "FAIL: the options of contract.yml are '$options', and ALL of scripts/changed-contracts.sh is '$all': a contract is in both" >&2
+  failed=1
+fi
+if [ "$matrix" != "$all" ]; then
+  echo "FAIL: the matrix of slow-suite.yml's server-contract is '$matrix', and ALL of scripts/changed-contracts.sh is '$all': a contract is in both" >&2
+  failed=1
+fi
+for contract in $all; do
+  if ! grep -q "^  test-$contract:\$" "$root/tasks/go.yml"; then
+    echo "FAIL: tasks/go.yml has no task test-$contract, which contract.yml runs for the contract $contract" >&2
+    failed=1
+  fi
+done
+
 if [ "$failed" -ne 0 ]; then
   exit 1
 fi

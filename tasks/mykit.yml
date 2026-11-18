@@ -13,7 +13,7 @@
 # internal/platform/platformtest runs in the test process (ADR-0093 §8). Those of pkg/mybot (mybot-integration-vet,
 # mybot-integration-test) live in pkg/mybot/integration, of the same shape: an echo bot against that server, and the
 # fake server of pkg/mybot/mybottest against the spec (ADR-0093 §18). They are part of this check, so they run in
-# `check:changed` and in the merge queue (the jobs mykit-static and mykit-test of ci.yml) whenever the mykit context is selected:
+# `check:changed` and in the merge queue (the job mykit-test of ci.yml, on pull requests too) whenever the mykit context is selected:
 # a change of the root go.mod or go.sum (a bump by hand that leaves the integration modules untidy, which mod-check and
 # mybot-mod-check catch; Dependabot's bumps tidy them through go.work, ADR-0081), of pkg/mykit, of the spec (api/), of internal/interface/clientapi/ (both through the api context), or of
 # internal/platform/platformtest/. They take seconds after the server's packages are built, so they do not belong
@@ -29,7 +29,7 @@ tasks:
   check:
     desc: Check pkg/mykit (Go - tidy, vet, lint, tests, dependency licenses, no dependency on the server module, the integration tests against an in-process server; TS - tsc, Oxlint, knip, bun test, the build, dependency licenses) and the same Go and TS checks of pkg/mybot, and the TS formatting (web:fmt-check)
     # The license scope check (MIT in pkg/mykit and pkg/mybot) belongs to the api context, which a change of pkg/mykit alone does not
-    # select. mybot-ts-runtimes is left out: it needs Node.js 22 and Deno, which the mykit-test job of CI installs for it.
+    # select. mybot-ts-runtimes is left out: it needs Node.js 22 and Deno, which the mykit-ts-test job of CI installs for it.
     # No build of the Go modules: vet and the tests compile every package. mybot-ts-build builds mykit's TypeScript too.
     deps: [mod-check, server-dep-check, vet, lint, test, licenses, integration-vet, integration-test, ts-typecheck, ts-lint, ts-knip, ts-test, ts-licenses, mybot-mod-check, mybot-server-dep-check, mybot-vet, mybot-lint, mybot-test, mybot-licenses, mybot-integration-vet, mybot-integration-test, mybot-ts-typecheck, mybot-ts-lint, mybot-ts-knip, mybot-ts-test, mybot-ts-build, mybot-ts-licenses, ":api:license-scope", ":web:fmt-check"]
 
@@ -175,7 +175,7 @@ tasks:
       - bun src/licenses.ts {{.MYKIT_ALLOWED_LICENSES}} --deps-of ../../pkg/mybot/ts
 
   mybot-ts-runtimes:
-    desc: Load the build of @mycroblog/mybot on Node.js and Deno and run a bot on each (pkg/mybot/ts/test/runtimes.mjs); needs node and deno on PATH, which the mykit-test job of CI installs (Node.js 22, the oldest supported)
+    desc: Load the build of @mycroblog/mybot on Node.js and Deno and run a bot on each (pkg/mybot/ts/test/runtimes.mjs); needs node and deno on PATH, which the mykit-ts-test job of CI installs (Node.js 22, the oldest supported)
     deps: [mybot-ts-build]
     dir: pkg/mybot/ts
     cmds:

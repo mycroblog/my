@@ -168,9 +168,9 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## CI
 
-A pull request runs only what its own files decide (formatting, licenses, lint of the changed modules); the merge
-queue runs the compile, type, and test checks once, on the merged state, for the contexts the group changes, and is
-the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
+A pull request runs what its own files decide (formatting, licenses), and for a Go module it changes the lint and
+then the tests; the merge queue runs the compile, type, and test checks on the merged state, for the contexts the
+group changes, and is the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
 before a release. A job is named `<subject>-<kind>` (`server-test`, `web-static`, `docs-lint`), and each step after the
 task it runs, so a failed step is reproduced with `scripts/task.sh <step name>`; `scripts/agentkit.sh pr jobs <pr>`
 prints where the time went. The workflows in `.github/workflows/` say in their own comments what each job guarantees

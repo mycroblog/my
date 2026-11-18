@@ -2,7 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Tests scripts/ci-jobs.sh: that its rules and the jobs of .github/workflows/ci.yml name the same jobs, that `gate`
-# needs every one of them, and which jobs made-up lists of changed paths run. It reads no git history and changes no
+# needs every one of them (and the slow suite's `result` every job of the suite), and which jobs made-up lists of
+# changed paths run. It reads no git history and changes no
 # file.
 #
 #   scripts/ci-jobs-test.sh
@@ -44,6 +45,15 @@ while IFS= read -r name; do
   fi
 done < "$tmp/workflow"
 
+# The slow suite's `result` needs every job of the suite, or a failed job would not fail a release or the Nightly.
+suite="$root/.github/workflows/slow-suite.yml"
+sed -n '/^jobs:/,$p' "$suite" | sed -n -E 's/^  ([a-z][a-z0-9-]*):.*/\1/p' | grep -vx result | sort > "$tmp/suite"
+sed -n '/^  result:/,$p' "$suite" | sed -n -E 's/^    needs: \[(.*)\]$/\1/p' | tr -d ' ' | tr ',' '\n' | sort > "$tmp/suite-needs"
+if ! diff "$tmp/suite" "$tmp/suite-needs" > "$tmp/diff"; then
+  fail "the jobs of slow-suite.yml (<) and \`needs\` of its result (>) differ: result must need every job"
+  cat "$tmp/diff" >&2
+fi
+
 # jobs EVENT PATH... prints the jobs of the event (pr, a pull request; full, a merge group; both, a pull request
 # labelled allow:full-ci) for the paths, on one line.
 jobs() {
@@ -81,30 +91,33 @@ lacks() {
 # A pull request runs what its files decide; the merge queue runs the rest and none of it again.
 expect "a document, on a pull request" pr "source-license docs-lint" CONTRIBUTING.md
 expect "a document, in the merge queue" full "docs-static" CONTRIBUTING.md
-expect "a published document, in the merge queue" full "docs-static site-static site-test site-build" docs/guide/posting.md
+expect "a published document, in the merge queue" full "docs-static site-test site-build" docs/guide/posting.md
 expect "a decision, on a pull request" pr "source-license docs-lint docs-change" docs/adr/0079-ci-single-gate-merge-queue.md
 expect "a context map" pr "source-license docs-change" internal/app/content/context-map.yaml
-expect "the server's code, on a pull request" pr "go-format source-license server-lint" internal/app/content/text.go
-expect "the server's code, in the merge queue" full "server-static server-test docs-static web-e2e-build web-e2e" internal/app/content/text.go
+expect "the server's code, on a pull request" pr "go-format source-license server-test" internal/app/content/text.go
+expect "the server's code, in the merge queue" full "server-test server-static docs-static web-e2e-build web-e2e" internal/app/content/text.go
 expect "the server's code, on a pull request labelled allow:full-ci" both \
-  "go-format source-license server-lint server-static server-test docs-static web-e2e-build web-e2e" internal/app/content/text.go
+  "go-format source-license server-test server-static docs-static web-e2e-build web-e2e" internal/app/content/text.go
 expect "a web package, on a pull request" pr "ts-format source-license" web/app/src/main.tsx
 expect "a script, on a pull request" pr "source-license shell-lint" scripts/adr-new.sh
 
 # A job runs only for the paths its checks read.
 has "an adapter selects its contract" full server-contract internal/adapter/blob/s3/s3.go
 lacks "the application selects no contract" full server-contract internal/app/content/text.go
-lacks "the server's code runs no check of the spec" full api-static internal/app/content/text.go
+lacks "the server's code runs no check of the spec" full api-test internal/app/content/text.go
 lacks "the server's code runs no check of the schema" full schema-static internal/app/content/text.go
 has "the schema" full schema-static schema/09-instance/postgres.sql
 has "a query" full schema-static queries/postgres/hook/hook.sql
 has "the code that applies the schema" full schema-static internal/adapter/db/postgres/schema_apply.go
-has "the spec" full api-static api/spec/openapi.yaml
-has "a script whose calls of the API api:live-calls reads" full api-static scripts/restore-drill.sh
+has "the spec" full api-test api/spec/openapi.yaml
+has "a script whose calls of the API api:live-calls reads" full api-test scripts/restore-drill.sh
 lacks "the server's code runs no check of agentkit" full agentkit-test internal/app/content/text.go
 has "agentkit" full agentkit-test tools/agentkit/internal/ops/pr.go
-has "agentkit, on a pull request" pr agentkit-lint tools/agentkit/internal/ops/pr.go
-has "the server's go.sum, which bounds agentkit's dependencies" full agentkit-static go.sum
+has "agentkit, on a pull request" pr agentkit-test tools/agentkit/internal/ops/pr.go
+has "the server's go.sum, which bounds agentkit's dependencies" full agentkit-test go.sum
+has "the client libraries' Go modules, on a pull request" pr mykit-test pkg/mykit/client.go
+lacks "the npm packages of the client libraries wait for the merge queue" pr mykit-ts-test pkg/mykit/ts/src/client.ts
+has "the npm packages of the client libraries" full mykit-ts-test pkg/mykit/ts/src/client.ts
 has "a dependency, on a pull request" pr deps-license bun.lock
 has "a Go dependency, on a pull request" pr deps-license go.sum
 lacks "the server's code changes no dependency" pr deps-license internal/app/content/text.go
