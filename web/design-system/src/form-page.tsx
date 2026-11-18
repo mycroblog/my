@@ -12,9 +12,10 @@
 // reader is when they send it again; a field's sits under the field. Like the app's frame (shell.tsx), it reads the
 // viewport, and it carries the page's surface onto <html>.
 
-import type { ComponentProps, ReactElement, ReactNode, Ref } from "react";
+import { use, type ComponentProps, type ReactElement, type ReactNode, type Ref } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Avatar } from "./avatar";
+import { describedBy as idsOf, FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
 import { Box, Column, Row, Stack, type Gap } from "./layout";
 
@@ -227,6 +228,8 @@ const form = tv({
     input: [
       "box-border rounded-control border-0 bg-surface-raised px-control-timeline-inline font-sans",
       "text-body text-text outline-hidden focus-visible:shadow-focus read-only:text-muted-text",
+      // On a raised surface (a section of a settings screen), a field takes the page's surface.
+      "[[data-surface-raised]_&]:bg-surface",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
@@ -380,7 +383,8 @@ export type TextFieldProps = {
 
 /**
  * A labelled field on a raised surface: its label and hint above it, its error right under it, both read with it
- * (aria-describedby). It posts under `name`.
+ * (aria-describedby), as is what holds it says of it (a dialog's refusal of what the field holds). It posts under
+ * `name`.
  */
 export function TextField({
   id,
@@ -404,8 +408,8 @@ export function TextField({
   onChange,
 }: TextFieldProps) {
   const s = form({ multiline });
-  const described =
-    [describedBy, hint && `${id}-hint`, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
+  const holder = use(FieldContext);
+  const described = idsOf(describedBy, hint && `${id}-hint`, error && `${id}-error`, holder.describedBy);
   const common = {
     id,
     name,

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The switch, in the reader's language (the toolbar's locale; ja, else en): off, on, with a line that describes it,
-// disabled with the reason, and a label long enough to wrap at 320 px. The words are placeholders of the notification
-// settings.
+// disabled with the reason, and a label long enough to wrap at 320 px, each with nothing to say of its saving (its
+// save states are among the settings' parts). The words are placeholders of the notification settings.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -43,12 +43,12 @@ function All() {
   const w = useWords();
   return (
     <Column>
-      <Switch label={w.favourites} />
-      <Switch label={w.boosts} defaultSelected />
-      <Switch label={w.mentions} description={w.mentionsAbout} defaultSelected />
-      <Switch label={w.email} />
-      <Switch label={w.push} isDisabled reason={w.pushOff} />
-      <Switch label={w.boosts} isDisabled defaultSelected />
+      <Switch label={w.favourites} save={null} />
+      <Switch label={w.boosts} defaultSelected save={null} />
+      <Switch label={w.mentions} description={w.mentionsAbout} defaultSelected save={null} />
+      <Switch label={w.email} save={null} />
+      <Switch label={w.push} isDisabled reason={w.pushOff} save={null} />
+      <Switch label={w.boosts} isDisabled defaultSelected save={null} />
     </Column>
   );
 }

@@ -1,0 +1,6 @@
+{
+  "dialog.close": {
+    "defaultMessage": "閉じる",
+    "description": "The button at the end of the head of a confirmation (a small dialog that asks before something that cannot be undone), after its title, that closes it without confirming, as its Cancel does."
+  }
+}

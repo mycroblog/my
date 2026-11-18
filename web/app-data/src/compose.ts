@@ -25,6 +25,7 @@ import {
   type ServerDraft,
 } from "./drafts";
 import { editStatus, type EditStatus } from "./own-posts";
+import { usePreferences } from "./preferences";
 import { useAppData } from "./provider";
 import { cachedStatus, shadowStatus, useShadow } from "./shadow";
 import { findCachedCopy, type Status } from "./statuses";
@@ -106,10 +107,13 @@ export const defaultComposeSettings: ComposeSettings = {
   },
 };
 
-/** The settings a new post starts from: the reader's preferences and the instance's limits, the defaults until read. */
+/**
+ * The settings a new post starts from: the reader's preferences as they show (preferences.ts) and the instance's
+ * limits, the defaults until read.
+ */
 export function useComposeSettings(): ComposeSettings {
   const { queries } = useAppData();
-  const preferences = useQuery(queries.queryOptions("get", "/preferences")).data;
+  const preferences = usePreferences();
   const instance = useQuery(queries.queryOptions("get", "/instance")).data;
   const viewer = useQuery(queries.queryOptions("get", "/accounts/verify_credentials")).data;
   const policy = preferences?.default_interaction_policy;

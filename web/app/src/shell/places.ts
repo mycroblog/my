@@ -37,12 +37,22 @@ const directMessages: Place = {
   count: "direct",
 };
 
+/** The settings: their menu, whose entries open screens under it. */
+const settings: Place = { href: "/settings", icon: "settings", label: "app.settings" };
+
 /** The reader's own places, after the tab bar's in the rail and the sidebar, and in the menu's sheet on a phone. */
 const ownPlaces: readonly Place[] = [
   { href: "/profile", icon: "profile", label: "app.profile" },
   { href: "/bookmarks", icon: "bookmark", label: "app.bookmarks" },
-  { href: "/settings", icon: "settings", label: "app.settings" },
+  settings,
 ];
+
+/**
+ * Whether `place` is where the reader at `pathname` is: at its own address, or, for the settings, at a screen under
+ * their menu, which the navigation marks as the settings too.
+ */
+export const isPlaceAt = (place: Place, pathname: string): boolean =>
+  place.href === pathname || (place === settings && pathname.startsWith(`${settings.href}/`));
 
 /**
  * The reader's lists, which the rail and the sidebar leave to the menu (ADR-0110 §11 names their places): a group of

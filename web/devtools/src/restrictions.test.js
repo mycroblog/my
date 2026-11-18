@@ -4,8 +4,11 @@
 // one that a fixture line expects with an `error: <Component> prop` comment (design-system-props), an `error: layers
 // @my/<x>` comment (layer-imports), an `error: platform <what>` comment (platform-globals), an `error: e2e <what>`
 // comment (e2e-queries), an `error: e2e-flaky <what>` comment (e2e-flaky), an `error: color <colour>` comment
-// (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), or an `error:
-// viewport <what>` comment (viewport-breakpoints), and each expected one must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
+// (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), an `error:
+// viewport <what>` comment (viewport-breakpoints), an `error: switch <what>` comment (switch-in-form), an `error:
+// section <element>` comment (settings-sections), an `error: heading <element>` comment (heading-size), an `error:
+// count <element>` comment (settings-count), or an `error: date <what>` comment (zone-dates), and each expected one
+// must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
 // other lint run fails on them; this lints copies of them beside them, under the same overrides, and removes the
 // copies. It also holds the lists of the rules to the code: the files layout-parts.js names exist, and the
 // breakpoints are the tokens'.
@@ -48,6 +51,11 @@ const findings = {
   "restrict(token-colors)": (/** @type {string} */ message) => `color ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(layout-parts)": (/** @type {string} */ message) => styleFinding("layout", message),
   "restrict(viewport-breakpoints)": (/** @type {string} */ message) => styleFinding("viewport", message),
+  "restrict(switch-in-form)": (/** @type {string} */ message) => `switch ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(settings-sections)": (/** @type {string} */ message) => `section ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(heading-size)": (/** @type {string} */ message) => `heading ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(settings-count)": (/** @type {string} */ message) => `count ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(zone-dates)": (/** @type {string} */ message) => `date ${/^`([^`]+)`/.exec(message)?.[1]}`,
 };
 
 /** A finding of a rule of the styles: what a declaration wrote, or a name of layout-parts.js. */
@@ -93,7 +101,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport) \S+)/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date) \S+)/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -114,13 +122,15 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/design-system/fixtures/colors.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/layout.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/viewport.tsx");
+  expect(fixtures).toContain("web/design-system/fixtures/dates.tsx");
+  expect(fixtures).toContain("web/devtools/fixtures/restrictions/settings.tsx");
   const want = await expected();
   expect(want.some((line) => line.includes(" e2e-flaky "))).toBe(true);
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
   expect(want.some((line) => line.includes(" layers @my/"))).toBe(true);
   expect(want.some((line) => line.includes(" platform "))).toBe(true);
   expect(want.some((line) => line.includes(" e2e "))).toBe(true);
-  for (const kind of ["color", "layout", "layout-part", "viewport"])
+  for (const kind of ["color", "layout", "layout-part", "viewport", "switch", "section", "heading", "count", "date"])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);
 }, 60_000);

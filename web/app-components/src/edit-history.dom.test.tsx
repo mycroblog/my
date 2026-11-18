@@ -5,6 +5,7 @@
 // marked and read is the design system's (history.dom.test.tsx), and the panel's focus is too (dialog.dom.test.tsx).
 
 import { expect, test } from "bun:test";
+import { TimeZoneProvider } from "@my/design-system";
 import { cleanup, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { EditHistory, type PostEdit } from "./edit-history";
@@ -67,6 +68,34 @@ test("every version, newest first, each with its label and its time", () => {
   for (const [i, label] of ["Current", "Earlier edit", "Original"].entries()) {
     const item = versions[i];
     expect(item !== undefined && within(item).queryAllByText(label)).toHaveLength(1);
+  }
+});
+
+test("each version's time reads on the clock of the reader's zone, the device's when none is chosen", () => {
+  const device = process.env.TZ;
+  process.env.TZ = "Asia/Tokyo";
+  try {
+    /** What the versions' times read as for a reader in `timeZone`, newest first. */
+    const timesIn = (timeZone: string | undefined) => {
+      cleanup();
+      inLocale(
+        <TimeZoneProvider timeZone={timeZone}>
+          <EditHistory layer={false} edits={edits} onClose={() => undefined} />
+        </TimeZoneProvider>,
+      );
+      return screen.getAllByRole("time").map((time) => time.textContent.replace(/\s/g, " "));
+    };
+
+    // 05:00 UTC on Nov 14 is midnight in New York, and the versions before it are of the day before there.
+    expect(timesIn("America/New_York")).toEqual([
+      "Nov 14, 2026, 12:00 AM",
+      "Nov 13, 2026, 11:00 PM",
+      "Nov 13, 2026, 10:00 PM",
+    ]);
+    expect(timesIn(undefined)).toEqual(["Nov 14, 2026, 2:00 PM", "Nov 14, 2026, 1:00 PM", "Nov 14, 2026, 12:00 PM"]);
+  } finally {
+    if (device === undefined) delete process.env.TZ;
+    else process.env.TZ = device;
   }
 });
 

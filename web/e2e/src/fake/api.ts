@@ -15,22 +15,24 @@
 // muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
 // conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
 // hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
-// published, the reader's articles posted and edited and the images they upload, their profile, and their personal
-// settings of settings.ts) are kept in memory; a post's edit
-// history holds the scenario's versions of it, then the reader's edits. An article's body comes only with the status
-// read alone, as the server's does, and its preview renders as publishing would, unless the options make it fail. A
-// list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list
-// read to its end ends; a later page comes late only with `lateMs`. With `failFirst` the home timeline's first page
-// fails during the first second, and its retry succeeds late. What the shell reads (the instance, the reader's rights
-// and preferences, the announcements, the voice rooms, the events) answers in the state the options give the server:
-// its timelines, one person's, its closure, its maintenance, down, or newer than the app. The voice rooms are the
+// published, the reader's articles posted and edited, the images they upload, their preferences, their profile, and
+// their personal settings of settings.ts) are kept in memory; a post's edit history holds the scenario's versions of
+// it, then the reader's edits. An article's body comes only with the status read alone, as the server's does, and its
+// preview renders as publishing would, unless the options make it fail. A list pages as the server's do: `limit` items
+// a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later page comes late
+// only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second, and its retry
+// succeeds late. What the shell reads (the instance, the reader's rights and preferences, the announcements, the voice
+// rooms, the events) answers in the state the options give the server: its timelines, one person's, its closure, its
+// maintenance, down, or newer than the app (the preferences, as `preferences` starts them). The voice rooms are the
 // fake's own, since a room lives only while people are in it and the seed opens none. A post is translated by the
 // provider `translation` names, which answers or refuses as the options say. With `approvals`, posts of the fake's own
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
-// `newNotification` make one. A test scripts an operation with `script` (script.ts).
+// `newNotification` make one. A test scripts an operation with `script` (script.ts). The token revocation the app
+// signs out through (POST /oauth/revoke) is no operation of the client API: the fake answers it itself, keeps it
+// (`revocations`), or fails it (`revocation`).
 
 import type { StreamEvent } from "@mycroblog/mykit";
 import { drawingBlurhash, drawingURL } from "../drawing";
@@ -329,6 +331,17 @@ export type FakeOptions = {
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
   /**
+   * The reader's preferences at the start, where they are not the server's defaults for a new account (the language
+   * and the time zone follow the browser, new posts go into the timelines by themselves, large link cards): the ones
+   * named here, as GET /preferences answers them. The reader's changes (PATCH /preferences) are kept.
+   */
+  preferences?: Partial<Schema<"Preferences">>;
+  /**
+   * The reader's preferences are not read (`read`: GET /preferences fails, a 500) or not saved (`save`: PATCH
+   * /preferences fails, a 500, and changes nothing).
+   */
+  preferencesFail?: "read" | "save";
+  /**
    * In place of the seed's notifications, one of each kind of a group the server sends: from people (`people`), the
    * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
    */
@@ -358,6 +371,11 @@ export type FakeOptions = {
    * a server that processes it meanwhile; ready at once by default.
    */
   uploads?: "processing";
+  /**
+   * The token revocation, which the app signs out through (POST /oauth/revoke, no operation of the client API), fails
+   * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
+   */
+  revocation?: "fails";
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -459,6 +477,11 @@ export type FakeApi = {
   send: (event: FakeStreamEvent) => void;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
+  /**
+   * The token revocations the server took (POST /oauth/revoke), each as the form it was sent with: the client
+   * (`client_id`) and the token it names. One it took ended the reader's session.
+   */
+  readonly revocations: readonly { readonly clientId: string; readonly token: string }[];
   /**
    * Adds `count` posts to the home timeline, sends them on the stream as the reader's keyword filters leave them, and
    * returns them, newest first.
@@ -1804,8 +1827,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       permissions: permissionsOf(username),
     });
   };
-  /** The reader's preferences, the server's defaults for a person of their locale. */
-  const preferences: Schema<"Preferences"> = {
+  /**
+   * The reader's preferences: the server's defaults for a person of their locale, with what the options name
+   * (`preferences`) in their place, then as the reader changed them.
+   */
+  let preferences: Schema<"Preferences"> = {
     locale: personOf(viewer).locale,
     locale_follows_browser: true,
     time_zone: "UTC",
@@ -1819,10 +1845,63 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     default_post_language: "und",
     require_media_description: false,
-    timeline_auto_insert: false,
+    timeline_auto_insert: true,
     link_card_size: "large",
     timeline_languages: [],
+    ...o.preferences,
   };
+  /** A language tag as the server keeps it (`ja-jp` is `ja-JP`); undefined for one it refuses. */
+  const languageTag = (tag: string): string | undefined => {
+    try {
+      return Intl.getCanonicalLocales(tag)[0];
+    } catch {
+      return undefined;
+    }
+  };
+  /** Whether `zone` is a time zone the server knows, an IANA name. */
+  const knownZone = (zone: string): boolean => {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  /**
+   * The reader's preferences changed as the server changes them (PATCH /preferences): what the request leaves out
+   * stays, a language or a time zone named without whether it follows the browser stops following it, and the
+   * timelines' languages are kept sorted, each once. A value the server refuses (a malformed language, an unknown time
+   * zone, more than 64 languages) changes nothing and answers the problem that names its preference.
+   */
+  function changePreferences(change: Schema<"UpdatePreferencesRequest">): Answer<"PATCH /preferences"> {
+    const refused = (field: string, detail = "This value is not valid. Check what you entered.") =>
+      problem(422, "This could not be done.", { field, detail });
+    const { default_interaction_policy: policy, timeline_languages: languages, ...plain } = change;
+    const locale = change.locale === undefined ? undefined : languageTag(change.locale);
+    if (change.locale !== undefined && (locale === undefined || locale === "und")) return refused("locale");
+    if (change.time_zone !== undefined && !knownZone(change.time_zone)) return refused("time_zone");
+    const postLanguage =
+      change.default_post_language === undefined ? undefined : languageTag(change.default_post_language);
+    if (change.default_post_language !== undefined && postLanguage === undefined)
+      return refused("default_post_language");
+    if (languages !== undefined && languages.length > 64) return refused("timeline_languages", "Use at most 64 items.");
+    const tags = languages?.map(languageTag);
+    if (tags?.includes(undefined) === true) return refused("timeline_languages");
+    preferences = {
+      ...preferences,
+      ...plain,
+      ...(locale === undefined ? {} : { locale, locale_follows_browser: change.locale_follows_browser ?? false }),
+      ...(change.time_zone === undefined
+        ? {}
+        : { time_zone_chosen: true, time_zone_follows_browser: change.time_zone_follows_browser ?? false }),
+      ...(postLanguage === undefined ? {} : { default_post_language: postLanguage }),
+      default_interaction_policy: { ...preferences.default_interaction_policy, ...policy },
+      ...(tags === undefined
+        ? {}
+        : { timeline_languages: [...new Set(tags.filter((tag) => tag !== undefined))].toSorted() }),
+    };
+    return { status: 200, body: preferences };
+  }
   const brandImage = (svg: string): Schema<"InstanceBrandImage"> => ({
     revision: "1",
     svg_url: `data:image/svg+xml,${encodeURIComponent(svg)}`,
@@ -2486,7 +2565,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The shell --------------------------------------------------------------------------------------------------
 
     "GET /accounts/verify_credentials": () => ({ status: 200, body: credentialOf(viewer) }),
-    "GET /preferences": () => ({ status: 200, body: preferences }),
+    "GET /preferences": () =>
+      o.preferencesFail === "read" ? problem(500, "Internal Server Error") : { status: 200, body: preferences },
+    "PATCH /preferences": ({ body }) =>
+      o.preferencesFail === "save" ? problem(500, "Internal Server Error") : changePreferences(body),
     "GET /instance": () => ({ status: 200, body: instanceBody }),
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
@@ -3379,12 +3461,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     unimplemented.push(error.operation);
   });
 
+  const revocations: { clientId: string; token: string }[] = [];
+
+  /** The answer of the revocation endpoint (RFC 7009), outside the client API: 200 with no body, the form kept. */
+  async function revoked(request: Request): Promise<Response> {
+    if (o.revocation === "fails") return json(problem(503, "Service Unavailable").problem, 503);
+    const form = new URLSearchParams(await request.text());
+    revocations.push({ clientId: form.get("client_id") ?? "", token: form.get("token") ?? "" });
+    return new Response(null, { status: 200, headers: { "Cache-Control": "no-store" } });
+  }
+
   /** The answer of the server in the state of the options: down, under maintenance, or as it is. */
   async function served(request: Request): Promise<Response> {
-    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
+    const { pathname } = new URL(request.url);
+    const path = pathname.replace(/^\/api\/v1/, "");
     const down = o.down !== undefined && (path !== "/instance" || instanceRead);
     if (path === "/instance") instanceRead = true;
     if (down && o.down === "offline") throw new TypeError("Failed to fetch");
+    if (!down && o.maintenance !== true && request.method === "POST" && pathname === "/oauth/revoke")
+      return revoked(request);
     if (down && o.down === "outage")
       return path === "/instance/health"
         ? health({ status: "unavailable", checked_at: new Date().toISOString() })
@@ -3495,6 +3590,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     script: scripts.script,
     send,
     unimplemented,
+    revocations,
     newPosts,
     newNotification,
     newMessage,

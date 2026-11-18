@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import type { AppData } from "@my/app-data";
-import { scenario } from "@my/e2e/fake";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { preferencesQuery, receiveListStatuses, type AppData } from "@my/app-data";
+import { scenario, type FakeOptions } from "@my/e2e/fake";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { PostActions } from "../post-actions";
 import { fakeData, renderFeature } from "../test/feature";
@@ -13,9 +13,15 @@ import { ListIndex, ListTimeline, loadLists, loadListTimeline } from "./lists";
  * A server where the reader follows sam, hana and layla, and keeps the list Bread and coffee of sam and hana and
  * 翻訳の仲間 of layla; sam posted once, unless `posts` is false. `l1` and `l2` are the lists' IDs.
  */
-function server({ lists = true, posts = true, limit }: { lists?: boolean; posts?: boolean; limit?: number } = {}) {
+function server({
+  lists = true,
+  posts = true,
+  limit,
+  preferences,
+}: { lists?: boolean; posts?: boolean; limit?: number; preferences?: FakeOptions["preferences"] } = {}) {
   const { fake, data, requests } = fakeData({
     ...(limit === undefined ? {} : { listLimits: { lists: limit } }),
+    ...(preferences === undefined ? {} : { preferences }),
     seed: {
       people: scenario.people,
       follows: ["sam", "hana", "layla"].map((followee) => ({ follower: "yuki", followee })),
@@ -90,6 +96,38 @@ test("the loader reads the list and its timeline; the screen shows its name, mem
   expect(within(feed).getByText("The first loaf.")).not.toBeNull();
   // A list has nothing to follow: no action in its head.
   expect(screen.queryAllByRole("button", { name: "Follow" })).toHaveLength(0);
+});
+
+test("a list's new posts wait behind the button for a reader who chose to hold them back, and go in by themselves otherwise", async () => {
+  /** The list's feed for a reader who set `timeline_auto_insert` to `autoInsert`, after a post arrived on the stream. */
+  async function afterAPost(autoInsert: boolean) {
+    const { fake, data, l1 } = server({ preferences: { timeline_auto_insert: autoInsert } });
+    await data.queryClient.query(preferencesQuery(data));
+    await loadListTimeline(data, l1);
+    const user = timeline(data, l1);
+    const feed = within(screen.getByRole("feed", { name: "Posts from the list Bread and coffee" }));
+    expect(feed.getAllByRole("article")).toHaveLength(1);
+    const arrived = fake.newPosts(1);
+    act(() => {
+      receiveListStatuses(data, l1, arrived);
+    });
+    return { user, feed };
+  }
+  const inTheFeed = (feed: Awaited<ReturnType<typeof afterAPost>>["feed"], count: number) =>
+    waitFor(() => {
+      if (feed.getAllByRole("article").length !== count)
+        throw new Error(`the feed does not show ${String(count)} posts`);
+    });
+
+  const held = await afterAPost(false);
+  const button = await screen.findByRole("button", { name: "1 new post" });
+  expect(held.feed.getAllByRole("article")).toHaveLength(1);
+  await held.user.click(button);
+  await inTheFeed(held.feed, 2);
+
+  const inserted = await afterAPost(true);
+  await inTheFeed(inserted.feed, 2);
+  expect(screen.queryAllByRole("button", { name: /new posts?$/ })).toHaveLength(0);
 });
 
 test("a list whose members have not posted says so, in en and ja", async () => {

@@ -23,6 +23,7 @@ export { streamOpened } from "./stream";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { Profile } from "./profile";
 export { Reactors } from "./reactors";
+export { DisplaySettings, Landing, Settings } from "./settings";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
 export { Notice } from "./notice";

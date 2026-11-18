@@ -8,6 +8,10 @@
 // @my/platform (ADR-0028 §18): one tab at a time holds its lock to renew the token, first asks the other tabs for one,
 // trades the cookie only when none has a usable one, and passes the new token to every tab. The token goes over the
 // channel from memory to memory, never to storage. A browser without the group renews the token in each tab.
+//
+// Signing out ends it (ADR-0090 §13): the web client revokes its access token at the revocation endpoint (RFC 7009),
+// and the server ends the token's family and the session of the sign-in pages that authorized it, and deletes the
+// cookie. The cache of server data is emptied then, and the other tabs forget their token.
 import { createClient, type TokenSource } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import { createAppData, type AppData } from "./app-data";
@@ -16,6 +20,9 @@ import type { ServerWatch } from "./server";
 /** The endpoint that trades the cookie for an access token, and the header it requires. */
 const refreshPath = "/oauth/token/refresh";
 const refreshHeader = "X-My-Token-Refresh";
+
+/** The endpoint that revokes a token, and with it the session it belongs to. */
+const revokePath = "/oauth/revoke";
 
 /** How long before its expiry the access token counts as expired, so that it does not expire on the way. */
 const expirySkewMs = 30_000;
@@ -135,6 +142,12 @@ export class SessionTokenSource implements TokenSource {
     });
   }
 
+  /** Forgets the token of a session that ended here (signing out), and tells the other tabs, which forget theirs. */
+  end(): void {
+    this.#token = null;
+    this.#tabs?.post({ kind: "ended" } satisfies SessionMessage);
+  }
+
   #receive(message: SessionMessage): void {
     switch (message.kind) {
       case "token":
@@ -229,6 +242,32 @@ export async function openSession({
   if ((await tokenSource.getAccessToken()) === null) return null;
   const connection = { server, tokenSource, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) };
   return { ...createAppData(createClient(connection), undefined, watch), connection };
+}
+
+/**
+ * Ends the browser's session of `data`, signing out (ADR-0090 §13): revokes its access token as the web client
+ * `clientId`, which ends the session on the server and deletes its cookie, then has the other tabs forget their token
+ * and empties the cache of server data. A session the server already ended has nothing to revoke. It rejects, with
+ * nothing changed, when the server did not take the revocation (no answer, or an error).
+ */
+export async function endSession(data: AppData, clientId: string): Promise<void> {
+  const { connection, watch, queryClient } = data;
+  const tokenSource = connection?.tokenSource;
+  // Data that connects with no token (a simulated server's) names none.
+  const token = tokenSource === undefined ? "" : await tokenSource.getAccessToken();
+  if (token !== null) {
+    const fetch = connection?.fetch ?? watch?.fetch ?? ((request: Request) => globalThis.fetch(request));
+    const response = await fetch(
+      new Request((connection?.server ?? watch?.server ?? "") + revokePath, {
+        method: "POST",
+        credentials: "same-origin",
+        body: new URLSearchParams({ client_id: clientId, token, token_type_hint: "access_token" }),
+      }),
+    );
+    if (!response.ok) throw new Error(`app-data: ${revokePath} answered ${String(response.status)}`);
+  }
+  if (tokenSource instanceof SessionTokenSource) tokenSource.end();
+  queryClient.clear();
 }
 
 /**

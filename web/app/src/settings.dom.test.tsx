@@ -1,0 +1,315 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// The settings (#3198), which the navigation's Settings leads to: the menu at /settings, its entries in their groups
+// and Sign out… apart at its end; an entry's screen at an address of its own, with the menu beside it marking it and
+// the way back to the menu; an address that names no entry; and signing out, from the menu's row, from an address, and
+// from the page of a server that closed. With the first entry, Display and posting (#3199), the app reads in the
+// language chosen there at once. What each control of the entry saves and says is the feature's test (app-features,
+// settings/display.dom.test.tsx), what the confirmation does with a sign-out that fails, its own
+// (settings/sign-out.dom.test.tsx); what the device keeps of a reader who signed out is with the preferences
+// (preferences.dom.test.tsx). Whether the menu shows beside the screen or before it is the width's, a layout test.
+
+import { describe, expect, test } from "bun:test";
+import { preferencesQuery } from "@my/app-data";
+import { screen, waitFor, within } from "@testing-library/react";
+import { main, renderApp, type TestApp } from "./test/app";
+import { browserCaches, ownDevice } from "./test/device";
+import { fakeApp } from "./test/server";
+import { rail } from "./test/viewport";
+
+/** The title of the screen in place, as its heading says it. */
+const heading = () =>
+  main()
+    .queryAllByRole("heading", { level: 1 })
+    .map((title) => title.textContent)
+    .join();
+
+/** The rows of a settings menu: each link's words, where it leads, and whether it is the entry the reader is at. */
+const rows = (menu: HTMLElement) =>
+  within(menu)
+    .getAllByRole("link")
+    .map((link) => [link.textContent, link.getAttribute("href"), link.getAttribute("aria-current")]);
+
+/** The groups of a settings menu, by their headings. */
+const groups = (menu: HTMLElement) =>
+  within(menu)
+    .getAllByRole("heading")
+    .map((group) => group.textContent);
+
+/** The settings' menus outside the screen, named `name` in the reader's language: the one the frame places beside an entry. */
+const beside = (name = "Settings") =>
+  screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
+
+const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
+
+describe("the menu", () => {
+  test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
+    const app = await renderApp("/lists");
+
+    await app.user.click(within(rail()).getByRole("link", { name: "Settings" }));
+
+    await waitFor(() => {
+      if (heading() !== "Settings") throw new Error(`test: the screen is "${heading()}"`);
+    });
+    expect(app.path()).toBe("/settings");
+    expect(app.title()).toContain("Settings");
+    const menu = main().getByRole("navigation", { name: "Settings" });
+    // One group has an entry; a group without one is not drawn.
+    expect(groups(menu)).toEqual(["General"]);
+    const [display, ...others] = rows(menu);
+    // The entry's row says its name, then what it holds.
+    expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
+    expect(display?.slice(1)).toEqual(["/settings/display", null]);
+    expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
+    // The menu is the screen: none beside it.
+    expect(beside()).toHaveLength(0);
+    expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  test("leads to an entry's screen, whose way back leads to the menu", async () => {
+    const app = await renderApp("/settings");
+
+    await app.user.click(main().getByRole("link", { name: /^Display and posting/ }));
+    await main().findByRole("combobox", { name: "Display language" });
+    expect(app.path()).toBe("/settings/display");
+    expect(heading()).toBe("Display and posting");
+
+    await app.user.click(main().getByRole("button", { name: "Settings" }));
+    await main().findByRole("navigation", { name: "Settings" });
+    expect(app.path()).toBe("/settings");
+    expect(heading()).toBe("Settings");
+  });
+
+  for (const at of ["/settings", "/settings/display"])
+    test(`asks a reader without a session to sign in, at ${at}`, async () => {
+      const app = await renderApp(at, { visitor: true });
+
+      expect(heading()).toBe("Settings");
+      expect(app.title()).toContain("Settings");
+      expect(main().getByRole("status").textContent).toMatch(/^Sign in to see this screen\.\s*Sign in$/);
+      expect(main().getByRole("link", { name: "Sign in" }).getAttribute("href")).toBe("/login");
+      expect(screen.queryAllByRole("navigation", { name: "Settings" })).toHaveLength(0);
+    });
+});
+
+describe("an entry", () => {
+  test("opens at its address, titled by its name, with the menu beside it marking it and the navigation's Settings", async () => {
+    const app = await renderApp("/settings/display");
+
+    await main().findByRole("combobox", { name: "Display language" });
+    expect(heading()).toBe("Display and posting");
+    expect(app.title()).toContain("Display and posting");
+    expect(app.path()).toBe("/settings/display");
+    const [menu, ...others] = beside();
+    if (menu === undefined) throw new Error("test: no settings menu beside the screen");
+    expect(others).toHaveLength(0);
+    expect(groups(menu)).toEqual(["General"]);
+    expect(rows(menu)).toEqual([
+      ["Display and posting", "/settings/display", "page"],
+      ["Sign out…", "/settings/display?sign_out=true", null],
+    ]);
+    expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
+  });
+
+  test("that the address names but the settings do not have says so, and leads back to Settings", async () => {
+    const app = await renderApp("/settings/nothing");
+
+    expect(main().getByRole("alert").textContent).toMatch(
+      /^This settings page does not exist\. Check the address, or go back to Settings\.\s*Settings$/,
+    );
+    expect(heading()).not.toBe("Settings");
+    expect(main().queryAllByRole("combobox")).toHaveLength(0);
+    // The menu beside it marks no entry.
+    expect(beside().flatMap(rows)).toEqual([
+      ["Display and posting", "/settings/display", null],
+      ["Sign out…", "/settings/nothing?sign_out=true", null],
+    ]);
+
+    await app.user.click(main().getByRole("link", { name: "Settings" }));
+
+    await main().findByRole("navigation", { name: "Settings" });
+    expect(app.path()).toBe("/settings");
+  });
+});
+
+describe("the display language", () => {
+  test("chosen in the settings, the app reads in it at once, before the server answers, and the page says so; back to the browser's the same", async () => {
+    ownDevice();
+    // The server holds the browser's language and the device's zone: the app has nothing of its own to send it, and
+    // the one change sent is the reader's.
+    const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const on = fakeApp({ preferences: { locale: "en", time_zone: zone } });
+    const app = await renderApp("/settings/display", { on });
+    await main().findByRole("combobox", { name: "Display language" });
+    const sent = on.fake.script("PATCH /preferences", { hold: "request" });
+
+    await app.user.selectOptions(main().getByRole("combobox", { name: "Display language" }), "日本語");
+    expect((await sent.arrived()).body).toEqual({ locale: "ja" });
+
+    // The server has not read the request, and the app is in Japanese: its screen, its menu, its navigation, its title.
+    await waitFor(() => {
+      if (heading() !== "表示と投稿") throw new Error(`test: the screen is "${heading()}"`);
+    });
+    expect(document.documentElement.lang).toBe("ja");
+    expect(app.title()).toContain("表示と投稿");
+    expect(beside("設定").flatMap(rows)).toEqual([
+      ["表示と投稿", "/settings/display", "page"],
+      ["ログアウト…", "/settings/display?sign_out=true", null],
+    ]);
+    expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);
+    sent.release();
+    await sent.served();
+
+    await app.user.selectOptions(main().getByRole("combobox", { name: "表示言語" }), "ブラウザと同じ");
+
+    await waitFor(() => {
+      if (heading() !== "Display and posting") throw new Error(`test: the screen is "${heading()}"`);
+    });
+    expect(document.documentElement.lang).toBe("en");
+    expect((await sent.served(2)).body).toEqual({ locale_follows_browser: true });
+    // The same app on the same screen: no page was loaded.
+    expect(app.path()).toBe("/settings/display");
+    expect(app.left()).toEqual([]);
+  });
+});
+
+/** The confirmation of signing out, once it is open. */
+const confirmation = () => screen.findByRole("alertdialog", { name: "Sign out of this browser?" });
+
+/** Waits until no confirmation is open and the app is at `path`. */
+const closedAt = (app: TestApp, path: string) =>
+  waitFor(() => {
+    if (screen.queryAllByRole("alertdialog").length > 0 || app.path() !== path)
+      throw new Error(
+        `test: the app is at ${app.path()}, with ${String(screen.queryAllByRole("alertdialog").length)} confirmations`,
+      );
+  });
+
+/** Waits until the app has the reader's preferences: its cache holds something of the account. */
+const read = ({ data }: Pick<TestApp, "data">) =>
+  waitFor(() => {
+    if (data.queryClient.getQueryData(preferencesQuery(data).queryKey) === undefined)
+      throw new Error("test: the preferences are not read yet");
+  });
+
+describe("signing out", () => {
+  // The row Sign out… of each menu: the screen's own at /settings, and the one beside an entry's screen.
+  for (const [menu, at, title] of [
+    ["the menu", "/settings", "Settings"],
+    ["the menu beside an entry", "/settings/display", "Display and posting"],
+  ] as const)
+    test(`Sign out… of ${menu} asks first, over the screen, and Cancel goes back to it`, async () => {
+      const app = await renderApp("/lists");
+      await app.navigate(at);
+      const [own] = at === "/settings" ? [screen.getByRole("main")] : beside();
+      if (own === undefined) throw new Error("test: no settings menu beside the screen");
+
+      await app.user.click(within(own).getByRole("link", { name: "Sign out…" }));
+
+      const asking = await confirmation();
+      expect(app.path()).toBe(`${at}?sign_out=true`);
+      expect(heading()).toBe(title);
+      expect(app.fake.revocations).toEqual([]);
+
+      await app.user.click(within(asking).getByRole("button", { name: "Cancel" }));
+
+      await closedAt(app, at);
+      expect(heading()).toBe(title);
+      // Back, and no step added: the screen before the settings is one step behind.
+      await app.back();
+      expect(app.path()).toBe("/lists");
+      expect(app.fake.revocations).toEqual([]);
+      expect(app.left()).toEqual([]);
+    });
+
+  /** The app opened at Display and posting with the confirmation over it, and Cancel pressed: no confirmation is open. */
+  async function cancelledAtAnEntry() {
+    const app = await renderApp("/settings/display?sign_out=true");
+    const asking = await confirmation();
+    expect(heading()).toBe("Display and posting");
+    await app.user.click(within(asking).getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      if (screen.queryAllByRole("alertdialog").length > 0) throw new Error("test: the confirmation is still open");
+    });
+    return app;
+  }
+
+  test("an address with sign_out=true asks over the screen it names, and Cancel takes the asking address out of the history", async () => {
+    const app = await cancelledAtAnEntry();
+
+    expect(app.path()).not.toContain("sign_out");
+    // Nothing is behind the address the app opened at: going back does not ask again.
+    await app.back();
+    expect(screen.queryAllByRole("alertdialog")).toHaveLength(0);
+    expect(app.fake.revocations).toEqual([]);
+    expect(app.left()).toEqual([]);
+  });
+
+  // A reader who reloads Display and posting with the confirmation open and cancels stays on that screen: the
+  // address that asked gives way to the screen's own, not to the menu's.
+  test("Cancel of a confirmation opened by its address leaves the reader on the screen it was over", async () => {
+    const app = await cancelledAtAnEntry();
+
+    expect(app.path()).toBe("/settings/display");
+  });
+
+  test("Sign out revokes the session's token, empties what the browser kept of the account, and leaves for the start by a load of the page", async () => {
+    const caches = browserCaches("shell", "home-timeline");
+    const app = await renderApp("/settings");
+    await read(app);
+    await app.user.click(main().getByRole("link", { name: "Sign out…" }));
+
+    await app.user.click(within(await confirmation()).getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    expect(app.left()).toEqual(["/"]);
+    // The app's client and the token of its session; a test's connection has no token source.
+    expect(app.fake.revocations).toEqual([{ clientId: "my-web", token: "" }]);
+    expect(app.data.queryClient.getQueryCache().getAll()).toHaveLength(0);
+    expect(caches()).toEqual([]);
+  });
+
+  test("a revocation the server fails leaves the confirmation open, saying so, removes nothing, and the app stays", async () => {
+    const caches = browserCaches("shell", "home-timeline");
+    const app = await renderApp("/settings?sign_out=true", { revocation: "fails" });
+    await read(app);
+    const asking = await confirmation();
+
+    await app.user.click(within(asking).getByRole("button", { name: "Sign out" }));
+
+    const failed = await screen.findByRole("alert");
+    expect(failed.textContent).toContain("Signing out did not finish");
+    expect((await confirmation()).contains(failed)).toBe(true);
+    expect(app.path()).toBe("/settings?sign_out=true");
+    expect(app.left()).toEqual([]);
+    expect(app.fake.revocations).toEqual([]);
+    expect(app.data.queryClient.getQueryData(preferencesQuery(app.data).queryKey)).toBeDefined();
+    expect(caches()).toEqual(["shell", "home-timeline"]);
+  });
+
+  test("the page of a server that closed signs out through the same confirmation: Cancel closes it, Sign out leaves", async () => {
+    const app = await renderApp("/", { closure: "closed" });
+    const closed = () => screen.getAllByRole("heading", { level: 1 }).map((title) => title.textContent);
+
+    await app.user.click(await screen.findByRole("button", { name: "Sign out" }));
+    await app.user.click(within(await confirmation()).getByRole("button", { name: "Cancel" }));
+
+    await waitFor(() => {
+      if (screen.queryAllByRole("alertdialog").length > 0) throw new Error("test: the confirmation is still open");
+    });
+    expect(closed()).toEqual(["mycroblog demo has closed"]);
+    expect(app.fake.revocations).toEqual([]);
+    expect(app.left()).toEqual([]);
+
+    await app.user.click(screen.getByRole("button", { name: "Sign out" }));
+    await app.user.click(within(await confirmation()).getByRole("button", { name: "Sign out" }));
+
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    expect(app.left()).toEqual(["/"]);
+    expect(app.fake.revocations).toEqual([{ clientId: "my-web", token: "" }]);
+  });
+});

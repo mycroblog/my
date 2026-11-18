@@ -32,6 +32,7 @@ import {
   RelativeTime,
   TextButton,
   useLocale,
+  useTimeZone,
 } from "@my/design-system";
 import { useState } from "react";
 import { stringsIn } from "../locale";
@@ -92,6 +93,7 @@ function Row({
   onDelete: (d: ServerDraft) => void;
 }) {
   const failed = d.scheduled_at === undefined && d.last_schedule?.outcome === "failed" ? d.last_schedule : undefined;
+  const timeZone = useTimeZone();
   const lead =
     d.scheduled_at !== undefined
       ? { kind: "scheduled" as const, text: <ScheduleTime date={d.scheduled_at} /> }
@@ -99,7 +101,7 @@ function Row({
         ? {
             kind: "failed" as const,
             text: t("compose.schedule.failed", {
-              time: scheduleTime(failed.publish_at, locale),
+              time: scheduleTime(failed.publish_at, locale, timeZone),
               reason: reasonOf(failed.reason, t),
             }),
           }

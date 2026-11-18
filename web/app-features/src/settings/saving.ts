@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+
+// A setting that saves at once (ADR-0110 §1 P2, §5): where its last change is, for the save state its control shows
+// (the design system's `useSaveState`). A change is saving until the server answers, saved for a moment, then nothing;
+// one the server did not take stays not saved, with the way to save it again, until the reader tries again or changes
+// the setting; one whose value the server refused says the server's words, and trying again would not help. Only the
+// last change of a setting speaks. No UI here.
+
+import { refusedField } from "@my/app-data";
+import type { Saving } from "@my/design-system";
+import { useEffect, useRef, useState } from "react";
+
+/** How long a setting says it was saved. */
+const savedMs = 2000;
+
+/**
+ * The state of a setting's last change (`saving`, null while there is nothing to say), and `save`, which runs a write
+ * of the setting and follows it.
+ */
+export function useSaving(): { saving: Saving | null; save: (write: () => Promise<unknown>) => void } {
+  const [saving, setSaving] = useState<Saving | null>(null);
+  /** The last change, which alone speaks, and the timer that ends its "saved". */
+  const last = useRef<{ run: number; timer: ReturnType<typeof setTimeout> | undefined }>({ run: 0, timer: undefined });
+  useEffect(() => {
+    const kept = last.current;
+    return () => {
+      kept.run += 1;
+      clearTimeout(kept.timer);
+    };
+  }, []);
+  const save = (write: () => Promise<unknown>) => {
+    const own = last.current.run + 1;
+    last.current.run = own;
+    clearTimeout(last.current.timer);
+    setSaving({ state: "saving" });
+    write().then(
+      () => {
+        if (last.current.run !== own) return;
+        setSaving({ state: "saved" });
+        last.current.timer = setTimeout(() => {
+          setSaving(null);
+        }, savedMs);
+      },
+      (error: unknown) => {
+        if (last.current.run !== own) return;
+        const refused = refusedField(error);
+        setSaving(
+          refused === undefined
+            ? {
+                state: "failed",
+                retry: () => {
+                  save(write);
+                },
+              }
+            : { state: "failed", said: refused.detail },
+        );
+      },
+    );
+  };
+  return { saving, save };
+}

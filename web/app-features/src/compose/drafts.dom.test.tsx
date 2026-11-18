@@ -6,9 +6,10 @@
 
 import { expect, test } from "bun:test";
 import { defaultComposeSettings, defaultDraftLimits, useComposeSettings, type ServerDraft } from "@my/app-data";
-import { readerZone, scheduleTime } from "@my/app-components";
+import { localInput, readerZone, scheduleTime } from "@my/app-components";
+import { TimeZoneProvider } from "@my/design-system";
 import type { BoundFunctions, queries } from "@testing-library/dom";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { stringsIn } from "../locale";
 import { fakeData, pasteInto, renderFeature } from "../test/feature";
 import { ComposerView } from "./composer";
@@ -411,6 +412,43 @@ test("the schedule's form: the time in the reader's zone, the server's limits, a
 
   await scheduleForm(from(day));
   expect(screen.getByRole("button", { name: "Don't schedule" })).not.toBeNull();
+});
+
+test("for a reader who chose a zone, the form holds the time on that zone's clock and sets the moment its value names there", async () => {
+  cleanup();
+  const zone = "America/New_York";
+  const at = from(3 * day);
+  const { data } = await instanceWith(undefined);
+  const set: (string | undefined)[] = [];
+  function InTheZone() {
+    const settings = useComposeSettings();
+    const { t } = stringsIn("en");
+    return (
+      <TimeZoneProvider timeZone={zone}>
+        <ScheduleTimeForm
+          at={at}
+          limits={settings.schedule}
+          onSet={(chosen) => set.push(chosen)}
+          onDone={none}
+          t={t}
+          locale="en"
+        />
+      </TimeZoneProvider>
+    );
+  }
+  const user = renderFeature(data, <InTheZone />);
+  const field = screen.getByLabelText<HTMLInputElement>("Date and time");
+
+  // The time set, and the zone it is of, are New York's whatever the device's zone.
+  expect(field.value).toBe(localInput(new Date(at), zone));
+  expect(document.body.textContent).toMatch(/America\/New_York · GMT-[45]/);
+  // A month from now at 15:30 UTC, the late morning in New York, written as its clock reads then.
+  const chosen = new Date(Date.now() + 30 * day);
+  chosen.setUTCHours(15, 30, 0, 0);
+  fireEvent.change(field, { target: { value: localInput(chosen, zone) } });
+  await user.click(screen.getByRole("button", { name: "Set time" }));
+
+  expect(set).toEqual([chosen.toISOString()]);
 });
 
 test("a time nearer than the server's nearest, or farther than its farthest, says so in the form, and the field is invalid", async () => {

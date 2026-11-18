@@ -57,6 +57,7 @@ import {
   TagInput,
   TextButton,
   useLocale,
+  useTimeZone,
 } from "@my/design-system";
 import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/editor";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
@@ -107,7 +108,7 @@ function BodyEditor(props: PlainTextEditorProps & { t: T }) {
 }
 
 /** The form's error before the action: the first thing that keeps the article from being sent. */
-function alertOf(e: ArticleEditor, t: T, locale: string): string | undefined {
+function alertOf(e: ArticleEditor, t: T, locale: string, timeZone: string | undefined): string | undefined {
   const { phase, problems, draft } = e;
   if (phase.kind === "conflict") return t("compose.conflict");
   if (phase.kind === "gone") return t("compose.gone");
@@ -116,7 +117,7 @@ function alertOf(e: ArticleEditor, t: T, locale: string): string | undefined {
   if (draft.failure !== undefined && draft.scheduledAt === undefined)
     return t("compose.schedule.failed.next", {
       failure: t("compose.schedule.failed", {
-        time: scheduleTime(draft.failure.publishAt, locale),
+        time: scheduleTime(draft.failure.publishAt, locale, timeZone),
         reason: t(`compose.schedule.failed.${draft.failure.reason}`),
       }),
     });
@@ -161,6 +162,7 @@ export type ArticleViewProps = {
 /** The article editor's screen, for the state of `e` (use-article.ts). */
 export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, opened }: ArticleViewProps) {
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   const { t, lang } = stringsIn(locale);
   const id = useId();
   const bodyRef = useRef<EditorHandle>(null);
@@ -178,7 +180,7 @@ export function ArticleView({ e, onClose, onDrafts, onNewer, mode: initialMode, 
   const summaryLeft = articleFieldLimits.summary - charsOf(draft.summary);
   const tagsLeft = articleFieldLimits.tags - draft.tags.length;
   const textLang = draft.language === "" ? undefined : draft.language;
-  const alert = alertOf(e, t, locale);
+  const alert = alertOf(e, t, locale, timeZone);
   // What the server refused of an input it named, beside that input (field-errors.ts); the preview gives way to what
   // is written, which holds it.
   const refused = phase.kind === "failed" ? phase : undefined;
