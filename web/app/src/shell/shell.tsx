@@ -23,6 +23,7 @@ import {
   useArticleAuthoring,
   useInstance,
   useModerationCount,
+  useNotificationSounds,
   useRights,
   useUnreadConversations,
   useUnreadNotifications,
@@ -47,7 +48,7 @@ import {
   useAction,
   useLocale,
 } from "@my/design-system";
-import { showAppBadge } from "@my/platform";
+import { playSound, showAppBadge } from "@my/platform";
 import { useRouter } from "@tanstack/react-router";
 import { useEffect, type ReactNode } from "react";
 import { useStrings } from "../locale";
@@ -76,6 +77,20 @@ function AppBadge() {
       showAppBadge(0);
     };
   }, [count]);
+  return null;
+}
+
+/** Plays the app's sound; the platform says whether the page may. */
+const sound = () => {
+  void playSound();
+};
+
+/**
+ * The notification sound (ADR-0086 §12): played when the stream brings a notification of a kind the reader lets sound
+ * on this device, once for a burst. It draws nothing.
+ */
+function NotificationSound() {
+  useNotificationSounds(sound);
   return null;
 }
 
@@ -294,6 +309,7 @@ export function Shell({
   return (
     <MenuSheet sheet={narrow}>
       {signedIn && <AppBadge />}
+      {signedIn && <NotificationSound />}
       <Frame>
         <FrameSide label={t("app.navigation")}>
           <Mark instance={instance} serverName={serverName} />

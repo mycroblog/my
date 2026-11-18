@@ -24,6 +24,7 @@ export {
 export {
   askNotificationPermission,
   notificationPermission,
+  pushNeedsInstall,
   registerServiceWorker,
   showAppBadge,
   subscribePush,
@@ -33,6 +34,7 @@ export {
   type PushSubscriptionData,
 } from "./push";
 export { copyText, shareLink, type ShareOutcome } from "./share";
+export { playSound, trySound } from "./sound";
 export { joinTabGroup, type TabGroup } from "./tabs";
 export {
   browserName,

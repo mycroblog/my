@@ -58,7 +58,7 @@ export function Toggle({
   about?: string | undefined;
   /** Its state as the server has it; of a fixed one, what the server enforces. */
   on: boolean;
-  /** Why the reader cannot change it (the server decides it). */
+  /** Why the reader cannot change it (the server decides it, or this device cannot do it). */
   fixed?: string | undefined;
   /** Saves the state chosen. */
   onChange: (on: boolean) => Promise<unknown>;

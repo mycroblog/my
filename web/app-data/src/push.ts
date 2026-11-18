@@ -3,7 +3,8 @@
 // none of; the kinds of notifications the reader gets (the rows of their notification settings), which a subscription
 // pushes all of when it is made from the prompt; and registering this browser's subscription. Whether this account
 // closed the prompt in this browser is kept on the device, never sent: closing it, or turning push off, keeps the
-// record; turning it on takes it away.
+// record; turning it on takes it away. The notification sound is the device's too: whether it plays at all, and for
+// which kinds, and telling when a notification the stream brings is to sound; playing it is the platform's.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import {
   askNotificationPermission,
@@ -16,11 +17,12 @@ import {
   type PushSubscriptionData,
 } from "@my/platform";
 import { useQuery } from "@tanstack/react-query";
-import { useSyncExternalStore } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { viewerQuery } from "./accounts";
 import type { AppData } from "./app-data";
+import { inOrder } from "./in-order";
 import { instanceQuery } from "./instance";
-import type { NotificationType } from "./notifications";
+import { watchNotifications, type NotificationType } from "./notifications";
 import { useAppData } from "./provider";
 
 /** The Web Push subscription of the grant. */
@@ -62,11 +64,19 @@ export function useNotificationKinds(): readonly NotificationType[] | undefined 
  * Registers this browser's subscription for the notifications of `alerts`, and puts what the server answered into the
  * cache; it rejects with the server's problem.
  */
-async function registerPush(data: AppData, subscription: PushSubscriptionData, alerts: readonly NotificationType[]) {
+async function putPush(data: AppData, subscription: PushSubscriptionData, alerts: readonly NotificationType[]) {
   const { data: saved } = await data.api.PUT("/push/subscription", {
     body: { endpoint: subscription.endpoint, keys: subscription.keys, alerts: [...alerts] },
   });
   if (saved !== undefined) data.queryClient.setQueryData(pushSubscriptionQuery(data).queryKey, saved);
+}
+
+/** The document the writes of the subscription are one of, each sent once the ones before it were answered. */
+const subscriptionWrites = "/push/subscription";
+
+/** Registers the subscription (putPush), once the writes of it made before were answered. */
+function registerPush(data: AppData, subscription: PushSubscriptionData, alerts: readonly NotificationType[]) {
+  return inOrder(data, subscriptionWrites, () => putPush(data, subscription, alerts));
 }
 
 /** Registers a subscription for the session of the nearest AppDataProvider (registerPush). */
@@ -150,8 +160,10 @@ export async function turnPushOn(
  * with the server's problem.
  */
 export async function turnPushOff(data: AppData, accountId: string): Promise<void> {
-  await data.api.DELETE("/push/subscription");
-  data.queryClient.setQueryData(pushSubscriptionQuery(data).queryKey, null);
+  await inOrder(data, subscriptionWrites, async () => {
+    await data.api.DELETE("/push/subscription");
+    data.queryClient.setQueryData(pushSubscriptionQuery(data).queryKey, null);
+  });
   rememberPushPromptClosed(accountId, true);
 }
 
@@ -162,6 +174,21 @@ export async function turnPushOff(data: AppData, accountId: string): Promise<voi
  */
 export async function changePushAlerts(data: AppData, key: string, alerts: readonly NotificationType[]): Promise<void> {
   await registerPush(data, await subscribePush(key), alerts);
+}
+
+/**
+ * Turns the pushes of `kinds` (those of rows of the settings) on or off for this device's subscription, the others
+ * staying as they are, and resolves once the cache holds the subscription as the server answered. Each change starts
+ * from what the one before it left, so that changes made together all hold. It rejects with the server's problem,
+ * when the browser refuses, or when the grant has no subscription.
+ */
+function changePushKinds(data: AppData, key: string, kinds: readonly NotificationType[], on: boolean): Promise<void> {
+  return inOrder(data, subscriptionWrites, async () => {
+    const held = data.queryClient.getQueryData<PushSubscription | null>(pushSubscriptionQuery(data).queryKey);
+    if (held === undefined || held === null) throw new Error("app-data: no push subscription to change");
+    const others = held.alerts.filter((kind) => !kinds.includes(kind));
+    await putPush(data, await subscribePush(key), on ? [...others, ...kinds] : others);
+  });
 }
 
 /** What a screen of the notification settings holds of Web Push, and can do. */
@@ -175,6 +202,8 @@ export type PushSwitch = {
   readonly turnOn: (alerts: readonly NotificationType[]) => Promise<PushTurnOn>;
   readonly turnOff: () => Promise<void>;
   readonly changeAlerts: (alerts: readonly NotificationType[]) => Promise<void>;
+  /** Turns the pushes of `kinds` on or off, the others staying (`changePushKinds`). */
+  readonly changeKinds: (kinds: readonly NotificationType[], on: boolean) => Promise<void>;
 };
 
 /**
@@ -200,6 +229,7 @@ export function usePushSwitch(): PushSwitch {
     },
     turnOff: () => turnPushOff(data, need().id),
     changeAlerts: (alerts) => changePushAlerts(data, need().key, alerts),
+    changeKinds: (kinds, on) => changePushKinds(data, need().key, kinds, on),
   };
 }
 
@@ -221,16 +251,77 @@ export function setNotificationSound(on: boolean): void {
   for (const listener of soundListeners) listener();
 }
 
+const watchSound = (listener: () => void) => {
+  soundListeners.add(listener);
+  return () => {
+    soundListeners.delete(listener);
+  };
+};
+
 /** Whether notifications play a sound on this device, following changes of the switch. */
 export function useNotificationSound(): boolean {
-  return useSyncExternalStore(
-    (listener) => {
-      soundListeners.add(listener);
-      return () => {
-        soundListeners.delete(listener);
-      };
-    },
-    notificationSoundOn,
-    () => false,
-  );
+  return useSyncExternalStore(watchSound, notificationSoundOn, () => false);
+}
+
+/** The device's key of the kinds of notifications that sound (the cells of the sound column, ADR-0086 §12). */
+const soundKindsKey = "my:notification-sound-kinds";
+
+const noKinds: readonly NotificationType[] = [];
+
+/** The kinds as last read from the device, the same list for the same text kept. */
+let soundKindsRead: { text: string | null; kinds: readonly NotificationType[] } = { text: null, kinds: noKinds };
+
+/** The kinds of notifications that sound on this device; none until the reader chooses some. */
+function notificationSoundKinds(): readonly NotificationType[] {
+  const text = readDeviceValue(soundKindsKey);
+  if (text === soundKindsRead.text) return soundKindsRead.kinds;
+  let kinds = noKinds;
+  try {
+    const parsed: unknown = JSON.parse(text ?? "[]");
+    // What the device keeps is this app's own, of any version of it: a kind no longer known sounds for nothing.
+    if (Array.isArray(parsed)) kinds = parsed.filter((kind): kind is NotificationType => typeof kind === "string");
+  } catch {
+    kinds = noKinds;
+  }
+  soundKindsRead = { text, kinds };
+  return kinds;
+}
+
+/** Turns the sound of the notifications of `kinds` (those of a row of the settings) on or off on this device. */
+export function setNotificationSoundKinds(kinds: readonly NotificationType[], on: boolean): void {
+  const others = notificationSoundKinds().filter((kind) => !kinds.includes(kind));
+  const now = on ? [...others, ...kinds] : others;
+  writeDeviceValue(soundKindsKey, now.length === 0 ? null : JSON.stringify(now));
+  for (const listener of soundListeners) listener();
+}
+
+/** The kinds of notifications that sound on this device, following the reader's changes. */
+export function useNotificationSoundKinds(): readonly NotificationType[] {
+  return useSyncExternalStore(watchSound, notificationSoundKinds, () => noKinds);
+}
+
+/** How long after a notification that sounded the next ones are silent, in ms: a burst sounds once. */
+const soundQuietMs = 3000;
+
+/**
+ * Calls `play` when the stream brings a notification that sounds on this device (ADR-0086 §12): the sound is on, the
+ * notification's kind is among those that sound, and none that sounds arrived in the moments before, so that a burst
+ * is one sound. Until the function it returns is called.
+ */
+export function watchNotificationSound(data: AppData, play: () => void): () => void {
+  let last = Number.NEGATIVE_INFINITY;
+  return watchNotifications(data, ({ type }) => {
+    if (!notificationSoundOn() || !notificationSoundKinds().includes(type)) return;
+    const now = Date.now();
+    const quiet = now - last >= soundQuietMs;
+    // A burst that goes on stays one sound.
+    last = now;
+    if (quiet) play();
+  });
+}
+
+/** Calls `play` for the notifications that sound on this device, while the app shows (`watchNotificationSound`). */
+export function useNotificationSounds(play: () => void): void {
+  const data = useAppData();
+  useEffect(() => watchNotificationSound(data, play), [data, play]);
 }

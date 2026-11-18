@@ -5,11 +5,13 @@
 // does not block the site's notifications, the grant is known to have no subscription (never while that is read or
 // could not be), the kinds to push are read, and this account did not close it in this browser. Turn on asks the
 // browser's permission only as the reader presses it, then subscribes to every kind the reader gets and registers the
-// subscription; the prompt goes and a line says that the kinds are chosen in the settings. The question closed without
+// subscription; the prompt goes and a line says so, with a link to the notification settings, where the kinds are
+// chosen and it is turned off. The question closed without
 // a choice, or a failed subscription, says so under the prompt, which stays to be pressed again; a refusal says so
 // and leaves only Not now. Not now keeps the record on this device and moves the focus to the tabs. Nothing subscribes
 // again by itself: a reader who signed in again sees the prompt.
 
+import { notificationSettingsPath } from "@my/app-components";
 import {
   rememberPushPromptClosed,
   useInstance,
@@ -20,7 +22,7 @@ import {
   useViewer,
   type NotificationType,
 } from "@my/app-data";
-import { FeedNotice, InlinePrompt } from "@my/design-system";
+import { FeedNotice, InlinePrompt, TextLink } from "@my/design-system";
 import {
   askNotificationPermission,
   notificationPermission,
@@ -73,7 +75,15 @@ export function PushPrompt({ t }: { t: T }) {
   const [phase, setPhase] = useState<Phase>("offered");
   const running = useRef(false);
   if (phase === "gone") return null;
-  if (phase === "on") return <FeedNotice start>{t("notifications.push_on")}</FeedNotice>;
+  if (phase === "on")
+    return (
+      <FeedNotice
+        start
+        action={<TextLink href={notificationSettingsPath}>{t("notifications.push_settings")}</TextLink>}
+      >
+        {t("notifications.push_on")}
+      </FeedNotice>
+    );
   const offered =
     viewer !== undefined &&
     key !== undefined &&

@@ -51,6 +51,9 @@ export const followRequestsPath = "/notifications/follow_requests";
 /** The address of the notifications the reader's notification policy holds back, by the account that sent them. */
 export const heldPath = "/notifications/requests";
 
+/** The address of the notification settings, where the reader chooses what notifies them and how. */
+export const notificationSettingsPath = "/settings/notifications";
+
 /** The address of the held-back notifications of the account of `id`. */
 export const heldOfPath = (id: string) => `${heldPath}/${id}`;
 

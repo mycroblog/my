@@ -24,6 +24,23 @@ export function supportsPush(): boolean {
   );
 }
 
+/**
+ * Whether this browser would receive Web Push once the site is installed: Safari on iOS and iPadOS has the Push API
+ * only in a site added to the Home Screen and opened from there, so a tab of it has none.
+ */
+export function pushNeedsInstall(): boolean {
+  if (supportsPush()) return false;
+  const browser = globalThis as unknown as {
+    navigator?: { platform?: string; maxTouchPoints?: number; standalone?: boolean };
+  };
+  const device = browser.navigator;
+  if (device === undefined) return false;
+  const platform = device.platform ?? "";
+  // An iPad says it is a Mac, with a touch screen that no Mac has.
+  const apple = /iphone|ipad|ipod/i.test(platform) || (/mac/i.test(platform) && (device.maxTouchPoints ?? 0) > 1);
+  return apple && device.standalone !== true;
+}
+
 /** What the reader said to this site's notifications. */
 export function notificationPermission(): NotificationPermissionState {
   if (typeof Notification === "undefined") return "unsupported";

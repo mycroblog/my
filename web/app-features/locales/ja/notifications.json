@@ -434,5 +434,13 @@
   "notifications.push_on": {
     "defaultMessage": "この端末で通知を受け取れるようになりました。",
     "description": "The line in place of the Web Push prompt once push notifications are on for this device."
+  },
+  "notifications.push_settings": {
+    "defaultMessage": "種類は設定で選べます",
+    "description": "The link after notifications.push_on, once the reader turned Web Push on from the prompt over the notifications: it leads to the notification settings page (settings.entry.notifications), where they choose which kinds of notification are pushed, and turn it off."
+  },
+  "notifications.held_settings": {
+    "defaultMessage": "通知の設定",
+    "description": "The link on the screen Held-back notifications (notifications.held), after notifications.held_about or notifications.held_empty: it leads to the notification settings page (settings.entry.notifications), where the reader chooses whose notifications are held back."
   }
 }

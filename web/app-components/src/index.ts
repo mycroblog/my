@@ -60,6 +60,7 @@ export {
   heldOfPath,
   heldPath,
   notificationPath,
+  notificationSettingsPath,
   reactorsPath,
   statusPath,
   tagPath,

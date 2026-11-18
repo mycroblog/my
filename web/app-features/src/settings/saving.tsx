@@ -3,7 +3,8 @@
 // A setting that saves at once (ADR-0110 §1 P2, §5): where its last change is, as the save state its control shows
 // (the design system's `SaveState`, in its own words). A change is saving until the server answers, saved for a
 // moment, then nothing; one the server did not take stays not saved, with Try again, until the reader tries again or
-// changes the setting; one whose value the server refused says the server's words, and trying again would not help.
+// changes the setting; one whose value the server refused says the server's words, and one the write itself explains
+// (`Said`) says the write's, and trying again would not help either.
 // Only the last change of a setting speaks. A change that is not saved once its control is gone (the reader left the
 // page while it was on its way) has no row to say so: it is told to the toast of the settings (unsaved.tsx), with the
 // setting's name and its page (ADR-0110 §6).
@@ -15,6 +16,12 @@ import { reportUnsaved } from "./unsaved";
 
 /** How long a setting says it was saved. */
 const savedMs = 2000;
+
+/**
+ * What a write rejects with when it knows why the change did not hold and trying the same again would not help (the
+ * browser refused it): the setting says these words, the message, in the reader's language.
+ */
+export class Said extends Error {}
 
 /** Where a setting's last change is: on its way, saved, or not saved. */
 type Saving =
@@ -71,16 +78,16 @@ export function useSaving(
           reportUnsaved(setting, page);
           return;
         }
-        const refused = refusedField(error);
+        const said = error instanceof Said ? error.message : refusedField(error)?.detail;
         setSaving(
-          refused === undefined
+          said === undefined
             ? {
                 state: "failed",
                 retry: () => {
                   save(write);
                 },
               }
-            : { state: "failed", said: refused.detail },
+            : { state: "failed", said },
         );
       },
     );

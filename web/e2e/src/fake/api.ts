@@ -320,7 +320,9 @@ export type FakeOptions = {
   subscriptions?: readonly string[];
   /**
    * The reader's personal settings at the start, in place of `defaultSettings` for the members given (settings.ts):
-   * their keyword filters, badges, featured hashtags, notification policy, auto-delete policy and its maximum, imports,
+   * their keyword filters, badges, featured hashtags, notification policy, the rows of their notification settings
+   * (`memberNotificationRows` are a member's, `moderatorNotificationRows` what a moderator gets besides), auto-delete
+   * policy and its maximum, imports,
    * aliases, why the account cannot be deactivated, and the moderators' actions with their appeals. The filters in
    * effect apply to what the reader reads, as on the server (ADR-0157 §6): in the contexts a filter names (the home and
    * list timelines and the stream's posts, the notifications, the public and hashtag timelines, a thread, a profile's
@@ -357,11 +359,12 @@ export type FakeOptions = {
    */
   held?: boolean;
   /**
-   * Web Push (FR-206): the server sends it (its application key), the reader has no subscription until they register
-   * one, and their notification settings list the rows of the ordinary kinds; none by default, as a server without
-   * a VAPID key.
+   * Web Push (FR-206): the server sends it (its application key), and the reader has no subscription until they
+   * register one; none by default, as a server without a VAPID key.
    */
   push?: boolean;
+  /** The server sends email (the instance's `sends_email`); it does not by default. */
+  email?: boolean;
   /**
    * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
    * their notification settings (`settings-fail`) fails with a 500.
@@ -1975,7 +1978,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     article_authoring: o.articles?.authoring ?? "everyone",
     timelines,
     federation: { mode: "off" },
-    sends_email: false,
+    sends_email: o.email === true,
     ...(o.push === true ? { push_server_key: pushServerKey } : {}),
     rules: [],
     search_indexing: o.crawlers?.search ?? "allow",

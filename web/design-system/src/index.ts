@@ -272,6 +272,14 @@ export {
   SubmitBar,
   type SettingRowProps,
 } from "./settings";
+export {
+  ChannelCell,
+  ChannelGap,
+  ChannelRow,
+  ChannelTable,
+  type ChannelCellProps,
+  type ChannelColumn,
+} from "./channels";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";

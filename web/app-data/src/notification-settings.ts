@@ -6,7 +6,10 @@
 import type { components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
-import { notificationSettingsQuery } from "./push";
+import { inOrder } from "./in-order";
+import { instanceQuery } from "./instance";
+import { preferencesQuery } from "./preferences";
+import { notificationSettingsQuery, pushSubscriptionQuery } from "./push";
 import { useAppData } from "./provider";
 
 /** The rows of the viewer's notification settings. */
@@ -30,14 +33,45 @@ export type NotificationCellChange = {
 
 /**
  * Changes the cells of `changes` (the others keep their value), and resolves once the cache holds the settings as the
- * server answered. It rejects with the server's problem (a cell that is fixed, a row the viewer does not get).
+ * server answered. It rejects with the server's problem (a cell that is fixed, a row the viewer does not get). A
+ * change is sent once the ones made before it were answered.
  */
-export async function changeNotificationSettings(
-  data: AppData,
-  changes: readonly NotificationCellChange[],
-): Promise<void> {
-  const { data: saved } = await data.api.PATCH("/preferences/notifications", { body: { changes: [...changes] } });
-  if (saved !== undefined) data.queryClient.setQueryData(notificationSettingsQuery(data).queryKey, saved);
+export function changeNotificationSettings(data: AppData, changes: readonly NotificationCellChange[]): Promise<void> {
+  return inOrder(data, "/preferences/notifications", async () => {
+    const { data: saved } = await data.api.PATCH("/preferences/notifications", { body: { changes: [...changes] } });
+    if (saved !== undefined) data.queryClient.setQueryData(notificationSettingsQuery(data).queryKey, saved);
+  });
+}
+
+/** The rows of the viewer's notification settings, undefined until the server answered. */
+export function useNotificationSettings(): NotificationSettings | undefined {
+  return useQuery(notificationSettingsQuery(useAppData())).data;
+}
+
+/**
+ * Where the reads of what the screen of the notification settings shows are: the rows, the policy, the grant's Web
+ * Push subscription, the viewer's preferences and the instance. `loading` until the server answered them all, `failed`
+ * when it did not answer one, with `retry`, which reads again those that failed.
+ */
+export function useNotificationSettingsRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+  const data = useAppData();
+  const reads = [
+    useQuery(notificationSettingsQuery(data)),
+    useQuery(notificationPolicyQuery(data)),
+    useQuery(pushSubscriptionQuery(data)),
+    useQuery(preferencesQuery(data)),
+    useQuery(instanceQuery(data)),
+  ];
+  return {
+    status: reads.some((r) => r.status === "error")
+      ? "failed"
+      : reads.every((r) => r.status === "success")
+        ? "read"
+        : "loading",
+    retry: () => {
+      for (const r of reads) if (r.status === "error") void r.refetch();
+    },
+  };
 }
 
 /** Changes cells of the notification settings, from a screen (`changeNotificationSettings`). */
@@ -69,14 +103,16 @@ export function useNotificationPolicy(): NotificationPolicy | undefined {
  * answered and the notifications it holds back, their summary, and the notifications are read again.
  * It rejects with the server's problem.
  */
-export async function changeNotificationPolicy(data: AppData, change: Partial<NotificationPolicy>): Promise<void> {
+export function changeNotificationPolicy(data: AppData, change: Partial<NotificationPolicy>): Promise<void> {
   const { queryClient } = data;
-  const { data: saved } = await data.api.PATCH("/preferences/notification_policy", { body: change });
-  if (saved !== undefined) queryClient.setQueryData(notificationPolicyQuery(data).queryKey, saved);
-  await queryClient.invalidateQueries({
-    predicate: ({ queryKey }) =>
-      typeof queryKey[1] === "string" &&
-      (queryKey[1] === "/notifications" || queryKey[1].startsWith("/notifications/requests")),
+  return inOrder(data, "/preferences/notification_policy", async () => {
+    const { data: saved } = await data.api.PATCH("/preferences/notification_policy", { body: change });
+    if (saved !== undefined) queryClient.setQueryData(notificationPolicyQuery(data).queryKey, saved);
+    await queryClient.invalidateQueries({
+      predicate: ({ queryKey }) =>
+        typeof queryKey[1] === "string" &&
+        (queryKey[1] === "/notifications" || queryKey[1].startsWith("/notifications/requests")),
+    });
   });
 }
 

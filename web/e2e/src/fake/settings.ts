@@ -31,6 +31,117 @@ type DeactivationPreview = Schema<"DeactivationPreview">;
 /** A filter as the seed writes it: the server's filter, without its ID. */
 type FakeFilter = Omit<KeywordFilter, "id" | "expired" | "created_at"> & { createdDaysAgo?: number };
 
+/**
+ * A row of the notification settings as the seed writes it: whether the reader gets its notifications in the app and
+ * by email when the fake starts, `fixed` for a channel the server keeps on for everyone; without `email`, the row is
+ * never emailed. Its types are `types`, or the one of the group's own name.
+ */
+export type FakeNotificationRow = {
+  group: Schema<"NotificationGroup">;
+  section: Schema<"NotificationSettingRow">["section"];
+  types?: readonly Schema<"NotificationType">[];
+  in_app: boolean | "fixed";
+  email?: boolean | "fixed";
+};
+
+const ordinaryRow = (
+  group: Schema<"NotificationGroup">,
+  more: Partial<FakeNotificationRow> = {},
+): FakeNotificationRow => ({
+  group,
+  section: "ordinary",
+  in_app: true,
+  email: false,
+  ...more,
+});
+
+/**
+ * The rows a member of a server gets, with the server's defaults: every kind from other people, on in the app and off
+ * by email (new posts and approval requests are never emailed), then the server's own notices, of which the
+ * moderators' and the closure's are always in the app, and the closure's and the supporter plan's always emailed.
+ */
+export const memberNotificationRows: readonly FakeNotificationRow[] = [
+  ordinaryRow("mention"),
+  ordinaryRow("follow"),
+  ordinaryRow("follow_request"),
+  ordinaryRow("follow_accepted"),
+  ordinaryRow("boost"),
+  ordinaryRow("favourite"),
+  ordinaryRow("reaction"),
+  ordinaryRow("quote"),
+  {
+    group: "interaction_request",
+    section: "ordinary",
+    types: ["reply_request", "boost_request", "quote_request", "interaction_accepted", "interaction_rejected"],
+    in_app: true,
+  },
+  ordinaryRow("poll_closed"),
+  ordinaryRow("account_moved"),
+  ordinaryRow("voice", { types: ["voice_room_started", "voice_room_invited"] }),
+  ordinaryRow("event", {
+    types: [
+      "event_invited",
+      "event_schedule_confirmed",
+      "event_changed",
+      "event_cancelled",
+      "event_reminder",
+      "event_started",
+      "event_room_unavailable",
+    ],
+  }),
+  { group: "status", section: "ordinary", in_app: true },
+  {
+    group: "moderation",
+    section: "instance",
+    types: [
+      "moderation_notice",
+      "report_resolved",
+      "appeal_decided",
+      "relationships_severed",
+      "custom_emoji_request_decided",
+      "hook_appeal_decided",
+    ],
+    in_app: "fixed",
+    email: false,
+  },
+  { group: "service_closure", section: "instance", in_app: "fixed", email: "fixed" },
+  {
+    group: "supporter",
+    section: "instance",
+    types: [
+      "supporter_payment_failed",
+      "supporter_subscription_ended",
+      "supporter_plan_retired",
+      "supporter_service_closure",
+    ],
+    in_app: "fixed",
+    email: "fixed",
+  },
+  { group: "announcement", section: "instance", in_app: true },
+  { group: "auto_delete_limit", section: "instance", in_app: true, email: true },
+  { group: "scheduled_status_failed", section: "instance", in_app: true },
+];
+
+/**
+ * The rows a moderator and administrator gets besides a member's, after the kinds from other people: one a kind of
+ * what awaits them, on in the app and by email.
+ */
+export const moderatorNotificationRows: readonly FakeNotificationRow[] = (
+  [
+    "admin_report",
+    "admin_sign_up",
+    "admin_appeal",
+    "admin_webhook_disabled",
+    "admin_hook_failing",
+    "admin_hook_appeal",
+    "admin_domain_list_failing",
+    "admin_custom_emoji_request",
+    "admin_account_moved",
+    "admin_service_closure_due",
+    "admin_error_group",
+  ] as const
+).map((group) => ({ group, section: "moderator", in_app: true, email: true }));
+
 /** What the fake's personal settings hold when it starts. */
 export type FakeSettings = {
   /** The reader's keyword filters, oldest first; an expiry in the past makes one expired. */
@@ -41,6 +152,8 @@ export type FakeSettings = {
   featured: readonly string[];
   /** The notification policy. */
   policy: NotificationPolicy;
+  /** The rows of the notification settings the reader gets, in the order shown, each cell as it starts. */
+  notificationRows: readonly FakeNotificationRow[];
   /** The policy that deletes old posts as saved, and the server's maximum over it (none: the server sets no maximum). */
   autoDelete: AutoDeletePolicy;
   autoDeleteLimit: AutoDeleteLimit | undefined;
@@ -56,7 +169,8 @@ export type FakeSettings = {
 
 /**
  * What the fake's settings hold unless a test gives others: three filters of which one expired; a moderator's badge
- * shown and a supporter's not; two featured hashtags; a policy that holds the new and the unsolicited back; a policy
+ * shown and a supporter's not; two featured hashtags; a policy that holds the new and the unsolicited back; seven
+ * rows of notification settings, of kinds from other people, on in the app and off by email; a policy
  * that deletes posts older than half a year under a server maximum of a year, which does not let posts with media be
  * kept and so binds the saved policy; a finished import; an alias; a limit of
  * the account in effect that can be appealed and an earlier action whose appeal was decided.
@@ -106,6 +220,9 @@ export const defaultSettings: FakeSettings = {
     unsolicited_private_mention: "filter",
     limited_account: "filter",
   },
+  notificationRows: (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
+    (group) => ordinaryRow(group),
+  ),
   autoDelete: {
     enabled: true,
     min_age_days: 180,
@@ -341,17 +458,25 @@ export function createSettings(env: SettingsEnv): SettingsState {
 
   // ---- Notification settings and policy ----------------------------------------------------------------------------
 
-  const groups = ["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const;
+  // A cell the reader may change is kept by its row and channel; a fixed one is on, and a row without email has none.
+  const seeded = settings.notificationRows;
   const cells = new Map<string, boolean>(
-    groups.flatMap((g) => [[`${g}/in_app`, true] as const, [`${g}/email`, false] as const]),
+    seeded.flatMap((row) => [
+      ...(row.in_app === "fixed" ? [] : [[`${row.group}/in_app`, row.in_app] as const]),
+      ...(row.email === undefined || row.email === "fixed" ? [] : [[`${row.group}/email`, row.email] as const]),
+    ]),
   );
+  const cellOf = (group: string, channel: "in_app" | "email", seed: boolean | "fixed") =>
+    seed === "fixed"
+      ? { enabled: true, fixed: true }
+      : { enabled: cells.get(`${group}/${channel}`) ?? seed, fixed: false };
   const rows = (): Schema<"NotificationSettingRow">[] =>
-    groups.map((group) => ({
-      group,
-      section: "ordinary",
-      types: [group],
-      in_app: { enabled: cells.get(`${group}/in_app`) ?? true, fixed: false },
-      email: { enabled: cells.get(`${group}/email`) ?? false, fixed: false },
+    seeded.map((row) => ({
+      group: row.group,
+      section: row.section,
+      types: [...(row.types ?? [row.group as Schema<"NotificationType">])],
+      in_app: cellOf(row.group, "in_app", row.in_app),
+      ...(row.email === undefined ? {} : { email: cellOf(row.group, "email", row.email) }),
     }));
   let policy: NotificationPolicy = settings.policy;
 
@@ -565,7 +690,10 @@ export function createSettings(env: SettingsEnv): SettingsState {
     "GET /preferences/notifications": () => ({ status: 200, body: { rows: rows() } }),
     "PATCH /preferences/notifications": ({ body }) => {
       for (const c of body.changes) {
-        if (!(groups as readonly string[]).includes(c.group)) return problem(422, "The user does not get this row");
+        const row = seeded.find((r) => r.group === c.group);
+        if (row === undefined) return problem(422, "The user does not get this row");
+        if (row[c.channel] === undefined) return problem(422, "The row has no such channel");
+        if (row[c.channel] === "fixed") return problem(422, "The channel is always on");
       }
       for (const c of body.changes) cells.set(`${c.group}/${c.channel}`, c.enabled);
       return { status: 200, body: { rows: rows() } };

@@ -32,13 +32,13 @@ its thread.
 
 ## Choosing how they reach you
 
-Under "Notifications" in the settings you choose, for each kind of notification, whether it arrives "In the app", by
-"Push", by "Email", or with "Sound". A kind that you turn off in the app is not created at all, so it reaches you in no
-other way either.
+Under "Notifications" in the settings you choose, for each kind, whether it arrives "In the app", by
+"Push", by "Email", or with "Sound"; "All" sets a whole column. A kind you turn off in the app is not created, so
+it reaches you in no other way.
 
-- **Push**: "Turn on" over your notifications gets them on this device even while the app is closed. Your browser asks for permission first. On an iPhone or iPad, add the site to the Home Screen and open it from there.
-- **Sound**: "Play a sound for new notifications" plays a sound on this device while the app is open.
-- **Email**: only on servers that send email. The link at the bottom of a notification email stops the emails of that kind ("Stop these emails"); the notifications still appear in the app. If emails to your address bounce or are marked as spam, the settings page says so ("Email delivery") and explains how to start receiving them again.
+- **Push**: "Push notifications" there, or "Turn on" over your notifications, gets them on this device while the app is closed. Your browser asks permission first. On an iPhone or iPad, add the site to the Home Screen and open it from there.
+- **Sound**: "Notification sound" plays a sound on this device while the app is open; "Play the sound" tries it.
+- **Email**: only on servers that send email. The link at the bottom of a notification email stops the emails of that kind ("Stop these emails"); the notifications still appear in the app. If emails to your address bounce or are marked as spam, the settings say so ("Email to your address is stopped").
 
 Accounts you mute do not notify you (see [Blocking and muting](safety.md)). A keyword filter that applies to
 notifications leaves out a notification about a post it hides, from the list, the unread count, push notifications, and
@@ -46,13 +46,13 @@ email; a notification about a post it only folds names the filter in its push no
 
 ## Holding notifications from people you don't know
 
-"Notification policy", at the bottom of the notification settings, chooses what happens to the notifications of people
-who meet each condition: "People you don't follow", "People who don't follow you", "New accounts" (created less than 30
-days ago), "Unrequested private mentions" (direct posts that mention you without replying to one of yours), and
-"Accounts limited by the moderators". For each condition you choose:
+"Notifications from people you may not know", at the bottom of the notification settings, chooses what happens to the
+notifications of people who meet each condition: "People you don't follow", "People who don't follow you", "New
+accounts" (created less than 30 days ago), "Unrequested private mentions" (direct posts that mention you without
+replying to one of yours), and "Accounts limited by the moderators". For each you choose:
 
 - **Accept**: the notification appears and reaches you the ways you chose above. Every condition accepts until you change it.
-- **Hold**: the notification stays out of your notifications and the unread count, and sends no push notification, email, or sound. It waits to be answered.
+- **Hold back**: the notification stays out of your notifications and the unread count, and sends no push, email, or sound. It waits to be answered.
 - **Drop**: no notification is made. What the person did still happens; a follow still follows you.
 
 A notification that meets several conditions gets the strictest choice. People you follow, and people whose notifications you

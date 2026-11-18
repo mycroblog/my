@@ -60,4 +60,4 @@ browsers and apps stay signed in.
 
 ## Settings
 
-"Settings" in the navigation opens the settings. They hold "Display and posting".
+"Settings" in the navigation opens the settings. They hold "Display and posting" and "Notifications".
