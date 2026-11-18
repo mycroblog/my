@@ -29,6 +29,8 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
+//   - `fresh.moderate(staff, target, { kind, publicReason, expiresIn? })` a moderation action of `staff`, a fresh person
+//     made with `admin: true`, on the fresh `target`'s account, which is told of it.
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `secrets()` what the seed made
 // that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID), and

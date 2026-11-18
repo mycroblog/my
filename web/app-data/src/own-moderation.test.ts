@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import type { components } from "@mycroblog/mykit";
 import type { AppData } from "./app-data";
+import { postStatus } from "./compose";
 import {
   appealHookDecision,
   appealModerationAction,
+  appealRefusalOf,
   hookAppealQuery,
+  hookRefusalOf,
   ownModerationActionsQuery,
   useHookAppeal,
   useOwnModerationActions,
@@ -105,6 +109,151 @@ describe("appealModerationAction", () => {
     const { data } = fakeData();
     await read(data);
     expect((await refusedWith(appealModerationAction(data, "gone", "Why?"))).status).toBe(404);
+  });
+});
+
+/** What `write` was rejected with, whatever it is; fails the test when it resolved. */
+async function rejection(write: Promise<unknown>): Promise<unknown> {
+  const outcome = await write.then(
+    () => ({ resolved: true }) as const,
+    (error: unknown) => ({ error }),
+  );
+  if ("resolved" in outcome) throw new Error("the write was not rejected");
+  return outcome.error;
+}
+
+/** A problem of the server of `type`, as it refuses an appeal. */
+const refusal = (type: string, status: number) =>
+  ({ type: `/api/v1/problems/${type}`, title: "This could not be done.", status }) as const;
+
+const appealRoute = "POST /moderation/actions/{id}/appeal";
+
+describe("what the rejection of an appeal means for the reader (appealRefusalOf)", () => {
+  // The problem's type alone decides: the specification answers these with a 422, and a server may answer a 409.
+  const told = [
+    ["already-appealed", 422, "appealed"],
+    ["appeal-window-closed", 422, "closed"],
+    ["not-appealable", 422, "not_appealable"],
+    ["not-appealable", 409, "not_appealable"],
+    ["already-appealed", 409, "appealed"],
+  ] as const;
+  for (const [type, status, means] of told)
+    test(`${type} (${String(status)}) is "${means}"`, async () => {
+      const { fake, data } = fakeData();
+      await read(data);
+      fake.script(appealRoute, { fail: refusal(type, status) });
+      const error = await rejection(appealModerationAction(data, cached(data, false)[0]?.id ?? "", "Why?"));
+      expect(appealRefusalOf(error)).toBe(means);
+    });
+
+  test('an action the reader does not have (a 404) is "gone"', async () => {
+    const { data } = fakeData();
+    await read(data);
+    expect(appealRefusalOf(await rejection(appealModerationAction(data, "gone", "Why?")))).toBe("gone");
+  });
+
+  test("a text the server refuses, a server that fails, and one that is not reached say nothing of the action", async () => {
+    const { fake, data } = fakeData();
+    await read(data);
+    const id = cached(data, false)[0]?.id ?? "";
+    // A 422 that names the text, of no type the client knows.
+    expect(appealRefusalOf(await rejection(appealModerationAction(data, id, "   ")))).toBeUndefined();
+    for (const fail of [500, "network"] as const) {
+      const failing = fake.script(appealRoute, { fail });
+      expect(appealRefusalOf(await rejection(appealModerationAction(data, id, "Why?")))).toBeUndefined();
+      failing.end();
+    }
+    expect(appealRefusalOf(new Error("anything else"))).toBeUndefined();
+  });
+});
+
+describe("an appeal the server refuses, in the cache", () => {
+  /** The requests that read the reader's actions. */
+  const reads = (requests: readonly string[]) => requests.filter((r) => r.startsWith("GET /moderation/actions")).length;
+
+  // The server says that the action cannot be appealed any more: the lists say so at once, and the count of what
+  // waits for the reader drops, without a read.
+  const ended = [
+    ["the time to appeal has passed", { settings: { appealSave: "closed" } }, undefined],
+    ["the action can no longer be appealed", {}, refusal("not-appealable", 422)],
+  ] as const;
+  for (const [why, options, fail] of ended)
+    test(`${why}: the action stays cached, no longer appealable and with no appeal, in both lists, and nothing is read again`, async () => {
+      const { fake, data, requests } = fakeData(options);
+      await read(data);
+      const limit = cached(data, false)[0];
+      expect(limit?.appealable).toBe(true);
+      if (fail !== undefined) fake.script(appealRoute, { fail });
+      const before = reads(requests);
+
+      await rejection(appealModerationAction(data, limit?.id ?? "", "Why?"));
+
+      for (const active of [false, true]) {
+        const [first] = cached(data, active);
+        expect([active, first?.id, first?.appealable, first?.appeal]).toEqual([active, limit?.id, false, undefined]);
+      }
+      // The other action stays as it was.
+      expect(cached(data, false)[1]?.appeal?.state).toBe("overturned");
+      await read(data);
+      expect(reads(requests)).toBe(before);
+    });
+
+  // Anything else says nothing the lists can show by themselves: they are left as they are. The screen that sent the
+  // appeal reads them again where the server may hold more than they do (app-features, account-status-action).
+  const others = [
+    ["the action was appealed already", refusal("already-appealed", 422)],
+    ["the action is no longer the reader's", 404],
+    ["the server fails", 500],
+    ["the server is not reached", "network"],
+  ] as const;
+  for (const [why, fail] of others)
+    test(`${why}: the cached lists are left as they were`, async () => {
+      const { fake, data } = fakeData();
+      await read(data);
+      const before = [cached(data, false), cached(data, true)];
+      fake.script(appealRoute, { fail });
+
+      await rejection(appealModerationAction(data, before[0]?.[0]?.id ?? "", "Why?"));
+
+      expect([cached(data, false), cached(data, true)]).toEqual(before);
+      expect(cached(data, true)[0]?.appealable).toBe(true);
+    });
+});
+
+describe("a post the server's automated review refused (hookRefusalOf)", () => {
+  /** The problem of such a post, with the members given besides. */
+  const rejected = (more: object): components["schemas"]["StatusRejectedProblem"] => ({
+    type: "/api/v1/problems/status-rejected",
+    title: "This post was not published.",
+    status: 422,
+    detail: "This server's automated review did not accept this post.",
+    ...more,
+  });
+  const post = (data: AppData) => postStatus(data, { text: "Just a recipe.", visibility: "public" }, "key");
+
+  test("names the decision the author may appeal, and the last moment to appeal it", async () => {
+    const { fake, data } = fakeData();
+    fake.script("POST /statuses", {
+      fail: rejected({ hook_decision_id: "decision", appeal_deadline: "2031-03-09T12:00:00.000Z" }),
+    });
+    expect(hookRefusalOf(await rejection(post(data)))).toEqual({
+      decision: "decision",
+      deadline: "2031-03-09T12:00:00.000Z",
+    });
+  });
+
+  test("is none for a refusal that names no decision, for another problem, and for anything else", async () => {
+    const { fake, data } = fakeData();
+    const unnamed = fake.script("POST /statuses", { fail: rejected({}) });
+    expect(hookRefusalOf(await rejection(post(data)))).toBeUndefined();
+    unnamed.end();
+    // Another problem that happens to carry the member is no refusal of the review.
+    const other = fake.script("POST /statuses", {
+      fail: { ...rejected({ hook_decision_id: "decision" }), type: "/api/v1/problems/posting-restricted", status: 403 },
+    });
+    expect(hookRefusalOf(await rejection(post(data)))).toBeUndefined();
+    other.end();
+    expect(hookRefusalOf(new Error("anything else"))).toBeUndefined();
   });
 });
 

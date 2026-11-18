@@ -317,6 +317,31 @@ export class Fresh {
       throw new Error(`fresh: ${from.username} could not move to ${to.username}: ${JSON.stringify(moved.error)}`);
   }
 
+  /**
+   * `staff`, a person who keeps the administrator's rights (`fresh.person({ admin: true })`), takes the moderation
+   * action `kind` on `target`'s account, which is told of it: for the reason shown to the account, and for
+   * `expiresIn` seconds, or until a moderator lifts it when none is given.
+   */
+  async moderate(
+    staff: Person,
+    target: Person,
+    o: { kind: components["schemas"]["AdminAccountActionKind"]; publicReason: string; expiresIn?: number },
+  ): Promise<void> {
+    const account = await this.#account(target);
+    const body: components["schemas"]["CreateAccountActionRequest"] = {
+      kind: o.kind,
+      reason_category: "other",
+      public_reason: o.publicReason,
+      notify_target: true,
+    };
+    if (o.expiresIn !== undefined) body.expires_in = o.expiresIn;
+    const { error } = await (
+      await this.#api(staff)
+    ).POST("/admin/accounts/{id}/actions", { params: { path: { id: account.id } }, body });
+    if (error !== undefined)
+      throw new Error(`fresh: ${staff.username} could not act on ${target.username}: ${JSON.stringify(error)}`);
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);
