@@ -625,11 +625,7 @@
   },
   "settings.security.linked.done": {
     "defaultMessage": "Your {provider} account is linked. You can sign in with it now.",
-    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.security.linked.done.unknown."
-  },
-  "settings.security.linked.done.unknown": {
-    "defaultMessage": "Your account at the other service is linked. You can sign in with it now.",
-    "description": "As settings.security.linked.done, when the page does not know the name of the service the browser came back from."
+    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there, and the account holds a link at that service. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
   "settings.confirm.external.error": {
     "defaultMessage": "{reason, select, denied {This server does not accept that account of the other service. Try another account there, or ask the administrators.} linked_elsewhere {That account of the other service is linked to another account on this server. Unlink it there first, or link a different one.} already_linked {You have already linked an account of that service. Unlink it first to link another.} mismatch {The account you signed in with at the other service is not linked to yours. Try again with the linked account.} unavailable {That service cannot be used now. Try again later, or use another way.} rate_limited {Too many attempts. Wait a while, then try again.} expired {That took too long. Try again.} other {The sign-in with the other service did not complete. Try again.}}",
@@ -1100,8 +1096,8 @@
     "description": "The line under the heading Token for your own account on the page Issue token: what issuing a token does."
   },
   "settings.apps.token.scope.hint": {
-    "defaultMessage": "Separated by spaces, within the scopes of the app. Leave the field empty for all of them.",
-    "description": "The hint under the label Scopes on the page Issue token. The field starts with all the scopes of the app."
+    "defaultMessage": "Separated by spaces, within the scopes of the app. An empty field gets the scopes it started with.",
+    "description": "The hint under the label Scopes on the page Issue token. The field starts with the scopes of the app that the reader's account may put in a token: all of them, but the permission scopes (admin:manage_invites) of permissions the account does not have. A field the reader emptied asks for those same scopes."
   },
   "settings.apps.token.admin": {
     "defaultMessage": "Only a token issued here can carry a permission scope such as admin:manage_invites, and only for a permission your account has. An app that asks for one on the page where people allow it is refused.",
@@ -1318,6 +1314,10 @@
   "settings.invites.more": {
     "defaultMessage": "Show more",
     "description": "The button under the list Your invites that shows the next, older invites."
+  },
+  "settings.invites.failed_more": {
+    "defaultMessage": "The rest of this list could not be loaded.",
+    "description": "Under the list Your invites on the settings' page Invites, when its next, older invites could not be read after Show more (the network, the server); the button under it then reads Try again (settings.retry) and asks for them again."
   },
   "settings.invites.cannot": {
     "defaultMessage": "You cannot create invites",

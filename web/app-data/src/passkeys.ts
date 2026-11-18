@@ -9,9 +9,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { confirmationFields, type Confirmation } from "./confirmation";
 import { useAppData } from "./provider";
+import { removeCached, writeCached } from "./written";
 
 /** A passkey of the account. */
 export type Passkey = components["schemas"]["Passkey"];
+
+type PasskeyList = components["schemas"]["PasskeyList"];
 
 /** The account's passkeys, oldest first. */
 export function passkeysQuery({ queries }: AppData) {
@@ -19,41 +22,40 @@ export function passkeysQuery({ queries }: AppData) {
 }
 
 /**
- * Adds a passkey named `name`, confirmed by `confirmation`, and puts it in the cache. It rejects with the server's
- * problem (a wrong password, an expired confirmation, 20 passkeys already) or with the PasskeyError of the browser's
- * ceremony (`reason`: the reader closed the prompt, the authenticator holds a passkey of the account, no passkeys).
+ * Adds a passkey named `name`, confirmed by `confirmation`, and puts it in the cache, the reads of the list on their
+ * way cancelled first. It rejects with the server's problem (a wrong password, an expired confirmation, 20 passkeys
+ * already) or with the PasskeyError of the browser's ceremony (`reason`: the reader closed the prompt, the
+ * authenticator holds a passkey of the account, no passkeys).
  */
-export async function addPasskey(
-  data: AppData,
-  name: string,
-  confirmation: Confirmation,
-  { signal }: { signal?: AbortSignal | undefined } = {},
-): Promise<Passkey> {
+export async function addPasskey(data: AppData, name: string, confirmation: Confirmation): Promise<Passkey> {
   const { data: begun } = await data.api.POST("/passkeys/registration", {
     body: { name, ...confirmationFields(confirmation) },
-    ...(signal === undefined ? {} : { signal }),
   });
   if (begun === undefined) throw new Error("app-data: /passkeys/registration answered without options");
-  const credential = await createPasskey(begun.options, { signal });
+  const credential = await createPasskey(begun.options);
   const { data: made } = await data.api.POST("/passkeys", {
     body: { registration_token: begun.registration_token, credential },
-    ...(signal === undefined ? {} : { signal }),
   });
   if (made === undefined) throw new Error("app-data: /passkeys answered without the passkey");
-  data.queryClient.setQueryData<components["schemas"]["PasskeyList"]>(passkeysQuery(data).queryKey, (now) =>
-    now === undefined ? now : { ...now, items: [...now.items, made] },
-  );
+  await writeCached<PasskeyList>(data, passkeysQuery(data).queryKey, (now) => ({
+    ...now,
+    items: [...now.items, made],
+  }));
   return made;
 }
 
 /**
- * Deletes the passkey of `id`, and takes it from the cache once the server did. It rejects with the server's problem; a
- * 409 of the type `/api/v1/problems/last-sign-in-method` says it is the last way to sign in.
+ * Deletes the passkey of `id`, and takes it from the cache once the server did, the reads of the list on their way
+ * cancelled first. A passkey the server no longer has (404) is deleted already: it resolves all the same, and the list
+ * is read again. It rejects with the server's problem; a 409 of the type `/api/v1/problems/last-sign-in-method` says
+ * it is the last way to sign in.
  */
 export async function deletePasskey(data: AppData, id: string): Promise<void> {
-  await data.api.DELETE("/passkeys/{id}", { params: { path: { id } } });
-  data.queryClient.setQueryData<components["schemas"]["PasskeyList"]>(passkeysQuery(data).queryKey, (now) =>
-    now === undefined ? now : { ...now, items: now.items.filter((p) => p.id !== id) },
+  await removeCached<PasskeyList>(
+    data,
+    passkeysQuery(data).queryKey,
+    data.api.DELETE("/passkeys/{id}", { params: { path: { id } } }),
+    (now) => ({ ...now, items: now.items.filter((p) => p.id !== id) }),
   );
 }
 
@@ -63,11 +65,7 @@ export function usePasskeys(): readonly Passkey[] | undefined {
 }
 
 export type PasskeyWrites = {
-  readonly add: (
-    name: string,
-    confirmation: Confirmation,
-    options?: { signal?: AbortSignal | undefined },
-  ) => Promise<Passkey>;
+  readonly add: (name: string, confirmation: Confirmation) => Promise<Passkey>;
   readonly remove: (id: string) => Promise<void>;
 };
 
@@ -75,7 +73,7 @@ export type PasskeyWrites = {
 export function usePasskeyWrites(): PasskeyWrites {
   const data = useAppData();
   return {
-    add: (name, confirmation, options) => addPasskey(data, name, confirmation, options),
+    add: (name, confirmation) => addPasskey(data, name, confirmation),
     remove: (id) => deletePasskey(data, id),
   };
 }

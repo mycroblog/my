@@ -7,9 +7,12 @@ import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { browserSessionsQuery } from "./browser-sessions";
 import { useAppData } from "./provider";
+import { removeCached } from "./written";
 
 /** An app the account authorized. */
 export type AuthorizedApp = components["schemas"]["AuthorizedApp"];
+
+type AuthorizedAppList = components["schemas"]["AuthorizedAppList"];
 
 /** The apps the account authorized, the most recently used first. */
 export function authorizedAppsQuery({ queries }: AppData) {
@@ -17,17 +20,20 @@ export function authorizedAppsQuery({ queries }: AppData) {
 }
 
 /**
- * Revokes the app of `id`, and takes it from the cache once the server did; the browsers are read again when the
- * server's own web client was revoked. It rejects with the server's problem (404: it holds no working grant).
+ * Revokes the app of `id`, and takes it from the cache once the server did, the reads of the list on their way
+ * cancelled first. An app that holds no working grant any more (404) is revoked already: it resolves all the same, and
+ * the list is read again. When the server's own web client was revoked, the browsers signed in are stale and read
+ * anew when next shown, never at once: that revocation ended this browser's session too, and nothing more is asked
+ * with it. It rejects with the server's problem.
  */
 export async function revokeAuthorizedApp(data: AppData, id: string): Promise<void> {
   const key = authorizedAppsQuery(data).queryKey;
-  const revoked = data.queryClient
-    .getQueryData<components["schemas"]["AuthorizedAppList"]>(key)
-    ?.items.find((a) => a.id === id);
-  await data.api.DELETE("/authorized_apps/{id}", { params: { path: { id } } });
-  data.queryClient.setQueryData<components["schemas"]["AuthorizedAppList"]>(key, (now) =>
-    now === undefined ? now : { ...now, items: now.items.filter((a) => a.id !== id) },
+  const revoked = data.queryClient.getQueryData<AuthorizedAppList>(key)?.items.find((a) => a.id === id);
+  await removeCached<AuthorizedAppList>(
+    data,
+    key,
+    data.api.DELETE("/authorized_apps/{id}", { params: { path: { id } } }),
+    (now) => ({ ...now, items: now.items.filter((a) => a.id !== id) }),
   );
   if (revoked?.first_party === true)
     void data.queryClient.invalidateQueries({ queryKey: browserSessionsQuery(data).queryKey, refetchType: "none" });

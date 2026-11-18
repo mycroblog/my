@@ -54,6 +54,8 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
   /** How many more invites the reader can create before they have as many usable ones as the server allows. */
   const left = Math.max(0, limits.max_active - usable);
   const may = canCreate && left > 0;
+  /** The next, older invites were asked for and could not be read: said under the ones held, with the way to ask again. */
+  const failedMore = list.failedNextPage && list.hasNextPage && !list.isFetchingNextPage;
   const create = (
     <LinkButton size="timeline" href={invitesPaths.create}>
       {t("settings.invites.create")}
@@ -97,10 +99,12 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
             })}
           </SettingsList>
         )}
+        {failedMore && <SettingsEmpty>{t("settings.invites.failed_more")}</SettingsEmpty>}
         {list.hasNextPage && (
           <Row justify="start">
+            {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
             <Button size="timeline" busy={list.isFetchingNextPage} onPress={list.fetchNextPage}>
-              {t("settings.invites.more")}
+              {t(failedMore ? "settings.retry" : "settings.invites.more")}
             </Button>
           </Row>
         )}

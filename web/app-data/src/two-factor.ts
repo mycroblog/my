@@ -7,6 +7,7 @@ import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
+import { writeCached } from "./written";
 
 /** Whether two-factor authentication is on, since when, and how many recovery codes are unused. */
 export type TwoFactor = components["schemas"]["TwoFactor"];
@@ -28,23 +29,35 @@ export async function setUpTotp(data: AppData): Promise<TotpSetup> {
 
 /**
  * Turns two-factor authentication on with the secret of `setupToken`, once `code` shows that the app has it, and returns
- * the recovery codes, which are shown only this once. It rejects with the server's problem: a wrong code (`field`
- * names `code`), an expired setup, too many wrong codes.
+ * the recovery codes, which are shown only this once, as soon as the server gave them: the cache says at once that it
+ * is on, with as many recovery codes left, and the state is read again behind, with no screen on it too, for what the
+ * answer does not hold (since when). A reader who leaves before that read ends has seen the codes. It rejects with the
+ * server's problem: a wrong code (`field` names `code`), an expired setup, too many wrong codes.
  */
 export async function enableTotp(data: AppData, setupToken: string, code: string): Promise<readonly string[]> {
   const { data: codes } = await data.api.POST("/two_factor/totp", { body: { setup_token: setupToken, code } });
-  // Read again even with no screen on it: a later write patches the cached state, which must not be the old one.
-  await data.queryClient.invalidateQueries({ queryKey: twoFactorQuery(data).queryKey, refetchType: "all" });
-  return codes?.recovery_codes ?? [];
+  const made = codes?.recovery_codes ?? [];
+  const { queryKey } = twoFactorQuery(data);
+  await writeCached<TwoFactor>(data, queryKey, (now) => ({
+    ...now,
+    enabled: true,
+    recovery_codes_remaining: made.length,
+  }));
+  void data.queryClient.invalidateQueries({ queryKey, refetchType: "all" });
+  return made;
 }
 
 /**
- * Turns two-factor authentication off once `code`, one of the app or an unused recovery code, confirms it. It rejects
- * with the server's problem (a wrong code, too many wrong codes).
+ * Turns two-factor authentication off once `code`, one of the app or an unused recovery code, confirms it, and puts
+ * the state the server answered in the cache, the reads of it on their way cancelled first. It rejects with the
+ * server's problem (a wrong code, too many wrong codes).
  */
 export async function disableTotp(data: AppData, code: string): Promise<void> {
   const { data: state } = await data.api.POST("/two_factor/totp/disable", { body: { code } });
-  if (state !== undefined) data.queryClient.setQueryData<TwoFactor>(twoFactorQuery(data).queryKey, state);
+  if (state === undefined) return;
+  const { queryKey } = twoFactorQuery(data);
+  await data.queryClient.cancelQueries({ queryKey });
+  data.queryClient.setQueryData<TwoFactor>(queryKey, state);
 }
 
 /**
@@ -54,9 +67,10 @@ export async function disableTotp(data: AppData, code: string): Promise<void> {
 export async function regenerateRecoveryCodes(data: AppData, code: string): Promise<readonly string[]> {
   const { data: codes } = await data.api.POST("/two_factor/recovery_codes", { body: { code } });
   const made = codes?.recovery_codes ?? [];
-  data.queryClient.setQueryData<TwoFactor>(twoFactorQuery(data).queryKey, (now) =>
-    now === undefined ? now : { ...now, recovery_codes_remaining: made.length },
-  );
+  await writeCached<TwoFactor>(data, twoFactorQuery(data).queryKey, (now) => ({
+    ...now,
+    recovery_codes_remaining: made.length,
+  }));
   return made;
 }
 
@@ -75,19 +89,23 @@ export function totpSetupQuery(data: AppData) {
 
 /**
  * The setup of the screen that turns two-factor authentication on: `loading` until the server gave a secret, `failed`
- * when it did not, and `restart`, which asks for a new one (after a failure, or once the setup expired).
+ * when it did not, and `restart`, which asks for a new one (after a failure, or once the setup expired). A restart
+ * first drops the setup it had, whose secret works no more: until the new one is read there is none, and the screen
+ * says that it loads, or that it failed, never the old secret.
  */
 export function useTotpSetup(): {
   setup: TotpSetup | undefined;
   status: "loading" | "failed" | "ready";
   restart: () => void;
 } {
-  const { data, isError, isFetching, refetch } = useQuery(totpSetupQuery(useAppData()));
+  const appData = useAppData();
+  const query = totpSetupQuery(appData);
+  const { data, isError, isFetching } = useQuery(query);
   return {
     setup: data,
     status: data !== undefined ? "ready" : isError && !isFetching ? "failed" : "loading",
     restart: () => {
-      void refetch();
+      void appData.queryClient.resetQueries({ queryKey: query.queryKey });
     },
   };
 }

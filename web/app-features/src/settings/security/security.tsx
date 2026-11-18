@@ -306,7 +306,10 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
   const open = (linked?.providers ?? []).filter(
     (provider) => provider.allow_link && !items.some((identity) => identity.provider_id === provider.id),
   );
-  if (items.length === 0 && open.length === 0) return null;
+  const rows = items.length > 0 || open.length > 0;
+  // With no account linked and no provider to link one at, there is nothing to show, but an unlinking under way,
+  // whose confirmation stands over the section, and that the last one went.
+  if (!rows && unlinking === undefined && result.line === null) return null;
 
   const link = (provider: LinkableLoginProvider) => {
     setSaid(undefined);
@@ -322,17 +325,19 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
       },
     );
   };
-  /** The name of the provider the browser came back from with a link made; none for one the server no longer lists. */
-  const linkedAt = returned?.kind === "linked" ? nameOf(returned.provider) : undefined;
+  /**
+   * The name of the provider the browser came back from with a link made, said only while the account holds a link
+   * there: the fragment of an address is anyone's to write, and the links the server lists, read by now, are not.
+   */
+  const linkedAt =
+    returned?.kind === "linked" && items.some((identity) => identity.provider_id === returned.provider)
+      ? nameOf(returned.provider)
+      : undefined;
   return (
     <>
       <SettingsSection heading={t("settings.security.linked")} about={t("settings.security.linked.about")}>
-        {returned?.kind === "linked" && (
-          <SaveState state="saved">
-            {linkedAt === undefined
-              ? t("settings.security.linked.done.unknown")
-              : t("settings.security.linked.done", { provider: linkedAt })}
-          </SaveState>
+        {linkedAt !== undefined && (
+          <SaveState state="saved">{t("settings.security.linked.done", { provider: linkedAt })}</SaveState>
         )}
         {/* What a confirmation came to is the confirmation's to say, where its operation is asked from. */}
         {returned?.kind === "error" && returned.operation === undefined && (
@@ -341,49 +346,51 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
         {confirmation.notice}
         {said !== undefined && <FormAlert>{said}</FormAlert>}
         {result.line}
-        <SettingsList label={t("settings.security.linked")}>
-          {items.map((identity) => (
-            <SettingsListRow
-              key={identity.id}
-              icon={glyphOf(identity.provider_kind)}
-              title={identity.provider_name}
-              caption={t(
-                identity.available ? "settings.security.linked.since" : "settings.security.linked.since.unavailable",
-                { date: day(identity.linked_at) },
-              )}
-              end={
-                <Button
-                  size="timeline"
-                  onPress={() => {
-                    result.clear();
-                    setUnlinking(identity);
-                  }}
-                >
-                  {t("settings.security.linked.unlink")}
-                </Button>
-              }
-            />
-          ))}
-          {open.map((provider) => (
-            <SettingsListRow
-              key={provider.id}
-              icon={glyphOf(provider.kind)}
-              title={provider.display_name}
-              caption={t("settings.security.linked.not_linked")}
-              end={
-                <Button
-                  size="timeline"
-                  busy={confirmation.busy}
-                  onPress={() => {
-                    link(provider);
-                  }}
-                >
-                  {t("settings.security.linked.link")}
-                </Button>
-              }
-            />
-          ))}
-        </SettingsList>
+        {rows && (
+          <SettingsList label={t("settings.security.linked")}>
+            {items.map((identity) => (
+              <SettingsListRow
+                key={identity.id}
+                icon={glyphOf(identity.provider_kind)}
+                title={identity.provider_name}
+                caption={t(
+                  identity.available ? "settings.security.linked.since" : "settings.security.linked.since.unavailable",
+                  { date: day(identity.linked_at) },
+                )}
+                end={
+                  <Button
+                    size="timeline"
+                    onPress={() => {
+                      result.clear();
+                      setUnlinking(identity);
+                    }}
+                  >
+                    {t("settings.security.linked.unlink")}
+                  </Button>
+                }
+              />
+            ))}
+            {open.map((provider) => (
+              <SettingsListRow
+                key={provider.id}
+                icon={glyphOf(provider.kind)}
+                title={provider.display_name}
+                caption={t("settings.security.linked.not_linked")}
+                end={
+                  <Button
+                    size="timeline"
+                    busy={confirmation.busy}
+                    onPress={() => {
+                      link(provider);
+                    }}
+                  >
+                    {t("settings.security.linked.link")}
+                  </Button>
+                }
+              />
+            ))}
+          </SettingsList>
+        )}
       </SettingsSection>
       {confirmation.dialog}
       <ModalPresence>

@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { confirmationFields, type Confirmation, type ConfirmedOperation } from "./confirmation";
 import { useAppData } from "./provider";
+import { removeCached } from "./written";
 
 /** An account at a login provider linked to the account. */
 export type LinkedIdentity = components["schemas"]["LinkedIdentity"];
@@ -68,13 +69,17 @@ export async function beginExternalConfirmation(
 }
 
 /**
- * Unlinks the account of the link of `id`, and takes it from the cache once the server did. It rejects with the
- * server's problem; a 409 of the type `/api/v1/problems/last-sign-in-method` says it is the last way to sign in.
+ * Unlinks the account of the link of `id`, and takes it from the cache once the server did, the reads of the links on
+ * their way cancelled first. A link the server no longer has (404) is unlinked already: it resolves all the same, and
+ * the links are read again. It rejects with the server's problem; a 409 of the type
+ * `/api/v1/problems/last-sign-in-method` says it is the last way to sign in.
  */
 export async function unlinkIdentity(data: AppData, id: string): Promise<void> {
-  await data.api.DELETE("/linked_identities/{id}", { params: { path: { id } } });
-  data.queryClient.setQueryData<LinkedIdentities>(linkedIdentitiesQuery(data).queryKey, (now) =>
-    now === undefined ? now : { ...now, items: now.items.filter((l) => l.id !== id) },
+  await removeCached<LinkedIdentities>(
+    data,
+    linkedIdentitiesQuery(data).queryKey,
+    data.api.DELETE("/linked_identities/{id}", { params: { path: { id } } }),
+    (now) => ({ ...now, items: now.items.filter((l) => l.id !== id) }),
   );
 }
 

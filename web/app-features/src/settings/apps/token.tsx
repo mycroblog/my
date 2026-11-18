@@ -2,17 +2,20 @@
 
 // Issuing a token, the screen under an app the reader registered, at /settings/apps/{id}/token (ADR-0090 §2, §17): an
 // access token and a refresh token of the app for the reader's own account, with no consent page and no redirect. The
-// form holds the scopes, by their names, which start as all of the app's: the reader takes out what the token should
-// not carry, and an empty field asks for all of them. Issued, the screen says so, with the token's scopes and how
-// long it works, then shows the two tokens, which the server gives this once: each stands under its name and the plain
+// form holds the scopes, by their names, which start as all of the app's that the account may put in a token: the
+// reader takes out what the token should not carry, and an emptied field asks for the ones it started with, never for
+// nothing: the server reads a request without scopes as the app's whole scope, and refuses it where that holds a
+// permission scope the account cannot have. Issued, the screen says so, with the token's scopes and how long it
+// works, then shows the two tokens, which the server gives this once: each stands under its name and the plain
 // statement that it is not shown again, with its Copy, and the button at the screen's end goes back to the app.
 //
 // A permission scope (`admin:<permission>`) is only ever carried by a token issued here, and only for a permission
-// the reader's account has: the screen says so, and the field starts without the ones the account cannot have. What
-// the server refuses of the scopes shows under the field, which takes the focus; an app the administrators disabled gets no token, which the
-// screen says in the form's place.
+// the reader's account has: the screen says so, and the field starts without the ones the account cannot have, which
+// the account's permissions say: the form comes once the app and the account are both read. What the server refuses
+// of the scopes shows under the field, which takes the focus; an app the administrators disabled gets no token, which
+// the screen says in the form's place.
 
-import { useOAuthApp, useOAuthAppRead, useOAuthAppWrites, usePermissions, type OAuthAppToken } from "@my/app-data";
+import { useOAuthApp, useOAuthAppTokenRead, useOAuthAppWrites, usePermissions, type OAuthAppToken } from "@my/app-data";
 import {
   BackButton,
   Button,
@@ -41,7 +44,7 @@ function permissionOf(scope: string): string | undefined {
 export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
-  const { status, retry } = useOAuthAppRead(id);
+  const { status, retry } = useOAuthAppTokenRead(id);
   const app = useOAuthApp(id);
   const permissions: readonly string[] = usePermissions();
   const { issueToken } = useOAuthAppWrites();
@@ -68,7 +71,8 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
     );
 
   const back = <BackButton onPress={onBack}>{app?.name ?? t("settings.entry.apps")}</BackButton>;
-  if (app === undefined)
+  // No field before the account is read too: it starts from the account's permissions, and takes its start once.
+  if (app === undefined || status !== "read")
     return (
       <SettingsScreen
         sub
@@ -79,10 +83,12 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
     );
 
   // The scopes the reader may put in a token: the app's, without the permission scopes their account cannot have.
-  const offered = scopesOf(app.scope).filter((scope) => {
-    const permission = permissionOf(scope);
-    return permission === undefined || permissions.includes(permission);
-  });
+  const offered = scopesOf(app.scope)
+    .filter((scope) => {
+      const permission = permissionOf(scope);
+      return permission === undefined || permissions.includes(permission);
+    })
+    .join(" ");
 
   const submit = (form: HTMLFormElement) => {
     if (busy) return;
@@ -91,7 +97,11 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
     setFault(undefined);
     setSaid(undefined);
     setBusy(true);
-    issueToken(app.id, scope === "" ? undefined : scope).then(setMade, (error: unknown) => {
+    // An emptied field asks for what it started with: sent without scopes, the request would ask for the app's whole
+    // scope, the permission scopes the account cannot have among it. Only where the field started empty too (the app
+    // has no scope the account may have) is none sent, and the server says why not.
+    const asked = scope === "" ? offered : scope;
+    issueToken(app.id, asked === "" ? undefined : asked).then(setMade, (error: unknown) => {
       setBusy(false);
       const { faults, refused } = refusedOf(error);
       setFault(faults.scope);
@@ -136,7 +146,7 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
               label={t("settings.apps.form.scope")}
               hint={t("settings.apps.token.scope.hint")}
               error={fault}
-              defaultValue={offered.join(" ")}
+              defaultValue={offered}
               autoComplete="off"
               autoCapitalize="none"
             />

@@ -78,7 +78,7 @@ export { SecurityPasskey } from "./settings/security/passkey";
 export { SecurityPassword } from "./settings/security/password";
 export { loadSecuritySettings, SecuritySettings } from "./settings/security/security";
 export { SecurityTwoFactor } from "./settings/security/two-factor";
-export { SettingsBeside, settingsEntryPath, SettingsIndex } from "./settings/menu";
+export { SettingsBeside, settingsEntryPath, settingsFactsWaitMs, SettingsIndex } from "./settings/menu";
 export {
   SettingsEntryScreen,
   SettingsMissing,

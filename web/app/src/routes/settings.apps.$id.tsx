@@ -23,8 +23,14 @@ function Screen(props: SettingsSubProps) {
   return <OwnApp key={id} id={id} {...props} />;
 }
 
+/** The screen under the app's name, for a signed-in reader, whose apps alone are read. */
+function Titled() {
+  const { id } = Route.useParams();
+  return <SettingsUnder entry="apps" title={useOwnAppTitle(id)} signedIn Screen={Screen} />;
+}
+
 function AppScreen() {
   const { data } = Route.useRouteContext();
-  const { id } = Route.useParams();
-  return <SettingsUnder entry="apps" title={useOwnAppTitle(id)} signedIn={data !== null} Screen={Screen} />;
+  // Without a session nothing of the reader's is read: the title is the settings' own.
+  return data === null ? <SettingsUnder entry="apps" title="" signedIn={false} Screen={Screen} /> : <Titled />;
 }

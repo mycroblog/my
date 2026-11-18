@@ -625,11 +625,7 @@
   },
   "settings.security.linked.done": {
     "defaultMessage": "{provider} のアカウントを連携しました。このアカウントでログインできます。",
-    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.security.linked.done.unknown."
-  },
-  "settings.security.linked.done.unknown": {
-    "defaultMessage": "ほかのサービスのアカウントを連携しました。このアカウントでログインできます。",
-    "description": "As settings.security.linked.done, when the page does not know the name of the service the browser came back from."
+    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there, and the account holds a link at that service. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
   "settings.confirm.external.error": {
     "defaultMessage": "{reason, select, denied {このサーバーでは、ほかのサービスのそのアカウントは使えません。別のアカウントで試すか、管理者に問い合わせてください。} linked_elsewhere {ほかのサービスのそのアカウントは、このサーバーの別のアカウントと連携しています。先にそちらで連携を解除するか、ほかのサービスの別のアカウントを連携してください。} already_linked {そのサービスのアカウントはすでに連携しています。別のアカウントを連携するには、先に連携を解除してください。} mismatch {ほかのサービスでログインしたアカウントは、このアカウントと連携していません。連携したアカウントでもう一度試してください。} unavailable {そのサービスはいま使えません。あとでもう一度試すか、別の方法を使ってください。} rate_limited {試行回数が多すぎます。しばらく待ってから、もう一度試してください。} expired {時間がかかりすぎました。もう一度試してください。} other {ほかのサービスでのログインが完了しませんでした。もう一度試してください。}}",
@@ -1100,8 +1096,8 @@
     "description": "The line under the heading Token for your own account on the page Issue token: what issuing a token does."
   },
   "settings.apps.token.scope.hint": {
-    "defaultMessage": "アプリのスコープの範囲で、スペースで区切って入力します。空のままにすると、アプリのすべてのスコープになります。",
-    "description": "The hint under the label Scopes on the page Issue token. The field starts with all the scopes of the app."
+    "defaultMessage": "アプリのスコープの範囲で、スペースで区切って入力します。空にすると、はじめに入っていたスコープになります。",
+    "description": "The hint under the label Scopes on the page Issue token. The field starts with the scopes of the app that the reader's account may put in a token: all of them, but the permission scopes (admin:manage_invites) of permissions the account does not have. A field the reader emptied asks for those same scopes."
   },
   "settings.apps.token.admin": {
     "defaultMessage": "admin:manage_invites のような権限のスコープを持てるのは、ここで発行するトークンだけです。指定できるのは、自分のアカウントが持つ権限のスコープに限られます。アプリを許可する画面でアプリが要求しても、拒否されます。",
@@ -1318,6 +1314,10 @@
   "settings.invites.more": {
     "defaultMessage": "さらに表示",
     "description": "The button under the list Your invites that shows the next, older invites."
+  },
+  "settings.invites.failed_more": {
+    "defaultMessage": "この一覧の続きを読み込めませんでした。",
+    "description": "Under the list Your invites on the settings' page Invites, when its next, older invites could not be read after Show more (the network, the server); the button under it then reads Try again (settings.retry) and asks for them again."
   },
   "settings.invites.cannot": {
     "defaultMessage": "招待を作れません",

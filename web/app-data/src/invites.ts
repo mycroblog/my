@@ -214,8 +214,18 @@ export type OwnInviteRead = {
 };
 
 /**
+ * The reader's invite of `id` among the pages of the list read so far; undefined until one holds it. It asks for no
+ * further page, which is the invite's screen's to do (`useOwnInviteRead`): what only names the invite beside that
+ * screen (the title of its page) reads it here, since two that paged would each ask for the same page.
+ */
+export function useOwnInviteFound(id: string): OwnInvite | undefined {
+  return useOwnInvites().items.find((item) => item.id === id);
+}
+
+/**
  * The reader's invite of `id`. The API reads no invite alone: it is found in the list, whose next pages are read, one
- * after another, until one holds it or there is none left.
+ * after another, until one holds it or there is none left. One screen reads an invite so at a time: a second that did
+ * would ask for each further page again (`useOwnInviteFound` reads what the first found).
  */
 export function useOwnInviteRead(id: string): OwnInviteRead {
   const { items, status, hasNextPage, isFetchingNextPage, fetchNextPage, refetch } = useOwnInvites();
@@ -268,7 +278,8 @@ export function useMayInvite(): boolean {
  * Whether the server has answered whether the reader may create invites (`useMayInvite`): the instance was read, and,
  * unless it takes no invites, the first page of the reader's invites was read or could not be. The settings' menu
  * paints its entries once it has, so that it never gains one a moment after it painted, on the app's first load too,
- * whose loader does not wait.
+ * whose loader does not wait. It stays false for as long as the client sends the read again to a server that answers
+ * 429 or 503 (mykit's retries, which no read turns off): what waits for it bounds its own wait.
  */
 export function useInviteRightKnown(): boolean {
   const instance = useQuery(instanceQuery(useAppData()));

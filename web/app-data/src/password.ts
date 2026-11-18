@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The account's password (FR-002, ADR-0106): whether it has one, changing or setting it, and removing it where a
 // passkey or a linked account remains to sign in with. Both writes end every other browser and app of the account,
-// so those lists are read again. A change is confirmed with the current password or a passkey; a setting by an account
-// without a password, and a removal, with a passkey or a linked provider's confirmation (confirmation.ts).
+// so those lists are read again. A change is confirmed with the current password, a passkey or a linked provider's
+// confirmation; a setting by an account without a password, and a removal, with a passkey or a linked provider's
+// confirmation (confirmation.ts).
 import type { components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
@@ -19,10 +20,15 @@ export function passwordStatusQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/accounts/password");
 }
 
-/** What a write of the password changed: the status is as the server left it, and the lists it ended are read again. */
+/**
+ * What a write of the password changed: the status is as the server left it, the reads of it on their way cancelled
+ * first, and the lists it ended are read again.
+ */
 async function passwordWritten(data: AppData, hasPassword: boolean): Promise<void> {
   const { queryClient } = data;
-  queryClient.setQueryData<PasswordStatus>(passwordStatusQuery(data).queryKey, { has_password: hasPassword });
+  const { queryKey } = passwordStatusQuery(data);
+  await queryClient.cancelQueries({ queryKey });
+  queryClient.setQueryData<PasswordStatus>(queryKey, { has_password: hasPassword });
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: browserSessionsQuery(data).queryKey }),
     queryClient.invalidateQueries({ queryKey: authorizedAppsQuery(data).queryKey }),

@@ -66,18 +66,15 @@ export function confirmationRefused(error: unknown, kind: Confirmation["kind"]):
  * confirmation for one operation. It rejects with the server's problem, or with the PasskeyError of the browser's
  * ceremony (`reason` says why: the reader closed the prompt, the browser has no passkeys).
  */
-export async function confirmWithPasskey(
-  data: AppData,
-  { signal }: { signal?: AbortSignal | undefined } = {},
-): Promise<Confirmation> {
-  const { data: begun } = await data.api.POST("/passkeys/confirmation", signal === undefined ? {} : { signal });
+export async function confirmWithPasskey(data: AppData): Promise<Confirmation> {
+  const { data: begun } = await data.api.POST("/passkeys/confirmation");
   if (begun === undefined) throw new Error("app-data: /passkeys/confirmation answered without options");
-  const credential = await getPasskey(begun.options, { signal });
+  const credential = await getPasskey(begun.options);
   return { kind: "passkey", passkey: { confirmation_token: begun.confirmation_token, credential } };
 }
 
 /** Confirms with a passkey, from a screen (confirmWithPasskey). */
-export function useConfirmWithPasskey(): (options?: { signal?: AbortSignal | undefined }) => Promise<Confirmation> {
+export function useConfirmWithPasskey(): () => Promise<Confirmation> {
   const data = useAppData();
-  return (options) => confirmWithPasskey(data, options);
+  return () => confirmWithPasskey(data);
 }

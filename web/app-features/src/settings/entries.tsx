@@ -9,7 +9,7 @@
 // read before the menu paints (whether the reader may create invites) is read by the settings' loader
 // (`loadSettingsFacts`), so that the menu comes with every entry it has instead of gaining one a moment later; on the
 // app's first load, whose loader does not wait, the menu paints its entries once that fact is known
-// (`useSettingsFactsKnown`).
+// (`useSettingsFactsKnown`), or once it has waited long enough for it (menu.tsx).
 
 import {
   loadInviteRight,

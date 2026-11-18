@@ -5,9 +5,12 @@ import type { components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
+import { removeCached, writeCached } from "./written";
 
 /** A browser signed in to the account. */
 export type BrowserSession = components["schemas"]["BrowserSession"];
+
+type BrowserSessionList = components["schemas"]["BrowserSessionList"];
 
 /** The browsers signed in, the current one first. */
 export function browserSessionsQuery({ queries }: AppData) {
@@ -15,24 +18,29 @@ export function browserSessionsQuery({ queries }: AppData) {
 }
 
 /**
- * Signs out the browser of `id`, and takes it from the cache once the server did. It rejects with the server's
- * problem (404: not in the list any more; 409: it is the browser that asks).
+ * Signs out the browser of `id`, and takes it from the cache once the server did, the reads of the list on their way
+ * cancelled first. A browser the server no longer lists (404) is signed out already: it resolves all the same, and the
+ * list is read again. It rejects with the server's problem (409: it is the browser that asks).
  */
 export async function revokeBrowserSession(data: AppData, id: string): Promise<void> {
-  await data.api.DELETE("/sessions/{id}", { params: { path: { id } } });
-  data.queryClient.setQueryData<components["schemas"]["BrowserSessionList"]>(
+  await removeCached<BrowserSessionList>(
+    data,
     browserSessionsQuery(data).queryKey,
-    (now) => (now === undefined ? now : { ...now, items: now.items.filter((s) => s.id !== id) }),
+    data.api.DELETE("/sessions/{id}", { params: { path: { id } } }),
+    (now) => ({ ...now, items: now.items.filter((s) => s.id !== id) }),
   );
 }
 
-/** Signs out every browser but the one that asks, and leaves the cache with that one. It rejects with the problem. */
+/**
+ * Signs out every browser but the one that asks, and leaves the cache with that one, the reads of the list on their
+ * way cancelled first. It rejects with the problem.
+ */
 export async function revokeOtherBrowserSessions(data: AppData): Promise<void> {
   await data.api.POST("/sessions/revoke_others");
-  data.queryClient.setQueryData<components["schemas"]["BrowserSessionList"]>(
-    browserSessionsQuery(data).queryKey,
-    (now) => (now === undefined ? now : { ...now, items: now.items.filter((s) => s.current) }),
-  );
+  await writeCached<BrowserSessionList>(data, browserSessionsQuery(data).queryKey, (now) => ({
+    ...now,
+    items: now.items.filter((s) => s.current),
+  }));
 }
 
 /** The browsers signed in, current first; undefined until the server answered. */

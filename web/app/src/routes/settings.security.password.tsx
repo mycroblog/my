@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The password, at /settings/security/password, a screen under the settings' Security (FR-002): changing it, setting
-// one, removing it. Back, in its head, goes to Security. Without a session it asks the reader to sign in.
+// The password, at /settings/security/password, a screen under the settings' Security (FR-002): changing it, or
+// setting one for an account that has none; removing it is a row of Security itself. Back, in its head, goes to
+// Security. Without a session it asks the reader to sign in.
 
 import { loadSecuritySettings, SecurityPassword, useSecurityTitle } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";

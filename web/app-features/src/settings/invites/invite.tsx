@@ -12,7 +12,7 @@
 // The API reads no invite alone: the screen finds it in the list (app-data's `useOwnInviteRead`). An address that
 // names no invite of the reader's says so in the sections' place, with the way to the list.
 
-import { useOwnInviteRead, useOwnInviteWrites } from "@my/app-data";
+import { useOwnInviteFound, useOwnInviteRead, useOwnInviteWrites } from "@my/app-data";
 import {
   BackButton,
   Button,
@@ -35,10 +35,13 @@ export type InviteScreenProps = {
   id: string;
 };
 
-/** The code of the reader's invite of `id`, the title of its page; the list's name until the invite is read. */
+/**
+ * The code of the reader's invite of `id`, the title of its page; the list's name until the invite is read, which is
+ * the screen's to do: the title asks for no page of the list.
+ */
 export function useOwnInviteTitle(id: string): string {
   const { t } = stringsIn(useLocale().locale);
-  return useOwnInviteRead(id).invite?.code ?? t("settings.invites.own");
+  return useOwnInviteFound(id)?.code ?? t("settings.invites.own");
 }
 
 export function OwnInviteScreen({ id, onBack }: SettingsSubProps & InviteScreenProps) {

@@ -5,8 +5,9 @@
 // - Off, it turns it on: the server's secret for an authenticator app, as a QR code and as a key to copy, asked for as
 //   the screen opens (nothing is kept until the code is taken), then the code the app makes from it, and Turn on. A
 //   code the server refuses says so under its field, in the server's words, and the field takes the focus; a setup
-//   that expired is replaced by a new one, and the screen says so beside the button, with the field empty again and
-//   the focus in it.
+//   that expired leaves the screen with its secret, which says that it loads (its title takes the focus) or that it
+//   failed until a new one is read, and then says so beside the button, with the field empty again and the focus in
+//   it.
 // - Turned on, or the recovery codes made again: the recovery codes, shown this once, with Copy and the plain statement
 //   that they are not shown again; Finish goes back to Security. The view takes the place of the one before it, so
 //   its title takes the focus, and what made the codes is a status.
@@ -94,6 +95,13 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
   const fault = useFieldFault(fieldId);
   const [said, setSaid] = useState<string>();
   const reading = useReadingNotice(setup !== undefined ? "read" : status === "failed" ? "failed" : "loading", restart);
+  // A setup that expired goes with its form, and the button the reader pressed with it: until the new one is read,
+  // the screen's title takes the focus, which the new field then takes.
+  const title = useRef<HTMLHeadingElement>(null);
+  const replacing = round > 0 && setup === undefined;
+  useEffect(() => {
+    if (replacing) title.current?.focus();
+  }, [replacing]);
 
   const submit = () => {
     const code = typed.trim();
@@ -109,7 +117,8 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
       setBusy(false);
       if (totpSetupExpired(error)) {
         // The secret is gone with its setup: the app needs the new one, and the code of the old one is no use. The
-        // field is empty again and takes the focus, for the code of the new entry.
+        // old secret leaves the screen at once, which says that it loads until the new one is read; the field is
+        // then empty again and takes the focus, for the code of the new entry.
         restart();
         setTyped("");
         setRound((n) => n + 1);
@@ -134,6 +143,7 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
       <SettingsScreen
         sub
         title={t("settings.security.two_factor")}
+        titleRef={title}
         back={back}
         notice={reading}
         foot={
