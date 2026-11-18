@@ -162,7 +162,8 @@ export function Status({ page }: { page: AuthPage }) {
           ) : (
             status.pending && <FormText>{t("auth.status.pending")}</FormText>
           )}
-          {status.verifyEmail && (
+          {/* A rejected registration never gets in: confirming its address would lead nowhere. */}
+          {status.verifyEmail && !status.rejected && (
             <Form action={paths.resendVerification}>
               <FormState page={page} returnTo={false} />
               <FormText>{status.verifyEmail}</FormText>
