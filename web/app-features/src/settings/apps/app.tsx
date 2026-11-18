@@ -6,7 +6,8 @@
 //   says the secret it has stops working, and the new one is then shown this once, in the screen's place, with Copy
 //   and the plain statement that it is not shown again; and Issue token, which opens its screen (token.tsx).
 // - App settings: a form saved as a whole, the fields of form.tsx, and a sentence that says the app's type and why it
-//   stays. What the server refuses of a field shows under that field, and what came of saving right before the button.
+//   stays. A field left empty that an app needs, and what the server refuses of a field, show under that field,
+//   which takes the focus; what came of saving shows right before the button.
 // - Delete app, after a confirmation that says every token of it stops working, for everyone, for good; deleted, the
 //   screen goes back to Apps.
 //
@@ -38,11 +39,19 @@ import {
   SubmitBar,
   useLocale,
 } from "@my/design-system";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
 import { Asking } from "../security/parts";
-import { AppAccessFields, AppIdentityFields, missingOf, readApp, refusedOf, type AppFaults } from "./form";
+import {
+  AppAccessFields,
+  AppIdentityFields,
+  missingOf,
+  readApp,
+  refusedOf,
+  useFaultFocus,
+  type AppFaults,
+} from "./form";
 import { appsPaths, Kept, Once, Unread, type AppScreenProps } from "./parts";
 
 /**
@@ -69,11 +78,21 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
   const [kept, setKept] = useState<OAuthApp>();
   /** The secret the server just made, shown until the reader says they kept it. */
   const [secret, setSecret] = useState<string>();
+  /**
+   * How many times the reader finished with a secret shown once: the screen then takes that view's place again, and
+   * its title takes the focus the view's button left, as a screen's heading does.
+   */
+  const [finished, setFinished] = useState(0);
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (finished > 0) title.current?.focus();
+  }, [finished]);
   const [busy, setBusy] = useState(false);
   const [faults, setFaults] = useState<AppFaults>({});
   const [result, setResult] = useState<{ saved: true } | { saved: false; said: string }>();
   /** New fields after each save, which start from the app as the server left it. */
   const [round, setRound] = useState(0);
+  const fault = useFaultFocus();
   const app = read ?? kept;
   const back = <BackButton onPress={onBack}>{t("settings.entry.apps")}</BackButton>;
 
@@ -95,6 +114,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
         values={[{ what: "secret", label: t("settings.apps.secret"), value: secret }]}
         onDone={() => {
           setSecret(undefined);
+          setFinished((n) => n + 1);
         }}
       />
     );
@@ -108,7 +128,11 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
     const missing = missingOf(values, t);
     setFaults(missing);
     setResult(undefined);
-    if (Object.keys(missing).length > 0) return;
+    if (Object.keys(missing).length > 0) {
+      // Nothing is sent: the first field left empty takes the focus, with what it needs under it.
+      fault.focus();
+      return;
+    }
     setBusy(true);
     writes.update(app.id, values).then(
       () => {
@@ -121,6 +145,8 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
         const { faults: refused, refused: placed } = refusedOf(error);
         setFaults(refused);
         setResult({ saved: false, said: placed.reason ?? t("settings.confirm.failed") });
+        // The field the server refused takes the focus; a refusal that names none stays before the button.
+        fault.focus();
       },
     );
   };
@@ -128,6 +154,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
   return (
     <>
       <form
+        ref={fault.ref}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();
@@ -137,6 +164,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
         <SettingsScreen
           sub
           title={app.name}
+          titleRef={title}
           back={back}
           foot={
             <SubmitBar

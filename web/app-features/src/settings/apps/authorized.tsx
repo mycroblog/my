@@ -129,9 +129,15 @@ export function AuthorizedAppScreen({
             confirm={t("settings.apps.revoke")}
             run={async () => {
               await revoke(app.id);
-              // The server's own web client took this browser's session with it.
-              if (own) onSessionEnded();
-              else onBack();
+              if (!own) {
+                onBack();
+                return;
+              }
+              // The server's own web client took this browser's session with it: the app leaves, and until it has,
+              // the confirmation stays as it is, spinning, as the one of signing out does. The screen under it reads
+              // nothing more of a server that would refuse it.
+              onSessionEnded();
+              await new Promise<never>(() => undefined);
             }}
             onClose={() => {
               setAsking(false);

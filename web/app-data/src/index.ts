@@ -415,7 +415,7 @@ export {
   type PickerCustomEmoji,
   type StatusReactor,
 } from "./reactions";
-export { endSession, onSignedOutElsewhere, openSession, visitorData, type SessionEnd } from "./session";
+export { closeSession, endSession, onSignedOutElsewhere, openSession, visitorData, type SessionEnd } from "./session";
 export {
   appPath,
   finishSignIn,

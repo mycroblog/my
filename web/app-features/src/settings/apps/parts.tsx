@@ -20,7 +20,7 @@ import {
   useLocale,
 } from "@my/design-system";
 import { copyText } from "@my/platform";
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -110,7 +110,7 @@ export function Kept({ what, label, value }: { what: KeptWhat; label: string; va
 
 /**
  * The screen that shows what the server gives only once, in the place of the screen that asked for it: first what
- * happened (`said`) and what it means (`about`), then each value in a section under its own name, a secret under the
+ * happened (`said`), which takes the focus as the screen comes, and what it means (`about`), then each value in a section under its own name, a secret under the
  * statement that it is not shown again, right at it; a client ID, which the app's screen shows again, has none.
  * Finish ends the screen, which the reader presses once they kept what must be kept.
  */
@@ -129,6 +129,12 @@ export function Once({
   onDone: () => void;
 }): ReactNode {
   const { t } = stringsIn(useLocale().locale);
+  // It took another view's place, whose focus went with it (the form's button, the confirmation's): the sentence
+  // that says what happened takes the focus, so that a screen reader reads it first.
+  const happened = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    happened.current?.focus();
+  }, []);
   return (
     <SettingsScreen
       sub
@@ -141,7 +147,7 @@ export function Once({
         </SubmitBar>
       }
     >
-      <StatusSummary icon="accepted" title={said} about={about} />
+      <StatusSummary icon="accepted" title={said} titleRef={happened} about={about} />
       {values.map((value) => (
         <SettingsSection
           key={value.what}

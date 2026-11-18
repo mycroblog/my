@@ -9,7 +9,7 @@
 //
 // A permission scope (`admin:<permission>`) is only ever carried by a token issued here, and only for a permission
 // the reader's account has: the screen says so, and the field starts without the ones the account cannot have. What
-// the server refuses of the scopes shows under the field; an app the administrators disabled gets no token, which the
+// the server refuses of the scopes shows under the field, which takes the focus; an app the administrators disabled gets no token, which the
 // screen says in the form's place.
 
 import { useOAuthApp, useOAuthAppRead, useOAuthAppWrites, usePermissions, type OAuthAppToken } from "@my/app-data";
@@ -27,7 +27,7 @@ import {
 import { useId, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
-import { refusedOf } from "./form";
+import { refusedOf, useFaultFocus } from "./form";
 import { Once, Unread, type AppScreenProps } from "./parts";
 import { scopesOf } from "./scopes";
 
@@ -50,6 +50,7 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
   const [said, setSaid] = useState<string>();
   /** The tokens the server just issued, shown until the reader leaves. */
   const [made, setMade] = useState<OAuthAppToken>();
+  const refusedField = useFaultFocus();
 
   if (made !== undefined)
     return (
@@ -94,11 +95,14 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
       const { faults, refused } = refusedOf(error);
       setFault(faults.scope);
       setSaid(refused.reason ?? t("settings.confirm.failed"));
+      // The scopes the server refused take the focus; a refusal of anything else stays before the button.
+      refusedField.focus();
     });
   };
 
   return (
     <form
+      ref={refusedField.ref}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();

@@ -6,8 +6,9 @@
 // secret stands under the plain statement of that, each has its Copy, and the button at the screen's end goes back to
 // Apps, whose list holds the app.
 //
-// What the server refuses of a field shows under that field, and anything else right before the button, in the
-// server's words (25 apps already, too many registered within the hour). Where the server's administrators turned
+// A field left empty that an app needs, and what the server refuses of a field, show under that field, and the first
+// such field takes the focus; anything else the server refuses shows right before the button, in the server's words
+// (25 apps already, too many registered within the hour), and the focus stays there. Where the server's administrators turned
 // registration off, which the list of the reader's apps says, the screen says so in the form's place from the first
 // read, as the section of Apps does, and offers no form; until that list is read it says that it loads, or that it
 // could not be read. Registration turned off while the form was open is told by the refusal, and the screen then says
@@ -42,6 +43,7 @@ import {
   missingOf,
   readApp,
   refusedOf,
+  useFaultFocus,
   type AppFaults,
   type AppType,
 } from "./form";
@@ -66,6 +68,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
   const [said, setSaid] = useState<string>();
   /** The app the server just registered, with its secret: shown until the reader leaves. */
   const [made, setMade] = useState<OAuthAppCreated>();
+  const fault = useFaultFocus();
 
   if (made !== undefined) {
     const secret = made.client_secret;
@@ -91,7 +94,11 @@ export function AppRegister({ onBack }: SettingsSubProps) {
     const missing = missingOf(values, t);
     setFaults(missing);
     setSaid(undefined);
-    if (Object.keys(missing).length > 0) return;
+    if (Object.keys(missing).length > 0) {
+      // Nothing is sent: the first field left empty takes the focus, with what it needs under it.
+      fault.focus();
+      return;
+    }
     setBusy(true);
     const { website, ...needed } = values;
     const request = { ...needed, client_type: type, ...(website === "" ? {} : { website }) };
@@ -102,6 +109,8 @@ export function AppRegister({ onBack }: SettingsSubProps) {
       const { faults: refused, refused: placed } = refusedOf(error);
       setFaults(refused);
       setSaid(placed.reason ?? t("settings.confirm.failed"));
+      // The field the server refused takes the focus; a refusal that names none stays before the button.
+      fault.focus();
     });
   };
 
@@ -119,6 +128,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
 
   return (
     <form
+      ref={fault.ref}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();

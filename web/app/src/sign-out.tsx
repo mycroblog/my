@@ -15,9 +15,10 @@
 // signed in, and the confirmation says so. The settings' menu and the closed server's page both sign out this way.
 //
 // A session the server ended with what the reader did on a screen (revoking the server's own web client among the
-// authorized apps) leaves the same way, with no question, since nothing is left to refuse.
+// authorized apps, which ends every browser's) leaves the same way, with no question and no revocation, since
+// nothing is left to revoke or to refuse: the same is removed, the other tabs follow, and the app starts again.
 
-import { endSession, type SessionEnd } from "@my/app-data";
+import { closeSession, endSession, type SessionEnd } from "@my/app-data";
 import { SignOutDialog } from "@my/app-features";
 import { ModalPresence } from "@my/design-system";
 import { clearCaches } from "@my/platform";
@@ -60,17 +61,14 @@ export function followSignOut({ data, leave }: Pick<RouterContext, "data" | "lea
 }
 
 /**
- * Leaves the app as after signing out, for a session of `context` that the server has ended already. The token went
- * with the session, so a revocation the server does not take changes nothing: what the session left in this browser
- * is removed all the same, and the app is left for its start.
+ * Leaves the app as after signing out, for a session of `context` that the server has ended already, in every
+ * browser. The token went with the session, so no revocation is sent: the session is closed in this browser (this
+ * tab's token and cache of server data, what the browser kept), the other tabs hear that the reader signed out and
+ * follow as after a sign-out (`followSignOut`), and the app is left for its start, which loads anew, signed out.
  */
-export async function leaveEndedSession({ data, config, leave }: Session): Promise<void> {
+export async function leaveEndedSession({ data, leave }: Pick<Session, "data" | "leave">): Promise<void> {
   if (data === null) await removeKept();
-  else
-    await endSession(data, config.clientId, removeKept).catch(async () => {
-      data.queryClient.clear();
-      await removeKept();
-    });
+  else await closeSession(data, removeKept);
   leave(startPath);
 }
 

@@ -9,7 +9,7 @@
 
 import type { OAuthApp } from "@my/app-data";
 import { ChoiceList, TextField, useLocale } from "@my/design-system";
-import { useId } from "react";
+import { useEffect, useId, useRef, useState, type RefObject } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { stringsIn } from "../../locale";
 import { scopesOf } from "./scopes";
@@ -77,6 +77,29 @@ export function refusedOf(error: unknown): { faults: AppFaults; refused: Refused
     if (text !== undefined) faults[field] = text;
   }
   return { faults, refused };
+}
+
+/**
+ * Moves the focus to the first field of a form that says something is wrong with its value, so that a screen reader
+ * reads the field with what is wrong and the reader corrects it at once: `ref` is the form's, and `focus` asks, each
+ * time the form said its faults (its own check before sending, or what the server refused of a field), once those
+ * words stand under their fields. With no field at fault it moves nothing: what the server refused of the whole
+ * stands right before the button, which keeps the focus.
+ */
+export function useFaultFocus(): { ref: RefObject<HTMLFormElement | null>; focus: () => void } {
+  const ref = useRef<HTMLFormElement>(null);
+  /** Each ask, counted: the same faults said again ask again. */
+  const [asked, setAsked] = useState(0);
+  useEffect(() => {
+    if (asked === 0) return;
+    ref.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
+  }, [asked]);
+  return {
+    ref,
+    focus: () => {
+      setAsked((n) => n + 1);
+    },
+  };
 }
 
 type FieldsProps = {
