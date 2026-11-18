@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The mail of the demo server. It runs with `mail = none` (server/demo.ts): its mailer sends nothing, and in the
-// `development` profile it writes each message whole to the server's log, for a developer to take a link from. A
-// message is one JSON line of the log that says "mail not sent (mail = none)" with the recipient, the subject and the
-// text. A test reads the mail of its own person there, as the person would open it.
-//
-// With no mailer that delivers, the server asks nobody to confirm an email address before the account can be used,
-// treats an open registration as one that waits for approval, and offers no password reset by email: the flows that
-// need a delivered mail are not the demo server's.
+// The mail of the demo server. It runs with `mail = fake` (server/demo.ts), the mailer of the test build: the server
+// counts on it as on one that delivers, so it asks a new person to confirm their email address before the account can
+// be used, lets an open registration in once the address is confirmed, and mails password reset links
+// (`/auth/forgot_password`). The mailer sends nothing: it writes each message whole to the server's log, one JSON line
+// that says "mail not sent (mail = fake)" with the recipient (`to`), the subject and the text. A test reads the mail of
+// its own person there, as the person would open it.
 
 import { readFileSync } from "node:fs";
 

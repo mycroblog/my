@@ -3,22 +3,29 @@
 // The demo server (ADR-0015 §7, §8), which the decider's demo (`scripts/task.sh web:demo`, main.ts) and the E2E tests
 // (specs/global-setup.ts) both start: the test build of `bin/my` (GO_TAGS=e2e_fakes, with the web client of web:build
 // embedded) on a fresh SQLite database and blob directory, with the schema applied by `my schema apply`, in the
-// `development` profile with the settings that need no outside service (no mail, the fake payments, voice chat between
-// browsers on one machine, federation off), seeded with the scenario (seed/main.ts). The directory is made anew on
-// every start: the fake payments keep their side in the server's memory alone. Web Push is on (ADR-0015 §3, §9): a
-// VAPID key made on every start (`my config vapid-key`), and the fake push service of the test build (`my dev
-// push-service`, over HTTPS with the certificate of scripts/mailpit-cert.sh, whose CA the server trusts), which starts
-// before the server and stops with it; push_allowed_destinations lets the server's sends reach it alone.
+// `development` profile with the settings that need no outside service (the fake mailer, which writes each mail to the
+// log (mail.ts), the fake payments, voice chat between browsers on one machine, federation off), seeded with the
+// scenario (seed/main.ts). The directory is made anew on every start: the fake payments keep their side in the server's
+// memory alone. Web Push is on (ADR-0015 §3, §9): a VAPID key made on every start (`my config vapid-key`), and the fake
+// push service of the test build (`my dev push-service`, over HTTPS with the certificate of scripts/mailpit-cert.sh,
+// whose CA the server trusts), which starts before the server and stops with it; push_allowed_destinations lets the
+// server's sends reach it alone. So is signing in with a login provider: the fake OpenID Connect provider of the test
+// build (`my dev oidc-provider`, started and trusted the same way, reached through
+// login_provider_allowed_destinations), which the seed registers as the scenario's login provider.
 
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { randomBytes } from "node:crypto";
 import { existsSync, mkdirSync, openSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { loginProvider } from "../scenario";
 import type { SeedState } from "../seed/seed";
 import { myBin, root } from "./paths";
 
 /** The fake push service beside the demo server: its origin, and the CA that signs its certificate. */
 type DemoPush = { origin: string; ca: string };
+
+/** The fake OpenID Connect provider beside the demo server: its issuer, the origin of its authorization page. */
+type DemoOIDC = { issuer: string };
 
 export type DemoOptions = {
   /** The directory of the database, the blobs, the key, the logs and the seed's state; emptied first. */
@@ -42,6 +49,8 @@ export type Demo = {
   logFile?: string;
   /** The fake push service that the server's Web Push sends reach. */
   push: DemoPush;
+  /** The fake OpenID Connect provider behind the scenario's login provider (scenario.ts, loginProvider). */
+  oidc: DemoOIDC;
   /** Stops the server and removes the directory. */
   stop: () => Promise<void>;
 };
@@ -79,7 +88,10 @@ function serverEnv(dir: string, port: number): Record<string, string> {
     MY_BLOB_FS_DIR: join(dir, "blobs"),
     // A file: Bun drops an environment value that ends in "=", as a base64 key may.
     MY_KEK_FILE: join(dir, "kek"),
-    MY_MAIL: "none",
+    // The mailer of the test build: the server counts on mail (it asks a new person to confirm their address and
+    // mails password reset links) and writes each message to its log instead of sending it (mail.ts).
+    MY_MAIL: "fake",
+    MY_MAIL_FROM: "noreply@demo.test",
     MY_PAYMENTS: "fake",
     MY_TRANSLATOR_FAKE: "true",
     MY_VOICE: "p2p",
@@ -125,30 +137,36 @@ async function ready(url: string, server: ChildProcess): Promise<void> {
 const certs = process.env["MAILPIT_CERTS"] ?? join(root, ".tmp/mailpit");
 
 /**
- * Starts the fake push service on a free port, with the certificate of scripts/mailpit-cert.sh (made when missing),
- * and returns once it listens.
+ * Starts the fake `name` of the test build (`my dev <name>`) on a free port, with its certificate of
+ * scripts/mailpit-cert.sh, its origin given as the flag `originFlag`, and returns it and its origin once it listens.
  */
-async function startPushService(env: Record<string, string>, stdio: "inherit" | number) {
-  execFileSync(join(root, "scripts/mailpit-cert.sh"), [], { env: { ...env, MAILPIT_CERTS: certs }, stdio: "ignore" });
+async function startFake(
+  name: "push-service" | "oidc-provider",
+  originFlag: string,
+  args: readonly string[],
+  env: Record<string, string>,
+  stdio: "inherit" | number,
+) {
   const port = freePort(0);
   const origin = `https://localhost:${String(port)}`;
   const fake = spawn(
     myBin,
     [
       "dev",
-      "push-service",
+      name,
       "-listen",
       `127.0.0.1:${String(port)}`,
-      "-origin",
+      originFlag,
       origin,
       "-cert",
-      join(certs, "push-service.pem"),
+      join(certs, `${name}.pem`),
       "-key",
-      join(certs, "push-service.key"),
+      join(certs, `${name}.key`),
+      ...args,
     ],
     { env, stdio: ["ignore", "pipe", stdio] },
   );
-  // It prints "my dev push-service: listening on ..." once it accepts connections.
+  // It prints "my dev <name>: listening on ..." once it accepts connections.
   const up = await new Promise<boolean>((done) => {
     const timer = setTimeout(() => {
       done(false);
@@ -166,9 +184,30 @@ async function startPushService(env: Record<string, string>, stdio: "inherit" | 
   });
   if (!up) {
     fake.kill("SIGTERM");
-    throw new Error("demo: my dev push-service did not start (is bin/my the test build, GO_TAGS=e2e_fakes?)");
+    throw new Error(`demo: my dev ${name} did not start (is bin/my the test build, GO_TAGS=e2e_fakes?)`);
   }
-  return { fake, push: { origin, ca: join(certs, "ca.pem") } };
+  return { fake, origin };
+}
+
+/**
+ * Starts the fake push service and the fake OpenID Connect provider, with the certificates of scripts/mailpit-cert.sh
+ * (made when missing), and returns once both listen.
+ */
+async function startFakes(env: Record<string, string>, stdio: "inherit" | number) {
+  execFileSync(join(root, "scripts/mailpit-cert.sh"), [], { env: { ...env, MAILPIT_CERTS: certs }, stdio: "ignore" });
+  const push = await startFake("push-service", "-origin", [], env, stdio);
+  try {
+    const client = ["-client-id", loginProvider.clientId, "-client-secret", loginProvider.clientSecret];
+    const oidc = await startFake("oidc-provider", "-issuer", client, env, stdio);
+    return {
+      fakes: [push.fake, oidc.fake],
+      push: { origin: push.origin, ca: join(certs, "ca.pem") },
+      oidc: { issuer: oidc.origin },
+    };
+  } catch (err) {
+    push.fake.kill("SIGTERM");
+    throw err;
+  }
 }
 
 /** Starts the demo server, seeds it, and returns once the scenario is in. */
@@ -189,6 +228,7 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
   env["MY_VAPID_PRIVATE_KEY_FILE"] = join(o.dir, "vapid");
   writeFileSync(env["MY_VAPID_PRIVATE_KEY_FILE"], vapid, { mode: 0o600 });
   env["MY_PUSH_ALLOWED_DESTINATIONS"] = "localhost";
+  env["MY_LOGIN_PROVIDER_ALLOWED_DESTINATIONS"] = "localhost";
   env["SSL_CERT_FILE"] = join(certs, "ca.pem");
   const log = join(o.dir, "server.log");
   const stdio = o.output === "inherit" ? "inherit" : openSync(log, "a");
@@ -205,13 +245,13 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
     throw failed(err);
   }
 
-  let started: Awaited<ReturnType<typeof startPushService>>;
+  let started: Awaited<ReturnType<typeof startFakes>>;
   try {
-    started = await startPushService(env, stdio);
+    started = await startFakes(env, stdio);
   } catch (err) {
     throw failed(err);
   }
-  const { fake, push } = started;
+  const { fakes, push, oidc } = started;
   const server = spawn(myBin, ["serve"], { env, stdio: ["ignore", stdio, stdio] });
   const exited = new Promise<void>((done) =>
     server.once("exit", () => {
@@ -220,7 +260,7 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
   );
   const stop = async () => {
     if (server.exitCode === null && server.signalCode === null) server.kill("SIGTERM");
-    fake.kill("SIGTERM");
+    for (const fake of fakes) fake.kill("SIGTERM");
     await exited;
     rmSync(o.dir, { recursive: true, force: true });
   };
@@ -236,6 +276,8 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
         url,
         "--state",
         stateFile,
+        "--oidc-issuer",
+        oidc.issuer,
       ],
       { env: { ...env, E2E_MY_BIN: myBin }, stdio: ["ignore", stdio, stdio], cwd: root },
     );
@@ -245,7 +287,7 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
     const envFile = join(o.dir, "my-env.json");
     const settings = Object.fromEntries(Object.entries(env).filter(([k]) => k.startsWith("MY_")));
     writeFileSync(envFile, JSON.stringify(settings, null, 2), { mode: 0o600 });
-    return { url, state, stateFile, envFile, ...(o.output === "file" ? { logFile: log } : {}), push, stop };
+    return { url, state, stateFile, envFile, ...(o.output === "file" ? { logFile: log } : {}), push, oidc, stop };
   } catch (err) {
     failed(err);
     await stop();

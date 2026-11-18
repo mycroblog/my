@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A person who lost their password sets a new one on the server's reset screen and signs in with it. The demo server
-// delivers no email (src/mail.ts), so it mails no reset link: the link is the one an administrator issues for the
-// person, which leads to the same screen.
+// A person who lost their password sets a new one on the server's reset screen and signs in with it. The link is the
+// one an administrator issues for the person, which leads to the same screen as the one the server mails.
 
 import { Frame, PasswordReset, SignIn } from "./screens";
 import { expect, test } from "./test";

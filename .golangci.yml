@@ -1144,6 +1144,30 @@ linters:
           deny:
             - pkg: github.com/mycroblog/my/internal/adapter/pushservice/fake
               desc: only cmd/my/dev_push_service.go (build tag e2e_fakes) and tests import the fake push service
+        # The fake mailer sends nothing and writes each message, with its links, to the log: besides the tests, only
+        # the test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-fakes.sh checks it).
+        mail-fake:
+          list-mode: lax
+          files:
+            - $all
+            - "!$test"
+            - "!**/internal/adapter/mail/fake/**"
+            - "!**/internal/platform/adapters_mail_fake.go"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/mail/fake
+              desc: only internal/platform/adapters_mail_fake.go (build tag e2e_fakes) and tests import the fake mailer
+        # The fake OpenID Connect provider signs anyone in without a password: besides the tests, only the test builds
+        # (build tag e2e_fakes) link it, through the one file of my dev oidc-provider (ADR-0015 §9).
+        oidc-provider-fake:
+          list-mode: lax
+          files:
+            - $all
+            - "!$test"
+            - "!**/internal/adapter/oidc/fake/**"
+            - "!**/cmd/my/dev_oidc_provider.go"
+          deny:
+            - pkg: github.com/mycroblog/my/internal/adapter/oidc/fake
+              desc: only cmd/my/dev_oidc_provider.go (build tag e2e_fakes) and tests import the fake OpenID Connect provider
         # The live interoperability scenarios are black-box clients of running servers (test/federation-live/README.md):
         # HTTP to the client APIs and a read of this server's database (pgx), nothing of this module.
         federation-live:

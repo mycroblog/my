@@ -119,8 +119,8 @@ so no hosts file entry is needed. The server runs with `profile = development` a
   models, and translations fail until it answers.
 - The Go code and the web client's build are not reloaded: `docker compose restart my` builds both again and restarts
   the server. `scripts/task.sh web:dev` serves the client with reloading.
-- `GO_TAGS=e2e_fakes` builds the [test build](#build-tags), with the fake push service, payment provider, search
-  index, and translation provider.
+- `GO_TAGS=e2e_fakes` builds the [test build](#build-tags), with the fake push service, OpenID Connect provider,
+  payment provider, search index, translation provider, and mailer.
 - Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
   that another program uses must move there.
 - `my` runs as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
@@ -372,8 +372,8 @@ Pull requests and the merge queue check the same adapter against a stand-in SMTP
 ## Build tags
 
 The build tag `e2e_fakes` makes the test build: it adds the fake payment provider (`payments = fake`), search index
-(`search = fake`), and translation provider (`translator_fake = true`), and the command `my dev push-service`.
-No released binary or image has it.
+(`search = fake`), translation provider (`translator_fake = true`), and mailer (`mail = fake`), and the commands
+`my dev push-service` and `my dev oidc-provider`. No released binary or image has it.
 
 ```sh
 scripts/task.sh go:bin GO_TAGS=e2e_fakes
@@ -382,14 +382,16 @@ MY_PROFILE=development MY_PAYMENTS=fake bin/my serve
 
 Four checks keep the fakes out of production; each one stops them on its own when another one is bypassed:
 
-- **At start.** A binary without the tag rejects the three settings and has no `my dev` command. A test build refuses
-  them, and `my dev push-service`, unless `profile = development`, and logs a warning that it is a test build.
+- **At start.** A binary without the tag rejects the four settings and has no `my dev` command. A test build refuses
+  them, and the commands of `my dev`, unless `profile = development`, and logs a warning that it is a test build.
 - **The build check.** `scripts/task.sh go:fakes-check` (`scripts/go-fakes.sh`; part of `scripts/task.sh go:check`, and
   CI runs it in the merge queue) fails when `cmd/my` without the tag depends on a fake or on a package that only tests
   may link, or when the build with the tag lacks a fake. Only files with the constraint `//go:build e2e_fakes` import
   the fakes outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider,
   `internal/platform/adapters_search_fake.go` the fake search index, `internal/platform/adapters_translator_fake.go`
-  the fake translation provider, and `cmd/my/dev_push_service.go` the fake push service.
+  the fake translation provider, `internal/platform/adapters_mail_fake.go` the fake mailer,
+  `cmd/my/dev_push_service.go` the fake push service, and `cmd/my/dev_oidc_provider.go` the fake OpenID Connect
+  provider.
 - **The container image.** The `Dockerfile` stops when `GO_TAGS` has `e2e_fakes`, before it compiles anything, and
   checks the binary it built as the release check does.
 - **The release.** `scripts/check-release-build.sh BINARY...` fails when the Go build info of a binary
@@ -398,6 +400,15 @@ Four checks keep the fakes out of production; each one stops them on its own whe
 
 `scripts/task.sh go:fakes-test` runs `go vet` on the test build and the tests that only it has, named `*E2EFakes*`;
 CI runs it in the slow suite.
+
+### The fake mailer
+
+With `mail = none` the server does not count on email: it asks nobody to confirm an address, makes sign-ups in the
+`open` mode wait for approval, and offers no password reset by email. `mail = fake` (with `mail_from`) makes it behave
+as with a mailer that delivers, and sends nothing: each message goes whole to the server log, as one line
+`mail not sent (mail = fake)` with `category`, `to`, `from_name`, `reply_to`, `subject`, and `text`. Take the link of a
+confirmation or a password reset from that line. The demo server of `scripts/task.sh web:demo` and the end-to-end
+tests run with it; to see an email as it is really sent, use Mailpit ([Emails](#emails)).
 
 ### The fake push service
 
@@ -428,6 +439,46 @@ development Mailpit in [Emails](#emails)) and its SSRF guard lets the Web Push s
 | `POST /push/<id>`, a push message to the endpoint | `201` with `Location` when it is accepted; `401` without a `vapid` `Authorization`; `403` when the token's signature, its `k` (other than the subscription's `applicationServerKey`), its `aud` (other than the origin), its `exp` (past, or more than 24 hours ahead), or its `sub` (missing) fails; `400` without `TTL`, with a `Content-Encoding` other than `aes128gcm`, a bad `Urgency` or `Topic`, or a body that does not decrypt; `413` over 4096 bytes; `404` for an unknown subscription; `410` once it has expired |
 | `POST /subscriptions/<id>/expire` | `204`; later push messages to it answer `410` |
 | `GET /subscriptions/<id>/messages` | `200` and `{"messages": [...]}`: every push message to it, oldest first, with `status`, `error` (why it was refused), `plaintext`, `ttl`, `urgency`, `topic`, `subject`, and `received_at` |
+
+### The fake OpenID Connect provider
+
+`my dev oidc-provider` stands in for an organization's identity provider, which a test cannot sign in to: an OpenID
+Connect provider over HTTPS on this machine for one client, with Discovery, an authorization page, a token endpoint,
+and the JWKS of the key it signs ID tokens with (ES256, a new key on every start). Its authorization page asks for no
+password. Its form names who signs in: the subject (`sub`), the email address and whether the provider verified it
+(`email`, `email_verified`), the name (`name`), and the username (`preferred_username`). "Sign in" sends the browser
+back with a code, and "Deny" with `error=access_denied`. The same subject is the same account at the provider, so one
+provider serves every person of a test. Each submission is a new authentication whose time is the ID token's
+`auth_time`, which answers a request to sign in again (`max_age=0`, `prompt=login`).
+
+```sh
+scripts/mailpit-cert.sh   # the development CA and .tmp/mailpit/oidc-provider.pem
+MY_PROFILE=development bin/my dev oidc-provider   # https://localhost:8931
+printf 'my-dev-client-secret\n' | bin/my login-provider create -kind oidc -name "Example SSO" \
+  -issuer https://localhost:8931 -client-id my -allow-signup
+```
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `-listen` | `127.0.0.1:8931` | The address to listen on |
+| `-issuer` | `https://localhost:<port of -listen>` | The issuer, the origin that the server and the browser reach it at |
+| `-client-id`, `-client-secret` | `my`, `my-dev-client-secret` | The credentials of the one client, which the login provider of the server has |
+| `-cert`, `-key` | `.tmp/mailpit/oidc-provider.pem`, `.tmp/mailpit/oidc-provider.key` | The TLS certificate and its key, for `localhost` and `127.0.0.1`, signed by the development CA |
+| `-config` | `$MY_CONFIG` | The configuration file; it reads only `profile`, which must be `development` |
+
+`my serve` reaches it only when it trusts the development CA (`SSL_CERT_FILE=.tmp/mailpit/ca.pem`) and its SSRF guard
+lets the requests to login providers reach `localhost`
+([`login_provider_allowed_destinations`](docs/reference/configuration.md#login_provider_allowed_destinations) set to
+`localhost`). A browser does not trust that CA: it warns before the authorization page, and a Playwright test opens
+the page in a context with `ignoreHTTPSErrors`.
+
+| Request | Answer |
+| --- | --- |
+| `GET /.well-known/openid-configuration` | The Discovery document: the endpoints below, `ES256`, `S256`, `client_secret_basic` |
+| `GET /jwks` | The JSON Web Key Set |
+| `GET /authorize?...` | The authorization page of an authentication request with `response_type=code`, the client's `client_id`, a `redirect_uri`, a `scope` with `openid`, and a `code_challenge` with `code_challenge_method=S256`; `400` for another client or without a redirect URI, and a redirect with `error` for the rest |
+| `POST /authorize?...` with the form (`sub`, `email`, `email_verified=true`, `name`, `preferred_username`, `action=allow` or `deny`) | `303` to the redirect URI with `code` and `state`, or with `error=access_denied`; the page again with `400` without a subject |
+| `POST /token` with `grant_type=authorization_code`, `code`, `redirect_uri`, `code_verifier`, and the client's credentials in HTTP Basic authentication | `200` and `id_token` (with `access_token`, `token_type`, `expires_in`); `401` `invalid_client` for other credentials; `400` `invalid_grant` for a code that is unknown, redeemed before, or older than a minute, another redirect URI, or a verifier that does not match |
 
 ### Leaving an adapter out
 

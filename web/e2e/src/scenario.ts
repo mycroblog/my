@@ -314,6 +314,17 @@ export const instance: Readonly<Record<string, string>> = {
   scheduled_post_min_lead_minutes: "1",
 };
 
+/**
+ * The login provider of the demo server, registered with `my login-provider create` as an OpenID Connect provider that
+ * lets new people sign up and people link their accounts: the fake provider of the test build
+ * (`my dev oidc-provider`), whose page signs in whoever its form names, as this client.
+ */
+export const loginProvider = {
+  name: "Example SSO",
+  clientId: "my-demo",
+  clientSecret: "my-demo-client-secret",
+} as const;
+
 /** The server's custom emoji, added with `my admin emoji create`. */
 export const emojis: readonly CustomEmoji[] = [
   {

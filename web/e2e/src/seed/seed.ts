@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Applies the scenario (scenario.ts, ADR-0015 §5) to a running `my serve`: the people, the instance settings and the
-// custom emoji with `bin/my`, everything else with the client API through @mycroblog/mykit, signed in as each person
+// custom emoji and the login provider with `bin/my`, everything else with the client API through @mycroblog/mykit, signed in as each person
 // (sign-in.ts). It writes no SQL: the timelines and notifications come from the actions. Every creating request carries
 // `Idempotency-Key: demo:<key>`, and what the server already has is found again (people by username, posts with images
 // by their alt text, articles by title, apps by name, emoji by shortcode, announcements and events by title, drafts by text) and left alone, so a second
@@ -27,6 +27,7 @@ import {
   instance,
   interactions,
   lists,
+  loginProvider,
   people,
   personOf,
   posts,
@@ -63,6 +64,8 @@ export type SeedOptions = {
   runMy: RunMy;
   /** The state of an earlier run against the same server. */
   state?: SeedState;
+  /** The issuer of the fake OpenID Connect provider (`my dev oidc-provider`); without it, no login provider. */
+  oidcIssuer?: string;
   log?: (line: string) => void;
 };
 
@@ -201,6 +204,38 @@ class Seeder {
       }
       if (current !== value) this.#o.runMy(["instance", "set", k, "-"], value);
     }
+  }
+
+  /**
+   * The login provider, the fake OpenID Connect provider at the issuer given, registered with
+   * `my login-provider create` unless the server has one of its name.
+   */
+  registerLoginProvider() {
+    const issuer = this.#o.oidcIssuer;
+    if (issuer === undefined) return;
+    // The columns of `my login-provider list`: ID, KIND, NAME, ...
+    const have = this.#o
+      .runMy(["login-provider", "list"])
+      .split("\n")
+      .some((line) => line.split(/\s{2,}/)[2] === loginProvider.name);
+    if (have) return;
+    this.#o.runMy(
+      [
+        "login-provider",
+        "create",
+        "-kind",
+        "oidc",
+        "-name",
+        loginProvider.name,
+        "-issuer",
+        issuer,
+        "-client-id",
+        loginProvider.clientId,
+        "-allow-signup",
+      ],
+      `${loginProvider.clientSecret}\n`,
+    );
+    this.log(`registered the login provider ${loginProvider.name}`);
   }
 
   /** The custom emoji, each from a PNG file drawn into a temporary directory. */
@@ -691,6 +726,7 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   const s = new Seeder(o);
   s.createPeople();
   s.configureInstance();
+  s.registerLoginProvider();
   await s.addEmojis();
   await s.setUpProfiles();
   await s.follow();

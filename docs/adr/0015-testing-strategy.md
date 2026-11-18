@@ -3,7 +3,7 @@
 - Status: Accepted
 - Date: 2026-10-16
 - Deciders: @rosylilly
-- Issue: #14, #453, #1674, #1712, #1720, #2453, #2863, #2875
+- Issue: #14, #453, #1674, #1712, #1720, #2453, #2863, #2875, #3208
 
 ## Decision（決定）
 
@@ -84,6 +84,7 @@
   3. **コンテナのイメージ**: `Dockerfile` は `GO_TAGS` に `e2e_fakes` があればビルドを失敗させる。イメージは試験用のビルドを作らない。
   4. **リリース**: 公開する binary とイメージを作るジョブは、成果物の Go のビルド情報（`go version -m` の `build -tags=`。Go 1.27.3 で確かめた）に `e2e_fakes` がないことを確かめるスクリプトを通す。
 - ADR-0074 §8 の「fake は本番の binary に入らない」は保たれる。変わるのは、試験用のビルドに限って fake を組み立てられることだけである。
+- **fake のメール**（`mail = fake`）: 何も送らず、メールの全文をログに書く。サーバーは届く mailer として扱う。組み立てと 4 つの確かめは決済と同じにする。
 
 ### 7. 外部のサービスを使わない
 
@@ -93,29 +94,25 @@
 | --- | --- |
 | `profile` | `development` |
 | `database`・`blob` | `sqlite`（起動のたびに新しいファイル）・`fs` |
-| `mail` | `smtp` で Mailpit へ（`mail_smtp_host = localhost`、`mail_smtp_port = 1025`、下の「メール」） |
+| `mail` | `fake`（§6、下の「メール」） |
 | `federation_mode`（インスタンスの設定） | `off`（ADR-0006。外へ配送も取得もしない） |
 | `voice` | `p2p`（STUN・TURN なし。同じマシンのブラウザどうしで繋がる） |
 | `payments` | `fake`（§6） |
 | Web Push | `vapid_private_key` をその場で作り（`my config vapid-key`）、`push_allowed_destinations` に fake のオリジンだけを書く（§9、§11） |
-| CAPTCHA・外部 IdP・エラーと計測の送り先 | 設定しない（無効） |
+| 外部 IdP | fake の IdP（§9）を、登録とひも付けを許す `oidc` の IdP として登録し、`login_provider_allowed_destinations` に fake のオリジンだけを書く |
+| CAPTCHA・エラーと計測の送り先 | 設定しない（無効） |
 
 **メール**:
 
-- Mailpit は、開発の構成と同じ固定のイメージ（ルートの `compose.yaml` のタグとダイジェスト）で、同じ設定（`scripts/mailpit-cert.sh` の開発用の CA の証明書で STARTTLS を必須にする）で動かす。
-  `mail = smtp` は STARTTLS と証明書の検証を省かないので、`my serve` は `SSL_CERT_FILE` でその CA を信頼する。`SSL_CERT_FILE` はシステムのルート証明書を置き換え、サーバーは外の HTTPS に繋がらなくなるが、デモ環境は外へ出ないので（`federation_mode = off`）かえって都合がよい。
-- これで、メールのリンクを開く作業（パスワードの再設定、メールアドレスの確認、メールで送る招待）を、手元でも L4 でも利用者と同じ道筋で通せる。
-- **L4 のエージェントは、Mailpit の Web の画面（`http://127.0.0.1:8025`）を別のタブで開いてメールを読む**。利用者がメールのアプリを開いてリンクを押すのと同じ形で、こちらのメールの文面とリンクの分かりやすさも作業に含めて確かめられるからである。
-  ハーネスが REST API でリンクを取って渡す形は採らない。メールに気づいて開く段とメールの文面を飛ばし、作業の一部を測らなくなるからである。
-  Mailpit の画面の中の手数は Mailpit の作りに左右されるので、ハーネスは Mailpit のオリジンでの手数を別に記録し、作業の手数と lostness から除く（L1 の最短の手順では「メールを開いてリンクを押す」を 1 手と数える）。
+- `mail = none` のサーバーは `open` の登録を承認待ちにし、メールアドレスの確認もメールでのパスワードの再設定も出さない。デモ環境は、届く mailer として働く fake を使う。
+- メールのリンクを開く流れは、E2E も手元も、ログからその人物へのメールを読んで通す。
 
 ### 8. 入口
 
-- **手元**: `scripts/task.sh web:demo` が、`scripts/task.sh docker:mailpit` で Mailpit を起動し（すでに動いていればそのまま使う。Docker が要る）、`GO_TAGS=e2e_fakes` で `bin/my` を作り、`.tmp/demo/` に新しい DB を作ってスキーマを当て、`my serve` を起動してシードを流し、URL と人物のログインを表示する。
+- **手元**: `scripts/task.sh web:demo` が、`GO_TAGS=e2e_fakes` で `bin/my` を作り、`.tmp/demo/` に新しい DB を作ってスキーマを当て、`my serve` を起動してシードを流し、URL と人物のログインを表示する。
   起動のたびに DB を作り直す（fake の状態はメモリにだけあり、残した DB と食い違うため）。決定者の手での確認はこれを使う。
 - **L4**: `app/web/e2e/server.ts` に、`voice` と同じく別の DB とポートの `demo` のサーバーを足し、L4（`app/web/l4/run.ts`）はそれを起動する。
-  作業は筋書きの人物でログインして始め、シードで測れるようになった作業の `unavailable` を外す。nightly の L4 のジョブも `e2e_fakes` で `bin/my` を作り、Mailpit を同じイメージのダイジェストで動かす。
-  Mailpit は証明書を作ってから起動しなければならないので、ジョブの `services:` ではなく、`scripts/mailpit-cert.sh` の後のステップで ルートの `compose.yaml` から起動する（`services:` のコンテナはチェックアウトの前に起動し、証明書を読めない）。
+  作業は筋書きの人物でログインして始め、シードで測れるようになった作業の `unavailable` を外す。nightly の L4 のジョブも `e2e_fakes` で `bin/my` を作る。
 - **E2E**: 既存の spec は、最小のフィクスチャの `main` のサーバーのままにする（前提を変えない）。本物のデータが要る spec は、筋書きを通すために `demo` のサーバーを使う。E2E と L4 の binary は CI の中だけで使い、公開しない。
 - **画面のストーリー**（ADR-0079）: MSW のフィクスチャは、人物・投稿の文・画像を `scenario.ts` から読んでよい（できるところから）。サーバーの応答を録って生成したフィクスチャはコミットしない（ADR-0081）。
 
@@ -123,7 +120,8 @@
 
 - `e2e_fakes` のビルドの `my` にだけ入るサブコマンド（`my dev push-service`）として置く。単一の binary を保ち、§6 の 4 つの確かめ（実行時・静的な検査・コンテナ・リリース）にそのまま入れる。
   実行時は、`profile = development` の設定でなければ起動を拒む。
-- `localhost` の別のポートで **HTTPS** で待つ（endpoint を `https` に限る領域の規則を変えない）。証明書は Mailpit と同じ開発用の CA（`scripts/mailpit-cert.sh`）で作り、`my serve` は §7 の `SSL_CERT_FILE` でそれを信頼する。
+- `localhost` の別のポートで **HTTPS** で待つ（endpoint を `https` に限る領域の規則を変えない）。証明書は開発用の CA（`scripts/mailpit-cert.sh`）で作り、`my serve` は `SSL_CERT_FILE` でそれを信頼する。
+  `SSL_CERT_FILE` はシステムのルート証明書を置き換えるが、デモ環境は外へ出ない。
 - 振る舞い（状態はメモリにだけ置く）:
   - **購読の発行**: `applicationServerKey` を受け、P-256 の鍵の対と 16 バイトの `auth` を作り、`PushSubscriptionJSON`（endpoint・`p256dh`・`auth`）を返す。
   - **受信**（RFC 8030 §5）: `TTL` と `Content-Encoding: aes128gcm` を要し、`Authorization: vapid t=…, k=…` の JWT を検証する（ES256 の署名、`k` が購読の `applicationServerKey` と一致、`aud` が fake のオリジン、`exp` が 24 時間以内の未来、`sub` がある。RFC 8292 §2・§3）。
@@ -131,6 +129,8 @@
   - **失効**: 購読を失効させる操作を持ち、以後の受信に `410` を返す（サーバーの失効の扱いを確かめるため）。
   - **読み出し**: 購読ごとに受け取った平文と検証の結果を返す。
 - 受信と検証のコードは `internal/adapter/webpush` の暗号の実装と別に書く（同じ誤りを両側で持たないため）。テストは RFC 8291 付録 A の例で両側を確かめる。
+- **fake の OpenID Connect の IdP**（`my dev oidc-provider`）も同じ形で置く。Discovery・認可・トークン・JWKS を持ち、クライアントの秘密・リダイレクト先・コードが一度きりであること・PKCE を確かめ、ES256 の ID トークンを返す。
+  認可のページはパスワードを求めず、ログインする人（`sub`、メールアドレスと検証の有無、名前）をフォームで選ばせ、送るたびに新しい認証として `auth_time` を入れる（ADR-0106 §3.7）。
 
 ### 10. Web Push のブラウザの側
 
@@ -171,13 +171,18 @@
 - 本物のブラウザの購読の振る舞い（鍵の変更・ブラウザの側の失効）の退行が、差し替えのせいで見逃される場合（ブラウザのフラグで宛先を変える形か、本物の push service での手での確認を足す）。
 - Web Push の利用が小さく、fake と差し替えの保守が見合わない場合（デモ環境では Web Push を出さない形に戻す）。
 
+### 15. fake のメールと IdP の見直す条件
+
+- メールの経路（SMTP、ヘッダ、HTML）の退行を E2E で拾う必要が出た場合と、メールを読む画面を使う検査を再び置く場合（Mailpit に戻す）。
+- fake の IdP が本物の IdP とずれ、外部ログインの退行を見逃した場合（本物の IdP の実装で確かめる）。
+
 ## 経緯
 
 エージェントが自律的に作業するには、変更の正しさを機械的に判定できる必要がある（NFR-DEV-1, 2）。アダプタの差し替え可能性（NFR-PORT-3）と連合互換性（G4）も継続的に保証するため、§1 と §2 を決めた。頻度は、E2E を main への push だけに移し（ADR-0079）、検査を PR・Merge Queue・main・nightly に振り分け（ADR-0079）、Merge Queue に一本化した（ADR-0079）順に変わった。
 
 コンテナの PostgreSQL は `go test` の大半の時間を準備に使い、並列のエージェントでは reaper の起動失敗やタイムアウトで落ちた。spike #453 で pgmem（MIT、PGlite のフォークを WebAssembly にし wasm2go で Go に変換したもの）を試すと、4 つのパッケージの全テストが変更なしで通り（スキーマ、`FOR UPDATE` / `SKIP LOCKED`、advisory lock、READ COMMITTED、デッドロック検出 40P01 を含む）、CI の `go test ./...` は 129 秒から 52〜59 秒になった。
 
-本物のサーバーを動かして画面を確かめる場面が増えたが、サーバーのデータがほとんどなく、L4 の多くの作業が測れなかった。v0 の公開の前の決定者の手での確認も、人が使っている途中のサーバーを要る。そこで §5 から §8 を決めた。基準は、支払い済みと記録できる fake が本番の binary に決して入らないこと、データが領域の規則（ADR-0020）を通ること、外部のサービスと秘密を要さないこと、決定的で冪等であること、本物の `my serve` を測ることである。メールは決定者の問いを受けて、ログへの出力から Mailpit に替えた。
+本物のサーバーを動かして画面を確かめる場面が増えたが、サーバーのデータがほとんどなく、L4 の多くの作業が測れなかった。v0 の公開の前の決定者の手での確認も、人が使っている途中のサーバーを要る。そこで §5 から §8 を決めた。基準は、支払い済みと記録できる fake が本番の binary に決して入らないこと、データが領域の規則（ADR-0020）を通ること、外部のサービスと秘密を要さないこと、決定的で冪等であること、本物の `my serve` を測ることである。メールは Mailpit に替えたが、作り直した E2E のデモは `mail = none` で動き、メールアドレスの確認とメールでの再設定を通せなかった。決定者は 2026-11-18 に、Docker を足さず CI を変えないこと、ほかの fake と同じ形であること、Mailpit の画面を読む課題テストがなくなったこと（#2863）から fake の mailer に替え、外部 IdP の流れ（FR-010、ADR-0106）を通すために fake の IdP を足した。
 
 デモ環境は当初 Web Push を設定しなかったが、決定者の求めで検討した。ブラウザの購読の宛先（FCM）に CI の headless のブラウザは届かず、サーバーの送信は SSRF ガードがループバックを拒み、endpoint は領域の規則（`notification.ErrInvalidPushEndpoint`）で `https` に限り、Service Worker の `push` の処理は本物のブラウザで通っていなかった。FR-206、FR-210、ADR-0086 を本番を弱めず本番と同じ経路で通すため、§9 から §14 を決めた。決定者はプッシュサービスを自前の偽物、SSRF ガードの例外を開発用プロファイルに限るもの、fake の置き場所を `e2e_fakes` のサブコマンドとした。
 
@@ -192,7 +197,8 @@ E2E はすべての spec を幅 5 × ロケール 4 の 20 プロジェクトで
 - fake を常に binary に入れ `profile` で止める: ビルドの種類が増えないが、設定の誤り一つで支払いの偽装に届く。
 - デモ用の別の binary: 最も強い隔離だが、単一の binary の構成から外れ、コマンドとフラグを二重に保ち、L4 が本物の `my serve` を測らなくなる。
 - Stripe のテストモード・stripe-mock: 本物の事業者の画面を通せるが、鍵とネットワークが要り fork と手元で動かない。stripe-mock は申し込みの画面を持たない。
-- `mail = none`: Docker が要らず最も軽いが、リンクはログにしか出ず、利用者の道筋でメールを開く作業を測れない。
+- `mail = none`: 最も軽いが、届く mailer のないサーバーとして振る舞い、メールアドレスの確認とメールでの再設定が出ない。
+- Mailpit: 本物の SMTP とメールを読む画面を通せるが、Docker が要り、その画面を使う課題テストはもうない。
 - デモ環境で Web Push を出さない: 何も増えないが、送信のジョブから Service Worker の通知までを通す確かめがなく、Web Push の設定の画面を L4 で測れない。
 - [marc1706/web-push-testing](https://github.com/marc1706/web-push-testing): 必要な機能を持ち MIT で自前のコードが要らないが、Node と npm の依存を足し、HTTP だけで待ち、`aud` と `exp` の検査は要検証で、保守者は 1 人（2026-10-28 に GitHub の API とソースで確認）。[web-push-testing-service](https://github.com/GoogleChromeLabs/web-push-testing-service) はアーカイブ済み。
 - ブラウザのフラグで宛先を変える: 差し替えなしで本物の購読の流れを通せるが、GCM・MCS か autopush のプロトコルを話す必要があり（要検証）、作るものがずっと大きい。
@@ -212,7 +218,7 @@ E2E はすべての spec を幅 5 × ロケール 4 の 20 プロジェクトで
 - シードが client / admin の API と `@mycroblog/mykit` を通るので、API とライブラリの使い方の確かめにもなる。筋書きは API の変更に合わせて保守が要り、壊れれば nightly の L4 で翌日に分かる。
 - ビルドの種類が増え、試験用のビルドと公開するビルドを取り違える余地が生まれる。§6 の 4 つの確かめで防ぐが、確かめのスクリプトとタグの名前は保守の対象になる。
 - fake の申し込みの画面は Stripe・PAY.JP の画面と違うので、事業者の画面の中の迷いやすさは L4 では測れない。
-- `web:demo` と L4 のジョブは Mailpit のために Docker を要る。Mailpit のイメージの更新は、開発の構成・統合テストと同じダイジェストを揃えて行う。
+- デモ環境は Docker を要らない。SMTP の経路は `mail = smtp` の統合テストが確かめる。fake の IdP のページは、開発用の CA を信頼しないブラウザで証明書の警告が出る。
 - サーバーの暗号化・VAPID・送信のジョブ・失効の扱いと Service Worker の `push` の処理を、本物のコードで E2E と L4 から通せる。自前の fake が RFC 8291・8292 をこちらの実装と別に検証するので、相互運用の誤りの一部を CI で見つけられる。
 - fake と init script の差し替えは保守の対象で、差し替えた `PushManager` はブラウザの本物の購読の振る舞い（鍵の変更、ブラウザの側の失効）を再現しない。
 - 設定の鍵と `e2e_fakes` のコードが増える。§11 の許可リストは本番では使えないが、鍵の存在そのものは設定の説明（`docs/reference/configuration.md`）に載る。

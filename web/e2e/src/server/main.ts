@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The decider's demo (`scripts/task.sh web:demo`, ADR-0015 §8): the demo server (demo.ts) in .tmp/demo/ on DEMO_PORT
-// (8787 by default), with its output here, until Ctrl-C. It prints the URL and the people's sign-ins once the scenario
-// is in.
+// (8787 by default), with its output here, until Ctrl-C. It prints the URL, the people's sign-ins, where the mail is and
+// how the login provider signs in once the scenario is in.
 
 import { join } from "node:path";
-import { people } from "../scenario";
+import { loginProvider, people } from "../scenario";
 import { loginOf } from "../seed/seed";
 import { startDemo } from "./demo";
 import { root } from "./paths";
@@ -25,6 +25,9 @@ console.log(
     ...(totp.length === 0
       ? []
       : [`Two-factor secrets (add them to an authenticator app) are in ${demo.stateFile}: ${totp.join(", ")}`]),
+    'Mail is not sent: each message is a line "mail not sent (mail = fake)" of this output, with its links.',
+    `"${loginProvider.name}" on the sign-in screen is a fake provider (${demo.oidc.issuer}, whose certificate the`,
+    "browser does not trust): it signs in whoever its form names, without a password.",
     "Ctrl-C stops the server and removes its data.",
   ].join("\n"),
 );

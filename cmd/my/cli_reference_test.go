@@ -110,7 +110,7 @@ Most commands read the configuration as the server does: from the environment, a
 ` + "`-config`" + ` or ` + "`MY_CONFIG`" + ` ([configuration reference](configuration.md)). A command exits with 2 when its command
 line is wrong, without changing anything.
 
-A test build adds ` + "`my dev push-service`" + ` ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)).
+A test build adds ` + "`my dev push-service`" + ` ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)) and ` + "`my dev oidc-provider`" + ` ([contributing guide](../../CONTRIBUTING.md#the-fake-openid-connect-provider)).
 `)
 	var render func(c, parent *cliCommand)
 	render = func(c, parent *cliCommand) {

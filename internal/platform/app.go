@@ -667,6 +667,10 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	return a, nil
 }
 
+// testBuildMailers builds the Mailer of each value of mail that only a test build has (build tag
+// e2e_fakes, ADR-0015 §6): the files of that build add theirs, and any other build has none.
+var testBuildMailers = map[string]func(ctx context.Context, cfg *config.Config, logger *slog.Logger) (kernel.Mailer, error){}
+
 func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger, meter kernel.Meter) (kernel.Mailer, error) {
 	switch cfg.Mail {
 	case "", "none":
@@ -681,6 +685,9 @@ func newMailer(ctx context.Context, cfg *config.Config, logger *slog.Logger, met
 	case "plugin":
 		return newPluginMailer(cfg, meter)
 	default:
+		if build, ok := testBuildMailers[cfg.Mail]; ok {
+			return build(ctx, cfg, logger)
+		}
 		return nil, fmt.Errorf("mail %q is not implemented yet", cfg.Mail)
 	}
 }
