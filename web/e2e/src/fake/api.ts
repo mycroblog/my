@@ -15,7 +15,8 @@
 // muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
 // conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
 // hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
-// published, the reader's articles posted and edited and the images they upload) are kept in memory; a post's edit
+// published, the reader's articles posted and edited and the images they upload, their profile, and their personal
+// settings of settings.ts) are kept in memory; a post's edit
 // history holds the scenario's versions of it, then the reader's edits. An article's body comes only with the status
 // read alone, as the server's does, and its preview renders as publishing would, unless the options make it fail. A
 // list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list
@@ -62,7 +63,9 @@ import {
   type ServerAnnouncement,
   type ServerEventPlan,
 } from "../scenario";
+import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } from "./common";
 import { articleHtml, serverHtml } from "./html";
+import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { createScripts, type Script, type Scripted } from "./script";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
@@ -166,7 +169,8 @@ export const scenario: FakeSeed = {
   follows: [...scenarioFollows, { follower: "sora@photos.example", followee: "yuki" }],
   posts: [...scenarioPosts, ...remotePosts],
   interactions: [...scenarioInteractions, { kind: "boost", by: "sam", post: "sora-film" }],
-  restrictions: scenarioRestrictions,
+  // The reader blocks quickdeals and mutes kai (the scenario's), and blocks the account sora left behind when moving.
+  restrictions: [...scenarioRestrictions, { kind: "block", by: "yuki", target: "sora@social.example" }],
   lists: scenarioLists,
   drafts: scenarioDrafts,
   announcements: scenarioAnnouncements,
@@ -312,6 +316,12 @@ export type FakeOptions = {
   notes?: Readonly<Record<string, string>>;
   /** The people whose new posts notify the reader at the start. */
   subscriptions?: readonly string[];
+  /**
+   * The reader's personal settings at the start, in place of `defaultSettings` for the members given (settings.ts):
+   * their keyword filters, badges, featured hashtags, notification policy, auto-delete policy and its maximum, imports,
+   * aliases, why the account cannot be deactivated, and the moderators' actions with their appeals.
+   */
+  settings?: Partial<FakeSettings>;
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
   /**
@@ -473,56 +483,8 @@ export type FakeApi = {
   notificationPath: (type: string) => string;
 };
 
-/** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
-const pageSize = 20;
-const maxPageSize = 40;
-const minute = 60_000;
-const day = 24 * 60 * minute;
-
-/** A problem as the server answers it: `about:blank` unless `more` names its type. */
-const problem = (status: number, title: string, more: Partial<Schema<"Problem">> = {}): Refusal => ({
-  problem: { type: "about:blank", title, status, ...more },
-});
-const notFound = () => problem(404, "Not Found");
-
 /** An answer that never comes. */
 const never = () => new Promise<never>(() => undefined);
-
-/** An ID as the server's, a UUIDv7: in its canonical form, a later one sorts after an earlier one. */
-function idAt(ms: number, n: number): string {
-  const time = Math.max(0, Math.round(ms)).toString(16).padStart(12, "0");
-  return `${time.slice(0, 8)}-${time.slice(8)}-7000-8000-${n.toString(16).padStart(12, "0")}`;
-}
-
-/** An image in the sizes the server gives it. */
-const variants = (url: string): Schema<"MediaVariants"> => ({ small: { url }, medium: { url }, large: { url } });
-
-/** A page of a list, as the server pages it. */
-type Paged<T> = { from: number; body: { items: T[]; next_cursor?: string } };
-type PageQuery = { get: (name: "cursor" | "limit") => string | null };
-
-/**
- * The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list; the cursor of a
- * page is the `key` of its last item, its ID unless the items have none.
- */
-function page<T extends { id: string }>(items: readonly T[], query: PageQuery): Paged<T>;
-function page<T>(items: readonly T[], query: PageQuery, key: (item: T) => string): Paged<T>;
-function page<T>(
-  items: readonly T[],
-  query: PageQuery,
-  key: (item: T) => string = (item) => (item as { id: string }).id,
-): Paged<T> {
-  const cursor = query.get("cursor");
-  const limit = Number(query.get("limit") ?? pageSize);
-  const size = Number.isInteger(limit) && limit > 0 ? Math.min(limit, maxPageSize) : pageSize;
-  const from = cursor === null ? 0 : items.findIndex((s) => key(s) === cursor) + 1;
-  const slice = items.slice(from, from + size);
-  const last = slice.at(-1);
-  return {
-    from,
-    body: { items: slice, ...(last !== undefined && from + size < items.length ? { next_cursor: key(last) } : {}) },
-  };
-}
 
 /** The IDs of the reader's uploads a body in Markdown shows as images (`![alt](media:ID)`), each once, in order. */
 const bodyImages = (text: string) =>
@@ -671,8 +633,36 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   // client shows a profile from at once.
   const accountOf = (username: string): Account => fullAccount(personOf(username));
 
+  /** The reader's personal settings (settings.ts), which start as `defaultSettings` with the options' members. */
+  const personal = createSettings({
+    started,
+    origin: fakeOrigin,
+    password: personOf(viewer).password,
+    accountExists: (id) => usernameOf.has(id),
+    ownStatuses: () => posts.filter((p) => p.author === viewer && visible(p)).map((p) => statusOf(p)),
+    settings: { ...defaultSettings, ...o.settings },
+  });
+  const shownBadges = personal.shownBadges;
+
+  /** What the reader changed of their own profile (PATCH /accounts/update_credentials); the seed's person otherwise. */
+  const edit: {
+    displayName?: string;
+    note?: string;
+    fields?: [string, string][];
+    avatar?: string;
+    header?: string | null;
+    locked?: boolean;
+    bot?: boolean;
+    discoverable?: boolean;
+    indexable?: boolean;
+    aiOptOut?: boolean;
+    feedEnabled?: boolean;
+    followsVisibility?: Schema<"FollowsVisibility">;
+  } = {};
+
   const fullAccount = (p: FakePerson): Account => {
     const remote = domainOf(p.username);
+    const own = p.username === viewer && !visitor;
     const username = remote === undefined ? p.username : p.username.slice(0, p.username.indexOf("@"));
     const moved = movedOf(p.username);
     return exact<Account>()({
@@ -680,18 +670,27 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       username,
       acct: p.username,
       domain: remote ?? fakeHost,
-      display_name: p.displayName,
+      display_name: own ? (edit.displayName ?? p.displayName) : p.displayName,
       emojis: [],
-      avatar: variants(drawingURL(p.avatar)),
+      avatar: variants(own && edit.avatar !== undefined ? edit.avatar : drawingURL(p.avatar)),
       uri: `${originOf(p.username)}/users/${username}`,
       url: `${originOf(p.username)}/@${username}`,
-      note: serverHtml(p.note, remote ?? fakeHost),
-      locked: p.locked ?? false,
-      bot: false,
+      note: serverHtml(own ? (edit.note ?? p.note) : p.note, remote ?? fakeHost),
+      locked: own ? (edit.locked ?? p.locked ?? false) : (p.locked ?? false),
+      bot: own ? (edit.bot ?? false) : false,
       created_at: new Date(started - 30 * day).toISOString(),
-      fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
-      badges: [],
-      ...(p.header === undefined ? {} : { header: variants(drawingURL(p.header)) }),
+      fields: (own ? (edit.fields ?? p.fields) : p.fields).map(([name, value]) => ({
+        name,
+        value: serverHtml(value, fakeHost),
+      })),
+      badges: own ? shownBadges() : [],
+      ...(own && edit.header !== undefined
+        ? edit.header === null
+          ? {}
+          : { header: variants(edit.header) }
+        : p.header === undefined
+          ? {}
+          : { header: variants(drawingURL(p.header)) }),
       // The account it moved to, without a move of its own: moves are not followed in chains.
       ...(moved === undefined ? {} : { moved: fullAccount(personOf(moved)) }),
       followers_count:
@@ -1779,13 +1778,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const p = personOf(username);
     return exact<Schema<"CredentialAccount">>()({
       ...fullAccount(p),
-      discoverable: true,
-      indexable: true,
-      ai_opt_out: false,
-      feed_enabled: false,
+      discoverable: edit.discoverable ?? true,
+      indexable: edit.indexable ?? true,
+      ai_opt_out: edit.aiOptOut ?? false,
+      feed_enabled: edit.feedEnabled ?? false,
       feed_follows_indexable: false,
-      follows_visibility: followsVisibility[username] ?? "public",
-      source: { note: p.note, fields: p.fields.map(([name, value]) => ({ name, value })) },
+      follows_visibility: edit.followsVisibility ?? followsVisibility[username] ?? "public",
+      source: {
+        note: edit.note ?? p.note,
+        fields: (edit.fields ?? p.fields).map(([name, value]) => ({ name, value })),
+      },
       posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
       statuses_count: posts.filter((x) => x.author === username).length,
       follow_requests_count: [...requested].filter((edge) => edge.endsWith(`>${username}`)).length,
@@ -2624,7 +2626,75 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         query,
       );
     },
-    "GET /accounts/{id}/featured_tags": () => ({ status: 200, body: { items: [] } }),
+    "GET /accounts/{id}/featured_tags": ({ params }) => ({
+      status: 200,
+      body: { items: params.id === idOf(viewer) ? personal.featured() : [] },
+    }),
+    "GET /followed_tags": () => ({
+      status: 200,
+      body: {
+        items: [...followedTags].map((name, i) => ({
+          name,
+          url: `${fakeOrigin}/tags/${name}`,
+          followed_at: new Date(started - (followedTags.size - i) * day).toISOString(),
+        })),
+      },
+    }),
+    "GET /blocks": async ({ query }) => {
+      const blocked = [...blocking]
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([by]) => by === viewer)
+        .map(([, target]) => accountOf(target));
+      return accountPage(blocked, query);
+    },
+    "GET /mutes": async ({ query }) => {
+      const muted = [...muting]
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([by]) => by === viewer)
+        .map(([, target]): Schema<"MutedAccount"> => ({ account: accountOf(target), hide_notifications: true }));
+      const { from, body } = page(muted, query, (m) => m.account.id);
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "PATCH /accounts/update_credentials": ({ body }) => {
+      if (visitor) return problem(401, "Unauthorized");
+      const length = (text: string) => Array.from(text).length;
+      if (body.display_name !== undefined && length(body.display_name) > 30)
+        return problem(422, "The display name is at most 30 characters");
+      if (body.note !== undefined && length(body.note) > 500)
+        return problem(422, "The profile text is at most 500 characters");
+      if (body.fields !== undefined) {
+        if (body.fields.length > 4) return problem(422, "A profile has at most 4 fields");
+        if (body.fields.some((f) => length(f.name) > 255 || length(f.value) > 255))
+          return problem(422, "A field is at most 255 characters");
+      }
+      // A picture is a processed upload of the reader's, or empty to remove it.
+      const picture = (id: string | undefined): string | null | undefined | Refusal => {
+        if (id === undefined) return undefined;
+        if (id === "") return null;
+        const url = uploads.get(id)?.url;
+        return url === undefined ? problem(422, "The image is not there or is not processed") : url;
+      };
+      const [avatar, header] = [picture(body.avatar_media_id), picture(body.header_media_id)];
+      if (typeof avatar === "object" && avatar !== null) return avatar;
+      if (typeof header === "object" && header !== null) return header;
+      if (body.display_name !== undefined) edit.displayName = body.display_name;
+      if (body.note !== undefined) edit.note = body.note;
+      if (body.fields !== undefined) edit.fields = body.fields.map((f) => [f.name, f.value]);
+      if (avatar !== undefined) {
+        if (avatar === null) delete edit.avatar;
+        else edit.avatar = avatar;
+      }
+      if (header !== undefined) edit.header = header;
+      if (body.locked !== undefined) edit.locked = body.locked;
+      if (body.bot !== undefined) edit.bot = body.bot;
+      if (body.discoverable !== undefined) edit.discoverable = body.discoverable;
+      if (body.indexable !== undefined) edit.indexable = body.indexable;
+      if (body.ai_opt_out !== undefined) edit.aiOptOut = body.ai_opt_out;
+      if (body.feed_enabled !== undefined) edit.feedEnabled = body.feed_enabled;
+      if (body.follows_visibility !== undefined) edit.followsVisibility = body.follows_visibility;
+      return { status: 200, body: credentialOf(viewer) };
+    },
     "GET /accounts/{id}/followers": ({ params, query }) => followsOf(params.id, true, query),
     "GET /accounts/{id}/following": ({ params, query }) => followsOf(params.id, false, query),
     "POST /accounts/{id}/follow": ({ params }) => change(params.id, "follow", true),
@@ -3002,17 +3072,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       pushSubscription = undefined;
       return { status: 204 };
     },
-    "GET /preferences/notifications": () => {
+    ...personal.handlers,
+    "GET /preferences/notifications": (call) => {
       if (o.pushState === "settings-fail") return problem(500, "Internal Server Error");
-      const rows = (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
-        (type): Schema<"NotificationSettingRow"> => ({
-          group: type,
-          section: "ordinary",
-          types: [type],
-          in_app: { enabled: true, fixed: false },
-        }),
-      );
-      return { status: 200, body: { rows } };
+      return personal.handlers["GET /preferences/notifications"]?.(call) ?? notFound();
     },
 
     // ---- Direct messages --------------------------------------------------------------------------------------------

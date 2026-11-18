@@ -232,12 +232,13 @@ export async function cacheRelationship(
 
 /**
  * Marks what a change of a relationship may change: the accounts with their counts and their lists of follows, the
- * timelines and the notifications, and the posts of the account. The marks of screens not shown are read when one
+ * timelines and the notifications, the lists of the accounts the viewer blocks and mutes, and the posts of the
+ * account. The marks of screens not shown are read when one
  * opens; the shown ones are read now, or with `later` when they open again.
  */
-async function markAccountLists(queryClient: QueryClient, id: string, marking: Marking): Promise<void> {
+export async function markAccountLists(queryClient: QueryClient, id: string, marking: Marking): Promise<void> {
   const refetchType = marking === "shown" ? "active" : "none";
-  const lists = ["/accounts/{id}/followers", "/accounts/{id}/following", "/notifications"];
+  const lists = ["/accounts/{id}/followers", "/accounts/{id}/following", "/notifications", "/blocks", "/mutes"];
   await Promise.all([
     queryClient.invalidateQueries({ queryKey: ["get", "/accounts/lookup"] }),
     queryClient.invalidateQueries({ queryKey: ["get", "/accounts/{id}"] }),

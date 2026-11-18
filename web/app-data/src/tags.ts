@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Hashtags (FR-203, ADR-0013 §24): a hashtag and whether the reader follows it, and following it or not. A write puts
 // the hashtag the server answered into the cache, and marks the home timeline, which the posts of a followed hashtag
-// join.
+// join, and the list of the followed hashtags.
 import type { components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
@@ -32,7 +32,10 @@ export async function followTag(data: AppData, hashtag: string, follow: boolean)
     ? await api.POST("/tags/{hashtag}/follow", path)
     : await api.DELETE("/tags/{hashtag}/follow", path);
   if (tag !== undefined) queryClient.setQueryData(tagQuery(data, hashtag).queryKey, tag);
-  await queryClient.invalidateQueries({ queryKey: ["get", "/timelines/home"] });
+  await Promise.all([
+    queryClient.invalidateQueries({ queryKey: ["get", "/timelines/home"] }),
+    queryClient.invalidateQueries({ queryKey: ["get", "/followed_tags"] }),
+  ]);
 }
 
 /** Follows a hashtag or stops following it, from a screen (`followTag`). */
