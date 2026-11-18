@@ -190,8 +190,11 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
   const door = capped && (count > most || items.hasNextPage);
   // The rows the server lists, then each the reader took out put back where it stood.
   const shown: I[] = [...(door ? items.items.slice(0, few) : items.items)];
-  for (const [key, { item, at }] of [...kept].sort((a, b) => a[1].at - b[1].at))
+  const taken = [...kept].sort((a, b) => a[1].at - b[1].at);
+  for (const entry of taken) {
+    const [key, { item, at }] = entry;
     if (!shown.some((i) => keyOf(i) === key)) shown.splice(Math.min(at, shown.length), 0, item);
+  }
   const failedMore = items.status === "success" && items.error !== null && items.hasNextPage;
   const retry = (onPress: () => void) => (
     <Button size="timeline" touch onPress={onPress}>
