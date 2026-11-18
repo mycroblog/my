@@ -5,7 +5,7 @@
   },
   "settings.back": {
     "defaultMessage": "Settings",
-    "description": "The button at the top of a settings page that goes back to the settings menu, where the menu does not stand beside the page; also the link under settings.not_found that leads to the menu. A page under an entry (one keyword filter) goes back to its entry instead, by the entry's name (settings.entry.*)."
+    "description": "The button at the top of a settings page that goes back to the settings menu, where the menu does not stand beside the page. A page under an entry (one keyword filter) goes back to its entry instead, by the entry's name (settings.entry.*)."
   },
   "settings.group.general": {
     "defaultMessage": "General",
@@ -124,8 +124,12 @@
     "description": "In the confirmation of signing out, which stays open, when the sign-out got no answer from the server (the network, the server): the reader presses the confirmation's button again."
   },
   "settings.not_found": {
-    "defaultMessage": "This settings page does not exist. Check the address, or go back to Settings.",
-    "description": "In place of a settings page at an address under /settings that names none (/settings/nothing); the link to the settings menu follows it (settings.back)."
+    "defaultMessage": "This settings page does not exist. Check the address.",
+    "description": "In place of a settings page at an address under /settings that names none (/settings/nothing), the only thing the screen says of it: the screen's heading and the document's title stay Settings (app.settings). The link to the settings menu follows it on the same line (settings.not_found.all), so the sentence does not name the menu."
+  },
+  "settings.not_found.all": {
+    "defaultMessage": "See all settings",
+    "description": "The link right after settings.not_found, on the same line, that opens the settings menu at /settings; the words of the link after a missing announcement (announcements.all)."
   },
   "settings.loading": {
     "defaultMessage": "Loading your settings…",
@@ -176,8 +180,8 @@
     "description": "The label of the choice of the time zone the app shows dates and times in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the time zones."
   },
   "settings.display.time_zone.region": {
-    "defaultMessage": "{region, select, Africa {Africa} America {Americas} Antarctica {Antarctica} Arctic {Arctic} Asia {Asia} Atlantic {Atlantic} Australia {Australia} Europe {Europe} Indian {Indian Ocean} Pacific {Pacific} other {Other}}",
-    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); other is for a zone of no such part."
+    "defaultMessage": "{region, select, Africa {Africa} America {Americas} Antarctica {Antarctica} Arctic {Arctic} Asia {Asia} Atlantic {Atlantic Ocean} Australia {Australia} Europe {Europe} Indian {Indian Ocean} Pacific {Pacific Ocean} other {Other}}",
+    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); the three oceans are named as oceans (Atlantic Ocean, Indian Ocean, Pacific Ocean). The choice offers no zone of another part, so other shows nowhere today; the format needs the branch."
   },
   "settings.display.time_zone.option": {
     "defaultMessage": "{place} ({offset})",
@@ -212,16 +216,24 @@
     "description": "The first option of Post language: a new post starts in the language the app is shown in (settings.display.language)."
   },
   "settings.display.media_description": {
-    "defaultMessage": "Ask me for a description before posting media without one",
-    "description": "The label of a switch in the New posts section of the Display and posting page of the settings: on, the composer asks the reader for a description (alt text) when a post has an image, a video or audio without one, before it is posted."
+    "defaultMessage": "Require media descriptions",
+    "description": "The label of a switch in the New posts section of the Display and posting page of the settings: on, the composer does not post an image, a video or audio that has no description (alt text) until the reader adds one. Short, to stay on one line on a phone; the line under it says the rest (settings.display.media_description.about)."
+  },
+  "settings.display.media_description.about": {
+    "defaultMessage": "When on, media needs a description (alt text) before you can post it.",
+    "description": "The line under Require media descriptions: what the switch does when on. Media is an image, a video or audio attached to a post; the description is the composer's (compose.description). While the server itself requires descriptions, settings.display.media_description.server stands in its place."
+  },
+  "settings.display.media_description.server": {
+    "defaultMessage": "This server requires a description for all media, so this is always on.",
+    "description": "The line under Require media descriptions, in place of settings.display.media_description.about, while the server requires a description of every media file (the instance's limit require_media_description): the switch shows on and cannot be changed, and this says why."
   },
   "settings.display.timeline_languages": {
     "defaultMessage": "Languages to show",
     "description": "The label of the choice of the languages whose posts the timelines show (several may be chosen), in the Timelines section of the Display and posting page of the settings."
   },
   "settings.display.timeline_languages.about": {
-    "defaultMessage": "Posts in other languages are left out of every timeline. Posts with no language set still show.",
-    "description": "The line under Languages to show: once languages are chosen, the home, list, local, federated and hashtag timelines leave out the posts marked as written in another language, and keep the posts marked with none."
+    "defaultMessage": "Once you choose languages, posts in other languages are left out of every timeline. Posts with no language set still show.",
+    "description": "The line under Languages to show, the same while no language is chosen (the choice says All languages, and nothing is left out) and once some are: with languages chosen, the home, list, local, federated and hashtag timelines leave out the posts marked as written in another language, and keep the posts marked with none."
   },
   "settings.display.timeline_languages.all": {
     "defaultMessage": "All languages",
@@ -233,11 +245,11 @@
   },
   "settings.display.timeline_languages.remove": {
     "defaultMessage": "Remove",
-    "description": "The button at the end of a language in the list under Languages to show: the timelines stop showing posts in that language alone; once the list is empty they show every language again."
+    "description": "The button at the end of a language in the list under Languages to show: it takes the language out of the list, and the timelines stop showing posts in that language alone; once the list is empty they show every language again. The word of the other buttons that take one thing out of a set (compose.remove, timeline.list_remove)."
   },
   "settings.display.timeline_languages.remove.name": {
     "defaultMessage": "Remove {language}",
-    "description": "The name of the Remove button of a language in the list under Languages to show, for assistive technology; it starts with the button's visible word (settings.display.timeline_languages.remove). language is the language's own name (日本語)."
+    "description": "The name of the Remove button of a language in the list under Languages to show, for assistive technology; it holds the button's visible word (settings.display.timeline_languages.remove). language is the language's own name (日本語)."
   },
   "settings.display.auto_insert": {
     "defaultMessage": "Show new posts as they arrive",

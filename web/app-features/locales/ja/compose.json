@@ -307,6 +307,10 @@
     "defaultMessage": "このサーバーでは、すべての画像に説明 (代替テキスト) が必要です。投稿する前に、それぞれの画像に説明を付けてください。",
     "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
   },
+  "compose.description.required.own": {
+    "defaultMessage": "設定で、すべての画像に説明 (代替テキスト) を必須にしています。投稿する前に、それぞれの画像に説明を付けてください。",
+    "description": "The error under an image's empty description, after Post was pressed, when the server does not ask for descriptions and the reader's own setting does (Require media descriptions on the Display and posting page of the settings, settings.display.media_description); compose.description.required with the reader's settings in the server's place."
+  },
   "compose.uploading": {
     "defaultMessage": "アップロード中…",
     "description": "Beside an image while its file uploads."

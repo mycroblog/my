@@ -307,6 +307,10 @@
     "defaultMessage": "This server requires a description (alt text) for every image. Add one to each image before posting.",
     "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
   },
+  "compose.description.required.own": {
+    "defaultMessage": "Your settings require a description (alt text) for every image. Add one to each image before posting.",
+    "description": "The error under an image's empty description, after Post was pressed, when the server does not ask for descriptions and the reader's own setting does (Require media descriptions on the Display and posting page of the settings, settings.display.media_description); compose.description.required with the reader's settings in the server's place."
+  },
   "compose.uploading": {
     "defaultMessage": "Uploading…",
     "description": "Beside an image while its file uploads."
