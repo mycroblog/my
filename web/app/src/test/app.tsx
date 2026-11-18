@@ -49,6 +49,11 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
   navigate: (to: string) => Promise<void>;
   /** Goes back, as the browser's button does, and returns once the screen is in place. */
   back: () => Promise<void>;
+  /**
+   * Returns once the app is at `path` with its screen loaded and drawn, which a press of the reader led to: it waits
+   * for the router's end of the navigation, not for a span of the wall's clock that a busy machine outlasts.
+   */
+  arrived: (path: string) => Promise<void>;
 };
 
 /**
@@ -96,6 +101,7 @@ export async function renderApp(
         throw new Error(`test: the app is still on its way to ${router.state.location.href}`);
     });
   await settled();
+  const isAt = (path: string) => router.state.status === "idle" && router.state.location.href === path;
   return {
     fake,
     data,
@@ -114,6 +120,19 @@ export async function renderApp(
       });
       await settled();
     },
+    arrived: (path) =>
+      new Promise<void>((resolve) => {
+        if (isAt(path)) {
+          resolve();
+          return;
+        }
+        // The router says a navigation resolved once the screen it loaded is drawn; the test's timeout bounds the wait.
+        const stop = router.subscribe("onResolved", () => {
+          if (!isAt(path)) return;
+          stop();
+          resolve();
+        });
+      }),
   };
 }
 

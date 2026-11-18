@@ -89,12 +89,14 @@ const confirmations = () =>
 /** Waits until the app asks whether to leave without saving, and returns the confirmation. */
 const asked = () => screen.findByRole("alertdialog", { name: "Leave without saving?" });
 
-/** Waits until no confirmation is open and the app is at `path`. */
-const settledAt = (app: TestApp, path: string) =>
-  waitFor(() => {
+/** Waits until the app is at `path` with its screen drawn, and no confirmation is open. */
+async function settledAt(app: TestApp, path: string) {
+  await app.arrived(path);
+  await waitFor(() => {
     if (confirmations().length > 0 || app.path() !== path)
       throw new Error(`test: the app is at ${app.path()}, with the confirmations ${JSON.stringify(confirmations())}`);
   });
+}
 
 type SeedFilter = NonNullable<NonNullable<FakeOptions["settings"]>["filters"]>[number];
 
@@ -118,8 +120,8 @@ describe("the list", () => {
 
     await app.user.click(second);
 
+    await app.arrived(list);
     await listRead();
-    expect(app.path()).toBe(list);
     expect(heading()).toBe("Keyword filters");
     expect(app.title()).toContain("Keyword filters");
     await withInvites();
@@ -133,8 +135,8 @@ describe("the list", () => {
 
     await app.user.click(main().getByRole("link", { name: "Add a filter" }));
 
+    await app.arrived(fresh);
     expect((await editorRead()).value).toBe("");
-    expect(app.path()).toBe(fresh);
     expect(heading()).toBe("New filter");
     expect(app.title()).toContain("New filter");
     await withInvites();
@@ -143,8 +145,8 @@ describe("the list", () => {
 
     await app.user.click(main().getByRole("button", { name: "Keyword filters" }));
 
+    await app.arrived(list);
     await listRead();
-    expect(app.path()).toBe(list);
     expect(heading()).toBe("Keyword filters");
     expect(confirmations()).toEqual([]);
   });
@@ -155,8 +157,8 @@ describe("the list", () => {
 
     await app.user.click(main().getByRole("link", { name: /^Election season/ }));
 
+    await app.arrived(app.fake.filterPath(1));
     expect((await editorRead()).value).toBe("Election season");
-    expect(app.path()).toBe(app.fake.filterPath(1));
     expect(heading()).toBe("Edit filter");
     expect(app.title()).toContain("Edit filter");
     await withInvites();
@@ -193,8 +195,8 @@ describe("the editor", () => {
 
     await app.user.click(within(missing).getByRole("link", { name: "See all filters" }));
 
+    await app.arrived(list);
     await listRead();
-    expect(app.path()).toBe(list);
   });
 });
 
@@ -503,8 +505,8 @@ describe("leaving the editor with unsaved changes", () => {
 
     await app.user.click(main().getByRole("button", { name: "Keyword filters" }));
 
+    await app.arrived(list);
     await listRead();
-    expect(app.path()).toBe(list);
     expect(confirmations()).toEqual([]);
   });
 });
