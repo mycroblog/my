@@ -20,7 +20,11 @@ func TestDevIsOnlyInTestBuilds(t *testing.T) {
 	if !strings.Contains(stderr.String(), `unknown command "dev"`) {
 		t.Errorf("stderr = %q, want the unknown command", stderr.String())
 	}
-	if strings.Contains(stderr.String(), "push-service") || strings.Contains(stderr.String(), "e2e_fakes") {
+	stderr.Reset()
+	if code := run([]string{"dev", "oidc-provider"}, &stdout, &stderr); code != 2 || !strings.Contains(stderr.String(), `unknown command "dev"`) {
+		t.Errorf("my dev oidc-provider = %d, %q, want 2 and the unknown command", code, stderr.String())
+	}
+	if strings.Contains(stderr.String(), "oidc-provider") || strings.Contains(stderr.String(), "push-service") || strings.Contains(stderr.String(), "e2e_fakes") {
 		t.Errorf("the usage names the commands of the test builds:\n%s", stderr.String())
 	}
 	if len(testBuildCommands) != 0 || testBuildUsage != "" {

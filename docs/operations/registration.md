@@ -159,9 +159,9 @@ Who may is the instance setting `invite_creators` ([instance settings](instance-
 Either way, a user whose account is suspended or limited, or whose registration is not approved, cannot create invites, and nobody can while the registration mode is `closed`.
 The holders of `manage_invites` keep making staff invites, which none of the limits below apply to.
 
-A member creates, lists, copies and revokes their own invites in the web client's settings ("Your invites", `/settings/invites`), or through the client API (`GET` / `POST /api/v1/invites` and `POST /api/v1/invites/{id}/revoke`).
-The settings list the page only for a user who can create invites now; a user who no longer can still opens it from its address to copy and revoke the invites they made.
-The list says, for each invite, whether it is usable, revoked, expired, used up, or unusable because its creator can no longer invite.
+A member creates, lists and revokes their own invites, and copies the link of a usable one, in the web client's settings ("Invites", `/settings/invites`), or through the client API (`GET` / `POST /api/v1/invites` and `POST /api/v1/invites/{id}/revoke`).
+The settings list the page only for a user who can create invites now; a user who cannot still opens it from its address, where it says why, to revoke the invites they made.
+The list says, for each invite, whether it is usable, revoked, expired, used up, or not usable while its creator cannot create invites.
 
 Limits, also instance settings, apply to member invites only.
 Administrators change them, and `invite_creators`, under "Member invites" on the "Registration" page of the server settings (`/admin/settings/registration`):

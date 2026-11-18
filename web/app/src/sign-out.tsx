@@ -13,8 +13,12 @@
 // password: the app is left for the server's sign-in page, which shows that session with its Sign out, or the
 // sign-in form when there is none. When the server does not take the revocation, nothing is removed, the reader stays
 // signed in, and the confirmation says so. The settings' menu and the closed server's page both sign out this way.
+//
+// A session the server ended with what the reader did on a screen (revoking the server's own web client among the
+// authorized apps, which ends every browser's) leaves the same way, with no question and no revocation, since
+// nothing is left to revoke or to refuse: the same is removed, the other tabs follow, and the app starts again.
 
-import { endSession, type SessionEnd } from "@my/app-data";
+import { closeSession, endSession, type SessionEnd } from "@my/app-data";
 import { SignOutDialog } from "@my/app-features";
 import { ModalPresence } from "@my/design-system";
 import { clearCaches } from "@my/platform";
@@ -25,6 +29,8 @@ import { serverSignInPath } from "./sign-in";
 
 /** Where the app starts again once signed out. */
 const startPath = "/";
+
+type Session = Pick<RouterContext, "data" | "config" | "leave">;
 
 /** What the session left in this browser, which goes with it. */
 async function removeKept(): Promise<void> {
@@ -38,7 +44,7 @@ async function removeKept(): Promise<void> {
  * was no token to end the server's session with. It rejects, with nothing removed, when the server did not take the
  * revocation.
  */
-async function signOut({ data, config, leave }: Pick<RouterContext, "data" | "config" | "leave">): Promise<void> {
+async function signOut({ data, config, leave }: Session): Promise<void> {
   let end: SessionEnd = "revoked";
   if (data === null) await removeKept();
   else end = await endSession(data, config.clientId, removeKept);
@@ -51,6 +57,18 @@ async function signOut({ data, config, leave }: Pick<RouterContext, "data" | "co
  */
 export function followSignOut({ data, leave }: Pick<RouterContext, "data" | "leave">): void {
   data?.queryClient.clear();
+  leave(startPath);
+}
+
+/**
+ * Leaves the app as after signing out, for a session of `context` that the server has ended already, in every
+ * browser. The token went with the session, so no revocation is sent: the session is closed in this browser (this
+ * tab's token and cache of server data, what the browser kept), the other tabs hear that the reader signed out and
+ * follow as after a sign-out (`followSignOut`), and the app is left for its start, which loads anew, signed out.
+ */
+export async function leaveEndedSession({ data, leave }: Pick<Session, "data" | "leave">): Promise<void> {
+  if (data === null) await removeKept();
+  else await closeSession(data, removeKept);
   leave(startPath);
 }
 

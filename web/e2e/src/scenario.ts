@@ -302,6 +302,8 @@ export const instance: Readonly<Record<string, string>> = {
   name: "mycroblog demo",
   short_description: "A small community to try mycroblog with. 小さなコミュニティで mycroblog を試せます。",
   federation_mode: "off",
+  // Anyone may sign up, and is let in once they confirm their email address; the sign-ups of `approvalDomain` wait.
+  registration_mode: "open",
   default_locale: "en",
   contact_account: admin,
   contact_email: "contact@demo.test",
@@ -313,6 +315,24 @@ export const instance: Readonly<Record<string, string>> = {
   // A post may be scheduled a minute ahead, so that the schedule the seed makes to fail fails soon after it.
   scheduled_post_min_lead_minutes: "1",
 };
+
+/**
+ * The domain whose email addresses sign up as on a server that approves registrations: the administrator's sign-up
+ * block of it (`require_approval`) makes each of them wait for a moderator, whatever the registration mode, so that
+ * the one server shows both an open registration and an approved one.
+ */
+export const approvalDomain = "approval.test";
+
+/**
+ * The login provider of the demo server, registered with `my login-provider create` as an OpenID Connect provider that
+ * lets new people sign up and people link their accounts: the fake provider of the test build
+ * (`my dev oidc-provider`), whose page signs in whoever its form names, as this client.
+ */
+export const loginProvider = {
+  name: "Example SSO",
+  clientId: "my-demo",
+  clientSecret: "my-demo-client-secret",
+} as const;
 
 /** The server's custom emoji, added with `my admin emoji create`. */
 export const emojis: readonly CustomEmoji[] = [

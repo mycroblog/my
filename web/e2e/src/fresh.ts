@@ -7,10 +7,19 @@
 // reading the clock.
 
 import { randomBytes, randomUUID } from "node:crypto";
-import type { Api, components } from "@mycroblog/mykit";
+import { all, type Api, type components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
 import { silentMP3, tinyWebM } from "./av";
-import type { Image, Person, Poll, Visibility } from "./scenario";
+import {
+  admin,
+  approvalDomain,
+  people,
+  personOf,
+  type Image,
+  type Person,
+  type Poll,
+  type Visibility,
+} from "./scenario";
 import { enrollTOTP, uploadDrawing, uploadFile } from "./seed/seed";
 import { signIn } from "./seed/sign-in";
 
@@ -76,6 +85,18 @@ export type FreshPost = { id: string; text: string; media: readonly MediaAttachm
 
 /** A draft of a test's: its ID, and its whole text, which finds it on the screen. */
 export type FreshDraft = { id: string; text: string };
+
+/** Someone the server does not know yet: what they sign up with on the registration screen. */
+export type Newcomer = { username: string; email: string; password: string };
+
+/**
+ * Someone the login provider knows and the server does not yet: the subject the provider names them by, and the email
+ * address, name and username it tells of them.
+ */
+export type ProviderIdentity = { subject: string; email: string; name: string; username: string };
+
+/** An invite of the staff: its code, and the address of the registration screen with the code filled in. */
+export type FreshInvite = { code: string; url: string };
 
 /** A person's avatar: a plain square, which no screen of a test reads. */
 const avatar: Drawing = { width: 64, height: 64, top: [120, 144, 168], bottom: [72, 96, 120], shapes: [] };
@@ -315,6 +336,76 @@ export class Fresh {
     ).POST("/accounts/move", { body: { target_account_id: target.id, password: from.password } });
     if (moved.error !== undefined)
       throw new Error(`fresh: ${from.username} could not move to ${to.username}: ${JSON.stringify(moved.error)}`);
+  }
+
+  /**
+   * A name, an address and a password that nobody has signed up with; with `approval`, an address of the domain whose
+   * sign-ups wait for a moderator (the scenario's `approvalDomain`).
+   */
+  newcomer(o: { approval?: boolean } = {}): Newcomer {
+    const id = unique();
+    const domain = o.approval === true ? approvalDomain : "fresh.test";
+    return { username: `fresh_${id}`, email: `fresh_${id}@${domain}`, password: `fresh-password-${id}` };
+  }
+
+  /** A person of the login provider whom nobody has signed in as, to name on the fake provider's page. */
+  providerIdentity(): ProviderIdentity {
+    const id = unique();
+    return {
+      subject: `fresh-subject-${id}`,
+      email: `fresh_${id}@fresh.test`,
+      name: `Fresh ${id.slice(0, 8)}`,
+      username: `fresh_${id}`,
+    };
+  }
+
+  /** The scenario's administrator, and its moderator. */
+  async #staff(role: "admin" | "moderator"): Promise<Api> {
+    const moderator = people.find((p) => p.staff === "moderator");
+    if (moderator === undefined) throw new Error("fresh: the scenario has no moderator");
+    return this.#api(role === "admin" ? personOf(admin) : moderator);
+  }
+
+  /** The account of `username` as the staff see it, with whether its email address is confirmed. */
+  async #adminAccount(username: string) {
+    const api = await this.#staff("admin");
+    const found = await api.GET("/admin/accounts", { params: { query: { username, origin: "local" } } });
+    const id = body(found.data, `the search for ${username}`).items.find((a) => a.account.username === username)?.id;
+    if (id === undefined) throw new Error(`fresh: the server has no account ${username}`);
+    const { data } = await api.GET("/admin/accounts/{id}", { params: { path: { id } } });
+    return body(data, `the account ${username}`);
+  }
+
+  /** A new invite of the administrator, which one person signs up with. */
+  async invite(): Promise<FreshInvite> {
+    const { data } = await (await this.#staff("admin")).POST("/admin/invites", { body: { max_uses: 1 } });
+    const invite = body(data, "the invite");
+    return { code: invite.code, url: invite.url };
+  }
+
+  /** The moderator approves the registration of `who`, which waits for it. */
+  async approve(who: Newcomer): Promise<void> {
+    const api = await this.#staff("moderator");
+    for await (const registration of all(async (cursor) =>
+      body(
+        (await api.GET("/admin/registrations", { params: { query: cursor === undefined ? {} : { cursor } } })).data,
+        "the registrations that wait",
+      ),
+    )) {
+      if (registration.username !== who.username) continue;
+      const { error } = await api.POST("/admin/registrations/{id}/approve", {
+        params: { path: { id: registration.id } },
+        body: {},
+      });
+      if (error !== undefined) throw new Error(`fresh: the registration of ${who.username} was not approved`);
+      return;
+    }
+    throw new Error(`fresh: no registration of ${who.username} waits for approval`);
+  }
+
+  /** Whether the server holds the email address of `who` as confirmed. */
+  async emailConfirmed(who: Newcomer): Promise<boolean> {
+    return (await this.#adminAccount(who.username)).email_verified === true;
   }
 
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */

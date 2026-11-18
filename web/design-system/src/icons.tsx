@@ -118,6 +118,7 @@ import {
   IconSettingsFilled,
   IconShare2,
   IconShield,
+  IconShieldCheck,
   IconShieldFilled,
   IconSparkles,
   IconSpeakerphone,
@@ -335,10 +336,12 @@ export const icons = {
   // The screens of the settings with no glyph of their own elsewhere (ADR-0110 §5): how the app shows and posts
   // (sliders), the keyword filters (a funnel), signing in and who is signed in (a lock, as what only the reader
   // opens), the apps the account lets in (a grid of them), the invitations (a ticket), the account's data (a store of
-  // it), and signing out: an arrow out of a door, as signing in is one into it.
+  // it), and signing out: an arrow out of a door, as signing in is one into it. Within signing in, the second check
+  // after the password: a shield that passed one.
   display: { off: IconAdjustmentsHorizontal },
   filter: { off: IconFilter },
   security: { off: IconLock },
+  twoFactor: { off: IconShieldCheck },
   apps: { off: IconApps },
   invite: { off: IconTicket },
   accountData: { off: IconDatabase },

@@ -34,6 +34,8 @@ const (
 // OAuthAppSettings runs the viewer's OAuth apps. *appidentity.Service implements it.
 type OAuthAppSettings interface {
 	OAuthApps(ctx context.Context, userID string) ([]appidentity.OAuthApp, error)
+	// MayRegisterOAuthApps reports whether RegisterOAuthApp accepts registrations now.
+	MayRegisterOAuthApps(ctx context.Context) (bool, error)
 	OAuthApp(ctx context.Context, userID, id string) (appidentity.OAuthApp, error)
 	RegisterOAuthApp(ctx context.Context, userID string, in appidentity.OAuthAppInput) (appidentity.RegisteredOAuthApp, error)
 	UpdateOAuthApp(ctx context.Context, userID, id string, ch appidentity.OAuthAppChanges) (appidentity.OAuthApp, error)
@@ -102,7 +104,8 @@ func (s *Server) oauthAppProblem(ctx context.Context, err error) *problem {
 	return &p
 }
 
-// ListOAuthApps serves GET /api/v1/oauth_apps.
+// ListOAuthApps serves GET /api/v1/oauth_apps: the viewer's apps, and whether the viewer may
+// register one now.
 func (s *Server) ListOAuthApps(ctx context.Context, _ ListOAuthAppsRequestObject) (ListOAuthAppsResponseObject, error) {
 	v, err := requireViewer(ctx)
 	if err != nil {
@@ -115,12 +118,16 @@ func (s *Server) ListOAuthApps(ctx context.Context, _ ListOAuthAppsRequestObject
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the OAuth apps of %s: %w", v.UserID, err)
 	}
-	items := make([]OAuthApp, len(apps))
+	mayRegister, err := s.o.OAuthApps.MayRegisterOAuthApps(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: whether %s may register OAuth apps: %w", v.UserID, err)
+	}
+	body := OAuthAppList{Items: make([]OAuthApp, len(apps)), CanCreate: mayRegister}
 	for i, a := range apps {
-		items[i] = newOAuthApp(a)
+		body.Items[i] = newOAuthApp(a)
 	}
 	cache := cacheNoStore
-	return ListOAuthApps200JSONResponse{Body: OAuthAppList{Items: items}, Headers: ListOAuthApps200ResponseHeaders{CacheControl: &cache}}, nil
+	return ListOAuthApps200JSONResponse{Body: body, Headers: ListOAuthApps200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // CreateOAuthApp serves POST /api/v1/oauth_apps.

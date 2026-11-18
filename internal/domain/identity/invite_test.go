@@ -4,6 +4,7 @@ package identity_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,6 +36,57 @@ func TestMayCreateInvites(t *testing.T) {
 		if identity.MayCreateInvites(f) {
 			t.Errorf("%s: true", name)
 		}
+	}
+}
+
+// A user who may not create invites has one cause, the first that holds of: the registration
+// is closed, the user is not let, the registration is not approved, the account is not active
+// or restricted (api/spec InvitesNotAllowedReason). Every set of causes is tried, so each
+// cause wins over each later one alone and together.
+func TestInviterFactsRefusal(t *testing.T) {
+	ok := identity.InviterFacts{Mode: identity.RegistrationApproval, HasPermission: true, Active: true, Approved: true}
+	everyone := ok
+	everyone.HasPermission, everyone.EveryoneInvites = false, true
+	for name, f := range map[string]identity.InviterFacts{"a permitted member": ok, "anyone while everyone invites": everyone} {
+		for _, mode := range []identity.RegistrationMode{identity.RegistrationOpen, identity.RegistrationApproval, identity.RegistrationInvite} {
+			f.Mode = mode
+			if got := f.Refusal(); got != "" || !identity.MayCreateInvites(f) {
+				t.Errorf("%s in %s: Refusal = %q, MayCreateInvites = %t; want none, true", name, mode, got, identity.MayCreateInvites(f))
+			}
+		}
+	}
+
+	causes := []struct {
+		name string
+		hold func(*identity.InviterFacts)
+		want identity.InviteRefusal
+	}{
+		{"closed", func(f *identity.InviterFacts) { f.Mode = identity.RegistrationClosed }, identity.InviteRefusalRegistrationClosed},
+		{"without permission", func(f *identity.InviterFacts) { f.HasPermission = false }, identity.InviteRefusalNotPermitted},
+		{"pending", func(f *identity.InviterFacts) { f.Approved = false }, identity.InviteRefusalNotApproved},
+		{"inactive", func(f *identity.InviterFacts) { f.Active = false }, identity.InviteRefusalRestricted},
+		{"restricted", func(f *identity.InviterFacts) { f.Restricted = true }, identity.InviteRefusalRestricted},
+	}
+	for set := 1; set < 1<<len(causes); set++ {
+		f, want, names := ok, identity.InviteRefusal(""), []string{}
+		for i := len(causes) - 1; i >= 0; i-- {
+			if set&(1<<i) != 0 {
+				causes[i].hold(&f)
+				want, names = causes[i].want, append([]string{causes[i].name}, names...)
+			}
+		}
+		if got := f.Refusal(); got != want {
+			t.Errorf("%s: Refusal = %q, want %q", strings.Join(names, ", "), got, want)
+		}
+		if identity.MayCreateInvites(f) {
+			t.Errorf("%s: MayCreateInvites = true", strings.Join(names, ", "))
+		}
+	}
+	// Everyone inviting takes the second cause away, and no other.
+	pending := everyone
+	pending.Approved = false
+	if got := pending.Refusal(); got != identity.InviteRefusalNotApproved {
+		t.Errorf("pending while everyone invites: Refusal = %q, want %q", got, identity.InviteRefusalNotApproved)
 	}
 }
 

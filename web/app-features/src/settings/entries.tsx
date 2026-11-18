@@ -4,12 +4,29 @@
 // at /settings/<path>. The menu (menu.tsx), the screen at an entry's address (screen.tsx) and the route's loader read
 // this list alone, so an entry is added here and nowhere else: its declaration in `settingsEntries`, at its place in
 // the menu's order, with its screen. A group with no entry to show is not drawn.
+//
+// What an entry's conditions read of the reader is one hook's (`useSettingsFacts`). A fact no screen of the app has
+// read before the menu paints (whether the reader may create invites) is read by the settings' loader
+// (`loadSettingsFacts`), so that the menu comes with every entry it has instead of gaining one a moment later; on the
+// app's first load, whose loader does not wait, the menu paints its entries once that fact is known
+// (`useSettingsFactsKnown`), or once it has waited long enough for it (menu.tsx).
 
-import { usePermissions, type AppData, type Permission } from "@my/app-data";
+import {
+  loadInviteRight,
+  useInstance,
+  useInviteRightKnown,
+  useMayInvite,
+  usePermissions,
+  type AppData,
+  type Permission,
+} from "@my/app-data";
 import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
+import { AppsSettings, loadAppsSettings } from "./apps/apps";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { InvitesSettings, loadInvitesSettings } from "./invites/invites";
+import { loadSecuritySettings, SecuritySettings } from "./security/security";
 
 /** The groups of the menu, in its order, each under its heading. */
 export const settingsGroups = [
@@ -20,12 +37,44 @@ export const settingsGroups = [
 ] as const satisfies readonly { id: string; heading: MessageId }[];
 export type SettingsGroupId = (typeof settingsGroups)[number]["id"];
 
+/**
+ * What a screen of the settings reads of its address and of the app around it, for what leaves the app and comes
+ * back: going to a login provider to link an account or to confirm an operation (confirmation.tsx).
+ */
+export type SettingsAddress = {
+  /**
+   * The fragment of the screen's address, without its `#`: what a login provider's return leaves there
+   * (`linked=…`, `external_confirmation=…`, `external_error=…`), empty otherwise.
+   */
+  fragment: string;
+  /** Takes the fragment off the address, once the screen has read it, so that a reload does not read it again. */
+  onFragmentRead: () => void;
+  /** Leaves the app for `href`, a page that loads anew (a login provider's). */
+  leave: (href: string) => void;
+};
+
 /** What an entry's screen is given by the screen that places it. */
-export type SettingsEntryProps = {
+export type SettingsEntryProps = SettingsAddress & {
   /** The way back to the menu (a `BackButton`), for the head of the entry's `SettingsScreen`. */
   back: ReactNode;
   /** The languages the app can be shown in, as BCP 47 tags. */
   languages: readonly string[];
+};
+
+/** What a screen under an entry (changing the password) is given by the route that places it. */
+export type SettingsSubProps = SettingsAddress & {
+  /** Goes back to the screen this one is under, its entry's for most: its head's back, and the end of what it does. */
+  onBack: () => void;
+};
+
+/** What a screen under an entry that may end the browser's session is given beside, by the route that places it. */
+export type SettingsSessionProps = {
+  /**
+   * The server ended this browser's session with what the reader just did on the screen (revoking the server's own
+   * web client among the authorized apps): removes what the session left in this browser and leaves the app, as
+   * after signing out.
+   */
+  onSessionEnded: () => void;
 };
 
 /**
@@ -35,6 +84,13 @@ export type SettingsEntryProps = {
 export type SettingsFacts = {
   /** The permissions of the reader's account; none until the server said them. */
   readonly permissions: readonly Permission[];
+  /** Whether the server is one person's (ADR-0152), which has no invites; false until the server said so. */
+  readonly singleUser: boolean;
+  /**
+   * Whether the reader may create invites now (ADR-0106 §14): by a permission of their account or because the server
+   * lets everyone, which only the list of their invites says; false until the server said so.
+   */
+  readonly mayInvite: boolean;
 };
 
 /** An entry of the settings. */
@@ -49,6 +105,11 @@ export type SettingsEntry = {
   readonly hint: MessageId;
   /** Whether the menu lists it and its screen opens for this reader; for every reader without it. */
   readonly shown?: (facts: SettingsFacts) => boolean;
+  /**
+   * Whether the menu lists it, for an entry whose screen still opens at its address for a reader the menu does not
+   * offer it to (the invites of a reader who may not create any now); wherever it is shown without it.
+   */
+  readonly listed?: (facts: SettingsFacts) => boolean;
   /** How many things on its screen wait for the reader, the badge at the row's end; none without it, or at zero. */
   readonly count?: (facts: SettingsFacts) => number | undefined;
   /** Its screen: a `SettingsScreen` of the design system, headed by the entry's glyph and name. */
@@ -68,22 +129,80 @@ export const settingsEntries: readonly SettingsEntry[] = [
     Screen: DisplaySettings,
     load: loadDisplaySettings,
   },
+  {
+    path: "security",
+    group: "access",
+    icon: "security",
+    name: "settings.entry.security",
+    hint: "settings.entry.security.hint",
+    Screen: SecuritySettings,
+    load: loadSecuritySettings,
+  },
+  {
+    path: "apps",
+    group: "access",
+    icon: "apps",
+    name: "settings.entry.apps",
+    hint: "settings.entry.apps.hint",
+    Screen: AppsSettings,
+    load: loadAppsSettings,
+  },
+  {
+    // A one-person server has no invites (ADR-0152 §4). Elsewhere the menu offers them to a reader who may create
+    // one (ADR-0106 §18), and the screen says to any other who opens its address why they may not.
+    path: "invites",
+    group: "access",
+    icon: "invite",
+    name: "settings.entry.invites",
+    hint: "settings.entry.invites.hint",
+    shown: (facts) => !facts.singleUser,
+    listed: (facts) => facts.mayInvite,
+    Screen: InvitesSettings,
+    load: loadInvitesSettings,
+  },
 ];
 
 /** What the conditions and the counts of the entries read of the reader. */
 function useSettingsFacts(): SettingsFacts {
-  return { permissions: usePermissions() };
+  return {
+    permissions: usePermissions(),
+    singleUser: useInstance()?.single_user === true,
+    mayInvite: useMayInvite(),
+  };
 }
 
-/** An entry as the menu shows it to this reader. */
-export type ShownEntry = SettingsEntry & { readonly waiting: number | undefined };
+/**
+ * Reads what the entries' conditions read that the app has not read by the time the settings open (whether the reader
+ * may create invites), for the settings' loader to wait for.
+ */
+export async function loadSettingsFacts(data: AppData): Promise<void> {
+  await loadInviteRight(data);
+}
 
-/** The entries the reader is shown, in the menu's order, each with how many things wait on its screen. */
+/**
+ * Whether the server has answered every fact the entries' conditions read (whether the reader may create invites),
+ * for the menu to paint its entries once, with every one it has: on the app's first load the loader does not wait.
+ */
+export function useSettingsFactsKnown(): boolean {
+  return useInviteRightKnown();
+}
+
+/** An entry as the settings show it to this reader. */
+export type ShownEntry = SettingsEntry & {
+  readonly waiting: number | undefined;
+  /** Whether the menu lists it; its screen opens at its address either way. */
+  readonly inMenu: boolean;
+};
+
+/**
+ * The entries whose screens open for the reader, in the menu's order, each with how many things wait on its screen
+ * and whether the menu lists it.
+ */
 export function useShownEntries(): readonly ShownEntry[] {
   const facts = useSettingsFacts();
   return settingsEntries
     .filter((entry) => entry.shown?.(facts) ?? true)
-    .map((entry) => ({ ...entry, waiting: entry.count?.(facts) }));
+    .map((entry) => ({ ...entry, waiting: entry.count?.(facts), inMenu: entry.listed?.(facts) ?? true }));
 }
 
 /** Reads what the screen of the entry at `path` shows; nothing for an address that names no entry. */

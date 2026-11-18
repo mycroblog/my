@@ -21,7 +21,7 @@ Which of these you see depends on how the server accepts new accounts:
 | --- | --- |
 | Is open | Sign up. An invite code is optional. |
 | Reviews new accounts | Sign up and say why you want to join. A moderator approves the account before you can use it. An invite code lets you use the account at once. |
-| Accepts invitations only | Enter the invite code you were given, or open the invitation link, which fills it in. |
+| Accepts invitations only | Enter the invite code you were given, or open the invite link, which fills it in. |
 | Is closed | The page says that the server is not accepting new accounts. |
 | Registers through login providers only | You sign up with a provider the server offers (for example "Sign in with GitHub") instead of a password. |
 
@@ -56,8 +56,12 @@ After signing in you may see a page instead of the app:
 ## Signing out
 
 Choose "Sign out…", the last row of the settings, and confirm with "Sign out". It signs this browser out; your other
-browsers and apps stay signed in.
+browsers and apps stay signed in. "Signed-in browsers", under "Security" in the settings, lists the browsers signed in
+to your account and signs them out.
 
 ## Settings
 
-"Settings" in the navigation opens the settings. They hold "Display and posting".
+"Settings" in the navigation opens the settings: "Display and posting", "Security", "Apps", and "Invites" when you can
+create invites. Under "Security" you manage your password, passkeys, two-factor authentication, linked accounts, and
+signed-in browsers; "Apps" lists the apps you allowed to use your account, which you can revoke, and the apps you
+registered; "Invites" creates invite links and revokes them.

@@ -114,8 +114,8 @@ type Deps struct {
 	// setting, FR-412, ADR-0057); nil makes them not indexable.
 	IndexableDefault func(ctx context.Context) (bool, error)
 	// UserAppRegistration reports whether users may register OAuth clients (the
-	// user_app_registration setting, ADR-0090 §1); RegisterOAuthApp calls it once per
-	// registration. Nil lets them.
+	// user_app_registration setting, ADR-0090 §1); MayRegisterOAuthApps calls it once per
+	// call, and RegisterOAuthApp once per registration. Nil lets them.
 	UserAppRegistration func(ctx context.Context) (bool, error)
 	// SignupBlocks screens the sign-ups from the registration page against the sign-up block
 	// list (FR-719); nil screens nothing.

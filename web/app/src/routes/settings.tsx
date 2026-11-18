@@ -2,14 +2,19 @@
 
 // The settings, at /settings and under it (ADR-0110 §5): the menu (settings.index.tsx) and the screens of its entries
 // (settings.$entry.tsx). `?sign_out`, on any of them, asks whether to sign out, over the screen: Sign out… of the
-// menu leads there, and Cancel leads back.
+// menu leads there, and Cancel leads back. Its loader waits for what the menu reads of the reader that the app has not
+// read yet (whether they may create invites), so that the menu, at /settings and beside every screen, comes with every
+// entry it has.
 
+import { loadSettingsFacts } from "@my/app-features";
 import { createFileRoute, Outlet, useCanGoBack, useRouter } from "@tanstack/react-router";
+import { screenLoad } from "../screen-load";
 import { SignOutConfirm } from "../sign-out";
 
 export const Route = createFileRoute("/settings")({
   validateSearch: (search: Record<string, unknown>): { sign_out?: true } =>
     search["sign_out"] === undefined || search["sign_out"] === false ? {} : { sign_out: true },
+  loader: ({ context }) => screenLoad(context, loadSettingsFacts),
   component: Settings,
   // The screens under it say their own.
   staticData: { scroll: "top" },

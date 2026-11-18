@@ -3,7 +3,9 @@ get:
   operationId: listOAuthApps
   x-first-party-only: true
   summary: List the OAuth apps that the authenticated user registered
-  description: The apps that the user registered and has not deleted, oldest first.
+  description: |
+    The apps that the user registered and has not deleted, oldest first, and whether the user
+    may register one now (`can_create`).
   tags: [oauth-apps]
   security:
     - oauth2: ["read:accounts"]

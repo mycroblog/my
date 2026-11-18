@@ -42,6 +42,15 @@ const beside = (name = "Settings") =>
   screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
 
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
+const securityHint = "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers";
+const appsHint = "Apps you allowed to use your account, apps you registered";
+const invitesHint = "Invite codes and links to bring people to this server";
+
+/**
+ * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
+ * read as the app opens there, and the entry comes with the answer.
+ */
+const withInvites = () => screen.findByRole("link", { name: "Invites" });
 
 describe("the menu", () => {
   test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
@@ -55,12 +64,19 @@ describe("the menu", () => {
     expect(app.path()).toBe("/settings");
     expect(app.title()).toContain("Settings");
     const menu = main().getByRole("navigation", { name: "Settings" });
-    // One group has an entry; a group without one is not drawn.
-    expect(groups(menu)).toEqual(["General"]);
-    const [display, ...others] = rows(menu);
-    // The entry's row says its name, then what it holds.
+    // Two groups have an entry; a group without one is not drawn.
+    expect(groups(menu)).toEqual(["General", "Sign-in and access"]);
+    const [display, security, apps, invites, ...others] = rows(menu);
+    // An entry's row says its name, then what it holds.
     expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
+    expect(security?.[0]).toMatch(new RegExp(`^Security\\s*${securityHint}$`));
+    expect(security?.slice(1)).toEqual(["/settings/security", null]);
+    expect(apps?.[0]).toMatch(new RegExp(`^Apps\\s*${appsHint}$`));
+    expect(apps?.slice(1)).toEqual(["/settings/apps", null]);
+    // The reader may create invites, which the settings read before the menu opens.
+    expect(invites?.[0]).toMatch(new RegExp(`^Invites\\s*${invitesHint}$`));
+    expect(invites?.slice(1)).toEqual(["/settings/invites", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.
     expect(beside()).toHaveLength(0);
@@ -101,12 +117,16 @@ describe("an entry", () => {
     expect(heading()).toBe("Display and posting");
     expect(app.title()).toContain("Display and posting");
     expect(app.path()).toBe("/settings/display");
+    await withInvites();
     const [menu, ...others] = beside();
     if (menu === undefined) throw new Error("test: no settings menu beside the screen");
     expect(others).toHaveLength(0);
-    expect(groups(menu)).toEqual(["General"]);
+    expect(groups(menu)).toEqual(["General", "Sign-in and access"]);
     expect(rows(menu)).toEqual([
       ["Display and posting", "/settings/display", "page"],
+      ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
+      ["Invites", "/settings/invites", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
@@ -123,8 +143,12 @@ describe("an entry", () => {
     );
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual([
       ["Display and posting", "/settings/display", null],
+      ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
+      ["Invites", "/settings/invites", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
     const all = main().getByRole("link", { name: "See all settings" });
@@ -182,6 +206,9 @@ describe("the display language", () => {
     expect(app.title()).toContain("表示と投稿");
     expect(beside("設定").flatMap(rows)).toEqual([
       ["表示と投稿", "/settings/display", "page"],
+      ["セキュリティ", "/settings/security", null],
+      ["アプリ", "/settings/apps", null],
+      ["招待", "/settings/invites", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);
     expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);

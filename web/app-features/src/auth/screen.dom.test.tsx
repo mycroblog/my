@@ -271,6 +271,51 @@ test("the sign-up of an account at a login provider has no password and carries 
   expect(Object.keys(posted.sends)).not.toContain("password");
 });
 
+const inviteOnly = {
+  ...signUpForm,
+  needInvite: true,
+  inviteHint: "This server accepts new accounts by invitation only.",
+};
+
+test("on an invite-only server the invite code is required, and its hint says that the server takes invitations only", () => {
+  const optional = shown({ ...base, screen: "sign_up", signUp: signUpForm });
+  expect(optional.main.getByLabelText<HTMLInputElement>("Invite code").required).toBe(false);
+
+  const { main } = shown({ ...base, screen: "sign_up", signUp: inviteOnly });
+  const invite = main.getByLabelText<HTMLInputElement>("Invite code");
+  expect(invite.required).toBe(true);
+  expect(described(invite)).toEqual(["This server accepts new accounts by invitation only."]);
+});
+
+test("an invite's link fills in the code, which the person can still change and the form sends", () => {
+  const { main, form } = shown({
+    ...base,
+    screen: "sign_up",
+    signUp: { ...inviteOnly, inviteCode: "NTPTXXGZG6YGYV6K" },
+  });
+  const invite = main.getByLabelText<HTMLInputElement>("Invite code");
+
+  expect([invite.value, invite.readOnly, invite.disabled]).toEqual(["NTPTXXGZG6YGYV6K", false, false]);
+  expect(form("Create an account").sends["invite_code"]).toBe("NTPTXXGZG6YGYV6K");
+});
+
+test("a refused invite code marks its field, is read after the field's hint, and comes with the summary", () => {
+  // The server has one error for a code that is wrong, expired, revoked, used up, or whose creator may not invite.
+  const refusal = "This invite code is not valid. It may have expired or been used up.";
+  const { main } = shown({
+    ...base,
+    screen: "sign_up",
+    error: "The account was not created. Check the fields marked below.",
+    signUp: { ...inviteOnly, inviteCode: "not-a-real-code1", errors: { invite_code: refusal } },
+  });
+  const invite = main.getByLabelText<HTMLInputElement>("Invite code");
+
+  expect([invite.value, invite.getAttribute("aria-invalid")]).toEqual(["not-a-real-code1", "true"]);
+  expect(described(invite)).toEqual(["This server accepts new accounts by invitation only.", refusal]);
+  expect(follows(invite, main.getByText(refusal))).toBe(true);
+  expect(main.getByRole("alert").textContent).toBe("The account was not created. Check the fields marked below.");
+});
+
 const consent: Consent = {
   clientName: "Tusky",
   redirectHost: "tusky.example",
@@ -378,6 +423,36 @@ test("a moderation action offers its appeal with the server's hint and the refus
   expect(described(appeal)).toEqual(["Once, within 14 days.", "Too long."]);
   expect(new FormData(appeal.form ?? undefined).get("action_id")).toBe("a1");
   for (const words of ["Suspended", "Reason: Spam", "Ends in 6 days"]) expect(main.getByText(words)).not.toBeNull();
+});
+
+/** Where the form of each button of the screen posts, in the screen's order. */
+const posts = (main: ReturnType<typeof shown>["main"]) =>
+  main.getAllByRole<HTMLButtonElement>("button").map((button) => button.form?.getAttribute("action"));
+
+test('a registration that waits is titled "not ready yet", and sends the verification mail again while the address is unconfirmed', () => {
+  const waiting = shown({ ...base, screen: "status", status: { pending: true } });
+  expect(waiting.title()).toBe("Your account is not ready yet");
+  expect(waiting.main.getByText(/^Your registration is waiting for a moderator's approval\./)).not.toBeNull();
+  expect(posts(waiting.main)).toEqual(["/auth/sign_out"]);
+
+  const unconfirmed = shown({ ...base, screen: "status", status: { pending: true, verifyEmail: "Confirm it." } });
+  expect(unconfirmed.title()).toBe("Your account is not ready yet");
+  expect(unconfirmed.main.getByText("Confirm it.")).not.toBeNull();
+  expect(posts(unconfirmed.main)).toContain("/auth/verify_email/resend");
+});
+
+test("a rejected registration has a title of its own and says so, with the sign-out as its only action", () => {
+  const { main, title } = shown({ ...base, screen: "status", status: { rejected: true } });
+
+  expect(title()).toBe("Your account cannot be used");
+  expect(main.getByText("Your registration was not approved, so this account cannot be used.")).not.toBeNull();
+  expect(posts(main)).toEqual(["/auth/sign_out"]);
+});
+
+test("a rejected registration is not offered the verification mail again, though its address is unconfirmed", () => {
+  const { main } = shown({ ...base, screen: "status", status: { rejected: true, verifyEmail: "Confirm it." } });
+
+  expect(posts(main)).toEqual(["/auth/sign_out"]);
 });
 
 test("the screens are worded in the page's locale", () => {

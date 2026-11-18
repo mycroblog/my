@@ -137,7 +137,9 @@ export function Status({ page }: { page: AuthPage }) {
     ? t("auth.status.deactivated_title")
     : status.restricted
       ? t("auth.status.restricted_title")
-      : t("auth.status.title");
+      : status.rejected
+        ? t("auth.status.rejected_title")
+        : t("auth.status.title");
   return (
     <AuthFrame page={page} title={title}>
       <FormHead title={title}>{page.notice && <FormText role="status">{page.notice}</FormText>}</FormHead>
@@ -160,7 +162,8 @@ export function Status({ page }: { page: AuthPage }) {
           ) : (
             status.pending && <FormText>{t("auth.status.pending")}</FormText>
           )}
-          {status.verifyEmail && (
+          {/* A rejected registration never gets in: confirming its address would lead nowhere. */}
+          {status.verifyEmail && !status.rejected && (
             <Form action={paths.resendVerification}>
               <FormState page={page} returnTo={false} />
               <FormText>{status.verifyEmail}</FormText>

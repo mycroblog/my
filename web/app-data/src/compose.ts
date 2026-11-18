@@ -321,6 +321,19 @@ export function refusedField(error: unknown): { member: string; detail: string; 
   return { member, detail, title: error.title };
 }
 
+/**
+ * The member of the request a refused write is about, when the server named one (a 422's `field`), with the server's
+ * words about it for a form that says them under that member's field and nowhere else: the problem's detail, else its
+ * title, where the server said no more; undefined for any other failure.
+ */
+export function refusedMember(error: unknown): { member: string; said: string } | undefined {
+  if (!(error instanceof ProblemError) || error.status !== 422) return undefined;
+  const member = error.problem.field;
+  const said = refusal(error);
+  if (member === undefined || member === "" || said === undefined) return undefined;
+  return { member, said };
+}
+
 /** The writes of the composer, bound to the session's data. */
 export type ComposeWrites = {
   readonly post: (body: CreateStatus, idempotencyKey: string) => Promise<Status>;

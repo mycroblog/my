@@ -1196,6 +1196,8 @@ components:
       $ref: ./components/responses/CustomEmojiRequestProblem.yaml
     LoginProviderProblem:
       $ref: ./components/responses/LoginProviderProblem.yaml
+    InvitesNotAllowedProblem:
+      $ref: ./components/responses/InvitesNotAllowedProblem.yaml
     OAuthApp:
       $ref: ./components/responses/OAuthApp.yaml
     OwnCustomEmoji:
@@ -1495,6 +1497,10 @@ components:
       $ref: ./components/schemas/AdminInviteState.yaml
     InviteCreatorKind:
       $ref: ./components/schemas/InviteCreatorKind.yaml
+    InvitesNotAllowedProblem:
+      $ref: ./components/schemas/InvitesNotAllowedProblem.yaml
+    InvitesNotAllowedReason:
+      $ref: ./components/schemas/InvitesNotAllowedReason.yaml
     OwnInvite:
       $ref: ./components/schemas/OwnInvite.yaml
     OwnInvitePage:

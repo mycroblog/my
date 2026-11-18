@@ -3706,6 +3706,30 @@ func (e InviteCreatorKind) Valid() bool {
 	}
 }
 
+// Defines values for InvitesNotAllowedReason.
+const (
+	InvitesNotAllowedReasonNotApproved        InvitesNotAllowedReason = "not_approved"
+	InvitesNotAllowedReasonNotPermitted       InvitesNotAllowedReason = "not_permitted"
+	InvitesNotAllowedReasonRegistrationClosed InvitesNotAllowedReason = "registration_closed"
+	InvitesNotAllowedReasonRestricted         InvitesNotAllowedReason = "restricted"
+)
+
+// Valid indicates whether the value is a known member of the InvitesNotAllowedReason enum.
+func (e InvitesNotAllowedReason) Valid() bool {
+	switch e {
+	case InvitesNotAllowedReasonNotApproved:
+		return true
+	case InvitesNotAllowedReasonNotPermitted:
+		return true
+	case InvitesNotAllowedReasonRegistrationClosed:
+		return true
+	case InvitesNotAllowedReasonRestricted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for KeywordFilterAction.
 const (
 	KeywordFilterActionHide KeywordFilterAction = "hide"
@@ -13268,6 +13292,48 @@ type InteractionRule struct {
 // under the caps of the instance settings; it works only while its creator may create invites.
 type InviteCreatorKind string
 
+// InvitesNotAllowedProblem The problem of a user who may not create invites of their own now (403,
+// `/api/v1/problems/invites-not-allowed`); `reason` says why, and `detail` says it to the
+// user. Another 403 has none.
+type InvitesNotAllowedProblem struct {
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
+	// Reason Why the user may not create invites of their own now, the first that holds of
+	// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+	// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+	// roles lack `create_invites`; `not_approved`: the registration of the account is not
+	// approved; `restricted`: the account is suspended or limited.
+	Reason *InvitesNotAllowedReason `json:"reason,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type string `json:"type"`
+}
+
+// InvitesNotAllowedReason Why the user may not create invites of their own now, the first that holds of
+// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+// roles lack `create_invites`; `not_approved`: the registration of the account is not
+// approved; `restricted`: the account is suspended or limited.
+type InvitesNotAllowedReason string
+
 // IssueOAuthAppTokenRequest The scope of the tokens of an app for the authenticated user.
 type IssueOAuthAppTokenRequest struct {
 	// Scope Space-separated scopes within the app's; omitted or empty, the app's whole scope.
@@ -14711,7 +14777,12 @@ type OAuthAppCreated struct {
 
 // OAuthAppList The OAuth apps that the authenticated user registered, oldest first; there are at most 25.
 type OAuthAppList struct {
-	Items []OAuthApp `json:"items"`
+	// CanCreate Whether the user may register an app now: the instance setting `user_app_registration`
+	// is on. When it is false, `POST /oauth_apps` answers 403
+	// `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+	// apps (the length of `items`) or the rate limit of registrations.
+	CanCreate bool       `json:"can_create"`
+	Items     []OAuthApp `json:"items"`
 }
 
 // OAuthAppSecret A new secret of a confidential OAuth app.
@@ -14861,9 +14932,17 @@ type OwnInvitePage struct {
 	// `everyone` or the user's roles have `create_invites`, the account is neither
 	// suspended nor limited, its registration is approved, and the registration mode is
 	// not `closed`. It does not count the cap of usable invites (`usable` against
-	// `limits.max_active`).
-	CanCreate bool        `json:"can_create"`
-	Items     []OwnInvite `json:"items"`
+	// `limits.max_active`). When it is false, `cannot_create_reason` says why; when it is
+	// true, `cannot_create_reason` is omitted.
+	CanCreate bool `json:"can_create"`
+
+	// CannotCreateReason Why the user may not create invites of their own now, the first that holds of
+	// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+	// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+	// roles lack `create_invites`; `not_approved`: the registration of the account is not
+	// approved; `restricted`: the account is suspended or limited.
+	CannotCreateReason *InvitesNotAllowedReason `json:"cannot_create_reason,omitempty"`
+	Items              []OwnInvite              `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
 	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
@@ -15443,7 +15522,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
 //     own now: the instance setting `invite_creators` and the user's roles do not let them, the
 //     account is suspended or limited, its registration is not approved, or the registration is
-//     `closed`.
+//     `closed`. Its `reason` says which.
 //   - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
 //     as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
 //     expire or be used up.
@@ -35576,6 +35655,16 @@ type HashtagJSONResponse struct {
 	Headers HashtagResponseHeaders
 }
 
+type InvitesNotAllowedProblemResponseHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+type InvitesNotAllowedProblemApplicationProblemPlusJSONResponse struct {
+	Body InvitesNotAllowedProblem
+
+	Headers InvitesNotAllowedProblemResponseHeaders
+}
+
 type KeywordFilterResponseHeaders struct {
 	CacheControl *string
 }
@@ -55066,6 +55155,28 @@ func (response CreateOwnInvite201JSONResponse) VisitCreateOwnInviteResponse(w ht
 		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
 	}
 	w.WriteHeader(201)
+	_, err := buf.WriteTo(w)
+	return err
+}
+
+type CreateOwnInvite403ApplicationProblemPlusJSONResponse struct {
+	InvitesNotAllowedProblemApplicationProblemPlusJSONResponse
+}
+
+func (response CreateOwnInvite403ApplicationProblemPlusJSONResponse) VisitCreateOwnInviteResponse(w http.ResponseWriter) error {
+
+	var buf bytes.Buffer
+	if err := json.NewEncoder(&buf).Encode(response.Body); err != nil {
+		return err
+	}
+	w.Header().Set("Content-Type", "application/problem+json")
+	if response.Headers.CacheControl != nil {
+		w.Header().Set("Cache-Control", fmt.Sprint(*response.Headers.CacheControl))
+	}
+	if response.Headers.ContentLanguage != nil {
+		w.Header().Set("Content-Language", fmt.Sprint(*response.Headers.ContentLanguage))
+	}
+	w.WriteHeader(403)
 	_, err := buf.WriteTo(w)
 	return err
 }

@@ -1081,6 +1081,7 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 | `smtp` | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
 | `ses` | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. |
 | `plugin` | A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself ([sending email](../operations/email.md)). |
+| `fake` | Test builds only: a stand-in mailer for end-to-end tests and demonstrations that sends nothing and writes each message whole, with its links, to the server log, while the server treats it as a mailer that delivers: it asks users to confirm their addresses and mails password reset links. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([contributing guide](../../CONTRIBUTING.md#build-tags)). It needs `mail_from` alone. |
 
 ### `mail_from`
 

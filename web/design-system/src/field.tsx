@@ -41,6 +41,8 @@ type FieldHolder = {
   stateBy?: string | undefined;
   /** The field cannot be changed now. */
   disabled?: boolean | undefined;
+  /** What the field holds is wrong: the holder says why, among what describes it. */
+  invalid?: boolean | undefined;
 };
 
 export const FieldContext = createContext<FieldHolder>({});
@@ -57,6 +59,9 @@ const field = tv({
       "font-sans text-body text-text hover:bg-surface-raised-hover has-[:focus-visible]:shadow-focus",
       "has-[:disabled]:opacity-disabled",
       "[[data-surface-raised]_&]:bg-surface [[data-surface-raised]_&]:hover:bg-surface-hover",
+      // A wrong value: a line of the text's color, as a text field's.
+      "has-[[aria-invalid=true]]:outline-solid has-[[aria-invalid=true]]:outline-[length:var(--form-page-invalid)]",
+      "has-[[aria-invalid=true]]:-outline-offset-[var(--form-page-invalid)] has-[[aria-invalid=true]]:outline-text",
     ],
     // The select itself, over the field, unseen.
     select: "cursor-pointer opacity-0 disabled:cursor-not-allowed",
@@ -66,6 +71,8 @@ const field = tv({
       "text-end font-sans text-body text-text tabular-nums outline-hidden focus-visible:shadow-focus",
       "disabled:cursor-not-allowed disabled:opacity-disabled",
       "[[data-surface-raised]_&]:bg-surface",
+      "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
+      "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
     unit: "text-body text-muted-text",
   },
@@ -174,6 +181,7 @@ export function Select({
           aria-label={label}
           aria-labelledby={labelledBy ?? (label === undefined ? holder.labelledBy : undefined)}
           aria-describedby={describedBy(described, holder.describedBy, holder.stateBy)}
+          aria-invalid={holder.invalid === true || undefined}
           value={chosen}
           disabled={disabled}
           onChange={(e) => {
@@ -303,6 +311,7 @@ export function NumberField({
           {...(max === undefined ? {} : { maxValue: max })}
           formatOptions={WHOLE}
           isWheelDisabled
+          isInvalid={holder.invalid === true}
           isDisabled={isDisabled ?? holder.disabled ?? false}
         />
       }

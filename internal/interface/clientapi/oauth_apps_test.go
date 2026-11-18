@@ -4,6 +4,8 @@ package clientapi_test
 
 import (
 	"context"
+	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -24,6 +26,7 @@ type fakeOAuthApps struct {
 	err      error
 	disabled bool
 	calls    []string
+	mayErr   error
 }
 
 var oauthAppCreatedAt = time.Date(2026, 10, 2, 9, 0, 0, 0, time.UTC)
@@ -44,6 +47,15 @@ func (f *fakeOAuthApps) OAuthApps(_ context.Context, userID string) ([]appidenti
 		}
 	}
 	return out, nil
+}
+
+// MayRegisterOAuthApps reports false while err is the refusal of the instance setting, and fails
+// with mayErr when it is set.
+func (f *fakeOAuthApps) MayRegisterOAuthApps(context.Context) (bool, error) {
+	if f.mayErr != nil {
+		return false, f.mayErr
+	}
+	return !errors.Is(f.err, appidentity.ErrOAuthAppRegistrationDisabled), nil
 }
 
 func (f *fakeOAuthApps) OAuthApp(_ context.Context, userID, id string) (appidentity.OAuthApp, error) {
@@ -212,6 +224,43 @@ func TestOAuthAppRegistration(t *testing.T) {
 		if p := decodeProblem(t, res); res.StatusCode != tc.status || p.Type != tc.typ {
 			t.Errorf("create with %v = %d %+v, want %d %s", tc.err, res.StatusCode, p, tc.status, tc.typ)
 		}
+	}
+}
+
+// The list says whether the user may register an app now, beside the apps, which it lists either
+// way; POST /oauth_apps refuses with 403 exactly when the list says no; a failure of the question
+// is the endpoint's failure (ADR-0090 §1, #3206).
+func TestOAuthAppListSaysWhetherOneMayBeRegistered(t *testing.T) {
+	e, f := newOAuthAppEnv(t)
+	if res := e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", confidentialAppBody); res.StatusCode != http.StatusCreated {
+		t.Fatalf("create = %d, want 201", res.StatusCode)
+	}
+
+	res := e.send(t, http.MethodGet, "/oauth_apps", "read-accounts", "")
+	raw := decodeJSON[map[string]json.RawMessage](t, res)
+	var items []json.RawMessage
+	if err := json.Unmarshal(raw["items"], &items); res.StatusCode != http.StatusOK || string(raw["can_create"]) != "true" || err != nil || len(items) != 1 {
+		t.Errorf("registration on = %d %s, want can_create true with the app", res.StatusCode, raw)
+	}
+	if res := e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", confidentialAppBody); res.StatusCode == http.StatusForbidden {
+		t.Errorf("create while the list says can_create = 403, want the registration to be let through")
+	}
+
+	f.err = appidentity.ErrOAuthAppRegistrationDisabled
+	res = e.send(t, http.MethodGet, "/oauth_apps", "read-accounts", "")
+	raw = decodeJSON[map[string]json.RawMessage](t, res)
+	items = nil
+	if err := json.Unmarshal(raw["items"], &items); res.StatusCode != http.StatusOK || string(raw["can_create"]) != "false" || err != nil || len(items) != 1 {
+		t.Errorf("registration off = %d %s, want can_create false with the app still listed", res.StatusCode, raw)
+	}
+	res = e.sendJSON(t, http.MethodPost, "/oauth_apps", "write", confidentialAppBody)
+	if p := decodeProblem(t, res); res.StatusCode != http.StatusForbidden || p.Type != clientapi.ProblemTypeOAuthAppRegistrationDisabled {
+		t.Errorf("create while the list says can_create false = %d %+v, want 403 %s", res.StatusCode, p, clientapi.ProblemTypeOAuthAppRegistrationDisabled)
+	}
+
+	f.err, f.mayErr = nil, errors.New("settings are down")
+	if res := e.send(t, http.MethodGet, "/oauth_apps", "read-accounts", ""); res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("list while the question fails = %d, want 500", res.StatusCode)
 	}
 }
 

@@ -29,23 +29,34 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
+//   - `fresh.newcomer({ approval? })` a username, an email address and a password nobody has signed up with, for a
+//     person who signs up on the registration screen: the server is open to everyone, and with `approval` the address
+//     is of the domain whose sign-ups wait for a moderator (the scenario's `approvalDomain`);
+//     `fresh.approve(newcomer)` the moderator's approval of their registration, and `fresh.emailConfirmed(newcomer)`
+//     whether the server holds their email address as confirmed.
+//   - `fresh.invite()` an invite of the administrator for one person: `{ code, url }`, the registration screen's
+//     address with the code.
+//   - `fresh.providerIdentity()` a subject, an email address, a name and a username nobody has signed in with, for a
+//     person who signs in through the login provider (screens/login-provider.ts).
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `secrets()` what the seed made
-// that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID), and
+// that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID),
 // `totpCode(secret, { avoidStep })` a code of an authenticator app that the server has not taken: the current step's,
-// or the next one's when the current step is `avoidStep`.
+// or the next one's when the current step is `avoidStep`, and `mailedLink(address, path)` the link to the server's
+// page at `path` in the mail the server wrote to `address` (src/mail.ts).
 
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { expect, test as base } from "@playwright/test";
 import { Fresh } from "../src/fresh";
+import { mailedLinkTo } from "../src/mail";
 import { personOf, type Person } from "../src/scenario";
 import type { SeedState } from "../src/seed/seed";
 import { totpCode } from "../src/seed/totp";
 import { runMyOn } from "../src/server/demo";
 
 export { expect, personOf as person, totpCode };
-export type { FreshPerson, FreshPost } from "../src/fresh";
+export type { FreshPerson, FreshPost, Newcomer } from "../src/fresh";
 
 /** The demo server's origin, which global-setup.ts set for the workers. */
 function demoURL(): string {
@@ -57,6 +68,22 @@ function demoURL(): string {
 /** What the seed made that the server decided: the TOTP secrets and steps, the passkeys' keys, the apps' client IDs. */
 export function secrets(): SeedState {
   return JSON.parse(readFileSync(process.env["E2E_DEMO_STATE"] ?? "", "utf8")) as SeedState;
+}
+
+/**
+ * The newest link to the server's page at `path` (`/auth/verify_email`) in the mail to `address`, once the server
+ * wrote it: a mail goes out in a job, after the screen that caused it has answered.
+ */
+export async function mailedLink(address: string, path: string): Promise<string> {
+  const log = process.env["E2E_DEMO_LOG"];
+  if (log === undefined || log === "")
+    throw new Error("e2e: no log of the demo server; run the specs with scripts/task.sh web:e2e");
+  let link: string | undefined;
+  await expect
+    .poll(() => (link = mailedLinkTo(log, address, path)), { message: `a mail to ${address} with a link to ${path}` })
+    .toBeDefined();
+  if (link === undefined) throw new Error(`e2e: no mail to ${address} links to ${path}`);
+  return link;
 }
 
 type Fixtures = {

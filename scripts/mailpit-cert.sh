@@ -1,14 +1,16 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Creates the private development CA and two certificates it signs:
+# Creates the private development CA and the certificates it signs:
 #   server.pem / server.key              the STARTTLS certificate of the development Mailpit (root compose.yaml),
 #                                        valid for the host names that `my serve` reaches it by: mailpit (in the compose
 #                                        stack), localhost, and 127.0.0.1;
 #   push-service.pem / push-service.key  the HTTPS certificate of the fake Web Push service of the test builds
-#                                        (`my dev push-service`), valid for localhost and 127.0.0.1.
-# mail = smtp and the Web Push sender always verify the server's certificate, so `my serve` trusts the CA through
-# SSL_CERT_FILE (CONTRIBUTING.md, "Emails"). Keeps the CA and each certificate unless it expires within a day; a
-# certificate that the current CA did not sign is created again.
+#                                        (`my dev push-service`), valid for localhost and 127.0.0.1;
+#   oidc-provider.pem / oidc-provider.key  the HTTPS certificate of the fake OpenID Connect provider of the test
+#                                        builds (`my dev oidc-provider`), valid for localhost and 127.0.0.1.
+# mail = smtp, the Web Push sender, and the requests to a login provider always verify the server's certificate, so
+# `my serve` trusts the CA through SSL_CERT_FILE (CONTRIBUTING.md, "Emails"). Keeps the CA and each certificate unless
+# it expires within a day; a certificate that the current CA did not sign is created again.
 # Usage: scripts/mailpit-cert.sh   (needs openssl; writes to MAILPIT_CERTS, default .tmp/mailpit)
 set -euo pipefail
 
@@ -49,5 +51,6 @@ issue() {
 
 issue server mailpit "DNS:mailpit,DNS:localhost,IP:127.0.0.1"
 issue push-service localhost "DNS:localhost,IP:127.0.0.1"
+issue oidc-provider localhost "DNS:localhost,IP:127.0.0.1"
 # Read by the containers, which run as other users: the keys of a development server only.
 chmod 0644 "$certs"/*

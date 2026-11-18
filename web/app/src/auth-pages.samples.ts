@@ -76,6 +76,15 @@ const words = {
     en: "If someone invited you, enter the invite code. You can also sign up without one.",
     ja: "招待を受けた人は招待コードを入力してください。招待コードなしでも登録できます。",
   },
+  inviteOnlyHint: {
+    en: "This server accepts new accounts by invitation only.",
+    ja: "このサーバーは招待を受けた人だけが登録できます。",
+  },
+  inviteInvalid: {
+    en: "This invite code is not valid. It may have expired or been used up. Ask the person who invited you for a new one.",
+    ja: "この招待コードは使えません。期限切れか、使用回数の上限に達した可能性があります。招待した人に新しいコードをもらってください。",
+  },
+  inviteCode: { en: "K7QF2M9XPD", ja: "K7QF2M9XPD" },
   reasonHint: {
     en: "A moderator reviews new accounts before they can be used. Up to 500 characters.",
     ja: "新しいアカウントは、モデレーターの承認後に使えるようになります。500 文字まで。",
@@ -220,6 +229,7 @@ export function authScreens(lang: Lang): AuthScreenStates[] {
     passwordMax: 128,
     reasonMax: 500,
   };
+  const inviteOnly = { ...signUpForm, needInvite: true, inviteHint: w("inviteOnlyHint") };
   const signUp = { ...base, screen: "sign_up", signUp: signUpForm, humanCheck, external } as const;
   const consent = {
     clientName: app.name,
@@ -312,6 +322,19 @@ export function authScreens(lang: Lang): AuthScreenStates[] {
           external,
         }),
         state("closed", { ...base, screen: "sign_up", signUp: { ...signUpForm, closed: true } }),
+        state("invite-only", { ...signUp, signUp: inviteOnly }),
+        state("invite-link", { ...signUp, signUp: { ...inviteOnly, inviteCode: w("inviteCode") } }),
+        state("invite-invalid", {
+          ...signUp,
+          error: w("signUpSummary"),
+          signUp: {
+            ...inviteOnly,
+            username: reader.username,
+            email,
+            inviteCode: w("inviteCode"),
+            errors: { invite_code: w("inviteInvalid") },
+          },
+        }),
       ],
     },
     {
@@ -396,6 +419,7 @@ export function authScreens(lang: Lang): AuthScreenStates[] {
             ],
           },
         }),
+        state("rejected", { ...status, status: { rejected: true } }),
         state("deactivated", {
           ...status,
           status: {

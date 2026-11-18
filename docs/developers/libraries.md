@@ -146,7 +146,7 @@ await bot.run({ signal: controller.signal });
 
 A bot acts as a user, so run it on an account of its own and give it the bot flag (the account's setting, or `Config.SetBotFlag` in Go with the scope `write:accounts`). To get its credentials:
 
-1. Sign in as the bot's account and open **Settings → Your apps**.
+1. Sign in as the bot's account and open **Settings → Apps → Your apps**.
 2. Register an app of the type **Confidential**, with `http://127.0.0.1/callback` as its redirect URI and at least the scopes `read:accounts`, `read:notifications`, `read:statuses`, and `write:statuses`.
 3. Copy the client ID and the secret, which is shown once.
 4. Press **Issue token** on the app. The server shows an access token and a refresh token for your account once, without a redirect. Pass the refresh token to the bot; it gets its own access tokens and saves each rotated refresh token.

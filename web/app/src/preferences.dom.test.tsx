@@ -360,6 +360,25 @@ describe("the app opened again on the device", () => {
     expect([page().lang, heading()]).toEqual(["en", lists.en]);
   });
 
+  // The web client's tokens are the session of every browser of the account (ADR-0090 §5): revoking it ends this
+  // one as signing out does, without the token's revocation that signing out sends.
+  test("forgets the account's choice once the reader revoked the server's own web client, which ends the session", async () => {
+    ownDevice();
+    const on = fakeApp({ preferences: japanese });
+    const app = await opened(`/settings/apps/authorized/${on.fake.appId("authorized", 0)}`, { on });
+    await reads("ja", "mycroblog");
+
+    await app.user.click(await main().findByRole("button", { name: "取り消す" }));
+    const asking = await screen.findByRole("alertdialog", { name: "mycroblog の許可を取り消しますか？" });
+    await app.user.click(within(asking).getByRole("button", { name: "取り消す" }));
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+
+    await openedUnread("/lists", { preferences: japanese });
+    expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
+
   test("is the account's alone: once the reader is read as another account it is dropped, before their preferences are read, and for good", async () => {
     ownDevice();
     await opened("/lists", { preferences: japanese });
