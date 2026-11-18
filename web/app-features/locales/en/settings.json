@@ -820,11 +820,11 @@
     "description": "The line under the heading Your apps: what registering an app is for. A client is a program that uses the account through the server's programming interface."
   },
   "settings.apps.own.none": {
-    "defaultMessage": "You have not registered an app yet. Register one to get a client ID and tokens for a bot, a script or a client of your own.",
-    "description": "In the place of the list of the reader's own apps while it is empty, over the button Register an app."
+    "defaultMessage": "You have not registered an app yet. Register one to get its client ID and tokens.",
+    "description": "In the place of the list of the reader's own apps while it is empty, over the button Register an app and under the line settings.apps.own.about, which says what an app is registered for: this line does not repeat it."
   },
   "settings.apps.own.off": {
-    "defaultMessage": "This server's administrators have turned off app registration, so you cannot register an app now. Apps registered before keep working.",
+    "defaultMessage": "The server's administrators have turned off app registration. Apps already registered keep working.",
     "description": "A sentence in the section Your apps, in the place of the button Register an app, and in the place of the form on the page Register an app, on a server whose administrators do not let users register apps."
   },
   "settings.apps.own.registered": {
@@ -892,8 +892,8 @@
     "description": "The question of the confirmation before an authorized app is revoked. app is the app's name as the app gives it."
   },
   "settings.apps.revoke.text": {
-    "defaultMessage": "It can no longer use your account, and what it does for you stops working at once. You can allow it again later from the app.",
-    "description": "Under settings.apps.revoke.title in the confirmation, for an app that is not the server's own: what stops working, and that it can be undone by allowing the app again."
+    "defaultMessage": "The app loses access to your account at once. You can allow it again later from the app.",
+    "description": "Under settings.apps.revoke.title in the confirmation, for an app that is not the server's own: that the app can no longer use the account from that moment, and that it can be undone by allowing the app again."
   },
   "settings.apps.revoke.text.web": {
     "defaultMessage": "This is the app you are using now. Revoking it signs you out of every browser at once, this one included. You can sign in again afterwards.",
@@ -936,8 +936,8 @@
     "description": "The label of the field for the redirect URIs of an app the reader registers. A developer's word (OAuth): the addresses the server may send the browser back to once someone allowed the app."
   },
   "settings.apps.form.redirect_uris.hint": {
-    "defaultMessage": "One per line, up to {max, number}. Each is an https address, an address with a scheme of your own such as com.example.app:/callback, or http://127.0.0.1 on any port.",
-    "description": "The hint under the label Redirect URIs. max is how many an app may have. com.example.app:/callback and http://127.0.0.1 are examples to keep as they are."
+    "defaultMessage": "The addresses the server may send the browser back to after someone allows the app. One per line, up to {max, number}: an https address, an address with a scheme of your own such as com.example.app:/callback, or http://127.0.0.1 on any port.",
+    "description": "The hint under the label Redirect URIs: what a redirect URI is for, then how to enter them. max is how many an app may have. com.example.app:/callback and http://127.0.0.1 are examples to keep as they are."
   },
   "settings.apps.form.scope": {
     "defaultMessage": "Scopes",
@@ -956,7 +956,7 @@
     "description": "The line under the heading Type on the page Register an app: what the choice decides, and that it is final."
   },
   "settings.apps.form.type.choice": {
-    "defaultMessage": "{type, select, confidential {Confidential: keeps a secret, as a server or a bot can} other {Public: cannot keep a secret, as an app on a phone or in a browser}}",
+    "defaultMessage": "{type, select, confidential {Confidential: can keep a secret, like a server or a bot} other {Public: cannot keep a secret, like an app on a phone or in a browser}}",
     "description": "One of the two choices of the type of an app the reader registers, with what it means. type is confidential, or other (public). The first word is the type's name, as settings.apps.type has it. No full stop: it is a choice."
   },
   "settings.apps.form.type.fixed": {
@@ -976,12 +976,12 @@
     "description": "Under settings.apps.registered, for a confidential app: which of the two values under it the reader finds again later, and which not."
   },
   "settings.apps.disabled": {
-    "defaultMessage": "This server's administrators disabled this app",
+    "defaultMessage": "The server's administrators have disabled this app",
     "description": "The sentence of the status summary at the top of the page of one of the reader's own apps while the server's administrators have it disabled. No full stop: it is a heading."
   },
   "settings.apps.disabled.about": {
-    "defaultMessage": "{type, select, confidential {Until they enable it again, nobody can allow it, and it cannot get tokens or use the ones it has. You can still make a new secret, change its settings or delete it.} other {Until they enable it again, nobody can allow it, and it cannot get tokens or use the ones it has. You can still change its settings or delete it.}}",
-    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled, and what the reader may still do on the page, where the way to a token is then not offered. type is confidential (the app has a secret, which can still be made again), or other (a public app)."
+    "defaultMessage": "{type, select, confidential {Its tokens have stopped working and will not work again. Until the administrators enable it again, nobody can allow it and it gets no new tokens. You can still make a new secret, change its settings or delete it.} other {Its tokens have stopped working and will not work again. Until the administrators enable it again, nobody can allow it and it gets no new tokens. You can still change its settings or delete it.}}",
+    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled (every token of it was revoked, and stays revoked when the app is enabled again: people allow it again then), and what the reader may still do on the page, where the way to a token is then not offered. type is confidential (the app has a secret, which can still be made again), or other (a public app)."
   },
   "settings.apps.credentials": {
     "defaultMessage": "Credentials",
@@ -1040,8 +1040,8 @@
     "description": "Beside a button that copies a value of an app, when the browser refused to copy. The same words as the Security pages' (settings.security.two_factor.copy_failed)."
   },
   "settings.apps.once.done": {
-    "defaultMessage": "{kept, select, one {I saved it} several {I saved them} other {Done}}",
-    "description": "The button at the end of a page that shows values of an app once. kept is one (a secret was shown), several (an access token and a refresh token were), or other (nothing secret: the client ID of a public app). It goes back to the page the reader came from."
+    "defaultMessage": "Finish",
+    "description": "The button at the end of a page that shows values of an app once (a new app's client ID and secret, a new secret, an access token and a refresh token). It goes back to the page the reader came from. The same words as the Security pages' (settings.security.two_factor.recovery.done)."
   },
   "settings.apps.edit": {
     "defaultMessage": "App settings",
@@ -1088,7 +1088,7 @@
     "description": "The heading of the section with the field Scopes on the page Issue token."
   },
   "settings.apps.token.about": {
-    "defaultMessage": "The server issues an access token and a refresh token of this app for your account. Nobody is asked to allow it, and no browser is sent anywhere.",
+    "defaultMessage": "The server issues an access token and a refresh token of this app for your own account, with no page to allow the app and no redirect.",
     "description": "The line under the heading Token for your own account on the page Issue token: what issuing a token does."
   },
   "settings.apps.token.scope.hint": {
@@ -1096,11 +1096,11 @@
     "description": "The hint under the label Scopes on the page Issue token. The field starts with all the scopes of the app."
   },
   "settings.apps.token.admin": {
-    "defaultMessage": "Only a token issued here can carry a permission scope such as admin:manage_invites, and only for a permission your account has. An app that asks for one when someone else allows it is refused.",
-    "description": "A sentence under the field Scopes on the page Issue token. A permission scope is a scope named admin: and a permission of the server's staff (admin:manage_invites, to keep as it is); the reader can choose only those of the permissions their own account has."
+    "defaultMessage": "Only a token issued here can carry a permission scope such as admin:manage_invites, and only for a permission your account has. An app that asks for one on the page where people allow it is refused.",
+    "description": "A sentence under the field Scopes on the page Issue token. A permission scope is a scope named admin: and a permission of the server's staff (admin:manage_invites, to keep as it is); the reader can choose only those of the permissions their own account has, and no request on the page where people allow the app (the consent page) may ask for one, whoever allows."
   },
   "settings.apps.token.disabled": {
-    "defaultMessage": "This server's administrators disabled this app, so it gets no token until they enable it again.",
+    "defaultMessage": "The server's administrators have disabled this app, so it gets no token until they enable it again.",
     "description": "A sentence in the place of the form on the page Issue token, for an app the server's administrators disabled."
   },
   "settings.apps.token.issued": {
