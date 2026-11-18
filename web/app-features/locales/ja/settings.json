@@ -343,14 +343,6 @@
     "defaultMessage": "コピー",
     "description": "The button under the setup key, and under the recovery codes, that copies them."
   },
-  "settings.security.two_factor.copied": {
-    "defaultMessage": "コピーしました",
-    "description": "Beside the button Copy once the setup key or the recovery codes were copied."
-  },
-  "settings.security.two_factor.copy_failed": {
-    "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
-    "description": "Beside the button Copy when the browser refused to copy."
-  },
   "settings.security.two_factor.verify": {
     "defaultMessage": "コードを入力",
     "description": "The heading of the second section of the page that turns two-factor authentication on, with the field Authentication code."
@@ -382,10 +374,6 @@
   "settings.security.two_factor.recovery.once": {
     "defaultMessage": "認証アプリを使えないとき、それぞれのコードで 1 回ずつログインできます。安全な場所に保管してください。このコードは二度と表示されません。",
     "description": "The line under the heading Recovery codes on the page that shows them once. It must say plainly that the codes will not be shown again."
-  },
-  "settings.security.two_factor.recovery.done": {
-    "defaultMessage": "完了する",
-    "description": "The button at the end of the page that shows the recovery codes once. It goes back to the Security page."
   },
   "settings.security.two_factor.recovery.regenerated": {
     "defaultMessage": "新しいリカバリーコードを作りました。以前のコードは使えません。",
@@ -670,10 +658,6 @@
   "settings.security.browsers.signed_in.from.unknown": {
     "defaultMessage": "ログイン元: 不明",
     "description": "As settings.security.browsers.signed_in.from, when the server kept no record of the address the browser signed in from."
-  },
-  "settings.security.browsers.last_used": {
-    "defaultMessage": "最終利用: {date}",
-    "description": "A line of its own under a browser's name in the list of signed-in browsers, after the lines of its sign-in. date is the day and the hour the browser last used the account, written out in the reader's language (Mar 3, 2 PM)."
   },
   "settings.security.browsers.current": {
     "defaultMessage": "このブラウザ",

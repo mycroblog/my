@@ -59,10 +59,7 @@ function useCopy(text: string): { copy: () => void; result: string | undefined }
     copy: () => {
       void copyText(text).then(setCopied);
     },
-    result:
-      copied === undefined
-        ? undefined
-        : t(copied ? "settings.security.two_factor.copied" : "settings.security.two_factor.copy_failed"),
+    result: copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed"),
   };
 }
 
@@ -199,7 +196,7 @@ function Codes({ codes, said, onDone }: { codes: readonly string[]; said: string
       foot={
         <SubmitBar>
           <Button kind="primary" onPress={onDone}>
-            {t("settings.security.two_factor.recovery.done")}
+            {t("settings.once.done")}
           </Button>
         </SubmitBar>
       }

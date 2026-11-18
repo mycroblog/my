@@ -440,9 +440,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
       session.ip === undefined
         ? t("settings.security.browsers.signed_in.from.unknown")
         : t("settings.security.browsers.signed_in.from", { ip: session.ip }),
-      session.last_used_at === undefined
-        ? undefined
-        : t("settings.security.browsers.last_used", { date: hour(session.last_used_at) }),
+      session.last_used_at === undefined ? undefined : t("settings.last_used", { date: hour(session.last_used_at) }),
     ].filter((fact) => fact !== undefined);
   return (
     <>
