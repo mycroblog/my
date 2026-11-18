@@ -459,6 +459,7 @@ export {
   type NotificationPolicyAction,
   type NotificationSettingRow,
   type NotificationSettings,
+  type VerificationWait,
 } from "./notification-settings";
 export {
   autoDeleteQuery,

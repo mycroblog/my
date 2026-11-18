@@ -368,6 +368,12 @@ export type FakeOptions = {
   /** The server sends email (the instance's `sends_email`); it does not by default. */
   email?: boolean;
   /**
+   * The verification email (POST /accounts/email/verification), which the fake queues (a 202) unless the server sends
+   * no email (a 404): `limited`, the server sent as many as it sends for now and answers a 429 whose `Retry-After`
+   * asks for 25 minutes.
+   */
+  verificationEmail?: "limited";
+  /**
    * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
    * their notification settings (`settings-fail`) fails with a 500.
    */
@@ -2791,6 +2797,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (from > 0) await late();
       return { status: 200, body };
     },
+    "POST /accounts/email/verification": () => {
+      if (visitor) return problem(401, "Unauthorized");
+      if (o.email !== true) return notFound();
+      if (o.verificationEmail === "limited")
+        return { ...problem(429, "Too Many Requests"), headers: { "Retry-After": String(25 * 60) } };
+      return { status: 202 };
+    },
     "PATCH /accounts/update_credentials": ({ body }) => {
       if (visitor) return problem(401, "Unauthorized");
       if (o.profile?.save === "waits") return new Promise<never>(() => undefined);
@@ -3353,7 +3366,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       // An image the reader uploads, served from the reader's own copy of the file: ready at once, or still processed
       // until it is read again (`uploads`); or refused, as a file the server cannot use.
       if (o.uploads === "refused")
-        return problem(422, "This could not be done.", { detail: "This file is not a picture this server can use." });
+        return problem(422, "This could not be done.", { detail: "This file is not an image this server can use." });
       const form = await request.formData();
       const file = form.get("file");
       const description = form.get("description");

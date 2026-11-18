@@ -14,14 +14,14 @@ import { SettingsSection } from "./settings";
 
 const words = {
   en: {
-    section: "Pictures",
+    section: "Images",
     avatar: "Avatar",
-    header: "Header",
+    header: "Header image",
     headerHint: "Shown across the top of your profile.",
-    choose: "Choose a picture",
+    choose: "Choose an image",
     replace: "Replace",
     remove: "Remove",
-    refused: "This picture could not be used. Choose another one.",
+    refused: "This image could not be used. Choose another one.",
   },
   ja: {
     section: "画像",
@@ -29,8 +29,8 @@ const words = {
     header: "ヘッダー画像",
     headerHint: "プロフィールの上部に表示されます。",
     choose: "画像を選ぶ",
-    replace: "変更",
-    remove: "削除",
+    replace: "画像を変更",
+    remove: "外す",
     refused: "この画像は使えませんでした。別の画像を選んでください。",
   },
 } as const;

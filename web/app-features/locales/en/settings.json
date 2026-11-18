@@ -376,12 +376,8 @@
     "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
   },
   "settings.profile.indexable.about": {
-    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} other {This server tells search engines not to list any account. Your choice still decides whether this server's search of posts shows your posts.}}",
-    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that tells search engines to stay out and has a search of posts, where the choice still decides that search. The server states what search engines may do and cannot make them obey: say may, never will."
-  },
-  "settings.profile.indexable.overridden": {
-    "defaultMessage": "This server tells search engines not to list any account, so your choice has no effect here.",
-    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators tell search engines to stay out, and the server has no search of posts, so on this server the reader's profile and posts are in no search whatever they chose. Here, because other servers still receive the reader's own choice."
+    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} elsewhere {This server tells search engines not to list any account. Your choice is still sent to other servers, which may use it for their search.} other {This server tells search engines not to list any account. Your choice still decides whether this server's search of posts shows your posts.}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, server on one that tells search engines not to list any account and has a search of posts, where the choice applies to that search, and elsewhere on one that tells search engines not to list any account and has no search of posts: the choice then decides nothing on this server, but other servers receive it with the profile and may use it for their own search."
   },
   "settings.profile.ai_opt_out": {
     "defaultMessage": "Refuse AI training and use",
@@ -400,8 +396,8 @@
     "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
   },
   "settings.profile.feed.about": {
-    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} overridden {People can read your public posts in a feed reader, without an account. This server's choice for search engines does not apply to the feed.} other {People can read your public posts in a feed reader, without an account.}}",
-    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled and shows off because the server tells search engines to stay out for every account: the feed is not held to that, so this switch may show on under a search switch that shows off, and the line says the server's choice stops at search engines; anything else once the reader set this switch, which then keeps their choice."
+    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} other {People can read your public posts in a feed reader, without an account.}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
   },
   "settings.profile.edit.section.pictures": {
     "defaultMessage": "Images",
@@ -591,9 +587,9 @@
     "defaultMessage": "Sent. Open the link in the email to receive email again.",
     "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
   },
-  "settings.notifications.email_stopped.busy": {
-    "defaultMessage": "The verification email can be sent up to 3 times an hour. Try again later.",
-    "description": "Beside settings.notifications.email_stopped.verify when the server refused it because it already sent 3 verification emails in the last hour."
+  "settings.notifications.email_stopped.wait": {
+    "defaultMessage": "{minutes, plural, =0 {You asked for the email too many times. Try again later.} one {You asked for the email too many times. Try again in # minute.} other {You asked for the email too many times. Try again in # minutes.}}",
+    "description": "Beside the button Send the verification email on the notification settings page when the server refused to send another one so soon; the same sentence as on the sign-up status page (server:auth.status.resend_rate_limited). minutes is how long the server asks the reader to wait, rounded up to whole minutes, or 0 when the server did not say."
   },
   "settings.notifications.email_stopped.not_sent": {
     "defaultMessage": "The email could not be sent. Try again.",
@@ -763,9 +759,21 @@
     "defaultMessage": "Notifications from people you may not know",
     "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
   },
-  "settings.notifications.policy.about": {
-    "defaultMessage": "Accept: the notification arrives as usual. Hold back: it waits in “Held-back notifications” until you accept or dismiss it. Drop: it is never created, so you cannot see it later.",
-    "description": "The line under the heading settings.notifications.policy: what each of the three choices does. Accept, Hold back and Drop are the options of settings.notifications.policy.action; Held-back notifications is the screen notifications.held, where accepting and dismissing are notifications.held_accept and notifications.held_dismiss."
+  "settings.notifications.policy.actions": {
+    "defaultMessage": "What each choice does",
+    "description": "The name, for assistive technology, of the list under the heading Notifications from people you may not know that says what each of the three choices does: Accept, Hold back, Drop (settings.notifications.policy.action), each over its line (settings.notifications.policy.about.*)."
+  },
+  "settings.notifications.policy.about.accept": {
+    "defaultMessage": "The notification arrives as usual.",
+    "description": "The line under Accept in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.about.filter": {
+    "defaultMessage": "It waits in “Held-back notifications” until you accept or dismiss it.",
+    "description": "The line under Hold back in the list of what each choice does, under the heading Notifications from people you may not know. The quoted words are the name of the screen that lists them (notifications.held)."
+  },
+  "settings.notifications.policy.about.drop": {
+    "defaultMessage": "It is never created, so you cannot see it later.",
+    "description": "The line under Drop in the list of what each choice does, under the heading Notifications from people you may not know."
   },
   "settings.notifications.policy.action": {
     "defaultMessage": "{action, select, accept {Accept} filter {Hold back} other {Drop}}",

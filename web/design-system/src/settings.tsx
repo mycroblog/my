@@ -768,6 +768,36 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
 }
 
 /**
+ * What a section states and the reader cannot press (what an app was granted, where it comes from), named by `label`:
+ * each fact a sentence over the muted lines about it, where it has some, the facts one under another at one distance
+ * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall.
+ */
+export function SettingsFacts({
+  label,
+  items,
+}: {
+  label: string;
+  items: readonly { text: string; about?: readonly string[] | undefined }[];
+}) {
+  const s = list();
+  return (
+    <Stack as="ul" gap="screen-row-gap" aria-label={label} className={s.root()}>
+      {items.map((item) => (
+        <Stack as="li" key={item.text}>
+          <bdi className={s.title()}>{item.text}</bdi>
+          {item.about?.map((line) => (
+            <Fragment key={line}>
+              {" "}
+              <span className={s.fact()}>{line}</span>
+            </Fragment>
+          ))}
+        </Stack>
+      ))}
+    </Stack>
+  );
+}
+
+/**
  * The submit bar of a form saved as a whole: its button (`children`, the screen's primary action) at the end, and
  * what came of sending right before it, in the same place every time (`result`: a `SaveState` once saved, a
  * `FormAlert` when refused). It ends the screen and stays at the bottom of the viewport while the form is longer,

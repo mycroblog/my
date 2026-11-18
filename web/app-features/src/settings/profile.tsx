@@ -9,8 +9,10 @@
 // each, a section that is absent with no badge (ADR-0070 §12); whether follows need their approval, and who sees the
 // lists of whom they follow and who follows them; and how the account is found: suggestions and the search by name,
 // search engines and this server's search of posts, AI, and the Atom feed, which follows the reader's choice for
-// search until they set it. A choice the server makes for every account is disabled, shows what the server enforces
-// (search off, AI refused), and says that the reader's own has no effect (ADR-0057 §1).
+// search until they set it. The search choice stays the reader's whatever the server tells search engines: other
+// servers receive it with the profile and may use it for their search (ADR-0057 §6), and its line says what it
+// still decides. Where the server refuses AI training and use for every account, the AI choice decides nothing
+// anywhere: it is disabled, shows what the server enforces, and says so (ADR-0057 §1).
 
 import { AccountName, handleOf, nameOf, PostContent, ProfileHead } from "@my/app-components";
 import {
@@ -164,13 +166,14 @@ function Sections({ account }: { account: CredentialAccount }) {
   const change = (c: ProfileChange) => update(c);
   const badges = useBadgeChoices();
   const chooseBadge = useChooseBadge();
-  // What the server states for every account, which an account cannot widen (ADR-0057 §1): its own search of posts
-  // still follows the account's choice where it keeps search engines out. A choice that changes nothing is fixed, and
-  // its switch shows what the server enforces: no search, AI refused.
-  const enginesOut = instance?.search_indexing === "deny";
+  // What the server states for every account, which an account cannot widen (ADR-0057 §1). Where it tells search
+  // engines not to list any account, the account's search choice still decides this server's own search of posts,
+  // where it has one, and what other servers are sent of it (§6): it is never fixed, and its line says which. The AI
+  // choice narrows this server's own statement alone, and is sent nowhere: where the server refuses both for every
+  // account, it changes nothing, is fixed, and its switch shows what the server enforces.
+  const unlisted = instance?.search_indexing === "deny";
   const postSearch = instance?.full_text_search.available === true;
   const ai = instance?.ai_usage;
-  const searchFixed = enginesOut && !postSearch;
   const aiFixed = ai === "deny";
   return (
     <>
@@ -240,10 +243,9 @@ function Sections({ account }: { account: CredentialAccount }) {
           page={page}
           label={t("settings.profile.indexable")}
           about={t("settings.profile.indexable.about", {
-            where: enginesOut ? "server" : postSearch ? "both" : "engines",
+            where: unlisted ? (postSearch ? "server" : "elsewhere") : postSearch ? "both" : "engines",
           })}
-          on={searchFixed ? false : account.indexable}
-          fixed={searchFixed ? t("settings.profile.indexable.overridden") : undefined}
+          on={account.indexable}
           onChange={(indexable) => change({ indexable })}
         />
         <Toggle
@@ -257,11 +259,7 @@ function Sections({ account }: { account: CredentialAccount }) {
         <Toggle
           page={page}
           label={t("settings.profile.feed")}
-          // Until the reader sets it, the feed follows what they chose for search, also where the switch above shows
-          // what the server enforces instead.
-          about={t("settings.profile.feed.about", {
-            follows: !account.feed_follows_indexable ? "no" : searchFixed ? "overridden" : "yes",
-          })}
+          about={t("settings.profile.feed.about", { follows: account.feed_follows_indexable ? "yes" : "no" })}
           on={account.feed_enabled}
           onChange={(feed_enabled) => change({ feed_enabled })}
         />

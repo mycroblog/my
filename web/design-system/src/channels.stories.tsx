@@ -26,7 +26,7 @@ const en = {
     closure: "Closure of this server",
     long: "Scheduled posts that could not be published at the time you chose",
   },
-  off: "Off in the app, so it does not arrive any other way.",
+  off: "“In the app” is off, so it does not arrive any other way.",
   fixed: "Always arrives in the app and by email.",
 };
 
@@ -44,7 +44,7 @@ const ja: typeof en = {
     closure: "このサーバーの閉鎖",
     long: "指定した時刻に公開できなかった予約投稿",
   },
-  off: "アプリ内がオフなので、ほかの方法でも届きません。",
+  off: "「アプリ内」がオフなので、ほかの方法でも届きません。",
   fixed: "アプリ内とメールには必ず届きます。",
 };
 

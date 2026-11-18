@@ -33,7 +33,7 @@ const words = {
     name: "ラベル",
     value: "内容",
     legend: (n: number) => `補足情報 ${String(n)}`,
-    remove: (n: number) => `補足情報 ${String(n)} を削除`,
+    remove: (n: number) => `補足情報 ${String(n)} を外す`,
     refused: "この値は使えません。入力した内容を確かめてください。",
     tooMany: "4 個までにしてください。",
     pairs: [

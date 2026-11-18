@@ -376,12 +376,8 @@
     "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
   },
   "settings.profile.indexable.about": {
-    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されることがあります。} engines {検索エンジンに表示されることがあります。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。このサーバーの投稿の検索に載せるかどうかは、この選択で決まります。}}",
-    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that tells search engines to stay out and has a search of posts, where the choice still decides that search. The server states what search engines may do and cannot make them obey: say may, never will."
-  },
-  "settings.profile.indexable.overridden": {
-    "defaultMessage": "このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っているため、この選択はこのサーバーでは反映されません。",
-    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators tell search engines to stay out, and the server has no search of posts, so on this server the reader's profile and posts are in no search whatever they chose. Here, because other servers still receive the reader's own choice."
+    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されることがあります。} engines {検索エンジンに表示されることがあります。} elsewhere {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。この選択はほかのサーバーにも送られ、そのサーバーの検索で使われることがあります。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。このサーバーの投稿の検索に載せるかどうかは、この選択で決まります。}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, server on one that tells search engines not to list any account and has a search of posts, where the choice applies to that search, and elsewhere on one that tells search engines not to list any account and has no search of posts: the choice then decides nothing on this server, but other servers receive it with the profile and may use it for their own search."
   },
   "settings.profile.ai_opt_out": {
     "defaultMessage": "AI の学習と利用を拒否する",
@@ -400,8 +396,8 @@
     "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
   },
   "settings.profile.feed.about": {
-    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} overridden {アカウントのない人も、フィードリーダーで公開投稿を読めます。検索エンジンについてのこのサーバーの設定は、フィードには当てはまりません。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
-    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled and shows off because the server tells search engines to stay out for every account: the feed is not held to that, so this switch may show on under a search switch that shows off, and the line says the server's choice stops at search engines; anything else once the reader set this switch, which then keeps their choice."
+    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
   },
   "settings.profile.edit.section.pictures": {
     "defaultMessage": "画像",
@@ -591,9 +587,9 @@
     "defaultMessage": "送りました。メールのリンクを開くと、またメールが届くようになります。",
     "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
   },
-  "settings.notifications.email_stopped.busy": {
-    "defaultMessage": "確認のメールは 1 時間に 3 回まで送れます。しばらくしてからもう一度試してください。",
-    "description": "Beside settings.notifications.email_stopped.verify when the server refused it because it already sent 3 verification emails in the last hour."
+  "settings.notifications.email_stopped.wait": {
+    "defaultMessage": "{minutes, plural, =0 {確認のメールを求めた回数が多すぎます。しばらくしてからもう一度試してください。} other {確認のメールを求めた回数が多すぎます。# 分後にもう一度試してください。}}",
+    "description": "Beside the button Send the verification email on the notification settings page when the server refused to send another one so soon; the same sentence as on the sign-up status page (server:auth.status.resend_rate_limited). minutes is how long the server asks the reader to wait, rounded up to whole minutes, or 0 when the server did not say."
   },
   "settings.notifications.email_stopped.not_sent": {
     "defaultMessage": "メールを送れませんでした。もう一度試してください。",
@@ -763,9 +759,21 @@
     "defaultMessage": "知らないかもしれない人からの通知",
     "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
   },
-  "settings.notifications.policy.about": {
-    "defaultMessage": "受け入れる: 通知はいつもどおり届きます。保留する: 受け入れるか消すまで「保留中の通知」で待ちます。破棄する: 通知は作られないので、あとから見ることもできません。",
-    "description": "The line under the heading settings.notifications.policy: what each of the three choices does. Accept, Hold back and Drop are the options of settings.notifications.policy.action; Held-back notifications is the screen notifications.held, where accepting and dismissing are notifications.held_accept and notifications.held_dismiss."
+  "settings.notifications.policy.actions": {
+    "defaultMessage": "それぞれの選択でどうなるか",
+    "description": "The name, for assistive technology, of the list under the heading Notifications from people you may not know that says what each of the three choices does: Accept, Hold back, Drop (settings.notifications.policy.action), each over its line (settings.notifications.policy.about.*)."
+  },
+  "settings.notifications.policy.about.accept": {
+    "defaultMessage": "通知はいつもどおり届きます。",
+    "description": "The line under Accept in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.about.filter": {
+    "defaultMessage": "受け入れるか消すまで「保留中の通知」で待ちます。",
+    "description": "The line under Hold back in the list of what each choice does, under the heading Notifications from people you may not know. The quoted words are the name of the screen that lists them (notifications.held)."
+  },
+  "settings.notifications.policy.about.drop": {
+    "defaultMessage": "通知は作られないので、あとから見ることもできません。",
+    "description": "The line under Drop in the list of what each choice does, under the heading Notifications from people you may not know."
   },
   "settings.notifications.policy.action": {
     "defaultMessage": "{action, select, accept {受け入れる} filter {保留する} other {破棄する}}",

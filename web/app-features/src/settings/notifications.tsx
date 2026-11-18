@@ -61,6 +61,7 @@ import {
   ChannelTable,
   Row,
   SaveState,
+  SettingsFacts,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
@@ -451,7 +452,17 @@ const conditions = [
 /** What the policy may do with a notification, from the mildest. */
 const actions = ["accept", "filter", "drop"] as const satisfies readonly NotificationPolicyAction[];
 
-/** The policy: a choice a condition, and the way to the notifications it holds back. */
+/** What each action does with a notification, the line under its name. */
+const actionAbout = {
+  accept: "settings.notifications.policy.about.accept",
+  filter: "settings.notifications.policy.about.filter",
+  drop: "settings.notifications.policy.about.drop",
+} as const satisfies Record<NotificationPolicyAction, MessageId>;
+
+/**
+ * The policy: what each of its three actions does, stated once; a choice a condition; and the way to the
+ * notifications it holds back.
+ */
 function Policy({ policy, t }: { policy: NotificationPolicy; t: T }) {
   const change = useChangeNotificationPolicy();
   const options = actions.map((action) => ({
@@ -459,7 +470,14 @@ function Policy({ policy, t }: { policy: NotificationPolicy; t: T }) {
     label: t("settings.notifications.policy.action", { action }),
   }));
   return (
-    <SettingsSection heading={t("settings.notifications.policy")} about={t("settings.notifications.policy.about")}>
+    <SettingsSection heading={t("settings.notifications.policy")}>
+      <SettingsFacts
+        label={t("settings.notifications.policy.actions")}
+        items={actions.map((action) => ({
+          text: t("settings.notifications.policy.action", { action }),
+          about: [t(actionAbout[action])],
+        }))}
+      />
       {conditions.map((condition) => (
         <Choice
           key={condition.id}
@@ -483,8 +501,14 @@ function Policy({ policy, t }: { policy: NotificationPolicy; t: T }) {
 
 // ---- The stopped address -------------------------------------------------------------------------------------------
 
-/** What came of the last press of the summary's action. */
-type Sending = "sending" | "sent" | "busy" | "failed";
+/**
+ * What came of the last press of the summary's action; a number is the wait the server asks for before it sends
+ * another email, in whole minutes, 0 when it did not say how long.
+ */
+type Sending = "sending" | "sent" | "failed" | number;
+
+/** A wait in whole minutes, rounded up as the server's own pages round it; 0 for one the server did not say. */
+const minutesOf = (waitMs: number | undefined) => (waitMs === undefined ? 0 : Math.max(1, Math.ceil(waitMs / 60_000)));
 
 /**
  * Why the server stopped sending email to the reader's address. After a bounce, its action sends the verification
@@ -496,15 +520,21 @@ function EmailStopped({ kind, t }: { kind: NonNullable<Preferences["email_suppre
   const [sending, setSending] = useState<Sending | null>(null);
   const send = () => {
     setSending("sending");
-    resend().then(setSending, () => {
-      setSending("failed");
-    });
+    resend().then(
+      (answer) => {
+        setSending(answer === "sent" ? "sent" : minutesOf(answer.waitMs));
+      },
+      () => {
+        setSending("failed");
+      },
+    );
   };
   const result =
     sending === null || sending === "sending" ? null : sending === "sent" ? (
       <SaveState state="saved">{t("settings.notifications.email_stopped.sent")}</SaveState>
-    ) : sending === "busy" ? (
-      <SaveState state="failed">{t("settings.notifications.email_stopped.busy")}</SaveState>
+    ) : typeof sending === "number" ? (
+      // The server's own wait, in the words its sign-up page says it in: no number of the server's is the client's.
+      <SaveState state="failed">{t("settings.notifications.email_stopped.wait", { minutes: sending })}</SaveState>
     ) : (
       // The action stays beside it, which is the way to try again.
       <SaveState state="failed">{t("settings.notifications.email_stopped.not_sent")}</SaveState>

@@ -82,17 +82,35 @@ export function useChangeNotificationSettings(): (changes: readonly Notification
 
 // ---- The stopped address -------------------------------------------------------------------------------------------
 
+/** A verification email the server did not send, having sent as many as it sends for now. */
+export type VerificationWait = {
+  /**
+   * How long the server asks to wait before the next one (the `Retry-After` of its 429), in ms; undefined when it
+   * did not say.
+   */
+  readonly waitMs: number | undefined;
+};
+
+/** The wait a `Retry-After` header asks for, in seconds or as an HTTP date, in ms from now; undefined for none. */
+function retryAfterMs(header: string | null): number | undefined {
+  const value = header?.trim() ?? "";
+  if (/^\d+$/.test(value)) return Number(value) * 1000;
+  const at = value === "" ? Number.NaN : Date.parse(value);
+  return Number.isNaN(at) ? undefined : Math.max(at - Date.now(), 0);
+}
+
 /**
  * Sends the viewer a new verification email, whose link lifts the stop of email to their address after a hard bounce
- * (`Preferences.email_suppression`): `sent` once it is queued, `busy` when the server sent as many as it sends in an
- * hour. An address that is no longer stopped has nothing to verify: the preferences are read again, and it is `sent`.
- * It rejects with any other problem.
+ * (`Preferences.email_suppression`): `sent` once it is queued, or the wait the server asks for when it sent as many as
+ * it sends for now (a 429). An address that is no longer stopped has nothing to verify: the preferences are read
+ * again, and it is `sent`. It rejects with any other problem.
  */
-export async function resendVerificationEmail(data: AppData): Promise<"sent" | "busy"> {
+export async function resendVerificationEmail(data: AppData): Promise<"sent" | VerificationWait> {
   try {
     await data.api.POST("/accounts/email/verification");
   } catch (error) {
-    if (error instanceof ProblemError && error.status === 429) return "busy";
+    if (error instanceof ProblemError && error.status === 429)
+      return { waitMs: retryAfterMs(error.headers.get("Retry-After")) };
     if (!(error instanceof ProblemError && error.status === 409)) throw error;
     await data.queryClient.invalidateQueries({ queryKey: preferencesQuery(data).queryKey });
   }
@@ -100,7 +118,7 @@ export async function resendVerificationEmail(data: AppData): Promise<"sent" | "
 }
 
 /** Sends a new verification email, from a screen (`resendVerificationEmail`). */
-export function useResendVerificationEmail(): () => Promise<"sent" | "busy"> {
+export function useResendVerificationEmail(): () => Promise<"sent" | VerificationWait> {
   const data = useAppData();
   return () => resendVerificationEmail(data);
 }

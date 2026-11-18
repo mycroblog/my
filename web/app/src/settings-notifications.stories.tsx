@@ -82,6 +82,21 @@ export const EmailStopped: Story = {
   }),
   beforeEach: pushBrowser({ permission: "granted" }),
 };
+/**
+ * The same on a server that sent as many verification emails as it sends for now: pressed, the action says how long
+ * the server asks the reader to wait.
+ */
+export const EmailStoppedLimited: Story = {
+  parameters: screen({
+    at,
+    server: {
+      ...server,
+      verificationEmail: "limited",
+      preferences: { email_suppression: { kind: "hard_bounce", state_changed_at: "2026-11-02T09:30:00Z" } },
+    },
+  }),
+  beforeEach: pushBrowser({ permission: "granted" }),
+};
 /** With favourites turned off in the app: its other cells are off and disabled, and the row says why. */
 export const KindOffInTheApp: Story = {
   parameters: screen({

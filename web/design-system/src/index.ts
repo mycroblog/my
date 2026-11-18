@@ -261,6 +261,7 @@ export {
 export {
   SettingRow,
   SettingsEmpty,
+  SettingsFacts,
   SettingsGroup,
   SettingsItem,
   SettingsList,
