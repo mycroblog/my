@@ -8,7 +8,7 @@
 // those loaded), the first page is read again at once at the top, else when the reader presses the button. The button
 // tells how many are held or went in above; the feed takes the reader to the top and the focus to the heading.
 
-import { useTimelineArrivals, type Arrival, type StreamedTimeline } from "@my/app-data";
+import { usePreferences, useTimelineArrivals, type Arrival, type StreamedTimeline } from "@my/app-data";
 import { useLocale } from "@my/design-system";
 import { useState } from "react";
 import { stringsIn } from "../locale";
@@ -72,12 +72,13 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
 }
 
 /**
- * What the column of a streamed timeline takes for its new posts, with `timeline_auto_insert` at its default, on
- * (ADR-0013 §22), until the reader's preferences are read: what its feed hears, and its button, worded.
+ * What the column of a streamed timeline takes for its new posts, by the reader's `timeline_auto_insert`, at its
+ * default, on (ADR-0013 §22), until their preferences are read: what its feed hears, and its button, worded.
  */
 export function useNewPostsColumn(timeline: StreamedTimeline) {
   const { t } = stringsIn(useLocale().locale);
-  const { onTopChange, onReaderChange, told, onPress } = useNewPosts(timeline, true);
+  const autoInsert = usePreferences()?.timeline_auto_insert ?? true;
+  const { onTopChange, onReaderChange, told, onPress } = useNewPosts(timeline, autoInsert);
   const label =
     told === undefined
       ? undefined

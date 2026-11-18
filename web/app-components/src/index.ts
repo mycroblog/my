@@ -41,6 +41,7 @@ export {
   DraftSection,
   DraftSections,
   localInput,
+  localInstant,
   readerZone,
   ScheduleForm,
   ScheduleTime,

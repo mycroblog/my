@@ -3,7 +3,8 @@
 // The design system of the web client (ADR-0025 §2–§6): its components, on React Aria Components, styled with
 // Tailwind from the tokens of @my/design-tokens, and its icons. An app loads @my/design-system/styles.css once, with
 // @my/design-system/emoji.css, the self-hosted Noto Color Emoji (ADR-0091 §9), and places React Aria's I18nProvider,
-// from which every part reads the locale and the direction (locale.ts).
+// from which every part reads the locale and the direction (locale.ts), and the TimeZoneProvider, from which it reads
+// the zone of the dates and times it shows (zone.tsx).
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export {
@@ -271,5 +272,6 @@ export {
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
+export { dateFormat, instantAt, TimeZoneProvider, timeZoneName, useTimeZone, wallTime, type WallTime } from "./zone";
 // The app's router reaches the links of the parts through React Aria's RouterProvider, which the app places.
 export { I18nProvider, RouterProvider as NavigationProvider, useLocale } from "react-aria-components";

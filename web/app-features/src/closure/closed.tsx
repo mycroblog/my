@@ -9,6 +9,7 @@
 import { useDataExports, type Closure, type DataExport } from "@my/app-data";
 import {
   Button,
+  dateFormat,
   FormActions,
   FormHead,
   FormLink,
@@ -16,6 +17,7 @@ import {
   FormPage,
   FormText,
   useLocale,
+  useTimeZone,
   type FormPageServer,
 } from "@my/design-system";
 import { useEffect, useState, type ReactNode } from "react";
@@ -51,7 +53,8 @@ export function ClosedScreen({ server, wordmark, closure, footer }: ClosedScreen
   const { exports, request, download, csv } = useDataExports();
   const [sending, setSending] = useState(false);
   const [failed, setFailed] = useState<Failed>(null);
-  const date = (iso: string) => new Intl.DateTimeFormat(lang, { dateStyle: "long" }).format(new Date(iso));
+  const timeZone = useTimeZone();
+  const date = (iso: string) => dateFormat(lang, timeZone, { dateStyle: "long" }).format(new Date(iso));
   const title = t("closure.closed_title", { name: server.name });
   useEffect(() => {
     document.title = title;

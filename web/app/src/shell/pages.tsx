@@ -8,6 +8,7 @@
 import { useStatusPageUrl, type Closure, type Instance, type Maintenance } from "@my/app-data";
 import { ClosedScreen } from "@my/app-features";
 import {
+  dateFormat,
   FormHead,
   FormLink,
   FormLinks,
@@ -15,6 +16,7 @@ import {
   FormPageFooter,
   FormText,
   useLocale,
+  useTimeZone,
   type FormPageServer,
 } from "@my/design-system";
 import { useEffect } from "react";
@@ -63,13 +65,14 @@ function useTitle(title: string) {
 export function MaintenancePage({ maintenance }: { maintenance: Maintenance }) {
   const t = useStrings();
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   const statusPage = useStatusPageUrl();
   const title = t("app.maintenance_title");
   useTitle(title);
   const until =
     maintenance.until === undefined
       ? undefined
-      : new Intl.DateTimeFormat(locale, {
+      : dateFormat(locale, timeZone, {
           weekday: "long",
           hour: "numeric",
           minute: "2-digit",

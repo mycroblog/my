@@ -19,6 +19,7 @@ import {
 import {
   BackButton,
   CaptionLine,
+  dateFormat,
   Entry,
   Excerpt,
   FeedNotice,
@@ -27,6 +28,7 @@ import {
   TextButton,
   TextLink,
   useLocale,
+  useTimeZone,
 } from "@my/design-system";
 import { useEffect, useId, useRef } from "react";
 import { stringsIn } from "../locale";
@@ -51,9 +53,9 @@ export async function loadAnnouncement(data: AppData, id: string): Promise<void>
 /** An announcement's title, or the word for one without. */
 const titleOf = (a: Announcement, t: T) => (a.title === "" ? t("announcements.untitled") : a.title);
 
-/** When an announcement shows: since it started, until its end, or over. */
-function period(a: Announcement, t: T, lang: string): string {
-  const date = (iso: string) => new Intl.DateTimeFormat(lang, { dateStyle: "long" }).format(new Date(iso));
+/** When an announcement shows, by the dates of the reader's zone: since it started, until its end, or over. */
+function period(a: Announcement, t: T, lang: string, timeZone: string | undefined): string {
+  const date = (iso: string) => dateFormat(lang, timeZone, { dateStyle: "long" }).format(new Date(iso));
   if (a.ends_at === undefined) return t("announcements.period_open", { from: date(a.published_at) });
   const span = { from: date(a.published_at), until: date(a.ends_at) };
   return a.ended ? t("announcements.period_ended", span) : t("announcements.period_until", span);
@@ -130,6 +132,7 @@ export function useAnnouncementTitle(id: string): string | undefined {
  */
 export function AnnouncementPage({ id, onBack }: { id: string; onBack: () => void }) {
   const { t, lang } = stringsIn(useLocale().locale);
+  const timeZone = useTimeZone();
   const { announcement: a, error } = useAnnouncement(id);
   const markRead = useMarkAnnouncementRead();
   const opens = a !== undefined && !a.read && !a.ended;
@@ -162,7 +165,7 @@ export function AnnouncementPage({ id, onBack }: { id: string; onBack: () => voi
           <strong dir="auto">{titleOf(a, t)}</strong>
         </NoticeLine>
         <PostContent html={a.content} lang={undefined} />
-        <CaptionLine icon="events">{period(a, t, lang)}</CaptionLine>
+        <CaptionLine icon="events">{period(a, t, lang, timeZone)}</CaptionLine>
       </Entry>
     </>
   );

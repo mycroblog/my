@@ -51,6 +51,7 @@ import {
   PollSettings,
   TextButton,
   useLocale,
+  useTimeZone,
   WarningField,
 } from "@my/design-system";
 import type { EditorHandle } from "@my/design-system/editor";
@@ -210,21 +211,24 @@ function Poll({
   );
 }
 
+/** The locale and the time zone a time is said in: the reader's. */
+type Reader = { readonly locale: string; readonly timeZone: string | undefined };
+
 /** Why a scheduled post was not posted, in a sentence with the time it was for. */
-const failureOf = (failure: NonNullable<Composer["draft"]["failure"]>, locale: string, t: T) =>
+const failureOf = (failure: NonNullable<Composer["draft"]["failure"]>, reader: Reader, t: T) =>
   t("compose.schedule.failed", {
-    time: scheduleTime(failure.publishAt, locale),
+    time: scheduleTime(failure.publishAt, reader.locale, reader.timeZone),
     reason: t(`compose.schedule.failed.${failure.reason}`),
   });
 
 /** The form's error before Post: the first thing that keeps the post from being sent. */
-function alertOf(c: Composer, t: T, locale: string): string | undefined {
+function alertOf(c: Composer, t: T, reader: Reader): string | undefined {
   if (c.phase.kind === "conflict") return t("compose.conflict");
   if (c.phase.kind === "gone") return t("compose.gone");
   if (c.phase.kind === "failed")
     return c.phase.reason ?? t(c.draft.target.kind === "edit" ? "compose.save_failed" : "compose.failed");
   if (c.draft.failure !== undefined && c.draft.scheduledAt === undefined)
-    return t("compose.schedule.failed.next", { failure: failureOf(c.draft.failure, locale, t) });
+    return t("compose.schedule.failed.next", { failure: failureOf(c.draft.failure, reader, t) });
   if (!c.checked) return undefined;
   if (c.problems.waiting) return t("compose.wait_uploads");
   if (c.problems.pollInvalid)
@@ -277,6 +281,7 @@ export function ComposerView({
   unloaded,
 }: ComposerViewProps) {
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   const textRef = useRef<EditorHandle>(null);
   const cwRef = useRef<EditorHandle>(null);
   const errorId = useId();
@@ -309,7 +314,7 @@ export function ComposerView({
   // A redraft is a new post; a quote whose quoted post was taken out is one too.
   const kind = draft.target.kind;
   const title = t(`compose.title.${kind === "redraft" || (kind === "quote" && draft.quoteRemoved) ? "new" : kind}`);
-  const alert = alertOf(c, t, locale);
+  const alert = alertOf(c, t, { locale, timeZone });
   const handle = answered ? sentenceHandleOf((answered.boost ?? answered).account) : "";
   // A reply to a post whose author approves the reader's replies says so over the row, before it is sent.
   const waits = kind === "reply" && (answered?.boost ?? answered)?.permissions?.reply === "pending";

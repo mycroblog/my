@@ -265,8 +265,12 @@ class Seeder {
           },
         });
       const prefs = body((await api.GET("/preferences")).data, "the preferences");
-      if (prefs.locale !== p.locale || prefs.default_post_language !== p.locale)
-        await api.PATCH("/preferences", { body: { locale: p.locale, default_post_language: p.locale } });
+      // The person's locale is what the server writes them in (email, push); the app keeps following the browser, as
+      // for a new account, so that a spec reads the app in the language of its browser.
+      if (prefs.locale !== p.locale || prefs.default_post_language !== p.locale || !prefs.locale_follows_browser)
+        await api.PATCH("/preferences", {
+          body: { locale: p.locale, locale_follows_browser: true, default_post_language: p.locale },
+        });
       this.#accounts.set(p.username, body((await api.GET("/accounts/verify_credentials")).data, "verify_credentials"));
     }
   }

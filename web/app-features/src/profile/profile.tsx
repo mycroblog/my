@@ -60,6 +60,7 @@ import {
   Button,
   CaptionLine,
   ConfirmDialog,
+  dateFormat,
   FeedNotice,
   Icon,
   IconButton,
@@ -73,6 +74,7 @@ import {
   TextLink,
   LinkButton,
   useLocale,
+  useTimeZone,
 } from "@my/design-system";
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
@@ -469,7 +471,9 @@ function Head({
   const change = useChangeRelationship();
   const featured = useFeaturedHashtags(account.id);
   const n = (v: number) => new Intl.NumberFormat(lang).format(v);
-  const joined = new Intl.DateTimeFormat(lang, { year: "numeric", month: "long" }).format(new Date(account.created_at));
+  const joined = dateFormat(lang, useTimeZone(), { year: "numeric", month: "long" }).format(
+    new Date(account.created_at),
+  );
   const blocked = relationship?.blocking ?? false;
   const remote = account.acct.includes("@");
   const mutedDomain = useMutedDomain(remote && !own ? account.domain : undefined);

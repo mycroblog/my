@@ -2,17 +2,20 @@
 
 // A post's edit history (FR-109), opened from its edited mark: a panel over the page (a dialog from `tablet`, a screen
 // of its own on a phone) listing every version newest first, each headed by Current, Edit or Original and when it was
-// made, in full in the reader's locale, then its content warning, its text and its images, what it changed from the
-// version before it marked inline: its words, word by word in the post's language, and its images, by their id.
+// made, in full in the reader's locale and zone, then its content warning, its text and its images, what it changed
+// from the version before it marked inline: its words, word by word in the post's language, and its images, by their
+// id.
 
 import {
   CaptionLine,
+  dateFormat,
   DiffMedia,
   DiffText,
   PanelDialog,
   Version,
   VersionList,
   useLocale,
+  useTimeZone,
   type DiffImage,
   type DiffMarks,
 } from "@my/design-system";
@@ -58,7 +61,7 @@ export type EditHistoryProps = {
 
 export function EditHistory({ edits, postLang, onClose, layer = true }: EditHistoryProps) {
   const { t, lang } = stringsIn(useLocale().locale);
-  const when = new Intl.DateTimeFormat(lang, { dateStyle: "medium", timeStyle: "short" });
+  const when = dateFormat(lang, useTimeZone(), { dateStyle: "medium", timeStyle: "short" });
   const newest = [...edits].reverse();
   const marks: DiffMarks = {
     lang,

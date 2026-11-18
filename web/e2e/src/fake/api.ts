@@ -15,14 +15,15 @@
 // muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
 // conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
 // hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
-// published, the reader's articles posted and edited and the images they upload) are kept in memory; a post's edit
-// history holds the scenario's versions of it, then the reader's edits. An article's body comes only with the status
-// read alone, as the server's does, and its preview renders as publishing would, unless the options make it fail. A
-// list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more follow, so that a list
-// read to its end ends; a later page comes late only with `lateMs`. With `failFirst` the home timeline's first page
-// fails during the first second, and its retry succeeds late. What the shell reads (the instance, the reader's rights
-// and preferences, the announcements, the voice rooms, the events) answers in the state the options give the server:
-// its timelines, one person's, its closure, its maintenance, down, or newer than the app. The voice rooms are the
+// published, the reader's articles posted and edited, the images they upload and their preferences) are kept in
+// memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An article's body comes
+// only with the status read alone, as the server's does, and its preview renders as publishing would, unless the
+// options make it fail. A list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more
+// follow, so that a list read to its end ends; a later page comes late only with `lateMs`. With `failFirst` the home
+// timeline's first page fails during the first second, and its retry succeeds late. What the shell reads (the
+// instance, the reader's rights and preferences, the announcements, the voice rooms, the events) answers in the state
+// the options give the server: its timelines, one person's, its closure, its maintenance, down, or newer than the app
+// (the preferences, as `preferences` starts them). The voice rooms are the
 // fake's own, since a room lives only while people are in it and the seed opens none. A post is translated by the
 // provider `translation` names, which answers or refuses as the options say. With `approvals`, posts of the fake's own
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
@@ -314,6 +315,12 @@ export type FakeOptions = {
   subscriptions?: readonly string[];
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
+  /**
+   * The reader's preferences at the start, where they are not the server's defaults for a new account (the language
+   * and the time zone follow the browser, new posts go into the timelines by themselves, large link cards): the ones
+   * named here, as GET /preferences answers them. The reader's changes (PATCH /preferences) are kept.
+   */
+  preferences?: Partial<Schema<"Preferences">>;
   /**
    * In place of the seed's notifications, one of each kind of a group the server sends: from people (`people`), the
    * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
@@ -1792,8 +1799,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       permissions: permissionsOf(username),
     });
   };
-  /** The reader's preferences, the server's defaults for a person of their locale. */
-  const preferences: Schema<"Preferences"> = {
+  /**
+   * The reader's preferences: the server's defaults for a person of their locale, with what the options name
+   * (`preferences`) in their place, then as the reader changed them.
+   */
+  let preferences: Schema<"Preferences"> = {
     locale: personOf(viewer).locale,
     locale_follows_browser: true,
     time_zone: "UTC",
@@ -1807,10 +1817,63 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     default_post_language: "und",
     require_media_description: false,
-    timeline_auto_insert: false,
+    timeline_auto_insert: true,
     link_card_size: "large",
     timeline_languages: [],
+    ...o.preferences,
   };
+  /** A language tag as the server keeps it (`ja-jp` is `ja-JP`); undefined for one it refuses. */
+  const languageTag = (tag: string): string | undefined => {
+    try {
+      return Intl.getCanonicalLocales(tag)[0];
+    } catch {
+      return undefined;
+    }
+  };
+  /** Whether `zone` is a time zone the server knows, an IANA name. */
+  const knownZone = (zone: string): boolean => {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: zone });
+      return true;
+    } catch {
+      return false;
+    }
+  };
+  /**
+   * The reader's preferences changed as the server changes them (PATCH /preferences): what the request leaves out
+   * stays, a language or a time zone named without whether it follows the browser stops following it, and the
+   * timelines' languages are kept sorted, each once. A value the server refuses (a malformed language, an unknown time
+   * zone, more than 64 languages) changes nothing and answers the problem that names its preference.
+   */
+  function changePreferences(change: Schema<"UpdatePreferencesRequest">): Answer<"PATCH /preferences"> {
+    const refused = (field: string, detail = "This value is not valid. Check what you entered.") =>
+      problem(422, "This could not be done.", { field, detail });
+    const { default_interaction_policy: policy, timeline_languages: languages, ...plain } = change;
+    const locale = change.locale === undefined ? undefined : languageTag(change.locale);
+    if (change.locale !== undefined && (locale === undefined || locale === "und")) return refused("locale");
+    if (change.time_zone !== undefined && !knownZone(change.time_zone)) return refused("time_zone");
+    const postLanguage =
+      change.default_post_language === undefined ? undefined : languageTag(change.default_post_language);
+    if (change.default_post_language !== undefined && postLanguage === undefined)
+      return refused("default_post_language");
+    if (languages !== undefined && languages.length > 64) return refused("timeline_languages", "Use at most 64 items.");
+    const tags = languages?.map(languageTag);
+    if (tags?.includes(undefined) === true) return refused("timeline_languages");
+    preferences = {
+      ...preferences,
+      ...plain,
+      ...(locale === undefined ? {} : { locale, locale_follows_browser: change.locale_follows_browser ?? false }),
+      ...(change.time_zone === undefined
+        ? {}
+        : { time_zone_chosen: true, time_zone_follows_browser: change.time_zone_follows_browser ?? false }),
+      ...(postLanguage === undefined ? {} : { default_post_language: postLanguage }),
+      default_interaction_policy: { ...preferences.default_interaction_policy, ...policy },
+      ...(tags === undefined
+        ? {}
+        : { timeline_languages: [...new Set(tags.filter((tag) => tag !== undefined))].toSorted() }),
+    };
+    return { status: 200, body: preferences };
+  }
   const brandImage = (svg: string): Schema<"InstanceBrandImage"> => ({
     revision: "1",
     svg_url: `data:image/svg+xml,${encodeURIComponent(svg)}`,
@@ -2469,6 +2532,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     "GET /accounts/verify_credentials": () => ({ status: 200, body: credentialOf(viewer) }),
     "GET /preferences": () => ({ status: 200, body: preferences }),
+    "PATCH /preferences": ({ body }) => changePreferences(body),
     "GET /instance": () => ({ status: 200, body: instanceBody }),
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };

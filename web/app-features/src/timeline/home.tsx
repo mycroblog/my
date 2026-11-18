@@ -2,7 +2,7 @@
 
 // The home timeline (ADR-0025 §2, §4): the column of @my/app-components fed by useHomeTimeline() of @my/app-data, and
 // what a route's loader reads before the column shows (ADR-0028 §6). Its new posts follow the policy of new-posts.ts,
-// with `timeline_auto_insert` at its default, on (ADR-0013 §22), until the reader's preferences are read. A post's
+// by the reader's `timeline_auto_insert`, at its default, on (ADR-0013 §22), until their preferences are read. A post's
 // actions are answered as on every screen (post-actions.tsx). While the reader follows no one, as a new account right
 // after it signed up, it offers people to follow over its posts (people.tsx).
 
