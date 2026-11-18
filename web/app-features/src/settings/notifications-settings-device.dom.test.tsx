@@ -2,17 +2,19 @@
 
 // Notifications, the entry of the settings (#3201): what is this device's. Web Push (ADR-0086 §8, §18–§21): a switch
 // that asks the browser and registers a subscription for every kind of the reader's rows, as the prompt over the
-// notifications does, and that deletes it; where it cannot be turned on it stands off and disabled and says why; while
-// the device has a subscription, the tables' Push column changes the kinds it is for. The notification sound (§12):
-// off until the reader turns it on, kept on this device with the kinds it plays for, never sent to the server, and
-// tried with a button. The browser is stubbed whole (test/browser.ts): what its own parts answer is the platform's
-// test, and that a subscription reaches a real server, the E2E test's.
+// notifications does, and that deletes it; where it cannot be turned on it stands off and disabled and says why, and
+// it follows the browser's settings of the site while the screen is open; while the device has a subscription, the
+// tables' Push column changes the kinds it is for. The notification sound (§12): off until the reader turns it on,
+// which plays it once, kept on this device with the kinds it plays for, never sent to the server, and tried with a
+// button. The browser is stubbed whole (test/browser.ts): what its own parts answer is the platform's test, and that a
+// subscription reaches a real server, the E2E test's. Where the focus goes when the switch turns disabled under the
+// reader is notifications-settings-device.jsdom.test.tsx.
 
 import { describe, expect, test } from "bun:test";
 import { rememberPushPromptClosed, usePushPromptClosed } from "@my/app-data";
 import { memberNotificationRows, type FakeOptions } from "@my/e2e/fake";
 import { renderHook, screen, waitFor } from "@testing-library/react";
-import type { PushBrowser } from "../test/browser";
+import { changeSitePermission, type PushBrowser } from "../test/browser";
 import { fakeData } from "../test/feature";
 import {
   cell,
@@ -65,6 +67,7 @@ const promptClosed = (id: string) => renderHook(() => usePushPromptClosed(id)).r
 /** What the rows of This device say: of a save, or of why something did not happen. */
 const saidOnDevice = () => said(section(device).queryAllByRole("status"));
 
+const offer = "Get your notifications on this device, even while the app is closed.";
 const blocked = "Your browser blocks notifications from this site. Allow them in the browser's settings.";
 const notTurnedOn = "Notifications could not be turned on. Reload or update the app, then try again.";
 
@@ -74,7 +77,7 @@ describe("Web Push on this device", () => {
 
     expect(toggle(push).checked).toBe(false);
     expect(toggle(push).disabled).toBe(false);
-    expect(describedBy(toggle(push))).toEqual(["Get your notifications on this device, even while the app is closed."]);
+    expect(describedBy(toggle(push))).toEqual([offer]);
     // Drawing the screen asks the browser nothing.
     expect(seen).toEqual({ asked: 0, subscribed: 0, played: 0 });
     expect(columnsOf(people)).not.toContain("Push");
@@ -215,10 +218,19 @@ describe("the switch says how turning Web Push on and off goes", () => {
 
   // The browser blocks the site from the refusal on, so the switch cannot be turned on any more, as on a device where
   // the site was blocked before the screen opened.
-  test("once the reader refused the browser's question, the switch is disabled", async () => {
-    await refusedTheQuestion();
+  test("once the reader refused the browser's question, the switch is disabled: pressed again, it asks, subscribes and writes nothing", async () => {
+    const drawn = await refusedTheQuestion();
 
     expect(toggle(push).disabled).toBe(true);
+
+    await drawn.user.click(toggle(push));
+    // A turn of the event loop, in which a question would have been asked.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(drawn.seen).toMatchObject({ asked: 1, subscribed: 0 });
+    expect(writes(drawn)).toEqual([]);
+    expect(toggle(push).checked).toBe(false);
+    expect(saidOnDevice()).toEqual([blocked]);
   });
 
   test("a subscription the browser fails to make: it says so and stays off, and turned on again it subscribes", async () => {
@@ -314,6 +326,72 @@ describe("where Web Push cannot be turned on, the switch is off and disabled and
     });
 });
 
+// The reader allows or blocks the site's notifications in the browser's own settings while the screen is open: the
+// switch follows, with no reload and no question.
+describe("when the browser's settings of the site change while the screen is open", () => {
+  test("blocked there, the switch turns disabled and says that the browser blocks the site, in place of its offer", async () => {
+    const drawn = await withPush(sends);
+    expect(toggle(push).disabled).toBe(false);
+
+    changeSitePermission("denied");
+
+    await waitFor(() => {
+      expect(toggle(push).disabled).toBe(true);
+    });
+    expect(describedBy(toggle(push))).toEqual([blocked]);
+    expect(toggle(push).checked).toBe(false);
+    // The browser told the screen: the screen asked nothing, and no row speaks of a save.
+    expect(drawn.seen).toEqual({ asked: 0, subscribed: 0, played: 0 });
+    expect(writes(drawn)).toEqual([]);
+    expect(saidOnDevice()).toEqual([]);
+  });
+
+  for (const [there, permission, asked] of [
+    ["unblocked", "default", 1],
+    ["allowed", "granted", 0],
+  ] as const)
+    test(`${there} there, the switch is the reader's again with its offer, and turned on it subscribes`, async () => {
+      const { fake, user, seen } = await withPush(sends, { permission: "denied" });
+      expect(toggle(push).disabled).toBe(true);
+      const sent = fake.script("PUT /push/subscription");
+
+      changeSitePermission(permission);
+
+      await waitFor(() => {
+        expect(toggle(push).disabled).toBe(false);
+      });
+      expect(describedBy(toggle(push))).toEqual([offer]);
+      expect(toggle(push).checked).toBe(false);
+      expect(sent.seen).toHaveLength(0);
+
+      await user.click(toggle(push));
+
+      await sent.served();
+      await waitFor(() => {
+        expect(toggle(push).checked).toBe(true);
+      });
+      expect(seen).toMatchObject({ asked, subscribed: 1 });
+    });
+
+  test("unblocked there after the reader refused the browser's question, the switch no longer says that the browser blocks the site", async () => {
+    const drawn = await withPush(sends, { answer: "denied" });
+    await drawn.user.click(toggle(push));
+    await waitFor(() => {
+      expect(saidOnDevice()).toEqual([blocked]);
+    });
+    expect(toggle(push).disabled).toBe(true);
+
+    changeSitePermission("default");
+
+    await waitFor(() => {
+      expect(toggle(push).disabled).toBe(false);
+    });
+    expect(saidOnDevice()).toEqual([]);
+    expect(describedBy(toggle(push))).toEqual([offer]);
+    expect(drawn.seen).toMatchObject({ asked: 1, subscribed: 0 });
+  });
+});
+
 describe("the tables' Push column, while this device has a subscription", () => {
   /** The kinds the subscription is for once the server took the next change. */
   async function alertsAfter(drawn: Drawn, change: () => Promise<void>) {
@@ -403,6 +481,27 @@ describe("the notification sound", () => {
     expect(stateOf(cell(people, "Mentions", "Sound"))).toBe("off");
     expect(stateOf(cell(server, "All", "Sound"))).toBe("off");
     expect(writes(drawn)).toEqual([]);
+  });
+
+  // The press that turns the sound on is the gesture that lets the browser sound the page from then on.
+  test("turned on, it plays the sound once; turned off again, it plays nothing", async () => {
+    const { user, seen } = await withPush(sends);
+    expect(seen.played).toBe(0);
+
+    await user.click(toggle(sound));
+
+    await waitFor(() => {
+      expect(seen.played).toBe(1);
+    });
+    expect(toggle(sound).checked).toBe(true);
+
+    await user.click(toggle(sound));
+
+    await waitFor(() => {
+      expect(columnsOf(people)).not.toContain("Sound");
+    });
+    expect(toggle(sound).checked).toBe(false);
+    expect(seen.played).toBe(1);
   });
 
   test("a cell of Sound turns its kind's sound on, the first row a whole table's, and the server is told nothing", async () => {

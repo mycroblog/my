@@ -27,6 +27,8 @@ import {
   pairs,
   pictures,
   profileForm,
+  refusal,
+  refusedSave,
   rewrite,
   saveButton,
   type DrawnForm,
@@ -52,10 +54,6 @@ async function saved({ user }: DrawnForm): Promise<void> {
     expect(said()).toEqual(["Saved"]);
   });
 }
-
-/** A problem of the server about the member `field` of the change, in its own words. */
-const refusal = (field: string, detail: string) =>
-  ({ type: "about:blank", title: "This could not be done.", status: 422, field, detail }) as const;
 
 describe("the form opens with what the account has", () => {
   test("the scenario's account: both images with Replace and Remove, the name, the bio as written, and its one field", async () => {
@@ -267,6 +265,44 @@ describe("the limits of the name and the bio", () => {
     expect(invalid()).toEqual([]);
     await saved(form);
     expect(sent.seen.map((request) => request.body)).toEqual([{ display_name: "😀".repeat(30) }]);
+  });
+
+  // What a screen reader says of the field when it reaches it: the count once it shows, then what is wrong.
+  for (const [name, field, limit, sentence, near] of [
+    [...limited[0], 10],
+    [...limited[1], 50],
+  ] as const)
+    test(`${name}: nothing counts in its description far from the limit; from ${String(near)} left on the count's words describe it, before what is wrong`, async () => {
+      const form = await profileForm();
+      expect(describedBy(field())).toEqual([]);
+
+      await rewrite(form.user, field(), "a".repeat(limit - near - 1));
+      expect(describedBy(field())).toEqual([]);
+
+      await rewrite(form.user, field(), "a".repeat(limit - near));
+      expect(describedBy(field())).toEqual([`${String(near)} characters left`]);
+
+      await rewrite(form.user, field(), "a".repeat(limit - 2));
+      expect(describedBy(field())).toEqual(["2 characters left"]);
+
+      await rewrite(form.user, field(), "a".repeat(limit + 2));
+      expect(describedBy(field())).toEqual(["2 characters over", sentence]);
+    });
+
+  test("the count's words come before the server's too, of a name near its limit that the server refuses", async () => {
+    const form = await profileForm();
+    await rewrite(form.user, nameField(), "a".repeat(28));
+    form.fake.script("PATCH /accounts/update_credentials", {
+      times: 1,
+      fail: refusal("display_name", "The server does not take this here."),
+    });
+
+    await form.user.click(saveButton());
+
+    await waitFor(() => {
+      expect(invalid()).toEqual(["Display name"]);
+    });
+    expect(describedBy(nameField())).toEqual(["2 characters left", "The server does not take this here."]);
   });
 });
 
@@ -607,22 +643,6 @@ describe("the form tells its owner whether it holds unsaved changes", () => {
 });
 
 describe("what the server refuses shows where it belongs", () => {
-  /** The form with one more pair written, and a script that refuses the next save with `problem`. */
-  async function refused(problem: ReturnType<typeof refusal>) {
-    const form = await profileForm();
-    await form.user.click(screen.getByRole("button", { name: "Add a field" }));
-    await rewrite(form.user, pairField(2, "Label"), "Pronouns");
-    await rewrite(form.user, pairField(2, "Content"), "she/her");
-    await rewrite(form.user, nameField(), "Yuki Snow");
-    await rewrite(form.user, bioField(), "Photos and walks.");
-    form.fake.script("PATCH /accounts/update_credentials", { times: 1, fail: problem });
-    await form.user.click(saveButton());
-    await waitFor(() => {
-      expect(alerts()).not.toEqual([]);
-    });
-    return form;
-  }
-
   // The member the problem names, and the one input that is marked and described by the server's words.
   const named = [
     ["display_name", "Display name", nameField],
@@ -634,7 +654,7 @@ describe("what the server refuses shows where it belongs", () => {
 
   for (const [member, name, field] of named)
     test(`${member}: the server's words under ${name}, which alone is marked, and the problem's title beside Save`, async () => {
-      await refused(refusal(member, "The server does not take this here."));
+      await refusedSave(refusal(member, "The server does not take this here."));
 
       expect(invalid()).toEqual([name]);
       expect(describedBy(field())).toEqual(["The server does not take this here."]);
@@ -649,7 +669,7 @@ describe("what the server refuses shows where it belongs", () => {
     });
 
   test("fields, as a whole: the server's words describe the list, and no input is marked", async () => {
-    await refused(refusal("fields", "You can have at most 4."));
+    await refusedSave(refusal("fields", "You can have at most 4."));
 
     expect(invalid()).toEqual([]);
     expect(describedBy(screen.getByRole("list", { name: "Fields" }))).toEqual(["You can have at most 4."]);
@@ -828,7 +848,7 @@ describe("what the server refuses shows where it belongs", () => {
   });
 
   test("what was refused is no longer said once the next Save is taken", async () => {
-    const form = await refused(refusal("fields[1].value", "The server does not take this here."));
+    const form = await refusedSave(refusal("fields[1].value", "The server does not take this here."));
 
     await saved(form);
 

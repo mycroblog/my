@@ -91,7 +91,7 @@ test("the closure notice says when the server closes, leads to the export and th
 
   expect(region.textContent).toMatch(/^This server closes on .+\. Export your data by .+\./);
   expect(links).toEqual([
-    ["Export your data", "/settings/export"],
+    ["Export your data", "/settings/account/export"],
     ["Move your account", "/settings/move"],
   ]);
   expect(within(region).queryAllByRole("button")).toHaveLength(0);

@@ -6,9 +6,10 @@
 
 import { instanceQuery, viewerQuery } from "@my/app-data";
 import { fakeOrigin, type FakeOptions } from "@my/e2e/fake";
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { onTestFinished, spyOn } from "bun:test";
+import { File as RuntimeFile } from "node:buffer";
 import { loadProfileEdit, ProfileEdit, type ProfileEditProps } from "../settings/profile-edit";
 import { fakeData, renderFeature, type FakeData } from "./feature";
 
@@ -84,9 +85,39 @@ export function runtimeSignals(): void {
   });
 }
 
-/** A file of an image to pick: a PNG by its name, whose bytes no test reads. */
-export const imageFile = (name: string): File =>
-  new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], name, { type: "image/png" });
+/**
+ * A file of an image to pick: a PNG by its name, whose bytes no test reads. On jsdom it is the runtime's file and not
+ * the simulation's: jsdom puts its own `File` in the runtime's place, which the runtime refuses to give an address
+ * (`URL.createObjectURL`) and to send.
+ */
+export function imageFile(name: string): File {
+  const bytes = [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])];
+  const simulated = new Request(fakeOrigin).signal.constructor !== globalThis.AbortSignal;
+  return simulated ? new RuntimeFile(bytes, name, { type: "image/png" }) : new File(bytes, name, { type: "image/png" });
+}
+
+/** A problem of the server about the member `field` of the change, in its own words. */
+export const refusal = (field: string, detail: string) =>
+  ({ type: "about:blank", title: "This could not be done.", status: 422, field, detail }) as const;
+
+/**
+ * Edit profile on the scenario's server with one more pair, the name and the bio written, after a Save the server
+ * refused with `problem`: the form says so in its bar.
+ */
+export async function refusedSave(problem: ReturnType<typeof refusal>): Promise<DrawnForm> {
+  const form = await profileForm();
+  await form.user.click(screen.getByRole("button", { name: "Add a field" }));
+  await rewrite(form.user, pairField(2, "Label"), "Pronouns");
+  await rewrite(form.user, pairField(2, "Content"), "she/her");
+  await rewrite(form.user, nameField(), "Yuki Snow");
+  await rewrite(form.user, bioField(), "Photos and walks.");
+  form.fake.script("PATCH /accounts/update_credentials", { times: 1, fail: problem });
+  await form.user.click(saveButton());
+  await waitFor(() => {
+    if (alerts().length === 0) throw new Error("test: the form says nothing of the refused Save yet");
+  });
+  return form;
+}
 
 /** Presses `button`, which opens the file chooser, and picks `file` in it, as a browser does once the reader chose. */
 export async function chooseFile(user: UserEvent, button: HTMLElement, file: File): Promise<void> {

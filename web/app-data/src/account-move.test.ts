@@ -58,7 +58,7 @@ describe("the account's aliases", () => {
     const { data } = fakeData();
     await data.queryClient.query(accountAliasesQuery(data));
     const refused = await refusedWith(addAccountAlias(data, "not an address"));
-    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/account-not-found"]);
+    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/invalid-alias"]);
     expect(probe(data, useAccountAliases)).toHaveLength(1);
   });
 

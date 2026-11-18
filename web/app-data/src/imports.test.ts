@@ -56,7 +56,7 @@ describe("startDataImport", () => {
     const { data } = fakeData();
     await startDataImport(data, mutes);
     const refused = await refusedWith(startDataImport(data, { ...mutes, kind: "blocks", text: "a@b.example" }));
-    expect([refused.status, refused.type]).toEqual([409, "/api/v1/problems/import-running"]);
+    expect([refused.status, refused.type]).toEqual([409, "/api/v1/problems/import-in-progress"]);
     const { items } = await data.queryClient.query({ ...dataImportsQuery(data), staleTime: Infinity });
     expect(items.filter((i) => i.state === "in_progress")).toHaveLength(1);
   });

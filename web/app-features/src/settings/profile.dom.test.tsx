@@ -390,6 +390,157 @@ describe("the featured hashtags are saved at once, with a PUT of the whole list"
   });
 });
 
+// The list shown is the reader's from the press on: what the server holds and what is on its way to it. A change made
+// while another is on its way starts from that list, and waits for the other's answer.
+describe("the featured hashtags, while a save is on its way", () => {
+  const held = ["baking", "photography"];
+  /** A turn of the event loop, in which a request that was not waiting for another would have left. */
+  const turn = () => new Promise((resolve) => setTimeout(resolve, 0));
+  /** The lists the server was sent, in order. */
+  const lists = (sent: { seen: readonly { body: { names: readonly string[] } }[] }) =>
+    sent.seen.map((request) => request.body.names);
+
+  test("Remove takes the hashtag's button away at the press, before the server read the request", async () => {
+    const { fake, user } = await read();
+    const sent = fake.script("PUT /featured_tags", { hold: "request" });
+
+    await user.click(screen.getByRole("button", { name: "Remove #baking" }));
+    await sent.arrived();
+
+    expect(featured()).toEqual(["photography"]);
+    await waitFor(() => {
+      expect(said()).toEqual(["Saving…"]);
+    });
+
+    sent.release();
+    await waitFor(() => {
+      expect(said()).toEqual(["Saved"]);
+    });
+    expect(featured()).toEqual(["photography"]);
+  });
+
+  /** A change the reader makes: what it is, how they make it, and the list shown from the press on. */
+  type Made = readonly [what: string, act: (user: UserEvent) => Promise<void>, shown: string[]];
+
+  // The second change the reader makes, the list shown after it, which is the list sent for it.
+  const seconds: readonly Made[] = [
+    ["another hashtag added", write("rye{Enter}"), [...held, "sourdough", "rye"]],
+    ["a Remove", press("Remove #baking"), ["photography", "sourdough"]],
+  ];
+
+  for (const [what, second, shown] of seconds)
+    test(`${what} while an added hashtag is on its way starts from the list shown, and is sent only once the first is answered`, async () => {
+      const { fake, user } = await read();
+      const sent = fake.script("PUT /featured_tags");
+      const first = fake.script("PUT /featured_tags", { times: 1, hold: "request" });
+
+      await write("sourdough{Enter}")(user);
+      await first.arrived();
+      // At the press: the hashtag is in the list with its Remove, and the field is empty for the next one.
+      expect(featured()).toEqual([...held, "sourdough"]);
+      expect(tagField().value).toBe("");
+
+      await second(user);
+
+      expect(featured()).toEqual(shown);
+      await turn();
+      expect(lists(sent)).toEqual([[...held, "sourdough"]]);
+      expect(said()).toEqual(["Saving…"]);
+
+      first.release();
+
+      await sent.served(2);
+      expect(lists(sent)).toEqual([[...held, "sourdough"], shown]);
+      await waitFor(() => {
+        expect(said()).toEqual(["Saved"]);
+      });
+      expect(featured()).toEqual(shown);
+      expect(sent.seen).toHaveLength(2);
+    });
+
+  test("with nine held and a tenth on its way the field takes no more and says so at the press", async () => {
+    const nine = ["one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+    const { fake, user } = await read({ settings: { featured: nine } });
+    const sent = fake.script("PUT /featured_tags");
+    const tenth = fake.script("PUT /featured_tags", { times: 1, hold: "request" });
+    expect(tagField().readOnly).toBe(false);
+
+    await write("ten{Enter}")(user);
+    await tenth.arrived();
+
+    expect(featured()).toEqual([...nine, "ten"]);
+    expect(tagField().readOnly).toBe(true);
+    expect(tagField().placeholder).toBe("No more hashtags");
+    await write("eleven{Enter}")(user);
+    expect(tagField().value).toBe("");
+
+    tenth.release();
+    await waitFor(() => {
+      expect(said()).toEqual(["Saved"]);
+    });
+    await turn();
+    expect(lists(sent)).toEqual([[...nine, "ten"]]);
+    expect(featured()).toEqual([...nine, "ten"]);
+  });
+
+  test("a hashtag that is shown while it is on its way, in whatever case, sends nothing more", async () => {
+    const { fake, user } = await read();
+    const sent = fake.script("PUT /featured_tags");
+    const first = fake.script("PUT /featured_tags", { times: 1, hold: "request" });
+    await write("sourdough{Enter}")(user);
+    await first.arrived();
+
+    await write("Sourdough{Enter}")(user);
+    await write("#SOURDOUGH,")(user);
+
+    expect(featured()).toEqual([...held, "sourdough"]);
+    first.release();
+    await waitFor(() => {
+      expect(said()).toEqual(["Saved"]);
+    });
+    await turn();
+    expect(lists(sent)).toEqual([[...held, "sourdough"]]);
+    expect(featured()).toEqual([...held, "sourdough"]);
+  });
+
+  // The change the reader makes, and the list shown from the press on, which is the list sent.
+  const failed: readonly Made[] = [
+    ["a hashtag added", write("sourdough{Enter}"), [...held, "sourdough"]],
+    ["a Remove", press("Remove #baking"), ["photography"]],
+  ];
+
+  for (const [what, change, shown] of failed)
+    test(`${what} that the server fails to save: the list goes back to the server's, and Try again shows the reader's list again while it sends the same one`, async () => {
+      const { fake, user } = await read();
+      const sent = fake.script("PUT /featured_tags");
+      const failing = fake.script("PUT /featured_tags", { times: 1, fail: 500 });
+
+      await change(user);
+
+      await waitFor(() => {
+        expect(said().join()).toMatch(/^This could not be saved\.\s*Try again$/);
+      });
+      expect(featured()).toEqual(held);
+      failing.end();
+      const again = fake.script("PUT /featured_tags", { times: 1, hold: "request" });
+
+      await user.click(screen.getByRole("button", { name: "Try again" }));
+      await again.arrived();
+
+      expect(featured()).toEqual(shown);
+      await waitFor(() => {
+        expect(said()).toEqual(["Saving…"]);
+      });
+
+      again.release();
+      await waitFor(() => {
+        expect(said()).toEqual(["Saved"]);
+      });
+      expect(featured()).toEqual(shown);
+      expect(lists(sent)).toEqual([shown, shown]);
+    });
+});
+
 describe("the badges", () => {
   test("are a list named Badges with a switch for each badge the server gave the account", async () => {
     await read();

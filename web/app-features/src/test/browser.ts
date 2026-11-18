@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The browser's own parts that the notification settings turn on and off, for the tests of a feature: its
-// notifications, its push manager behind a Service Worker, and its audio, none of which a simulation has; and what the
-// device keeps of them (the notification sound, its kinds, who closed the Web Push prompt). What the browser's own
-// parts answer is the platform's test (web/platform/src/push.test.ts, sound.test.ts).
+// notifications with the settings that allow or block them for the site, its push manager behind a Service Worker, and
+// its audio, none of which a simulation has; and what the device keeps of them (the notification sound, its kinds, who
+// closed the Web Push prompt). What the browser's own parts answer is the platform's test
+// (web/platform/src/push.test.ts, sound.test.ts).
 
 import { onTestFinished } from "bun:test";
 import { writeDeviceValue } from "@my/platform";
@@ -39,6 +40,18 @@ function audioPart(started: () => void): unknown {
   return part;
 }
 
+// The browser's settings of the site, of the test that runs now: what changes the site's notifications there.
+const settings = { change: undefined as ((permission: NotificationPermission) => void) | undefined };
+
+/**
+ * The reader changes what the site's notifications are in the browser's settings, while the page is open: no question
+ * is asked, and the browser tells whoever asked its Permissions API to be told of a change.
+ */
+export function changeSitePermission(permission: NotificationPermission): void {
+  if (settings.change === undefined) throw new Error("test: no browser of pushBrowser() is in place");
+  settings.change(permission);
+}
+
 /** Whether a sound's notes are starting in this turn: a sound is one thing to the reader, however many notes it has. */
 let starting = false;
 
@@ -69,8 +82,9 @@ class PageAudio {
 }
 
 /**
- * Gives the test a browser with notifications, a Service Worker, audio and (unless `noPushApi`) the Push API, until
- * the test ends; and returns what it saw: how many times the site asked, subscribed, and played a sound.
+ * Gives the test a browser with notifications, the Permissions API that tells of a change of them
+ * (`changeSitePermission`), a Service Worker, audio and (unless `noPushApi`) the Push API, until the test ends; and
+ * returns what it saw: how many times the site asked, subscribed, and played a sound.
  */
 export function pushBrowser({
   permission = "default",
@@ -149,10 +163,35 @@ export function pushBrowser({
       removeEventListener: () => undefined,
     },
   });
+  // The Permissions API's status of the site's notifications, the same one for every question about them.
+  class SiteStatus extends EventTarget {
+    onchange: ((event: Event) => void) | null = null;
+    get state(): PermissionState {
+      return now === "default" ? "prompt" : now;
+    }
+  }
+  const status = new SiteStatus();
+  Object.defineProperty(browser, "permissions", {
+    configurable: true,
+    value: {
+      query: ({ name }: { name: string }) =>
+        name === "notifications"
+          ? Promise.resolve(status)
+          : Promise.reject(new TypeError(`test: the browser was asked about ${name}`)),
+    },
+  });
+  settings.change = (permission) => {
+    now = permission;
+    const event = new Event("change");
+    status.dispatchEvent(event);
+    status.onchange?.(event);
+  };
   onTestFinished(() => {
     for (const name of Object.keys(globals)) Reflect.deleteProperty(globalThis, name);
     Reflect.deleteProperty(browser, "serviceWorker");
+    Reflect.deleteProperty(browser, "permissions");
     audio.seen = undefined;
+    settings.change = undefined;
   });
   return seen;
 }
