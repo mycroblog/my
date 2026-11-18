@@ -1,16 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Where the focus goes once a change under Security is said (#3205), on jsdom: what takes it is no control (the
-// status a section says its result in, the heading of the recovery codes), and happy-dom gives the focus to any
-// element a script asks it for, focusable or not. A change on the entry says its result at the top of its section, as
-// a status that takes the focus once the confirmation has left; the recovery codes' view takes it to its heading as
-// it appears. What the status says and where it stands is pinned here with the focus, and the rest of each change on
+// status a section says its result in, the heading of the recovery codes, the title of a screen whose setup expired),
+// and happy-dom gives the focus to any element a script asks it for, focusable or not. A change on the entry says its
+// result at the top of its section, as a status that takes the focus once the confirmation has left, also when the
+// server no longer held what was to be removed, and when the section has no row left; the recovery codes' view takes
+// it to its heading as it appears; and a setup that expired gives it to the screen's title until the new one is there. What the status says and where it stands is pinned here with the focus, and the rest of each change on
 // happy-dom (security.dom.test.tsx, two-factor.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
 import { fakeExternalConfirmation, fakeTotpCode } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { atRest, closed, focused, offered, passkeyBrowser, section } from "../../test/security";
+import {
+  atRest,
+  closed,
+  focused,
+  focusOn,
+  heldBy,
+  noNewLinks,
+  offered,
+  passkeyBrowser,
+  removedElsewhere,
+  section,
+} from "../../test/security";
 import { requestsOnJsdom, settingsOn, type Access, type Given } from "../../test/settings";
 import { SettingsEntryScreen } from "../screen";
 import { SecurityTwoFactor } from "./two-factor";
@@ -49,7 +61,8 @@ async function confirm(user: Awaited<ReturnType<typeof entry>>["user"], name: st
 }
 
 describe("a change on the entry says its result at the top of its section, which takes the focus", () => {
-  for (const [what, title, row, button, dialog, press, result] of [
+  // Each with the list the server holds it in, and its place there.
+  const changes = [
     [
       "a passkey removed",
       "Passkeys",
@@ -58,6 +71,8 @@ describe("a change on the entry says its result at the top of its section, which
       "Remove the passkey “YubiKey 5C”?",
       "Remove",
       "The passkey “YubiKey 5C” is removed.",
+      "/passkeys",
+      2,
     ],
     [
       "an account unlinked",
@@ -67,6 +82,8 @@ describe("a change on the entry says its result at the top of its section, which
       "Unlink your GitHub account?",
       "Unlink",
       "Your GitHub account is unlinked.",
+      "/linked_identities",
+      0,
     ],
     [
       "a browser signed out",
@@ -76,6 +93,8 @@ describe("a change on the entry says its result at the top of its section, which
       "Sign out Safari on iPhone?",
       "Sign out",
       "Safari on iPhone is signed out.",
+      "/sessions",
+      1,
     ],
     [
       "the browser without a recorded origin signed out",
@@ -85,8 +104,12 @@ describe("a change on the entry says its result at the top of its section, which
       "Sign out this unknown browser?",
       "Sign out",
       "The unknown browser is signed out.",
+      "/sessions",
+      3,
     ],
-  ] as const)
+  ] as const;
+
+  for (const [what, title, row, button, dialog, press, result] of changes)
     test(what, async () => {
       const { user } = await entry();
 
@@ -95,6 +118,48 @@ describe("a change on the entry says its result at the top of its section, which
 
       expect(await saidWithFocus(title)).toBe(`status: ${result}`);
     });
+
+  // Another browser of the reader's removed it while the confirmation was open: the server answers 404, and what the
+  // reader asked for is done. One of each kind of thing.
+  for (const [what, title, row, button, dialog, press, result, list, at] of changes.slice(0, 3))
+    test(`${what}, which the server no longer holds (404): the same is said, no row offers it any longer, and the list is read again once`, async () => {
+      const on = await entry();
+      const { user, fake, requests } = on;
+      const { items } = await heldBy<{ items: { id: string }[] }>(fake, list);
+      const id = items[at]?.id ?? "";
+      await user.click(offered(title, row, button));
+      await screen.findByRole("alertdialog", { name: dialog });
+      await removedElsewhere(fake, `${list}/${id}`);
+      const before = requests.length;
+
+      await confirm(user, dialog, press);
+
+      expect(await saidWithFocus(title)).toBe(`status: ${result}`);
+      await atRest(on);
+      expect(requests.slice(before)).toEqual([`DELETE ${list}/${id}`, `GET ${list}`]);
+      // A passkey's and a browser's row is gone; a provider's stays, to link an account at it again.
+      expect(
+        within(section(title))
+          .queryAllByRole("group", { name: row })
+          .flatMap((group) => within(group).queryAllByRole("button", { name: button })),
+      ).toHaveLength(0);
+      expect(focused()).toBe(`status: ${result}`);
+    });
+
+  // No row is left in the section, which stays for what it says: the focus has the status to go to.
+  test("an account's only link unlinked, at a provider that takes no new link: the status takes the focus, and keeps it once the links are read again", async () => {
+    const on = await entry({}, noNewLinks);
+
+    await on.user.click(offered("Linked accounts", "GitHub", "Unlink"));
+    await confirm(on.user, "Unlink your GitHub account?", "Unlink");
+
+    expect(await saidWithFocus("Linked accounts")).toBe("status: Your GitHub account is unlinked.");
+    // A confirmation gives the focus back a frame after it left, to the button that opened it, which is gone.
+    await atRest(on);
+    await new Promise((frames) => setTimeout(frames, 50));
+    expect(focused()).toBe("status: Your GitHub account is unlinked.");
+    expect(within(section("Linked accounts")).queryAllByRole("list")).toHaveLength(0);
+  });
 
   test("the other browsers signed out", async () => {
     const { user } = await entry();
@@ -134,16 +199,40 @@ describe("a change on the entry says its result at the top of its section, which
   });
 });
 
-describe("the recovery codes' view takes the focus to its heading as it appears", () => {
-  /** Two-factor authentication's screen, once it is at rest. */
-  async function twoFactor(access: Access) {
-    requestsOnJsdom();
-    const on = await settingsOn(access, (address) => <SecurityTwoFactor {...address} />);
-    await screen.findAllByRole("region");
-    await atRest(on);
-    return on;
-  }
+/** Two-factor authentication's screen, once it is at rest. */
+async function twoFactor(access: Access) {
+  requestsOnJsdom();
+  const on = await settingsOn(access, (address) => <SecurityTwoFactor {...address} />);
+  await screen.findAllByRole("region");
+  await atRest(on);
+  return on;
+}
 
+// The field that had the focus is gone with the setup it belonged to: the screen's title takes it, the one part
+// that stays, and the new setup's field once it is there.
+test("a setup of two-factor authentication that expired gives the focus to the screen's title while the new one is on its way, and to the code's field once it is there", async () => {
+  const { user, fake } = await twoFactor({});
+  fake.script("POST /two_factor/totp", {
+    times: 1,
+    fail: { type: "/api/v1/problems/totp-setup-expired", title: "The setup expired", status: 422 },
+  });
+  const next = fake.script("POST /two_factor/totp/setup", { hold: "request" });
+
+  await user.type(screen.getByRole("textbox", { name: "Authentication code" }), fakeTotpCode);
+  await user.click(screen.getByRole("button", { name: "Turn on" }));
+
+  await next.arrived();
+  await focusOn(() => screen.queryAllByRole("heading", { name: "Two-factor authentication" })[0]);
+  expect(focused()).toBe("heading: Two-factor authentication");
+  expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+
+  next.release();
+
+  await focusOn(() => screen.queryAllByRole("textbox", { name: "Authentication code" })[0]);
+  expect(screen.getByRole<HTMLInputElement>("textbox", { name: "Authentication code" }).value).toBe("");
+});
+
+describe("the recovery codes' view takes the focus to its heading as it appears", () => {
   /** Waits until the heading named "Recovery codes" has the focus. */
   const headingFocused = () =>
     waitFor(() => {

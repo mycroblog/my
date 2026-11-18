@@ -2,7 +2,7 @@
 
 // Invites, the settings' entry of an account's own invites (#3207, ADR-0106 §14, §15, §17, §18): the list as an
 // account that may create invites reads it, each invite a row that says its state as itself and leads to its screen;
-// the pages after the first; the one way to create, the sentence in its place at the server's limit, and the one
+// the pages after the first, and one that could not be read; the one way to create, the sentence in its place at the server's limit, and the one
 // before the last invite left; what an account that may not create invites is told, each cause as its own sentence
 // in English and in Japanese (#3116), with its invites still listed; a server that takes no new account; and a
 // one-person server, which has no invites and is asked for none (ADR-0152). An invite's screen and the form that
@@ -13,8 +13,9 @@ import { describe, expect, test } from "bun:test";
 import type { OwnInvite } from "@my/app-data";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
+import { before } from "../../test/apps";
 import { heldInvites, invitesDrawn, invitesRead, loading, notLoaded } from "../../test/invites";
-import { atRest, hourOf, inOrder, row, rows, section, sections, words } from "../../test/security";
+import { atRest, focused, hourOf, inOrder, row, rows, section, sections, words } from "../../test/security";
 
 const about = "A person signs up with an invite's link, or enters its code on the sign-up page.";
 const cannot = "You cannot create invites";
@@ -162,6 +163,43 @@ describe("for an account that may create invites", () => {
     expect(within(section("Your invites")).queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
     expect(requests.filter((request) => request.startsWith("GET /invites"))).toHaveLength(2);
     expect(settingsFindings(document.body)).toEqual([]);
+  });
+
+  test("when the rest could not be read, the rows stay and the section says so under them; the same button, now Try again, keeps the focus and reads the rest, and the section then counts them", async () => {
+    const { fake, user } = await invitesRead({ invites: "many" });
+    const held = await heldInvites(fake);
+    const asked = fake.script("GET /invites", { fail: 500, times: 1 });
+    const notRead = "The rest of this list could not be loaded.";
+    const more = within(section("Your invites")).getByRole("button", { name: "Show more" });
+
+    await user.click(more);
+
+    await within(section("Your invites")).findByRole("button", { name: "Try again" });
+    // The button the reader pressed, under another name: the focus has nowhere else to go.
+    expect(words(more)).toBe("Try again");
+    expect(focused()).toBe("button: Try again");
+    expect(rows("Your invites").map((shown) => shown.leads)).toEqual(
+      held.slice(0, 20).map((invite) => `/settings/invites/${invite.id}`),
+    );
+    const said = within(section("Your invites")).getByText(notRead);
+    expect(before(screen.getByRole("list", { name: "Your invites" }), said)).toBe(true);
+    expect(before(said, more)).toBe(true);
+    expect(sections()).toEqual(["Your invites"]);
+    expect(settingsFindings(document.body)).toEqual([]);
+
+    await user.click(more);
+
+    await waitFor(() => {
+      if (rows("Your invites").length !== 26) throw new Error("test: the rest is not listed yet");
+    });
+    // The same page, asked for a second time.
+    const [first, second, ...others] = asked.seen.map((seen) => seen.url.searchParams.get("cursor"));
+    expect(others).toEqual([]);
+    expect(first).not.toBeNull();
+    expect(second).toBe(first ?? "");
+    expect(within(section("Your invites")).queryAllByText(notRead)).toHaveLength(0);
+    expect(within(section("Your invites")).queryAllByRole("button")).toHaveLength(0);
+    expect(sections()).toEqual(["Your invites 26"]);
   });
 
   test("without an invite the section says so in the list's place and leads to creating one, with no count", async () => {

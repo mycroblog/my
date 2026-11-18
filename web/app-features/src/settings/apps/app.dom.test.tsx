@@ -39,6 +39,7 @@ import {
   focusOn,
   heldBy,
   offered,
+  removedElsewhere,
   row,
   rows,
   section,
@@ -390,6 +391,39 @@ describe("Delete", () => {
     expect(address.backs).toBe(1);
     expect(sent.seen.map((s) => s.url.pathname.split("/").at(-1))).toEqual([app.id]);
     expect((await ownApps(fake)).map((a) => a.name)).toEqual(["Home dashboard", "Old importer"]);
+  });
+
+  // Another browser of the reader's deleted it first: what the reader asked for is done.
+  test("a deletion of an app the server no longer holds (404) goes back to Apps, as one the server did", async () => {
+    const { user, fake, address, app } = await read(confidential);
+    await user.click(remove());
+    const dialog = await asking("Delete Morning bot?");
+    await removedElsewhere(fake, `/oauth_apps/${app.id}`);
+
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+    await waitFor(() => {
+      if (address.backs === 0) throw new Error("test: the screen did not go back yet");
+    });
+    expect(address.backs).toBe(1);
+    expect(alerts()).toEqual([]);
+  });
+
+  test("a deletion the server refuses stays in the confirmation, which says the server's words, and the screen does not go back", async () => {
+    const { user, fake, address } = await read(confidential);
+    fake.script("DELETE /oauth_apps/{id}", {
+      fail: { type: "about:blank", title: "The server could not delete the app", status: 500 },
+    });
+    await user.click(remove());
+    const dialog = await asking("Delete Morning bot?");
+
+    await user.click(within(dialog).getByRole("button", { name: "Delete" }));
+
+    const refused = await screen.findByRole("alert");
+    expect(words(refused)).toBe("The server could not delete the app");
+    expect((await asking("Delete Morning bot?")).contains(refused)).toBe(true);
+    expect(address.backs).toBe(0);
+    expect(await ownApps(fake)).toHaveLength(3);
   });
 
   test("Cancel sends nothing, leaves the reader on the screen, and gives the focus back to the button", async () => {

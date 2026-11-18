@@ -9,6 +9,7 @@ import type { AppData } from "@my/app-data";
 import { fakeOrigin, type FakeApi } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import { onTestFinished } from "bun:test";
+import type { Given } from "./settings";
 
 /** Waits until the app's data has no read on its way. */
 export const atRest = ({ data }: { data: AppData }) =>
@@ -21,6 +22,27 @@ export async function heldBy<T>(fake: FakeApi, path: string): Promise<T> {
   const answer = await fake.serve(new Request(`${fakeOrigin}/api/v1${path}`));
   return (await answer.json()) as T;
 }
+
+/**
+ * Removes what the fake server holds at `path` of the client API past the app, as another browser of the reader's
+ * does: the app's own removal of it is then answered 404.
+ */
+export async function removedElsewhere(fake: FakeApi, path: string): Promise<void> {
+  const answer = await fake.serve(new Request(`${fakeOrigin}/api/v1${path}`, { method: "DELETE" }));
+  if (answer.status !== 204) throw new Error(`test: the fake answered ${String(answer.status)} to DELETE ${path}`);
+}
+
+/**
+ * A server whose login providers take no new link (`allow_link` is false for each): an account linked before is
+ * still listed, to unlink, and no provider is offered to link.
+ */
+export const noNewLinks: Given = {
+  before: ({ fake }) => {
+    fake.script("GET /linked_identities", {
+      change: (body) => ({ ...body, providers: body.providers.map((p) => ({ ...p, allow_link: false })) }),
+    });
+  },
+};
 
 /** What `element` says as a reader reads its line: each run of spaces, breaking or not, as one space. */
 export const words = (element: Element): string => element.textContent.replace(/\s+/g, " ").trim();

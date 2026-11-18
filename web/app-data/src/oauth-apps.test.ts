@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, onTestFinished, test } from "bun:test";
+import { QueryObserver } from "@tanstack/react-query";
+import type { AppData } from "./app-data";
 import { authorizedAppsQuery } from "./authorized-apps";
 import {
   createOAuthApp,
@@ -269,6 +271,63 @@ describe("deleteOAuthApp", () => {
     await probe(data, useOAuthAppWrites).remove(confidential?.id ?? "");
     expect(probe(data, useOAuthApps)?.length).toBe(2);
   });
+});
+
+// The apps an account authorized are its working grants (ADR-0090 §5): deleting an app of the reader's ends its
+// grants, a change to it shows in them, and a token issued for the reader's own account is one more.
+describe("a write that changes the apps the account authorized", () => {
+  /** How many times the list of authorized apps was read. */
+  const listReads = (requests: readonly string[]) => requests.filter((r) => r === "GET /authorized_apps").length;
+  /** What a screen shown again shows: the cache while it holds the answer and it is not marked, else a read. */
+  const shown = (data: AppData) => data.queryClient.query({ ...authorizedAppsQuery(data), staleTime: Infinity });
+
+  for (const [name, route, write] of [
+    ["deleteOAuthApp", "DELETE /oauth_apps/{id}", (data: AppData, id: string) => deleteOAuthApp(data, id)],
+    [
+      "updateOAuthApp",
+      "PATCH /oauth_apps/{id}",
+      (data: AppData, id: string) => updateOAuthApp(data, id, { name: "Renamed" }),
+    ],
+    ["issueOAuthAppToken", "POST /oauth_apps/{id}/tokens", (data: AppData, id: string) => issueOAuthAppToken(data, id)],
+  ] as const) {
+    test(`${name}, with no screen on that list, sends no read of it: the next screen that shows it reads it once, inside its stale time`, async () => {
+      const { data, confidential, requests } = await read();
+      await data.queryClient.query(authorizedAppsQuery(data));
+
+      await write(data, confidential?.id ?? "");
+      await settled(data);
+
+      expect(listReads(requests)).toBe(1);
+      await shown(data);
+      expect(listReads(requests)).toBe(2);
+      // Read once: the list is as fresh as any, and the screen after that one shows the cache's.
+      await shown(data);
+      expect(listReads(requests)).toBe(2);
+    });
+
+    test(`${name}, with a screen on that list, sends one read of it once the server answered the write, and does not wait for it`, async () => {
+      const { data, fake, confidential } = await read();
+      await data.queryClient.query(authorizedAppsQuery(data));
+      // A screen that shows the list: something that watches it in the cache.
+      onTestFinished(new QueryObserver(data.queryClient, authorizedAppsQuery(data)).subscribe(() => undefined));
+      const sent = fake.script(route, { hold: "response" });
+      const reread = fake.script("GET /authorized_apps", { hold: "request" });
+
+      const writing = write(data, confidential?.id ?? "");
+      await sent.served();
+      // The server did it, and its answer is on its way: nothing is read yet.
+      await new Promise((turn) => setTimeout(turn, 0));
+      expect(reread.seen).toHaveLength(0);
+      sent.release();
+      // The write resolves while the read it started has no answer.
+      await writing;
+      await reread.arrived();
+
+      reread.release();
+      await settled(data);
+      expect(reread.seen).toHaveLength(1);
+    });
+  }
 });
 
 describe("rotateOAuthAppSecret", () => {

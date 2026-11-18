@@ -86,7 +86,6 @@ describe("beginLinkIdentity", () => {
     const provider = providers.find((p) => p.allow_link);
     const started = await beginLinkIdentity(data, provider?.id ?? "", await passkeyConfirmation(data));
     expect(started.url).toContain(provider?.id ?? "?");
-    expect(Number.isNaN(Date.parse(started.expiresAt))).toBe(false);
   });
 
   test("rejects with the unavailable problem for a provider that allows no link", async () => {

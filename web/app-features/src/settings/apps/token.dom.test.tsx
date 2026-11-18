@@ -2,10 +2,11 @@
 
 // Issuing a token of one's own app for one's own account, under the app's screen (#3206, ADR-0090 §17): the scopes
 // start as the app's, without the permission scopes (`admin:<permission>`) of permissions the reader's account does
-// not have, since the server issues those only for a permission the reader holds; an empty field asks for all the
-// app's scopes; a scope the server refuses is said under the field; and the issued pair is shown once, each token
-// with a way to copy it. An app the administrators disabled gets no token, and the screen says so in the form's
-// place. Its way back leads to the app's screen, which the route decides (web/app, settings-apps.dom.test.tsx).
+// not have, since the server issues those only for a permission the reader holds, so the form waits for the app and
+// for the account; an emptied field asks for the scopes it started with; a scope the server refuses is said under
+// the field; and the issued pair is shown once, each token with a way to copy it. An app the administrators disabled
+// gets no token, and the screen says so in the form's place. Its way back leads to the app's screen, which the route
+// decides (web/app, settings-apps.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
@@ -19,6 +20,7 @@ import {
   loading,
   notAmong,
   notDone,
+  notLoaded,
   notShownAgain,
   ownApps,
   said,
@@ -73,27 +75,95 @@ const withPermissionScopes = (permissions: readonly ("manage_reports" | "manage_
   },
 });
 
-const hint = "Separated by spaces, within the scopes of the app. Leave the field empty for all of them.";
+const hint = "Separated by spaces, within the scopes of the app. An empty field gets the scopes it started with.";
 const about =
   "The server issues an access token and a refresh token of this app for your own account, with no page to allow the app and no redirect.";
 const onlyHere =
   "Only a token issued here can carry a permission scope such as admin:manage_invites, and only for a permission your account has. An app that asks for one on the page where people allow it is refused.";
 
-test("until the app is read, the screen says that it loads the settings, with no field and nothing to send", async () => {
-  let held: { release: () => void } | undefined;
-  await drawn(confidential, {
-    before: ({ fake }) => {
-      held = fake.script("GET /oauth_apps/{id}", { hold: "request" });
-    },
+// What the field starts with needs both: the app's scopes, and the permissions of the reader's account.
+describe("until the app and the reader's account are read", () => {
+  /** The two reads the form waits for, and each as the app's data sends it for the app at `id`. */
+  const reads = [
+    ["the app", "GET /oauth_apps/{id}", (id: string) => `GET /oauth_apps/${id}`],
+    ["the reader's account", "GET /accounts/verify_credentials", () => "GET /accounts/verify_credentials"],
+  ] as const;
+
+  for (const [what, route] of reads)
+    test(`the screen says that it loads the settings while ${what} has no answer, with no field and nothing to send, and shows the form once it has`, async () => {
+      let held: { release: () => void } | undefined;
+      const { data } = await drawn(confidential, {
+        before: ({ fake }) => {
+          held = fake.script(route, { hold: "request" });
+        },
+      });
+      // The other read answered, and this one alone keeps the screen waiting.
+      await waitFor(() => {
+        if (data.queryClient.isFetching() !== 1)
+          throw new Error(`test: ${String(data.queryClient.isFetching())} reads are on their way`);
+      });
+
+      expect(said()).toEqual([loading]);
+      expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+      expect(buttons()).not.toContain("Issue token");
+
+      held?.release();
+
+      await screen.findByRole("textbox", { name: "Scopes" });
+      expect(said()).toEqual([]);
+    });
+
+  for (const [what, route, sent] of reads)
+    test(`the screen says that the settings could not be loaded when the read of ${what} fails, with no field, and Try again reads that alone, then shows the form`, async () => {
+      const on = await drawn(confidential, {
+        before: ({ fake }) => {
+          fake.script(route, { fail: 500, times: 1 });
+        },
+      });
+      const { user, fake, requests } = on;
+
+      const failed = await screen.findByRole("alert");
+      await atRest(on);
+      expect(words(failed)).toMatch(notLoaded);
+      expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+      expect(buttons()).not.toContain("Issue token");
+      const before = requests.length;
+
+      await user.click(within(failed).getByRole("button", { name: "Try again" }));
+
+      await screen.findByRole("textbox", { name: "Scopes" });
+      await atRest(on);
+      expect(alerts()).toEqual([]);
+      expect(requests.slice(before)).toEqual([sent(fake.appId("own", confidential))]);
+    });
+
+  // The app's scopes alone would start the field without the permission scopes, which the reader then could not
+  // tell from scopes the app lacks.
+  test("an account that answers after the app still starts the field with the permission scopes of the permissions it has", async () => {
+    let held: { release: () => void } | undefined;
+    const { data } = await drawn(confidential, {
+      before: ({ fake }) => {
+        fake.script("GET /oauth_apps/{id}", {
+          change: (app) => ({ ...app, scope: "read admin:manage_invites admin:manage_reports write:statuses" }),
+        });
+        held = fake.script("GET /accounts/verify_credentials", {
+          hold: "request",
+          change: (account) => ({ ...account, permissions: ["manage_reports" as const] }),
+        });
+      },
+    });
+    await waitFor(() => {
+      if (data.queryClient.isFetching() !== 1)
+        throw new Error(`test: ${String(data.queryClient.isFetching())} reads are on their way`);
+    });
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+
+    held?.release();
+
+    expect((await screen.findByRole<HTMLInputElement>("textbox", { name: "Scopes" })).value).toBe(
+      "read admin:manage_reports write:statuses",
+    );
   });
-
-  expect((await screen.findByRole("status")).textContent).toBe(loading);
-  expect(screen.queryAllByRole("textbox")).toHaveLength(0);
-  expect(buttons()).not.toContain("Issue token");
-
-  held?.release();
-
-  await screen.findByRole("textbox", { name: "Scopes" });
 });
 
 describe("the form", () => {
@@ -145,16 +215,37 @@ describe("Issue token", () => {
     expect(sent.seen.map((s) => [s.url.pathname.split("/").at(-2), s.body])).toEqual([[app.id, { scope: "read" }]]);
   });
 
-  test("with the field emptied, sends no scope: the server gives all the app's", async () => {
-    const { user, fake } = await read(confidential);
+  // Sent without a scope, the server gives all the app's, the permission scopes of permissions the reader lacks
+  // among them, which it then refuses: an emptied field asks for what the field started with.
+  test("with the field emptied, sends the scopes the field started with, not the permission scopes the reader's account lacks", async () => {
+    const { user, fake } = await read(confidential, withPermissionScopes(["manage_reports"]));
     const sent = fake.script("POST /oauth_apps/{id}/tokens");
+    expect(scopes().value).toBe("read admin:manage_reports write:statuses");
     await write(user, scopes(), "");
 
     await user.click(issue());
 
-    await screen.findByRole("region", { name: "The token is issued" });
+    await sent.arrived();
+    expect(sent.seen.map((s) => s.body)).toEqual([{ scope: "read admin:manage_reports write:statuses" }]);
+  });
+
+  // An app whose scopes are all permission scopes the reader's account lacks: nothing is left to start with.
+  test("only where the field started empty too, an empty field sends no scope", async () => {
+    const { user, fake } = await read(confidential, {
+      before: (on) => {
+        on.fake.script("GET /oauth_apps/{id}", { change: (app) => ({ ...app, scope: "admin:manage_invites" }) });
+        on.fake.script("GET /accounts/verify_credentials", {
+          change: (account) => ({ ...account, permissions: [] }),
+        });
+      },
+    });
+    const sent = fake.script("POST /oauth_apps/{id}/tokens");
+    expect(scopes().value).toBe("");
+
+    await user.click(issue());
+
+    await sent.arrived();
     expect(sent.seen.map((s) => s.body ?? {})).toEqual([{}]);
-    expect(words(section("The token is issued"))).toContain("Its scopes are read write:statuses.");
   });
 
   test("a scope the server refuses is said under the field in the server's words, the field takes the focus, the form says before its button that this could not be done, and no token is shown", async () => {

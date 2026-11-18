@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Adding a passkey, under Security (#3205; ADR-0106 §26): the name is checked before anything is asked, and a name the
+// Adding a passkey, under Security (#3205; ADR-0106 §26): the form comes once what Security reads of the account is
+// read; the name is checked before anything is asked, and a name the
 // screen or the server refuses is said under its field, which takes the focus; a browser
 // without passkeys is told so at once; and in one with them, once the reader confirmed it's them, the server starts
 // the registration, the browser creates the passkey, the server keeps it, and the screen goes back to the entry. What
@@ -9,11 +10,11 @@
 // what the browser's own parts answer is the platform's test (web/platform, passkeys.test.ts), and a passkey a real
 // browser makes and signs in with is the E2E test's (web/e2e, specs/security.spec.ts).
 
-import { expect, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { atRest, closed, describedBy, dialogs, passkeyBrowser, proving, words } from "../../test/security";
-import { settingsOn, type Access } from "../../test/settings";
+import { settingsOn, type Access, type Given } from "../../test/settings";
 import { SecurityPasskey } from "./passkey";
 
 /** The screen that adds a passkey, on a server whose account stands as `access` says, once it is at rest. */
@@ -43,6 +44,75 @@ async function addNamed(user: UserEvent, called: string) {
   await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
   await closed();
 }
+
+// How the account signs in decides how the reader confirms it's them, and whether a passkey can be added at all: the
+// form waits for what Security reads of the account.
+describe("until what Security reads of the account is read", () => {
+  const reads = [
+    "GET /accounts/password",
+    "GET /passkeys",
+    "GET /two_factor",
+    "GET /linked_identities",
+    "GET /sessions",
+  ] as const;
+  /** What the status regions say, the empty ones left out. */
+  const said = () =>
+    screen
+      .queryAllByRole("status")
+      .map(words)
+      .filter((text) => text !== "");
+  /** The names of the screen's buttons. */
+  const buttons = () => screen.queryAllByRole("button").map(words);
+  /** The screen before its reads answered, with what `before` scripted of them. */
+  const drawn = (before: NonNullable<Given["before"]>) =>
+    settingsOn({}, (address) => <SecurityPasskey {...address} />, { before });
+
+  for (const route of reads)
+    test(`the screen says that it loads the settings while ${route} has no answer, with no field and no button that adds, and shows the form once it has`, async () => {
+      let held: { release: () => void } | undefined;
+      const { data } = await drawn(({ fake }) => {
+        held = fake.script(route, { hold: "request" });
+      });
+      // The four other reads answered, and this one alone keeps the screen waiting.
+      await waitFor(() => {
+        if (data.queryClient.isFetching() !== 1)
+          throw new Error(`test: ${String(data.queryClient.isFetching())} reads are on their way`);
+      });
+
+      expect(said()).toEqual(["Loading your settings…"]);
+      expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+      expect(buttons()).toEqual(["Security"]);
+
+      held?.release();
+
+      await screen.findByRole("textbox", { name: "Name" });
+      expect(said()).toEqual([]);
+      expect(buttons()).toEqual(["Security", "Add a passkey"]);
+    });
+
+  test("the screen says that the settings could not be loaded when reads fail, with no field and no button that adds, and Try again reads the ones that failed, then shows the form", async () => {
+    const on = await drawn(({ fake }) => {
+      fake.script("GET /passkeys", { fail: 500, times: 1 });
+      fake.script("GET /sessions", { fail: 500, times: 1 });
+    });
+    const { user, requests } = on;
+
+    const failed = await screen.findByRole("alert");
+    await atRest(on);
+    expect(words(failed)).toMatch(/^Your settings could not be loaded\.\s*Try again$/);
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+    expect(buttons()).toEqual(["Security", "Try again"]);
+    const before = requests.length;
+
+    await user.click(within(failed).getByRole("button", { name: "Try again" }));
+
+    await screen.findByRole("textbox", { name: "Name" });
+    await atRest(on);
+    expect(alerts()).toEqual([]);
+    expect(buttons()).toEqual(["Security", "Add a passkey"]);
+    expect(requests.slice(before).sort()).toEqual(["GET /passkeys", "GET /sessions"]);
+  });
+});
 
 for (const [what, value] of [
   ["no name", ""],

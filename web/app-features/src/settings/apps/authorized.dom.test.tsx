@@ -13,7 +13,18 @@ import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { appAt, authorizedApps, buttons, listed, loading, notAmong, notLoaded } from "../../test/apps";
-import { atRest, buttonsOf, closed, dayOf, dialogs, hourOf, offered, sections, words } from "../../test/security";
+import {
+  atRest,
+  buttonsOf,
+  closed,
+  dayOf,
+  dialogs,
+  hourOf,
+  offered,
+  removedElsewhere,
+  sections,
+  words,
+} from "../../test/security";
 import { settingsOn, type Given } from "../../test/settings";
 import { AuthorizedAppScreen } from "./authorized";
 
@@ -276,18 +287,38 @@ describe("Revoke", () => {
     expect(address.backs).toBe(0);
   });
 
-  test("a revocation the server refuses stays in the confirmation, which says so, and the screen does not go back", async () => {
+  test("a revocation the server refuses stays in the confirmation, which says the server's words, and the screen does not go back", async () => {
     const { user, fake, address } = await read(selfRegistered);
-    fake.script("DELETE /authorized_apps/{id}", { fail: 500 });
+    fake.script("DELETE /authorized_apps/{id}", {
+      fail: { type: "about:blank", title: "The server could not revoke the app", status: 500 },
+    });
     await user.click(revoke());
     const dialog = await asking("Tuskr for Android");
 
     await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
 
     const refused = await screen.findByRole("alert");
+    expect(words(refused)).toBe("The server could not revoke the app");
     expect((await asking("Tuskr for Android")).contains(refused)).toBe(true);
     expect(address.backs).toBe(0);
     expect(await authorizedApps(fake)).toHaveLength(4);
+  });
+
+  // Another browser of the reader's revoked it first: what the reader asked for is done.
+  test("a revocation of an app the server no longer holds (404) goes back to Apps, as one the server did", async () => {
+    const { user, fake, address, app } = await read(selfRegistered);
+    await user.click(revoke());
+    const dialog = await asking("Tuskr for Android");
+    await removedElsewhere(fake, `/authorized_apps/${app.id}`);
+
+    await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
+
+    await waitFor(() => {
+      if (address.backs === 0) throw new Error("test: the screen did not go back yet");
+    });
+    expect(address.backs).toBe(1);
+    expect(address.sessionsEnded).toBe(0);
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
   });
 
   // The app the reader is using: its tokens are the session of every browser the account is signed in to.
@@ -361,6 +392,23 @@ describe("Revoke", () => {
       expect(fake.revocations).toEqual([]);
       expect(dialogs().map((open) => open === dialog)).toEqual([true]);
       expect(offers(dialog)).toEqual(atWork);
+    });
+
+    test("a revocation the server answers 404, the web client revoked already, tells its route once that the session ended all the same, and does not go back", async () => {
+      const on = await read(web);
+      const { user, fake, address, app } = on;
+      await user.click(revoke());
+      const dialog = await asking("mycroblog");
+      await removedElsewhere(fake, `/authorized_apps/${app.id}`);
+
+      await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
+
+      await waitFor(() => {
+        if (address.sessionsEnded === 0) throw new Error("test: the screen did not say that the session ended yet");
+      });
+      await atRest(on);
+      expect(address.sessionsEnded).toBe(1);
+      expect(address.backs).toBe(0);
     });
   });
 });

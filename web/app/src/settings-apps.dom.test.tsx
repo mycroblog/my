@@ -114,6 +114,27 @@ describe("the entry", () => {
       expect(main().queryAllByRole("region")).toHaveLength(0);
       expect(main().queryAllByRole("textbox")).toHaveLength(0);
     });
+
+  // The title of an app's screen is the app's name, which a reader with a session has the server asked for as the
+  // screen opens: a reader without one is asked to sign in, and the server is asked for nothing of an account.
+  for (const [what, path] of [
+    ["an app of the reader's", own(unknown)],
+    ["an authorized app", authorized(unknown)],
+  ] as const)
+    test(`asks the server for no app and no list of apps for a reader without a session, at the address of ${what}`, async () => {
+      const on = fakeApp({ visitor: true });
+      const asked = (["GET /oauth_apps/{id}", "GET /oauth_apps", "GET /authorized_apps"] as const).map(
+        (route) => [route, on.fake.script(route)] as const,
+      );
+
+      const app = await renderApp(path, { on });
+
+      expect(main().getByRole("status").textContent).toMatch(/^Sign in to see this screen\.\s*Sign in$/);
+      await waitFor(() => {
+        if (app.data.queryClient.isFetching() > 0) throw new Error("test: a read is still on its way");
+      });
+      expect(asked.filter(([, script]) => script.seen.length > 0).map(([route]) => route)).toEqual([]);
+    });
 });
 
 describe("a screen under the entry", () => {

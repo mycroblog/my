@@ -2,18 +2,20 @@
 
 // Invites in the app (#3207, ADR-0106 §18), what its routes and the settings' menu decide: the menu lists Invites
 // only for a reader who may create invites (the default menu, with the entry, is settings.dom.test.tsx's), and draws
-// no row before it knows; the entry stands beside the menu, which marks it on every screen under it; the list leads
-// to an invite's screen and to the form that creates one, each at an address of its own with its way back; an invite
-// created or revoked shows in the list once the reader is back; an account the server refuses as one that may not
-// create invites reads so on the form's screen and on the list; and a one-person server has no such screens
-// (ADR-0152). What each screen shows of an account and does with a press is the feature's test (app-features,
-// settings/invites/*.dom.test.tsx).
+// Sign out… alone before it knows, for no longer than it waits; the entry stands beside the menu, which marks it on
+// every screen under it; the list leads to an invite's screen and to the form that creates one, each at an address
+// of its own with its way back; an invite created or revoked shows in the list once the reader is back; an account
+// the server refuses as one that may not create invites reads so on the form's screen and on the list; and a
+// one-person server has no such screens (ADR-0152). What each screen shows of an account and does with a press is
+// the feature's test (app-features, settings/invites/*.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
+import { settingsFactsWaitMs } from "@my/app-features";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { main, renderApp, words, type TestApp } from "./test/app";
+import userEvent from "@testing-library/user-event";
+import { heldWaitsOf, main, renderApp, words, type TestApp } from "./test/app";
 import { fakeApp } from "./test/server";
 import { rail } from "./test/viewport";
 
@@ -52,6 +54,9 @@ const rowsAt = (at: string, { withInvites, here }: { withInvites: boolean; here?
     (row) => (row === here ? `${row} (here)` : row),
   );
 
+/** The menu's one row for a reader at `at` while it does not know its entries: Sign out…, which is always its last. */
+const signOutAlone = (at: string) => [`${at}?sign_out=true`];
+
 /** Waits until the screen titled `title` is in place at `path`. */
 const at = (app: TestApp, path: string, title: string) =>
   waitFor(() => {
@@ -72,9 +77,9 @@ const list = () => main().findByRole("region", { name: /^Your invites(\s*\d+)?$/
 /** An invite as the server answers it, in what these tests read of it. */
 type Invite = { id: string; code: string; state: string };
 
-/** The reader's invites as the fake holds them, newest first. */
+/** The reader's invites as the fake holds them, newest first: all of them, in one page of the server's most. */
 async function held(fake: FakeApi): Promise<Invite[]> {
-  const answer = await fake.serve(new Request(`${fakeOrigin}/api/v1/invites`));
+  const answer = await fake.serve(new Request(`${fakeOrigin}/api/v1/invites?limit=40`));
   return ((await answer.json()) as { items: Invite[] }).items;
 }
 
@@ -112,8 +117,8 @@ describe("the settings' menu", () => {
       expect(menu()).toEqual(rowsAt(display, { withInvites: false, here: display }));
     });
 
-  // Whether the reader may create invites is the first page of their invites' to say: until the server answered
-  // it, the menu draws no row, so that no row comes in under the reader's hand.
+  // Whether the reader may create invites is the first page of their invites' to say: on the way from another
+  // screen the settings open once the server answered it, so that no row comes in under the reader's hand.
   test("draws no row while it is not known whether the reader may create invites, then all of them at once, on the way from another screen", async () => {
     const on = fakeApp();
     const app = await renderApp("/lists", { on });
@@ -135,7 +140,8 @@ describe("the settings' menu", () => {
     expect(heading()).toBe("Settings");
   });
 
-  for (const [where, address, here, drawn] of [
+  /** The addresses a menu opens at with the app, the entry it marks there, and what is drawn around it meanwhile. */
+  const places = [
     // The shell is drawn around the menu's screen, and the entry's screen beside the menu: only the menu waits.
     ["the menu's own screen", "/settings", undefined, () => screen.findAllByRole("navigation", { name: "Main" })],
     [
@@ -144,8 +150,11 @@ describe("the settings' menu", () => {
       display,
       () => main().findByRole("combobox", { name: "Display language" }),
     ],
-  ] as const)
-    test(`draws no row while it is not known, then all of them at once, when the app opens at ${where}`, async () => {
+  ] as const;
+
+  // Sign out… is always the menu's last row: drawn from the start, it is under the reader's hand where it stays.
+  for (const [where, address, here, drawn] of places)
+    test(`draws Sign out… alone while it is not known, then every entry at once, when the app opens at ${where}`, async () => {
       const on = fakeApp();
       const asked = on.fake.script("GET /invites", { hold: "request" });
       const opened = renderApp(address, { on });
@@ -153,17 +162,80 @@ describe("the settings' menu", () => {
       await asked.arrived();
       await drawn();
       await readsLeft(on, 1);
-      expect(menu()).toEqual([]);
+      expect(menu()).toEqual(signOutAlone(address));
 
-      const first = waitFor(() => {
-        if (menu().length === 0) throw new Error("test: the menu has no row yet");
+      const next = waitFor(() => {
+        if (menu().length === 1) throw new Error("test: the menu still lists Sign out… alone");
         return menu();
       });
       asked.release();
 
-      expect(await first).toEqual(rowsAt(address, { withInvites: true, here }));
+      expect(await next).toEqual(rowsAt(address, { withInvites: true, here }));
       await opened;
     });
+
+  // A server that is slow to say whether the reader may create invites keeps them from no other entry for longer
+  // than the menu waits; the test ends that wait itself.
+  for (const [where, address, here, drawn] of places)
+    test(`lists its other entries once it waited ${String(settingsFactsWaitMs)} ms for the answer, and adds Invites when the answer then says the reader may create them, when the app opens at ${where}`, async () => {
+      const waits = heldWaitsOf(settingsFactsWaitMs);
+      const on = fakeApp();
+      const asked = on.fake.script("GET /invites", { hold: "request" });
+      const opened = renderApp(address, { on });
+      await asked.arrived();
+      await drawn();
+      await readsLeft(on, 1);
+      expect(menu()).toEqual(signOutAlone(address));
+
+      // The menu's wait, and the only one of that length.
+      expect(waits.pass()).toBe(1);
+
+      const without = await waitFor(() => {
+        if (menu().length === 1) throw new Error("test: the menu still lists Sign out… alone");
+        return menu();
+      });
+      expect(without).toEqual(rowsAt(address, { withInvites: false, here }));
+      expect(on.data.queryClient.isFetching()).toBe(1);
+
+      const withInvites = waitFor(() => {
+        if (!menu().includes(invites)) throw new Error("test: the menu does not list Invites yet");
+        return menu();
+      });
+      asked.release();
+
+      expect(await withInvites).toEqual(rowsAt(address, { withInvites: true, here }));
+      await opened;
+    });
+
+  test("each menu waits for itself: beside an entry opened from a menu whose wait is over, the menu lists Sign out… alone until its own is, on the one read", async () => {
+    const waits = heldWaitsOf(settingsFactsWaitMs);
+    const on = fakeApp();
+    const asked = on.fake.script("GET /invites", { hold: "request" });
+    const opened = renderApp("/settings", { on });
+    await asked.arrived();
+    await screen.findAllByRole("navigation", { name: "Main" });
+    await readsLeft(on, 1);
+    expect(waits.pass()).toBe(1);
+
+    await userEvent.setup().click(await main().findByRole("link", { name: /^Display and posting/ }));
+
+    await main().findByRole("combobox", { name: "Display language" });
+    expect(menu()).toEqual(signOutAlone(display));
+    expect(waits.pass()).toBe(1);
+    const without = await waitFor(() => {
+      if (menu().length === 1) throw new Error("test: the menu still lists Sign out… alone");
+      return menu();
+    });
+    expect(without).toEqual(rowsAt(display, { withInvites: false, here: display }));
+    expect(asked.seen).toHaveLength(1);
+
+    const withInvites = waitFor(() => {
+      if (!menu().includes(invites)) throw new Error("test: the menu does not list Invites yet");
+    });
+    asked.release();
+    await withInvites;
+    await opened;
+  });
 
   test("lists its other entries, and no Invites, when the invites could not be read", async () => {
     const on = fakeApp();
@@ -210,6 +282,23 @@ describe("the entry", () => {
 
     await at(app, invites, "Invites");
     await list();
+  });
+
+  // The screen's title and the screen both look for the invite in the list: one of them reads the list on.
+  test("opens an invite of a later page of the list by its address, titled by its code, with each page of the list asked for once", async () => {
+    const on = fakeApp({ access: { invites: "many" } });
+    const old = await invite(on.fake, 25);
+    const asked = on.fake.script("GET /invites");
+
+    const app = await renderApp(`${invites}/${old.id}`, { on });
+
+    await at(app, `${invites}/${old.id}`, old.code);
+    await main().findByRole("region", { name: "Status" });
+    await readsLeft(app);
+    expect(app.title()).toContain(old.code);
+    expect(
+      asked.seen.map((seen) => (seen.url.searchParams.has("cursor") ? "the page after it" : "the first page")),
+    ).toEqual(["the first page", "the page after it"]);
   });
 
   test("leads by Create invite to the form's screen, beside the menu that still marks Invites, whose way back leads to the list", async () => {

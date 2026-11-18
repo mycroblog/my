@@ -14,7 +14,7 @@ import {
 } from "./two-factor";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
-import { kindOf, refusal } from "./test/settings";
+import { kindOf, refusal, settled } from "./test/settings";
 
 /** What a screen shown again shows: the cache while it holds the answer and it is not marked, else a read. */
 const status = (data: AppData) => data.queryClient.query({ ...twoFactorQuery(data), staleTime: Infinity });
@@ -61,11 +61,46 @@ describe("enableTotp", () => {
     expect(probe(data, useTwoFactor)).toMatchObject({ enabled: false });
   });
 
-  test("through the hook, are the same writes bound to the session", async () => {
+  // The codes are shown once, and the server has turned it on: nothing the app reads afterwards may keep them from
+  // the reader.
+  test("answers the codes as soon as the server turned it on, the cache saying on with as many codes left, while the status it reads again in the background, with no screen on it, has no answer", async () => {
+    const { data, fake } = await off();
+    const { setup_token } = await setUpTotp(data);
+    // Eight codes, where the server makes ten: what the cache counts is what the answer holds.
+    fake.script("POST /two_factor/totp", {
+      change: (body) => ({ ...body, recovery_codes: body.recovery_codes.slice(0, 8) }),
+    });
+    const reread = fake.script("GET /two_factor", { hold: "request" });
+
+    const codes = await enableTotp(data, setup_token, fakeTotpCode);
+
+    expect(codes).toHaveLength(8);
+    expect(probe(data, useTwoFactor)).toMatchObject({ enabled: true, recovery_codes_remaining: 8 });
+    await reread.arrived();
+    reread.release();
+    await settled(data);
+    expect(reread.seen).toHaveLength(1);
+    // The server's own count, once it answered.
+    expect(probe(data, useTwoFactor)).toMatchObject({ enabled: true, recovery_codes_remaining: 10 });
+  });
+
+  test("leaves the cache saying on when the status it reads again could not be read", async () => {
+    const { data, fake } = await off();
+    const { setup_token } = await setUpTotp(data);
+    const reread = fake.script("GET /two_factor", { fail: 500 });
+
+    expect(await enableTotp(data, setup_token, fakeTotpCode)).toHaveLength(10);
+    await reread.arrived();
+    await settled(data);
+
+    expect(reread.seen).toHaveLength(1);
+    expect(probe(data, useTwoFactor)).toMatchObject({ enabled: true, recovery_codes_remaining: 10 });
+  });
+
+  test("through the hook, is the same write bound to the session", async () => {
     const { data } = await off();
-    const writes = probe(data, useTwoFactorWrites);
-    const { setup_token } = await writes.setUp();
-    expect(await writes.enable(setup_token, fakeTotpCode)).toHaveLength(10);
+    const { setup_token } = await setUpTotp(data);
+    expect(await probe(data, useTwoFactorWrites).enable(setup_token, fakeTotpCode)).toHaveLength(10);
     expect(await status(data)).toMatchObject({ enabled: true });
   });
 });

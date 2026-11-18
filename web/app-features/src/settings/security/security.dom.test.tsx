@@ -11,7 +11,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
-import { fakeExternalConfirmation, fakeOrigin } from "@my/e2e/fake";
+import { fakeExternalConfirmation, fakeOrigin, type FakeApi } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import {
   atRest,
@@ -22,6 +22,7 @@ import {
   heldBy,
   hourOf,
   inOrder,
+  noNewLinks,
   offered,
   passkeyBrowser,
   proving,
@@ -541,6 +542,57 @@ describe("Linked accounts", () => {
     expect(address.left).toHaveLength(1);
     expect(address.left[0]?.startsWith(`${fakeOrigin}/auth/external/${provider}/link?`)).toBe(true);
   });
+
+  /** A server that no longer has the provider the account is linked at: the link cannot sign in, and can be unlinked. */
+  const providerGone: Given = {
+    before: ({ fake }) => {
+      fake.script("GET /linked_identities", {
+        change: (body) => ({
+          ...body,
+          providers: [],
+          items: body.items.map((link) => ({ ...link, available: false })),
+        }),
+      });
+    },
+  };
+
+  // A provider that takes no new link, or that the server no longer has, is listed only for the account linked at
+  // it: once that is unlinked the section has no row left, and stays for what it says of the change. That its status
+  // takes the focus is jsdom's (focus.jsdom.test.tsx).
+  for (const [where, given, more] of [
+    ["that takes no new link", noNewLinks, ""],
+    ["the server no longer has", providerGone, ". This service cannot be used to sign in now."],
+  ] as const)
+    test(`the only link, at a provider ${where}, unlinked: the section stays without a list and says so, also once the links are read again`, async () => {
+      const on = await read({}, given);
+      const { user, fake } = on;
+      const [github] = (await heldBy<{ items: { id: string; linked_at: string }[] }>(fake, "/linked_identities")).items;
+      if (github === undefined) throw new Error("test: the fake links no account");
+      const sent = fake.script("DELETE /linked_identities/{id}");
+      expect(rows("Linked accounts")).toEqual([
+        row(`GitHub Linked ${dayOf(github.linked_at)}${more}`, { offers: ["Unlink"] }),
+      ]);
+
+      await user.click(offered("Linked accounts", "GitHub", "Unlink"));
+      await user.click(within(await asking("Unlink your GitHub account?")).getByRole("button", { name: "Unlink" }));
+
+      await closed();
+      await waitFor(() => {
+        if (saidIn("Linked accounts").length === 0) throw new Error("test: the section says nothing yet");
+      });
+      await atRest(on);
+      expect(sent.seen.map((s) => s.url.pathname.split("/").at(-1))).toEqual([github.id]);
+      expect(saidIn("Linked accounts")).toEqual(["Your GitHub account is unlinked."]);
+      expect(rows("Linked accounts")).toEqual([]);
+      expect(within(section("Linked accounts")).queryAllByRole("list")).toHaveLength(0);
+      expect(settingsFindings(document.body)).toEqual([]);
+    });
+
+  test("an account without a link, on a server whose providers take no new link, has no such section", async () => {
+    await read({ linked: "none" }, noNewLinks);
+
+    expect(sections()).toEqual(["Two-factor authentication is off", "Sign-in", "Passkeys 3", "Signed-in browsers 4"]);
+  });
 });
 
 describe("back from a login provider", () => {
@@ -554,10 +606,34 @@ describe("back from a login provider", () => {
     expect(screen.queryAllByRole("alert")).toHaveLength(0);
   });
 
-  test("with an account linked at a provider the server lists nowhere, it says so without a name", async () => {
-    await read({}, { fragment: () => "linked=01900000-0000-7000-8000-000000000000" });
+  // The fragment is the address's, which anyone can write: the section says that an account is linked only while the
+  // account's links hold one at the provider the fragment names.
+  for (const [what, provider] of [
+    ["the server lists nowhere", () => "01900000-0000-7000-8000-000000000000"],
+    ["the account links no account at", (f: FakeApi) => f.loginProviderId("oidc")],
+  ] as const)
+    test(`with a fragment that says an account is linked at a provider ${what}, nothing is said, and the fragment is read all the same`, async () => {
+      const { address } = await read({}, { fragment: (f) => `linked=${provider(f)}` });
 
-    expect(words(section("Linked accounts"))).toContain(linked("account at the other service"));
+      expect(saidIn("Linked accounts")).toEqual([]);
+      expect(words(section("Linked accounts"))).not.toContain("is linked");
+      expect(screen.queryAllByRole("alert")).toHaveLength(0);
+      expect(address.fragmentsRead).toBe(1);
+    });
+
+  test("once the account it says is linked is unlinked, the section says that alone", async () => {
+    const { user } = await read({}, { fragment: (f) => `linked=${f.loginProviderId("github")}` });
+    expect(words(section("Linked accounts"))).toContain(linked("GitHub account"));
+
+    await user.click(offered("Linked accounts", "GitHub", "Unlink"));
+    await user.click(within(await asking("Unlink your GitHub account?")).getByRole("button", { name: "Unlink" }));
+
+    await closed();
+    await waitFor(() => {
+      if (!saidIn("Linked accounts").includes("Your GitHub account is unlinked."))
+        throw new Error("test: the section does not say that the account is unlinked yet");
+    });
+    expect(words(section("Linked accounts"))).not.toContain("is linked");
   });
 
   for (const [reason, sentence] of [

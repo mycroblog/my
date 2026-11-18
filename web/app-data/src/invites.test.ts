@@ -14,6 +14,7 @@ import {
   revokeOwnInvite,
   useInviteRightKnown,
   useMayInvite,
+  useOwnInviteFound,
   useOwnInviteRead,
   useOwnInvites,
   useOwnInviteWrites,
@@ -296,6 +297,25 @@ describe("useOwnInviteRead", () => {
     await data.queryClient.infiniteQuery({ ...ownInvitesQuery(data), pages: 2, staleTime: 0 });
 
     expect(statuses()).toEqual(["read", "read", "missing"]);
+  });
+});
+
+// What a part of an invite's screen that pages nothing itself reads (its title): the pages the cache holds. That
+// the screen asks for each further page once is the app's test (web/app, settings-invites.dom.test.tsx).
+describe("useOwnInviteFound", () => {
+  test("holds nothing until the list is read, then the invite of the ID among the pages read, and nothing of an invite of a page not read yet", async () => {
+    const { fake, data, requests } = fakeData({ access: { invites: "many" } });
+    const found = (index: number) => probe(data, () => useOwnInviteFound(fake.inviteId(index)))?.id;
+    expect(found(0)).toBeUndefined();
+
+    await data.queryClient.infiniteQuery(ownInvitesQuery(data));
+
+    expect([found(0), found(25), found(99)]).toEqual([fake.inviteId(0), undefined, undefined]);
+    expect(listReads(requests)).toHaveLength(1);
+
+    await data.queryClient.infiniteQuery({ ...ownInvitesQuery(data), pages: 2, staleTime: 0 });
+
+    expect([found(0), found(25), found(99)]).toEqual([fake.inviteId(0), fake.inviteId(25), undefined]);
   });
 });
 

@@ -2,8 +2,8 @@
 
 // Two-factor authentication, under Security (#3205): for an account without it, the screen asks the server for a
 // setup as it opens, shows its key as a QR code and as text to copy, and takes the code of the authenticator app; a
-// code the screen or the server refuses is said under its field, which takes the focus, a setup that expired is asked
-// again, and the right code turns it on and shows the recovery codes, once. For an account with it, the screen makes new recovery codes and turns it off, each after a
+// code the screen or the server refuses is said under its field, which takes the focus, a setup that expired leaves
+// the screen while a new one is asked for, and the right code turns it on and shows the recovery codes, once. For an account with it, the screen makes new recovery codes and turns it off, each after a
 // code. That the entry shows it on and off afterwards is the app's test (web/app, settings-security.dom.test.tsx),
 // and a code of a real authenticator on a real server the E2E test's (web/e2e, specs/security.spec.ts).
 
@@ -11,6 +11,7 @@ import { describe, expect, onTestFinished, test } from "bun:test";
 import { fakeTotpCode } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
+import { before } from "../../test/apps";
 import {
   atRest,
   buttonsOf,
@@ -18,6 +19,7 @@ import {
   dayOf,
   describedBy,
   dialogs,
+  focusOn,
   heldBy,
   inOrder,
   row,
@@ -211,39 +213,88 @@ describe("an account without it", () => {
     expect(words(screen.getByRole("main"))).toContain("二要素認証をオンにしました。");
   });
 
-  test("a setup that expired is asked again, and the screen says to scan the new QR code beside the button, with the code's field empty and focused; the next code goes with the new setup", async () => {
-    const { user, fake, setups } = await read();
-    const sent = fake.script("POST /two_factor/totp");
-    const expired = fake.script("POST /two_factor/totp", {
-      times: 1,
-      fail: { type: "/api/v1/problems/totp-setup-expired", title: "The setup expired", status: 422 },
+  // The key on the screen is of a setup the server no longer knows: an entry made from it in the authenticator app
+  // never gives a code the server takes, so nothing of it stays to be scanned. That the screen's title takes the
+  // focus meanwhile is jsdom's (focus.jsdom.test.tsx).
+  describe("a setup that expired", () => {
+    const expired = { type: "/api/v1/problems/totp-setup-expired", title: "The setup expired", status: 422 } as const;
+    const scanTheNew =
+      "The setup of the authenticator app expired. Scan the new QR code, then enter the code of the new entry.";
+    const firstKey = "JBSWY3DPEHPK3PXP";
+    const newKey = "KRSXG5CTMVRXEZLU";
+
+    test("leaves the screen at once, which says that it loads the settings while one new setup is asked for; the new key then shows, with the code's field empty and focused and what happened said beside the button; the next code goes with the new setup", async () => {
+      const { user, fake, setups } = await read();
+      const sent = fake.script("POST /two_factor/totp");
+      fake.script("POST /two_factor/totp", { times: 1, fail: expired });
+      const next = fake.script("POST /two_factor/totp/setup", {
+        hold: "request",
+        change: (body) => ({ ...body, secret: newKey }),
+      });
+      expect(kept("Setup key")).toEqual([firstKey]);
+
+      await turnOn(user, fakeTotpCode);
+
+      // The new setup has no answer yet, and the old one is gone: its QR code, its key, and the bar that turns on.
+      await next.arrived();
+      await waitFor(() => {
+        if (sections().length > 0) throw new Error("test: the expired setup is still shown");
+      });
+      expect(said()).toEqual(["Loading your settings…"]);
+      expect(alerts()).toEqual([]);
+      expect(screen.queryAllByRole("img", { name: "QR code of the setup key" })).toHaveLength(0);
+      expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+      expect(screen.getAllByRole("button").map(words)).toEqual(["Security"]);
+      expect(words(screen.getByRole("main"))).not.toContain(firstKey);
+      expect(setups()).toBe(2);
+
+      next.release();
+
+      await screen.findByRole("textbox", { name: "Authentication code" });
+      expect(sections()).toEqual(["Add to your authenticator app", "Enter the code"]);
+      expect(kept("Setup key")).toEqual([newKey]);
+      expect(alerts()).toEqual([scanTheNew]);
+      const [told] = screen.getAllByRole("alert");
+      const button = screen.getByRole("button", { name: "Turn on" });
+      expect(told === undefined ? false : before(told, button)).toBe(true);
+      expect(told === undefined ? false : before(code(), told)).toBe(true);
+      // The old code is of the old setup: the field is empty for the new one, and has the focus, unmarked.
+      expect(code().value).toBe("");
+      await focusOn(code);
+      expect(describedBy(code())).toEqual([hint]);
+      expect(setups()).toBe(2);
+
+      await turnOn(user, fakeTotpCode);
+
+      await screen.findByRole("region", { name: "Recovery codes" });
+      const [first, second] = sent.seen.map((s) => s.body.setup_token);
+      expect(first).toBeDefined();
+      expect(second).toBeDefined();
+      expect(second).not.toBe(first);
     });
 
-    await turnOn(user, fakeTotpCode);
+    test("whose new setup the server could not make says that the settings could not be loaded, without the old key, and Try again asks for a setup once more", async () => {
+      const { user, fake, setups } = await read();
+      fake.script("POST /two_factor/totp", { times: 1, fail: expired });
+      fake.script("POST /two_factor/totp/setup", { fail: 500, times: 1 });
 
-    await waitFor(() => {
-      if (alerts().length === 0) throw new Error("test: the screen says nothing yet");
+      await turnOn(user, fakeTotpCode);
+
+      const failed = await screen.findByRole("alert");
+      expect(words(failed)).toMatch(/^Your settings could not be loaded\.\s*Try again$/);
+      expect(sections()).toEqual([]);
+      expect(screen.queryAllByRole("img", { name: "QR code of the setup key" })).toHaveLength(0);
+      expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+      expect(words(screen.getByRole("main"))).not.toContain(firstKey);
+      expect(setups()).toBe(2);
+
+      await user.click(within(failed).getByRole("button", { name: "Try again" }));
+
+      await screen.findByRole("textbox", { name: "Authentication code" });
+      expect(sections()).toEqual(["Add to your authenticator app", "Enter the code"]);
+      expect(alerts()).toEqual([scanTheNew]);
+      expect(setups()).toBe(3);
     });
-    expect(alerts()).toEqual([
-      "The setup of the authenticator app expired. Scan the new QR code, then enter the code of the new entry.",
-    ]);
-    await waitFor(() => {
-      if (setups() !== 2) throw new Error(`test: the server was asked for ${String(setups())} setups`);
-    });
-    expect(sections()).toEqual(["Add to your authenticator app", "Enter the code"]);
-    // The old code is of the old setup: the field is emptied for the new one, and has the focus, unmarked.
-    expect(code().value).toBe("");
-    expect(document.activeElement === code()).toBe(true);
-    expect(describedBy(code())).toEqual([hint]);
-    expired.end();
-
-    await turnOn(user, fakeTotpCode);
-
-    await screen.findByRole("region", { name: "Recovery codes" });
-    const [first, second] = sent.seen.map((s) => s.body.setup_token);
-    expect(first).toBeDefined();
-    expect(second).toBeDefined();
-    expect(second).not.toBe(first);
   });
 });
 

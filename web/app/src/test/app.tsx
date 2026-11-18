@@ -128,6 +128,45 @@ export const words = (element: Element): string =>
   element.textContent.replaceAll("\u2060", "").replace(/\s+/g, " ").trim();
 
 /**
+ * Keeps the waits of exactly `ms` that the app starts from now until the test ends, for the test to end them: `pass()`
+ * lets the ones that began and were not given up come at once, and returns how many they were. The test's clock in
+ * place of the wall's, for one wait the app times itself (how long the settings' menu waits for what it lists);
+ * every other wait, the data cache's and Testing Library's among them, keeps its time. Call it before the app starts
+ * the wait.
+ */
+export function heldWaitsOf(ms: number): { pass: () => number } {
+  const wait = globalThis.setTimeout;
+  const giveUp = globalThis.clearTimeout;
+  const held = new Map<unknown, () => void>();
+  const holding = ((handler: TimerHandler, timeout?: number, ...rest: unknown[]) => {
+    if (typeof handler !== "function" || timeout !== ms) return wait(handler, timeout, ...rest);
+    // A timer that does nothing stands for the held one: what gives it up gives up the held wait.
+    const timer = wait(() => undefined, 0);
+    held.set(timer, () => {
+      (handler as (...given: unknown[]) => void)(...rest);
+    });
+    return timer;
+  }) as typeof setTimeout;
+  globalThis.setTimeout = Object.assign(holding, wait);
+  globalThis.clearTimeout = ((timer?: Parameters<typeof clearTimeout>[0]) => {
+    held.delete(timer);
+    giveUp(timer);
+  }) as typeof clearTimeout;
+  onTestFinished(() => {
+    globalThis.setTimeout = wait;
+    globalThis.clearTimeout = giveUp;
+  });
+  return {
+    pass: () => {
+      const over = [...held.values()];
+      held.clear();
+      for (const come of over) come();
+      return over.length;
+    },
+  };
+}
+
+/**
  * Lets what the app waits `ms` or longer for (the second before it asks again whether an upload is processed) come at
  * once, until the test ends: the test's clock in place of the wall's, for a wait the app times itself. Call it before
  * the app starts the wait. What Testing Library waits for keeps its own time.
