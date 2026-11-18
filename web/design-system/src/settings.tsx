@@ -33,7 +33,7 @@ import { createContext, use, useId, type ReactElement, type ReactNode } from "re
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface } from "./button";
-import { describedBy, FieldContext } from "./field";
+import { FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
 import { Box, Layers, Row, Stack } from "./layout";
 import { ScreenTitle } from "./list";
@@ -246,13 +246,15 @@ const screen = tv({ base: "text-body" });
  * A screen of the settings: its sections (`SettingsSection`, a `StatusSummary` first) and nothing else, then `foot`,
  * what ends it (a `SubmitBar`). Its head is the entry's glyph and name under `back`, the way to the menu, where the
  * menu is not beside the screen. `sub`, a screen under an entry: its name under the way back to that entry, at every
- * width.
+ * width. While it has no section to show, `notice` stands in their place: that what it shows is being read, or could
+ * not be, with the way to try again (a `FeedNotice`).
  */
 export function SettingsScreen({
   icon,
   title,
   back,
   sub = false,
+  notice,
   foot,
   children,
 }: {
@@ -262,8 +264,10 @@ export function SettingsScreen({
   /** The way back (a `BackButton`): to the menu, or to the entry of a screen under it. */
   back?: ReactNode;
   sub?: boolean;
+  /** What stands in the sections' place while there are none: that they load, or could not be read. */
+  notice?: ReactNode;
   foot?: ReactNode;
-  children: ReactNode;
+  children?: ReactNode;
 }) {
   const head = (
     <ScreenTitle glyph={icon} back={back}>
@@ -273,6 +277,7 @@ export function SettingsScreen({
   return (
     <Stack gap="shell-edge" className={screen()} data-settings-screen="">
       {sub ? <div data-frame-head="">{head}</div> : <FrameHead>{head}</FrameHead>}
+      {notice}
       <SectionLevelContext value={sub ? 3 : 2}>{children}</SectionLevelContext>
       {foot}
     </Stack>
@@ -337,13 +342,49 @@ export function SettingsSection({
   );
 }
 
+/** Whether a list stands under a setting as the values it holds (`values` of a `SettingRow`). */
+const ValuesContext = createContext(false);
+
+/**
+ * The frame of a setting: its name (`name`) over the line under it (`under`) at the start, taking the room left on
+ * their line, and its control (`control`) at the end, as wide as what it holds. Beside the control the name's block
+ * stands at the middle of the control, with or without a line under it. Where the two cannot share a line, the
+ * control fills a line of its own right under the block, as a field under its label, and the row's space stays above
+ * the name. `reserve`, for a name with no line under it yet (a save state will stand there): on a line of its own the
+ * name keeps that line's room above it, so that the state finds its room and the control under it does not move. The
+ * block is on a line of its own when it is as wide as the frame, which the padding reads (a length that is the room
+ * or nothing).
+ */
+function SettingFrame({
+  className,
+  reserve,
+  name,
+  under,
+  control,
+}: {
+  className: string;
+  reserve: boolean;
+  name: ReactNode;
+  under: ReactNode;
+  control: ReactNode;
+}) {
+  const room =
+    "pt-[clamp(0px,(100%_-_100cqw_+_1px)_*_9999,calc(var(--text-caption)_*_var(--text-caption--line-height)))]";
+  return (
+    <Row wrap align="center" className={`${className} @container gap-x-screen-row-gap gap-y-screen-air`}>
+      <Stack grow="setting" pack="center">
+        <Box className={reserve ? room : undefined}>{name}</Box>
+        {under}
+      </Stack>
+      <Box grow="control">{control}</Box>
+    </Row>
+  );
+}
+
 const row = tv({
   slots: {
-    // A finger's target tall.
+    // A finger's target tall, which holds the name and one line under it beside the control.
     root: "min-h-icon-button-touch",
-    // The name's block of a setting that saves at once keeps the room of the name and one line under it, so that the
-    // save state finds its room there and no control moves, beside the name or under it.
-    reserve: "min-h-icon-button-touch",
     label: "[word-break:auto-phrase]",
     // The name of a setting that cannot be changed now, muted as every disabled label is.
     off: "text-muted-text",
@@ -361,6 +402,11 @@ export type SettingRowProps = {
   /** It cannot be changed now: its control is disabled, and `reason` says why, in place of the line about it. */
   isDisabled?: boolean | undefined;
   reason?: string | undefined;
+  /**
+   * What the setting holds, where it holds several and its control adds one (a `SettingsList` of the languages
+   * chosen): close under the row, as the setting's own.
+   */
+  values?: ReactNode;
   children: ReactNode;
 } & (
   | {
@@ -382,12 +428,24 @@ export type SettingRowProps = {
  * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
  * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
  * the name, as a field under its label. Its control either saves at once, and the row takes its save state (`save`,
- * ADR-0110 §6), which stands in the place of the line about it, the name's block keeping that room from the start;
- * or it is a field of a form saved as a whole (`form`), with no state of its own. The row names its control (`id`,
- * the control's `labelledBy`, which a `Select` and a `NumberField` take from the row by themselves), describes it by
- * the line about it and by the save state, and a press on the name puts the focus on it.
+ * ADR-0110 §6), which stands in the place of the line about it, or, with no such line, under the name, in the room
+ * the row's height holds beside the control (the name, at the middle of the control until then, gives way to it, and
+ * the control stays where it is); or it is a field of a form saved as a whole (`form`), with no state of its own.
+ * What the setting holds beyond its control's value (`values`) stands close under the row. The row names its control
+ * (`id`, the control's `labelledBy`, which a `Select` and a `NumberField` take from the row by themselves), describes
+ * it by the line about it and by the save state, and a press on the name puts the focus on it.
  */
-export function SettingRow({ id, label, about, isDisabled = false, reason, save, form, children }: SettingRowProps) {
+export function SettingRow({
+  id,
+  label,
+  about,
+  isDisabled = false,
+  reason,
+  values,
+  save,
+  form,
+  children,
+}: SettingRowProps) {
   const s = row();
   const saves = form !== true;
   const saying = saves && save !== undefined && save !== null && save !== false;
@@ -396,13 +454,17 @@ export function SettingRow({ id, label, about, isDisabled = false, reason, save,
   const controlId = `${id}-control`;
   const aboutId = `${id}-about`;
   const stateId = `${id}-state`;
-  return (
-    <Row wrap align="center" gap="screen-row-gap" className={s.root()}>
-      <Stack grow="setting" pack="center" className={saves ? s.reserve() : undefined}>
+  const setting = (
+    <SettingFrame
+      className={s.root()}
+      reserve={saves && below === undefined && !saying}
+      name={
         <label id={id} htmlFor={controlId} className={isDisabled ? `${s.label()} ${s.off()}` : s.label()}>
           {label}
         </label>
-        {(below !== undefined || saves) && (
+      }
+      under={
+        (below !== undefined || saves) && (
           <Layers>
             {below !== undefined && (
               <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
@@ -418,21 +480,29 @@ export function SettingRow({ id, label, about, isDisabled = false, reason, save,
               </span>
             )}
           </Layers>
-        )}
-      </Stack>
-      <Box grow="control">
+        )
+      }
+      control={
         <FieldContext
           value={{
             id: controlId,
             labelledBy: id,
-            describedBy: describedBy(below !== undefined && aboutId, saying && stateId),
+            describedBy: below === undefined ? undefined : aboutId,
+            stateBy: saying ? stateId : undefined,
             disabled: isDisabled || undefined,
           }}
         >
           {children}
         </FieldContext>
-      </Box>
-    </Row>
+      }
+    />
+  );
+  if (values === undefined || values === null || values === false) return setting;
+  return (
+    <Stack gap="screen-air">
+      {setting}
+      <ValuesContext value>{values}</ValuesContext>
+    </Stack>
   );
 }
 
@@ -488,6 +558,9 @@ const list = tv({
     root: "list-none p-0",
     // A row is a finger's target tall with a little air, a link or not, so that every list keeps one rhythm.
     row: "min-h-icon-button-touch py-screen-air",
+    // The values of a setting, under its row: set in from the setting's start, each as tall as its button alone.
+    values: "ps-screen-row-inline",
+    value: "min-h-control-timeline",
     link: [
       "min-h-icon-button-touch rounded-control px-screen-row-inline py-screen-air text-text no-underline",
       "outline-hidden data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
@@ -503,10 +576,21 @@ const list = tv({
   },
 });
 
-/** What a section lists (the passkeys, the signed-in browsers, the filters), named by `label`: its rows. */
+/**
+ * What a section lists (the passkeys, the signed-in browsers, the filters), named by `label`: its rows. As the
+ * `values` of a `SettingRow` (the languages a setting holds), it is the setting's own: set in from its start, its
+ * rows close to each other.
+ */
 export function SettingsList({ label, children }: { label: string; children: ReactNode }) {
+  const s = list();
+  const values = use(ValuesContext);
   return (
-    <Stack as="ul" aria-label={label} className={list().root()}>
+    <Stack
+      as="ul"
+      gap={values ? "screen-air" : undefined}
+      aria-label={label}
+      className={values ? `${s.root()} ${s.values()}` : s.root()}
+    >
       {children}
     </Stack>
   );
@@ -535,6 +619,7 @@ export function SettingsListRow({
 }) {
   const s = list();
   const titleId = useId();
+  const value = use(ValuesContext);
   // Its parts are a space apart in what assistive technology reads of the row, which no box of it shows.
   const parts = (
     <>
@@ -576,7 +661,7 @@ export function SettingsListRow({
       </Stack>
     );
   return (
-    <Row as="li" align="center" gap="screen-row-gap" className={s.row()}>
+    <Row as="li" align="center" gap="screen-row-gap" className={value ? s.value() : s.row()}>
       {parts}
       {end !== undefined && end !== null && end !== false && (
         <Row as="span" inline rigid align="center" gap="screen-tabs-gap" role="group" aria-labelledby={titleId}>

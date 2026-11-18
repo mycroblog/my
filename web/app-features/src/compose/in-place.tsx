@@ -24,7 +24,7 @@ import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { EditorFailed, PostText, retryEditors } from "./editors";
 import { ComposerEmoji } from "./emoji";
-import { emptyDraft, maxAttachments, nearChars, usedChars, type Draft } from "./model";
+import { descriptionRequired, emptyDraft, maxAttachments, nearChars, usedChars, type Draft } from "./model";
 import { useSuggestions } from "./suggest";
 import { useComposer } from "./use-composer";
 
@@ -206,7 +206,7 @@ function Box({ to, people, names, pickerSheet = false, onPosted }: InPlaceReplyP
               missing={
                 a.description.trim() === ""
                   ? c.settings.requireDescriptions && c.checked
-                    ? { text: t("compose.description.required"), required: true }
+                    ? { text: t(descriptionRequired(c.settings)), required: true }
                     : { text: t("compose.description.missing"), required: false }
                   : undefined
               }

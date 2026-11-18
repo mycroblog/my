@@ -10,6 +10,7 @@ import { NetworkError, ProblemError } from "@mycroblog/mykit";
 import { viewerQuery } from "./accounts";
 import type { AppData } from "./app-data";
 import { refusedField, useComposeSettings } from "./compose";
+import { instanceQuery } from "./instance";
 import {
   preferencesQuery,
   updatePreferences,
@@ -164,6 +165,39 @@ describe("a change", () => {
       policy: { reply: { audience: "everyone" }, quote: { audience: "nobody", approval: false } },
     });
   });
+});
+
+describe("who requires media descriptions", () => {
+  // The server's rule for everyone, the reader's own switch, and what the composer's settings then say.
+  const cases = [
+    [
+      "the server alone",
+      { requiresDescriptions: true },
+      { requireDescriptions: true, descriptionsRequiredBy: "server" },
+    ],
+    [
+      "the reader alone",
+      { preferences: { require_media_description: true } },
+      { requireDescriptions: true, descriptionsRequiredBy: "own" },
+    ],
+    [
+      "both, which is the server's rule: the reader's switch cannot lift it",
+      { requiresDescriptions: true, preferences: { require_media_description: true } },
+      { requireDescriptions: true, descriptionsRequiredBy: "server" },
+    ],
+    ["nobody", {}, { requireDescriptions: false, descriptionsRequiredBy: undefined }],
+  ] as const;
+
+  for (const [who, options, says] of cases)
+    test(`${who}: the composer's settings say so`, async () => {
+      const { data } = fakeData(options);
+      await data.queryClient.query(instanceQuery(data));
+      await data.queryClient.query(preferencesQuery(data));
+
+      const { requireDescriptions, descriptionsRequiredBy } = probe(data, () => useComposeSettings());
+
+      expect({ requireDescriptions, descriptionsRequiredBy }).toEqual(says);
+    });
 });
 
 describe("a change the server refuses", () => {

@@ -56,6 +56,9 @@ const en = {
     ["A passkey with a name long enough to wrap on a phone", "Added Jun 12 · used 5d ago"],
   ],
   none: "No passkeys yet.",
+  languages: "Languages to show",
+  languagesAbout: "Posts in other languages are left out of every timeline.",
+  addLanguage: "Add a language",
   filters: "Filters",
   addFilter: "Add a filter",
   filterRows: [
@@ -119,6 +122,9 @@ const ja: typeof en = {
     ["スマートフォンで折り返すほど長い名前を付けたパスキー", "6月12日に追加 · 5日前に使用"],
   ],
   none: "パスキーはまだありません。",
+  languages: "表示する言語",
+  languagesAbout: "ほかの言語の投稿は、どのタイムラインにも表示しません。",
+  addLanguage: "言語を追加",
   filters: "フィルター",
   addFilter: "フィルターを追加",
   filterRows: [
@@ -265,6 +271,25 @@ function Lists() {
       {/* Empty: the sentence and the add action in the rows' place; the head leaves the action out. */}
       <SettingsSection heading={w.passkeys} about={w.passkeysAbout}>
         <SettingsEmpty action={<Button size="timeline">{w.add}</Button>}>{w.none}</SettingsEmpty>
+      </SettingsSection>
+      {/* The values of a setting, which its control adds to: close under its row, as its own, then the next setting. */}
+      <SettingsSection heading={w.arrive}>
+        <SettingRow
+          id="values"
+          label={w.languages}
+          about={w.languagesAbout}
+          save={null}
+          values={
+            <SettingsList label={w.languages}>
+              {["English", "日本語"].map((title) => (
+                <SettingsListRow key={title} title={title} end={<Button size="timeline">{w.remove}</Button>} />
+              ))}
+            </SettingsList>
+          }
+        >
+          <Select options={[{ value: "", label: w.addLanguage }]} />
+        </SettingRow>
+        <Switch label={w.arrive} description={w.arriveAbout} save={null} />
       </SettingsSection>
       {/* The one list of a screen: adding is the screen's primary action; a row opens the screen under the entry. */}
       <SettingsSection
