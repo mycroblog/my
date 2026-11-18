@@ -137,7 +137,9 @@ export function Status({ page }: { page: AuthPage }) {
     ? t("auth.status.deactivated_title")
     : status.restricted
       ? t("auth.status.restricted_title")
-      : t("auth.status.title");
+      : status.rejected
+        ? t("auth.status.rejected_title")
+        : t("auth.status.title");
   return (
     <AuthFrame page={page} title={title}>
       <FormHead title={title}>{page.notice && <FormText role="status">{page.notice}</FormText>}</FormHead>

@@ -10,4 +10,5 @@ export default meta;
 
 export const Pending = authStory("status", "pending");
 export const Restricted = authStory("status", "restricted");
+export const Rejected = authStory("status", "rejected");
 export const Deactivated = authStory("status", "deactivated");
