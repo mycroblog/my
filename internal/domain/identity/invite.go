@@ -43,8 +43,43 @@ type InviterFacts struct {
 // invite a member created lets people sign up (ADR-0106 §14, §16): the registration is not
 // closed, the account is active, approved, and neither suspended nor limited, and the instance
 // lets everyone create invites or the user holds create_invites.
-func MayCreateInvites(f InviterFacts) bool {
-	return f.Mode != RegistrationClosed && f.Active && f.Approved && !f.Restricted && (f.EveryoneInvites || f.HasPermission)
+func MayCreateInvites(f InviterFacts) bool { return f.Refusal() == "" }
+
+// InviteRefusal is why a user may not create invites of their own (InviterFacts.Refusal).
+type InviteRefusal string
+
+// Invite refusals.
+const (
+	// InviteRefusalRegistrationClosed: the registration mode is closed, which takes no new
+	// accounts.
+	InviteRefusalRegistrationClosed InviteRefusal = "registration_closed"
+	// InviteRefusalNotPermitted: the instance setting invite_creators is not everyone and the
+	// user's roles lack create_invites.
+	InviteRefusalNotPermitted InviteRefusal = "not_permitted"
+	// InviteRefusalNotApproved: the user's registration is pending or rejected.
+	InviteRefusalNotApproved InviteRefusal = "not_approved"
+	// InviteRefusalRestricted: moderation suspended or limited the account or disabled its
+	// login, or the account is not active. An account that is not active has no cause of its
+	// own: it cannot use the app, so its user is told none.
+	InviteRefusalRestricted InviteRefusal = "restricted"
+)
+
+// Refusal returns why the user may not create invites of their own, "" when they may
+// (MayCreateInvites). When several causes hold it is the first of the registration mode, which
+// refuses everyone, the permission, the approval, and the restriction. The permission comes
+// before the approval and the restriction because those are read only for a user it lets.
+func (f InviterFacts) Refusal() InviteRefusal {
+	switch {
+	case f.Mode == RegistrationClosed:
+		return InviteRefusalRegistrationClosed
+	case !f.EveryoneInvites && !f.HasPermission:
+		return InviteRefusalNotPermitted
+	case !f.Approved:
+		return InviteRefusalNotApproved
+	case !f.Active || f.Restricted:
+		return InviteRefusalRestricted
+	}
+	return ""
 }
 
 // The defaults of the invites members create (ADR-0106 §15).

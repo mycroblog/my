@@ -197,7 +197,7 @@ description: |
   - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
     own now: the instance setting `invite_creators` and the user's roles do not let them, the
     account is suspended or limited, its registration is not approved, or the registration is
-    `closed`.
+    `closed`. Its `reason` says which.
   - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
     as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
     expire or be used up.

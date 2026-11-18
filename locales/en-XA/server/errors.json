@@ -319,6 +319,10 @@
     "defaultMessage": "[Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ƈřḗḗȧȧŧḗḗ īƞṽīŧḗḗş.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.invites.not_allowed_detail": {
+    "defaultMessage": "[{reason,select,not_approved{Ẏǿǿŭŭř řḗḗɠīşŧřȧȧŧīǿǿƞ īş ƞǿǿŧ ȧȧƥƥřǿǿṽḗḗḓ ẏḗḗŧ. Ẇȧȧīŧ ƒǿǿř ȧȧ ḿǿǿḓḗḗřȧȧŧǿǿř'ş ȧȧƥƥřǿǿṽȧȧŀ.} not_permitted{Ǿƞŀẏ şǿǿḿḗḗ ȧȧƈƈǿǿŭŭƞŧş ƈȧȧƞ ƈřḗḗȧȧŧḗḗ īƞṽīŧḗḗş ǿǿƞ ŧħīş şḗḗřṽḗḗř. Ȧşķ īŧş ȧȧḓḿīƞīşŧřȧȧŧǿǿřş ŧǿǿ ŀḗḗŧ ẏǿǿŭŭ ƈřḗḗȧȧŧḗḗ ŧħḗḗḿ.} other{Ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ƈřḗḗȧȧŧḗḗ īƞṽīŧḗḗş ƞǿǿẇ.} registration_closed{Ŧħīş şḗḗřṽḗḗř ŧȧȧķḗḗş ƞǿǿ ƞḗḗẇ ȧȧƈƈǿǿŭŭƞŧş ƞǿǿẇ, şǿǿ ƞǿǿ īƞṽīŧḗḗ ƈȧȧƞ ƀḗḗ ƈřḗḗȧȧŧḗḗḓ.} restricted{Ȧ ḿǿǿḓḗḗřȧȧŧīǿǿƞ ȧȧƈŧīǿǿƞ ķḗḗḗḗƥş ẏǿǿŭŭř ȧȧƈƈǿǿŭŭƞŧ ƒřǿǿḿ ƈřḗḗȧȧŧīƞɠ īƞṽīŧḗḗş ƒǿǿř ƞǿǿẇ.}}]",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.invites.registration_closed": {
     "defaultMessage": "[Ŧħīş şḗḗřṽḗḗř ŧȧȧķḗḗş ƞǿǿ ƞḗḗẇ ȧȧƈƈǿǿŭŭƞŧş ƞǿǿẇ, şǿǿ ƞǿǿ īƞṽīŧḗḗ ƈȧȧƞ ƀḗḗ ƈřḗḗȧȧŧḗḗḓ.]",
     "description": "Generated from en by tools/i18n; do not edit."

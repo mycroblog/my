@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: MIT
+description: |
+  The problem of a user who may not create invites of their own now (403,
+  `/api/v1/problems/invites-not-allowed`); `reason` says why, and `detail` says it to the
+  user. Another 403 has none.
+allOf:
+  - $ref: ./Problem.yaml
+  - type: object
+    properties:
+      reason:
+        $ref: ./InvitesNotAllowedReason.yaml

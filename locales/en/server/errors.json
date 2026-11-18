@@ -613,7 +613,11 @@
   },
   "errors.invites.not_allowed": {
     "defaultMessage": "You cannot create invites.",
-    "description": "Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts."
+    "description": "Title of the HTTP 403 API error when the user may not create invites of their own; the detail says why."
+  },
+  "errors.invites.not_allowed_detail": {
+    "defaultMessage": "{reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved yet. Wait for a moderator's approval.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}",
+    "description": "Detail of the HTTP 403 API error when the user may not create invites of their own. {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account waits for approval), or restricted (a moderation action on the account)."
   },
   "errors.invites.too_many": {
     "defaultMessage": "You have as many usable invites as allowed. Revoke one, or wait until one expires or is used up.",

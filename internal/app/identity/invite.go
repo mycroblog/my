@@ -52,11 +52,22 @@ var (
 	// ErrInvitesNotAllowed reports a user who may not create invites of their own now: the
 	// instance setting invite_creators and the user's roles do not let them, moderation
 	// restricts the account, the registration is not approved, or the registration is closed.
+	// Every InvitesNotAllowedError matches it.
 	ErrInvitesNotAllowed = errors.New("identity: the user may not create invites")
 	// ErrTooManyInvites reports a member who already holds as many usable invites as
 	// member_invite_max_active allows.
 	ErrTooManyInvites = errors.New("identity: too many usable invites")
 )
+
+// InvitesNotAllowedError reports why a user may not create invites of their own now.
+type InvitesNotAllowedError struct{ Reason identity.InviteRefusal }
+
+func (e *InvitesNotAllowedError) Error() string {
+	return ErrInvitesNotAllowed.Error() + ": " + string(e.Reason)
+}
+
+// Is makes the error match ErrInvitesNotAllowed.
+func (e *InvitesNotAllowedError) Is(target error) bool { return target == ErrInvitesNotAllowed }
 
 // newInviteCode returns InviteCodeLength characters of base32 from 80 random bits.
 func newInviteCode() string {
@@ -469,6 +480,8 @@ type OwnInvites struct {
 	// MayCreate reports whether the member may create invites now (identity.MayCreateInvites),
 	// before the cap of usable invites.
 	MayCreate bool
+	// Refusal is why the member may not create invites now, "" when MayCreate is true.
+	Refusal identity.InviteRefusal
 	// Caps are the caps of the members' invites now.
 	Caps identity.MemberInviteCaps
 	// Usable is how many usable invites the member holds, which member_invite_max_active
@@ -497,7 +510,8 @@ func (s *Service) ListOwnInvites(ctx context.Context, userID, before string, lim
 	if err != nil {
 		return OwnInvites{}, err
 	}
-	out := OwnInvites{MayCreate: identity.MayCreateInvites(f), Caps: settings.Caps}
+	refusal := f.Refusal()
+	out := OwnInvites{MayCreate: refusal == "", Refusal: refusal, Caps: settings.Caps}
 	if out.Invites, err = s.d.Repository.ListMemberInvites(ctx, userID, before, limit); err != nil {
 		return OwnInvites{}, err
 	}
@@ -531,8 +545,9 @@ type CreateOwnInviteInput struct {
 }
 
 // CreateOwnInvite creates an invite of a member (ADR-0106 §14, §15), audited with the member as
-// the actor (§6). It fails with ErrInvitesNotAllowed when the member may not create invites
-// now, with identity.ErrInviteUsesOverCap or identity.ErrInviteExpiryOverCap for a value
+// the actor (§6). It fails with an *InvitesNotAllowedError, which says why and matches
+// ErrInvitesNotAllowed, when the member may not create invites now, with
+// identity.ErrInviteUsesOverCap or identity.ErrInviteExpiryOverCap for a value
 // outside the caps, and with ErrTooManyInvites when the member already holds
 // member_invite_max_active usable invites. Two creations at the same moment may both pass the
 // last free place: the cap is a limit of abuse, not an invariant of the data.
@@ -549,8 +564,8 @@ func (s *Service) CreateOwnInvite(ctx context.Context, in CreateOwnInviteInput) 
 	if err != nil {
 		return InviteStatus{}, err
 	}
-	if !identity.MayCreateInvites(f) {
-		return InviteStatus{}, ErrInvitesNotAllowed
+	if reason := f.Refusal(); reason != "" {
+		return InviteStatus{}, &InvitesNotAllowedError{Reason: reason}
 	}
 	uses, expiresIn, err := settings.Caps.Resolve(in.MaxUses, in.ExpiresIn)
 	if err != nil {

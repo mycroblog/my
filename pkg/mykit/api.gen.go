@@ -3704,6 +3704,30 @@ func (e InviteCreatorKind) Valid() bool {
 	}
 }
 
+// Defines values for InvitesNotAllowedReason.
+const (
+	InvitesNotAllowedReasonNotApproved        InvitesNotAllowedReason = "not_approved"
+	InvitesNotAllowedReasonNotPermitted       InvitesNotAllowedReason = "not_permitted"
+	InvitesNotAllowedReasonRegistrationClosed InvitesNotAllowedReason = "registration_closed"
+	InvitesNotAllowedReasonRestricted         InvitesNotAllowedReason = "restricted"
+)
+
+// Valid indicates whether the value is a known member of the InvitesNotAllowedReason enum.
+func (e InvitesNotAllowedReason) Valid() bool {
+	switch e {
+	case InvitesNotAllowedReasonNotApproved:
+		return true
+	case InvitesNotAllowedReasonNotPermitted:
+		return true
+	case InvitesNotAllowedReasonRegistrationClosed:
+		return true
+	case InvitesNotAllowedReasonRestricted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for KeywordFilterAction.
 const (
 	KeywordFilterActionHide KeywordFilterAction = "hide"
@@ -13269,6 +13293,49 @@ type InteractionRule struct {
 // under the caps of the instance settings; it works only while its creator may create invites.
 type InviteCreatorKind string
 
+// InvitesNotAllowedProblem The problem of a user who may not create invites of their own now (403,
+// `/api/v1/problems/invites-not-allowed`); `reason` says why, and `detail` says it to the
+// user. Another 403 has none.
+type InvitesNotAllowedProblem struct {
+	// Detail An explanation of this occurrence, localized from `Accept-Language`.
+	Detail *string `json:"detail,omitempty"`
+
+	// Field The member of the request that a 422 is about, by its name in the request: a property of
+	// the JSON body by its path (`display_name`, `fields[].name`, `poll.options[1]`), a form
+	// field, a query parameter, or a header (`Idempotency-Key`). `detail` then says what is
+	// wrong with its value without naming it, for the client to show beside that field. Absent
+	// when the problem is not about one member.
+	Field *string `json:"field,omitempty"`
+
+	// Reason Why the user may not create invites of their own now, the first that holds of
+	// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+	// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+	// roles lack `create_invites`; `not_approved`: the registration of the account is not
+	// approved; `restricted`: the account is suspended or limited.
+	Reason *InvitesNotAllowedReason `json:"reason,omitempty"`
+
+	// RequestId The request ID (the `X-Request-Id` response header), for reporting the problem.
+	RequestId *string `json:"request_id,omitempty"`
+
+	// Status The HTTP status code.
+	Status int `json:"status"`
+
+	// Title A short summary of the problem type, localized from `Accept-Language`.
+	Title string `json:"title"`
+
+	// Type A URI that identifies the problem type, stable for clients to branch on.
+	// It is `about:blank` when the problem means no more than its HTTP status.
+	Type                 string                 `json:"type"`
+	AdditionalProperties map[string]interface{} `json:"-"`
+}
+
+// InvitesNotAllowedReason Why the user may not create invites of their own now, the first that holds of
+// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+// roles lack `create_invites`; `not_approved`: the registration of the account is not
+// approved; `restricted`: the account is suspended or limited.
+type InvitesNotAllowedReason string
+
 // IssueOAuthAppTokenRequest The scope of the tokens of an app for the authenticated user.
 type IssueOAuthAppTokenRequest struct {
 	// Scope Space-separated scopes within the app's; omitted or empty, the app's whole scope.
@@ -14863,9 +14930,17 @@ type OwnInvitePage struct {
 	// `everyone` or the user's roles have `create_invites`, the account is neither
 	// suspended nor limited, its registration is approved, and the registration mode is
 	// not `closed`. It does not count the cap of usable invites (`usable` against
-	// `limits.max_active`).
-	CanCreate bool        `json:"can_create"`
-	Items     []OwnInvite `json:"items"`
+	// `limits.max_active`). When it is false, `cannot_create_reason` says why; when it is
+	// true, `cannot_create_reason` is omitted.
+	CanCreate bool `json:"can_create"`
+
+	// CannotCreateReason Why the user may not create invites of their own now, the first that holds of
+	// `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+	// `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+	// roles lack `create_invites`; `not_approved`: the registration of the account is not
+	// approved; `restricted`: the account is suspended or limited.
+	CannotCreateReason *InvitesNotAllowedReason `json:"cannot_create_reason,omitempty"`
+	Items              []OwnInvite              `json:"items"`
 
 	// Limits The caps and defaults of the invites that members create, from the instance settings
 	// `member_invite_max_active`, `member_invite_max_uses`, and `member_invite_max_lifetime_seconds`.
@@ -15445,7 +15520,7 @@ type PreviewDomainBlockImportRequest struct {
 //   - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
 //     own now: the instance setting `invite_creators` and the user's roles do not let them, the
 //     account is suspended or limited, its registration is not approved, or the registration is
-//     `closed`.
+//     `closed`. Its `reason` says which.
 //   - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
 //     as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
 //     expire or be used up.
@@ -20084,6 +20159,158 @@ func (a *CustomEmojiRequestProblem) UnmarshalJSON(b []byte) error {
 
 // Override default JSON handling for CustomEmojiRequestProblem to handle AdditionalProperties
 func (a CustomEmojiRequestProblem) MarshalJSON() ([]byte, error) {
+	var err error
+	object := make(map[string]json.RawMessage)
+
+	if a.Detail != nil {
+		object["detail"], err = json.Marshal(a.Detail)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'detail': %w", err)
+		}
+	}
+
+	if a.Field != nil {
+		object["field"], err = json.Marshal(a.Field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'field': %w", err)
+		}
+	}
+
+	if a.Reason != nil {
+		object["reason"], err = json.Marshal(a.Reason)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'reason': %w", err)
+		}
+	}
+
+	if a.RequestId != nil {
+		object["request_id"], err = json.Marshal(a.RequestId)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling 'request_id': %w", err)
+		}
+	}
+
+	object["status"], err = json.Marshal(a.Status)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'status': %w", err)
+	}
+
+	object["title"], err = json.Marshal(a.Title)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'title': %w", err)
+	}
+
+	object["type"], err = json.Marshal(a.Type)
+	if err != nil {
+		return nil, fmt.Errorf("error marshaling 'type': %w", err)
+	}
+
+	for fieldName, field := range a.AdditionalProperties {
+		object[fieldName], err = json.Marshal(field)
+		if err != nil {
+			return nil, fmt.Errorf("error marshaling '%s': %w", fieldName, err)
+		}
+	}
+	return json.Marshal(object)
+}
+
+// Getter for additional properties for InvitesNotAllowedProblem. Returns the specified
+// element and whether it was found
+func (a InvitesNotAllowedProblem) Get(fieldName string) (value interface{}, found bool) {
+	if a.AdditionalProperties != nil {
+		value, found = a.AdditionalProperties[fieldName]
+	}
+	return
+}
+
+// Setter for additional properties for InvitesNotAllowedProblem
+func (a *InvitesNotAllowedProblem) Set(fieldName string, value interface{}) {
+	if a.AdditionalProperties == nil {
+		a.AdditionalProperties = make(map[string]interface{})
+	}
+	a.AdditionalProperties[fieldName] = value
+}
+
+// Override default JSON handling for InvitesNotAllowedProblem to handle AdditionalProperties
+func (a *InvitesNotAllowedProblem) UnmarshalJSON(b []byte) error {
+	object := make(map[string]json.RawMessage)
+	err := json.Unmarshal(b, &object)
+	if err != nil {
+		return err
+	}
+
+	if raw, found := object["detail"]; found {
+		err = json.Unmarshal(raw, &a.Detail)
+		if err != nil {
+			return fmt.Errorf("error reading 'detail': %w", err)
+		}
+		delete(object, "detail")
+	}
+
+	if raw, found := object["field"]; found {
+		err = json.Unmarshal(raw, &a.Field)
+		if err != nil {
+			return fmt.Errorf("error reading 'field': %w", err)
+		}
+		delete(object, "field")
+	}
+
+	if raw, found := object["reason"]; found {
+		err = json.Unmarshal(raw, &a.Reason)
+		if err != nil {
+			return fmt.Errorf("error reading 'reason': %w", err)
+		}
+		delete(object, "reason")
+	}
+
+	if raw, found := object["request_id"]; found {
+		err = json.Unmarshal(raw, &a.RequestId)
+		if err != nil {
+			return fmt.Errorf("error reading 'request_id': %w", err)
+		}
+		delete(object, "request_id")
+	}
+
+	if raw, found := object["status"]; found {
+		err = json.Unmarshal(raw, &a.Status)
+		if err != nil {
+			return fmt.Errorf("error reading 'status': %w", err)
+		}
+		delete(object, "status")
+	}
+
+	if raw, found := object["title"]; found {
+		err = json.Unmarshal(raw, &a.Title)
+		if err != nil {
+			return fmt.Errorf("error reading 'title': %w", err)
+		}
+		delete(object, "title")
+	}
+
+	if raw, found := object["type"]; found {
+		err = json.Unmarshal(raw, &a.Type)
+		if err != nil {
+			return fmt.Errorf("error reading 'type': %w", err)
+		}
+		delete(object, "type")
+	}
+
+	if len(object) != 0 {
+		a.AdditionalProperties = make(map[string]interface{})
+		for fieldName, fieldBuf := range object {
+			var fieldVal interface{}
+			err := json.Unmarshal(fieldBuf, &fieldVal)
+			if err != nil {
+				return fmt.Errorf("error unmarshaling field %s: %w", fieldName, err)
+			}
+			a.AdditionalProperties[fieldName] = fieldVal
+		}
+	}
+	return nil
+}
+
+// Override default JSON handling for InvitesNotAllowedProblem to handle AdditionalProperties
+func (a InvitesNotAllowedProblem) MarshalJSON() ([]byte, error) {
 	var err error
 	object := make(map[string]json.RawMessage)
 
@@ -26823,7 +27050,8 @@ type ClientInterface interface {
 	//
 	// The invites that the user created as a member, newest first, with how they
 	// have been used, and what the user may do: whether they may create an invite now
-	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+	// (`can_create`) and why not (`cannot_create_reason`), the caps of the instance settings,
+	// and how many usable invites they hold.
 	// A user who may no longer create invites still lists and revokes the ones they made; an
 	// otherwise usable one is then `creator_ineligible`. Invites of the staff
 	// (`/admin/invites`) are not listed.
@@ -26841,7 +27069,8 @@ type ClientInterface interface {
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
-	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+	// whose `reason` says which.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
 	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -26865,7 +27094,8 @@ type ClientInterface interface {
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
-	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+	// whose `reason` says which.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
 	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -38455,7 +38685,8 @@ func (c *Client) RejectInteractionRequest(ctx context.Context, id InteractionReq
 //
 // The invites that the user created as a member, newest first, with how they
 // have been used, and what the user may do: whether they may create an invite now
-// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+// (`can_create`) and why not (`cannot_create_reason`), the caps of the instance settings,
+// and how many usable invites they hold.
 // A user who may no longer create invites still lists and revokes the ones they made; an
 // otherwise usable one is then `creator_ineligible`. Invites of the staff
 // (`/admin/invites`) are not listed.
@@ -38483,7 +38714,8 @@ func (c *Client) ListOwnInvites(ctx context.Context, params *ListOwnInvitesParam
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
-// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+// whose `reason` says which.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
 // `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -38517,7 +38749,8 @@ func (c *Client) CreateOwnInviteWithBody(ctx context.Context, contentType string
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
-// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+// whose `reason` says which.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
 // `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -68765,7 +68998,8 @@ type ClientWithResponsesInterface interface {
 	//
 	// The invites that the user created as a member, newest first, with how they
 	// have been used, and what the user may do: whether they may create an invite now
-	// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+	// (`can_create`) and why not (`cannot_create_reason`), the caps of the instance settings,
+	// and how many usable invites they hold.
 	// A user who may no longer create invites still lists and revokes the ones they made; an
 	// otherwise usable one is then `creator_ineligible`. Invites of the staff
 	// (`/admin/invites`) are not listed.
@@ -68785,7 +69019,8 @@ type ClientWithResponsesInterface interface {
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
-	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+	// whose `reason` says which.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
 	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -68809,7 +69044,8 @@ type ClientWithResponsesInterface interface {
 	// person who signs up with it is approved at once. The user may create one when the
 	// instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 	// their account is neither suspended nor limited, their registration is approved, and the
-	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+	// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+	// whose `reason` says which.
 	// `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 	// value over the cap of the instance settings (`member_invite_max_uses`,
 	// `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -92217,6 +92453,12 @@ type CreateOwnInviteResponse201Headers struct {
 	CacheControl *string
 }
 
+// CreateOwnInviteResponse403Headers the declared response headers of an HTTP 403 response for CreateOwnInvite
+type CreateOwnInviteResponse403Headers struct {
+	CacheControl    *string
+	ContentLanguage *string
+}
+
 // CreateOwnInviteResponseDefaultHeaders the declared response headers of an HTTP default response for CreateOwnInvite
 type CreateOwnInviteResponseDefaultHeaders struct {
 	CacheControl    *string
@@ -92230,10 +92472,14 @@ type CreateOwnInviteResponse struct {
 	HTTPResponse *http.Response
 	// JSON201 the response for an HTTP 201 `application/json` response
 	JSON201 *OwnInvite
+	// ApplicationproblemJSON403 the response for an HTTP 403 `application/problem+json` response
+	ApplicationproblemJSON403 *InvitesNotAllowedProblem
 	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
 	ApplicationproblemJSONDefault *Problem
 	// Headers201 the parsed response headers for an HTTP 201 response
 	Headers201 *CreateOwnInviteResponse201Headers
+	// Headers403 the parsed response headers for an HTTP 403 response
+	Headers403 *CreateOwnInviteResponse403Headers
 	// HeadersDefault the parsed response headers for an HTTP default response
 	HeadersDefault *CreateOwnInviteResponseDefaultHeaders
 }
@@ -92241,6 +92487,11 @@ type CreateOwnInviteResponse struct {
 // GetJSON201 returns the response for an HTTP 201 `application/json` response
 func (r CreateOwnInviteResponse) GetJSON201() *OwnInvite {
 	return r.JSON201
+}
+
+// GetApplicationproblemJSON403 returns the response for an HTTP 403 `application/problem+json` response
+func (r CreateOwnInviteResponse) GetApplicationproblemJSON403() *InvitesNotAllowedProblem {
+	return r.ApplicationproblemJSON403
 }
 
 // GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
@@ -109555,7 +109806,8 @@ func (c *ClientWithResponses) RejectInteractionRequestWithResponse(ctx context.C
 //
 // The invites that the user created as a member, newest first, with how they
 // have been used, and what the user may do: whether they may create an invite now
-// (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+// (`can_create`) and why not (`cannot_create_reason`), the caps of the instance settings,
+// and how many usable invites they hold.
 // A user who may no longer create invites still lists and revokes the ones they made; an
 // otherwise usable one is then `creator_ineligible`. Invites of the staff
 // (`/admin/invites`) are not listed.
@@ -109581,7 +109833,8 @@ func (c *ClientWithResponses) ListOwnInvitesWithResponse(ctx context.Context, pa
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
-// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+// whose `reason` says which.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
 // `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -109611,7 +109864,8 @@ func (c *ClientWithResponses) CreateOwnInviteWithBodyWithResponse(ctx context.Co
 // person who signs up with it is approved at once. The user may create one when the
 // instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
 // their account is neither suspended nor limited, their registration is approved, and the
-// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+// registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+// whose `reason` says which.
 // `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
 // value over the cap of the instance settings (`member_invite_max_uses`,
 // `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -138365,6 +138619,13 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 		}
 		response.JSON201 = &dest
 
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 403:
+		var dest InvitesNotAllowedProblem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSON403 = &dest
+
 	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
 		var dest Problem
 		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
@@ -138385,6 +138646,23 @@ func ParseCreateOwnInviteResponse(rsp *http.Response) (*CreateOwnInviteResponse,
 			headers.CacheControl = &value
 		}
 		response.Headers201 = &headers
+	case rsp.StatusCode == 403:
+		var headers CreateOwnInviteResponse403Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		response.Headers403 = &headers
 	case true:
 		var headers CreateOwnInviteResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {

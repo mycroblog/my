@@ -64,7 +64,7 @@
     "server:errors.translation.unavailable",
     "server:errors.translation.unsupported_language",
     "server:errors.target_outranks_actor",
-    "server:errors.invites.not_allowed",
+    "server:errors.invites.not_allowed_detail#registration_closed",
     "server:errors.invites.registration_closed",
     "server:errors.oauth_app.registration_disabled",
     "server:errors.oauth_app.disabled",
@@ -101,7 +101,8 @@
     "server:errors.invalid_custom_emoji_detail#local_emoji"
   ],
   "A moderation action restricts the reader's account, and the app has no screen yet to appeal it (#3115): there is no step to point to.": [
-    "server:errors.supporters.ineligible_detail#restricted"
+    "server:errors.supporters.ineligible_detail#restricted",
+    "server:errors.invites.not_allowed_detail#restricted"
   ],
   "The fallback of a rule the server checks, shown only for a reason the other branches do not name: no step fits every case.": [
     "server:errors.relay.invalid_detail#other",
@@ -112,7 +113,8 @@
     "server:errors.supporters.tip_amounts_invalid_detail#other",
     "server:errors.webhook.invalid_detail#other",
     "server:errors.invalid_custom_emoji_detail#other",
-    "server:errors.custom_emoji_request_conflict_detail#other"
+    "server:errors.custom_emoji_request_conflict_detail#other",
+    "server:errors.invites.not_allowed_detail#other"
   ],
   "An app or another server reads it, not a person: what must change is the request the software sent.": [
     "server:errors.invalid_parameter",
