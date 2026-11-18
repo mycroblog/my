@@ -4,7 +4,9 @@ package clientapi_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
+	"reflect"
 	"testing"
 	"time"
 
@@ -126,5 +128,65 @@ func TestMoveOwnAccount(t *testing.T) {
 	res = e.sendJSON(t, http.MethodPost, "/statuses", "write", `{"text":"hello","visibility":"public"}`)
 	if res.StatusCode == http.StatusForbidden {
 		t.Errorf("post after the cancellation = %d, want it accepted", res.StatusCode)
+	}
+}
+
+// TestVerifyAccountCredentialsSaysWhereItMoved checks that the credential account carries the
+// move as the public account does: after a move its moved names the target, the same account
+// as the public read of the viewer; after the cancellation, and for an account that never
+// moved, it has none.
+func TestVerifyAccountCredentialsSaysWhereItMoved(t *testing.T) {
+	own := &fakeOwnAccount{}
+	moves := &fakeLocalMoves{states: map[string]account.MoveState{}}
+	e := newAuthEnv(t, func(o *clientapi.Options) {
+		o.OwnAccount = own
+		o.MoveConfirmations = own
+		o.LocalMoves = moves
+		o.Moves = fakeMoves{states: moves.states}
+		o.Accounts.(fakeAccounts)[bobAccountID] = appaccount.Actor{
+			Account:   account.Account{ID: bobAccountID, URI: "https://social.example/ap/actors/" + bobAccountID, CreatedAt: createdAt},
+			Local:     &account.LocalAccount{AccountID: bobAccountID, UserID: userOf(bobAccountID), Username: "bob"},
+			Profile:   &account.ProfileRevision{DisplayName: "Bob"},
+			Lifecycle: account.InitialLifecycleState(bobAccountID),
+		}
+	})
+	decode := func(res *http.Response) clientapi.Account {
+		t.Helper()
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("status = %d, want 200", res.StatusCode)
+		}
+		var got clientapi.Account
+		if err := json.NewDecoder(res.Body).Decode(&got); err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	credentials := func() clientapi.Account {
+		t.Helper()
+		return decode(e.get(t, "/accounts/verify_credentials", map[string]string{"Authorization": "Bearer read"}))
+	}
+
+	if got := credentials(); got.Moved != nil {
+		t.Errorf("moved of an account that never moved = %+v, want none", got.Moved)
+	}
+
+	res := e.sendJSON(t, http.MethodPost, "/accounts/move", "write", `{"target_account_id":"`+bobAccountID+`","password":"secret"}`)
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("move = %d, want 204", res.StatusCode)
+	}
+	got := credentials()
+	if got.Moved == nil || got.Moved.Id != bobAccountID {
+		t.Fatalf("moved after the move = %+v, want the account %s", got.Moved, bobAccountID)
+	}
+	if want := decode(e.get(t, "/accounts/"+aliceAccountID, nil)).Moved; !reflect.DeepEqual(got.Moved, want) {
+		t.Errorf("credential moved = %+v, public moved = %+v, want the same", got.Moved, want)
+	}
+
+	res = e.sendJSON(t, http.MethodDelete, "/accounts/move", "write", "")
+	if res.StatusCode != http.StatusNoContent {
+		t.Fatalf("cancel = %d, want 204", res.StatusCode)
+	}
+	if got := credentials(); got.Moved != nil {
+		t.Errorf("moved after the cancellation = %+v, want none", got.Moved)
 	}
 }
