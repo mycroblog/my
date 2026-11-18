@@ -64,21 +64,118 @@ describe("a moment and what a zone's clock reads at it", () => {
   test("the seconds of a moment are not part of what the clock reads", () => {
     expect(wallTime(new Date("2026-11-16T09:00:42.500Z"), "Asia/Kolkata")).toEqual(wall(2026, 11, 16, 14, 30));
   });
+});
 
-  test("a time the zone's clock reads twice names one of its two moments", () => {
-    // 01:30 on the night New York's clock goes back: 05:30 and 06:30 UTC both read so.
-    const twice = wall(2026, 11, 1, 1, 30);
-    const named = instantAt(twice, "America/New_York");
+/** The moment `reads` names on the clock of the device, while the device is in `zone`. */
+function onADeviceIn(zone: string, reads: WallTime): string {
+  const before = process.env.TZ;
+  process.env.TZ = zone;
+  try {
+    return instantAt(reads, undefined).toISOString();
+  } finally {
+    if (before === undefined) delete process.env.TZ;
+    else process.env.TZ = before;
+  }
+}
 
-    expect(["2026-11-01T05:30:00.000Z", "2026-11-01T06:30:00.000Z"]).toContain(named.toISOString());
-    expect(wallTime(named, "America/New_York")).toEqual(twice);
+describe("a time the zone's clock reads twice is the earlier of its two moments", () => {
+  // The zone, the time its clock reads twice as it goes back, and the first moment that reads so.
+  const table: readonly (readonly [string, WallTime, string])[] = [
+    // New York's clock goes from 01:59 summer time back to 01:00: the hour from 05:00 UTC reads as the next does.
+    ["America/New_York", wall(2026, 11, 1, 1, 0), "2026-11-01T05:00:00.000Z"],
+    ["America/New_York", wall(2026, 11, 1, 1, 30), "2026-11-01T05:30:00.000Z"],
+    ["America/New_York", wall(2026, 11, 1, 1, 59), "2026-11-01T05:59:00.000Z"],
+    // Lord Howe's goes from 01:59 back to 01:30: half an hour, from 14:30 UTC of the day before.
+    ["Australia/Lord_Howe", wall(2026, 4, 5, 1, 30), "2026-04-04T14:30:00.000Z"],
+    ["Australia/Lord_Howe", wall(2026, 4, 5, 1, 59), "2026-04-04T14:59:00.000Z"],
+  ];
+
+  for (const [zone, reads, moment] of table)
+    test(`${zone} at ${JSON.stringify(reads)}`, () => {
+      const named = instantAt(reads, zone);
+
+      expect(named.toISOString()).toBe(moment);
+      expect(wallTime(named, zone)).toEqual(reads);
+    });
+
+  test("on the device's own clock too", () => {
+    expect(onADeviceIn("America/New_York", wall(2026, 11, 1, 1, 30))).toBe("2026-11-01T05:30:00.000Z");
+    expect(onADeviceIn("Australia/Lord_Howe", wall(2026, 4, 5, 1, 59))).toBe("2026-04-04T14:59:00.000Z");
+  });
+});
+
+describe("a time the zone's clock skips is that long after the change", () => {
+  // The zone, a time its clock never reads as it goes forward, the moment it names, and what the clock reads then.
+  const table: readonly (readonly [string, WallTime, string, WallTime])[] = [
+    // New York's clock goes from 01:59 to 03:00, at 07:00 UTC.
+    ["America/New_York", wall(2026, 3, 8, 2, 0), "2026-03-08T07:00:00.000Z", wall(2026, 3, 8, 3, 0)],
+    ["America/New_York", wall(2026, 3, 8, 2, 30), "2026-03-08T07:30:00.000Z", wall(2026, 3, 8, 3, 30)],
+    ["America/New_York", wall(2026, 3, 8, 2, 59), "2026-03-08T07:59:00.000Z", wall(2026, 3, 8, 3, 59)],
+    // Lord Howe's goes from 01:59 to 02:30, at 15:30 UTC of the day before.
+    ["Australia/Lord_Howe", wall(2026, 10, 4, 2, 15), "2026-10-03T15:45:00.000Z", wall(2026, 10, 4, 2, 45)],
+    // Apia's calendar went from December 29, 2011 to the 31st: noon of the day it never had is noon of the 31st.
+    ["Pacific/Apia", wall(2011, 12, 30, 12, 0), "2011-12-30T22:00:00.000Z", wall(2011, 12, 31, 12, 0)],
+  ];
+
+  for (const [zone, skipped, moment, reads] of table)
+    test(`${zone} at ${JSON.stringify(skipped)}`, () => {
+      const named = instantAt(skipped, zone);
+
+      expect(named.toISOString()).toBe(moment);
+      expect(wallTime(named, zone)).toEqual(reads);
+    });
+
+  test("on the device's own clock too", () => {
+    expect(onADeviceIn("America/New_York", wall(2026, 3, 8, 2, 30))).toBe("2026-03-08T07:30:00.000Z");
+    expect(onADeviceIn("Australia/Lord_Howe", wall(2026, 10, 4, 2, 15))).toBe("2026-10-03T15:45:00.000Z");
+  });
+});
+
+describe("a date or a time no calendar and no clock has names no moment", () => {
+  // What is wrong with each, where a date of JavaScript would count on into the next month, day or hour.
+  const table: readonly (readonly [string, WallTime])[] = [
+    ["February 30", wall(2026, 2, 30, 10, 0)],
+    ["February 29 of a year that is not a leap year", wall(2026, 2, 29, 10, 0)],
+    ["month 13", wall(2026, 13, 1, 10, 0)],
+    ["month 0", wall(2026, 0, 1, 10, 0)],
+    ["day 0", wall(2026, 11, 0, 10, 0)],
+    ["25:00", wall(2026, 11, 16, 25, 0)],
+    ["minute 61", wall(2026, 11, 16, 10, 61)],
+    ["half a day", wall(2026, 11, 16.5, 10, 0)],
+    ["half an hour as an hour", wall(2026, 11, 16, 10.5, 0)],
+    ["a minute that is no number", wall(2026, 11, 16, 10, Number.NaN)],
+  ];
+
+  for (const [what, none] of table)
+    test(what, () => {
+      for (const zone of ["America/New_York", "UTC", undefined])
+        expect([zone, Number.isNaN(instantAt(none, zone).getTime())]).toEqual([zone, true]);
+    });
+
+  test("February 29 of a leap year is a day", () => {
+    expect(instantAt(wall(2028, 2, 29, 10, 0), "UTC").toISOString()).toBe("2028-02-29T10:00:00.000Z");
+  });
+});
+
+describe("a zone the platform does not know reads as the device's", () => {
+  const unknown = "Mars/Olympus_Mons";
+  const at = new Date("2026-11-16T15:30:00Z");
+
+  test("for what a clock reads at a moment, and for the moment a time names", () => {
+    // Tokyo's, the device's here.
+    expect(wallTime(at, unknown)).toEqual(wall(2026, 11, 17, 0, 30));
+    expect(instantAt(wall(2026, 11, 17, 0, 30), unknown).toISOString()).toBe(at.toISOString());
   });
 
-  test("a time the zone's clock skips names a moment beside the change, never none", () => {
-    // 02:30 on the night New York's clock goes forward: the hour before the change, or the hour after.
-    const named = instantAt(wall(2026, 3, 8, 2, 30), "America/New_York");
+  test("for a date written for a reader, and for the zone's name", () => {
+    expect(dateFormat("en", unknown, { dateStyle: "long", timeStyle: "short" }).format(at)).toBe(
+      "November 17, 2026 at 12:30 AM",
+    );
+    expect(timeZoneName(unknown)).toBe("Asia/Tokyo");
+  });
 
-    expect(["2026-03-08T06:30:00.000Z", "2026-03-08T07:30:00.000Z"]).toContain(named.toISOString());
+  test("but a zone the options of a date name must be one the platform knows", () => {
+    expect(() => dateFormat("en", "America/New_York", { timeStyle: "short", timeZone: unknown })).toThrow(RangeError);
   });
 });
 

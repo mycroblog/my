@@ -194,10 +194,17 @@ async function threadOn(on: FakeApp) {
   };
 }
 
-/** Waits until `read()` holds `words`. */
+/**
+ * Whether `all` says `words` as words of their own, no digit before them and none after: "1:01 PM" is not said by
+ * "11:01 PM", which is what New York's clock reads when Tokyo's reads it.
+ */
+const tells = (all: string, words: string) =>
+  new RegExp(String.raw`(?<!\d)${words.replace(/[.*+?^${}()|[\]\\]/g, String.raw`\$&`)}(?!\d)`).test(all);
+
+/** Waits until `read()` says `words`, as words of their own. */
 const says = (read: () => string, words: string) =>
   waitFor(() => {
-    if (!read().includes(words)) throw new Error(`test: "${read()}" does not say "${words}"`);
+    if (!tells(read(), words)) throw new Error(`test: "${read()}" does not say "${words}"`);
   });
 
 describe("the time zone", () => {
@@ -208,7 +215,7 @@ describe("the time zone", () => {
     await says(details, clock(posted.bread, newYork));
     await says(stamp, clock(posted.butter, newYork));
     // Tokyo's clock, the device's, reads another hour.
-    expect(details()).not.toContain(clock(posted.bread, tokyo));
+    expect(tells(details(), clock(posted.bread, tokyo))).toBe(false);
 
     await app.user.click(
       within(postOf(feed(), "Sam Rivera", "Bread at ten")).getByRole("button", { name: "Edited, show history" }),
@@ -222,7 +229,10 @@ describe("the time zone", () => {
     expect(versions).toHaveLength(2);
     await waitFor(() => {
       const times = within(history).queryAllByRole("time").map(said);
-      if (times.length !== 2 || !versions.every((version, i) => times[i]?.includes(clock(version.created_at, newYork))))
+      if (
+        times.length !== 2 ||
+        !versions.every((version, i) => tells(times[i] ?? "", clock(version.created_at, newYork)))
+      )
         throw new Error(`test: the history's times are ${times.join(", ")}`);
     });
   });
@@ -303,7 +313,7 @@ describe("the app opened again on the device", () => {
     expect(hasPreferences(on)).toBe(false);
     expect(page()).toEqual({ lang: "ja", dir: "ltr" });
     expect(heading()).toBe("投稿");
-    expect(again.details()).toContain(clock(again.posted.bread, newYork, "ja"));
+    expect(tells(again.details(), clock(again.posted.bread, newYork, "ja"))).toBe(true);
   });
 
   test("turns from what the device kept to what the account prefers now, once its preferences are read", async () => {
@@ -348,7 +358,9 @@ describe("a reader without an account", () => {
     expect(page()).toEqual({ lang: "en", dir: "ltr" });
     expect(heading()).toBe("Local");
     const reply = within(postOf(feed, "Yuki 雪", "I will bring butter.")).getByRole("time");
-    expect(said(reply)).toContain(clock(reply.getAttribute("datetime") ?? "", tokyo));
+    const moment = reply.getAttribute("datetime") ?? "";
+    expect(tells(said(reply), clock(moment, tokyo))).toBe(true);
+    expect(tells(said(reply), clock(moment, newYork))).toBe(false);
     await waitFor(() => {
       if (on.data.queryClient.isFetching() > 0) throw new Error("test: the server's answers are still on their way");
     });

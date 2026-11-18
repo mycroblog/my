@@ -56,8 +56,7 @@ describe("reading", () => {
     expect(probe(data, () => usePreferences(true))).toEqual(read);
   });
 
-  // A finding of #3199: without a session the hook is said to give none, and it gives what the cache holds, the
-  // preferences of the account that read them.
+  // A session that ended leaves its account's preferences in the cache: they are not the next reader's.
   test("a reader without a session has none, whatever the cache holds", async () => {
     const { data } = fakeData({ preferences: chosen });
     await data.queryClient.query(preferencesQuery(data));

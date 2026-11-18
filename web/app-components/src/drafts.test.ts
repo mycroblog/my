@@ -93,9 +93,8 @@ test("a field that holds no date and time names no moment", () => {
   expect(namesNone("")).toBe(true);
 });
 
-// A finding of #3199: the field's value is read as a moment even when the calendar or the clock has no such date or
-// time (February 30 reads as March 2), where the function is said to give no moment. A browser's own field never
-// holds one; a field of a browser without it is a text field, which does.
+// February 30 is not March 2. A browser's own field never holds such a value; where a browser has no such field it is
+// a text field, which does.
 test("a date or a time that does not exist names no moment", () => {
   for (const value of ["2026-02-30T10:00", "2026-13-01T10:00", "2026-11-16T25:00", "2026-11-16T10:61"])
     expect([value, namesNone(value, "America/New_York")]).toEqual([value, true]);

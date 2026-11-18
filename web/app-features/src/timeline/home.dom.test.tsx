@@ -161,6 +161,48 @@ test("for a reader who chose to hold new posts back, they wait behind the button
   expect(screen.queryAllByRole("button", { name: /new posts?$/ })).toHaveLength(0);
 });
 
+test("until the reader's preferences are read, new posts are held back; once read, they go in or stay as the reader chose", async () => {
+  /** The home timeline of a reader who set `timeline_auto_insert` so, drawn while their preferences are on their way. */
+  async function unread(autoInsert: boolean) {
+    cleanup();
+    const made = fakeData({ ...server, preferences: { timeline_auto_insert: autoInsert } });
+    const read = made.fake.script("GET /preferences", { hold: "request" });
+    await loadHomeTimeline(made.data);
+    renderFeature(
+      made.data,
+      <PostActions onCompose={() => undefined}>
+        <HomeTimeline />
+      </PostActions>,
+    );
+    await read.arrived();
+    const feed = within(screen.getByRole("feed", { name: "Home timeline" }));
+    twoArrive(made);
+    // Nothing says yet whether the reader wants them in: they wait.
+    await screen.findByRole("button", { name: "2 new posts" });
+    expect(feed.getAllByRole("article")).toHaveLength(2);
+    read.release();
+    await waitFor(() => {
+      if (made.data.queryClient.getQueryData(preferencesQuery(made.data).queryKey) === undefined)
+        throw new Error("the preferences are not read yet");
+    });
+    return feed;
+  }
+
+  const inserts = await unread(true);
+  await waitFor(() => {
+    if (inserts.getAllByRole("article").length !== 4) throw new Error("the new posts did not go in");
+  });
+  expect(screen.queryAllByRole("button", { name: /new posts?$/ })).toHaveLength(0);
+
+  const holds = await unread(false);
+  // Read, and the reader chose to be asked: a turn later the posts still wait.
+  await act(async () => {
+    await Promise.resolve();
+  });
+  expect(screen.getByRole("button", { name: "2 new posts" })).not.toBeNull();
+  expect(holds.getAllByRole("article")).toHaveLength(2);
+});
+
 test("for a reader who did not, new posts go in by themselves, with no button", async () => {
   const shown = await homeWith({ timeline_auto_insert: true });
 
