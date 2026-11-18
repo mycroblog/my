@@ -18,7 +18,13 @@
 // once (`useProviderReturn`). What the reader had entered is gone with the page, so nothing resumes by itself: the
 // notice says that they confirmed and asks them to do it again, and that next `ask` runs with the provider's
 // confirmation and opens no dialog. The confirmation works once, for ten minutes; one the server no longer takes opens
-// the dialog, which says so.
+// the dialog, which says so. A value of the screen's form that is no secret (the account a move names) is kept in the
+// tab under the operation while the reader is at the provider, and given back on the return (`kept`).
+//
+// An operation that is itself an act done at once (moving, deactivating, deleting the account) names it (`act`): the
+// dialog asks the act's question, says what the press does, in the text's color, over how to prove it, and its button
+// is named by the act wherever the press does it (not where it leaves for a provider). Back from a provider, the next
+// `ask` still asks, with no proof: a plain confirmation of the act, named and said as the dialog does.
 
 import {
   confirmationRefused,
@@ -35,16 +41,16 @@ import {
   type LinkedIdentity,
 } from "@my/app-data";
 import {
+  ConfirmDialog,
   FormAlert,
   ModalPresence,
   ReauthDialog,
   SaveState,
-  Stack,
   TextButton,
   TextField,
   useLocale,
 } from "@my/design-system";
-import { PasskeyError, supportsPasskeys } from "@my/platform";
+import { PasskeyError, readTabValue, supportsPasskeys, writeTabValue } from "@my/platform";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import type { SettingsAddress } from "./entries";
@@ -123,15 +129,36 @@ type Asked = {
   readonly left: (() => void) | undefined;
   /** What the dialog says as it opens: the server's refusal of a provider's confirmation. */
   readonly said: string | undefined;
+  /** The provider's confirmation an act runs with once the reader confirmed the act alone, with no proof. */
+  readonly held: string | undefined;
 };
+
+/** What the screen names an act by, where the confirmation does one at once (`act` of `useConfirmation`). */
+export type ConfirmationAct = {
+  /** The act's question, the dialog's title (Delete this account?). */
+  title: string;
+  /** The button that does it, named by the act (Delete account). */
+  confirm: string;
+};
+
+/**
+ * Where the tab keeps the value of a screen's form across a provider's page, for `operation` (`kept` of
+ * `useConfirmation`): a key of the tab's session storage.
+ */
+export const confirmationKeptKey = (operation: ConfirmedOperation): string => `my.confirmation.${operation}.kept`;
+const keptKey = confirmationKeptKey;
 
 type DialogProps = {
   operation: ConfirmedOperation;
   about: string;
+  act: ConfirmationAct | undefined;
+  kept: string | undefined;
   returnTo: string;
   leave: (href: string) => void;
   ways: readonly Way[];
   asked: Asked;
+  /** The provider's confirmation held was used: it works once. */
+  onHeldUsed: () => void;
   /** Cancel, close, Escape: nothing was written. */
   onClose: () => void;
   /** The write ended, done or failed: the dialog leaves, and `asked.left` follows once it has. */
@@ -140,7 +167,20 @@ type DialogProps = {
   onGone: () => void;
 };
 
-function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, onClose, onEnded, onGone }: DialogProps) {
+function ConfirmationDialog({
+  operation,
+  about,
+  act,
+  kept,
+  returnTo,
+  leave,
+  ways,
+  asked,
+  onHeldUsed,
+  onClose,
+  onEnded,
+  onGone,
+}: DialogProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
   useGone(onGone);
@@ -150,10 +190,59 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
   const [typed, setTyped] = useState("");
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState(asked.said);
+  /** The provider's confirmation the act runs with, until the server no longer takes it. */
+  const [held, setHeld] = useState(asked.held);
   const way = ways.find((w) => w.key === chosen) ?? ways[0];
 
+  const refuse = (words: string) => {
+    setBusy(false);
+    setSaid(words);
+  };
+  /** Runs the write with `confirmation`; a proof the server refuses stays in the dialog, anything else ends it. */
+  const run = (confirmation: Confirmation, refused: (words: string) => void) => {
+    asked.run(confirmation).then(
+      () => {
+        onEnded();
+        asked.done?.();
+      },
+      (error: unknown) => {
+        if (confirmationRefused(error, confirmation.kind)) {
+          refused(saidOf(error, t));
+          return;
+        }
+        onEnded();
+        asked.failed?.(error);
+      },
+    );
+  };
+
+  // Back from a provider, an act is still asked, with nothing to prove: its question, what it does, and its button.
+  if (act !== undefined && held !== undefined)
+    return (
+      <ConfirmDialog
+        title={act.title}
+        closeLabel={t("settings.confirm.close")}
+        cancel={t("settings.confirm.cancel")}
+        confirm={act.confirm}
+        busy={busy}
+        onCancel={onClose}
+        onConfirm={() => {
+          setBusy(true);
+          // The provider's confirmation works once.
+          onHeldUsed();
+          run({ kind: "external", token: held }, (words) => {
+            // The server no longer takes it: the dialog asks for a proof, and says why.
+            setHeld(undefined);
+            refuse(words);
+          });
+        }}
+      >
+        {about}
+      </ConfirmDialog>
+    );
+
   const cancel = {
-    title: t("settings.confirm.title"),
+    title: act?.title ?? t("settings.confirm.title"),
     closeLabel: t("settings.confirm.close"),
     cancel: t("settings.confirm.cancel"),
     onCancel: onClose,
@@ -162,11 +251,6 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
   // has nothing to confirm with: Cancel and close are its ways out.
   if (way === undefined)
     return <ReauthDialog {...cancel} about={about} error={<FormAlert>{t("settings.confirm.none")}</FormAlert>} />;
-
-  const refuse = (words: string) => {
-    setBusy(false);
-    setSaid(words);
-  };
   /** The proof of the way chosen; undefined when the browser's prompt gave none, or the app was left for a provider. */
   const prove = async (): Promise<Confirmation | undefined> => {
     if (way.key === "password") return { kind: "password", password: typed };
@@ -182,6 +266,8 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
     }
     try {
       const start = await beginConfirmation(way.identity.provider_id, operation, returnTo);
+      // What the reader entered and is no secret waits in the tab for the return.
+      if (kept !== undefined) writeTabValue(keptKey(operation), kept);
       // The dialog keeps spinning until the provider's page takes the app's place.
       leave(start.url);
     } catch (error) {
@@ -194,62 +280,55 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
     setBusy(true);
     setSaid(undefined);
     void prove().then((confirmation) => {
-      if (confirmation === undefined) return;
-      asked.run(confirmation).then(
-        () => {
-          onEnded();
-          asked.done?.();
-        },
-        (error: unknown) => {
-          if (confirmationRefused(error, confirmation.kind)) {
-            refuse(saidOf(error, t));
-            return;
-          }
-          onEnded();
-          asked.failed?.(error);
-        },
-      );
+      if (confirmation !== undefined) run(confirmation, refuse);
     });
   };
 
   const others = ways.filter((w) => w !== way);
   const provider = "identity" in way ? way.identity.provider_name : undefined;
+  /** How the way chosen proves it, in a sentence. */
+  const proving =
+    provider !== undefined
+      ? t("settings.confirm.provider.about", { provider })
+      : act === undefined
+        ? about
+        : way.key === "passkey"
+          ? t("settings.confirm.way.passkey")
+          : t("settings.confirm.way.password");
   return (
     <ReauthDialog
       {...cancel}
-      about={provider === undefined ? about : t("settings.confirm.provider.about", { provider })}
+      effect={act === undefined ? undefined : about}
+      about={proving}
       confirm={
         provider !== undefined
           ? t("settings.confirm.provider", { provider })
-          : way.key === "passkey"
-            ? t("settings.confirm.passkey")
-            : t("settings.confirm.submit")
+          : act !== undefined
+            ? act.confirm
+            : way.key === "passkey"
+              ? t("settings.confirm.passkey")
+              : t("settings.confirm.submit")
       }
       onConfirm={confirm}
       busy={busy}
       error={said === undefined ? undefined : <FormAlert>{said}</FormAlert>}
-      other={
-        others.length === 0 ? undefined : (
-          <Stack gap="hair" justify="start">
-            {others.map((w) => (
-              <TextButton
-                key={w.key}
-                isDisabled={busy}
-                onPress={() => {
-                  setChosen(w.key);
-                  setSaid(undefined);
-                }}
-              >
-                {"identity" in w
-                  ? t("settings.confirm.other.provider", { provider: w.identity.provider_name })
-                  : w.key === "password"
-                    ? t("settings.confirm.other.password")
-                    : t("settings.confirm.other.passkey")}
-              </TextButton>
-            ))}
-          </Stack>
-        )
-      }
+      // Each other way a row of its own (ReauthDialog), so that one is never pressed for the next.
+      other={others.map((w) => (
+        <TextButton
+          key={w.key}
+          isDisabled={busy}
+          onPress={() => {
+            setChosen(w.key);
+            setSaid(undefined);
+          }}
+        >
+          {"identity" in w
+            ? t("settings.confirm.other.provider", { provider: w.identity.provider_name })
+            : w.key === "password"
+              ? t("settings.confirm.other.password")
+              : t("settings.confirm.other.passkey")}
+        </TextButton>
+      ))}
     >
       {way.key === "password" && (
         <TextField
@@ -270,8 +349,21 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
 export type ConfirmationOptions = Pick<SettingsAddress, "leave"> & {
   /** The operation the server confirms. */
   operation: ConfirmedOperation;
-  /** Why the dialog asks, in a sentence (To change your password, confirm it's you.). */
+  /**
+   * Why the dialog asks, in a sentence (To change your password, confirm it's you.); with an `act`, what the press
+   * does (The account and its posts are deleted at once…).
+   */
   about: string;
+  /**
+   * The act the confirmation does at once, where it is one (moving, deactivating, deleting the account): the dialog's
+   * question and the name of its button. Without it, the dialog is Confirm it's you, its button the way's.
+   */
+  act?: ConfirmationAct | undefined;
+  /**
+   * What the reader entered in the screen's form and would enter again after a provider's page, never a secret (the
+   * account a move names): kept in the tab under the operation while the app is left, and given back as `kept`.
+   */
+  kept?: string | undefined;
   /** The app's address a login provider sends the browser back to: the screen's own. */
   returnTo: string;
   /** What a login provider's return left in the screen's address (`useProviderReturn`). */
@@ -282,11 +374,11 @@ export type ConfirmationOptions = Pick<SettingsAddress, "leave"> & {
 
 export type Confirmed = {
   /**
-   * Runs `run` once the reader has confirmed, with their confirmation: after the dialog, or at once with the
-   * confirmation a login provider gave. `done` follows a write that succeeded; `failed`, with the error, one that
-   * failed for anything but its confirmation; `left` follows either once the dialog is out of the document, the
-   * motion of its leaving over (at once where none was shown), which is when the screen can move the focus: until
-   * then the dialog keeps it. Cancelling the dialog runs none of them.
+   * Runs `run` once the reader has confirmed, with their confirmation: after the dialog, or with the confirmation a
+   * login provider gave, at once or, with an `act`, once the reader confirmed the act alone. `done` follows a write
+   * that succeeded; `failed`, with the error, one that failed for anything but its confirmation; `left` follows either
+   * once the dialog is out of the document, the motion of its leaving over (at once where none was shown), which is
+   * when the screen can move the focus: until then the dialog keeps it. Cancelling the dialog runs none of them.
    */
   ask: (
     run: (confirmation: Confirmation) => Promise<unknown>,
@@ -294,6 +386,13 @@ export type Confirmed = {
   ) => void;
   /** A write runs on a login provider's confirmation, with no dialog: the control that asked spins. */
   busy: boolean;
+  /**
+   * A login provider's confirmation is held for this operation: the next `ask` asks for no proof (an `act` is still
+   * asked, plainly). Until it is used, or the screen is left.
+   */
+  held: boolean;
+  /** What `kept` held as the reader left for a provider, back with them for this operation; undefined otherwise. */
+  kept: string | undefined;
   /** The dialog, which the screen places once. */
   dialog: ReactNode;
   /**
@@ -318,6 +417,8 @@ export function useProviderName(): (id: string | undefined) => string | undefine
 export function useConfirmation({
   operation,
   about,
+  act,
+  kept,
   returnTo,
   returned,
   leave,
@@ -328,6 +429,12 @@ export function useConfirmation({
   const ways = useWays(password);
   const own = returned !== null && returned.kind !== "linked" && returned.operation === operation ? returned : null;
   const [token, setToken] = useState(own?.kind === "confirmation" ? own.token : undefined);
+  /** What the tab kept of the form, back from the provider of this operation. */
+  const [back] = useState(() => (own === null ? undefined : (readTabValue(keptKey(operation)) ?? undefined)));
+  // Read once, as the screen opened: a later visit starts empty.
+  useEffect(() => {
+    writeTabValue(keptKey(operation), null);
+  }, [operation]);
   const [busy, setBusy] = useState(false);
   const [asked, setAsked] = useState<Asked>();
   /** What follows the dialog's leaving, after a write that ended in it. */
@@ -342,7 +449,12 @@ export function useConfirmation({
   const ask: Confirmed["ask"] = (run, then) => {
     const next = { run, done: then?.done, failed: then?.failed, left: then?.left };
     if (token === undefined) {
-      setAsked({ ...next, said: undefined });
+      setAsked({ ...next, said: undefined, held: undefined });
+      return;
+    }
+    // An act is asked all the same, with no proof: the press on its button does it.
+    if (act !== undefined) {
+      setAsked({ ...next, said: undefined, held: token });
       return;
     }
     // The provider's confirmation works once.
@@ -357,7 +469,7 @@ export function useConfirmation({
       (error: unknown) => {
         setBusy(false);
         if (confirmationRefused(error, "external")) {
-          setAsked({ ...next, said: saidOf(error, t) });
+          setAsked({ ...next, said: saidOf(error, t), held: undefined });
           return;
         }
         next.failed?.(error);
@@ -372,13 +484,21 @@ export function useConfirmation({
       <FormAlert>{providerFailure(own, t)}</FormAlert>
     ) : token !== undefined ? (
       <SaveState state="saved">
-        {provider === undefined ? t("settings.confirm.returned.unknown") : t("settings.confirm.returned", { provider })}
+        {act !== undefined
+          ? provider === undefined
+            ? t("settings.confirm.returned.act.unknown")
+            : t("settings.confirm.returned.act", { provider })
+          : provider === undefined
+            ? t("settings.confirm.returned.unknown")
+            : t("settings.confirm.returned", { provider })}
       </SaveState>
     ) : null;
 
   return {
     ask,
     busy,
+    held: token !== undefined,
+    kept: back,
     notice,
     dialog: (
       <ModalPresence>
@@ -386,10 +506,16 @@ export function useConfirmation({
           <ConfirmationDialog
             operation={operation}
             about={about}
+            act={act}
+            // What came back with the reader goes with them again, where they did not change it.
+            kept={kept ?? back}
             returnTo={returnTo}
             leave={leave}
             ways={ways}
             asked={asked}
+            onHeldUsed={() => {
+              setToken(undefined);
+            }}
             onClose={() => {
               setAsked(undefined);
             }}

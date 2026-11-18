@@ -11,14 +11,20 @@
 //   server looks the account up, the reader confirms it's them (confirmation.tsx), and the move is sent.
 // - What is wrong stands where it is wrong: an empty field, an address the server finds no account at, this account
 //   itself, and what the server refuses of the account named (it does not list this account among its aliases, it
-//   moved itself, it cannot be moved to) under the field, which takes the focus; a move too soon after the last one,
-//   and anything else, before the button, in the app's words where the refusal has a kind and the server's otherwise.
+//   moved itself, it cannot be moved to) under the field, which takes the focus; anything else before the button, in
+//   the server's words.
+// - Where the screen knows the account cannot move now (it cancelled the move here, or the server refused a move as
+//   too soon after the last one), the act's place says so, with no field and no button. The API says neither when the
+//   account moved nor when it may move again, so the screen says the wait in days and no date, and keeps it for this
+//   visit alone: after a reload the form is back, and a press finds it out again. The server's refusal names one kind
+//   for the two causes it has (moved in the last 30 days, or to that account before), so its sentence leads with the
+//   likelier and names both.
 // - Once the account has moved, the screen is its state: where it moved and what it can still do, and, in a section
-//   of its own, cancelling the move, which asks first and says what it does not undo. The API says neither when the
-//   account moved nor when it may move again, so the screen says the wait in days and no date.
+//   of its own, cancelling the move, which asks first and says what it does not undo.
 //
 // The view that comes with a move, or with its cancellation, says what happened first, and its title takes the focus
-// once the dialog over it has left.
+// once the dialog over it has left. The account named waits in the tab while the reader confirms at a login
+// provider's page, and is in the field again on the return (confirmation.tsx).
 
 import { accountMovePath, dataExportPath, handleOf } from "@my/app-components";
 import {
@@ -47,8 +53,9 @@ import {
   TextField,
   useLocale,
 } from "@my/design-system";
-import { useId, useRef, useState } from "react";
+import { useId, useRef, useState, type RefObject } from "react";
 import { stringsIn } from "../locale";
+import { tied } from "./account";
 import { saidOf, useConfirmation, useProviderReturn } from "./confirmation";
 import type { SettingsSubProps } from "./entries";
 import { Asking, Kept, ReadingNotice, useFaultFocus, useFocusAfterDialog } from "./parts";
@@ -80,7 +87,7 @@ function MoveEffect({ t }: { t: T }) {
           { text: t("settings.account.move.effect.stays"), about: [t("settings.account.move.effect.stays.about")] },
           { text: t("settings.account.move.effect.account"), about: [t("settings.account.move.effect.account.about")] },
           {
-            text: t("settings.account.move.effect.wait", { days: moveCooldownDays }),
+            text: tied(t("settings.account.move.effect.wait", { days: moveCooldownDays })),
             about: [t("settings.account.move.effect.wait.about")],
           },
         ]}
@@ -108,13 +115,39 @@ function AliasFirst({ account, t }: { account: Account; t: T }) {
 /** What has just come of the reader's act on this screen: the account moved, or its move was cancelled. */
 type Arrived = "moved" | "cancelled";
 
+/**
+ * Why the screen knows the account cannot move now: it cancelled the move here, or the server refused a move to the
+ * account of `handle` as too soon.
+ */
+type Later = { readonly cause: "cancelled" } | { readonly cause: "refused"; readonly handle: string };
+
+/** In the act's place while the account cannot move now: that it cannot, and until when, in days. */
+function MoveLater({ later, titleRef, t }: { later: Later; titleRef: RefObject<HTMLHeadingElement | null>; t: T }) {
+  const days = moveCooldownDays;
+  return (
+    <StatusSummary
+      icon="caution"
+      title={t("settings.account.move.later")}
+      titleRef={later.cause === "refused" ? titleRef : undefined}
+      about={tied(
+        later.cause === "cancelled"
+          ? t("settings.account.move.later.cancelled", { days })
+          : t("settings.account.move.refused", { reason: "too_soon", handle: later.handle, days }),
+      )}
+    />
+  );
+}
+
 export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: SettingsSubProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
   const { status, retry, account } = useOwnAccountRead();
   const { find, move, cancel } = useAccountMove();
   const returned = useProviderReturn({ fragment, onFragmentRead });
-  const [typed, setTyped] = useState("");
+  /** What the reader entered in the field; until they change it, what came back with them from a provider. */
+  const [entered, setEntered] = useState<string>();
+  /** The account cannot move now, as this visit found out. */
+  const [later, setLater] = useState<Later>();
   /** The account the server found at what the reader entered, which the confirmation names. */
   const [target, setTarget] = useState<Account>();
   const [finding, setFinding] = useState(false);
@@ -131,24 +164,31 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
   const focusFault = useFaultFocus(fieldId);
   const summary = useRef<HTMLHeadingElement>(null);
   const after = useFocusAfterDialog(summary);
+  const days = moveCooldownDays;
+  const named = target === undefined ? "" : handleOf(target);
   const moving = useConfirmation({
     operation: "account_move",
-    about: t("settings.account.move.confirm", { handle: target === undefined ? "" : handleOf(target) }),
+    about: tied(t("settings.account.move.confirm", { handle: named, days })),
+    act: {
+      title: t("settings.account.move.confirm.title", { handle: named }),
+      confirm: t("settings.account.move.submit"),
+    },
+    kept: entered,
     returnTo: accountMovePath,
     returned,
     leave,
   });
+  const typed = entered ?? moving.kept ?? "";
 
   const title = t("settings.account.move");
   const back = <BackButton onPress={onBack}>{t("settings.entry.account")}</BackButton>;
-  const days = moveCooldownDays;
 
   const refuse = (words: string) => {
     setFault(words);
     focusFault();
   };
   const submit = () => {
-    if (account === undefined || finding || moving.busy) return;
+    if (account === undefined || finding || moving.busy || later !== undefined) return;
     const address = typed.trim();
     setArrived(undefined);
     setSaid(undefined);
@@ -175,7 +215,12 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
           failed: (error) => {
             const reason = moveRefusalOf(error);
             if (reason === undefined) setSaid(saidOf(error, t));
-            else if (reason === "too_soon") setSaid(t("settings.account.move.refused", { reason, handle, days }));
+            // The account cannot move now: the act's place says so, and its title takes the focus once the dialog
+            // left.
+            else if (reason === "too_soon") {
+              after.expect();
+              setLater({ cause: "refused", handle });
+            }
             // What the server refused of the account named stands under its field, which takes the focus once the
             // dialog left.
             else setFault(t("settings.account.move.refused", { reason, handle, days }));
@@ -208,6 +253,8 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
               cancel().then(() => {
                 after.expect();
                 setArrived("cancelled");
+                // A cancelled move still counts: the account cannot move again until 30 days after it.
+                setLater({ cause: "cancelled" });
               })
             }
             onClose={() => {
@@ -215,7 +262,7 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
             }}
             onLeft={after.settle}
           >
-            {t("settings.account.move.cancel.text", { days })}
+            {tied(t("settings.account.move.cancel.text", { days }))}
           </Asking>
         )}
       </ModalPresence>
@@ -251,7 +298,7 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
           />
           <SettingsSection
             heading={t("settings.account.move.cancel")}
-            about={t("settings.account.move.cancel.about", { handle, days })}
+            about={tied(t("settings.account.move.cancel.about", { handle, days }))}
           >
             <Row justify="start">
               <Button
@@ -268,6 +315,30 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
       </>
     );
   }
+
+  const cancelled =
+    arrived === "cancelled" ? (
+      <StatusSummary
+        icon="accepted"
+        title={t("settings.account.move.cancelled")}
+        titleRef={summary}
+        about={t("settings.account.move.cancelled.about")}
+      />
+    ) : null;
+
+  // The account cannot move now: what a move does and what to do first stand, and the act's place says so.
+  if (later !== undefined)
+    return (
+      <>
+        <SettingsScreen sub title={title} back={back}>
+          {cancelled}
+          <MoveEffect t={t} />
+          <AliasFirst account={account} t={t} />
+          <MoveLater later={later} titleRef={summary} t={t} />
+        </SettingsScreen>
+        {dialogs}
+      </>
+    );
 
   return (
     <>
@@ -290,14 +361,7 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
             </SubmitBar>
           }
         >
-          {arrived === "cancelled" && (
-            <StatusSummary
-              icon="accepted"
-              title={t("settings.account.move.cancelled")}
-              titleRef={summary}
-              about={t("settings.account.move.cancelled.about")}
-            />
-          )}
+          {cancelled}
           <MoveEffect t={t} />
           <AliasFirst account={account} t={t} />
           <SettingsSection heading={t("settings.account.move.form")}>
@@ -309,10 +373,11 @@ export function AccountMoveScreen({ onBack, fragment, onFragmentRead, leave }: S
               hint={t("settings.account.aliases.add.hint")}
               autoCapitalize="none"
               autoComplete="off"
+              defaultValue={typed}
               error={fault}
               readOnly={finding}
               onChange={(value) => {
-                setTyped(value);
+                setEntered(value);
                 setFault(undefined);
               }}
             />

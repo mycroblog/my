@@ -56,7 +56,14 @@ export { AuthorizedAppScreen, useAuthorizedAppTitle } from "./settings/apps/auth
 export { appsPath, appsPaths, useAppsTitle, type AppScreenProps } from "./settings/apps/parts";
 export { AppRegister, loadAppRegister } from "./settings/apps/register";
 export { AppToken } from "./settings/apps/token";
-export { useConfirmation, useProviderReturn, type ConfirmationOptions, type Confirmed } from "./settings/confirmation";
+export {
+  confirmationKeptKey,
+  useConfirmation,
+  useProviderReturn,
+  type ConfirmationAct,
+  type ConfirmationOptions,
+  type Confirmed,
+} from "./settings/confirmation";
 export {
   ProfileAvatarField,
   profileEditPath,

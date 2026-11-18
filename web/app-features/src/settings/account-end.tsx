@@ -13,20 +13,28 @@
 //   already scheduled, a move, a registration under review, a supporter plan that goes on, the last administrator who
 //   can sign in, a reactivation in the last day), the screen says so in the act's place, with why and what to do
 //   first, and offers no way to it; a refusal that only a press finds out comes as that summary, which takes the
-//   focus.
-// - Deleting is at once and for good; the server keeps what it holds for some days more, hidden. What it refuses
-//   once the confirmation holds (the server's only administrator) is said before the button, in the server's words.
+//   focus. Where the app has the screen of what lifts it (Account status, the move's), the summary leads there, by
+//   the act's own words; the app has none for the administrators' roles nor for a supporter plan.
+// - Deleting is at once and for good; the server keeps what it holds for some days more, hidden. Of what keeps an
+//   account from being deactivated, the server refuses a deletion for one thing alone: the account is its only
+//   administrator who can sign in. The screen reads what deactivating would do, and where that says so the act's
+//   place says it; where something else is said first there (a move), only a press finds it out, and the summary
+//   then takes the act's place and the focus.
+//
+// The act's sentence follows what a press does now: back from a login provider that confirmed it's them, it no longer
+// says they are asked to, and the press still asks, plainly, what the act is (confirmation.tsx).
 
 import { accountMovePath, dataExportPath } from "@my/app-components";
 import {
   confirmationFields,
   deactivationRefused,
   deletionEraseDays,
+  lastAdministratorRefused,
   loadDeactivation,
-  loadOwnAccount,
+  loadDeletion,
   useAccountEnd,
   useDeactivationRead,
-  useOwnAccountRead,
+  useDeletionRead,
   type AppData,
   type DeactivationPreview,
 } from "@my/app-data";
@@ -48,7 +56,7 @@ import {
 } from "@my/design-system";
 import { useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { accountStatusPath, useActionDate } from "./account";
+import { accountStatusPath, tied, useActionDate } from "./account";
 import { accountDeactivatePath, accountDeletePath } from "./account-leave";
 import { saidOf, useConfirmation, useProviderReturn } from "./confirmation";
 import type { SettingsSessionProps, SettingsSubProps } from "./entries";
@@ -61,9 +69,9 @@ export async function loadAccountDeactivateSettings(data: AppData): Promise<void
   await loadDeactivation(data);
 }
 
-/** What the route's loader waits for: the reader's account and what it confirms with. */
+/** What the route's loader waits for: the reader's account, what deactivating would do, and what it confirms with. */
 export async function loadAccountDeleteSettings(data: AppData): Promise<void> {
-  await loadOwnAccount(data);
+  await loadDeletion(data);
 }
 
 /** The title of Deactivate account. */
@@ -143,10 +151,11 @@ const untilLeft = () => new Promise<never>(() => undefined);
 
 /** Where the reader acts on what keeps the account from being deactivated, if the app has a screen for it. */
 function refusalDoor(refusal: NonNullable<DeactivationPreview["refusal"]>, t: T): ReactNode {
+  // The way is named by the act that lifts it.
   if (refusal === "moved")
     return (
       <LinkButton href={accountMovePath} kind="primary">
-        {t("settings.account.move")}
+        {t("settings.account.move.cancel.submit")}
       </LinkButton>
     );
   if (refusal === "login_restricted" || refusal === "deletion_scheduled")
@@ -155,6 +164,7 @@ function refusalDoor(refusal: NonNullable<DeactivationPreview["refusal"]>, t: T)
         {t("settings.account.status")}
       </LinkButton>
     );
+  // The administrators' roles and a supporter plan have no screen in the app.
   return undefined;
 }
 
@@ -175,9 +185,11 @@ export function AccountDeactivateScreen({
   const [refused, setRefused] = useState(false);
   const summary = useRef<HTMLHeadingElement>(null);
   const after = useFocusAfterDialog(summary);
+  const due = preview === undefined ? "" : date(preview.deletion_due_at);
   const confirming = useConfirmation({
     operation: "account_deactivation",
-    about: t("settings.account.deactivate.confirm"),
+    about: t("settings.account.deactivate.confirm", { date: due }),
+    act: { title: t("settings.account.deactivate.confirm.title"), confirm: t("settings.account.deactivate.submit") },
     returnTo: accountDeactivatePath,
     returned,
     leave,
@@ -241,7 +253,6 @@ export function AccountDeactivateScreen({
     );
   }
 
-  const due = date(preview.deletion_due_at);
   const effect = t("settings.account.deactivate.effect");
   const coming = t("settings.account.deactivate.after");
   return (
@@ -277,7 +288,7 @@ export function AccountDeactivateScreen({
               },
               {
                 text: t("settings.account.deactivate.after.deleted"),
-                about: [t("settings.account.deactivate.after.deleted.about")],
+                about: [tied(t("settings.account.deactivate.after.deleted.about"))],
               },
             ]}
           />
@@ -289,7 +300,11 @@ export function AccountDeactivateScreen({
         />
         <Act
           heading={t("settings.account.deactivate.act")}
-          about={t("settings.account.deactivate.act.about", { date: due })}
+          about={
+            confirming.held
+              ? t("settings.account.deactivate.act.about.held", { date: due })
+              : t("settings.account.deactivate.act.about", { date: due })
+          }
           notice={confirming.notice}
           said={said}
           busy={confirming.busy}
@@ -311,13 +326,18 @@ export function AccountDeleteScreen({
   leave,
 }: SettingsSubProps & SettingsSessionProps) {
   const { t } = stringsIn(useLocale().locale);
-  const { status, retry, account } = useOwnAccountRead();
+  const { status, retry, account, preview } = useDeletionRead();
   const { remove } = useAccountEnd();
   const returned = useProviderReturn({ fragment, onFragmentRead });
   const [said, setSaid] = useState<string>();
+  /** The server refused a press for its only administrator: the summary that takes the act's place takes the focus. */
+  const [refused, setRefused] = useState(false);
+  const summary = useRef<HTMLHeadingElement>(null);
+  const after = useFocusAfterDialog(summary);
   const confirming = useConfirmation({
     operation: "account_deletion",
     about: t("settings.account.delete.confirm"),
+    act: { title: t("settings.account.delete.confirm.title"), confirm: t("settings.account.delete.submit") },
     returnTo: accountDeletePath,
     returned,
     leave,
@@ -325,7 +345,7 @@ export function AccountDeleteScreen({
 
   const title = t("settings.account.delete");
   const back = backTo(onBack, t);
-  if (account === undefined || status !== "read")
+  if (account === undefined || preview === undefined || status !== "read")
     return (
       <SettingsScreen
         sub
@@ -345,11 +365,20 @@ export function AccountDeleteScreen({
       },
       {
         failed: (error) => {
+          // What only the server could tell: the summary takes the act's place, and the focus once the dialog left.
+          if (lastAdministratorRefused(error)) {
+            after.expect();
+            setRefused(true);
+            return;
+          }
           setSaid(saidOf(error, t));
         },
+        left: after.settle,
       },
     );
   };
+  // Of what keeps an account from being deactivated, the one the server refuses a deletion for too.
+  const last = refused || preview.refusal === "last_administrator";
 
   const effect = t("settings.account.delete.effect");
   return (
@@ -374,7 +403,7 @@ export function AccountDeleteScreen({
               },
               { text: t("settings.account.end.signed_out"), about: [t("settings.account.end.signed_out.about")] },
               {
-                text: t("settings.account.delete.effect.erased", { days: deletionEraseDays }),
+                text: tied(t("settings.account.delete.effect.erased", { days: deletionEraseDays })),
                 about: [t("settings.account.delete.effect.erased.about")],
               },
             ]}
@@ -385,16 +414,27 @@ export function AccountDeleteScreen({
           about={t("settings.account.delete.first.export")}
           t={t}
         />
-        <Act
-          heading={t("settings.account.delete.act")}
-          about={t("settings.account.delete.act.about")}
-          notice={confirming.notice}
-          said={said}
-          busy={confirming.busy}
-          onPress={press}
-        >
-          {t("settings.account.delete.submit")}
-        </Act>
+        {last ? (
+          <StatusSummary
+            icon="caution"
+            title={t("settings.account.delete.refused")}
+            titleRef={refused ? summary : undefined}
+            about={t("settings.account.delete.refused.last_administrator")}
+          />
+        ) : (
+          <Act
+            heading={t("settings.account.delete.act")}
+            about={
+              confirming.held ? t("settings.account.delete.act.about.held") : t("settings.account.delete.act.about")
+            }
+            notice={confirming.notice}
+            said={said}
+            busy={confirming.busy}
+            onPress={press}
+          >
+            {t("settings.account.delete.submit")}
+          </Act>
+        )}
       </SettingsScreen>
       {confirming.dialog}
     </>

@@ -6,6 +6,7 @@
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQueries, useQuery } from "@tanstack/react-query";
 import type { Reauthentication } from "./account-move";
+import { viewerQuery, type Account } from "./accounts";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
 import { readOf, type ScreenRead } from "./reads";
@@ -82,6 +83,42 @@ export async function deactivateOwnAccount(data: AppData, proof: DeactivationPro
       await data.queryClient.invalidateQueries({ queryKey: deactivationPreviewQuery(data).queryKey });
     throw error;
   }
+}
+
+/**
+ * Reads what the screen that deletes the account shows, from the cache where it holds it: the account, what
+ * deactivating would do now (whose refusal `last_administrator` the deletion is refused for too: the server's only
+ * administrator who can sign in), and what the account confirms with. A read that fails is the screen's to say.
+ */
+export async function loadDeletion(data: AppData): Promise<void> {
+  await Promise.all([
+    data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined),
+    data.queryClient.query({ ...deactivationPreviewQuery(data), staleTime: Infinity }).catch(() => undefined),
+    loadConfirmation(data),
+  ]);
+}
+
+/**
+ * Where the reads of the screen that deletes the account are, as `useDeactivationRead` says them, and once read the
+ * account and what deactivating would do now.
+ */
+export function useDeletionRead(): ScreenRead & {
+  account: Account | undefined;
+  preview: DeactivationPreview | undefined;
+} {
+  const data = useAppData();
+  const account = useQuery(viewerQuery(data));
+  const preview = useQuery(deactivationPreviewQuery(data));
+  const ways = useQueries({ queries: [...confirmationQueries(data)] });
+  return { ...readOf([account, preview, ...ways]), account: account.data, preview: preview.data };
+}
+
+/**
+ * Whether the server refused to delete the account because it is the server's only administrator who can sign in (a
+ * 409 of the type `/api/v1/problems/last-administrator`).
+ */
+export function lastAdministratorRefused(error: unknown): boolean {
+  return error instanceof ProblemError && error.type === "/api/v1/problems/last-administrator";
 }
 
 /** Deletes the viewer's account at once. It rejects with the server's problem (a wrong confirmation). */

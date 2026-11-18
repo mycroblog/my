@@ -2024,8 +2024,12 @@
     "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
   },
   "settings.account.move.confirm": {
-    "defaultMessage": "このアカウントを {handle} に移転するには、本人確認が必要です。",
-    "description": "In the dialog Confirm it's you, opened by the button Move account on the settings page Move account: why it asks. {handle} is the handle of the account, as @name@example.com."
+    "defaultMessage": "フォロワーが {handle} へ移り、このアカウントは {days, number} 日間、再び移転できません。",
+    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.confirm.title": {
+    "defaultMessage": "このアカウントを {handle} に移転しますか？",
+    "description": "The title of the dialog opened by the button Move account on the settings page Move account, whose button Move account moves the account. {handle} is the handle of the account, as @name@example.com."
   },
   "settings.account.move.submit": {
     "defaultMessage": "アカウントを移転する",
@@ -2049,7 +2053,7 @@
   },
   "settings.account.move.cancel.submit": {
     "defaultMessage": "移転を取り消す",
-    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens."
+    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens; also the link under the summary This account cannot be deactivated now on the settings page Deactivate account, for an account that moved, which leads to Move account."
   },
   "settings.account.move.cancel.title": {
     "defaultMessage": "{handle} への移転を取り消しますか？",
@@ -2070,6 +2074,14 @@
   "settings.account.move.cancelled.about": {
     "defaultMessage": "このアカウントで再び投稿やフォローができます。移ったフォロワーは移転先のアカウントに残ります。",
     "description": "The muted line under the summary The move is cancelled on the settings page Move account."
+  },
+  "settings.account.move.later": {
+    "defaultMessage": "このアカウントは今は移転できません",
+    "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, once the page knows the account cannot move now: the reader cancelled the move there, or the server refused a move as too soon. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.later.cancelled": {
+    "defaultMessage": "このアカウントは移転してから {days, number} 日たっていません。前回の移転から {days, number} 日たつと再び移転できます。",
+    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
   },
   "settings.account.deactivate.effect": {
     "defaultMessage": "無効化で起きること",
@@ -2135,13 +2147,21 @@
     "defaultMessage": "本人確認のあと、ログアウトします。そのままにすると、アカウントは {date} に削除されます。",
     "description": "The line under the heading Deactivate this account on the settings page Deactivate account. date is the day and time the account would be deleted, as the reader's locale writes them."
   },
+  "settings.account.deactivate.act.about.held": {
+    "defaultMessage": "確認するとログアウトします。そのままにすると、アカウントは {date} に削除されます。",
+    "description": "In place of settings.account.deactivate.act.about on the settings page Deactivate account once the reader confirmed it's them at another service: the button then asks only whether to go ahead. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
   "settings.account.deactivate.submit": {
     "defaultMessage": "アカウントを無効化する",
     "description": "The button that ends the settings page Deactivate account: it asks the reader to confirm it's them, then deactivates the account and signs them out."
   },
   "settings.account.deactivate.confirm": {
-    "defaultMessage": "このアカウントを無効化するには、本人確認が必要です。",
-    "description": "In the dialog Confirm it's you, opened by the button Deactivate account on the settings page Deactivate account: why it asks."
+    "defaultMessage": "ログアウトし、それまでにログインし直さなければ、アカウントは {date} に削除されます。",
+    "description": "In the dialog Deactivate this account?, opened by the button Deactivate account on the settings page Deactivate account: what its button does, over how the reader confirms it's them. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "このアカウントを無効化しますか？",
+    "description": "The title of the dialog opened by the button Deactivate account on the settings page Deactivate account, whose button Deactivate account deactivates it."
   },
   "settings.account.deactivate.refused": {
     "defaultMessage": "このアカウントはいま無効化できません",
@@ -2203,13 +2223,29 @@
     "defaultMessage": "本人確認のあと、アカウントはすぐに削除され、ログアウトします。",
     "description": "The line under the heading Delete this account on the settings page Delete account."
   },
+  "settings.account.delete.act.about.held": {
+    "defaultMessage": "確認すると、アカウントはすぐに削除され、ログアウトします。",
+    "description": "In place of settings.account.delete.act.about on the settings page Delete account once the reader confirmed it's them at another service: the button then asks only whether to go ahead."
+  },
   "settings.account.delete.submit": {
     "defaultMessage": "アカウントを削除する",
     "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
   },
   "settings.account.delete.confirm": {
-    "defaultMessage": "このアカウントを完全に削除するには、本人確認が必要です。",
-    "description": "In the dialog Confirm it's you, opened by the button Delete account on the settings page Delete account: why it asks."
+    "defaultMessage": "アカウントと投稿はすぐに削除され、ログアウトします。もとに戻せません。",
+    "description": "In the dialog Delete this account?, opened by the button Delete account on the settings page Delete account: what its button does, over how the reader confirms it's them."
+  },
+  "settings.account.delete.confirm.title": {
+    "defaultMessage": "このアカウントを削除しますか？",
+    "description": "The title of the dialog opened by the button Delete account on the settings page Delete account, whose button Delete account deletes it."
+  },
+  "settings.account.delete.refused": {
+    "defaultMessage": "このアカウントは今は削除できません",
+    "description": "The summary at the end of the settings page Delete account, in place of the button Delete account, while the server would refuse the deletion; settings.account.delete.refused.last_administrator says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.delete.refused.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてから、削除してください。",
+    "description": "The muted line under the summary This account cannot be deleted now on the settings page Delete account: the server keeps its last administrator who can sign in."
   },
   "settings.security.sign_in": {
     "defaultMessage": "ログイン",
@@ -2675,6 +2711,14 @@
     "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻り、始めた操作をもう一度行います。",
     "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
   },
+  "settings.confirm.way.password": {
+    "defaultMessage": "本人確認のため、現在のパスワードを入力してください。",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with their password (the field Current password follows)."
+  },
+  "settings.confirm.way.passkey": {
+    "defaultMessage": "続けると、本人確認のためにブラウザがパスキーを求めます。",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with a passkey: pressing the button makes the browser ask for one."
+  },
   "settings.confirm.other.password": {
     "defaultMessage": "代わりにパスワードを使う",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
@@ -2702,6 +2746,14 @@
   "settings.confirm.returned.unknown": {
     "defaultMessage": "ほかのサービスで本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
     "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.returned.act": {
+    "defaultMessage": "{provider} で本人確認が完了しました。下からもう一度行ってください。続けるかどうかだけを確認します。",
+    "description": "On the settings pages Move account, Deactivate account and Delete account when the browser comes back from another service where the reader confirmed it's them: the reader does it again, and the dialog then asks only whether to go ahead, with no password. provider is the name of the service as the administrators wrote it; it is not translated. Without a name, the page shows settings.confirm.returned.act.unknown."
+  },
+  "settings.confirm.returned.act.unknown": {
+    "defaultMessage": "ほかのサービスで本人確認が完了しました。下からもう一度行ってください。続けるかどうかだけを確認します。",
+    "description": "As settings.confirm.returned.act, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.failed": {
     "defaultMessage": "サーバーに接続できなかったため、完了できませんでした。接続を確かめてから、もう一度試してください。",

@@ -6,22 +6,25 @@
 // - The entry: the door to Move account, then, last, the doors to Deactivate account and Delete account; and for an
 //   account that has moved, whose door says where.
 // - Move account: the form, empty, under what a move does and what to do first on the other account; back from a
-//   login provider's confirmation; an account that has moved, with the way to cancel; while it loads, and when it
-//   could not be read. What follows a press is shot by a script that types and presses: the field filled; an address
-//   the fake finds no account at (nobody@nowhere.example), and the reader's own (yuki), each refused under the field;
-//   the confirmation open (sora@photos.example); and, on a fake that refuses every move once it is confirmed, each
-//   refusal: the account named does not list this one among its aliases, moved itself, or cannot be moved to, under
-//   the field, and a move too soon after the last, before the button. On the moved account, the question before the
-//   move is cancelled, and the form again once it is.
+//   login provider's confirmation, the account named before leaving in the field again; an account that has moved,
+//   with the way to cancel; while it loads, and when it could not be read. What follows a press is shot by a script
+//   that types and presses: the field filled; an address the fake finds no account at (nobody@nowhere.example), and
+//   the reader's own (yuki), each refused under the field; the confirmation open (sora@photos.example), and back
+//   from the provider the plain question of the act; and, on a fake that refuses every move once it is confirmed,
+//   each refusal: the account named does not list this one among its aliases, moved itself, or cannot be moved to,
+//   under the field, and a move too soon after the last, which takes the act's place. On the moved account, the
+//   question before the move is cancelled, and once it is, the screen again with the act's place saying the wait.
 // - Deactivate account: what it does and until when it can be undone, the door to Export, and the act; each state in
 //   which the server refuses, said in the act's place with what to do first; while it loads, and when it could not
-//   be read. The confirmation open is shot by a script that presses.
-// - Delete account: what it does, the door to Export, and the act; on a fake whose only administrator the reader is,
-//   the refusal before the button, once a script pressed and confirmed; while it loads, and when it could not be
-//   read.
+//   be read. The confirmation open, and back from the provider the plain question of the act, are shot by a script
+//   that presses.
+// - Delete account: what it does, the door to Export, and the act; for the server's only administrator, the refusal
+//   in the act's place, known as the screen opens or, where what deactivating would do says another thing first,
+//   once a script pressed and confirmed; while it loads, and when it could not be read.
 //
 // A confirmation holds with yuki's password, with a passkey, or with the fake's linked provider.
 
+import { confirmationKeptKey } from "@my/app-features";
 import { fakeExternalConfirmation, type FakeOptions } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -70,9 +73,20 @@ export const EntryMoved: Story = { parameters: screen({ at: entry, server: { set
  * handle to copy, and the field that names the account to move to over the button that moves.
  */
 export const Move: Story = { parameters: screen({ at: moveAt }) };
-/** Back from GitHub, which confirmed a move: the form says to name the account again, which then asks nothing. */
+/**
+ * Back from GitHub, which confirmed a move: the account named before leaving is in the field again, and the form says
+ * to move again, which then asks only whether to.
+ */
 export const MoveConfirmedElsewhere: Story = {
   parameters: screen({ at: confirmedAt(moveAt, "account_move") }),
+  // What the tab kept of the form as the reader left for the provider.
+  beforeEach: () => {
+    const key = confirmationKeptKey("account_move");
+    sessionStorage.setItem(key, movedTo);
+    return () => {
+      sessionStorage.removeItem(key);
+    };
+  },
 };
 /** A fake that refuses the move because the account named does not list this one among its aliases. */
 export const MoveAliasMissing: Story = { parameters: moveRefused("alias_missing") };
@@ -80,7 +94,10 @@ export const MoveAliasMissing: Story = { parameters: moveRefused("alias_missing"
 export const MoveTargetMoved: Story = { parameters: moveRefused("target_moved") };
 /** A fake that refuses the move because the account named cannot be moved to. */
 export const MoveTargetUnavailable: Story = { parameters: moveRefused("target_unavailable") };
-/** A fake that refuses the move because the account moved in the last 30 days, or to that account before. */
+/**
+ * A fake that refuses the move because the account moved in the last 30 days, or to that account before: once
+ * pressed, the act's place says the wait, with no field and no button.
+ */
 export const MoveTooSoon: Story = { parameters: moveRefused("too_soon") };
 /** An account that has moved: where, what it can still do, and, in a section of its own, cancelling the move. */
 export const Moved: Story = { parameters: screen({ at: moveAt, server: { settings: { movedTo } } }) };
@@ -94,15 +111,15 @@ export const MoveFailed: Story = { parameters: screen({ at: moveAt, state: "erro
  * to Export, and last the button that deactivates.
  */
 export const Deactivate: Story = { parameters: screen({ at: deactivateAt }) };
-/** Back from GitHub, which confirmed the deactivation: the act says to press again, which then asks nothing. */
+/** Back from GitHub, which confirmed the deactivation: the act says to press again, which then asks only whether to. */
 export const DeactivateConfirmedElsewhere: Story = {
   parameters: screen({ at: confirmedAt(deactivateAt, "account_deactivation") }),
 };
-/** An account that has moved cannot be deactivated: the summary says so and leads to Move account. */
+/** An account that has moved cannot be deactivated: the summary says so and leads to cancelling the move. */
 export const DeactivateMoved: Story = { parameters: screen({ at: deactivateAt, server: { settings: { movedTo } } }) };
-/** The only administrator who can sign in cannot deactivate their account. */
+/** The only administrator who can sign in cannot deactivate their account; the app has no screen of roles to lead to. */
 export const DeactivateLastAdministrator: Story = { parameters: deactivationRefused("last_administrator") };
-/** A supporter plan that goes on is cancelled first. */
+/** A supporter plan that goes on is cancelled first; the app has no screen of the plan to lead to. */
 export const DeactivatePaidSubscription: Story = { parameters: deactivationRefused("paid_subscription") };
 /** An account reactivated in the last day: the summary says from when it can be deactivated again. */
 export const DeactivateRecentlyReactivated: Story = { parameters: deactivationRefused("recently_reactivated") };
@@ -119,12 +136,19 @@ export const DeactivateFailed: Story = { parameters: screen({ at: deactivateAt, 
 
 /** /settings/account/delete: what deleting does, the door to Export, and last the button that deletes. */
 export const Delete: Story = { parameters: screen({ at: deleteAt }) };
-/** Back from GitHub, which confirmed the deletion: the act says to press again, which then asks nothing. */
+/** Back from GitHub, which confirmed the deletion: the act says to press again, which then asks only whether to. */
 export const DeleteConfirmedElsewhere: Story = {
   parameters: screen({ at: confirmedAt(deleteAt, "account_deletion") }),
 };
-/** A fake whose only administrator the reader is: the deletion is refused once it is confirmed. */
+/** The only administrator who can sign in, as what deactivating would do says: the act's place says so. */
 export const DeleteLastAdministrator: Story = {
+  parameters: screen({ at: deleteAt, server: { settings: { deactivationRefusal: "last_administrator" } } }),
+};
+/**
+ * A fake whose only administrator the reader is while what deactivating would do says nothing of it: the deletion is
+ * refused once it is confirmed, and the summary then takes the act's place.
+ */
+export const DeleteLastAdministratorPressed: Story = {
   parameters: screen({ at: deleteAt, server: { settings: { deletionRefusal: "last_administrator" } } }),
 };
 /** Delete account while the account is on its way. */

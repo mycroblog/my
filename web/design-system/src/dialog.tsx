@@ -8,18 +8,19 @@
 // composer does: a dialog of the main column's width over the dimmed page from `tablet`, a screen of its own on a
 // phone; its head holds the title and close at its end, and its body scrolls under the head. The confirmation that
 // asks the reader to authenticate again (before changing the password, deleting the account) is the confirmation's
-// dialog with the proof in it: what it lets them do, the field of the proof (the password, a two-factor code) or none
-// where the confirmation itself proves it (a passkey, going to an external provider), another way to prove it, what
-// the server refused right before the pair, and the pair; where the reader has no way to prove it here, it says so
-// and has Cancel alone. The head of every modal ends with close, after its title; a confirmation's close cancels, as
-// its Cancel does.
+// dialog with the proof in it: what the confirmation does where it does an act at once (deleting the account), in the
+// text's color, then what the proof lets them do, the field of the proof (the password, a two-factor code) or none
+// where the confirmation itself proves it (a passkey, going to an external provider), the other ways to prove it, each
+// a row of its own a finger's target tall, what the server refused right before the pair, and the pair; where the
+// reader has no way to prove it here, it says so and has Cancel alone. The head of every modal ends with close, after
+// its title; a confirmation's close cancels, as its Cancel does.
 //
 // For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
 // the page behind is out of reach. The confirmation that asks to authenticate again is a form: the focus starts in
 // the field of the proof, Enter in it confirms, what the server refused is an alert that also describes the field,
 // and the focus goes back to the field for another try; while the proof is in flight nothing confirms it again.
 
-import { useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
+import { Children, isValidElement, useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
@@ -36,6 +37,11 @@ const confirm = tv({
     // Wrapping between phrases, never inside a word of ja.
     title: "text-title [word-break:auto-phrase]",
     text: "text-muted-text [word-break:auto-phrase]",
+    // What the press does, where it does an act at once: in the text's color, over the muted line of the proof.
+    effect: "text-text [word-break:auto-phrase]",
+    // The other ways to prove it, one under another, each a finger's target tall.
+    ways: "list-none p-0",
+    way: "min-h-icon-button-touch",
   },
 });
 
@@ -170,16 +176,25 @@ export function ConfirmDialog({
 }
 
 export type ReauthDialogProps = {
-  /** What it asks (Confirm it's you). */
+  /** What it asks (Confirm it's you; the act's question where the confirmation does it: Delete this account?). */
   title: string;
-  /** What the proof lets the reader do, in a sentence. */
+  /**
+   * What the confirmation does once the proof holds, where it does an act at once (The account is deleted at once…),
+   * in a sentence in the text's color, over `about`; none where the proof only lets the reader go on.
+   */
+  effect?: ReactNode;
+  /** What the proof lets the reader do, in a sentence; with an `effect`, how to prove it. */
   about: ReactNode;
   /**
    * The field of the proof (a `TextField`: the password, a two-factor code), which takes the focus as the dialog
    * opens; none where the confirmation itself proves it (using a passkey, going to an external provider).
    */
   children?: ReactNode;
-  /** Another way to prove it, under the field (a `TextButton`: use the password instead). */
+  /**
+   * The other ways to prove it, under the field (`TextButton`s: use the password instead, continue with a provider):
+   * one, or several as an array. The dialog gives each a row of its own, a finger's target tall, so that one is never
+   * pressed for another.
+   */
   other?: ReactNode;
   /** What the server refused, right before the pair (a `FormAlert`): read as it comes, and with the field. */
   error?: ReactNode;
@@ -187,8 +202,9 @@ export type ReauthDialogProps = {
   closeLabel: string;
   cancel: string;
   /**
-   * The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub); none where the
-   * reader has no way to prove it here, and the dialog only says so (`error`): Cancel and close are then its ways out.
+   * The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub) or, with an `effect`,
+   * the act it does (Delete account); none where the reader has no way to prove it here, and the dialog only says so
+   * (`error`): Cancel and close are then its ways out.
    */
   confirm?: string | undefined;
   onCancel: () => void;
@@ -209,6 +225,7 @@ const proofField = (root: HTMLElement | null) => root?.querySelector<HTMLElement
  */
 export function ReauthDialog({
   title,
+  effect,
   about,
   children,
   other,
@@ -226,8 +243,13 @@ export function ReauthDialog({
   const titleId = useId();
   const textId = useId();
   const errorId = useId();
+  const effectId = useId();
   const form = useRef<HTMLFormElement>(null);
   const refused = error !== undefined && error !== null && error !== false;
+  const acts = effect !== undefined && effect !== null && effect !== false;
+  // The dialog is described by what it does, then by how to prove it.
+  const describedBy = acts ? `${effectId} ${textId}` : textId;
+  const ways = Children.toArray(other);
   // Over the page, the focus starts in the field of the proof, where there is one: the reader came to enter it.
   useEffect(() => {
     if (layer) proofField(form.current)?.focus();
@@ -257,12 +279,32 @@ export function ReauthDialog({
         onClose={onCancel}
         busy={busy}
       />
+      {acts && (
+        <p id={effectId} className={s.effect()}>
+          {effect}
+        </p>
+      )}
       <p id={textId} className={s.text()}>
         {about}
       </p>
       {/* What the server refused describes the field of the proof. */}
       <FieldContext value={refused ? { describedBy: errorId } : {}}>{children}</FieldContext>
-      {other !== undefined && <Row justify="start">{other}</Row>}
+      {ways.length > 0 && (
+        // Each way a row of its own, a finger's target tall: a press meant for one never lands on the next.
+        <Stack as="ul" className={s.ways()}>
+          {ways.map((way, i) => (
+            <Row
+              as="li"
+              key={isValidElement(way) && way.key !== null ? way.key : i}
+              align="center"
+              justify="start"
+              className={s.way()}
+            >
+              {way}
+            </Row>
+          ))}
+        </Stack>
+      )}
       {refused && <div id={errorId}>{error}</div>}
       <Row wrap align="center" justify="end" gap="dialog-row">
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
@@ -284,7 +326,7 @@ export function ReauthDialog({
         max="dialog"
         role="dialog"
         aria-labelledby={titleId}
-        aria-describedby={textId}
+        aria-describedby={describedBy}
         className={`box-border ${s.modal()} ${s.dialog()}`}
         dir={direction}
       >
@@ -293,7 +335,7 @@ export function ReauthDialog({
     );
   return (
     <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panelClassName={s.modal()}>
-      <Dialog aria-describedby={textId} className={s.dialog()} dir={direction}>
+      <Dialog aria-describedby={describedBy} className={s.dialog()} dir={direction}>
         {body}
       </Dialog>
     </ModalLayer>

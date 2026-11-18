@@ -655,6 +655,8 @@ const list = tv({
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
     // A fact is a few words around a date or an address: it breaks at its spaces alone, so that neither is cut.
     fact: "text-caption text-muted-text [word-break:keep-all]",
+    // A line about a stated fact is a sentence: it wraps between phrases, never inside a word of ja.
+    about: "text-caption text-muted-text [word-break:auto-phrase]",
     // A row of several lines (a title over its facts): its title strong, as the menu's entries, and the rows further
     // apart than its own lines are, so that each reads as one.
     named: "font-label",
@@ -1043,7 +1045,7 @@ export function SettingsFacts({
           {item.about?.map((line) => (
             <Fragment key={line}>
               {" "}
-              <span className={s.fact()}>{line}</span>
+              <span className={s.about()}>{line}</span>
             </Fragment>
           ))}
         </Stack>

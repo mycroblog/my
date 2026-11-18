@@ -7,6 +7,7 @@
 export { clearCaches } from "./caches";
 export { isOnline, watchOnline } from "./connection";
 export { readDeviceValue, writeDeviceValue } from "./device-values";
+export { readTabValue, writeTabValue } from "./tab-values";
 export { namesCommandKey } from "./keyboard";
 export { watchKeyboardInset } from "./keyboard-inset";
 export { browserLanguages } from "./languages";

@@ -101,6 +101,12 @@ const en = {
   usePasskey: "Use a passkey",
   useProvider: "Continue with GitHub",
   usePassword: "Use your password instead",
+  usePasskeyInstead: "Use a passkey instead",
+  useProviderInstead: "Continue with GitHub instead",
+  actTitle: "Delete this account?",
+  actEffect: "The account and its posts are deleted at once, and you are signed out. This cannot be undone.",
+  actAbout: "Enter your current password to confirm it's you.",
+  act: "Delete account",
   wrong: "That password is not right.",
   noWay: "This browser has no way to confirm it's you. Try a browser or device that can use one of your passkeys.",
   signedOut: "Chrome on Windows is signed out.",
@@ -221,6 +227,12 @@ const ja: typeof en = {
   usePasskey: "パスキーを使う",
   useProvider: "GitHubで続ける",
   usePassword: "代わりにパスワードを使う",
+  usePasskeyInstead: "代わりにパスキーを使う",
+  useProviderInstead: "代わりにGitHubで続ける",
+  actTitle: "このアカウントを削除しますか？",
+  actEffect: "アカウントと投稿はすぐに削除され、ログアウトします。もとに戻せません。",
+  actAbout: "本人確認のため、現在のパスワードを入力してください。",
+  act: "アカウントを削除",
   wrong: "パスワードが正しくありません。",
   noWay: "このブラウザには本人確認の手段がありません。パスキーを使えるブラウザか端末で試してください。",
   signedOut: "Windows の Chrome をログアウトしました。",
@@ -675,6 +687,21 @@ function Reauth() {
         error={<FormAlert>{w.wrong}</FormAlert>}
       >
         <TextField id="reauth-wrong" name="password" type="password" label={w.password} />
+      </ReauthDialog>
+      {/* An act done at once: what the press does over how to prove it, the button named by the act, and the other
+          ways each a row of its own. */}
+      <ReauthDialog
+        {...pair}
+        title={w.actTitle}
+        effect={w.actEffect}
+        about={w.actAbout}
+        confirm={w.act}
+        other={[
+          <TextButton key="passkey">{w.usePasskeyInstead}</TextButton>,
+          <TextButton key="provider">{w.useProviderInstead}</TextButton>,
+        ]}
+      >
+        <TextField id="reauth-act" name="password" type="password" label={w.password} />
       </ReauthDialog>
       {/* No way to prove it here: it says so, with nothing to confirm; Cancel and close are its ways out. */}
       <ReauthDialog {...pair} title={w.confirmTitle} about={w.confirmAbout} error={<FormAlert>{w.noWay}</FormAlert>} />

@@ -181,7 +181,11 @@ export type FakeSettings = {
    * (`moved`). One reactivated lately (`recently_reactivated`) can be deactivated again in 20 hours.
    */
   deactivationRefusal: DeactivationPreview["refusal"];
-  /** The deletion of the account is refused once its confirmation holds: it is the server's only administrator. */
+  /**
+   * The deletion of the account is refused once its confirmation holds: it is the server's only administrator, which
+   * what deactivating would do does not say (it says another refusal first, or none). A `deactivationRefusal` of
+   * `last_administrator` refuses the deletion too.
+   */
   deletionRefusal?: "last_administrator" | undefined;
   /** The actions of the moderators on the reader's account, newest first, with the appeals made. */
   moderation: readonly FakeAction[];
@@ -1005,7 +1009,8 @@ export function createSettings(env: SettingsEnv): SettingsState {
     },
     "POST /accounts/delete": ({ body, request }) => {
       if (!confirmed(body)) return wrongProof(request);
-      if (settings.deletionRefusal === "last_administrator")
+      // The server keeps its last administrator who can sign in, whatever deactivating would say first.
+      if (settings.deletionRefusal === "last_administrator" || settings.deactivationRefusal === "last_administrator")
         return refused(said(request).lastAdministrator, "last-administrator", 409);
       return { status: 204 };
     },
