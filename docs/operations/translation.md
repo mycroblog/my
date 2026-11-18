@@ -170,6 +170,3 @@ covers the account.** Without the opt-out, Amazon is not only your service provi
 privacy policy ([privacy policy template](privacy-policy-template.md#the-services-you-choose)), and do not allow
 `private` or `direct` for `aws` in `translation_provider_visibilities`. By default the provider receives only `public`,
 `local`, and `unlisted` posts.
-
-A server built with the build tag `no_translator_aws` does not have the provider and refuses to start with
-`translator_aws_region` set ([build tags](../reference/build-tags.md)).

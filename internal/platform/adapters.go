@@ -36,11 +36,11 @@ import (
 
 // The adapters that need a client library, a driver, or a cloud SDK are wired in files of
 // their own, adapters_<name>.go, which the build tag no_<name> replaces with
-// adapters_no_<name>.go (NFR-PORT-4, ADR-0010): there, the constructor reports that the
+// adapters_no_<name>.go (ADR-0010 §2): there, the constructor reports that the
 // adapter is not in this build, and the binary links neither the adapter nor its
 // dependencies. Load already rejects the settings that select such an adapter
 // (config.ExcludedError), so the replacements are reached only through a Config built
-// without Load. docs/reference/build-tags.md lists the tags.
+// without Load.
 
 // repositories are the repositories of the database that cfg.DB selects.
 type repositories struct {

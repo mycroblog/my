@@ -136,7 +136,7 @@ Le serveur fait confiance au `X-Forwarded-For` des plages d’adresses par défa
 Le service ponctuel `garage-init` prépare le magasin à chaque `up`. Il reste à l’intérieur du réseau Compose, puisque le serveur
 sert lui-même les médias. Un nœud est un disque : sauvegardez le volume `garage` ou le bucket ([Sauvegarde](backup.md#media-in-a-bucket)).
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## Obtenir l’image
 
 L’image du serveur est `ghcr.io/mycroblog/my`, publique, pour `linux/amd64` et `linux/arm64`, avec tous les adaptateurs.
@@ -163,7 +163,6 @@ Où l’exécuter :
 - **Kubernetes** : récupérez-la depuis `ghcr.io` telle quelle.
 - **Cloud Run** : utilisez directement l’image `ghcr.io`. Un déploiement résout le tag en condensat.
 - **AWS (ECS, EKS)** : copiez l’image dans Amazon ECR, ou utilisez un pull through cache d’ECR, qui nécessite des identifiants ghcr.io.
-- **Une image plus petite** : `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` dans un checkout en construit une avec moins d’adaptateurs ([build tags](../reference/build-tags.md)). C’est votre propre build ; il n’est donc pas couvert par les vérifications ci-dessous.
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### Vérifier une image

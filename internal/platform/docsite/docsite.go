@@ -49,7 +49,7 @@ func SetBuildVersion(build string) {
 	running.Store(&v)
 }
 
-// URL returns the page of a published document of the repository, such as docs/reference/build-tags.md or
+// URL returns the page of a published document of the repository, such as docs/reference/configuration.md or
 // docs/operations/alerts.md#myqueuebacklog, at the version of the running binary.
 func URL(document string) string {
 	v := Next

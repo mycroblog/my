@@ -114,7 +114,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   (die Meldung nennt die Schlüssel-ID: Füge diesen KEK zu `kek_previous` hinzu und führe es erneut aus), oder der gespeicherte Wert ist beschädigt oder wurde aus einer anderen Zeile kopiert.
   Entferne keinen KEK aus `kek_previous`, solange `my kek status` noch Secrets darunter zählt.
 
-<!-- source: google-cloud-kms 1c47dd463234 -->
+<!-- source: google-cloud-kms 46a4c691c58f -->
 ## Google Cloud KMS
 
 Mit `key_manager = gcpkms` verpackt ein symmetrischer Cloud-KMS-Schlüssel (ein CryptoKey mit dem Zweck `ENCRYPT_DECRYPT`) die Data-Encryption-Keys, und der KEK verlässt Cloud KMS nie.
@@ -128,7 +128,6 @@ Ein durchgesickerter Datenbank-Dump und eine durchgesickerte Konfiguration zusam
   Ohne sie schlägt das Lesen eines Secrets mit einem Fehler fehl, der die Rolle nennt; eine fehlende oder deaktivierte Schlüsselversion schlägt ebenso fehl, und diese Fehler werden nicht wiederholt, bis die Konfiguration behoben ist.
   Ein Kontingentfehler oder ein nicht erreichbares Cloud KMS ist vorübergehend, und die Arbeit, die das Secret brauchte, wird wiederholt.
 - Der Server behält einen Data-Encryption-Key, den Cloud KMS entschlüsselt hat, für `kms_dek_cache_ttl` (Standard `10m`), sodass die meisten Lesezugriffe auf ein Secret Cloud KMS nicht aufrufen.
-- Das Build-Tag `no_gcpkms` lässt den Adapter aus dem Binary weg ([Build-Tags](../reference/build-tags.md)).
 
 <!-- source: rotate-the-key-in-cloud-kms ba58f052af2a -->
 ### Den Schlüssel in Cloud KMS rotieren
@@ -144,7 +143,7 @@ Cloud KMS sagt nicht, welche Secrets eine Version verpackt hat. Um Schlüsselmat
 3. Führe `my kek rewrap` mit derselben Konfiguration aus. Wenn `my kek status` unter der ID des alten Schlüssels keine Secrets mehr zählt, entferne `kms_key_previous` und starte neu.
 4. Erst dann deaktivierst du die Versionen des alten Schlüssels und hältst sie wiederherstellbar, solange du Datenbank-Backups aufbewahrst, die vor Schritt 3 erstellt wurden: Zum Wiederherstellen eines davon braucht man sie wieder.
 
-<!-- source: aws-kms f97406d91b4c -->
+<!-- source: aws-kms b74cad9cc18f -->
 ## AWS KMS
 
 Mit `key_manager = awskms` verpackt ein symmetrischer AWS-KMS-Schlüssel (Key Spec `SYMMETRIC_DEFAULT`, Key Usage `ENCRYPT_DECRYPT`, vom Kunden verwaltet) die Data-Encryption-Keys, und der KEK verlässt AWS KMS nie.
@@ -173,7 +172,6 @@ Ein durchgesickerter Datenbank-Dump und eine durchgesickerte Konfiguration zusam
 - Kosten: AWS berechnet eine monatliche Gebühr für jeden vom Kunden verwalteten Schlüssel (zum Zeitpunkt des Schreibens 1 USD, zuzüglich desselben Betrags für jede der ersten beiden Rotationen seines Schlüsselmaterials) und eine Gebühr pro Anfrage oberhalb eines monatlichen Freikontingents
   (siehe [AWS-KMS-Preise](https://aws.amazon.com/kms/pricing/)). Der Server behält einen Data-Encryption-Key, den AWS KMS entschlüsselt hat, für `kms_dek_cache_ttl` (Standard `10m`),
   ein Server mit zehn Actors, die ständig zustellen, stellt also etwa 43.000 Anfragen pro Monat und Prozess, einige Cent oberhalb des Freikontingents.
-- Das Build-Tag `no_awskms` lässt den Adapter aus dem Binary weg ([Build-Tags](../reference/build-tags.md)).
 
 <!-- source: retire-an-aws-kms-key b670091ad7f1 -->
 ### Einen AWS-KMS-Schlüssel außer Betrieb nehmen
@@ -187,7 +185,7 @@ Um einen Schlüssel nicht mehr zu verwenden oder um einen Alias auf einen andere
 3. Führe `my kek rewrap` mit derselben Konfiguration aus. Wenn `my kek status` unter der ID des alten Schlüssels keine Secrets mehr zählt, entferne `kms_key_previous` und starte neu.
 4. Erst dann deaktivierst du den alten Schlüssel und behältst ihn, solange du Datenbank-Backups aufbewahrst, die vor Schritt 3 erstellt wurden: Zum Wiederherstellen eines davon braucht man ihn wieder.
 
-<!-- source: a-plugin 43023e60bac9 -->
+<!-- source: a-plugin 336458ba764e -->
 ## Ein Plugin
 
 Mit `key_manager = plugin` hält ein [Plugin](plugins.md) von dir den KEK, in Vault, in einem HSM oder wo es will, und verpackt die Data-Encryption-Keys für den Server.
@@ -205,7 +203,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - Die Schlüssel-ID der gespeicherten Secrets ist `plugin:` gefolgt von der ID des Plugins für seinen KEK, die aus 1 bis 248 Bytes sichtbarem ASCII besteht.
 - **Behalte jeden KEK, den ein gespeichertes Secret noch nennt.** Eine Rotation im Plugin zeigt sich als neue ID beim nächsten Verpacken. Die zuvor verpackten Secrets nennen weiter die alte ID, und das Plugin muss sie weiterhin öffnen können. `my kek rewrap` verschiebt sie auf die aktuelle ID, und `my kek status` zählt die übrigen.
 - Ein Plugin und ein KMS bedienen nie zusammen: `kms_key` und `kms_key_previous` werden mit einem Plugin abgelehnt, ebenso `plugin_key_manager_address` mit `key_manager = gcpkms` oder `awskms`.
-- Das Build-Tag `no_plugins` lässt den Adapter aus dem Binary weg ([Build-Tags](../reference/build-tags.md)).
 
 <!-- source: when-the-server-starts 5faeda92e43b -->
 ### Wenn der Server startet

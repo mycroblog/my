@@ -20,7 +20,7 @@ De arriba abajo en el diagrama:
 - **Las partes que eliges.** Cada parte del centro del diagrama tiene una configuración que elige su adaptador, enumerado en [la sección siguiente](#parts-you-choose-by-configuration).
 - **Servicios externos al servidor.** CAPTCHA, el chat de voz, los pagos, los complementos y la importación de costos de la nube permanecen desactivados hasta que los configures; el servidor llama entonces al servicio que indiques.
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## Partes que eliges mediante la configuración
 
 Cada parte es una configuración de la [referencia de configuración](../reference/configuration.md), definido en un archivo TOML o como variable de entorno (`MY_` y la clave en mayúsculas, como `MY_DATABASE`). La primera opción de cada lista es la predeterminada. Cuando una parte guarda datos, elígela antes del primer arranque: los datos no se mueven solos cuando cambia la configuración.
@@ -47,9 +47,7 @@ Cada parte es una configuración de la [referencia de configuración](../referen
 | Trazas | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Trazas](running.md#traces) |
 | Informes de errores | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (solo la línea de registro y los grupos de errores), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Informes de errores](error-reporting.md) |
 
-El binario publicado y la imagen de contenedor incluyen todos los adaptadores de la tabla. Un binario que compilas tú
-puede dejar fuera los que no uses con [etiquetas de compilación](../reference/build-tags.md), y entonces rechaza sus
-configuraciones al arrancar.
+El binario publicado y la imagen de contenedor incluyen todos los adaptadores de la tabla.
 
 `my config check` informa de todos los problemas de la configuración a la vez, antes de que arranques el servidor
 ([lista de comprobación para producción](production-checklist.md)).

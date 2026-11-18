@@ -23,16 +23,6 @@ const cliReferencePath = "docs/reference/cli.md"
 
 var updateCLIReference = flag.Bool("update", false, "regenerate "+cliReferencePath)
 
-// cliBuildTagNotes are the commands whose work a build tag leaves out, and what such a build does instead. The
-// tags only remove or add code, which no single build can run, so the generator names them here.
-var cliBuildTagNotes = map[string]string{
-	"plugin": "A binary built with the build tag `no_plugins` has no plugins: `my plugin` and its subcommands " +
-		"exit with 1 and say so.",
-	"db backup": "A binary built with the build tag `no_sqlite` has no SQLite and refuses to back up.",
-	"schema apply": "A binary built with the build tag `no_sqlite` or `no_postgres` cannot apply the schema of " +
-		"the database that the tag leaves out.",
-}
-
 // cliCommand is one command of my, as running it with -help shows it.
 type cliCommand struct {
 	words []string      // after my: ["admin", "role", "grant"]
@@ -83,13 +73,7 @@ func walkCLI(t *testing.T) *cliCommand {
 // TestCLIReferenceUpToDate fails when the committed command reference differs from the commands of my.
 // Regenerate it with `scripts/task.sh go:cli-docs`.
 func TestCLIReferenceUpToDate(t *testing.T) {
-	root := walkCLI(t)
-	for name := range cliBuildTagNotes {
-		if find(root, strings.Fields(name)) == nil {
-			t.Errorf("cliBuildTagNotes names %q, which is not a command of my", name)
-		}
-	}
-	want := cliReference(t, root)
+	want := cliReference(t, walkCLI(t))
 	path := filepath.Join("..", "..", filepath.FromSlash(cliReferencePath))
 	if *updateCLIReference {
 		if err := os.WriteFile(path, []byte(want), 0o600); err != nil {
@@ -104,18 +88,6 @@ func TestCLIReferenceUpToDate(t *testing.T) {
 	if string(got) != want {
 		t.Errorf("%s is stale; run `scripts/task.sh go:cli-docs`", cliReferencePath)
 	}
-}
-
-func find(c *cliCommand, words []string) *cliCommand {
-	if len(words) == 0 {
-		return c
-	}
-	for _, ch := range c.child {
-		if ch.words[len(ch.words)-1] == words[0] {
-			return find(ch, words[1:])
-		}
-	}
-	return nil
 }
 
 // reDocsLine is the last line of a help that links its page on the documentation site.
@@ -138,9 +110,7 @@ Most commands read the configuration as the server does: from the environment, a
 ` + "`-config`" + ` or ` + "`MY_CONFIG`" + ` ([configuration reference](configuration.md)). A command exits with 2 when its command
 line is wrong, without changing anything.
 
-A binary built with build tags that leave adapters out has the same commands; the ones that need what a tag left out
-are marked below and fail with a message that names the tag. A test build adds ` + "`my dev push-service`" + `
-([build tags](build-tags.md)).
+A test build adds ` + "`my dev push-service`" + ` ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)).
 `)
 	var render func(c, parent *cliCommand)
 	render = func(c, parent *cliCommand) {
@@ -149,9 +119,6 @@ are marked below and fail with a message that names the tag. A test build adds `
 			level = "##"
 		}
 		blocks := []string{fmt.Sprintf("%s `%s`", level, c.name())}
-		if note, ok := cliBuildTagNotes[strings.Join(c.words, " ")]; ok {
-			blocks = append(blocks, note)
-		}
 		help, docs := splitDocsLine(t, c.help)
 		if len(c.subs) == 0 {
 			blocks = append(blocks, "```text\n"+strings.Join(synopsis(c, help), "\n")+"\n```")

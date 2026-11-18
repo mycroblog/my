@@ -138,7 +138,7 @@ Le serveur parle lui-même le protocole Sentry : aucun SDK Sentry n’intervie
 - **GlitchTip** : copiez le DSN du projet. Il est open source et tourne sur un petit serveur. Vérifiez quelles règles d’alerte votre version propose pour les problèmes nouveaux et récurrents.
 - **Datadog Error Tracking** : utilisez le DSN Sentry de votre site Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige le tag `service`, que le serveur définit toujours. Datadog stocke ces événements comme des journaux et les groupe dans Error Tracking. Si vous envoyez plutôt la ligne de journal à Datadog avec un agent ou un forwarder (Error Tracking for Logs), la pile se trouve dans `message` ; associez-la à `error.stack` avec un pipeline de journaux, faute de quoi Datadog ne la voit pas comme une pile. L’exporteur `sentry` n’exige aucune correspondance de ce type.
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP
 
 ```sh
@@ -149,7 +149,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 Chaque rapport est un enregistrement de journal OpenTelemetry nommé `exception`, avec la sévérité `ERROR` (`FATAL` quand il arrête le processus), `exception.type`, `exception.message`, `exception.stacktrace`, `my.error.fingerprint`, `my.error.where`, `my.error.source`, `my.error.kind`, ainsi que les ID de trace et de span. Il circule via OTLP/HTTP (protobuf, gzip) avec la même ressource que les métriques et les traces.
 
-Que le backend transforme ces enregistrements en erreurs groupées dépend du backend : certains construisent leurs vues d’erreurs à partir des seules données de trace, et Datadog a besoin de `error.stack`. Pour Sentry, GlitchTip et Datadog, utilisez `sentry`. Utilisez `otlp` quand vous voulez les enregistrements à côté de vos autres journaux. Le build tag `no_otel` exclut `otlp` ([Build tags](../reference/build-tags.md)).
+Que le backend transforme ces enregistrements en erreurs groupées dépend du backend : certains construisent leurs vues d’erreurs à partir des seules données de trace, et Datadog a besoin de `error.stack`. Pour Sentry, GlitchTip et Datadog, utilisez `sentry`. Utilisez `otlp` quand vous voulez les enregistrements à côté de vos autres journaux.
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## Ce que le nettoyage garantit et ne garantit pas

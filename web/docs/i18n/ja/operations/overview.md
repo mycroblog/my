@@ -16,7 +16,7 @@
 - **選ぶ部品。** 図の中央にある各部品には、そのアダプターを選ぶ設定が 1 つずつあります。[次の節](#parts-you-choose-by-configuration)に一覧があります。
 - **サーバー外のサービス。** CAPTCHA、通話、支払い、プラグイン、クラウド費用の取り込みは、それぞれ設定するまで無効で、設定するとサーバーは指定したサービスを呼び出します。
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## 設定で選ぶ部品
 
 どの部品も[設定リファレンス](../reference/configuration.md)の設定項目で、TOML ファイルか環境変数（`MY_` にキーを大文字にしたもの。例: `MY_DATABASE`）で設定します。各一覧の最初の選択肢が既定値です。データを保持する部品は、最初の起動の前に選んでください。設定を変えても、データが自動で移ることはありません。
@@ -43,7 +43,7 @@
 | トレース | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [トレース](running.md#traces) |
 | エラーレポート | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（ログ行とエラーグループだけ）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [エラーレポート](error-reporting.md) |
 
-リリースされたバイナリとコンテナイメージには、表のアダプターがすべて含まれています。自分でビルドするバイナリでは、使わないアダプターを[ビルドタグ](../reference/build-tags.md)で外せます。その場合、起動時にそのアダプターの設定は拒否されます。
+リリースされたバイナリとコンテナイメージには、表のアダプターがすべて含まれています。
 
 `my config check` は、サーバーを起動する前に、設定の問題をまとめてすべて報告します（[本番運用のチェックリスト](production-checklist.md)）。
 

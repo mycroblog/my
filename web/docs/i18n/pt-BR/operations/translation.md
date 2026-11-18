@@ -159,6 +159,3 @@ cubra a conta.** Sem essa exclusão, a Amazon não é apenas o seu provedor de s
 privacidade ([modelo de política de privacidade](privacy-policy-template.md#the-services-you-choose)), e não permita
 `private` nem `direct` para `aws` em `translation_provider_visibilities`. Por padrão, o provedor recebe apenas publicações
 `public`, `local` e `unlisted`.
-
-Um servidor compilado com a build tag `no_translator_aws` não tem o provedor e se recusa a iniciar com
-`translator_aws_region` definido ([build tags](../reference/build-tags.md)).

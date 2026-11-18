@@ -26,7 +26,7 @@ De haut en bas du schéma :
 - **Les services extérieurs au serveur.** CAPTCHA, chat vocal, paiements, plugins et import des coûts cloud restent chacun désactivés
   tant que vous ne les configurez pas ; le serveur appelle alors le service que vous indiquez.
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## Les éléments que vous choisissez par la configuration
 
 Chaque élément est un réglage de la [référence de configuration](../reference/configuration.md), défini dans un fichier TOML ou sous forme de variable d’environnement (`MY_` suivi de la clé en majuscules, par exemple `MY_DATABASE`). La première option de chaque liste est la valeur par défaut.
@@ -54,7 +54,7 @@ Lorsqu’un élément conserve des données, choisissez-le avant le premier dém
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Rapports d’erreurs | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (uniquement la ligne de journal et les groupes d’erreurs), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Rapports d’erreurs](error-reporting.md) |
 
-Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du tableau. Un binaire que vous compilez vous-même peut omettre ceux que vous n’utilisez pas grâce aux [build tags](../reference/build-tags.md), et refuse alors leurs réglages au démarrage.
+Le binaire publié et l’image de conteneur contiennent tous les adaptateurs du tableau.
 
 `my config check` signale d’un coup tous les problèmes de la configuration, avant que vous démarriez le serveur ([liste de contrôle de production](production-checklist.md)).
 

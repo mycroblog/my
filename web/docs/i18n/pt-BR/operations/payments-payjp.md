@@ -108,7 +108,7 @@ O servidor distingue os eventos das APIs v1 e v2 pelo formato deles, então as d
 O PAY.JP reenvia uma notificação apenas a cada 3 minutos, no máximo 3 vezes, e uma notificação além disso não chega até você reenviá-la pelo painel. A conciliação corrige o que foi perdido, então **recomenda-se definir `payments_reconcile_interval` como 1 hora**.
 O estado do provedor (o modo, o momento em que chegou o último webhook e o resultado da última conciliação) aparece na seção “Provedor de pagamento” de `/admin/supporters` na administração.
 
-<!-- source: 4-configure-the-server b0d24c7a2da0 -->
+<!-- source: 4-configure-the-server 5f0d4e9b413b -->
 ## 4. Configurar o servidor
 
 ```sh
@@ -121,7 +121,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` verifica a configuração. Um binário compilado com a build tag `no_payments_payjp` recusa `payments = payjp` (veja [build-tags.md](../reference/build-tags.md)).
+`my config check` verifica a configuração.
 
 <!-- source: 5-try-it-in-test-mode f6ebbada0e0e -->
 ## 5. Experimentar no modo de teste

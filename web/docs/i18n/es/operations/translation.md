@@ -159,6 +159,3 @@ Organizations cubra la cuenta.** Sin la exclusión, Amazon no es solo tu proveed
 política de privacidad ([plantilla de política de privacidad](privacy-policy-template.md#the-services-you-choose)) y no permitas
 `private` ni `direct` para `aws` en `translation_provider_visibilities`. De forma predeterminada el proveedor recibe solo publicaciones `public`,
 `local` y `unlisted`.
-
-Un servidor compilado con la etiqueta de compilación `no_translator_aws` no tiene el proveedor y se niega a arrancar con
-`translator_aws_region` definido ([etiquetas de compilación](../reference/build-tags.md)).

@@ -26,10 +26,10 @@
 | Cloudflare | 这些模块不负责。像插件一样设置 `MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN`（来自机密） |
 | 插件 | 这些模块不负责。`backends` 中没有账单模块时，在应用模块的 `env` 中设置 `MY_BILLING_SOURCES = plugin` 以及[插件](#a-plugin-billing_sources--plugin)的各项设置；与账单模块同时使用时，应用模块会拒绝 `env` 中的 `MY_BILLING_SOURCES`，因此请自行添加一个返回 `billing_sources = ["plugin"]` 的后端（[后端的字段](../../deploy/opentofu/README.md)） |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS（`billing_sources = aws`）
 
-服务器每个账单月（UTC 的自然月）调用一次 AWS Cost Explorer 的 `GetCostAndUsage`，按服务（`SERVICE`）和记录类型（`RECORD_TYPE`）分组。端点始终是 `us-east-1`。金额以美元计。在 Cost Explorer 把某个月标记为估算（`Estimated`）期间，服务器把截至前一天的金额记录为估算值；不再标记之后，记录为确定值。使用构建标签 `no_billing_aws` 构建的二进制文件会拒绝 `aws`（见 [build-tags.md](../reference/build-tags.md)）。
+服务器每个账单月（UTC 的自然月）调用一次 AWS Cost Explorer 的 `GetCostAndUsage`，按服务（`SERVICE`）和记录类型（`RECORD_TYPE`）分组。端点始终是 `us-east-1`。金额以美元计。在 Cost Explorer 把某个月标记为估算（`Estimated`）期间，服务器把截至前一天的金额记录为估算值；不再标记之后，记录为确定值。
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### 费用与限额
@@ -146,10 +146,10 @@ AWS Organizations 的管理账号可以查看组织中每个成员账号的费�
 
 除 `throttled` 和 `unavailable` 之外的失败无法通过重试解决，因此服务器会记录失败并停止，由第二天的定时导入再次尝试。
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud（`billing_sources = gcp`）
 
-Google Cloud 没有返回实际费用的 API，因此服务器每天用一次 BigQuery `jobs.query` 汇总 Cloud Billing 导出到 BigQuery 的数据（标准使用费用）（`billing_gcp_method = bigquery`，默认）。无法设置导出时，还有一种简易方法，只从预算的 Pub/Sub 通知导入一个近似的总额（见[从预算通知导入](#importing-from-budget-notifications-billing_gcp_method--budget)）。账单月是导出数据中的 `invoice.month`，即美国太平洋时间（含夏令时）的自然月。日期按太平洋时间原样记录。金额以结算账号的货币计，按账单月、服务（`service.description`）和费用类型（`cost_type`）以 `NUMERIC` 求和；抵扣额（`credits[]`）每项服务合并为一行抵扣。导出中用于抵消先前行的更正行也计入总和。导出数据没有表示已确定的标记，因此从次月 5 日（太平洋时间）起运行的导入会把该月视为已确定，在此之前则记录为从当月第一天到最后一次使用当天的估算值。确定之后，导入仍会在 15 日之前再次读取该月，并把任何差额记录为更正。使用构建标签 `no_billing_gcp` 构建的二进制文件会拒绝 `gcp`（见 [build-tags.md](../reference/build-tags.md)）。
+Google Cloud 没有返回实际费用的 API，因此服务器每天用一次 BigQuery `jobs.query` 汇总 Cloud Billing 导出到 BigQuery 的数据（标准使用费用）（`billing_gcp_method = bigquery`，默认）。无法设置导出时，还有一种简易方法，只从预算的 Pub/Sub 通知导入一个近似的总额（见[从预算通知导入](#importing-from-budget-notifications-billing_gcp_method--budget)）。账单月是导出数据中的 `invoice.month`，即美国太平洋时间（含夏令时）的自然月。日期按太平洋时间原样记录。金额以结算账号的货币计，按账单月、服务（`service.description`）和费用类型（`cost_type`）以 `NUMERIC` 求和；抵扣额（`credits[]`）每项服务合并为一行抵扣。导出中用于抵消先前行的更正行也计入总和。导出数据没有表示已确定的标记，因此从次月 5 日（太平洋时间）起运行的导入会把该月视为已确定，在此之前则记录为从当月第一天到最后一次使用当天的估算值。确定之后，导入仍会在 15 日之前再次读取该月，并把任何差额记录为更正。
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### 费用与限额
@@ -234,7 +234,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 - 估算中的月份记录为从当月第一天到最后一条通知发布当天（太平洋时间）的费用。
 - 筛选由预算的范围（项目、服务、一个标签键和值）决定，不使用 `billing_gcp_projects` 和 `billing_gcp_label`。
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### 准备预算、主题和订阅
 
 1. 创建一个主题和一个只由本服务器读取的拉取订阅。保留期限和过期设置的原因见下文“如何读取通知”。
@@ -256,7 +256,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 
 4. 设置 `MY_BILLING_GCP_METHOD=budget` 和 `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`。
 
-身份验证与 BigQuery 相同，使用应用默认凭据（见上文 [IAM 角色](#iam-roles)中的表格）。构建标签 `no_billing_gcp` 也会移除这种方法。Pub/Sub 客户端库与 `stream = pubsub` 共用，因此只有同时设置 `no_pubsub` 时，它才会从二进制文件中移除（见 [build-tags.md](../reference/build-tags.md)）。
+身份验证与 BigQuery 相同，使用应用默认凭据（见上文 [IAM 角色](#iam-roles)中的表格）。
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### 如何读取通知
@@ -280,10 +280,10 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 | `unavailable` | `UNAVAILABLE`、`INTERNAL` 等，网络故障 | 任务会在暂停后重试 |
 | `invalid_response` | 无法作为预算通知读取的消息、非每月的预算、显示名称相同的两个预算 | 把预算设为每月，为各预算设置不同的显示名称，并且不向该主题发送其他消息 |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare（`billing_sources = cloudflare`）
 
-服务器会读取 Cloudflare 账号的可计费用量：其按量付费产品（例如 R2、Workers 和 D1）的使用费用，每个指标每天一条记录。它按产品（`R2`、`Workers`、`D1`）把这些记录汇总到 UTC 日历月中，因此每个产品每月是一行使用费。免费额度内的用量也会导入，数值为 0。只有按量付费的账号才有这些数据；Enterprise 合同账号会以 `not_enabled` 失败。使用构建标签 `no_billing_cloudflare` 构建的二进制文件会拒绝 `cloudflare`（请参阅 [build-tags.md](../reference/build-tags.md)）。
+服务器会读取 Cloudflare 账号的可计费用量：其按量付费产品（例如 R2、Workers 和 D1）的使用费用，每个指标每天一条记录。它按产品（`R2`、`Workers`、`D1`）把这些记录汇总到 UTC 日历月中，因此每个产品每月是一行使用费。免费额度内的用量也会导入，数值为 0。只有按量付费的账号才有这些数据；Enterprise 合同账号会以 `not_enabled` 失败。
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### 不导入的内容

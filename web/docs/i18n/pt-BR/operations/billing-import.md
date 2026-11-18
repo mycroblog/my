@@ -28,12 +28,11 @@ Os módulos [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/R
 | Cloudflare | Não por estes módulos. Defina `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` e `MY_BILLING_CLOUDFLARE_API_TOKEN` (a partir de um segredo) como para um plugin |
 | Um plugin | Não por estes módulos. Sem nenhum módulo de cobrança em `backends`, defina `MY_BILLING_SOURCES = plugin` e as configurações do [plugin](#a-plugin-billing_sources--plugin) no `env` do módulo de aplicação; ao lado de um módulo de cobrança, o módulo de aplicação recusa `MY_BILLING_SOURCES` em `env`, então adicione um backend seu que retorne `billing_sources = ["plugin"]` ([os campos de um backend](../../deploy/opentofu/README.md)) |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
 
 O servidor chama `GetCostAndUsage` do AWS Cost Explorer uma vez por mês de cobrança (um mês civil em UTC), agrupado por serviço (`SERVICE`) e tipo de registro (`RECORD_TYPE`). O endpoint é sempre `us-east-1`.
 Os valores são em USD. Enquanto o Cost Explorer marca um mês como estimado (`Estimated`), o servidor registra o valor até o dia anterior como estimativa e, quando ele deixa de marcar, como definitivo.
-Um binário compilado com a build tag `no_billing_aws` recusa `aws` (veja [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### Custo e limites
@@ -158,7 +157,7 @@ Os valores do Cost Explorer e a fatura podem diferir por causa do momento da atu
 
 Tentar de novo não corrige uma falha que não seja `throttled` ou `unavailable`, então o servidor a registra e para, e a importação agendada do dia seguinte tenta de novo.
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud (`billing_sources = gcp`)
 
 O Google Cloud não tem uma API que retorne os custos reais, então o servidor agrega a exportação do Cloud Billing para o BigQuery (standard usage cost) uma vez por dia com um `jobs.query` do BigQuery (`billing_gcp_method = bigquery`, o padrão).
@@ -166,7 +165,6 @@ Quando você não consegue configurar a exportação, há também um método sim
 O mês de cobrança é o `invoice.month` da exportação, um mês civil no horário do Pacífico dos EUA (com horário de verão). As datas são registradas no horário do Pacífico, como estão.
 Os valores estão na moeda da conta de faturamento, somados como `NUMERIC` por mês de cobrança, serviço (`service.description`) e tipo de cobrança (`cost_type`), e os créditos (`credits[]`) viram uma linha de crédito por serviço. As linhas de correção da exportação que cancelam linhas anteriores fazem parte da soma.
 A exportação não tem marca de que o mês é definitivo, então a importação que roda a partir do dia 5 (horário do Pacífico) do mês seguinte trata o mês como definitivo e, até lá, o registra como estimativa do primeiro dia do mês até o dia do último uso. Depois de definitivo, a importação ainda lê o mês de novo até o dia 15 e registra qualquer diferença como correção.
-Um binário compilado com a build tag `no_billing_gcp` recusa `gcp` (veja [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### Custo e limites
@@ -255,7 +253,7 @@ Este método importa **apenas um total aproximado baseado em estimativas**.
 - Um mês estimado é registrado como o custo do primeiro dia do mês até o dia (horário do Pacífico) em que a última notificação foi publicada.
 - A filtragem é decidida pelo escopo do orçamento (projetos, serviços, uma chave e um valor de rótulo), e `billing_gcp_projects` e `billing_gcp_label` não são usados.
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### Preparar o orçamento, o tópico e a assinatura
 
 1. Crie um tópico e uma assinatura pull que somente este servidor leia. Veja "Como as notificações são lidas" abaixo para os motivos do período de retenção e da expiração.
@@ -281,7 +279,6 @@ Este método importa **apenas um total aproximado baseado em estimativas**.
 4. Defina `MY_BILLING_GCP_METHOD=budget` e `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`.
 
 A autenticação é a mesma das Application Default Credentials do BigQuery (veja a tabela em [Funções do IAM](#iam-roles) acima).
-A build tag `no_billing_gcp` remove também este método. A biblioteca cliente do Pub/Sub é compartilhada com `stream = pubsub`, então ela só sai do binário quando você também define `no_pubsub` (veja [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### Como as notificações são lidas
@@ -306,13 +303,12 @@ A build tag `no_billing_gcp` remove também este método. A biblioteca cliente d
 | `unavailable` | `UNAVAILABLE`, `INTERNAL` e similares, falha de rede | O job tenta de novo após uma pausa |
 | `invalid_response` | Uma mensagem que não pode ser lida como notificação de orçamento, um orçamento que não é mensal, dois orçamentos com o mesmo nome de exibição | Torne o orçamento mensal, dê nomes de exibição distintos aos orçamentos e não envie outras mensagens ao tópico |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare (`billing_sources = cloudflare`)
 
 O servidor lê o uso faturável de uma conta da Cloudflare: as cobranças de uso dos produtos pay-as-you-go, como R2, Workers e D1, um registro por métrica e dia.
 Ele as soma por produto (`R2`, `Workers`, `D1`) em meses de calendário UTC, então cada produto é uma linha de uso por mês. O uso dentro de uma franquia gratuita também é importado, com valor 0.
 Somente uma conta cobrada em pay-as-you-go tem esses dados; uma conta de contrato Enterprise falha com `not_enabled`.
-Um binário compilado com a build tag `no_billing_cloudflare` recusa `cloudflare` (veja [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### O que não é importado

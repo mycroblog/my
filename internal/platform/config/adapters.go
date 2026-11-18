@@ -2,14 +2,10 @@
 
 package config
 
-import (
-	"fmt"
-
-	"github.com/mycroblog/my/internal/platform/docsite"
-)
+import "fmt"
 
 // excludedValues maps a setting to its values whose adapter a build tag left out of this binary
-// (NFR-PORT-4, ADR-0010), and each such value to the tag. The files with the tag's build
+// (ADR-0010 §2), and each such value to the tag. The files with the tag's build
 // constraint fill it in; Load rejects these values.
 var excludedValues = map[string]map[string]string{}
 
@@ -30,11 +26,8 @@ func ExcludedError(key, value, tag string) error {
 }
 
 func excludedError(value, tag string) error {
-	return fmt.Errorf("%q is not in this build: the build tag %s left its adapter out (%s)", value, tag, docsite.URL(buildTagsDocument))
+	return fmt.Errorf("%q is not in this build: the build tag %s left its adapter out", value, tag)
 }
-
-// buildTagsDocument lists the build tags, which the errors about a value that this build lacks link.
-const buildTagsDocument = "docs/reference/build-tags.md"
 
 // testOnlyValues maps a setting to its values whose adapter only a test build has, and each such
 // value to the build tag that adds it (ADR-0015 §6). The files of the builds without the tag
@@ -53,5 +46,5 @@ func testOnly(tag, key string, values ...string) {
 }
 
 func testOnlyError(value, tag string) error {
-	return fmt.Errorf("%q is only in test builds: the build tag %s adds its adapter, and released binaries never have it (%s)", value, tag, docsite.URL(buildTagsDocument))
+	return fmt.Errorf("%q is only in test builds: the build tag %s adds its adapter, and released binaries never have it", value, tag)
 }

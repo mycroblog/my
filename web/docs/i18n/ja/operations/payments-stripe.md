@@ -127,7 +127,7 @@ Stripe は、subscription 1 つにつき新しい請求書を 1 分に 10 件、
 `duplicate_charge` も載ります。2 つ目の加入がまだ解約・返金されていないことを表します。[運用](#7-operation) を参照してください。
 この節の「今すぐ照合する」（`POST /api/v1/admin/payment_reconciliation/runs`）は、予定された実行を待たずにすぐ照合します。UTC の 1 時間に 1 回までに制限されており（同じ時間内の 2 回目の呼び出しは `429` を返します）、監査ログに `payment_reconcile_queued` が記録されます。
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. サーバーを設定する
 
 ```sh
@@ -139,7 +139,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` で設定を検証できます。ビルドタグ `no_payments_stripe` でビルドしたバイナリは `payments = stripe` を拒否します（[build-tags.md](../reference/build-tags.md) を参照）。
+`my config check` で設定を検証できます。
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. テストモードで試す

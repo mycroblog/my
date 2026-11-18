@@ -12,7 +12,6 @@ Secrets are read only from the environment: either the variable itself or `<NAME
 (trailing newlines are removed), for Docker and Kubernetes secrets. Setting a secret in the TOML file is an error.
 
 Adapters are always selected by an explicit key; nothing is inferred from a URL scheme.
-A binary built with a build tag that leaves an adapter out rejects the values that select it ([build tags](build-tags.md)).
 
 `my config check` validates the configuration and lists every problem at once; the server refuses to start on any of them.
 The problems are described in the language of the process locale (`LANGUAGE`, `LC_ALL`, `LC_MESSAGES`, `LANG`; English for `C` or an unsupported language),
@@ -493,7 +492,7 @@ Whether the server serves HTTPS itself, so that it runs without a reverse proxy 
 | Value | Description |
 | --- | --- |
 | `off` | Plain HTTP on `listen`: a reverse proxy, a load balancer, or a CDN in front terminates TLS. |
-| `acme` | HTTPS on `listen` with certificates that the server obtains itself from the ACME certificate authority `tls_acme_directory`, for `host` and, when it differs, the host of `web_origin`. It needs `tls_acme_agree_terms = true`, a `host` that is a DNS name with a dot, and a `kv` that every process shares (`kv = memory` only with `role = all`). The certificates and their keys are kept in the database, the keys sealed. The first certificate is ordered after the server starts listening, and handshakes for a host fail until it has one. The CA validates the order on `listen` (TLS-ALPN-01) or on `tls_http_listen` (HTTP-01), so both must be reachable from the internet on ports 443 and 80, or at least `listen` on port 443. The build tag `no_acme` leaves it out. |
+| `acme` | HTTPS on `listen` with certificates that the server obtains itself from the ACME certificate authority `tls_acme_directory`, for `host` and, when it differs, the host of `web_origin`. It needs `tls_acme_agree_terms = true`, a `host` that is a DNS name with a dot, and a `kv` that every process shares (`kv = memory` only with `role = all`). The certificates and their keys are kept in the database, the keys sealed. The first certificate is ordered after the server starts listening, and handshakes for a host fail until it has one. The CA validates the order on `listen` (TLS-ALPN-01) or on `tls_http_listen` (HTTP-01), so both must be reachable from the internet on ports 443 and 80, or at least `listen` on port 443. |
 | `files` | HTTPS on `listen` with the certificate `tls_cert_file` and its key `tls_key_file`, which another tool such as certbot keeps up to date. The server looks at their modification times every minute and loads them again when they change, without a restart. Port `tls_http_listen` redirects to `https`. |
 
 ### `tls_acme_directory`
@@ -612,8 +611,8 @@ Database adapter. The adapter is never inferred from `database_url`.
 
 | Value | Description |
 | --- | --- |
-| `sqlite` | Local SQLite file (`modernc.org/sqlite`). The build tag `no_sqlite` leaves it out. |
-| `postgres` | PostgreSQL and compatible services (`pgx/v5`). The build tag `no_postgres` leaves it out. |
+| `sqlite` | Local SQLite file (`modernc.org/sqlite`). |
+| `postgres` | PostgreSQL and compatible services (`pgx/v5`). |
 
 ### `database_url`
 
@@ -651,7 +650,7 @@ Job queue adapter.
 | --- | --- |
 | `db` | Queue table in the database. |
 | `inline` | Runs jobs synchronously in the enqueuing process; for tests and development. Requires `role = all`. |
-| `cloudtasks` | The queue table in the database (`database = postgres`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials. The build tag `no_cloudtasks` leaves it out ([running the server](../operations/running.md)). |
+| `cloudtasks` | The queue table in the database (`database = postgres`), with Google Cloud Tasks carrying a wake-up signal for each job to `POST /_internal/jobs` (`queue_cloudtasks_` settings). Cloud Scheduler calls `POST /_internal/tick` every minute for the periodic jobs instead of a scheduler in the process, and no process polls the table. Requires `kv = db` or `valkey`. Application Default Credentials ([running the server](../operations/running.md)). |
 
 ### `queue_cloudtasks_routes`
 
@@ -712,8 +711,8 @@ Blob storage adapter for media.
 | Value | Description |
 | --- | --- |
 | `fs` | Local file system. |
-| `s3` | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. The build tag `no_s3` leaves it out. |
-| `gcs` | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. The build tag `no_gcs` leaves it out. |
+| `s3` | S3-compatible object storage (Amazon S3, Cloudflare R2, the XML API of Google Cloud Storage, MinIO, Garage): `blob_s3_bucket` and the other `blob_s3_` settings. |
+| `gcs` | Google Cloud Storage through its JSON API, with Application Default Credentials (the service account of Cloud Run or of the instance), so that no key is kept: `blob_gcs_bucket`. |
 
 ### `media_image`
 
@@ -726,7 +725,7 @@ Processor of images: their variants, without metadata.
 | Value | Description |
 | --- | --- |
 | `native` | In the server, in pure Go. |
-| `plugin` | A plugin of yours (`plugin_media_image_address`) re-encodes images into their variants, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+| `plugin` | A plugin of yours (`plugin_media_image_address`) re-encodes images into their variants, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). |
 
 ### `media_video`
 
@@ -739,7 +738,7 @@ Processor of videos: writing their streams again without metadata.
 | Value | Description |
 | --- | --- |
 | `native` | In the server, in pure Go. |
-| `plugin` | A plugin of yours (`plugin_media_video_address`) remuxes videos, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+| `plugin` | A plugin of yours (`plugin_media_video_address`) remuxes videos, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). |
 
 ### `media_audio`
 
@@ -752,7 +751,7 @@ Processor of audio-only files: writing their streams again without metadata.
 | Value | Description |
 | --- | --- |
 | `native` | In the server, in pure Go. |
-| `plugin` | A plugin of yours (`plugin_media_audio_address`) remuxes audio files, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). The build tag `no_plugins` leaves it out. |
+| `plugin` | A plugin of yours (`plugin_media_audio_address`) remuxes audio files, so that heavy conversion runs on another machine; the server still checks uploads and every output itself, and removing metadata is left to the plugin ([plugins](../operations/plugins.md)). |
 
 ### `blob_fs_dir`
 
@@ -923,7 +922,7 @@ Key-value store adapter for caches and rate limits.
 | --- | --- |
 | `db` | Table in the database. |
 | `memory` | In-process memory; limits are per process. |
-| `valkey` | Valkey or another server that speaks the Redis protocol (`valkey_url`); entries are shared by every process on the server. The build tag `no_valkey` leaves it out. |
+| `valkey` | Valkey or another server that speaks the Redis protocol (`valkey_url`); entries are shared by every process on the server. |
 
 ### `valkey_url`
 
@@ -960,10 +959,10 @@ Broker that carries the signals of the real-time updates (`GET /api/v1/streaming
 | Value | Description |
 | --- | --- |
 | `hub` | In-process only; for one process with `role = all` (SQLite, or one PostgreSQL server process). |
-| `postgres` | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. The build tag `no_postgres` leaves it out. |
-| `valkey` | Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. The build tag `no_valkey` leaves it out. |
-| `sns` | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. The build tag `no_sns` leaves it out. |
-| `pubsub` | A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. The build tag `no_pubsub` leaves it out. |
+| `postgres` | PostgreSQL `LISTEN` / `NOTIFY` on the database of `database_url` (or `stream_postgres_url`). Requires `database = postgres`. |
+| `valkey` | Valkey Pub/Sub on `valkey_url`, with the channel `{valkey_key_prefix}stream`. |
+| `sns` | An Amazon SNS standard topic (`stream_sns_topic_arn`) that fans out to one SQS queue per listening process (`stream_sns_queue_prefix`); credentials and settings from the AWS SDK's default chain. |
+| `pubsub` | A Google Cloud Pub/Sub topic (`stream_pubsub_topic`) with one subscription per listening process (`stream_pubsub_subscription_prefix`); Application Default Credentials, or the emulator at `PUBSUB_EMULATOR_HOST`. |
 
 ### `stream_postgres_url`
 
@@ -1016,9 +1015,9 @@ Key manager adapter that encrypts actor private keys.
 | Value | Description |
 | --- | --- |
 | `local` | Uses the key-encryption key from `kek`. With `plugin_key_manager_address` set, the plugin only decrypts the secrets it still holds, while they move to `kek`. |
-| `gcpkms` | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials. The build tag `no_gcpkms` leaves it out ([key management](../operations/key-management.md)). |
-| `awskms` | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain. The build tag `no_awskms` leaves it out ([key management](../operations/key-management.md)). |
-| `plugin` | A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key. The build tag `no_plugins` leaves it out ([key management](../operations/key-management.md)). |
+| `gcpkms` | Google Cloud KMS: the symmetric CryptoKey of `kms_key` encrypts the data-encryption keys, with Application Default Credentials ([key management](../operations/key-management.md)). |
+| `awskms` | AWS KMS: the symmetric key of `kms_key` encrypts the data-encryption keys, with the credentials and region of the AWS SDK's default chain ([key management](../operations/key-management.md)). |
+| `plugin` | A plugin of yours at `plugin_key_manager_address`, such as one before Vault or an HSM. It sees the data-encryption keys, so it is in the same trust boundary as the key-encryption key. The server does not start without its answer or when it fails a self-test, and nothing falls back to another key ([key management](../operations/key-management.md)). |
 
 ### `kek`
 
@@ -1080,8 +1079,8 @@ Mailer adapter for verification emails. With `none`, no email reaches users, so 
 | --- | --- |
 | `none` | Sends nothing and logs each message's category; for instances without email. With `profile = development` it logs the whole message, including its links. |
 | `smtp` | SMTP submission with mandatory STARTTLS (`mail_smtp_host`, `mail_smtp_port`, `mail_smtp_username`, `mail_smtp_password`). |
-| `ses` | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. The build tag `no_ses` leaves it out. |
-| `plugin` | A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself ([sending email](../operations/email.md)). The build tag `no_plugins` leaves it out. |
+| `ses` | The Amazon SES v2 API (`mail_ses_region`, `mail_ses_configuration_set`); credentials from the AWS SDK's default chain, such as the execution role, so no SMTP password. |
+| `plugin` | A plugin of yours (`plugin_mailer_address`), for a mail service that offers only an HTTP API. It gets the parts of each message and adds `Message-ID`, `Date`, and `Auto-Submitted` itself ([sending email](../operations/email.md)). |
 
 ### `mail_from`
 
@@ -1246,7 +1245,7 @@ How many activities each relay may bring in per hour. The ones over it are dropp
 
 ### `billing_sources`
 
-Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), `cloudflare` (the usage charges of a pay-as-you-go Cloudflare account by product, without plans, taxes, or credits: `billing_cloudflare_account_id`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of AWS and Google Cloud, and from `billing_cloudflare_api_token` for Cloudflare ([importing cloud costs](../operations/billing-import.md)). The build tags `no_billing_aws`, `no_billing_gcp`, `no_billing_cloudflare`, and `no_plugins` leave `aws`, `gcp`, `cloudflare`, and `plugin` out. Empty imports nothing.
+Cloud providers whose usage charges are imported into the instance's costs every 24 hours, comma-separated: `aws` (AWS Cost Explorer, about $0.01 per billed request), `gcp` (the Cloud Billing export to BigQuery, or the Pub/Sub notifications of a budget: `billing_gcp_method`), `cloudflare` (the usage charges of a pay-as-you-go Cloudflare account by product, without plans, taxes, or credits: `billing_cloudflare_account_id`), and `plugin` (a plugin of yours that aggregates any other providers: `plugin_billing_address`). Each import records the charges of the current billing month and of the previous one (through the 15th, or until it is final) by service and charge type, as estimates until the provider closes the month, then final, then corrections; `GET /api/v1/admin/billing_imports` shows the state of the imports. A provider whose adapter is not in this build is refused at start. Credentials come from the SDK's default chain of AWS and Google Cloud, and from `billing_cloudflare_api_token` for Cloudflare ([importing cloud costs](../operations/billing-import.md)). Empty imports nothing.
 
 - Environment variable: `MY_BILLING_SOURCES`
 - Default: none
@@ -1407,9 +1406,9 @@ The payment provider of the supporters: local users subscribe to paid plans on i
 | Value | Description |
 | --- | --- |
 | `none` | No payments: the webhook endpoint and the reconciliation do not run. |
-| `stripe` | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` ([payments with Stripe](../operations/payments-stripe.md)). The build tag `no_payments_stripe` leaves it out. |
-| `payjp` | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` ([payments with PAY.JP](../operations/payments-payjp.md)). JPY only. The build tag `no_payments_payjp` leaves it out. |
-| `fake` | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
+| `stripe` | Stripe Billing: Checkout in subscription mode and the customer portal, with `payments_stripe_secret_key` and `payments_stripe_webhook_secret` ([payments with Stripe](../operations/payments-stripe.md)). |
+| `payjp` | PAY.JP on its API v1: plans and subscriptions of PAY.JP, with the server's own checkout and card pages that load payjp.js, with `payments_payjp_secret_key`, `payments_payjp_public_key`, and `payments_payjp_webhook_token` ([payments with PAY.JP](../operations/payments-payjp.md)). JPY only. |
+| `fake` | Test builds only: a stand-in provider for end-to-end tests and demonstrations that keeps its side in the server's memory and serves its own checkout page, where paying records the subscription as paid without any money moving. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([contributing guide](../../CONTRIBUTING.md#build-tags)). It needs no other setting. |
 
 ### `payments_stripe_secret_key`
 
@@ -1501,7 +1500,7 @@ The `https:` URL of DeepL's API that the server calls, such as a proxy in front 
 
 ### `translator_google_project`
 
-The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). The build tag `no_translator_google` leaves it out. Empty registers no such provider.
+The Google Cloud project that the translations of the provider `google`, Google Cloud Translation, are billed to; the Cloud Translation API must be enabled in it, and the service account of the server needs `roles/cloudtranslate.user` on it. Setting it registers the provider, which the instance setting `translation_providers` enables; credentials come from Application Default Credentials ([translation providers](../operations/translation.md#google-cloud-translation)). Empty registers no such provider.
 
 - Environment variable: `MY_TRANSLATOR_GOOGLE_PROJECT`
 - Default: none
@@ -1517,7 +1516,7 @@ The location of the requests of the provider `google`: `global`, or a location o
 
 ### `translator_aws_region`
 
-The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. The build tag `no_translator_aws` leaves it out. Empty registers no such provider.
+The AWS region of Amazon Translate, such as `us-east-1`. Setting it registers Amazon Translate as the translation provider `aws`, which the instance setting `translation_providers` enables ([translation providers](../operations/translation.md#amazon-translate)); the credentials come from the AWS SDK's default chain, such as the execution role. Empty registers no such provider.
 
 - Environment variable: `MY_TRANSLATOR_AWS_REGION`
 - Default: none
@@ -1534,7 +1533,7 @@ Test builds only: registers the stand-in translation provider `fake`, which the 
 | Value | Description |
 | --- | --- |
 | `false` | No such provider. |
-| `true` | The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). |
+| `true` | The provider `fake`. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([contributing guide](../../CONTRIBUTING.md#build-tags)). |
 
 ### `search`
 
@@ -1547,11 +1546,11 @@ The search engine of the full-text search of statuses. The search of accounts an
 | Value | Description |
 | --- | --- |
 | `none` | No full-text search: the server connects to no engine and enqueues no search job, and `GET /api/v1/instance` tells clients that the search is not available. |
-| `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([build tags](build-tags.md)). It needs no other setting. |
-| `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). The build tag `no_search_elasticsearch` leaves it out. |
-| `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. The build tag `no_search_opensearch` leaves it out. |
-| `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. The build tag `no_search_meilisearch` leaves it out. |
-| `plugin` | A plugin of yours (`plugin_search_address`), for an engine that the server has no built-in support for, such as Groonga or an index built with Sudachi. The plugin receives the text, author, visibility, and language of the posts that the index holds and the queries of signed-in people, and returns post IDs only ([plugins](../operations/plugins.md#searching-posts), [search protocol](../plugins/search.md)). The build tag `no_plugins` leaves it out. |
+| `fake` | Test builds only: a stand-in index in the server's memory, for end-to-end tests and demonstrations. Only a binary built with the build tag `e2e_fakes` has it, and that binary refuses it unless `profile = development`; released binaries and images never have it ([contributing guide](../../CONTRIBUTING.md#build-tags)). It needs no other setting. |
+| `elasticsearch` | An Elasticsearch cluster, version 8 or later, at `search_elasticsearch_url`, with `search_elasticsearch_api_key` or `search_elasticsearch_username` and `search_elasticsearch_password` when it has security on. The server creates and upgrades the index itself ([search engines](../operations/search-engines.md#elasticsearch)). |
+| `opensearch` | An OpenSearch cluster, or a domain of Amazon OpenSearch Service, at `search_opensearch_url` ([search engines](../operations/search-engines.md#opensearch)). The server creates its index at start. |
+| `meilisearch` | A Meilisearch server (self-hosted or Meilisearch Cloud) at `search_meilisearch_url`, with `search_meilisearch_api_key`. The server creates the index `search_meilisearch_index` and its settings. |
+| `plugin` | A plugin of yours (`plugin_search_address`), for an engine that the server has no built-in support for, such as Groonga or an index built with Sudachi. The plugin receives the text, author, visibility, and language of the posts that the index holds and the queries of signed-in people, and returns post IDs only ([plugins](../operations/plugins.md#searching-posts), [search protocol](../plugins/search.md)). |
 
 ### `search_elasticsearch_url`
 
@@ -1714,8 +1713,8 @@ How the voice chat rooms connect their participants. With `off`, the voice chat 
 | --- | --- |
 | `off` | No voice chat. |
 | `p2p` | The browsers connect to each other, with the STUN servers of `voice_stun_urls`; the server only relays what they send to set up the connections. The server gives the browsers the TURN servers of `voice_turn` (coturn or Cloudflare) with short-lived credentials. A room holds at most `voice_p2p_max_participants` people. Without STUN and TURN, which the server warns about at start, only browsers on the same network connect. |
-| `livekit` | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. The build tag `no_voice_livekit` leaves it out. |
-| `sora` | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. The build tag `no_voice_sora` leaves it out. |
+| `livekit` | A LiveKit server (self-hosted or LiveKit Cloud) carries the audio, with `voice_livekit_url`, `voice_livekit_api_key`, and `voice_livekit_api_secret`. Its own STUN and TURN servers serve the browsers. LiveKit sends its events to `https://<domain>/voice/webhooks/livekit`. |
+| `sora` | A Sora server (self-hosted or Sora Cloud) carries the audio, with `voice_sora_mode`, `voice_sora_signaling_urls`, `voice_sora_join_secret`, and the settings of the mode. Its own STUN and TURN servers serve the browsers. Sora calls `https://<domain>/voice/webhooks/sora/auth` (its auth webhook) before every connection and sends its event and session webhooks to `https://<domain>/voice/webhooks/sora/events`. The Sora transport is tested only against a stand-in that follows Sora's documents, not against a real Sora server. |
 
 ### `voice_p2p_max_participants`
 
@@ -1984,8 +1983,8 @@ Where the service metrics go: the request, federation, delivery, job, and stream
 | Value | Description |
 | --- | --- |
 | `none` | No metrics exporter; measuring costs next to nothing. The job `metrics.snapshot` still writes the instance-wide gauges every 15 minutes as one `metrics snapshot` log line. On Cloud Run the platform's metrics and log-based metrics made from the log lines stand in for them. |
-| `prometheus` | The Prometheus text format at `GET /metrics` on `metrics_listen`, a listener of its own, for a Prometheus-compatible server (and KEDA) to scrape; for self-hosted instances. The build tag `no_otel` leaves it out. |
-| `otlp` | OTLP over HTTP (protobuf) to an OpenTelemetry Collector, configured by the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_METRIC_EXPORT_INTERVAL` (default 60 seconds). The build tag `no_otel` leaves it out. |
+| `prometheus` | The Prometheus text format at `GET /metrics` on `metrics_listen`, a listener of its own, for a Prometheus-compatible server (and KEDA) to scrape; for self-hosted instances. |
+| `otlp` | OTLP over HTTP (protobuf) to an OpenTelemetry Collector, configured by the standard environment variables `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`), `OTEL_EXPORTER_OTLP_HEADERS`, and `OTEL_METRIC_EXPORT_INTERVAL` (default 60 seconds). |
 | `emf` | CloudWatch Embedded Metric Format lines, which CloudWatch Logs turns into metrics; for AWS (ECS). The log line that ends each request and job carries its duration metrics, and the other measurements are written on standard output, one line per label set, at the end of each request and job. Requests in progress and open streams are not written. |
 
 ### `metrics_listen`
@@ -2023,7 +2022,7 @@ Where the distributed traces go: the spans of the HTTP requests, the job runs (e
 | Value | Description |
 | --- | --- |
 | `none` | No spans; tracing costs next to nothing. The log lines still carry `trace_id` and `span_id` of a `traceparent` from `trusted_proxies`, which correlates them with the platform's traces (Cloud Run). |
-| `otlp` | OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does ([running the server](../operations/running.md)). The build tag `no_otel` leaves it out. |
+| `otlp` | OTLP over HTTP (protobuf, gzip) to an OpenTelemetry Collector or another receiver, configured by the standard environment variables `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) and `OTEL_EXPORTER_OTLP_HEADERS`. The server does not authenticate to Cloud Trace or X-Ray itself: send to a collector next to it, which does ([running the server](../operations/running.md)). |
 
 ### `traces_sample_ratio`
 
@@ -2058,7 +2057,7 @@ Where the error reports also go: the panics, the errors behind a 5xx response or
 | --- | --- |
 | `none` | Only the log line and the error groups in the database. |
 | `sentry` | Also to a Sentry-compatible service at `errors_sentry_dsn`: Sentry (hosted or self-hosted), GlitchTip, or Datadog Error Tracking. |
-| `otlp` | Also as OpenTelemetry log records of exceptions (event name `exception`) over OTLP/HTTP (protobuf, gzip), to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) with `OTEL_EXPORTER_OTLP_HEADERS`. Whether the receiving backend groups them as errors depends on the backend; for Sentry, GlitchTip, and Datadog use `sentry`. The build tag `no_otel` leaves it out. |
+| `otlp` | Also as OpenTelemetry log records of exceptions (event name `exception`) over OTLP/HTTP (protobuf, gzip), to the endpoint of the standard environment variables `OTEL_EXPORTER_OTLP_LOGS_ENDPOINT` or `OTEL_EXPORTER_OTLP_ENDPOINT` (default `http://localhost:4318`) with `OTEL_EXPORTER_OTLP_HEADERS`. Whether the receiving backend groups them as errors depends on the backend; for Sentry, GlitchTip, and Datadog use `sentry`. |
 
 ### `errors_sentry_dsn`
 

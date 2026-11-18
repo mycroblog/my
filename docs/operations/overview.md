@@ -53,8 +53,7 @@ Where a part keeps data, choose it before the first start: the data does not mov
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Error reports | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (the log line and the error groups only), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Error reporting](error-reporting.md) |
 
-The released binary and container image hold every adapter of the table. A binary you build yourself can leave the
-ones you do not use out with [build tags](../reference/build-tags.md), and then refuses their settings at start.
+The released binary and container image hold every adapter of the table.
 
 `my config check` reports every problem of the configuration at once, before you start the server
 ([production checklist](production-checklist.md)).

@@ -127,7 +127,7 @@ O estado do provedor (o modo, quando chegou o último webhook, e o resultado e o
 Ele também lista `duplicate_charge`: uma segunda assinatura ainda não foi cancelada e reembolsada. Veja [Operação](#7-operation).
 “Reconciliar agora” na seção (`POST /api/v1/admin/payment_reconciliation/runs`) reconcilia na hora, em vez de esperar a execução agendada. Ele é limitado a uma vez por hora UTC (uma segunda chamada na mesma hora retorna `429`), e o registro de auditoria grava `payment_reconcile_queued`.
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. Configure o servidor
 
 ```sh
@@ -139,7 +139,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` verifica a configuração. Um binário compilado com a build tag `no_payments_stripe` recusa `payments = stripe` (veja [build-tags.md](../reference/build-tags.md)).
+`my config check` verifica a configuração.
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. Experimente no modo de teste

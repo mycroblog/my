@@ -285,8 +285,7 @@ type MoneyMovement struct {
 
 ### 8. build tag
 
-- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments = stripe` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。`fake` は test だけで使い、本番の binary に入らない。
-- 代表の組み合わせのうち、self-hosted の組に `no_payments_stripe` を足す（AWS と Google Cloud の組は含めたまま build を確かめる）。
+- `no_payments_stripe` は `internal/adapter/payment/stripe` と `stripe-go` を外し、`payments = stripe` を拒む（ADR-0010 §2）。`fake` は test だけで使い、本番の binary に入らない。
 
 ### 9. ポートと契約テストに足すもの
 
@@ -410,7 +409,7 @@ v1 にホスト型の画面がないので、adapter が Stripe のホスト型�
 
 ### 16. build tag とデータモデル
 
-- `no_payments_payjp` は `internal/adapter/payment/payjp` を外し、`payments = payjp` を拒む（[build-tags.md](../reference/build-tags.md)）。依存を増やさないので、代表の組み合わせはどれも含めたまま build を確かめる。
+- `no_payments_payjp` は `internal/adapter/payment/payjp` を外し、`payments = payjp` を拒む（ADR-0010 §2）。
 - `schema/12-finance/<dialect>.sql`（`income_movements`）と `13-supporters.sql` の `provider` の値は `payjp` を含む。表は増えない。FR-910 の決済の事業者は Stripe か PAY.JP である。
 
 ### 17. テストのしかた

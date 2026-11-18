@@ -3,7 +3,7 @@
 
 语音聊天让已登录的用户开设房间、邀请他人并交谈。在你选择音频的传输方式之前，它处于关闭状态。本指南介绍如何做出这个选择、每种方式所需的 STUN 和 TURN 服务器或媒体服务器，以及部署、隐私和审核方面需要了解的事项。这里提到的每项设置都在[配置参考](../reference/configuration.md#voice)中有说明。
 
-<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
+<!-- source: choose-how-the-audio-travels 1fe795fb2216 -->
 ## 选择音频的传输方式
 
 `voice` 为整个实例选择一种方式；每个房间都使用它。
@@ -28,7 +28,6 @@
 - 使用 `p2p` 时，音频从不经过本服务器（如果使用了 TURN 服务器，则经过它）。服务器的负载只有房间消息、心跳和流。
 - 小型实例最适合使用 `p2p`，或者 LiveKit Cloud 的免费 Build 套餐（请参阅 [LiveKit Cloud](#livekit-cloud)）。
 - 使用 `livekit` 或 `sora` 时，下面的 STUN 和 TURN 设置以及 ICE 策略不会被使用（如果你设置了它们，服务器会在启动时发出警告），因为媒体服务器自带服务器。此时参与者的 IP 地址只有媒体服务器能看到，其他参与者看不到。
-- 构建标签 `no_voice_livekit` 和 `no_voice_sora` 会把这两种媒体服务器方式从二进制文件中去掉（[构建标签](../reference/build-tags.md)）。
 - 请通过 HTTPS 提供实例服务：浏览器只允许在安全页面上访问麦克风。
 
 这些限制会让付费媒体服务器的成本保持有界。除最后一项外，都可以设为 `0` 来取消限制：

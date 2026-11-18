@@ -113,7 +113,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` verifies the configuration. A binary built with the build tag `no_payments_payjp` refuses `payments = payjp` (see [build-tags.md](../reference/build-tags.md)).
+`my config check` verifies the configuration.
 
 ## 5. Try it in test mode
 

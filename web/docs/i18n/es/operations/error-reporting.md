@@ -138,7 +138,7 @@ El servidor habla el protocolo de Sentry por sí mismo, así que no interviene n
 - **GlitchTip**: copia el DSN del proyecto. Es de código abierto y funciona en un servidor pequeño. Comprueba qué reglas de alerta ofrece tu versión para incidencias nuevas y recurrentes.
 - **Datadog Error Tracking**: usa el DSN de Sentry de tu sitio de Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog exige la etiqueta `service`, que el servidor siempre establece. Datadog guarda estos eventos como registros y los agrupa en Error Tracking. Si en cambio envías la línea de registro a Datadog con un agente o un reenviador (Error Tracking for Logs), la traza de pila está en `message`; asígnala a `error.stack` con un pipeline de registros, o Datadog no la reconocerá como traza de pila. El exportador `sentry` no necesita esa asignación.
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP
 
 ```sh
@@ -149,7 +149,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 Cada informe es un registro de log de OpenTelemetry llamado `exception`, con severidad `ERROR` (`FATAL` cuando detiene el proceso), `exception.type`, `exception.message`, `exception.stacktrace`, `my.error.fingerprint`, `my.error.where`, `my.error.source`, `my.error.kind` y los ID de traza y de span. Va por OTLP/HTTP (protobuf, gzip) con el mismo recurso que las métricas y las trazas.
 
-Que el backend convierta estos registros en errores agrupados depende del backend: algunos construyen sus vistas de errores solo a partir de datos de trazas, y Datadog necesita `error.stack`. Para Sentry, GlitchTip y Datadog, usa `sentry`. Usa `otlp` cuando quieras los registros junto a tus demás logs. La etiqueta de compilación `no_otel` deja fuera `otlp` ([Etiquetas de compilación](../reference/build-tags.md)).
+Que el backend convierta estos registros en errores agrupados depende del backend: algunos construyen sus vistas de errores solo a partir de datos de trazas, y Datadog necesita `error.stack`. Para Sentry, GlitchTip y Datadog, usa `sentry`. Usa `otlp` cuando quieras los registros junto a tus demás logs.
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## Qué garantiza y qué no garantiza la depuración

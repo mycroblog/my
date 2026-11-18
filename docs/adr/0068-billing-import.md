@@ -158,9 +158,8 @@ type CostLine struct {
 
 ### 10. build tag
 
-- `no_billing_aws` は `internal/adapter/billing/aws` と `service/costexplorer` を、`no_billing_gcp` は `internal/adapter/billing/gcp` と `bigquery/v2` を外し、それぞれ `billing_sources` の `aws`・`gcp` を拒む（[build-tags.md](../reference/build-tags.md) の「Adding a tag」の手順）。
+- `no_billing_aws` は `internal/adapter/billing/aws` と `service/costexplorer` を、`no_billing_gcp` は `internal/adapter/billing/gcp` と `bigquery/v2` を外し、それぞれ `billing_sources` の `aws`・`gcp` を拒む（ADR-0010 §2）。
 - `no_billing_gcp` を付けない build は、予算の方法のために Pub/Sub のクライアントを含む。`no_pubsub` は `stream = pubsub` を外すだけなので、Pub/Sub のクライアントを外すには両方を付ける。
-- 代表の組み合わせ: self-hosted の組に両方、AWS の組に `no_billing_gcp`、Google Cloud の組に `no_billing_aws`。
 
 ### 11. Cloudflare adapter（`internal/adapter/billing/cloudflare`）
 
@@ -181,7 +180,7 @@ type CostLine struct {
   Cloudflare には AWS・Google Cloud のような認証の連鎖も実行環境に紐づく資格もないので、§8 の「秘密の設定を足さない」の例外にする。
 - **失敗の種類**（§9 の分類）: 無効なトークン（400、エラーコード 9106）・401・403 → `permission`（アカウント ID の誤りも 403、エラーコード 10000 で返るので、管理画面はトークンの権限とアカウント ID の両方を確かめるよう案内する）、`info` の `covered: false` → `not_enabled`、404 → `not_found`、429 → `throttled`、5xx・ネットワーク → `unavailable`、封筒の `success: false`・要る列の欠け・1 日を超える記録・通貨の混在 → `invalid_response`。失敗は SDK の `*cloudflare.Error` の `StatusCode` で分ける。
 - **データモデル**（§5）: `billing_import_runs.source` と `imported_cost_revisions.source` の enum に `cloudflare`。
-- **build tag**（§10）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。Cloudflare はどの実行環境とも組み合わせて使うので、代表の組み合わせには付けない。
+- **build tag**（§10）: `no_billing_cloudflare` は `internal/adapter/billing/cloudflare` と `cloudflare-go` を外し、`billing_sources` の `cloudflare` を拒む。
 - **契約テスト**: `BillingSourceContract` の名前の一覧に `cloudflare` を足し、`usage` の行だけを返す事業者のための変種（`BillingTotalsSourceContract` と同じく、筋書きのクレジット・税の行を求めない）を足す。fake は `billable-usage` の HTTP を `httptest` で返す。
 
 ### この決定を覆す条件

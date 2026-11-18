@@ -332,7 +332,6 @@ Where to run it:
 - **Kubernetes**: pull it from `ghcr.io` as it is.
 - **Cloud Run**: use the `ghcr.io` image directly. A deployment resolves the tag to a digest.
 - **AWS (ECS, EKS)**: copy the image to Amazon ECR, or use an ECR pull through cache, which needs ghcr.io credentials.
-- **A smaller image**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` in a checkout builds one with fewer adapters ([build tags](../reference/build-tags.md)). It is your own build, so it is not covered by the checks below.
 
 ### Verify an image
 

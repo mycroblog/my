@@ -16,7 +16,7 @@
 - **你選擇的元件**。圖中間的每個元件都有一個用來選擇其轉接器的設定，列在[下一節](#parts-you-choose-by-configuration)。
 - **伺服器外部的服務**。CAPTCHA、語音聊天、付款、外掛和雲端費用匯入，在你設定之前都保持關閉；設定之後，伺服器會呼叫你指定的服務。
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## 透過設定選擇的組成部分
 
 每個組成部分都是[設定參考](../reference/configuration.md)中的一項設定，可以在 TOML 檔案中設定，或用環境變數設定（`MY_` 加上大寫的鍵，例如 `MY_DATABASE`）。每個清單的第一個選項就是預設值。
@@ -44,7 +44,7 @@
 | 追蹤 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追蹤](running.md#traces) |
 | 錯誤回報 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日誌行和錯誤群組）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [錯誤回報](error-reporting.md) |
 
-發行的二進位檔與容器映像檔包含表中的每個 adapter。你自己建置的二進位檔可以用[建置標籤](../reference/build-tags.md)排除你不使用的 adapter，這時它在啟動時會拒絕那些設定。
+發行的二進位檔與容器映像檔包含表中的每個 adapter。
 
 `my config check` 會在你啟動伺服器之前，一次回報設定中的所有問題（[上線檢查清單](production-checklist.md)）。
 

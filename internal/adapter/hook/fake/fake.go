@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Package fake is an in-memory hook Plugin for tests: it answers what a test sets and counts its
-// calls. Only tests link it (`scripts/go-build-tags.sh` keeps the fakes out of cmd/my).
+// calls. Only tests link it (`scripts/go-fakes.sh` keeps the fakes out of cmd/my).
 package fake
 
 import (

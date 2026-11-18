@@ -121,7 +121,6 @@ A leaked database dump and a leaked configuration together still do not expose t
   Without it, reading a secret fails with an error that names the role; a missing or disabled key version fails likewise, and those errors are not retried until the configuration is fixed.
   A quota error or an unavailable Cloud KMS is temporary, and the work that needed the secret is retried.
 - The server keeps a data-encryption key that Cloud KMS decrypted for `kms_dek_cache_ttl` (default `10m`), so most reads of a secret do not call Cloud KMS.
-- The build tag `no_gcpkms` leaves the adapter out of the binary ([Build tags](../reference/build-tags.md)).
 
 ### Rotate the key in Cloud KMS
 
@@ -164,7 +163,6 @@ A leaked database dump and a leaked configuration together still do not expose t
 - Cost: AWS charges a monthly fee for each customer managed key (USD 1 at the time of writing, plus the same for each of the first two rotations of its key material) and a fee per request beyond a monthly free tier
   (see [AWS KMS pricing](https://aws.amazon.com/kms/pricing/)). The server keeps a data-encryption key that AWS KMS decrypted for `kms_dek_cache_ttl` (default `10m`),
   so a server with ten actors that deliver all the time makes about 43,000 requests a month per process, a few cents beyond the free tier.
-- The build tag `no_awskms` leaves the adapter out of the binary ([Build tags](../reference/build-tags.md)).
 
 ### Retire an AWS KMS key
 
@@ -194,7 +192,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - The key ID of the stored secrets is `plugin:` followed by the plugin's ID for its KEK, which is 1 to 248 bytes of visible ASCII.
 - **Keep every KEK that a stored secret still names.** A rotation in the plugin shows as a new ID in the next wrap. The secrets wrapped before keep naming the old ID, and the plugin must still open them. `my kek rewrap` moves them to the current ID, and `my kek status` counts the ones that remain.
 - A plugin and a KMS never serve together: `kms_key` and `kms_key_previous` are refused with a plugin, and so is `plugin_key_manager_address` with `key_manager = gcpkms` or `awskms`.
-- The build tag `no_plugins` leaves the adapter out of the binary ([Build tags](../reference/build-tags.md)).
 
 ### When the server starts
 

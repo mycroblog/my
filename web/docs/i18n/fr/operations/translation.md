@@ -160,6 +160,3 @@ Organizations couvre le compte.** Sans cette désactivation, Amazon n’est pas 
 politique de confidentialité ([modèle de politique de confidentialité](privacy-policy-template.md#the-services-you-choose)), et n’autorisez pas
 `private` ou `direct` pour `aws` dans `translation_provider_visibilities`. Par défaut, le fournisseur ne reçoit que les publications `public`,
 `local` et `unlisted`.
-
-Un serveur compilé avec le build tag `no_translator_aws` n’a pas ce fournisseur et refuse de démarrer si
-`translator_aws_region` est défini ([build tags](../reference/build-tags.md)).

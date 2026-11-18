@@ -9,13 +9,13 @@
 
 ### 1. テストのレベル
 
-検査の場所は ADR-0079 が決める。「本検査」は Merge Queue の `check`、「遅い検査」はリリースの関門・nightly・手動で回す `slow-suite.yml` である。
+検査の場所は ADR-0079 が決める。「本検査」は Merge Queue の `gate`、「遅い検査」はリリースの関門・nightly・手動で回す `slow-suite.yml` である。
 
 | レベル | 対象 | 実行環境 | 実行タイミング |
 | --- | --- | --- | --- |
 | Unit | domain / application（フェイクのポート使用） | ローカル・CI | 本検査 |
 | Contract | 各ポートの全アダプタ（同一スイート） | SQLite in-memory / pgmem（§3）/ PG（コンテナ）/ Garage（S3 互換。`pkg/testkit/s3test`）/ Floci（SNS・SQS。ADR-0050 §5）/ Cloud Tasks エミュレータ | 本検査は SQLite・pgmem（§3）・メモリの偽物で回す。コンテナの契約（`postgres-contract`・`stream-contract`・`blob-contract`・`voice-contract`・`search-contract`・`mail-integration`）は、そのアダプタが変わったときの本検査と、遅い検査（全部）。クラウド実体が必要なものは nightly |
-| Build matrix | `CGO_ENABLED=0` で linux/amd64・linux/arm64 をビルド、ビルドタグでアダプタを除外してもビルドできる | CI | `CGO_ENABLED=0` のビルドは本検査。ビルドタグの組み合わせと arm64 のイメージは遅い検査 |
+| Build matrix | `CGO_ENABLED=0` で linux/amd64・linux/arm64 をビルド | CI | `CGO_ENABLED=0` のビルドは本検査。arm64 のイメージは遅い検査 |
 | API conformance | OpenAPI スキーマとサーバー実装・生成クライアントの一致 | CI | 本検査 |
 | Federation fixtures | 実サーバー由来の JSON を入力にした受信・生成の回帰テスト | CI | 本検査 |
 | Federation live | docker compose で Mastodon / GoToSocial 等と実際に連合 | CI | 遅い検査 |
@@ -80,7 +80,7 @@
   `Mode()` は `test` を返すので、画面は ADR-0074 §5 のテストのモードの表示を出す。事業者の側の状態はプロセスのメモリにだけある（§8 の、起動のたびに作り直す環境の前提）。
 - **本番に入れない確かめ**。支払い済みと記録できる fake が本番の binary に入れば、誰でもお金を払わずにサポーターのロールを得られる。どれか一つが破れても残りが止める:
   1. **実行時**: `payments = fake` は `profile = development` でなければ起動を拒む。起動のときに、試験用のビルドであることを警告のログに出す。
-  2. **静的な検査**: `scripts/go-build-tags.sh`（`scripts/task.sh go:build-tags`、`go:check` の一部）は、タグのない `cmd/my` と代表の組み合わせのどれもが `internal/adapter/payment/fake` に依存しないことを確かめる。
+  2. **静的な検査**: `scripts/go-fakes.sh`（`scripts/task.sh go:fakes-check`、`go:check` の一部）は、タグのない `cmd/my` が fake に依存しないことと、`e2e_fakes` のビルドが fake を持つことを確かめる。確かめるのはこの 2 つのビルドだけである。
   3. **コンテナのイメージ**: `Dockerfile` は `GO_TAGS` に `e2e_fakes` があればビルドを失敗させる。イメージは試験用のビルドを作らない。
   4. **リリース**: 公開する binary とイメージを作るジョブは、成果物の Go のビルド情報（`go version -m` の `build -tags=`。Go 1.27.3 で確かめた）に `e2e_fakes` がないことを確かめるスクリプトを通す。
 - ADR-0074 §8 の「fake は本番の binary に入らない」は保たれる。変わるのは、試験用のビルドに限って fake を組み立てられることだけである。

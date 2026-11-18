@@ -113,7 +113,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   （メッセージが鍵 ID を示します。その KEK を `kek_previous` に加えてもう一度実行してください）か、保存された値が壊れているか別の行からコピーされたかのどちらかです。
   `my kek status` がまだその鍵のシークレットを数えている間は、`kek_previous` から KEK を外さないでください。
 
-<!-- source: google-cloud-kms 1c47dd463234 -->
+<!-- source: google-cloud-kms 46a4c691c58f -->
 ## Google Cloud KMS
 
 `key_manager = gcpkms` では、Cloud KMS の対称鍵（目的が `ENCRYPT_DECRYPT` の CryptoKey）がデータ暗号化鍵をラップし、KEK は Cloud KMS から出ることがありません。
@@ -127,7 +127,6 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   これがないと、シークレットの読み取りはロールを示すエラーで失敗します。鍵のバージョンがない、または無効なときも同様に失敗し、これらのエラーは設定を直すまで再試行しません。
   クォータのエラーや Cloud KMS を利用できない状態は一時的なもので、シークレットを必要とした処理は再試行します。
 - サーバーは Cloud KMS が復号したデータ暗号化鍵を `kms_dek_cache_ttl`（既定値 `10m`）の間保持するため、シークレットの読み取りのほとんどは Cloud KMS を呼び出しません。
-- ビルドタグ `no_gcpkms` は、このアダプターをバイナリから取り除きます（[ビルドタグ](../reference/build-tags.md)）。
 
 <!-- source: rotate-the-key-in-cloud-kms ba58f052af2a -->
 ### Cloud KMS で鍵をローテーションする
@@ -143,7 +142,7 @@ Cloud KMS は、あるバージョンがどのシークレットをラップし�
 3. 同じ設定で `my kek rewrap` を実行します。`my kek status` が古い鍵の ID のシークレットを数えなくなったら、`kms_key_previous` を外して再起動します。
 4. そのあとで初めて古い鍵のバージョンを無効にし、手順 3 より前に取ったデータベースのバックアップを保持する間は、それらを復元できる状態にしておきます。それらのバックアップを復元するときにまた必要になります。
 
-<!-- source: aws-kms f97406d91b4c -->
+<!-- source: aws-kms b74cad9cc18f -->
 ## AWS KMS
 
 `key_manager = awskms` では、AWS KMS の対称鍵（鍵仕様 `SYMMETRIC_DEFAULT`、鍵の用途 `ENCRYPT_DECRYPT`、カスタマー管理）がデータ暗号化鍵をラップし、KEK は AWS KMS から出ることがありません。
@@ -172,7 +171,6 @@ Cloud KMS は、あるバージョンがどのシークレットをラップし�
 - 費用: AWS はカスタマー管理の鍵ごとに月額料金（執筆時点で USD 1。さらに、鍵の素材の最初の 2 回のローテーションごとに同額）と、月ごとの無料枠を超えたリクエストごとの料金を請求します
   （[AWS KMS の料金](https://aws.amazon.com/kms/pricing/) を参照）。サーバーは AWS KMS が復号したデータ暗号化鍵を `kms_dek_cache_ttl`（既定値 `10m`）の間保持するため、
   常に配送している 10 のアクターを持つサーバーで、プロセスごとに月に約 43,000 回のリクエストとなり、無料枠を数セント超える程度です。
-- ビルドタグ `no_awskms` は、このアダプターをバイナリから取り除きます（[ビルドタグ](../reference/build-tags.md)）。
 
 <!-- source: retire-an-aws-kms-key b670091ad7f1 -->
 ### AWS KMS の鍵を引退させる
@@ -186,7 +184,7 @@ AWS KMS の自動の鍵のローテーションは、鍵の ARN とそれまで�
 3. 同じ設定で `my kek rewrap` を実行します。`my kek status` が古い鍵の ID のシークレットを数えなくなったら、`kms_key_previous` を外して再起動します。
 4. そのあとで初めて古い鍵を無効にし、手順 3 より前に取ったデータベースのバックアップを保持する間は、その鍵を保持します。それらのバックアップを復元するときにまた必要になります。
 
-<!-- source: a-plugin 43023e60bac9 -->
+<!-- source: a-plugin 336458ba764e -->
 ## プラグイン
 
 `key_manager = plugin` では、自分の [プラグイン](plugins.md) が KEK を Vault や HSM など自ら選んだ場所に保持し、サーバーのためにデータ暗号化鍵をラップします。
@@ -204,7 +202,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - 保存したシークレットの鍵 ID は、`plugin:` に、プラグインが自分の KEK に付けた ID を続けたものです。その ID は 1 から 248 バイトの、表示可能な ASCII です。
 - **保存したシークレットがまだ示している KEK は、すべて保持してください。** プラグインでのローテーションは、次のラップで新しい ID として表れます。それより前にラップされたシークレットは古い ID を示し続け、プラグインはそれらを引き続き開けなければなりません。`my kek rewrap` はそれらを現在の ID に移し、`my kek status` は残っているものを数えます。
 - プラグインと KMS は一緒には使えません。プラグインでは `kms_key` と `kms_key_previous` が拒否され、`key_manager = gcpkms` または `awskms` では `plugin_key_manager_address` が拒否されます。
-- ビルドタグ `no_plugins` は、このアダプターをバイナリから取り除きます（[ビルドタグ](../reference/build-tags.md)）。
 
 <!-- source: when-the-server-starts 5faeda92e43b -->
 ### サーバーの起動時

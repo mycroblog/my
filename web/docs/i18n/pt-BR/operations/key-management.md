@@ -114,7 +114,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   (a mensagem nomeia o ID da chave: adicione essa KEK a `kek_previous` e execute de novo), ou o valor armazenado está danificado ou foi copiado de outra linha.
   Não remova uma KEK de `kek_previous` enquanto `my kek status` ainda contar segredos sob ela.
 
-<!-- source: google-cloud-kms 1c47dd463234 -->
+<!-- source: google-cloud-kms 46a4c691c58f -->
 ## Google Cloud KMS
 
 Com `key_manager = gcpkms`, uma chave simétrica do Cloud KMS (uma CryptoKey com a finalidade `ENCRYPT_DECRYPT`) envolve as chaves de criptografia de dados, e a KEK nunca sai do Cloud KMS.
@@ -128,7 +128,6 @@ Um dump vazado do banco de dados e uma configuração vazada, juntos, ainda não
   Sem isso, a leitura de um segredo falha com um erro que nomeia a função; uma versão de chave ausente ou desativada falha da mesma forma, e esses erros não são repetidos até que a configuração seja corrigida.
   Um erro de cota ou um Cloud KMS indisponível é temporário, e o trabalho que precisava do segredo é repetido.
 - O servidor mantém por `kms_dek_cache_ttl` (padrão `10m`) uma chave de criptografia de dados que o Cloud KMS decifrou, então a maioria das leituras de um segredo não chama o Cloud KMS.
-- A build tag `no_gcpkms` deixa o adaptador de fora do binário ([Build tags](../reference/build-tags.md)).
 
 <!-- source: rotate-the-key-in-cloud-kms ba58f052af2a -->
 ### Rotacionar a chave no Cloud KMS
@@ -144,7 +143,7 @@ O Cloud KMS não informa quais segredos uma versão envolveu, então, para apose
 3. Execute `my kek rewrap`, com a mesma configuração. Quando `my kek status` não contar mais segredos sob o ID da chave antiga, remova `kms_key_previous` e reinicie.
 4. Só então desative as versões da chave antiga e mantenha-as restauráveis enquanto você mantiver backups do banco de dados feitos antes da etapa 3: restaurar um deles volta a precisar delas.
 
-<!-- source: aws-kms f97406d91b4c -->
+<!-- source: aws-kms b74cad9cc18f -->
 ## AWS KMS
 
 Com `key_manager = awskms`, uma chave simétrica do AWS KMS (key spec `SYMMETRIC_DEFAULT`, key usage `ENCRYPT_DECRYPT`, gerenciada pelo cliente) envolve as chaves de criptografia de dados, e a KEK nunca sai do AWS KMS.
@@ -173,7 +172,6 @@ Um dump vazado do banco de dados e uma configuração vazada, juntos, ainda não
 - Custo: a AWS cobra uma taxa mensal por cada chave gerenciada pelo cliente (USD 1 na data desta escrita, mais o mesmo valor por cada uma das duas primeiras rotações do material da chave) e uma taxa por requisição além de uma camada gratuita mensal
   (veja os [preços do AWS KMS](https://aws.amazon.com/kms/pricing/)). O servidor mantém por `kms_dek_cache_ttl` (padrão `10m`) uma chave de criptografia de dados que o AWS KMS decifrou,
   então um servidor com dez atores que entregam o tempo todo faz cerca de 43.000 requisições por mês por processo, alguns centavos além da camada gratuita.
-- A build tag `no_awskms` deixa o adaptador de fora do binário ([Build tags](../reference/build-tags.md)).
 
 <!-- source: retire-an-aws-kms-key b670091ad7f1 -->
 ### Retirar uma chave do AWS KMS
@@ -187,7 +185,7 @@ Para deixar de usar uma chave, ou para apontar um alias para outra chave, mova p
 3. Execute `my kek rewrap`, com a mesma configuração. Quando `my kek status` não contar mais segredos sob o ID da chave antiga, remova `kms_key_previous` e reinicie.
 4. Só então desative a chave antiga e mantenha-a enquanto você mantiver backups do banco de dados feitos antes da etapa 3: restaurar um deles volta a precisar dela.
 
-<!-- source: a-plugin 43023e60bac9 -->
+<!-- source: a-plugin 336458ba764e -->
 ## Um plugin
 
 Com `key_manager = plugin`, um [plugin](plugins.md) seu guarda a KEK, no Vault, em um HSM ou onde ele escolher, e envolve as chaves de criptografia de dados para o servidor.
@@ -205,7 +203,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - O ID da chave dos segredos armazenados é `plugin:` seguido do ID que o plugin dá à sua KEK, que tem de 1 a 248 bytes de ASCII visível.
 - **Mantenha toda KEK que um segredo armazenado ainda nomeia.** Uma rotação no plugin aparece como um novo ID no próximo envolvimento. Os segredos envolvidos antes continuam nomeando o ID antigo, e o plugin ainda precisa conseguir abri-los. `my kek rewrap` os move para o ID atual, e `my kek status` conta os que restam.
 - Um plugin e um KMS nunca atuam juntos: `kms_key` e `kms_key_previous` são recusados com um plugin, e `plugin_key_manager_address` também é recusado com `key_manager = gcpkms` ou `awskms`.
-- A build tag `no_plugins` deixa o adaptador de fora do binário ([Build tags](../reference/build-tags.md)).
 
 <!-- source: when-the-server-starts 5faeda92e43b -->
 ### Quando o servidor inicia

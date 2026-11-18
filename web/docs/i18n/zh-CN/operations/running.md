@@ -108,7 +108,7 @@ cp example.env .env
 
 **内置的 Garage。** 配合 `COMPOSE_PROFILES=garage` 使用 `compose.s3.yaml` 时，需要 `example.env` 顶部列出的那些值。一次性服务 `garage-init` 会在每次 `up` 时准备存储。它只留在 Compose 网络内部，因为媒体由服务器自己提供。一个节点就是一块磁盘：请备份卷 `garage` 或存储桶（[备份](backup.md#media-in-a-bucket)）。
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## 获取镜像
 
 服务器镜像是 `ghcr.io/mycroblog/my`，公开提供，支持 `linux/amd64` 和 `linux/arm64`，包含所有适配器。
@@ -134,7 +134,6 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 - **Kubernetes**：直接从 `ghcr.io` 拉取。
 - **Cloud Run**：直接使用 `ghcr.io` 的镜像。部署时会把标签解析为摘要。
 - **AWS（ECS、EKS）**：把镜像复制到 Amazon ECR，或者使用 ECR 拉取缓存（pull through cache），后者需要 ghcr.io 的凭据。
-- **更小的镜像**：在检出的代码中执行 `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .`，可以构建包含较少适配器的镜像（[构建标签](../reference/build-tags.md)）。这是你自己的构建，因此不在下面的校验范围内。
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### 校验镜像

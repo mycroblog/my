@@ -371,7 +371,7 @@ proto の版はパッケージごとの `v1` で、`my` の Go のインター�
   - Connect のエラーの `message` を捨てるので、プラグインの障害の調査はプラグインのログに頼る
   - 依存が増える: `connect/v2`（`cmd/my` に）、`buf`（`tools/buf/` に）。`connect/v2` は最初の版から 1 か月ほどで、変更に追随する可能性がある
 - 後続で必要になる作業（Issue 化する）
-  - #2216: §3〜§8・§12・§16 の基盤。`scripts/license-scope-check.sh`、`README.md`、`tools/agentkit/context-map.yaml`、`docs/reference/` と運用文書、`agentkit docs inventory` の `my plugin test` とビルドタグ
+  - #2216: §3〜§8・§12・§16 の基盤。`scripts/license-scope-check.sh`、`README.md`、`tools/agentkit/context-map.yaml`、`docs/reference/` と運用文書、`agentkit docs inventory` の `my plugin test`
   - #2217〜#2221: §11・§13・§14 の写像。#2218 はスキーマと API の列挙の変更を含む
   - `Processor` のポートを `io.Reader` にしてメモリの上限を下げる（任意）
 

@@ -1109,7 +1109,7 @@ linters:
             - github.com/mycroblog/my/internal/adapter/db/postgres/instance$
             - github.com/mycroblog/my/internal/adapter/db/postgres/webhook$
         # The fake payment provider records payments as paid without any money moving: besides the tests, only the
-        # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-build-tags.sh checks it).
+        # test builds (build tag e2e_fakes) link it, through one file (ADR-0015 §6; scripts/go-fakes.sh checks it).
         payment-fake:
           list-mode: lax
           files:
@@ -1121,7 +1121,7 @@ linters:
             - pkg: github.com/mycroblog/my/internal/adapter/payment/fake
               desc: only internal/platform/adapters_payments_fake.go (build tag e2e_fakes) and tests import the fake payment provider
         # The fake search index keeps its documents in memory: besides the tests, only the test builds (build tag
-        # e2e_fakes) link it, through one file (ADR-0149 §3; scripts/go-build-tags.sh checks it).
+        # e2e_fakes) link it, through one file (ADR-0149 §3; scripts/go-fakes.sh checks it).
         search-fake:
           list-mode: lax
           files:
