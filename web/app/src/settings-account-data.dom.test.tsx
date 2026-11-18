@@ -887,9 +887,9 @@ describe("Delete old posts automatically under a limit of the server", () => {
     expect(put.seen).toHaveLength(0);
   });
 
-  // Finding: the rule describes the field, but the field is not marked invalid, as the other refused fields of the
-  // settings are (an alias's, a move's target): a reader of assistive technology hears the rule as a hint.
-  test.failing("an empty age refused marks the field invalid", async () => {
+  // The rule describes the field, which is marked invalid, as the other refused fields of the settings are (an
+  // alias's, a move's target): a reader of assistive technology hears it as what is wrong, not as a hint.
+  test("an empty age refused marks the field invalid", async () => {
     const app = await autoDeleteOn(deleting(policy));
     await ageOf(app, "");
 

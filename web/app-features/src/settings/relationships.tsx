@@ -131,9 +131,13 @@ export function useRemovals<I>(id: string) {
   const [kept, setKept] = useState<ReadonlyMap<string, { item: I; at: number; result: SettingsRowResult }>>(new Map());
   const count = useRef(0);
   const focus = useRef<string | undefined>(undefined);
+  // The result takes the focus once it is drawn: a row whose list has not yet come from the cache without it (the
+  // server's answer reaches the screen after the write resolves) says nothing yet, and the focus waits for it.
   useEffect(() => {
     if (focus.current === undefined) return;
-    document.getElementById(focus.current)?.focus();
+    const place = document.getElementById(focus.current);
+    if (place === null) return;
+    place.focus();
     focus.current = undefined;
   });
   const resultId = (key: string) => `${id}-done-${key}`;

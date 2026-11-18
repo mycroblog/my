@@ -323,9 +323,8 @@ function PolicyForm({
   // be checked, which takes the focus (`focusRefusedField` looks for `<id>-error`).
   const keptErrorId = `${keepId(firstKept ?? "keep_pinned")}-error`;
   const audiencesErrorId = `${audienceId("public")}-error`;
-  /** The control of a setting's row, and under it the place of what is wrong with it. */
+  /** The control of a setting's row, which takes the focus; what is wrong with it is the row's `error`. */
   const controlOf = (row: string) => `${row}-control`;
-  const errorOf = (row: string) => `${controlOf(row)}-error`;
 
   /**
    * The element of an input that was refused, which takes the focus; none for an input the server's maximum took off
@@ -427,30 +426,26 @@ function PolicyForm({
         : undefined;
 
   const threshold = (row: string, input: "boosts" | "favourites", value: number | null) => {
-    const error = errorAt(input);
     return (
-      <>
-        <SettingRow
-          id={row}
-          label={t("settings.account.auto_delete.threshold", { of: input })}
-          about={t("settings.account.auto_delete.threshold.about")}
-          form
-        >
-          <NumberField
-            name={input}
-            value={value}
-            min={0}
-            max={autoDeleteLimits.maxCount}
-            unit={t("settings.account.auto_delete.threshold.unit")}
-            describedBy={error === undefined ? undefined : errorOf(row)}
-            onChange={(n) => {
-              change(input === "boosts" ? { keep_min_boosts: n } : { keep_min_favourites: n });
-            }}
-            isDisabled={busy}
-          />
-        </SettingRow>
-        {error !== undefined && <FieldError id={errorOf(row)}>{error}</FieldError>}
-      </>
+      <SettingRow
+        id={row}
+        label={t("settings.account.auto_delete.threshold", { of: input })}
+        about={t("settings.account.auto_delete.threshold.about")}
+        form
+        error={errorAt(input)}
+      >
+        <NumberField
+          name={input}
+          value={value}
+          min={0}
+          max={autoDeleteLimits.maxCount}
+          unit={t("settings.account.auto_delete.threshold.unit")}
+          onChange={(n) => {
+            change(input === "boosts" ? { keep_min_boosts: n } : { keep_min_favourites: n });
+          }}
+          isDisabled={busy}
+        />
+      </SettingRow>
     );
   };
 
@@ -534,6 +529,7 @@ function PolicyForm({
             isDisabled={limit !== undefined}
             reason={t("settings.account.auto_delete.enabled.fixed")}
             form
+            error={enabledError}
           >
             <Select
               name="enabled"
@@ -542,19 +538,18 @@ function PolicyForm({
                 label: t("settings.account.auto_delete.enabled.choice", { enabled: value }),
               }))}
               value={form.enabled ? "on" : "off"}
-              describedBy={enabledError === undefined ? undefined : errorOf(enabledId)}
               onChange={(value) => {
                 change({ enabled: value === "on" });
               }}
               isDisabled={busy || limit !== undefined}
             />
           </SettingRow>
-          {enabledError !== undefined && <FieldError id={errorOf(enabledId)}>{enabledError}</FieldError>}
           <SettingRow
             id={daysId}
             label={t("settings.account.auto_delete.days")}
             about={t("settings.account.auto_delete.days.about", { max: maxDays })}
             form
+            error={daysError}
           >
             <NumberField
               name="min_age_days"
@@ -562,14 +557,12 @@ function PolicyForm({
               min={autoDeleteLimits.minDays}
               max={maxDays}
               unit={t("settings.account.auto_delete.days.unit")}
-              describedBy={daysError === undefined ? undefined : errorOf(daysId)}
               onChange={(n) => {
                 change({ min_age_days: n });
               }}
               isDisabled={busy}
             />
           </SettingRow>
-          {daysError !== undefined && <FieldError id={errorOf(daysId)}>{daysError}</FieldError>}
         </SettingsSection>
         {/* What the form deletes stands right under when it deletes, over what it keeps: the reader sees it first. */}
         <SettingsSection

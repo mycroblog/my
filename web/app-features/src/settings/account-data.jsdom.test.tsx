@@ -89,9 +89,9 @@ describe("a status that says what was done takes the focus", () => {
   });
 });
 
-// Finding: the row stays and reads Removed, but the focus, on its Remove as it was pressed, falls to the page as the
-// button goes: a reader of the keyboard starts again from the top (on happy-dom too, which focuses whatever is asked).
-test.failing("Aliases: Remove leaves the row in place, reading Removed, with the focus on it", async () => {
+// The row stays and reads Removed, and the focus, on its Remove as it was pressed, goes to what the row says, so that
+// a reader of the keyboard goes on from where they were (on happy-dom too, which focuses whatever is asked).
+test("Aliases: Remove leaves the row in place, reading Removed, with the focus on it", async () => {
   const { user } = await drawn(
     (props) => <AccountAliasesScreen {...props} />,
     () => screen.findByRole("list", { name: "1 of 5 aliases" }),
