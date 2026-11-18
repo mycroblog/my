@@ -2,8 +2,9 @@
 
 // A picture the reader picks from their device (a profile's avatar, its header): a field of a form whose control is
 // the picture as it will show, in its shape, and what the reader may do with it. `round` is an avatar at its
-// preview's size, the initial of `name` standing in for none; `banner` is 3:1 across the field, the surface standing
-// in for none. Its one button opens the system's picker for one image, and says so in the caller's words (choose one,
+// preview's size, the initial of `name` standing in for none; `banner` is 3:1 across the field, a picture's glyph on
+// a tone of the raised surface standing in for none, so that the empty place does not read as a field to write in.
+// Its one button opens the system's picker for one image, and says so in the caller's words (choose one,
 // or replace the one shown); remove stands after it while there is a picture to remove. The picture itself is
 // decoration: what the field holds is told by its label and by the buttons it offers.
 //
@@ -16,15 +17,19 @@ import { Avatar } from "./avatar";
 import { Button } from "./button";
 import { describedBy } from "./field";
 import { FieldError } from "./form-page";
+import { Icon } from "./icons";
 import { Box, Row, Stack } from "./layout";
 
 const picture = tv({
   slots: {
     label: "font-label",
     hint: "text-caption text-muted-text [word-break:auto-phrase]",
-    // The banner's box: the surface a field has, the page's on a raised section, under the picture.
-    banner: "rounded-overlay bg-surface-raised [[data-surface-raised]_&]:bg-surface",
+    // The banner's box, under the picture. Without one it is a place for a picture, not a field to write in: a tone
+    // of the raised surface, a step off the section it stands on and never the page's, which the fields there have.
+    banner: "rounded-overlay bg-surface-raised [[data-surface-raised]_&]:bg-surface-raised-hover",
     image: "object-cover",
+    // The glyph of a picture that is not there yet, in the middle of its place.
+    none: "text-muted-text",
   },
 });
 
@@ -118,7 +123,13 @@ export function PictureField({
       ) : (
         <>
           <Box ratio={3} clip className={s.banner()}>
-            {src !== undefined && <Box full="both" className={s.image()} as={<img src={src} alt="" />} />}
+            {src === undefined ? (
+              <Row full="both" align="center" justify="center" className={s.none()}>
+                <Icon name="picture" place="navigation" />
+              </Row>
+            ) : (
+              <Box full="both" className={s.image()} as={<img src={src} alt="" />} />
+            )}
           </Box>
           {actions}
         </>

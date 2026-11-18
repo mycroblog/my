@@ -369,7 +369,7 @@
   },
   "settings.profile.indexable.overridden": {
     "defaultMessage": "このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っているため、この選択は反映されません。",
-    "description": "The line under Include your profile and public posts in search while the switch is disabled: the server's administrators keep search engines out, and the server has no search of posts, so the reader's own choice changes nothing."
+    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators keep search engines out, and the server has no search of posts, so the reader's profile and posts are in no search whatever they chose."
   },
   "settings.profile.ai_opt_out": {
     "defaultMessage": "AI の学習と利用を拒否する",
@@ -381,15 +381,15 @@
   },
   "settings.profile.ai_opt_out.overridden": {
     "defaultMessage": "このサーバーは、すべてのアカウントで AI の学習と利用を拒否しているため、この選択は反映されません。",
-    "description": "The line under Refuse AI training and use while the switch is disabled: the server's administrators refuse both for every account, so the reader's own choice changes nothing."
+    "description": "The line under Refuse AI training and use while the switch is disabled and shows on: the server's administrators refuse both for every account, so both are refused whatever the reader chose."
   },
   "settings.profile.feed": {
     "defaultMessage": "公開投稿の Atom フィードを出す",
     "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
   },
   "settings.profile.feed.about": {
-    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
-    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
+    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} overridden {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、検索についてのあなた自身の選択に合わせます。上のサーバーの決まりは、この選択を変えません。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled because the server keeps search engines out for every account: that switch then shows off, what the server enforces, while the feed still follows what the reader had chosen there; anything else once the reader set this switch, which then keeps their choice."
   },
   "settings.profile.edit.section.pictures": {
     "defaultMessage": "画像",
@@ -418,6 +418,10 @@
   "settings.profile.picture.remove": {
     "defaultMessage": "削除",
     "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
+  },
+  "settings.profile.picture.failed": {
+    "defaultMessage": "{reason, select, processing {サーバーがこの画像を処理できませんでした。別の画像を選んでください。} other {この画像をアップロードできませんでした。もう一度保存するか、別の画像を選んでください。}}",
+    "description": "Under the avatar or the header image on the Edit profile page when saving failed because of that picture and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
   },
   "settings.profile.name": {
     "defaultMessage": "表示名",
@@ -484,8 +488,8 @@
     "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
   },
   "settings.profile.save.picture_failed": {
-    "defaultMessage": "サーバーが画像を処理できなかったため、何も保存されませんでした。別の画像を選んで、もう一度保存してください。",
-    "description": "Beside the Save button of the Edit profile page when the server took a picked avatar or header image and then could not turn it into a picture it can show."
+    "defaultMessage": "画像を使えなかったため、プロフィールは保存されませんでした。画像の下の説明を確認してください。",
+    "description": "Beside the Save button of the Edit profile page when the avatar or the header image the reader picked could not be uploaded or was refused; what is wrong stands under that picture (settings.profile.picture.failed, or the server's own words)."
   },
   "settings.profile.leave.title": {
     "defaultMessage": "保存せずに移動しますか？",

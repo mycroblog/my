@@ -5,15 +5,12 @@
 // chooses one, and with one, where it replaces it and Remove stands after it; one the server refused, with what is
 // wrong right under it; and both while the form is sent. Choosing a file shows it at once, as it will show.
 
-import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { PictureField } from "./picture-field";
 import { images } from "./samples";
 import { SettingsSection } from "./settings";
-
-const rem = (px: number) => `${px / rootPx}rem`;
 
 const words = {
   en: {
@@ -41,7 +38,7 @@ const words = {
 const useWords = () => words[new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en"];
 
 function Column({ children }: { children: ReactNode }) {
-  return <div style={{ maxWidth: rem(600), padding: rem(16) }}>{children}</div>;
+  return <div className="grid max-w-[37.5rem] gap-shell-edge p-shell-edge text-body">{children}</div>;
 }
 
 type Given = { picture?: string; error?: boolean; disabled?: boolean };

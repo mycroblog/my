@@ -2,7 +2,8 @@
 
 // The head of a page with a picture: the banner and the lead over its lower edge with what the reader may do at the
 // other end of its row, with and without a banner. In a column as narrow as a phone's the banner reaches the edges;
-// in a wider one it is a card of its own. The words are samples in English.
+// in a wider one it is a card of its own. And the head small, inside a section of another screen, its banner a strip.
+// The words are samples in English.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -11,11 +12,12 @@ import { Avatar } from "./avatar";
 import { BannerHead } from "./banner-head";
 import { Button } from "./button";
 import { images } from "./samples";
+import { SettingsSection } from "./settings";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
 function Column({ children }: { children: ReactNode }) {
-  return <div style={{ maxWidth: rem(600), paddingInline: rem(16) }}>{children}</div>;
+  return <div style={{ display: "grid", gap: rem(16), maxWidth: rem(600), paddingInline: rem(16) }}>{children}</div>;
 }
 
 // Tagged `themes`: the check of every story shows it in dark too.
@@ -50,6 +52,27 @@ export const WithoutBanner: Story = {
       <BannerHead lead={lead} labelledBy="banner-name" dir="ltr">
         <h2 id="banner-name">Alice Chen</h2>
       </BannerHead>
+    </Column>
+  ),
+};
+
+/**
+ * The head small, in a section of a settings screen: the banner a strip within the section at every width, the lead's
+ * ring the section's surface; and the same with no banner, a tone of the raised surface standing in.
+ */
+export const Strip: Story = {
+  render: () => (
+    <Column>
+      <SettingsSection heading="Your profile">
+        <BannerHead strip banner={images.dusk} lead={lead} end={end} labelledBy="strip-name" dir="ltr">
+          <p id="strip-name">Alice Chen</p>
+        </BannerHead>
+      </SettingsSection>
+      <SettingsSection heading="Your profile">
+        <BannerHead strip lead={lead} end={end} labelledBy="strip-bare-name" dir="ltr">
+          <p id="strip-bare-name">Alice Chen</p>
+        </BannerHead>
+      </SettingsSection>
     </Column>
   ),
 };

@@ -2,12 +2,13 @@
 
 // Profile, the entry of the settings (FR-006, ADR-0110 §5), and Edit profile, the screen under it, on the fake server
 // as yuki reads them. The entry, where every control saves at once: as the scenario's reader has it, with the badges
-// they may show and the hashtags they feature; as a new account has it, with neither; on a server that decides about
-// search engines and AI for every account, where the reader's own choices are disabled and say why, and on one that
+// they may show and the hashtags they feature; as a new account has it, with neither; with eight badges, one list of
+// them; on a server that decides about search engines and AI for every account, where the two switches are disabled,
+// show what the server enforces and say why, and on one that
 // decides a part of each, where the lines say what the choice still does; and while it loads, and when it could not
 // be read. The form, saved as a whole: filled, and with nothing yet; on a server that refuses the display name, which
-// Save then shows beside the field; on one whose review refuses the change; and on one that never answers, where Save
-// stays busy. What a control of the entry says of a change (saving, saved, not saved) is the design system's own
+// Save then shows beside the field; on one that refuses every upload, which Save shows under the picture picked; on
+// one whose review refuses the change; and on one that never answers, where Save stays busy. What a control of the entry says of a change (saving, saved, not saved) is the design system's own
 // story (Saving), and the fields of a picture and of a pair in their states are theirs (Picture field, Pair field).
 // The reader's own profile with the action that leads to the form is Profile's first story (Own).
 
@@ -31,6 +32,26 @@ export const Entry: Story = {};
 /** The entry as a new account has it: no hashtag featured, and no badge, so no Badges section. */
 export const EntryNew: Story = {
   parameters: screen({ at: entry, server: { settings: { badges: [], featured: [] } } }),
+};
+/** The entry of an account with eight badges: one list of them in the Badges section, a switch each. */
+export const EntryManyBadges: Story = {
+  parameters: screen({
+    at: entry,
+    server: {
+      settings: {
+        badges: [
+          { label: "Administrator", color: "neutral", displayed: true },
+          { label: "Moderator", color: "neutral", displayed: true },
+          { label: "Supporter", color: "neutral", displayed: false },
+          { label: "Translator", color: "neutral", displayed: true },
+          { label: "Emoji maker", color: "neutral", displayed: false },
+          { label: "Event host", color: "neutral", displayed: false },
+          { label: "Founding member", color: "neutral", displayed: false },
+          { label: "Volunteer of the year 2026", color: "neutral", displayed: false },
+        ],
+      },
+    },
+  }),
 };
 /**
  * The entry on a server that keeps search engines out, has no search of posts, and refuses AI for every account: the
@@ -63,3 +84,5 @@ export const EditRefused: Story = { parameters: screen({ at: edit, server: { pro
 export const EditRejected: Story = { parameters: screen({ at: edit, server: { profile: { save: "refused" } } }) };
 /** The form on a server that never answers: Save stays busy, and nothing can be changed meanwhile. */
 export const EditSaving: Story = { parameters: screen({ at: edit, server: { profile: { save: "waits" } } }) };
+/** The form on a server that refuses every upload: after a picture is picked, Save says so under that picture. */
+export const EditPictureRefused: Story = { parameters: screen({ at: edit, server: { uploads: "refused" } }) };

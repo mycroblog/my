@@ -33,4 +33,13 @@
   :where(html) {
     overflow-wrap: break-word;
   }
+
+  /*
+   * A placeholder is cut by its field, not by a line of its own: the browser gives it one as tall as the first
+   * family of the stack says, which is shorter than the letters of the family that draws them, and cuts the tail of
+   * a g with it.
+   */
+  :where(input)::placeholder {
+    overflow: visible;
+  }
 }

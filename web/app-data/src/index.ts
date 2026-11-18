@@ -393,6 +393,7 @@ export {
 export {
   badgeChoicesQuery,
   chooseBadge,
+  failedPicture,
   followedHashtagsQuery,
   ownFeaturedHashtagsQuery,
   profileLimits,
@@ -413,6 +414,7 @@ export {
   type FollowsVisibility,
   type ProfileChange,
   type ProfileField,
+  type ProfilePicture,
 } from "./profile";
 export { blocksQuery, mutesQuery, useBlocks, useMutes, type MutedAccount } from "./relations";
 export {

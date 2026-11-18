@@ -373,9 +373,10 @@ export type FakeOptions = {
   dismissFails?: boolean;
   /**
    * An upload is still processed when the server answers it, and ready when it is read again (GET /media/{id}), as on
-   * a server that processes it meanwhile; ready at once by default.
+   * a server that processes it meanwhile; ready at once by default. `refused`: every upload is refused (a 422 with the
+   * server's words), as a file the server cannot use.
    */
-  uploads?: "processing";
+  uploads?: "processing" | "refused";
   /**
    * The token revocation, which the app signs out through (POST /oauth/revoke, no operation of the client API), fails
    * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
@@ -2793,16 +2794,33 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
           detail: "This value is not valid. Check what you entered.",
           field: "display_name",
         });
-      const length = (text: string) => Array.from(text).length;
-      if (body.display_name !== undefined && length(body.display_name) > 30)
-        return problem(422, "The display name is at most 30 characters");
-      if (body.note !== undefined && length(body.note) > 500)
-        return problem(422, "The profile text is at most 500 characters");
-      if (body.fields !== undefined) {
-        if (body.fields.length > 4) return problem(422, "A profile has at most 4 fields");
-        if (body.fields.some((f) => length(f.name) > 255 || length(f.value) > 255))
-          return problem(422, "A field is at most 255 characters");
-      }
+      // What the server refuses of a text, which the problem names in `field` (a part of a field without the field's
+      // index, as the server does): longer than its limit, or holding a control character it does not take there (a
+      // line break or a tab is one too, but in the profile text and a field's value).
+      const refusedText = (field: string, text: string | undefined, max: number, lines: boolean) => {
+        if (text === undefined) return undefined;
+        const controls = lines ? /[^\P{Cc}\n\r\t]/u : /\p{Cc}/u;
+        const detail =
+          Array.from(text).length > max
+            ? `Use at most ${String(max)} characters.`
+            : controls.test(text)
+              ? "This value is not valid. Check what you entered."
+              : undefined;
+        return detail === undefined ? undefined : problem(422, "This could not be done.", { detail, field });
+      };
+      const refusedOf =
+        refusedText("display_name", body.display_name, 30, false) ??
+        refusedText("note", body.note, 500, true) ??
+        (body.fields !== undefined && body.fields.length > 4
+          ? problem(422, "This could not be done.", { detail: "You can have at most 4.", field: "fields" })
+          : undefined) ??
+        (body.fields ?? [])
+          .flatMap((f) => [
+            refusedText("fields[].name", f.name, 255, false),
+            refusedText("fields[].value", f.value, 255, true),
+          ])
+          .find((refused) => refused !== undefined);
+      if (refusedOf !== undefined) return refusedOf;
       // A picture is a processed upload of the reader's, or empty to remove it.
       const picture = (id: string | undefined): string | null | undefined | Refusal => {
         if (id === undefined) return undefined;
@@ -3323,7 +3341,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "POST /media": async ({ request }) => {
       // An image the reader uploads, served from the reader's own copy of the file: ready at once, or still processed
-      // until it is read again (`uploads`).
+      // until it is read again (`uploads`); or refused, as a file the server cannot use.
+      if (o.uploads === "refused")
+        return problem(422, "This could not be done.", { detail: "This file is not a picture this server can use." });
       const form = await request.formData();
       const file = form.get("file");
       const description = form.get("description");

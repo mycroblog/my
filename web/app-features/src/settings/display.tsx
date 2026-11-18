@@ -6,7 +6,7 @@
 // and quote it, each with the choices the composer offers for one post); and what
 // the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Where the server itself
 // requires a description of media, the switch of it stands on and cannot be changed. Every control saves at
-// once and says so in the line under its name (saving.tsx): the change shows at once, as the account's preferences show
+// once and says so in the line under its name (controls.tsx, saving.tsx): the change shows at once, as the account's preferences show
 // it everywhere (app-data), and goes back to what the server has when the server does not take it. The language
 // changes the whole app without a reload (the app's reader).
 
@@ -29,23 +29,20 @@ import {
 } from "@my/app-data";
 import {
   Button,
-  FeedNotice,
   Select,
   SettingRow,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
-  Switch,
-  TextButton,
   useLocale,
-  type SelectGroup,
   type SelectOption,
 } from "@my/design-system";
 import { useId } from "react";
 import { asksApproval, choiceText, interactionChoices, interactions } from "../interactions";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
+import { Choice, ReadingNotice, Toggle } from "./controls";
 import type { SettingsEntryProps } from "./entries";
 import { languageOptions, ownName, withLanguage } from "./languages";
 import { useSaving } from "./saving";
@@ -64,68 +61,6 @@ export async function loadDisplaySettings(data: AppData): Promise<void> {
 /** The value of the option that follows the browser, and of the post language that follows the display language. */
 const browser = "";
 const undetermined = "und";
-
-/** A choice from a list that saves at once: its name over the line about it, the picker at the row's end. */
-function Choice({
-  label,
-  about,
-  options,
-  value,
-  onChoose,
-}: {
-  label: string;
-  about?: string | undefined;
-  options: readonly (SelectOption | SelectGroup)[];
-  value: string;
-  /** Saves the value chosen. */
-  onChoose: (value: string) => Promise<unknown>;
-}) {
-  const id = useId();
-  const { state, save } = useSaving();
-  return (
-    <SettingRow id={id} label={label} about={about} save={state}>
-      <Select
-        options={options}
-        value={value}
-        onChange={(chosen) => {
-          save(() => onChoose(chosen));
-        }}
-      />
-    </SettingRow>
-  );
-}
-
-/** A setting on or off that saves at once; `fixed`, it cannot be changed, and the line under it says why. */
-function Toggle({
-  label,
-  about,
-  on,
-  fixed,
-  onChange,
-}: {
-  label: string;
-  about?: string | undefined;
-  on: boolean;
-  /** Why the reader cannot change it (the server decides it). */
-  fixed?: string | undefined;
-  /** Saves the state chosen. */
-  onChange: (on: boolean) => Promise<unknown>;
-}) {
-  const { state, save } = useSaving();
-  return (
-    <Switch
-      label={label}
-      description={about}
-      isSelected={on}
-      isDisabled={fixed !== undefined}
-      reason={fixed}
-      onChange={(next) => {
-        save(() => onChange(next));
-      }}
-      save={state}
-    />
-  );
-}
 
 /** The app's languages as options, each by its own name. */
 const displayLanguages = (languages: readonly string[]): readonly SelectOption[] =>
@@ -376,15 +311,7 @@ export function DisplaySettings({ back, languages }: SettingsEntryProps) {
       icon="display"
       title={t("settings.entry.display")}
       back={back}
-      notice={
-        preferences !== undefined ? undefined : status === "failed" ? (
-          <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-            {t("settings.failed")}
-          </FeedNotice>
-        ) : (
-          <FeedNotice>{t("settings.loading")}</FeedNotice>
-        )
-      }
+      notice={preferences === undefined ? <ReadingNotice failed={status === "failed"} onRetry={retry} /> : undefined}
     >
       {preferences !== undefined && <Sections preferences={preferences} languages={languages} />}
     </SettingsScreen>

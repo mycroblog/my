@@ -2,17 +2,15 @@
 
 // The pairs the reader writes (the fields of a profile), in the reader's language (the toolbar's locale; ja, else
 // en), on a raised section as a settings screen holds them: one pair not written yet, where the placeholders name its
-// fields; four written, one with a value longer than its field; the pairs with what the server refused of them under
-// the list; and while the form is sent.
+// fields; four written, one with a value longer than its field; one field the server refused, marked alone, with
+// what is wrong directly under its pair; what is wrong with the pairs as a whole, under the list; and while the form
+// is sent.
 
-import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
 import { useLocale } from "react-aria-components";
 import { PairField, PairList } from "./pair-field";
 import { SettingsSection } from "./settings";
-
-const rem = (px: number) => `${px / rootPx}rem`;
 
 const words = {
   en: {
@@ -22,6 +20,7 @@ const words = {
     legend: (n: number) => `Field ${String(n)}`,
     remove: (n: number) => `Remove field ${String(n)}`,
     refused: "This value is not valid. Check what you entered.",
+    tooMany: "You can have at most 4.",
     pairs: [
       ["Photos", "https://yuki.photos.example"],
       ["Pronouns", "she/her"],
@@ -36,6 +35,7 @@ const words = {
     legend: (n: number) => `補足情報 ${String(n)}`,
     remove: (n: number) => `補足情報 ${String(n)} を削除`,
     refused: "この値は使えません。入力した内容を確かめてください。",
+    tooMany: "4 個までにしてください。",
     pairs: [
       ["写真", "https://yuki.photos.example"],
       ["呼び方", "ゆきさん"],
@@ -48,13 +48,24 @@ const words = {
 const useWords = () => words[new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en"];
 
 function Column({ children }: { children: ReactNode }) {
-  return <div style={{ maxWidth: rem(600), padding: rem(16) }}>{children}</div>;
+  return <div className="grid max-w-[37.5rem] gap-shell-edge p-shell-edge text-body">{children}</div>;
 }
 
 type Pair = { key: number; name: string; value: string };
 
 /** A list that keeps what the reader writes in its pairs and removes. */
-function Pairs({ count, error = false, disabled = false }: { count: number; error?: boolean; disabled?: boolean }) {
+function Pairs({
+  count,
+  refused,
+  tooMany = false,
+  disabled = false,
+}: {
+  count: number;
+  /** The pair (from 0) and its field that the server refused. */
+  refused?: { pair: number; of: "name" | "value" };
+  tooMany?: boolean;
+  disabled?: boolean;
+}) {
   const w = useWords();
   const [pairs, setPairs] = useState<readonly Pair[]>(() =>
     count === 0
@@ -67,7 +78,7 @@ function Pairs({ count, error = false, disabled = false }: { count: number; erro
   return (
     <Column>
       <SettingsSection heading={w.section}>
-        <PairList id="pairs" label={w.section} error={error ? w.refused : undefined}>
+        <PairList id="pairs" label={w.section} error={tooMany ? w.tooMany : undefined}>
           {pairs.map((p, i) => (
             <PairField
               key={p.key}
@@ -89,7 +100,7 @@ function Pairs({ count, error = false, disabled = false }: { count: number; erro
                   setPairs((was) => was.filter((other) => other.key !== p.key));
                 },
               }}
-              invalid={error}
+              error={refused?.pair === i ? { of: refused.of, text: w.refused } : undefined}
               isDisabled={disabled}
             />
           ))}
@@ -111,8 +122,14 @@ export const Empty: Story = { render: () => <Pairs count={0} /> };
 /** Four pairs, one with a value longer than its field. */
 export const Written: Story = { render: () => <Pairs count={4} /> };
 
-/** What the server refused of the pairs, under the list; every field is marked. */
-export const Refused: Story = { render: () => <Pairs count={2} error /> };
+/** A name the server refused: it alone is marked, and what is wrong stands directly under it. */
+export const Refused: Story = { render: () => <Pairs count={3} refused={{ pair: 1, of: "name" }} /> };
+
+/** A content the server refused: it alone is marked, and what is wrong stands directly under it. */
+export const RefusedContent: Story = { render: () => <Pairs count={3} refused={{ pair: 1, of: "value" }} /> };
+
+/** What is wrong with the pairs as a whole, under the list; no field is marked. */
+export const RefusedWhole: Story = { render: () => <Pairs count={4} tooMany /> };
 
 /** While the form is sent, nothing can be changed. */
 export const Disabled: Story = { render: () => <Pairs count={2} disabled /> };

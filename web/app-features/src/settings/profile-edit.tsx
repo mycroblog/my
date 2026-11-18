@@ -8,15 +8,20 @@
 // its content each, added from the section's head, or from what stands in the list's place while there is none.
 //
 // Save sends what changed and nothing else (app-data's `updateProfile`), and the profile shows it at once. What the
-// server refused stands beside the input it names, the submit bar saying the rest; a picture it could not take is
-// said there too. A text over its limit is not sent: the focus goes to it. Leaving with changes not saved is the
-// app's to notice (`onUnsaved` tells it there are some): it holds the reader back and gives `leaving`, and the
-// screen asks whether to leave without saving.
+// server refused stands beside the input it is about, the submit bar saying the rest: a picture that could not be
+// uploaded or used, under that picture; a field of the list, under its pair, that field alone marked (the server
+// names the label or the content without saying of which field, so the form finds the first one its rule refuses).
+// A text over its limit is not sent: the focus goes to it. Leaving with changes not saved is the app's to notice
+// (`onUnsaved` tells it there are some): it holds the reader back and gives `leaving`, and the screen asks whether to
+// leave without saving.
 
 import { fieldError, placeRefusal, type FieldMembers, type Refused } from "../field-errors";
 import {
+  failedPicture,
   MediaFailedError,
   profileLimits,
+  refusalDetail,
+  refusedField,
   useCredentials,
   useProfileRead,
   useUpdateProfile,
@@ -52,7 +57,7 @@ import {
   usePickedPicture,
   useProfileIdentity,
 } from "../profile-identity";
-import { SettingsReading } from "./controls";
+import { ReadingNotice } from "./controls";
 
 /** What the route's loader waits for: the reader's own account, from the cache when it has it. */
 export async function loadProfileEdit(data: AppData): Promise<void> {
@@ -76,8 +81,14 @@ export type ProfileEditProps = {
   leaving?: { onStay: () => void; onLeave: () => void } | undefined;
 };
 
-/** The inputs of the form, which a refusal of the server is placed on. */
-type Input = "name" | "note" | "avatar" | "header" | "fields";
+/** A part of a field of the list: its label, or its content. */
+type Part = "name" | "value";
+
+/**
+ * The inputs of the form, which a refusal of the server is placed on: the display name, the bio, the two pictures,
+ * the list of fields as a whole, and a part of the field at an index of the fields sent.
+ */
+type Input = "name" | "note" | "avatar" | "header" | "fields" | `field:${number}:${Part}`;
 
 /** Which input answers to which member of the request (`PATCH /accounts/update_credentials`). */
 const members: FieldMembers<Input> = {
@@ -86,8 +97,8 @@ const members: FieldMembers<Input> = {
   avatar_media_id: "avatar",
   header_media_id: "header",
   fields: "fields",
-  "fields[].name": "fields",
-  "fields[].value": "fields",
+  "fields[].name": (index) => `field:${index}:name`,
+  "fields[].value": (index) => `field:${index}:value`,
 };
 
 /** A field of the profile as the form holds it: the pair, and a key of its own, which no other pair ever had. */
@@ -96,9 +107,9 @@ type Pair = ProfileField & { readonly key: number };
 /** The characters of a text as the server counts them (code points). */
 const charsOf = (text: string) => Array.from(text).length;
 
-/** The fields to save: the pairs with something written, in their order. */
-const written = (pairs: readonly Pair[]): ProfileField[] =>
-  pairs.filter((p) => p.name.trim() !== "" || p.value.trim() !== "").map(({ name, value }) => ({ name, value }));
+/** The pairs to save: those with something written, in their order. */
+const written = (pairs: readonly Pair[]): readonly Pair[] =>
+  pairs.filter((p) => p.name.trim() !== "" || p.value.trim() !== "");
 
 const sameFields = (a: readonly ProfileField[], b: readonly ProfileField[]) =>
   a.length === b.length &&
@@ -107,10 +118,50 @@ const sameFields = (a: readonly ProfileField[], b: readonly ProfileField[]) =>
     return other !== undefined && f.name === other.name && f.value === other.value;
   });
 
-/** Where the form's last save is. */
+/** A control character, which no label takes; and one that is no line break or tab, which no content takes. */
+const control = { name: /\p{Cc}/u, value: /[^\P{Cc}\n\r\t]/u } as const;
+
+/**
+ * Whether the server refuses `text` as a part of a field: longer than the limit, or holding a control character it
+ * does not take there. The server names the part it refused without the field's index (`fields[].name`), so the
+ * form finds the field by this rule.
+ */
+const unfit = (part: Part, text: string) => charsOf(text) > profileLimits.fieldText || control[part].test(text);
+
+/**
+ * A failed save placed on the form, whose `fields` were sent: a picture that could not be uploaded or used, under
+ * that picture, in the server's words when it gave some; a part of a field, under the first field sent that the
+ * server's rule refuses, else under the list; anything else as every form places it (field-errors.ts).
+ */
+function placed(error: unknown, fields: readonly ProfileField[], t: ReturnType<typeof stringsIn>["t"]): Refused<Input> {
+  const picture = failedPicture(error);
+  if (picture !== undefined)
+    return {
+      reason: t("settings.profile.save.picture_failed"),
+      field: {
+        input: picture,
+        text:
+          error instanceof MediaFailedError
+            ? t("settings.profile.picture.failed", { reason: "processing" })
+            : (refusalDetail(error) ?? t("settings.profile.picture.failed", { reason: "upload" })),
+      },
+    };
+  const named = refusedField(error);
+  const part = named === undefined ? undefined : /^fields\[\]\.(name|value)$/.exec(named.member)?.[1];
+  if (named !== undefined && (part === "name" || part === "value")) {
+    const index = fields.findIndex((field) => unfit(part, field[part]));
+    return {
+      reason: named.title || undefined,
+      field: { input: index < 0 ? "fields" : `field:${index}:${part}`, text: named.detail },
+    };
+  }
+  return placeRefusal(error, members);
+}
+
+/** Where the form's last save is; a refused one with the keys of the pairs it sent, in their order. */
 type Sent =
   | { readonly kind: "idle" | "sending" | "saved" }
-  | { readonly kind: "refused"; readonly refused: Refused<Input>; readonly picture: boolean };
+  | { readonly kind: "refused"; readonly refused: Refused<Input>; readonly keys: readonly number[] };
 
 function EditForm({
   account,
@@ -148,7 +199,18 @@ function EditForm({
 
   const busy = sent.kind === "sending";
   const refused = sent.kind === "refused" ? sent.refused : undefined;
-  const fields = written(pairs);
+  const sending = written(pairs);
+  const fields = sending.map(({ name, value }) => ({ name, value }));
+  /** What the server refused of a part of `pair`, which was sent at the place its key has among the keys sent. */
+  const pairError = (pair: Pair) => {
+    const at = sent.kind === "refused" ? sent.keys.indexOf(pair.key) : -1;
+    if (at < 0) return undefined;
+    for (const of of ["name", "value"] as const) {
+      const text = fieldError(refused, `field:${at}:${of}`);
+      if (text !== undefined) return { of, text };
+    }
+    return undefined;
+  };
   const noteLeft = profileLimits.note - charsOf(note);
   const noteChanged = note !== base.note;
   const fieldsChanged = !sameFields(fields, base.fields);
@@ -195,7 +257,7 @@ function EditForm({
         setSent({ kind: "saved" });
       },
       (error: unknown) => {
-        setSent({ kind: "refused", refused: placeRefusal(error, members), picture: error instanceof MediaFailedError });
+        setSent({ kind: "refused", refused: placed(error, fields, t), keys: sending.map((pair) => pair.key) });
       },
     );
   };
@@ -225,11 +287,7 @@ function EditForm({
               sent.kind === "saved" ? (
                 <SaveState state="saved" />
               ) : sent.kind === "refused" ? (
-                <FormAlert>
-                  {sent.picture
-                    ? t("settings.profile.save.picture_failed")
-                    : (sent.refused.reason ?? t("settings.profile.save.failed"))}
-                </FormAlert>
+                <FormAlert>{sent.refused.reason ?? t("settings.profile.save.failed")}</FormAlert>
               ) : undefined
             }
           >
@@ -271,6 +329,7 @@ function EditForm({
             name="note"
             label={t("settings.profile.note")}
             multiline
+            rows={3}
             defaultValue={note}
             onChange={(text) => {
               setNote(text);
@@ -324,7 +383,7 @@ function EditForm({
                   }}
                   // A pair the reader just added is theirs to write: the button that added it may be gone.
                   autoFocus={pair.key >= opened}
-                  invalid={fieldsError !== undefined}
+                  error={pairError(pair)}
                   isDisabled={busy}
                 />
               ))}
@@ -356,12 +415,11 @@ export function ProfileEdit({ onBack, onUnsaved, leaving }: ProfileEditProps) {
   const { status, retry } = useProfileRead();
   if (account === undefined)
     return (
-      <SettingsReading
+      <SettingsScreen
         sub
         title={t("settings.profile.edit")}
         back={<BackButton onPress={onBack}>{t("settings.entry.profile")}</BackButton>}
-        failed={status === "failed"}
-        onRetry={retry}
+        notice={<ReadingNotice failed={status === "failed"} onRetry={retry} />}
       />
     );
   return <EditForm account={account} onBack={onBack} onUnsaved={onUnsaved} leaving={leaving} />;

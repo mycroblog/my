@@ -13,7 +13,7 @@ import { tv } from "tailwind-variants/lite";
 import { ArticleText, ArticleTitle } from "./article";
 import { Button } from "./button";
 import { CaptionLine } from "./entry";
-import { FieldContext } from "./field";
+import { describedBy as idsOf, FieldContext } from "./field";
 import { FieldError, GlyphLabel } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon } from "./icons";
@@ -600,9 +600,11 @@ const tags = tv({
       "[[data-surface-raised]_&]:bg-surface-raised",
     ],
     // What is typed takes the room left on the line, and goes on a next one where less than its least width is left.
+    // Its line, and its placeholder's, which a browser gives a line of its own, is as tall as the field: a field cuts
+    // what reaches under a shorter line (the tail of a g).
     input: [
       "h-chip min-w-article-tag-input border-0 bg-transparent p-0 ps-article-tags-inset font-sans text-body text-text",
-      "outline-hidden placeholder:text-muted-text",
+      "leading-(--chip-height) outline-hidden placeholder:text-muted-text",
     ],
   },
 });
@@ -659,7 +661,7 @@ export function TagInput({
             id={holder.id}
             className={s.input()}
             aria-label={label}
-            aria-describedby={holder.describedBy}
+            aria-describedby={idsOf(holder.describedBy, holder.stateBy)}
             placeholder={placeholder}
             dir="auto"
             value={typed}

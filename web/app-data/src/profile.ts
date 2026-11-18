@@ -13,7 +13,7 @@ import {
   type FeaturedHashtag,
 } from "./accounts";
 import type { AppData } from "./app-data";
-import { uploadAttachment } from "./compose";
+import { refusedField, uploadAttachment } from "./compose";
 import { useAppData } from "./provider";
 
 /** The viewer's own account: the profile with the choices only its owner reads. */
@@ -40,20 +40,50 @@ export type ProfileChange = Omit<CredentialsRequest, "avatar_media_id" | "header
 /** The most characters of a display name, of the profile text, and of a field's label and value (code points). */
 export const profileLimits = { displayName: 30, note: 500, fieldText: 255, fields: 4, featuredHashtags: 10 } as const;
 
+/** A picture of the profile. */
+export type ProfilePicture = "avatar" | "header";
+
+/** The picture each failed upload of a profile change was of, by the error the change rejected with. */
+const uploadsFailed = new WeakMap<object, ProfilePicture>();
+
 /** The media of a picture to set: its ID once uploaded, empty to remove it, undefined to leave it. */
-async function pictureId(data: AppData, file: File | null | undefined): Promise<string | undefined> {
+async function pictureId(
+  data: AppData,
+  picture: ProfilePicture,
+  file: File | null | undefined,
+): Promise<string | undefined> {
   if (file === undefined) return undefined;
-  return file === null ? "" : (await uploadAttachment(data, file)).id;
+  if (file === null) return "";
+  try {
+    return (await uploadAttachment(data, file)).id;
+  } catch (error) {
+    if (typeof error === "object" && error !== null) uploadsFailed.set(error, picture);
+    throw error;
+  }
+}
+
+/**
+ * The picture a rejection of `updateProfile` is about: the one whose upload failed (the error is the upload's own:
+ * the server's problem, MediaFailedError, or mykit's), or the one the server refused in the change itself (a 422 that
+ * names `avatar_media_id` or `header_media_id`). Undefined for a failure that is about no picture.
+ */
+export function failedPicture(error: unknown): ProfilePicture | undefined {
+  if (typeof error !== "object" || error === null) return undefined;
+  const uploaded = uploadsFailed.get(error);
+  if (uploaded !== undefined) return uploaded;
+  const member = refusedField(error)?.member;
+  return member === "avatar_media_id" ? "avatar" : member === "header_media_id" ? "header" : undefined;
 }
 
 /**
  * Changes the viewer's profile, and resolves with the account the server answered once the cache holds it: as the
  * viewer's own, and as the profile of the account; the posts, notifications and lists that carry the account are read
- * again when they open. It rejects with the server's problem, or with mykit's error when an upload failed.
+ * again when they open. It rejects with the server's problem, or with the error of an upload that failed, and
+ * nothing is changed then; `failedPicture` says which picture such an error is about.
  */
 export async function updateProfile(data: AppData, change: ProfileChange): Promise<CredentialAccount> {
   const { avatar, header, ...fields } = change;
-  const [avatarId, headerId] = [await pictureId(data, avatar), await pictureId(data, header)];
+  const [avatarId, headerId] = [await pictureId(data, "avatar", avatar), await pictureId(data, "header", header)];
   const { data: saved } = await data.api.PATCH("/accounts/update_credentials", {
     body: {
       ...fields,
