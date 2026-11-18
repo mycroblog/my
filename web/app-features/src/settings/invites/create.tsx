@@ -6,10 +6,12 @@
 // in a summary that takes the focus, then shows the invite's link to copy in the form's place (Copy link the primary
 // action), and Finish, neutral, at its end goes back to Invites, whose list holds it.
 //
-// What the server refuses stands right before the button: a value over what it allows now, in the client's words (the
-// administrators lowered a limit after the screen opened, and the form then offers the new limits), and anything else
-// in the server's. A reader who may not create invites reads why in the form's place, and one who has as many usable
-// invites as the server allows, that; both also when the server says so only as it refuses the invite.
+// A value the server refuses as over what it allows now stands under its field, in the client's words, and the field
+// takes the focus (the administrators lowered a limit after the screen opened, and the form then offers the new
+// limits); anything else the server refuses stands right before the button, in its words, the focus left there. A
+// reader who may not create invites reads why in the form's place, and one who has as many usable invites as the server
+// allows, that; both also when the server says so only as it refuses the invite, and then what says it takes the focus
+// the form's button left.
 
 import {
   invitesNotAllowed,
@@ -27,6 +29,7 @@ import {
   Select,
   SettingRow,
   SettingsNote,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   StatusSummary,
@@ -107,6 +110,18 @@ function Created({ invite, onDone }: { invite: OwnInvite; onDone: () => void }) 
   );
 }
 
+/**
+ * That the reader holds as many usable invites as the server allows, in the form's place once the server refused the
+ * invite for it (409): a status that takes the focus the form's button left, so that a screen reader reads why.
+ */
+function AtCapRefused({ children }: { children: string }) {
+  const said = useRef<HTMLParagraphElement>(null);
+  useEffect(() => {
+    said.current?.focus();
+  }, []);
+  return <SettingsResult ref={said}>{children}</SettingsResult>;
+}
+
 export function InviteCreate({ onBack }: SettingsSubProps) {
   const { t } = stringsIn(useLocale().locale);
   const id = useId();
@@ -114,14 +129,26 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
   const { create } = useOwnInviteWrites();
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string>();
+  /** The value the server refused as over what it allows now, with the words under its field. */
+  const [over, setOver] = useState<{ field: "max_uses" | "expires_in"; said: string }>();
+  /** Whether the server refused the last invite sent, whose form then may give way to why. */
+  const [refused, setRefused] = useState(false);
   /** The invite the server just created, shown until the reader leaves. */
   const [made, setMade] = useState<OwnInvite>();
   const title = t("settings.invites.create");
+  const { limits, usable, canCreate } = list;
+  const limitsKey = limits === undefined ? "" : `${String(limits.max_uses)}:${String(limits.max_expires_in)}`;
+  const fieldIds = { max_uses: `${id}-uses`, expires_in: `${id}-life` } as const;
+  const overId = over === undefined ? undefined : `${fieldIds[over.field]}-control`;
+  // The field the server refused takes the focus once its words stand under it, and again when new limits give the
+  // form new fields (the list read again after the refusal), so that the focus does not fall to the page.
+  useEffect(() => {
+    if (overId !== undefined) document.getElementById(overId)?.focus();
+  }, [over, overId, limitsKey]);
 
   if (made !== undefined) return <Created invite={made} onDone={onBack} />;
 
   const back = <BackButton onPress={onBack}>{t("settings.entry.invites")}</BackButton>;
-  const { limits, usable, canCreate } = list;
   if (limits === undefined || usable === undefined || canCreate === undefined)
     return (
       <SettingsScreen
@@ -134,7 +161,7 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
   if (!canCreate)
     return (
       <SettingsScreen sub title={title} back={back}>
-        <CannotInvite reason={list.cannotCreateReason} />
+        <CannotInvite reason={list.cannotCreateReason} focus={refused} />
       </SettingsScreen>
     );
   // While an invite is being created, the list read again counts it before the screen shows it: the form stays.
@@ -142,7 +169,11 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
     return (
       <SettingsScreen sub title={title} back={back}>
         <SettingsSection heading={t("settings.invites.new.heading")}>
-          <SettingsNote>{t("settings.invites.full", { max: limits.max_active })}</SettingsNote>
+          {refused ? (
+            <AtCapRefused>{t("settings.invites.full", { max: limits.max_active })}</AtCapRefused>
+          ) : (
+            <SettingsNote>{t("settings.invites.full", { max: limits.max_active })}</SettingsNote>
+          )}
         </SettingsSection>
       </SettingsScreen>
     );
@@ -154,6 +185,8 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
     const uses = wholeOf(fields, "max_uses");
     const life = wholeOf(fields, "expires_in");
     setSaid(undefined);
+    setOver(undefined);
+    setRefused(false);
     setBusy(true);
     // A field left empty takes the server's default.
     create({
@@ -161,10 +194,13 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
       ...(life === undefined ? {} : { expires_in: life }),
     }).then(setMade, (error: unknown) => {
       setBusy(false);
+      setRefused(true);
       // The screen says it in the form's place, from what the data keeps of the refusal.
       if (invitesNotAllowed(error)) return;
-      const over = inviteValueRefused(error);
-      setSaid(over === undefined ? saidOf(error, t) : t("settings.invites.new.refused", { field: over }));
+      // A value over what the server allows now stands under its field; anything else beside the button.
+      const field = inviteValueRefused(error);
+      if (field === undefined) setSaid(saidOf(error, t));
+      else setOver({ field, said: t("settings.invites.new.refused", { field }) });
     });
   };
 
@@ -189,15 +225,13 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
         }
       >
         {/* New fields when the server's limits change, which start from its defaults within them. */}
-        <SettingsSection
-          key={`${String(limits.max_uses)}:${String(limits.max_expires_in)}`}
-          heading={t("settings.invites.new.heading")}
-        >
+        <SettingsSection key={limitsKey} heading={t("settings.invites.new.heading")}>
           <SettingRow
             form
-            id={`${id}-uses`}
+            id={fieldIds.max_uses}
             label={t("settings.invites.new.uses")}
             about={t("settings.invites.new.uses.about", { max: limits.max_uses })}
+            error={over?.field === "max_uses" ? over.said : undefined}
           >
             <NumberField
               name="max_uses"
@@ -206,7 +240,12 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
               defaultValue={Math.min(limits.default_max_uses, limits.max_uses)}
             />
           </SettingRow>
-          <SettingRow form id={`${id}-life`} label={t("settings.invites.new.life")}>
+          <SettingRow
+            form
+            id={fieldIds.expires_in}
+            label={t("settings.invites.new.life")}
+            error={over?.field === "expires_in" ? over.said : undefined}
+          >
             <Select
               name="expires_in"
               defaultValue={String(lives.chosen)}

@@ -133,6 +133,8 @@ const en = {
     ["Post and change things for you", ["Can post, edit and delete posts as you", "Can change your profile"]],
   ] as [string, string[]][],
   read: ["Read your bookmarks", "Read your keyword filters", "Read the accounts and domains you mute"],
+  overRange: "This server no longer allows that many days. Enter a smaller number and save again.",
+  overZone: "This server no longer offers that time zone. Choose another and save again.",
   invites: "Your invites",
   invitesAbout: "A person signs up with an invite's link, or enters its code on the sign-up page.",
   invitesFull: "You have as many usable invites as allowed (2). Revoke one, or wait until one expires or is used up.",
@@ -241,6 +243,8 @@ const ja: typeof en = {
     ["あなたに代わっての投稿と変更", ["あなたとして投稿・編集・削除ができます", "プロフィールを変更できます"]],
   ],
   read: ["ブックマークの読み取り", "キーワードフィルタの読み取り", "ミュートしているアカウントとドメインの読み取り"],
+  overRange: "このサーバーでは、その日数を使えなくなりました。小さい数を入力して、もう一度保存してください。",
+  overZone: "このサーバーでは、そのタイムゾーンを使えなくなりました。ほかを選んで、もう一度保存してください。",
   invites: "作成した招待",
   invitesAbout: "招待された人は、招待のリンクを開いて登録するか、登録画面で招待コードを入力します。",
   invitesFull:
@@ -508,6 +512,23 @@ function Disabled() {
           <NumberField defaultValue={30} min={1} unit={w.days} />
         </SettingRow>
         <Switch label={w.arrive} description={w.arriveAbout} isDisabled reason={w.arriveOff} save={null} />
+      </SettingsSection>
+    </Column>
+  );
+}
+
+/** Fields of a form saved as a whole whose sent values the server refused: the words under each, the field marked. */
+function Refused() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.section}>
+        <SettingRow form id="refused-number" label={w.ends} about={w.range} error={w.overRange}>
+          <NumberField name="ends" defaultValue={30} min={1} max={365} unit={w.days} />
+        </SettingRow>
+        <SettingRow form id="refused-select" label={w.zone} error={w.overZone}>
+          <Select name="zone" options={zones} />
+        </SettingRow>
       </SettingsSection>
     </Column>
   );
@@ -799,5 +820,7 @@ export const SecretToKeep: Story = { render: () => <Secret /> };
 export const StatedFacts: Story = { render: () => <Facts /> };
 /** Rows that work and rows that do not, muted, and the sentence that says why the add action is not there. */
 export const WorkingAndNot: Story = { render: () => <Working /> };
+/** A number and a choice of a form whose sent values the server refused: what is wrong right under each. */
+export const RefusedValues: Story = { render: () => <Refused /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

@@ -27,7 +27,7 @@ import {
   useLocale,
 } from "@my/design-system";
 import { copyText } from "@my/platform";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import { useDates } from "../security/parts";
 
@@ -67,13 +67,28 @@ export function Unread({ status, retry }: { status: "loading" | "failed" | "miss
   );
 }
 
-/** At a screen's top: that the reader may not create invites now, and why (`reason`; none names no cause). */
-export function CannotInvite({ reason }: { reason: InvitesNotAllowedReason | undefined }) {
+/**
+ * At a screen's top: that the reader may not create invites now, and why (`reason`; none names no cause). `focus`, it
+ * has just taken the place of the form whose button the reader pressed (the server refused the invite): its title
+ * takes the focus as it comes, so that the focus does not fall to the page and a screen reader reads why.
+ */
+export function CannotInvite({
+  reason,
+  focus = false,
+}: {
+  reason: InvitesNotAllowedReason | undefined;
+  focus?: boolean;
+}) {
   const { t } = stringsIn(useLocale().locale);
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    if (focus) title.current?.focus();
+  }, [focus]);
   return (
     <StatusSummary
       icon="caution"
       title={t("settings.invites.cannot")}
+      titleRef={focus ? title : undefined}
       about={t("settings.invites.cannot.reason", { reason: reason ?? "other" })}
     />
   );

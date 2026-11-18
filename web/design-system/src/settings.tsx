@@ -36,7 +36,8 @@ import { createContext, Fragment, use, useId, type ReactElement, type ReactNode,
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface, TextLink } from "./button";
-import { FieldContext } from "./field";
+import { describedBy, FieldContext } from "./field";
+import { FieldError } from "./form-page";
 import { Icon, type IconName } from "./icons";
 import { Box, Grid, Layers, Row, Stack } from "./layout";
 import { BackLead, ScreenTitle } from "./list";
@@ -447,11 +448,17 @@ export type SettingRowProps = {
        */
       save: ReactNode | null;
       form?: undefined;
+      error?: undefined;
     }
   | {
       /** It is a field of a form saved as a whole: the form's submit bar says what came of sending. */
       form: true;
       save?: undefined;
+      /**
+       * What is wrong with the value the form sent (one the server no longer allows), right under the row: the
+       * control is marked and described by it, and its id, `<id>-control`, is what the screen moves the focus to.
+       */
+      error?: string | undefined;
     }
 );
 
@@ -463,7 +470,8 @@ export type SettingRowProps = {
  * (`save`, ADR-0110 §6), which stands in the place of the line about it, or, with no such line, with the name: under
  * it beside the control, in the room the row's height holds (the name, at the middle of the control until then, gives
  * way to it), and beside it when the name has a line to itself; the control stays where it is. Or it is a field of a
- * form saved as a whole (`form`), with no state of its own. What the setting holds beyond its control's value
+ * form saved as a whole (`form`), with no state of its own, and what is wrong with the value it sent (`error`) right
+ * under the line about it, the control marked invalid and described by it. What the setting holds beyond its control's value
  * (`values`) stands close under the row. The row names its control (`id`, the control's `labelledBy`, which a
  * `Select` and a `NumberField` take from the row by themselves), describes it by the line about it and by the save
  * state, and a press on the name puts the focus on it.
@@ -477,6 +485,7 @@ export function SettingRow({
   values,
   save,
   form,
+  error,
   children,
 }: SettingRowProps) {
   const s = row();
@@ -487,6 +496,8 @@ export function SettingRow({
   const controlId = `${id}-control`;
   const aboutId = `${id}-about`;
   const stateId = `${id}-state`;
+  const errorId = `${id}-error`;
+  const wrong = error !== undefined && error !== "";
   // The state's place, a live region that is there before the state is.
   const state = saves && (
     <span id={stateId} role="status">
@@ -505,13 +516,18 @@ export function SettingRow({
       }
       state={below === undefined && state}
       under={
-        below !== undefined && (
-          <Layers>
-            <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
-              {below}
-            </span>
-            {state}
-          </Layers>
+        (below !== undefined || wrong) && (
+          <Stack gap="hair">
+            {below !== undefined && (
+              <Layers>
+                <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
+                  {below}
+                </span>
+                {state}
+              </Layers>
+            )}
+            {wrong && <FieldError id={errorId}>{error}</FieldError>}
+          </Stack>
         )
       }
       control={
@@ -519,9 +535,10 @@ export function SettingRow({
           value={{
             id: controlId,
             labelledBy: id,
-            describedBy: below === undefined ? undefined : aboutId,
+            describedBy: describedBy(below !== undefined && aboutId, wrong && errorId),
             stateBy: saying ? stateId : undefined,
             disabled: isDisabled || undefined,
+            invalid: wrong || undefined,
           }}
         >
           {children}
