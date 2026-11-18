@@ -248,7 +248,8 @@ export const localInput = (d: Date, timeZone?: string) => {
 
 /**
  * The moment a `datetime-local` field's value names in the reader's zone (`localInput`'s other way); an invalid Date
- * for a value that is no date and time.
+ * for a value that is no date and time, or whose date or time does not exist (February 30, 25:00), which a field the
+ * browser draws as plain text may hold.
  */
 export function localInstant(value: string, timeZone?: string): Date {
   const read = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);

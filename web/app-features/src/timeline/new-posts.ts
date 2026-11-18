@@ -4,13 +4,15 @@
 // arrives goes in at once, unless the reader is in the feed (focus or a selection inside it, WCAG 2.2.2), when it is
 // held until they leave it. At the top the reader sees it come in; away from it, the feed keeps their place and the
 // button counts the posts that went in above since they left the top, until they come back to it. With the setting
-// off, every post is held until the reader presses the button. After a break (a reconnection, or more held than join
-// those loaded), the first page is read again at once at the top, else when the reader presses the button. The button
-// tells how many are held or went in above; the feed takes the reader to the top and the focus to the heading.
+// off, every post is held until the reader presses the button; and so is every post until the reader's preferences
+// are read, so that nothing moves under a reader who chose to hold them. Once the setting is known to be on, what was
+// held meanwhile goes in as an arrival does. After a break (a reconnection, or more held than join those loaded), the
+// first page is read again at once at the top, else when the reader presses the button. The button tells how many are
+// held or went in above; the feed takes the reader to the top and the focus to the heading.
 
 import { usePreferences, useTimelineArrivals, type Arrival, type StreamedTimeline } from "@my/app-data";
 import { useLocale } from "@my/design-system";
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { stringsIn } from "../locale";
 
 /** Where the reader is: the setting, whether the feed's top is in view, and whether they are in the feed. */
@@ -50,6 +52,18 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
   const arrivals = useTimelineArrivals(timeline, (arrival) => goIn(arrival, { autoInsert, atTop, inside }));
   const { statuses, gap } = arrivals.held;
   const count = above + statuses.length;
+  /** Puts in what is held, as one arrival, when the policy takes it from a reader where `reading` says they are. */
+  const takeHeld = (reading: Reading) => {
+    const held: Arrival = gap ? { kind: "gap" } : { kind: "statuses", count: statuses.length };
+    if ((gap || statuses.length > 0) && goIn(held, reading)) void arrivals.take();
+  };
+  // The setting on, where it was off or not known yet: what was held meanwhile goes in.
+  const turnedOn = useEffectEvent(() => {
+    takeHeld({ autoInsert: true, atTop, inside });
+  });
+  useEffect(() => {
+    if (autoInsert) turnedOn();
+  }, [autoInsert]);
   return {
     onTopChange: (top) => {
       setAtTop(top);
@@ -58,10 +72,7 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
     onReaderChange: (now) => {
       setInside(now);
       // Leaving the feed puts in what was held while the reader was in it.
-      const held: Arrival = gap ? { kind: "gap" } : { kind: "statuses", count: statuses.length };
-      if (!now && (gap || statuses.length > 0) && goIn(held, { autoInsert, atTop, inside: false })) {
-        void arrivals.take();
-      }
+      if (!now) takeHeld({ autoInsert, atTop, inside: false });
     },
     told: count > 0 || gap ? { count, gap } : undefined,
     onPress: () => {
@@ -72,12 +83,12 @@ function useNewPosts(timeline: StreamedTimeline, autoInsert: boolean): NewPosts 
 }
 
 /**
- * What the column of a streamed timeline takes for its new posts, by the reader's `timeline_auto_insert`, at its
- * default, on (ADR-0013 §22), until their preferences are read: what its feed hears, and its button, worded.
+ * What the column of a streamed timeline takes for its new posts, by the reader's `timeline_auto_insert`, and as with
+ * it off until their preferences are read: what its feed hears, and its button, worded.
  */
 export function useNewPostsColumn(timeline: StreamedTimeline) {
   const { t } = stringsIn(useLocale().locale);
-  const autoInsert = usePreferences()?.timeline_auto_insert ?? true;
+  const autoInsert = usePreferences()?.timeline_auto_insert ?? false;
   const { onTopChange, onReaderChange, told, onPress } = useNewPosts(timeline, autoInsert);
   const label =
     told === undefined

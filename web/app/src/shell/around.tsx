@@ -110,7 +110,8 @@ function useEventTime(event: ServerEvent): string {
   let there: string;
   try {
     if (timeZoneName(timeZone) === event.time_zone) return here;
-    there = dateFormat(locale, event.time_zone, { hour: "numeric", minute: "2-digit" }).format(at);
+    // The event's zone is the options' own, which the platform refuses when it does not know it.
+    there = dateFormat(locale, timeZone, { hour: "numeric", minute: "2-digit", timeZone: event.time_zone }).format(at);
   } catch {
     // A time zone the browser does not know: the reader's time alone.
     return here;

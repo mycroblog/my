@@ -58,7 +58,7 @@ describe("reading", () => {
 
   // A finding of #3199: without a session the hook is said to give none, and it gives what the cache holds, the
   // preferences of the account that read them.
-  test.failing("a reader without a session has none, whatever the cache holds", async () => {
+  test("a reader without a session has none, whatever the cache holds", async () => {
     const { data } = fakeData({ preferences: chosen });
     await data.queryClient.query(preferencesQuery(data));
 

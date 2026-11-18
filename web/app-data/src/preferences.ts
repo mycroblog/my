@@ -100,11 +100,13 @@ export async function updatePreferences(data: AppData, change: PreferencesChange
 
 /**
  * The reader's preferences as they show: what the server last said, with the changes on their way to it in place.
- * Undefined until they are read, and without a session (`signedIn` false), which has none.
+ * Undefined until they are read, and without a session (`signedIn` false), which has none: not those the cache holds
+ * of an account that read them before either.
  */
 export function usePreferences(signedIn = true): Preferences | undefined {
   const data = useAppData();
-  const said = useQuery({ ...preferencesQuery(data), enabled: signedIn }).data;
+  const read = useQuery({ ...preferencesQuery(data), enabled: signedIn }).data;
+  const said = signedIn ? read : undefined;
   const flying = flyingOf(data);
   const changes = useSyncExternalStore(
     (listener) => {
