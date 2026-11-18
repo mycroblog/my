@@ -73,6 +73,24 @@ async function drawnSettings({ data }: FakeData, settings: ReactNode, locale = "
   return renderFeature(data, <main>{settings}</main>, locale);
 }
 
+/**
+ * Lets the app's reads reach the fake on jsdom until the test ends: jsdom puts its own AbortSignal in the global's
+ * place, which the runtime's Request refuses, so a request is made without the signal that would cancel it. A test
+ * of where the focus goes (`*.jsdom.test.tsx`) calls it before it draws its screen.
+ */
+export function requestsOnJsdom(): void {
+  const native = globalThis.Request;
+  class Unsignalled extends native {
+    constructor(input: RequestInfo | URL, init?: RequestInit) {
+      super(input, init === undefined ? undefined : { ...init, signal: null });
+    }
+  }
+  globalThis.Request = Unsignalled;
+  onTestFinished(() => {
+    globalThis.Request = native;
+  });
+}
+
 /** How the reader's account stands on the fake server (the fake's `access`). */
 export type Access = NonNullable<FakeOptions["access"]>;
 

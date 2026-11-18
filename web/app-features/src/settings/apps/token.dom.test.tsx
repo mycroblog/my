@@ -25,7 +25,7 @@ import {
   shown,
   write,
 } from "../../test/apps";
-import { atRest, describedBy, inOrder, section, sections, words } from "../../test/security";
+import { atRest, describedBy, focusOn, inOrder, section, sections, words } from "../../test/security";
 import { settingsOn, type Given } from "../../test/settings";
 import { AppToken } from "./token";
 
@@ -157,7 +157,7 @@ describe("Issue token", () => {
     expect(words(section("The token is issued"))).toContain("Its scopes are read write:statuses.");
   });
 
-  test("a scope the server refuses is said under the field in the server's words, the form says before its button that this could not be done, and no token is shown", async () => {
+  test("a scope the server refuses is said under the field in the server's words, the field takes the focus, the form says before its button that this could not be done, and no token is shown", async () => {
     const { user } = await read(confidential);
     // A scope beyond the app's, which no app has.
     await write(user, scopes(), "admin");
@@ -167,6 +167,7 @@ describe("Issue token", () => {
     await waitFor(() => {
       if (scopes().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
     });
+    await focusOn(scopes());
     expect(describedBy(scopes())).toEqual([hint, "This value is not valid. Check what you entered."]);
     const [refused, ...others] = screen.getAllByRole("alert");
     expect(others).toHaveLength(0);

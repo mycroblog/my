@@ -6,15 +6,17 @@
 // with its way back; an address that names no app keeps the name of its place; a change made on one of those screens
 // shows on the entry once the reader is back (an app revoked, registered or deleted, and a server found to have
 // turned registration off); and revoking the server's own web client, which ends the session, makes the app leave as
-// after signing out. What each screen shows and does with a press is the feature's test (app-features,
+// after signing out, once, with no token to revoke, and tells the reader's other tabs (that the device then forgets
+// the account's language and zone is preferences.dom.test.tsx). What each screen shows and does with a press is the feature's test (app-features,
 // settings/apps/*.dom.test.tsx), and that the menu lists the entry the menu's own (settings.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
+import { onSignedOutElsewhere } from "@my/app-data";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, words, type TestApp } from "./test/app";
 import { browserCaches } from "./test/device";
-import { fakeApp } from "./test/server";
+import { fakeApp, fakeTabs } from "./test/server";
 
 const apps = "/settings/apps";
 const register = `${apps}/new`;
@@ -343,6 +345,70 @@ test("revoking the server's own web client ends the session: the app removes the
   // was until the page loads.
   expect(caches()).toEqual([]);
   expect(app.path()).toBe(authorized(id));
+});
+
+// The server ended the session when it took the revocation: nothing is left to revoke or to read. The app tells the
+// reader's other tabs as a sign-out does and asks the browser for the start, once; the screen is still drawn until
+// the page loads.
+describe("once the server's own web client is revoked", () => {
+  /** What the app reads of the account on a settings screen, which it could read again. */
+  const reads = [
+    "GET /authorized_apps",
+    "GET /oauth_apps",
+    "GET /accounts/verify_credentials",
+    "GET /preferences",
+    "GET /invites",
+  ] as const;
+
+  /**
+   * The app in one tab of a browser, the same session in another, and the web client revoked from the first: the
+   * app has left, the page has not loaded yet, and several turns later no read is on its way.
+   */
+  async function revoked() {
+    const { on, tab } = await fakeTabs();
+    const elsewhere: string[] = [];
+    onSignedOutElsewhere(await tab(), () => elsewhere.push("the other tab hears the sign-out"));
+    const app = await renderApp(authorized(on.fake.appId("authorized", 0)), { on });
+    await section("Revoke access");
+    const counted = reads.map((route) => [route, on.fake.script(route)] as const);
+    await app.user.click(main().getByRole("button", { name: "Revoke" }));
+    await confirm(app, "Revoke mycroblog?", "Revoke");
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    await new Promise((turns) => setTimeout(turns, 50));
+    await waitFor(() => {
+      if (app.data.queryClient.isFetching() > 0) throw new Error("test: a read is still on its way");
+    });
+    return {
+      app,
+      elsewhere,
+      /** What the app read of the account since the revocation. */
+      readAgain: () => counted.filter(([, script]) => script.seen.length > 0).map(([route]) => route),
+    };
+  }
+
+  test("no token is revoked, the reader's other tabs hear a sign-out, the app leaves once, and the confirmation stays over the screen until the page loads", async () => {
+    const { app, elsewhere } = await revoked();
+
+    expect(app.fake.revocations).toEqual([]);
+    expect(elsewhere).toEqual(["the other tab hears the sign-out"]);
+    expect(app.left()).toEqual(["/"]);
+    expect(screen.getAllByRole("alertdialog", { name: "Revoke mycroblog?" })).toHaveLength(1);
+  });
+
+  // Defect: the screen and the shell around it are still drawn after the app emptied what it read, and they read
+  // the account again at once (the lists of apps and the account, three requests): with the fake, which still
+  // answers, the cache holds five answers again; a server that revoked the session's tokens refuses each request.
+  // The developers' words: no read after the revocation, and the cache is empty once the app has left and stays so.
+  test.failing("the app reads nothing of the account again, and what it read stays forgotten", async () => {
+    const { app, readAgain } = await revoked();
+
+    expect({ read: readAgain(), cached: app.data.queryClient.getQueryCache().getAll().length }).toEqual({
+      read: [],
+      cached: 0,
+    });
+  });
 });
 
 test("revoking another app leaves the session as it is: the app does not leave", async () => {

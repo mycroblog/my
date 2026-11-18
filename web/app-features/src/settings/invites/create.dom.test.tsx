@@ -5,8 +5,10 @@
 // lengths within the server's longest, at its default); what it sends; the invite it made, shown in the form's
 // place with its link, until Finish; what it says when the server refuses (the limit of usable invites, a value the
 // server no longer allows, an account that may not create invites, #3116); and what stands in the form's place for
-// an account that may not create invites or holds as many as the server allows. Where the focus goes once the
-// invite is made is jsdom's (focus.jsdom.test.tsx).
+// an account that may not create invites or holds as many as the server allows. A refused value is said under its
+// field, which takes the focus; a refusal of no field beside the button, where the focus stays. Where the focus goes
+// once the form gave way to something else (the invite, a summary, the limit's sentence) is jsdom's
+// (focus.jsdom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
@@ -50,6 +52,10 @@ const controls = () => [
   ...screen.queryAllByRole("combobox").map(() => "choice"),
   ...screen.queryAllByRole("button", { name: "Create invite" }).map(() => "submit"),
 ];
+
+/** The fields of the form that are marked as holding a value that is not taken. */
+const invalid = (): HTMLElement[] =>
+  [people(), life()].filter((field) => field.getAttribute("aria-invalid") === "true");
 
 /** Writes `count` over the number of people. */
 async function enter(user: UserEvent, count: string) {
@@ -201,8 +207,16 @@ describe("when the server refuses", () => {
     expect(people().value).toBe("3");
     expect(lives().chosen).toEqual(["1 day"]);
     expect(sections()).toEqual(["New invite"]);
+    // No field is at fault: none is marked, and the focus stays on the button the reader pressed.
+    expect(invalid()).toEqual([]);
+    expect(document.activeElement === create()).toBe(true);
 
+    // The next press takes the sentence away as it sends.
+    const next = fake.script("POST /invites", { hold: "request" });
     await user.click(create());
+    await next.arrived();
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    next.release();
 
     await made();
     expect(sent.seen.map((seen) => seen.body)).toEqual([
@@ -211,19 +225,25 @@ describe("when the server refuses", () => {
     ]);
   });
 
-  for (const [field, body, sentence] of [
+  // A value over what the server allows now: the list said more when the form was drawn. What is wrong is said
+  // under the field at fault, which takes the focus, and not beside the button.
+  for (const [field, body, control, about, sentence] of [
     [
       "max_uses",
       { max_uses: 11 },
+      people,
+      ["Up to 10."],
       "This server no longer allows that many people for one invite. Enter a smaller number and create the invite again.",
     ],
     [
       "expires_in",
       { expires_in: 31 * day },
+      life,
+      [],
       "This server no longer allows an invite to work that long. Choose a shorter time and create the invite again.",
     ],
   ] as const)
-    test(`a value the server no longer allows (${field}), the form says which and what to do, and stays`, async () => {
+    test(`a value the server no longer allows (${field}) is said under its field, after what the field takes: the field is marked and takes the focus, nothing is said beside the button, and the next press takes it away`, async () => {
       const problem = await refusalOn({}, body);
       expect([problem.status, problem.field]).toEqual([422, field]);
       const { fake, user } = await createForm();
@@ -231,8 +251,24 @@ describe("when the server refuses", () => {
 
       await user.click(create());
 
-      expect(await refused()).toBe(sentence);
+      await waitFor(() => {
+        if (control().getAttribute("aria-invalid") !== "true") throw new Error("test: no field is marked yet");
+        if (document.activeElement !== control()) throw new Error("test: the focus is not on the field yet");
+      });
+      expect(invalid()).toEqual([control()]);
+      expect(describedBy(control())).toEqual([...about, sentence]);
+      expect(screen.queryAllByRole("alert")).toHaveLength(0);
       expect(controls()).toEqual(["number", "choice", "submit"]);
+
+      const next = fake.script("POST /invites", { hold: "request" });
+      await user.click(create());
+      await next.arrived();
+      expect(invalid()).toEqual([]);
+      expect(describedBy(control())).toEqual([...about]);
+      expect(words(screen.getByRole("main"))).not.toContain(sentence);
+      next.release();
+
+      await made();
     });
 
   test("an account that may no longer create invites, the summary that says why stands in the form's place", async () => {
@@ -284,6 +320,8 @@ describe("in the form's place", () => {
     await atRest({ data });
     expect(headings()).toEqual(["Create invite", "New invite"]);
     expect(section("New invite").contains(limit)).toBe(true);
+    // A sentence of the screen as it opened, not the result of something the reader did: no status says it.
+    expect(screen.queryAllByRole("status").filter((status) => status.contains(limit))).toHaveLength(0);
     expect(controls()).toEqual([]);
     expect(settingsFindings(document.body)).toEqual([]);
   });

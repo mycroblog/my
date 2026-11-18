@@ -32,6 +32,23 @@ export const words = (element: Element): string => element.textContent.replace(/
 export const inOrder = (...parts: string[]): RegExp =>
   new RegExp(`^${parts.map((part) => part.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("\\s*")}$`);
 
+/** What has the focus, as a reader's tools name it: its role and its words; "nothing" when it is the page itself. */
+export const focused = (): string => {
+  const element = document.activeElement;
+  if (element === null || element === document.body) return "nothing";
+  const role =
+    element.getAttribute("role") ?? (/^H[1-6]$/.test(element.tagName) ? "heading" : element.tagName.toLowerCase());
+  return `${role}: ${words(element)}`;
+};
+
+/** Waits until the focus is on `target`: an element, or what finds one that may not be on the screen yet. */
+export const focusOn = (target: Element | (() => Element | undefined)) =>
+  waitFor(() => {
+    const element = typeof target === "function" ? target() : target;
+    if (element === undefined || document.activeElement !== element)
+      throw new Error(`test: the focus is on ${focused()}`);
+  });
+
 /** What describes `control`, part by part: its hint, then what is wrong with its value. */
 export const describedBy = (control: HTMLElement): string[] =>
   (control.getAttribute("aria-describedby") ?? "")

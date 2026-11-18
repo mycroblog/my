@@ -507,6 +507,60 @@ test("a row of a form saved as a whole has no place for a save state", () => {
   ]);
 });
 
+// A value the server refused when the form was sent is said at its row (`error`), where the reader changes it.
+for (const [kind, role, field] of [
+  ["a choice", "combobox", <Select key="choice" name="value" options={sizes} />],
+  ["a number", "textbox", <NumberField key="number" name="value" min={1} max={10} defaultValue={3} />],
+] as const) {
+  /** The row in a form saved as a whole, with the line about it or without, and what is wrong with its value. */
+  const row = (given: { about?: string; error?: string }) => (
+    <form aria-label="Invite">
+      <SettingRow id="refused" label="Works for" form {...given}>
+        {field}
+      </SettingRow>
+    </form>
+  );
+  /** What describes the control, part by part, in the order it is read. */
+  const described = (control: HTMLElement) =>
+    (control.getAttribute("aria-describedby") ?? "")
+      .split(" ")
+      .filter((id) => id !== "")
+      .map((id) => document.getElementById(id)?.textContent ?? "");
+  const about = "Up to 30 days.";
+  const error = "This server no longer allows that long. Choose a shorter time.";
+
+  test(`${kind} in a row of a form whose value was refused is marked invalid and described by the line about it, then by what is wrong, which stands under that line and is no alert`, () => {
+    const { rerender } = render(row({ about }));
+    const control = screen.getByRole(role, { name: "Works for" });
+    expect(control.getAttribute("aria-invalid")).not.toBe("true");
+    expect(described(control)).toEqual([about]);
+
+    rerender(row({ about, error }));
+
+    expect(screen.getByRole(role, { name: "Works for" }) === control).toBe(true);
+    expect(control.getAttribute("aria-invalid")).toBe("true");
+    expect(described(control)).toEqual([about, error]);
+    expect(before(screen.getByText(about), screen.getByText(error))).toBe(true);
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(screen.queryAllByRole("status")).toHaveLength(0);
+
+    // Sent again: the row is as it was before the refusal.
+    rerender(row({ about }));
+
+    expect(control.getAttribute("aria-invalid")).not.toBe("true");
+    expect(described(control)).toEqual([about]);
+    expect(screen.queryAllByText(error)).toHaveLength(0);
+  });
+
+  test(`${kind} in a row with no line about it is described by what is wrong alone`, () => {
+    render(row({ error }));
+
+    const control = screen.getByRole(role, { name: "Works for" });
+    expect(control.getAttribute("aria-invalid")).toBe("true");
+    expect(described(control)).toEqual([error]);
+  });
+}
+
 // ADR-0110 §6: a control that saves at once takes its save state as a required prop. The compiler holds it
 // (web:typecheck reads this file): each line below is an error, and stops being one if the prop becomes optional.
 test("a setting's row that saves at once cannot be written without its save state", () => {

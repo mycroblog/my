@@ -2,9 +2,10 @@
 
 // Registering an app, under Apps (#3206, ADR-0090 §1): the form waits for the list of the reader's apps, which says
 // whether they may register one; on a server whose administrators turned registration off it says so in the form's
-// place, and nothing can be sent; a field left empty or one the server refuses is said under that field; and a
-// registered app shows, in the form's place and once, its client ID and, for a confidential app, its secret, each
-// with a way to copy it. A server that turned registration off after the list was read says so when the form is
+// place, and nothing can be sent; a field left empty or one the server refuses is said under that field, and the
+// first field at fault takes the focus, which stays on the button when no field is at fault; and a registered app
+// shows, in the form's place and once, its client ID and, for a confidential app, its secret, each with a way to
+// copy it (that this view takes the focus is jsdom's, focus.jsdom.test.tsx). A server that turned registration off after the list was read says so when the form is
 // sent. That the entry lists the new app, and says that registration is off, is the app's test (web/app,
 // settings-apps.dom.test.tsx).
 
@@ -31,7 +32,7 @@ import {
   write,
   type AppFieldName,
 } from "../../test/apps";
-import { atRest, describedBy, inOrder, section, sections, words } from "../../test/security";
+import { atRest, describedBy, focused, focusOn, inOrder, section, sections, words } from "../../test/security";
 import { settingsOn, type Access, type Given } from "../../test/settings";
 import { AppRegister } from "./register";
 
@@ -178,7 +179,7 @@ test("where the administrators turned registration off, the screen says so in th
 });
 
 describe("a form that cannot be sent as it is", () => {
-  test("sent empty, says under the name, the redirect URIs and the scopes what each needs, leaves the website alone, and sends nothing", async () => {
+  test("sent empty, says under the name, the redirect URIs and the scopes what each needs, leaves the website alone, sends nothing, and gives the focus to the first of them, the name", async () => {
     const { user, fake } = await read();
     const sent = fake.script("POST /oauth_apps");
 
@@ -187,6 +188,7 @@ describe("a form that cannot be sent as it is", () => {
     await waitFor(() => {
       if (field("Name").getAttribute("aria-invalid") !== "true") throw new Error("test: no field is marked yet");
     });
+    await focusOn(field("Name"));
     expect(describedBy(field("Name"))).toEqual([hints.Name, "Enter a name."]);
     expect(describedBy(field("Redirect URIs"))).toEqual([hints["Redirect URIs"], "Enter at least one redirect URI."]);
     expect(describedBy(field("Scopes"))).toEqual([hints.Scopes, "Enter at least one scope."]);
@@ -198,7 +200,7 @@ describe("a form that cannot be sent as it is", () => {
     expect(sections()).toEqual(["Name and website", "Authorization", "Type"]);
   });
 
-  test("with one field left empty, says so under that field alone", async () => {
+  test("with one field left empty, says so under that field alone, which takes the focus", async () => {
     const { user, fake } = await read();
     const sent = fake.script("POST /oauth_apps");
     await write(user, field("Name"), "Reading list");
@@ -210,6 +212,7 @@ describe("a form that cannot be sent as it is", () => {
       if (field("Redirect URIs").getAttribute("aria-invalid") !== "true")
         throw new Error("test: the field is not marked yet");
     });
+    await focusOn(field("Redirect URIs"));
     expect(describedBy(field("Name"))).toEqual([hints.Name]);
     expect(describedBy(field("Scopes"))).toEqual([hints.Scopes]);
     expect(sent.seen).toHaveLength(0);
@@ -222,7 +225,7 @@ describe("a form that cannot be sent as it is", () => {
     ["Redirect URIs", "redirect_uris"],
     ["Scopes", "scope"],
   ] as const)
-    test(`a ${name} the server refuses is said under that field in the server's words, after what the field takes, and the form says before its button that this could not be done`, async () => {
+    test(`a ${name} the server refuses is said under that field in the server's words, after what the field takes; the field takes the focus, and the form says before its button that this could not be done`, async () => {
       const { user, fake, address } = await read();
       fake.script("POST /oauth_apps", {
         fail: {
@@ -240,6 +243,7 @@ describe("a form that cannot be sent as it is", () => {
       await waitFor(() => {
         if (field(name).getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
       });
+      await focusOn(field(name));
       expect(describedBy(field(name))).toEqual([hints[name], "This value is not valid. Check what you entered."]);
       for (const other of (Object.keys(hints) as AppFieldName[]).filter((one) => one !== name)) {
         expect(describedBy(field(other))).toEqual([hints[other]]);
@@ -290,7 +294,28 @@ describe("a form that cannot be sent as it is", () => {
     for (const name of Object.keys(hints) as AppFieldName[])
       expect(field(name).getAttribute("aria-invalid")).not.toBe("true");
     expect(field("Name").value).toBe("Reading list");
+    // No field is at fault, so none takes the focus: it stays where the reader pressed, beside what the form says.
+    expect(focused()).toBe("button: Register an app");
   });
+
+  for (const [what, fail] of [
+    ["too many requests (429)", 429],
+    ["a request that got no answer", "network"],
+  ] as const)
+    test(`${what} marks no field either, and leaves the focus on the button, after the one alert`, async () => {
+      const { user, fake } = await read();
+      fake.script("POST /oauth_apps", { fail });
+      await fill(user);
+
+      await user.click(register());
+
+      const refused = await screen.findByRole("alert");
+      expect(alerts()).toHaveLength(1);
+      expect(before(refused, register())).toBe(true);
+      for (const name of Object.keys(hints) as AppFieldName[])
+        expect(field(name).getAttribute("aria-invalid")).not.toBe("true");
+      expect(focused()).toBe("button: Register an app");
+    });
 });
 
 describe("what is sent", () => {

@@ -4,8 +4,9 @@
 // (where it comes from by its registration, the site it declared under that, the day it was authorized over its last
 // use), and that the server has not verified an app that is not its own (§4); what the app may do, in lists by risk,
 // the cautions of a scope under it; and Revoke, which asks first, then takes the app's access away and goes back to
-// Apps. Revoking the server's own web client signs every browser out, this one too: the screen says so before and
-// tells its route once it is done. That the entry no longer lists a revoked app, and where the app goes once its
+// Apps. Revoking the server's own web client signs every browser out, this one too: the screen says so before,
+// sends the one revocation and nothing after it, tells its route once that the session ended, and keeps its
+// confirmation open and at work until the app has left. That the entry no longer lists a revoked app, and where the app goes once its
 // session ended, is the app's test (web/app, settings-apps.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
@@ -290,32 +291,77 @@ describe("Revoke", () => {
   });
 
   // The app the reader is using: its tokens are the session of every browser the account is signed in to.
-  test("of the server's own web client says before and in its confirmation that every browser is signed out, this one included, and once confirmed tells its route that the session ended", async () => {
-    const { user, fake, address, app } = await read(web);
-    const sent = fake.script("DELETE /authorized_apps/{id}");
-    expect(words(screen.getByRole("region", { name: "Revoke access" }))).toContain(
-      "This is the app you are using now. Revoking it signs you out of every browser, this one included.",
-    );
+  describe("of the server's own web client", () => {
+    /** The buttons of the confirmation, each as its name and what it is to a reader meanwhile. */
+    const offers = (dialog: HTMLElement) =>
+      within(dialog)
+        .getAllByRole<HTMLButtonElement>("button")
+        .map((button) => [
+          button.getAttribute("aria-label") ?? button.textContent,
+          button.getAttribute("aria-busy") === "true" ? "busy" : button.disabled ? "disabled" : "to press",
+        ]);
+    /** The confirmation at work: Revoke is busy, and nothing closes it. */
+    const atWork = [
+      ["Close", "disabled"],
+      ["Cancel", "disabled"],
+      ["Revoke", "busy"],
+    ];
 
-    await user.click(revoke());
+    test("says before and in its confirmation that every browser is signed out, this one included", async () => {
+      const { user, address } = await read(web);
+      expect(words(screen.getByRole("region", { name: "Revoke access" }))).toContain(
+        "This is the app you are using now. Revoking it signs you out of every browser, this one included.",
+      );
 
-    const dialog = await asking("mycroblog");
-    expect(words(dialog)).toContain(
-      "This is the app you are using now. Revoking it signs you out of every browser at once, this one included. You can sign in again afterwards.",
-    );
-    expect(buttonsOf(dialog)).toEqual(["Close", "Cancel", "Revoke"]);
-    expect(address.sessionsEnded).toBe(0);
+      await user.click(revoke());
 
-    await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
-
-    await waitFor(() => {
-      if (address.sessionsEnded === 0) throw new Error("test: the screen did not say that the session ended yet");
+      const dialog = await asking("mycroblog");
+      expect(words(dialog)).toContain(
+        "This is the app you are using now. Revoking it signs you out of every browser at once, this one included. You can sign in again afterwards.",
+      );
+      expect(offers(dialog)).toEqual([
+        ["Close", "to press"],
+        ["Cancel", "to press"],
+        ["Revoke", "to press"],
+      ]);
+      expect(address.sessionsEnded).toBe(0);
     });
-    expect(address.sessionsEnded).toBe(1);
-    expect(sent.seen.map((s) => s.url.pathname.split("/").at(-1))).toEqual([app.id]);
-    // The app leaves as after signing out, which is the route's: the screen asks for no way back to a list it
-    // can no longer read.
-    expect(address.backs).toBe(0);
+
+    // Once the server took the revocation the session is over: the screen asks the server for nothing more, not for
+    // the list it showed and not to revoke a token that is revoked already, and has no way back to offer. Leaving is
+    // the route's, by a load of the page: until then the confirmation stays, at work.
+    test("once confirmed, sends the one revocation and nothing after it, tells its route once that the session ended, and keeps its confirmation open and at work, with nothing to press", async () => {
+      const on = await read(web);
+      const { user, fake, address, app, requests } = on;
+      const sent = fake.script("DELETE /authorized_apps/{id}", { hold: "response" });
+      await user.click(revoke());
+      const dialog = await asking("mycroblog");
+      const asked = requests.length;
+
+      await user.click(within(dialog).getByRole("button", { name: "Revoke" }));
+
+      // The server did it, and its answer is on its way.
+      await sent.served();
+      await waitFor(() => {
+        if (within(dialog).getByRole("button", { name: "Revoke" }).getAttribute("aria-busy") !== "true")
+          throw new Error("test: Revoke is not busy yet");
+      });
+      expect(offers(dialog)).toEqual(atWork);
+      expect(address.sessionsEnded).toBe(0);
+
+      sent.release();
+
+      await waitFor(() => {
+        if (address.sessionsEnded === 0) throw new Error("test: the screen did not say that the session ended yet");
+      });
+      await atRest(on);
+      expect(address.sessionsEnded).toBe(1);
+      expect(address.backs).toBe(0);
+      expect(requests.slice(asked)).toEqual([`DELETE /authorized_apps/${app.id}`]);
+      expect(fake.revocations).toEqual([]);
+      expect(dialogs().map((open) => open === dialog)).toEqual([true]);
+      expect(offers(dialog)).toEqual(atWork);
+    });
   });
 });
 

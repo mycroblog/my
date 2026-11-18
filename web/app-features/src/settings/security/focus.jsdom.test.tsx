@@ -7,30 +7,13 @@
 // it appears. What the status says and where it stands is pinned here with the focus, and the rest of each change on
 // happy-dom (security.dom.test.tsx, two-factor.dom.test.tsx).
 
-import { describe, expect, onTestFinished, test } from "bun:test";
+import { describe, expect, test } from "bun:test";
 import { fakeExternalConfirmation, fakeTotpCode } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
-import { atRest, closed, offered, passkeyBrowser, section, words } from "../../test/security";
-import { settingsOn, type Access, type Given } from "../../test/settings";
+import { atRest, closed, focused, offered, passkeyBrowser, section } from "../../test/security";
+import { requestsOnJsdom, settingsOn, type Access, type Given } from "../../test/settings";
 import { SettingsEntryScreen } from "../screen";
 import { SecurityTwoFactor } from "./two-factor";
-
-/**
- * Lets the app's reads reach the fake on jsdom until the test ends: jsdom puts its own AbortSignal in the global's
- * place, which the runtime's Request refuses, so a request is made without the signal that would cancel it.
- */
-function requestsOnJsdom() {
-  const native = globalThis.Request;
-  class Unsignalled extends native {
-    constructor(input: RequestInfo | URL, init?: RequestInit) {
-      super(input, init === undefined ? undefined : { ...init, signal: null });
-    }
-  }
-  globalThis.Request = Unsignalled;
-  onTestFinished(() => {
-    globalThis.Request = native;
-  });
-}
 
 /** Security with every read answered, on a server whose account stands as `access` says. */
 async function entry(access: Access = {}, given: Given = {}) {
@@ -44,15 +27,6 @@ async function entry(access: Access = {}, given: Given = {}) {
   await atRest(on);
   return on;
 }
-
-/** What has the focus, as a reader's tools name it: its role and its words. */
-const focused = (): string => {
-  const element = document.activeElement;
-  if (element === null || element === document.body) return "nothing";
-  const role =
-    element.getAttribute("role") ?? (/^H[1-6]$/.test(element.tagName) ? "heading" : element.tagName.toLowerCase());
-  return `${role}: ${words(element)}`;
-};
 
 /**
  * Waits until the focus is on a status of the section titled `title`, and returns what that status says: the focus

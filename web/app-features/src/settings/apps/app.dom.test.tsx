@@ -35,6 +35,8 @@ import {
   closed,
   describedBy,
   dialogs,
+  focused,
+  focusOn,
   heldBy,
   offered,
   row,
@@ -295,9 +297,10 @@ describe("Save changes", () => {
       ],
     ]);
     expect((await heldBy<{ name: string }>(fake, `/oauth_apps/${app.id}`)).name).toBe("Evening bot");
-    // The reader stays on the app's screen, which shows what was saved.
+    // The reader stays on the app's screen, which shows what was saved, with the focus on the button they pressed.
     expect(field("Name").value).toBe("Evening bot");
     expect(alerts()).toEqual([]);
+    expect(focused()).toBe("button: Save changes");
   });
 
   test("a website emptied is sent empty, which removes it", async () => {
@@ -313,22 +316,27 @@ describe("Save changes", () => {
     expect(sent.seen.map((s) => s.body.website)).toEqual([""]);
   });
 
-  test("a name emptied is said under its field, and nothing is sent", async () => {
-    const { user, fake } = await read(confidential);
-    const sent = fake.script("PATCH /oauth_apps/{id}");
-    await write(user, field("Name"), "");
+  for (const [name, needs] of [
+    ["Name", "Enter a name."],
+    ["Scopes", "Enter at least one scope."],
+  ] as const)
+    test(`${name} emptied is said under its field, which takes the focus, and nothing is sent`, async () => {
+      const { user, fake } = await read(confidential);
+      const sent = fake.script("PATCH /oauth_apps/{id}");
+      await write(user, field(name), "");
 
-    await user.click(save());
+      await user.click(save());
 
-    await waitFor(() => {
-      if (field("Name").getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
+      await waitFor(() => {
+        if (field(name).getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
+      });
+      await focusOn(field(name));
+      expect(describedBy(field(name))).toEqual([hints[name], needs]);
+      expect(sent.seen).toHaveLength(0);
+      expect(said()).toEqual([]);
     });
-    expect(describedBy(field("Name"))).toEqual([hints.Name, "Enter a name."]);
-    expect(sent.seen).toHaveLength(0);
-    expect(said()).toEqual([]);
-  });
 
-  test("a field the server refuses is said under it in the server's words, the form says before its button that this could not be done, and not that it saved", async () => {
+  test("a field the server refuses is said under it in the server's words and takes the focus, the form says before its button that this could not be done, and not that it saved", async () => {
     const { user, fake } = await read(confidential);
     const sent = fake.script("PATCH /oauth_apps/{id}");
     await write(user, field("Redirect URIs"), "not an address");
@@ -339,6 +347,7 @@ describe("Save changes", () => {
       if (field("Redirect URIs").getAttribute("aria-invalid") !== "true")
         throw new Error("test: the field is not marked yet");
     });
+    await focusOn(field("Redirect URIs"));
     expect(sent.seen.map((s) => s.body.redirect_uris)).toEqual([["not an address"]]);
     expect(describedBy(field("Redirect URIs"))).toEqual([
       hints["Redirect URIs"],
