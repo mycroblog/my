@@ -54,7 +54,8 @@ func TestE2EFakesDevUsage(t *testing.T) {
 	if code := run([]string{"-h"}, &stdout, &stderr); code != 0 {
 		t.Errorf("my -h = %d", code)
 	}
-	if !strings.Contains(stderr.String(), "my dev push-service") || !strings.Contains(stderr.String(), "e2e_fakes") {
+	if !strings.Contains(stderr.String(), "my dev push-service|oidc-provider") ||
+		!strings.Contains(stderr.String(), "e2e_fakes") {
 		t.Errorf("the usage of a test build does not name my dev:\n%s", stderr.String())
 	}
 	stderr.Reset()

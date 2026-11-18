@@ -6,6 +6,7 @@ package config
 
 import (
 	"errors"
+	"strings"
 	"testing"
 )
 
@@ -23,6 +24,29 @@ func TestE2EFakesPaymentsProfile(t *testing.T) {
 		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].String() != want {
 			t.Errorf("Load() with payments = fake, profile = %q: %v, want %q", profile, err, want)
 		}
+	}
+}
+
+// TestE2EFakesMailProfile: a test build takes mail = fake with profile = development only, and
+// the sender address is still required.
+func TestE2EFakesMailProfile(t *testing.T) {
+	env := with(minimal(), "MY_MAIL", "fake", "MY_MAIL_FROM", "noreply@example.test")
+	cfg, _, err := Load(source(with(env, "MY_PROFILE", "development"), nil))
+	if err != nil || cfg.Mail != "fake" {
+		t.Fatalf("Load() with mail = fake, profile = development: %+v, %v", cfg, err)
+	}
+	for _, profile := range []string{"production", unset} {
+		_, _, err := Load(source(with(env, "MY_PROFILE", profile), nil))
+		var ve *ValidationError
+		want := "mail (MY_MAIL): fake is refused in the production profile: it sends nothing and writes each message to the log; set profile = development"
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].String() != want {
+			t.Errorf("Load() with mail = fake, profile = %q: %v, want %q", profile, err, want)
+		}
+	}
+	_, _, err = Load(source(with(minimal(), "MY_MAIL", "fake", "MY_PROFILE", "development"), nil))
+	var ve *ValidationError
+	if !errors.As(err, &ve) || len(ve.Issues) != 1 || !strings.Contains(ve.Issues[0].String(), "MY_MAIL_FROM") {
+		t.Errorf("Load() with mail = fake and no mail_from: %v, want one issue about MY_MAIL_FROM", err)
 	}
 }
 
