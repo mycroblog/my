@@ -231,7 +231,24 @@ function useSampleCall(call: boolean) {
   }, [call]);
 }
 
-function StoryApp({
+/** Where the app starts again once its session ended. */
+const startPath = "/";
+
+/**
+ * The app of a story. When it leaves for its start, which it does once its session ended (signing out, revoking the
+ * server's own web client), it starts anew there with no session, on a server of its own, as a page that loads anew
+ * does: the data of the ended session reads nothing more.
+ */
+function StoryApp(props: Fake & { stream: Stream | undefined }) {
+  const [restarted, setRestarted] = useState(false);
+  return restarted ? (
+    <StoryPage key="restarted" {...props} at={startPath} signedOut onRestart={setRestarted} />
+  ) : (
+    <StoryPage {...props} onRestart={setRestarted} />
+  );
+}
+
+function StoryPage({
   at,
   state = "normal",
   failFirst = false,
@@ -241,7 +258,8 @@ function StoryApp({
   call = false,
   updateReady = false,
   stream,
-}: Fake & { stream: Stream | undefined }) {
+  onRestart,
+}: Fake & { stream: Stream | undefined; onRestart: (restarted: true) => void }) {
   const [{ fake, data, router, watch }] = useState(() => {
     const fake = createFakeApi({
       failFirst,
@@ -260,9 +278,11 @@ function StoryApp({
       data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
       at: pathOf(fake, at),
-      // A story's app has no page to load anew: what leaves it (signing out) goes there within it.
+      // A story's app has no page to load anew: leaving for the start, it starts anew there (`StoryApp`), and what
+      // leaves it for anywhere else (a login provider's page) goes there within it.
       leave: (href) => {
-        void router.navigate({ href });
+        if (href === startPath) onRestart(true);
+        else void router.navigate({ href });
       },
     });
     return { fake, data, router, watch };

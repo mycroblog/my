@@ -1,8 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // The data of one signed-in session: the mykit client of the server and the TanStack Query cache, the one cache of
-// server data (ADR-0028 §6, S1).
+// server data (ADR-0028 §6, S1). The data ends with its session: closed, it keeps nothing and asks nothing more.
 import type { Api, paths, StreamOptions } from "@mycroblog/mykit";
-import { QueryClient } from "@tanstack/react-query";
+import {
+  QueryCache,
+  QueryClient,
+  type DefaultedQueryObserverOptions,
+  type DefaultError,
+  type QueryClientConfig,
+  type QueryKey,
+  type QueryObserverOptions,
+} from "@tanstack/react-query";
 import createQueryHooks, { type OpenapiQueryClient } from "openapi-react-query";
 import type { ServerWatch } from "./server";
 
@@ -30,6 +38,13 @@ export type AppData = {
  * did not answer is read again once it does.
  */
 export function createAppData(api: Api, queryClient: QueryClient = createQueryClient(), watch?: ServerWatch): AppData {
+  // Data whose session ended asks nothing more of the server (`closeData`): a request refused here is never sent.
+  api.use({
+    onRequest: () => {
+      if (isClosed(queryClient)) throw new Error("app-data: the session of this data ended, and it asks nothing more");
+      return undefined;
+    },
+  });
   if (watch !== undefined) {
     let answering = answers(watch);
     watch.subscribe(() => {
@@ -47,13 +62,65 @@ function answers(watch: ServerWatch): boolean {
   return connection === "online" && maintenance === null;
 }
 
+/** The store of a session's cache, which keeps nothing more once the session ended: what is added then is dropped. */
+class SessionCache extends QueryCache {
+  closed = false;
+
+  override add(query: Parameters<QueryCache["add"]>[0]): void {
+    if (!this.closed) super.add(query);
+  }
+}
+
+/**
+ * The cache of one session. Once the session ended (`close`), it is empty and stays so, and the screens still drawn
+ * on it read nothing: what was on its way is cancelled, what it held is removed, a query that a screen asks for again
+ * as it draws is not kept, and no such query is read from the server, whatever the screen says of it (`enabled`).
+ * The screens are not taken down with the session, since what ended it may still stand over them (the confirmation of
+ * signing out, until the page loads anew), and a screen that draws again would otherwise read what was removed.
+ */
+class SessionQueryClient extends QueryClient {
+  readonly #cache: SessionCache;
+
+  constructor(config: QueryClientConfig) {
+    const queryCache = new SessionCache();
+    super({ ...config, queryCache });
+    this.#cache = queryCache;
+  }
+
+  get closed(): boolean {
+    return this.#cache.closed;
+  }
+
+  close(): void {
+    this.#cache.closed = true;
+    void this.cancelQueries();
+    this.clear();
+  }
+
+  override defaultQueryOptions<
+    TQueryFnData = unknown,
+    TError = DefaultError,
+    TData = TQueryFnData,
+    TQueryData = TQueryFnData,
+    TQueryKey extends QueryKey = QueryKey,
+    TPageParam = never,
+  >(
+    options:
+      | QueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey, TPageParam>
+      | DefaultedQueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey>,
+  ): DefaultedQueryObserverOptions<TQueryFnData, TError, TData, TQueryData, TQueryKey> {
+    const defaulted = super.defaultQueryOptions(options);
+    return this.closed ? { ...defaulted, enabled: false } : defaulted;
+  }
+}
+
 /**
  * The cache with the defaults of ADR-0028 §7: data is fresh for 30 seconds; a stale query is fetched again when a
  * screen opens, never on focus or reconnect while it is read (Y7). The client retries 429 and 503 itself (ADR-0093
- * §3), so a query is not retried again.
+ * §3), so a query is not retried again. It can be closed with its session (`closeData`).
  */
 export function createQueryClient(): QueryClient {
-  return new QueryClient({
+  return new SessionQueryClient({
     defaultOptions: {
       queries: {
         staleTime: defaultStaleTime,
@@ -63,4 +130,19 @@ export function createQueryClient(): QueryClient {
       },
     },
   });
+}
+
+/** Whether the session of the data that reads through `queryClient` ended (`closeData`). */
+function isClosed(queryClient: QueryClient): boolean {
+  return queryClient instanceof SessionQueryClient && queryClient.closed;
+}
+
+/**
+ * Ends what `data` reads and keeps, with its session: its cache of server data is emptied and stays empty, the reads
+ * on their way are cancelled, the screens still drawn on it read nothing more, and no request of its API is sent
+ * again (each rejects). Data on a cache that is not this module's has its cache emptied, and no more.
+ */
+export function closeData({ queryClient }: AppData): void {
+  if (queryClient instanceof SessionQueryClient) queryClient.close();
+  else queryClient.clear();
 }

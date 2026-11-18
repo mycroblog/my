@@ -33,7 +33,7 @@ import {
   SubmitBar,
   useLocale,
 } from "@my/design-system";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
 import {
@@ -68,7 +68,8 @@ export function AppRegister({ onBack }: SettingsSubProps) {
   const [said, setSaid] = useState<string>();
   /** The app the server just registered, with its secret: shown until the reader leaves. */
   const [made, setMade] = useState<OAuthAppCreated>();
-  const fault = useFaultFocus();
+  const formRef = useRef<HTMLFormElement>(null);
+  const focusFault = useFaultFocus(formRef);
 
   if (made !== undefined) {
     const secret = made.client_secret;
@@ -96,7 +97,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
     setSaid(undefined);
     if (Object.keys(missing).length > 0) {
       // Nothing is sent: the first field left empty takes the focus, with what it needs under it.
-      fault.focus();
+      focusFault();
       return;
     }
     setBusy(true);
@@ -110,7 +111,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
       setFaults(refused);
       setSaid(placed.reason ?? t("settings.confirm.failed"));
       // The field the server refused takes the focus; a refusal that names none stays before the button.
-      fault.focus();
+      focusFault();
     });
   };
 
@@ -128,7 +129,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
 
   return (
     <form
-      ref={fault.ref}
+      ref={formRef}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();

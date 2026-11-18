@@ -92,7 +92,8 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
   const [result, setResult] = useState<{ saved: true } | { saved: false; said: string }>();
   /** New fields after each save, which start from the app as the server left it. */
   const [round, setRound] = useState(0);
-  const fault = useFaultFocus();
+  const formRef = useRef<HTMLFormElement>(null);
+  const focusFault = useFaultFocus(formRef);
   const app = read ?? kept;
   const back = <BackButton onPress={onBack}>{t("settings.entry.apps")}</BackButton>;
 
@@ -130,7 +131,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
     setResult(undefined);
     if (Object.keys(missing).length > 0) {
       // Nothing is sent: the first field left empty takes the focus, with what it needs under it.
-      fault.focus();
+      focusFault();
       return;
     }
     setBusy(true);
@@ -146,7 +147,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
         setFaults(refused);
         setResult({ saved: false, said: placed.reason ?? t("settings.confirm.failed") });
         // The field the server refused takes the focus; a refusal that names none stays before the button.
-        fault.focus();
+        focusFault();
       },
     );
   };
@@ -154,7 +155,7 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
   return (
     <>
       <form
-        ref={fault.ref}
+        ref={formRef}
         noValidate
         onSubmit={(event) => {
           event.preventDefault();

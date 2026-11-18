@@ -24,7 +24,7 @@ import {
   TextField,
   useLocale,
 } from "@my/design-system";
-import { useId, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
 import { refusedOf, useFaultFocus } from "./form";
@@ -50,7 +50,8 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
   const [said, setSaid] = useState<string>();
   /** The tokens the server just issued, shown until the reader leaves. */
   const [made, setMade] = useState<OAuthAppToken>();
-  const refusedField = useFaultFocus();
+  const formRef = useRef<HTMLFormElement>(null);
+  const focusFault = useFaultFocus(formRef);
 
   if (made !== undefined)
     return (
@@ -96,13 +97,13 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
       setFault(faults.scope);
       setSaid(refused.reason ?? t("settings.confirm.failed"));
       // The scopes the server refused take the focus; a refusal of anything else stays before the button.
-      refusedField.focus();
+      focusFault();
     });
   };
 
   return (
     <form
-      ref={refusedField.ref}
+      ref={formRef}
       noValidate
       onSubmit={(event) => {
         event.preventDefault();

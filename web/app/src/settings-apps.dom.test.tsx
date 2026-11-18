@@ -401,7 +401,7 @@ describe("once the server's own web client is revoked", () => {
   // the account again at once (the lists of apps and the account, three requests): with the fake, which still
   // answers, the cache holds five answers again; a server that revoked the session's tokens refuses each request.
   // The developers' words: no read after the revocation, and the cache is empty once the app has left and stays so.
-  test.failing("the app reads nothing of the account again, and what it read stays forgotten", async () => {
+  test("the app reads nothing of the account again, and what it read stays forgotten", async () => {
     const { app, readAgain } = await revoked();
 
     expect({ read: readAgain(), cached: app.data.queryClient.getQueryCache().getAll().length }).toEqual({
