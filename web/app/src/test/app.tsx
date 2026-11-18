@@ -26,6 +26,11 @@ export type AppOptions = FakeOptions & {
    * script its fake before the app's first request.
    */
   on?: FakeApp;
+  /**
+   * The app could not ask whether the browser has a session when it started (the server did not answer): it runs as
+   * for a visitor (`visitor: true`), without knowing that there is none.
+   */
+  unasked?: boolean;
 };
 
 /** The app a test rendered: its fake API (to script and to push events), its data, and what a reader does and reads. */
@@ -50,7 +55,10 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
  * Renders the app at the path `at`, on a fake API of its own, and returns once the first screen is in place. The
  * reader is the fake's (`viewer`, yuki by default), or a visitor (`visitor: true`).
  */
-export async function renderApp(at: string, { locale = "en", on, ...options }: AppOptions = {}): Promise<TestApp> {
+export async function renderApp(
+  at: string,
+  { locale = "en", on, unasked = false, ...options }: AppOptions = {},
+): Promise<TestApp> {
   const { fake, watch, data, visitor } = on ?? fakeApp(options);
   // What the app started ends with the test that rendered it, in whichever file it is.
   onTestFinished(() => {
@@ -79,7 +87,7 @@ export async function renderApp(at: string, { locale = "en", on, ...options }: A
   });
   render(
     <I18nProvider locale={locale}>
-      <AppRoot router={router} visitor={data} />
+      <AppRoot router={router} visitor={data} unasked={unasked} />
     </I18nProvider>,
   );
   const settled = () =>

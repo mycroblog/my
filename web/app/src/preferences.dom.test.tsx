@@ -12,9 +12,10 @@
 
 import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { localInput, scheduleTime } from "@my/app-components";
-import { preferencesQuery, updatePreferences } from "@my/app-data";
+import { preferencesQuery, updatePreferences, viewerQuery } from "@my/app-data";
 import { dateFormat } from "@my/design-system";
 import { scenario, type FakeOptions } from "@my/e2e/fake";
+import { readDeviceValue, writeDeviceValue } from "@my/platform";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type AppOptions } from "./test/app";
 import { newPost, paste } from "./test/composer";
@@ -358,6 +359,52 @@ describe("the app opened again on the device", () => {
     await openedUnread("/lists", { preferences: japanese });
     expect([page().lang, heading()]).toEqual(["en", lists.en]);
   });
+
+  test("is the account's alone: once the reader is read as another account it is dropped, before their preferences are read, and for good", async () => {
+    ownDevice();
+    await opened("/lists", { preferences: japanese });
+    await reads("ja", lists.ja);
+
+    // Sam signs in on the device Yuki read on: whose account it is the app knows once it read the viewer.
+    const sam = await openedUnread("/lists", { viewer: "sam" });
+    await waitFor(() => {
+      if (sam.on.data.queryClient.getQueryData(viewerQuery(sam.on.data).queryKey) === undefined)
+        throw new Error("test: the viewer is not read yet");
+    });
+    await reads("en", lists.en);
+    expect(hasPreferences(sam.on)).toBe(false);
+
+    // Dropped, not only passed over: Yuki's next run has nothing kept to paint first with.
+    await openedUnread("/lists", { preferences: japanese });
+    expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
+
+  test("is not used when it names no account, as a build before this one kept it", async () => {
+    ownDevice();
+    await opened("/lists", { preferences: japanese });
+    await reads("ja", lists.ja);
+    // What the device keeps, without whose it is. This test alone reads the kept value: it has to make an older one.
+    const kept = JSON.parse(readDeviceValue("my:reader-choice") ?? "null") as Record<string, unknown> | null;
+    expect(Object.keys(kept ?? {})).toContain("account");
+    writeDeviceValue("my:reader-choice", JSON.stringify({ ...kept, account: undefined }));
+
+    await openedUnread("/lists", { preferences: japanese });
+
+    expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
+
+  test("is kept when the app could not ask whether the browser has a session, and paints the reader's next run", async () => {
+    ownDevice();
+    await opened("/lists", { preferences: japanese });
+    await reads("ja", lists.ja);
+
+    // The server did not answer when the app started: it runs as for a visitor, who may be Yuki still.
+    await opened("/local", { visitor: true, unasked: true });
+    await feedOf("Local timeline");
+
+    await openedUnread("/lists", { preferences: japanese });
+    expect([page().lang, heading()]).toEqual(["ja", lists.ja]);
+  });
 });
 
 describe("an account that follows the browser", () => {
@@ -431,6 +478,55 @@ describe("an account that follows the browser", () => {
     expect(sent.seen).toHaveLength(1);
     // The reader saw nothing of it: the app reads in the browser's language all along.
     expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
+
+  // The update is made from what the server last said, never from a change of the reader's that is still on its
+  // way: Yuki chose Japanese, the browser reads English, and Yuki now chooses to follow the browser.
+  describe("by a choice the reader just made", () => {
+    /** The app with that choice made and held at the server: the app reads in English already. */
+    async function following(outcome: "kept" | "refused") {
+      ownDevice();
+      const on = fakeApp({ preferences: { ...japanese, time_zone: tokyo } });
+      const sent = on.fake.script("PATCH /preferences");
+      const app = await opened("/lists", { on });
+      await reads("ja", lists.ja);
+      const held = on.fake.script("PATCH /preferences", {
+        times: 1,
+        hold: "request",
+        ...(outcome === "refused" ? { fail: 500 } : {}),
+      });
+      const choice = updatePreferences(on.data, { locale_follows_browser: true }).catch((error: unknown) => error);
+      await held.arrived();
+      await reads("en", lists.en);
+      return { on, app, sent, held, choice, bodies: () => sent.seen.map((request) => request.body) };
+    }
+
+    test("is sent the browser's language once the server answered the choice, and once only", async () => {
+      const { app, sent, held, choice, bodies } = await following("kept");
+
+      held.release();
+      expect(await choice).toMatchObject({ locale: "ja", locale_follows_browser: true });
+      await sent.served(2);
+      await app.navigate("/bookmarks");
+      await app.navigate("/lists");
+
+      expect(bodies()).toEqual([{ locale_follows_browser: true }, { locale: "en", locale_follows_browser: true }]);
+      expect([page().lang, heading()]).toEqual(["en", lists.en]);
+    });
+
+    test("is sent nothing when the server refused the choice: the account still holds its own language", async () => {
+      const { on, app, held, choice, bodies } = await following("refused");
+
+      held.release();
+      expect(await choice).toBeInstanceOf(Error);
+      await reads("ja", lists.ja);
+      await app.navigate("/bookmarks");
+      await app.navigate("/lists");
+
+      expect(bodies()).toEqual([{ locale_follows_browser: true }]);
+      const { data: stored } = await on.data.api.GET("/preferences");
+      expect(stored).toMatchObject({ locale: "ja", locale_follows_browser: false });
+    });
   });
 });
 

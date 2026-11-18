@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The settings on the real server (#3198, #3199): a reader signs out from them, which ends the session on the server
-// (its token is refused from then on, and a reload finds no session), and the display language a reader chose there is
+// (its token is refused from then on, a reload finds no session, and the reader's other tab leaves with them), and the
+// display language a reader chose there is
 // the account's, so that it is theirs again when they sign in after signing out. Each reader is a fresh person: the
 // scenario's people keep their sessions and their language. What each control of the settings saves is a component
 // test on the fake (app-features, settings/display.dom.test.tsx).
@@ -14,8 +15,9 @@ import { expect, test } from "./test";
 const withToken = (request: Request) =>
   new URL(request.url()).pathname.startsWith("/api/v1/") && request.headers()["authorization"] !== undefined;
 
-test("a reader signs out from the settings, lands signed out at the server's address, and stays signed out", async ({
+test("a reader signs out from the settings, lands signed out at the server's address, and stays signed out; their other tab follows", async ({
   page,
+  context,
   signIn,
   fresh,
 }) => {
@@ -26,6 +28,10 @@ test("a reader signs out from the settings, lands signed out at the server's add
   // The server takes the token while the session lasts.
   const taken = await page.request.get("/api/v1/preferences", { headers: { Authorization: token } });
   expect(taken.status()).toBe(200);
+  // The same session in a second tab of the browser, on a screen only a signed-in reader has.
+  const other = await context.newPage();
+  await other.goto("/notifications");
+  await expect(new Frame(other).heading("Notifications")).toBeVisible();
 
   await new Frame(page).goTo("Settings");
   const settings = new Settings(page);
@@ -37,6 +43,9 @@ test("a reader signs out from the settings, lands signed out at the server's add
   await expect(page).toHaveURL("/");
   const refused = await page.request.get("/api/v1/preferences", { headers: { Authorization: token } });
   expect(refused.status()).toBe(401);
+  // The other tab heard of it: it left for the server's address by itself, signed out too.
+  await expect(new Landing(other).signIn).toBeVisible();
+  await expect(other).toHaveURL("/");
 
   await page.reload();
   await expect(landing.signIn).toBeVisible();
