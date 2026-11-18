@@ -7,6 +7,7 @@
 // once, before the answer, so asserting what it shows and then reloading or navigating is the flaky pattern: the
 // reload aborts the unanswered request and the server drops the write.
 
+export { AccountData } from "./account-data";
 export { AccountNote } from "./account-note";
 export { AccountStatus } from "./account-status";
 export { Apps } from "./apps";
@@ -38,5 +39,6 @@ export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { SignUp } from "./sign-up";
 export { Thread } from "./thread";
 export { VerifyEmail } from "./verify";
+export { Welcome } from "./welcome";
 export { Notice } from "./notice";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
