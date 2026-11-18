@@ -218,7 +218,7 @@ export {
   type BrowserSession,
   type BrowserSessionWrites,
 } from "./browser-sessions";
-export { loadSecurity, useSecurityRead } from "./security";
+export { loadOwnAccount, loadSecurity, useOwnAccountRead, useSecurityRead } from "./security";
 export { loadApps, useAppsRead } from "./apps";
 export {
   authorizedAppsQuery,
@@ -624,11 +624,14 @@ export {
 } from "./imports";
 export {
   accountAliasesQuery,
+  accountNotFound,
   addAccountAlias,
   aliasLimit,
   aliasRefusalOf,
   cancelOwnAccountMove,
+  moveCooldownDays,
   moveOwnAccount,
+  moveRefusalOf,
   removeAccountAlias,
   useAccountAliases,
   useAccountAliasList,
@@ -636,14 +639,19 @@ export {
   useAccountMove,
   type AccountAlias,
   type AliasRefusal,
+  type MoveRefusal,
   type Reauthentication,
 } from "./account-move";
 export {
   deactivateOwnAccount,
   deactivationPreviewQuery,
+  deactivationRefused,
   deleteOwnAccount,
+  deletionEraseDays,
+  loadDeactivation,
   useAccountEnd,
   useDeactivationPreview,
+  useDeactivationRead,
   type Deactivation,
   type DeactivationPreview,
   type DeactivationProof,

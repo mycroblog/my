@@ -1845,7 +1845,7 @@
   },
   "settings.account.aliases.add.hint": {
     "defaultMessage": "Its handle, such as @name@example.com, or the address of its profile.",
-    "description": "The hint of the field Account you are moving from on the settings page Aliases: what the server takes."
+    "description": "The hint of a field that takes an account by its address, on the settings pages Aliases (Account you are moving from) and Move account (Account you are moving to): what the server takes."
   },
   "settings.account.aliases.add.submit": {
     "defaultMessage": "Add",
@@ -1870,6 +1870,326 @@
   "settings.account.aliases.full": {
     "defaultMessage": "You have {max, number} aliases, the most an account can have. Remove one to add another.",
     "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
+  },
+  "settings.account.departure": {
+    "defaultMessage": "Moving to another account",
+    "description": "A heading on the settings page Account and data, over the row that leads to Move account: moving this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move": {
+    "defaultMessage": "Move account",
+    "description": "A row of the section Moving to another account on the settings page Account and data, and the title of the page it opens, where the reader moves this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move.row.about": {
+    "defaultMessage": "Move your followers to another account of yours",
+    "description": "The line under the row Move account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.move.row.standing": {
+    "defaultMessage": "Moved to {handle}",
+    "description": "The line under the row Move account on the settings page Account and data, in place of settings.account.move.row.about, while this account has moved. {handle} is the handle of the account, as @name@example.com. Without a full stop."
+  },
+  "settings.account.end": {
+    "defaultMessage": "Deactivating or deleting this account",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Deactivate account and Delete account, the last section of the page. A heading: no full stop."
+  },
+  "settings.account.deactivate": {
+    "defaultMessage": "Deactivate account",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deactivates their account: it is hidden, and deleted later unless they sign in again. A heading: no full stop."
+  },
+  "settings.account.deactivate.row.about": {
+    "defaultMessage": "Hide your account and posts, which are deleted unless you sign in again in time",
+    "description": "The line under the row Deactivate account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.delete": {
+    "defaultMessage": "Delete account",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deletes their account at once. A heading: no full stop."
+  },
+  "settings.account.delete.row.about": {
+    "defaultMessage": "Delete your account and posts at once, for good",
+    "description": "The line under the row Delete account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.loading": {
+    "defaultMessage": "Loading your account…",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections while what they show is on its way."
+  },
+  "settings.account.failed": {
+    "defaultMessage": "Your account could not be loaded.",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections when what they show could not be read; the button Try again follows it."
+  },
+  "settings.account.end.signed_out": {
+    "defaultMessage": "You are signed out everywhere",
+    "description": "A fact in the first section of the settings pages Deactivate account and Delete account: what deactivating or deleting the account does to where the reader is signed in. Strong, over settings.account.end.signed_out.about. No full stop."
+  },
+  "settings.account.end.signed_out.about": {
+    "defaultMessage": "Every browser and app is signed out at once, this one too.",
+    "description": "The muted line under the fact You are signed out everywhere on the settings pages Deactivate account and Delete account."
+  },
+  "settings.account.move.effect": {
+    "defaultMessage": "What a move does",
+    "description": "The heading of the first section of the settings page Move account: what moves, what does not, and what becomes of this account. A heading: no full stop."
+  },
+  "settings.account.move.effect.followers": {
+    "defaultMessage": "Your followers move",
+    "description": "A fact in the section What a move does of the settings page Move account: the one thing that moves. Strong, over settings.account.move.effect.followers.about. No full stop."
+  },
+  "settings.account.move.effect.followers.about": {
+    "defaultMessage": "They follow the account you move to instead of this one.",
+    "description": "The muted line under the fact Your followers move on the settings page Move account."
+  },
+  "settings.account.move.effect.stays": {
+    "defaultMessage": "Everything else stays here",
+    "description": "A fact in the section What a move does of the settings page Move account: what does not move. Strong, over settings.account.move.effect.stays.about. No full stop."
+  },
+  "settings.account.move.effect.stays.about": {
+    "defaultMessage": "Your posts, the accounts you follow, your blocks, mutes and bookmarks do not move.",
+    "description": "The muted line under the fact Everything else stays here on the settings page Move account."
+  },
+  "settings.account.move.effect.account": {
+    "defaultMessage": "This account can no longer post or follow",
+    "description": "A fact in the section What a move does of the settings page Move account: what becomes of the account that moves. Strong, over settings.account.move.effect.account.about. No full stop."
+  },
+  "settings.account.move.effect.account.about": {
+    "defaultMessage": "Its profile says where you moved. You can still sign in, read, export your data and delete the account, but not post, boost, react, follow or vote.",
+    "description": "The muted line under the fact This account can no longer post or follow on the settings page Move account."
+  },
+  "settings.account.move.effect.wait": {
+    "defaultMessage": "You cannot move again for {days, plural, one {# day} other {# days}}",
+    "description": "A fact in the section What a move does of the settings page Move account: how long the account waits before another move. days is 30. Strong, over settings.account.move.effect.wait.about. No full stop."
+  },
+  "settings.account.move.effect.wait.about": {
+    "defaultMessage": "Cancelling the move does not shorten the wait, and does not bring your followers back.",
+    "description": "The muted line under the fact You cannot move again for 30 days on the settings page Move account."
+  },
+  "settings.account.move.effect.export": {
+    "defaultMessage": "To take your follows, blocks, mutes and bookmarks with you, export them as CSV files here and import them on the other account.",
+    "description": "A sentence at the end of the section What a move does of the settings page Move account; the link Export (settings.account.export) follows it."
+  },
+  "settings.account.move.alias": {
+    "defaultMessage": "First, on the account you are moving to",
+    "description": "The heading of the second section of the settings page Move account: what the reader does on the other account before the move. A heading: no full stop."
+  },
+  "settings.account.move.alias.about": {
+    "defaultMessage": "Add this account as an alias there: in its settings, under “Account and data”, open “Aliases” and enter this handle under “Add an alias”. Other software has the same under a similar name.",
+    "description": "The line under the heading First, on the account you are moving to of the settings page Move account, over this account's handle. Account and data, Aliases and Add an alias are settings.entry.account, settings.account.aliases and settings.account.aliases.add: the same words."
+  },
+  "settings.account.move.alias.handle": {
+    "defaultMessage": "This account's handle",
+    "description": "The name, for assistive technology, of the box on the settings page Move account that holds this account's handle (@name@example.com) for the reader to copy."
+  },
+  "settings.account.move.alias.copy": {
+    "defaultMessage": "Copy handle",
+    "description": "The button under this account's handle on the settings page Move account: it copies the handle."
+  },
+  "settings.account.move.form": {
+    "defaultMessage": "Move this account",
+    "description": "The heading of the last section of the settings page Move account, over the field Account you are moving to. A heading: no full stop."
+  },
+  "settings.account.move.target": {
+    "defaultMessage": "Account you are moving to",
+    "description": "The label of the field on the settings page Move account where the reader names the account this one moves to; its hint is settings.account.aliases.add.hint."
+  },
+  "settings.account.move.target.missing": {
+    "defaultMessage": "Enter the handle or the address of the account you are moving to.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader chose Move account with the field empty."
+  },
+  "settings.account.move.target.not_found": {
+    "defaultMessage": "No account was found there. Check the handle, such as @name@example.com, or the address of the profile.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the server found no account at what the reader entered."
+  },
+  "settings.account.move.target.own": {
+    "defaultMessage": "That is this account. Enter the account you are moving to.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader entered this account itself."
+  },
+  "settings.account.move.refused": {
+    "defaultMessage": "{reason, select, alias_missing {{handle} does not list this account as an alias yet. On that account, add this account under “Aliases”, then try again.} target_moved {{handle} has moved to another account itself. Enter the account it moved to.} target_unavailable {You cannot move to {handle}: this server cannot reach that account, or does not accept it. Check the handle, or choose another account.} other {This account moved less than {days, plural, one {# day} other {# days}} ago, or has moved to {handle} before. It can move again {days, plural, one {# day} other {# days}} after its last move, and never to the same account twice.}}",
+    "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
+  },
+  "settings.account.move.confirm": {
+    "defaultMessage": "To move this account to {handle}, confirm it's you.",
+    "description": "In the dialog Confirm it's you, opened by the button Move account on the settings page Move account: why it asks. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.submit": {
+    "defaultMessage": "Move account",
+    "description": "The button that ends the settings page Move account: it asks the reader to confirm it's them, then moves the account."
+  },
+  "settings.account.move.moved": {
+    "defaultMessage": "This account moved to {handle}",
+    "description": "The summary at the top of the settings page Move account while this account has moved. {handle} is the handle of the account, as @name@example.com. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.moved.about": {
+    "defaultMessage": "Its followers were moved there. This account cannot post, boost, react, follow or vote; you can still sign in, read, export your data and delete it.",
+    "description": "The muted line under the summary This account moved to… on the settings page Move account."
+  },
+  "settings.account.move.cancel": {
+    "defaultMessage": "Cancelling the move",
+    "description": "The heading of the section of the settings page Move account that holds the button Cancel the move, while this account has moved. A heading: no full stop."
+  },
+  "settings.account.move.cancel.about": {
+    "defaultMessage": "Cancelling lets this account post and follow again, and tells other servers that it no longer moved. Followers who moved stay with {handle}, and the {days, plural, one {# day} other {# days}} before another move still count from this move.",
+    "description": "The line under the heading Cancelling the move on the settings page Move account: what cancelling does and does not undo. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.cancel.submit": {
+    "defaultMessage": "Cancel the move",
+    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens."
+  },
+  "settings.account.move.cancel.title": {
+    "defaultMessage": "Cancel the move to {handle}?",
+    "description": "The title of the dialog opened by the button Cancel the move on the settings page Move account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.cancel.text": {
+    "defaultMessage": "Followers who already moved do not come back, and this account still cannot move again until {days, plural, one {# day} other {# days}} after this move.",
+    "description": "The text of the dialog Cancel the move to…? on the settings page Move account: what cancelling does not undo. days is 30."
+  },
+  "settings.account.move.cancel.keep": {
+    "defaultMessage": "Keep the move",
+    "description": "The button of the dialog Cancel the move to…? on the settings page Move account that closes it and cancels nothing, beside Cancel the move."
+  },
+  "settings.account.move.cancelled": {
+    "defaultMessage": "The move is cancelled",
+    "description": "The summary at the top of the settings page Move account once the reader cancelled the move. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.cancelled.about": {
+    "defaultMessage": "This account can post and follow again. Followers who moved stay with the other account.",
+    "description": "The muted line under the summary The move is cancelled on the settings page Move account."
+  },
+  "settings.account.deactivate.effect": {
+    "defaultMessage": "What deactivating does",
+    "description": "The heading of the first section of the settings page Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.effect.hidden": {
+    "defaultMessage": "Your profile and posts are hidden",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.hidden.about. No full stop."
+  },
+  "settings.account.deactivate.effect.hidden.about": {
+    "defaultMessage": "Nobody can see them, on this server or on others. Some servers show the account as suspended, because they have no other way to show it.",
+    "description": "The muted line under the fact Your profile and posts are hidden on the settings page Deactivate account. Suspended is what a moderator does to an account (凍結)."
+  },
+  "settings.account.deactivate.effect.dropped": {
+    "defaultMessage": "Nothing reaches the account meanwhile",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.dropped.about. No full stop."
+  },
+  "settings.account.deactivate.effect.dropped.about": {
+    "defaultMessage": "Mentions, direct messages, notifications and new followers that come while it is deactivated are not kept, and are not there when you come back.",
+    "description": "The muted line under the fact Nothing reaches the account meanwhile on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.effect.kept": {
+    "defaultMessage": "Everything else is kept",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.kept.about. No full stop."
+  },
+  "settings.account.deactivate.effect.kept.about": {
+    "defaultMessage": "Your posts, the accounts you follow and your followers stay as they are.",
+    "description": "The muted line under the fact Everything else is kept on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after": {
+    "defaultMessage": "Coming back",
+    "description": "The heading of the second section of the settings page Deactivate account: until when the reader can reactivate the account, and what happens after. A heading: no full stop."
+  },
+  "settings.account.deactivate.after.reactivate": {
+    "defaultMessage": "Sign in by {date} to reactivate it",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. date is the day and time the account would be deleted if it were deactivated now, as the reader's locale writes them. Strong, over settings.account.deactivate.after.reactivate.about. No full stop."
+  },
+  "settings.account.deactivate.after.reactivate.about": {
+    "defaultMessage": "The account comes back as it was.",
+    "description": "The muted line under the fact Sign in by… to reactivate it on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after.deleted": {
+    "defaultMessage": "After that, the account is deleted",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
+  },
+  "settings.account.deactivate.after.deleted.about": {
+    "defaultMessage": "It is deleted for good, as “Delete account” deletes it. Where this server sends email, you get one email with the date now, and no reminder before the deletion.",
+    "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
+  },
+  "settings.account.deactivate.first": {
+    "defaultMessage": "Before you deactivate",
+    "description": "The heading of the third section of the settings page Deactivate account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.deactivate.first.export": {
+    "defaultMessage": "Your data cannot be exported while the account is deactivated",
+    "description": "The line under the row Export in the section Before you deactivate of the settings page Deactivate account. Without a full stop."
+  },
+  "settings.account.deactivate.act": {
+    "defaultMessage": "Deactivate this account",
+    "description": "The heading of the last section of the settings page Deactivate account, over the button Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.act.about": {
+    "defaultMessage": "You are asked to confirm it's you, then signed out. If you do nothing more, the account is deleted on {date}.",
+    "description": "The line under the heading Deactivate this account on the settings page Deactivate account. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.submit": {
+    "defaultMessage": "Deactivate account",
+    "description": "The button that ends the settings page Deactivate account: it asks the reader to confirm it's them, then deactivates the account and signs them out."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "To deactivate this account, confirm it's you.",
+    "description": "In the dialog Confirm it's you, opened by the button Deactivate account on the settings page Deactivate account: why it asks."
+  },
+  "settings.account.deactivate.refused": {
+    "defaultMessage": "This account cannot be deactivated now",
+    "description": "The summary at the top of the settings page Deactivate account while the server would refuse the deactivation; settings.account.deactivate.refused.reason says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.deactivate.refused.reason": {
+    "defaultMessage": "{reason, select, login_restricted {A moderation action keeps this account from signing in. “Account status” says which, and how to appeal it.} deletion_scheduled {This account is already waiting to be deleted. “Account status” says why.} already_deactivated {This account is already deactivated. Sign in again to reactivate it.} moved {This account moved to another account. Cancel the move first, under “Move account”.} registration_pending {The registration of this account is still waiting for a moderator's approval. Try again once it is approved.} paid_subscription {Your supporter plan is still running. Cancel it first, then deactivate the account.} last_administrator {This is the only administrator account that can sign in, and a deactivated account is deleted in the end. Make someone else an administrator first.} recently_reactivated {This account was reactivated a short while ago. You can deactivate it again from {date}.} reactivated {This account was reactivated a short while ago. Try again tomorrow.} other {The server did not say why. Reload the app, then try again.}}",
+    "description": "The muted line under the summary This account cannot be deactivated now on the settings page Deactivate account: why, and what to do. date (recently_reactivated only) is the day and time from which it can be deactivated again; reactivated is the same without a known time. Account status and Move account are settings.account.status and settings.account.move: the same words."
+  },
+  "settings.account.delete.effect": {
+    "defaultMessage": "What deleting does",
+    "description": "The heading of the first section of the settings page Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.effect.gone": {
+    "defaultMessage": "Your account and posts are deleted at once",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.gone.about. No full stop."
+  },
+  "settings.account.delete.effect.gone.about": {
+    "defaultMessage": "They disappear from this server, and other servers are told to delete them too.",
+    "description": "The muted line under the fact Your account and posts are deleted at once on the settings page Delete account."
+  },
+  "settings.account.delete.effect.final": {
+    "defaultMessage": "It cannot be undone",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.final.about. No full stop."
+  },
+  "settings.account.delete.effect.final.about": {
+    "defaultMessage": "There is no time to change your mind. To keep a way back for a while, deactivate the account instead.",
+    "description": "The muted line under the fact It cannot be undone on the settings page Delete account."
+  },
+  "settings.account.delete.effect.username": {
+    "defaultMessage": "The username is never free again",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.username.about. No full stop."
+  },
+  "settings.account.delete.effect.username.about": {
+    "defaultMessage": "Nobody, you included, can register {username} on this server again.",
+    "description": "The muted line under the fact The username is never free again on the settings page Delete account. {username} is the account's username on this server with its @, as @name."
+  },
+  "settings.account.delete.effect.erased": {
+    "defaultMessage": "The data is erased {days, plural, one {# day} other {# days}} later",
+    "description": "A fact in the section What deleting does of the settings page Delete account. days is 7. Strong, over settings.account.delete.effect.erased.about. No full stop."
+  },
+  "settings.account.delete.effect.erased.about": {
+    "defaultMessage": "Until then the server keeps it, hidden from everyone.",
+    "description": "The muted line under the fact The data is erased 7 days later on the settings page Delete account."
+  },
+  "settings.account.delete.first": {
+    "defaultMessage": "Before you delete",
+    "description": "The heading of the second section of the settings page Delete account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.delete.first.export": {
+    "defaultMessage": "Nothing can be exported once the account is deleted",
+    "description": "The line under the row Export in the section Before you delete of the settings page Delete account. Without a full stop."
+  },
+  "settings.account.delete.act": {
+    "defaultMessage": "Delete this account",
+    "description": "The heading of the last section of the settings page Delete account, over the button Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.act.about": {
+    "defaultMessage": "You are asked to confirm it's you. The account is then deleted at once, and you are signed out.",
+    "description": "The line under the heading Delete this account on the settings page Delete account."
+  },
+  "settings.account.delete.submit": {
+    "defaultMessage": "Delete account",
+    "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "To delete this account for good, confirm it's you.",
+    "description": "In the dialog Confirm it's you, opened by the button Delete account on the settings page Delete account: why it asks."
   },
   "settings.security.sign_in": {
     "defaultMessage": "Sign-in",

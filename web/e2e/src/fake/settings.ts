@@ -9,7 +9,9 @@
 // rest of the fake answers a read with (`judged`): they fold or leave out what their words match.
 //
 // An import started stays in progress for a moment (`importSeconds`), then reads as finished. A confirmation (a move,
-// a deactivation, a deletion) holds with the reader's password, a passkey or the confirmation of an external login.
+// a deactivation, a deletion) holds with the reader's password, a passkey or the confirmation of an external login;
+// what the server refuses of them it refuses by the server's problem types, in the server's words. A move made stays
+// until it is canceled: the reader's account names where it moved (`movedTo`), and cannot be deactivated meanwhile.
 
 import { day, idAt, notFound, page, problem, type PageQuery } from "./common";
 import type { Answer, Handlers, Schema } from "./spec";
@@ -166,8 +168,21 @@ export type FakeSettings = {
   imports: readonly Omit<DataImport, "id">[];
   /** The accounts the reader says are also theirs, by handle. */
   aliases: readonly string[];
-  /** Why the account cannot be deactivated; none if it can. */
+  /** The person the reader's account moved to, by username; none for an account that has not moved. */
+  movedTo?: string | undefined;
+  /**
+   * Why every move is refused once its confirmation holds, where the server would take it: the target does not list
+   * the account among its aliases (`alias_missing`), moved itself (`target_moved`), cannot be moved to
+   * (`target_unavailable`), or the account moved in the last 30 days or to that target before (`too_soon`).
+   */
+  moveRefusal?: "alias_missing" | "target_moved" | "target_unavailable" | "too_soon" | undefined;
+  /**
+   * Why the account cannot be deactivated; none if it can, unless it moved, which the server refuses by itself
+   * (`moved`). One reactivated lately (`recently_reactivated`) can be deactivated again in 20 hours.
+   */
   deactivationRefusal: DeactivationPreview["refusal"];
+  /** The deletion of the account is refused once its confirmation holds: it is the server's only administrator. */
+  deletionRefusal?: "last_administrator" | undefined;
   /** The actions of the moderators on the reader's account, newest first, with the appeals made. */
   moderation: readonly FakeAction[];
   /**
@@ -232,6 +247,72 @@ const actionWords: Record<
       ban: "BAN (アカウントは削除される)",
     },
     category: { spam: "スパム", legal: "法的な理由", violation: "サーバーのルール違反", other: "その他" },
+  },
+};
+
+/**
+ * The server's words for what it refuses of a move, a deactivation and a deletion of the account
+ * (locales/<lang>/server/errors.json).
+ */
+const endWords: Record<
+  "en" | "ja",
+  {
+    wrongPassword: string;
+    notMoved: string;
+    lastAdministrator: string;
+    move: Record<NonNullable<FakeSettings["moveRefusal"]>, string>;
+    deactivation: Record<NonNullable<DeactivationPreview["refusal"]> | "refused", string>;
+  }
+> = {
+  en: {
+    wrongPassword: "The password is wrong. Enter your current password.",
+    notMoved: "Your account has not moved.",
+    lastAdministrator: "This is the only administrator of this server. Make another user an administrator first.",
+    move: {
+      alias_missing:
+        "The account to move to does not list your account as an alias. Add your account as an alias on that account first.",
+      target_moved: "The account to move to has moved itself. Move to the account it moved to.",
+      target_unavailable: "You cannot move to that account.",
+      too_soon: "Your account can move again 30 days after its last move, and not to an account it moved to before.",
+    },
+    deactivation: {
+      refused: "This account cannot be deactivated now.",
+      login_restricted: "A moderation action keeps this account from signing in.",
+      deletion_scheduled: "This account is waiting to be deleted.",
+      already_deactivated: "This account is deactivated.",
+      moved: "This account moved to another account.",
+      registration_pending: "The registration of this account is waiting for a moderator's approval.",
+      paid_subscription: "Cancel your supporter plan first.",
+      last_administrator:
+        "This is the only administrator account that can sign in. Make someone else an administrator first.",
+      recently_reactivated:
+        "This account was reactivated less than 24 hours ago. Try again 24 hours after reactivating it.",
+    },
+  },
+  ja: {
+    wrongPassword: "パスワードが違います。現在のパスワードを入力してください。",
+    notMoved: "このアカウントは移転していません。",
+    lastAdministrator: "このサーバーの管理者はこのアカウントだけです。先にほかの利用者を管理者にしてください。",
+    move: {
+      alias_missing:
+        "移転先のアカウントの別名に、このアカウントがありません。先に移転先のアカウントで、このアカウントを別名に追加してください。",
+      target_moved: "移転先のアカウントは移転済みです。そのアカウントの移転先へ移転してください。",
+      target_unavailable: "そのアカウントへは移転できません。",
+      too_soon:
+        "アカウントは、前回の移転から 30 日たつと再び移転できます。以前に移転したことのあるアカウントには移転できません。",
+    },
+    deactivation: {
+      refused: "このアカウントはいま無効化できません。",
+      login_restricted: "モデレーションの処分により、このアカウントはログインできません。",
+      deletion_scheduled: "このアカウントは削除される予定です。",
+      already_deactivated: "このアカウントはすでに無効化されています。",
+      moved: "このアカウントは別のアカウントへ移転しました。",
+      registration_pending: "このアカウントの登録はモデレーターの承認待ちです。",
+      paid_subscription: "先にサポーターのプランを解約してください。",
+      last_administrator: "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてください。",
+      recently_reactivated:
+        "このアカウントは、もとに戻してから 24 時間たっていません。もとに戻してから 24 時間たったら、もう一度試してください。",
+    },
   },
 };
 
@@ -375,6 +456,8 @@ export type SettingsEnv = {
   viewerId: string | undefined;
   /** The ID of the account of a person of the seed, if there is one. */
   accountExists: (id: string) => boolean;
+  /** The ID of the account of the person of `username`; none for nobody of the seed. */
+  accountId: (username: string) => string | undefined;
   /** Some of the reader's own posts, newest first, as statuses (what an estimate shows as examples). */
   ownStatuses: () => Schema<"Status">[];
   /** The settings it starts with. */
@@ -414,6 +497,8 @@ export type SettingsState = {
   actionId: (index: number) => string | undefined;
   /** The ID of the reader's filter at `index`, oldest first; none past the last. */
   filterId: (index: number) => string | undefined;
+  /** The ID of the account the reader's account moved to; none while it has not moved. */
+  movedTo: () => string | undefined;
 };
 
 /** Creates the state of the personal settings from `env.settings`, and the handlers that answer for it. */
@@ -654,18 +739,27 @@ export function createSettings(env: SettingsEnv): SettingsState {
   };
   const aliases: AccountAlias[] = settings.aliases.map((a) => aliasOf(a, started));
   const aliasLimit = 5;
-  let moveTarget: string | undefined;
+  let moveTarget = settings.movedTo === undefined ? undefined : env.accountId(settings.movedTo);
   const confirmed = (p: {
     password?: string | undefined;
     passkey?: unknown;
     external_confirmation?: string | undefined;
   }) => p.passkey !== undefined || p.external_confirmation !== undefined || p.password === env.password;
-  const wrongProof = () => refused("The confirmation does not hold", "reauthentication-failed");
+  /** The server's words for what it refuses of the account's move and end, in the language `request` asks for. */
+  const said = (request: Request) =>
+    endWords[request.headers.get("Accept-Language")?.toLowerCase().startsWith("ja") === true ? "ja" : "en"];
+  /** A wrong confirmation, as the operations that confirm answer it (clientapi's passkeyProblem). */
+  const wrongProof = (request: Request) =>
+    problem(422, said(request).wrongPassword, { type: "/api/v1/problems/wrong-password", field: "password" });
+  /** A refused move, by the problem type the server tells it by (clientapi's moveProblem). */
+  const moveRefused = (reason: NonNullable<FakeSettings["moveRefusal"]>, request: Request) =>
+    refused(said(request).move[reason], `move-${reason.replace("_", "-")}`, 422);
 
   // ---- Deactivation ------------------------------------------------------------------------------------------------
 
   const deletionDue = () => new Date(Date.now() + 30 * day).toISOString();
-  const refusal = settings.deactivationRefusal;
+  /** Why the account cannot be deactivated now: what the seed says, else that it moved. */
+  const refusalNow = () => settings.deactivationRefusal ?? (moveTarget === undefined ? undefined : "moved");
 
   // ---- Moderation --------------------------------------------------------------------------------------------------
 
@@ -871,31 +965,48 @@ export function createSettings(env: SettingsEnv): SettingsState {
       if (at_ >= 0) aliases.splice(at_, 1);
       return { status: 200, body: { items: aliases } };
     },
-    "POST /accounts/move": ({ body }) => {
-      if (!confirmed(body)) return wrongProof();
-      if (!env.accountExists(body.target_account_id)) return notFound();
-      if (aliases.length === 0)
-        return refused("The target does not have this account as an alias", "move-target-without-alias", 422);
+    "POST /accounts/move": ({ body, request }) => {
+      if (!confirmed(body)) return wrongProof(request);
+      if (settings.moveRefusal !== undefined) return moveRefused(settings.moveRefusal, request);
+      // The reader's own account, and one the server does not find, cannot be moved to.
+      if (!env.accountExists(body.target_account_id) || body.target_account_id === env.viewerId)
+        return moveRefused("target_unavailable", request);
       moveTarget = body.target_account_id;
       return { status: 204 };
     },
-    "DELETE /accounts/move": () => {
-      if (moveTarget === undefined) return notFound();
+    "DELETE /accounts/move": ({ request }) => {
+      if (moveTarget === undefined) return refused(said(request).notMoved, "account-not-moved", 409);
       moveTarget = undefined;
       return { status: 204 };
     },
 
-    "GET /accounts/deactivation": () => ({
-      status: 200,
-      body: refusal === undefined ? { deletion_due_at: deletionDue() } : { deletion_due_at: deletionDue(), refusal },
-    }),
-    "POST /accounts/deactivation": ({ body }) => {
-      if (refusal !== undefined) return refused("The account cannot be deactivated", `deactivation-${refusal}`, 409);
-      if (!confirmed(body)) return wrongProof();
+    "GET /accounts/deactivation": () => {
+      const refusal = refusalNow();
+      return {
+        status: 200,
+        body: {
+          deletion_due_at: deletionDue(),
+          ...(refusal === undefined ? {} : { refusal }),
+          ...(refusal === "recently_reactivated"
+            ? { available_at: new Date(Date.now() + (20 * day) / 24).toISOString() }
+            : {}),
+        },
+      };
+    },
+    "POST /accounts/deactivation": ({ body, request }) => {
+      const refusal = refusalNow();
+      if (refusal !== undefined)
+        return problem(409, said(request).deactivation.refused, {
+          type: "/api/v1/problems/deactivation-refused",
+          detail: said(request).deactivation[refusal],
+        });
+      if (!confirmed(body)) return wrongProof(request);
       return { status: 200, body: { deletion_due_at: deletionDue() } };
     },
-    "POST /accounts/delete": ({ body }) => {
-      if (!confirmed(body)) return wrongProof();
+    "POST /accounts/delete": ({ body, request }) => {
+      if (!confirmed(body)) return wrongProof(request);
+      if (settings.deletionRefusal === "last_administrator")
+        return refused(said(request).lastAdministrator, "last-administrator", 409);
       return { status: 204 };
     },
 
@@ -960,5 +1071,5 @@ export function createSettings(env: SettingsEnv): SettingsState {
     badges.filter((b) => b.displayed).map(({ role_id, label, color }) => ({ role_id, label, color }));
   const filterId = (index: number) => filters[index]?.id;
   const actionId = (index: number) => actions[index]?.id;
-  return { handlers, judged, featured: featuredBody, shownBadges, filterId, actionId };
+  return { handlers, judged, featured: featuredBody, shownBadges, filterId, actionId, movedTo: () => moveTarget };
 }

@@ -1845,7 +1845,7 @@
   },
   "settings.account.aliases.add.hint": {
     "defaultMessage": "@name@example.com のようなハンドルか、プロフィールのアドレス。",
-    "description": "The hint of the field Account you are moving from on the settings page Aliases: what the server takes."
+    "description": "The hint of a field that takes an account by its address, on the settings pages Aliases (Account you are moving from) and Move account (Account you are moving to): what the server takes."
   },
   "settings.account.aliases.add.submit": {
     "defaultMessage": "追加",
@@ -1870,6 +1870,326 @@
   "settings.account.aliases.full": {
     "defaultMessage": "別名は上限の {max, number} 件に達しています。追加するには、どれかを削除してください。",
     "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
+  },
+  "settings.account.departure": {
+    "defaultMessage": "別のアカウントへの移転",
+    "description": "A heading on the settings page Account and data, over the row that leads to Move account: moving this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move": {
+    "defaultMessage": "アカウントの移転",
+    "description": "A row of the section Moving to another account on the settings page Account and data, and the title of the page it opens, where the reader moves this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move.row.about": {
+    "defaultMessage": "フォロワーを自分の別のアカウントに移す",
+    "description": "The line under the row Move account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.move.row.standing": {
+    "defaultMessage": "移転先: {handle}",
+    "description": "The line under the row Move account on the settings page Account and data, in place of settings.account.move.row.about, while this account has moved. {handle} is the handle of the account, as @name@example.com. Without a full stop."
+  },
+  "settings.account.end": {
+    "defaultMessage": "このアカウントの無効化と削除",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Deactivate account and Delete account, the last section of the page. A heading: no full stop."
+  },
+  "settings.account.deactivate": {
+    "defaultMessage": "アカウントの無効化",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deactivates their account: it is hidden, and deleted later unless they sign in again. A heading: no full stop."
+  },
+  "settings.account.deactivate.row.about": {
+    "defaultMessage": "アカウントと投稿を隠し、期限までにログインし直さなければ削除する",
+    "description": "The line under the row Deactivate account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.delete": {
+    "defaultMessage": "アカウントの削除",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deletes their account at once. A heading: no full stop."
+  },
+  "settings.account.delete.row.about": {
+    "defaultMessage": "アカウントと投稿をすぐに、完全に削除する",
+    "description": "The line under the row Delete account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.loading": {
+    "defaultMessage": "アカウントを読み込んでいます…",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections while what they show is on its way."
+  },
+  "settings.account.failed": {
+    "defaultMessage": "アカウントを読み込めませんでした。",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections when what they show could not be read; the button Try again follows it."
+  },
+  "settings.account.end.signed_out": {
+    "defaultMessage": "すべてのブラウザとアプリからログアウトします",
+    "description": "A fact in the first section of the settings pages Deactivate account and Delete account: what deactivating or deleting the account does to where the reader is signed in. Strong, over settings.account.end.signed_out.about. No full stop."
+  },
+  "settings.account.end.signed_out.about": {
+    "defaultMessage": "このブラウザも含めて、すぐにログアウトします。",
+    "description": "The muted line under the fact You are signed out everywhere on the settings pages Deactivate account and Delete account."
+  },
+  "settings.account.move.effect": {
+    "defaultMessage": "移転で起きること",
+    "description": "The heading of the first section of the settings page Move account: what moves, what does not, and what becomes of this account. A heading: no full stop."
+  },
+  "settings.account.move.effect.followers": {
+    "defaultMessage": "フォロワーが移ります",
+    "description": "A fact in the section What a move does of the settings page Move account: the one thing that moves. Strong, over settings.account.move.effect.followers.about. No full stop."
+  },
+  "settings.account.move.effect.followers.about": {
+    "defaultMessage": "このアカウントの代わりに、移転先のアカウントをフォローします。",
+    "description": "The muted line under the fact Your followers move on the settings page Move account."
+  },
+  "settings.account.move.effect.stays": {
+    "defaultMessage": "それ以外はこのアカウントに残ります",
+    "description": "A fact in the section What a move does of the settings page Move account: what does not move. Strong, over settings.account.move.effect.stays.about. No full stop."
+  },
+  "settings.account.move.effect.stays.about": {
+    "defaultMessage": "投稿・フォロー・ブロック・ミュート・ブックマークは移りません。",
+    "description": "The muted line under the fact Everything else stays here on the settings page Move account."
+  },
+  "settings.account.move.effect.account": {
+    "defaultMessage": "このアカウントでは投稿やフォローができなくなります",
+    "description": "A fact in the section What a move does of the settings page Move account: what becomes of the account that moves. Strong, over settings.account.move.effect.account.about. No full stop."
+  },
+  "settings.account.move.effect.account.about": {
+    "defaultMessage": "プロフィールには移転先が表示されます。ログイン・閲覧・データのエクスポート・アカウントの削除は引き続きできますが、投稿・ブースト・リアクション・フォロー・投票はできません。",
+    "description": "The muted line under the fact This account can no longer post or follow on the settings page Move account."
+  },
+  "settings.account.move.effect.wait": {
+    "defaultMessage": "次の移転は {days, number} 日後までできません",
+    "description": "A fact in the section What a move does of the settings page Move account: how long the account waits before another move. days is 30. Strong, over settings.account.move.effect.wait.about. No full stop."
+  },
+  "settings.account.move.effect.wait.about": {
+    "defaultMessage": "移転を取り消しても、この期間は短くならず、フォロワーも戻りません。",
+    "description": "The muted line under the fact You cannot move again for 30 days on the settings page Move account."
+  },
+  "settings.account.move.effect.export": {
+    "defaultMessage": "フォロー・ブロック・ミュート・ブックマークを引き継ぐには、ここで CSV ファイルにエクスポートし、移転先のアカウントでインポートしてください。",
+    "description": "A sentence at the end of the section What a move does of the settings page Move account; the link Export (settings.account.export) follows it."
+  },
+  "settings.account.move.alias": {
+    "defaultMessage": "先に、移転先のアカウントで",
+    "description": "The heading of the second section of the settings page Move account: what the reader does on the other account before the move. A heading: no full stop."
+  },
+  "settings.account.move.alias.about": {
+    "defaultMessage": "移転先のアカウントで、このアカウントを別名に追加してください。設定の「アカウントとデータ」から「別名」を開き、「別名を追加」にこのハンドルを入力します。ほかのソフトウェアにも、似た名前の同じ設定があります。",
+    "description": "The line under the heading First, on the account you are moving to of the settings page Move account, over this account's handle. Account and data, Aliases and Add an alias are settings.entry.account, settings.account.aliases and settings.account.aliases.add: the same words."
+  },
+  "settings.account.move.alias.handle": {
+    "defaultMessage": "このアカウントのハンドル",
+    "description": "The name, for assistive technology, of the box on the settings page Move account that holds this account's handle (@name@example.com) for the reader to copy."
+  },
+  "settings.account.move.alias.copy": {
+    "defaultMessage": "ハンドルをコピー",
+    "description": "The button under this account's handle on the settings page Move account: it copies the handle."
+  },
+  "settings.account.move.form": {
+    "defaultMessage": "このアカウントを移転",
+    "description": "The heading of the last section of the settings page Move account, over the field Account you are moving to. A heading: no full stop."
+  },
+  "settings.account.move.target": {
+    "defaultMessage": "移転先のアカウント",
+    "description": "The label of the field on the settings page Move account where the reader names the account this one moves to; its hint is settings.account.aliases.add.hint."
+  },
+  "settings.account.move.target.missing": {
+    "defaultMessage": "移転先のアカウントのハンドルかアドレスを入力してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader chose Move account with the field empty."
+  },
+  "settings.account.move.target.not_found": {
+    "defaultMessage": "アカウントが見つかりませんでした。@name@example.com のようなハンドルか、プロフィールのアドレスを確認してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the server found no account at what the reader entered."
+  },
+  "settings.account.move.target.own": {
+    "defaultMessage": "それはこのアカウントです。移転先のアカウントを入力してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader entered this account itself."
+  },
+  "settings.account.move.refused": {
+    "defaultMessage": "{reason, select, alias_missing {{handle} の別名に、このアカウントがまだありません。移転先のアカウントで「別名」にこのアカウントを追加してから、もう一度試してください。} target_moved {{handle} は別のアカウントへ移転済みです。その移転先のアカウントを入力してください。} target_unavailable {{handle} へは移転できません。このサーバーからそのアカウントに接続できないか、このサーバーが受け入れていません。ハンドルを確認するか、別のアカウントを選んでください。} other {このアカウントは移転してから {days, number} 日たっていないか、以前 {handle} に移転したことがあります。前回の移転から {days, number} 日たつと再び移転できますが、同じアカウントへは二度移転できません。}}",
+    "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
+  },
+  "settings.account.move.confirm": {
+    "defaultMessage": "このアカウントを {handle} に移転するには、本人確認が必要です。",
+    "description": "In the dialog Confirm it's you, opened by the button Move account on the settings page Move account: why it asks. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.submit": {
+    "defaultMessage": "アカウントを移転する",
+    "description": "The button that ends the settings page Move account: it asks the reader to confirm it's them, then moves the account."
+  },
+  "settings.account.move.moved": {
+    "defaultMessage": "このアカウントは {handle} に移転しました",
+    "description": "The summary at the top of the settings page Move account while this account has moved. {handle} is the handle of the account, as @name@example.com. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.moved.about": {
+    "defaultMessage": "フォロワーは移転先に移りました。このアカウントでは投稿・ブースト・リアクション・フォロー・投票ができません。ログイン・閲覧・データのエクスポート・アカウントの削除は引き続きできます。",
+    "description": "The muted line under the summary This account moved to… on the settings page Move account."
+  },
+  "settings.account.move.cancel": {
+    "defaultMessage": "移転の取り消し",
+    "description": "The heading of the section of the settings page Move account that holds the button Cancel the move, while this account has moved. A heading: no full stop."
+  },
+  "settings.account.move.cancel.about": {
+    "defaultMessage": "取り消すと、このアカウントで再び投稿やフォローができるようになり、移転をやめたことがほかのサーバーに伝わります。移ったフォロワーは {handle} に残ります。次の移転までの {days, number} 日は、この移転から数えます。",
+    "description": "The line under the heading Cancelling the move on the settings page Move account: what cancelling does and does not undo. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.cancel.submit": {
+    "defaultMessage": "移転を取り消す",
+    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens."
+  },
+  "settings.account.move.cancel.title": {
+    "defaultMessage": "{handle} への移転を取り消しますか？",
+    "description": "The title of the dialog opened by the button Cancel the move on the settings page Move account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.cancel.text": {
+    "defaultMessage": "すでに移ったフォロワーは戻りません。次の移転も、この移転から {days, number} 日たつまでできません。",
+    "description": "The text of the dialog Cancel the move to…? on the settings page Move account: what cancelling does not undo. days is 30."
+  },
+  "settings.account.move.cancel.keep": {
+    "defaultMessage": "取り消さない",
+    "description": "The button of the dialog Cancel the move to…? on the settings page Move account that closes it and cancels nothing, beside Cancel the move."
+  },
+  "settings.account.move.cancelled": {
+    "defaultMessage": "移転を取り消しました",
+    "description": "The summary at the top of the settings page Move account once the reader cancelled the move. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.cancelled.about": {
+    "defaultMessage": "このアカウントで再び投稿やフォローができます。移ったフォロワーは移転先のアカウントに残ります。",
+    "description": "The muted line under the summary The move is cancelled on the settings page Move account."
+  },
+  "settings.account.deactivate.effect": {
+    "defaultMessage": "無効化で起きること",
+    "description": "The heading of the first section of the settings page Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.effect.hidden": {
+    "defaultMessage": "プロフィールと投稿が隠れます",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.hidden.about. No full stop."
+  },
+  "settings.account.deactivate.effect.hidden.about": {
+    "defaultMessage": "このサーバーでもほかのサーバーでも、誰からも見えなくなります。ほかのサーバーでは、アカウントが凍結されたように表示されることがあります。無効化を表す表示がないためです。",
+    "description": "The muted line under the fact Your profile and posts are hidden on the settings page Deactivate account. Suspended is what a moderator does to an account (凍結)."
+  },
+  "settings.account.deactivate.effect.dropped": {
+    "defaultMessage": "無効化のあいだは何も届きません",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.dropped.about. No full stop."
+  },
+  "settings.account.deactivate.effect.dropped.about": {
+    "defaultMessage": "無効化のあいだに届いたメンション・DM・通知・新しいフォローは保存されず、もとに戻しても表示されません。",
+    "description": "The muted line under the fact Nothing reaches the account meanwhile on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.effect.kept": {
+    "defaultMessage": "それ以外はそのまま残ります",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.kept.about. No full stop."
+  },
+  "settings.account.deactivate.effect.kept.about": {
+    "defaultMessage": "投稿・フォロー・フォロワーはそのまま残ります。",
+    "description": "The muted line under the fact Everything else is kept on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after": {
+    "defaultMessage": "もとに戻すには",
+    "description": "The heading of the second section of the settings page Deactivate account: until when the reader can reactivate the account, and what happens after. A heading: no full stop."
+  },
+  "settings.account.deactivate.after.reactivate": {
+    "defaultMessage": "{date} までにログインすると、もとに戻せます",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. date is the day and time the account would be deleted if it were deactivated now, as the reader's locale writes them. Strong, over settings.account.deactivate.after.reactivate.about. No full stop."
+  },
+  "settings.account.deactivate.after.reactivate.about": {
+    "defaultMessage": "アカウントは無効化の前の状態に戻ります。",
+    "description": "The muted line under the fact Sign in by… to reactivate it on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after.deleted": {
+    "defaultMessage": "その後、アカウントは削除されます",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
+  },
+  "settings.account.deactivate.after.deleted.about": {
+    "defaultMessage": "「アカウントの削除」と同じく、完全に削除されます。このサーバーがメールを送る場合は、削除の日付を知らせるメールがいま 1 通届きます。削除の前にもう一度知らせることはありません。",
+    "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
+  },
+  "settings.account.deactivate.first": {
+    "defaultMessage": "無効化の前に",
+    "description": "The heading of the third section of the settings page Deactivate account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.deactivate.first.export": {
+    "defaultMessage": "無効化のあいだはデータをエクスポートできません",
+    "description": "The line under the row Export in the section Before you deactivate of the settings page Deactivate account. Without a full stop."
+  },
+  "settings.account.deactivate.act": {
+    "defaultMessage": "このアカウントを無効化",
+    "description": "The heading of the last section of the settings page Deactivate account, over the button Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.act.about": {
+    "defaultMessage": "本人確認のあと、ログアウトします。そのままにすると、アカウントは {date} に削除されます。",
+    "description": "The line under the heading Deactivate this account on the settings page Deactivate account. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.submit": {
+    "defaultMessage": "アカウントを無効化する",
+    "description": "The button that ends the settings page Deactivate account: it asks the reader to confirm it's them, then deactivates the account and signs them out."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "このアカウントを無効化するには、本人確認が必要です。",
+    "description": "In the dialog Confirm it's you, opened by the button Deactivate account on the settings page Deactivate account: why it asks."
+  },
+  "settings.account.deactivate.refused": {
+    "defaultMessage": "このアカウントはいま無効化できません",
+    "description": "The summary at the top of the settings page Deactivate account while the server would refuse the deactivation; settings.account.deactivate.refused.reason says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.deactivate.refused.reason": {
+    "defaultMessage": "{reason, select, login_restricted {モデレーションの処分により、このアカウントはログインできません。処分の内容と異議申し立ての方法は「アカウントの状態」で確認できます。} deletion_scheduled {このアカウントはすでに削除される予定です。理由は「アカウントの状態」で確認できます。} already_deactivated {このアカウントはすでに無効化されています。もとに戻すには、ログインし直してください。} moved {このアカウントは別のアカウントへ移転しました。先に「アカウントの移転」で移転を取り消してください。} registration_pending {このアカウントの登録はモデレーターの承認待ちです。承認されてから、もう一度試してください。} paid_subscription {サポーターのプランが続いています。先に解約してから、アカウントを無効化してください。} last_administrator {ログインできる管理者はこのアカウントだけで、無効化したアカウントは最後には削除されます。先にほかの人を管理者にしてください。} recently_reactivated {このアカウントは、もとに戻したばかりです。{date} から再び無効化できます。} reactivated {このアカウントは、もとに戻したばかりです。明日もう一度試してください。} other {理由はサーバーから伝えられませんでした。アプリを再読み込みしてから、もう一度試してください。}}",
+    "description": "The muted line under the summary This account cannot be deactivated now on the settings page Deactivate account: why, and what to do. date (recently_reactivated only) is the day and time from which it can be deactivated again; reactivated is the same without a known time. Account status and Move account are settings.account.status and settings.account.move: the same words."
+  },
+  "settings.account.delete.effect": {
+    "defaultMessage": "削除で起きること",
+    "description": "The heading of the first section of the settings page Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.effect.gone": {
+    "defaultMessage": "アカウントと投稿がすぐに削除されます",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.gone.about. No full stop."
+  },
+  "settings.account.delete.effect.gone.about": {
+    "defaultMessage": "このサーバーから消え、ほかのサーバーにも削除が伝えられます。",
+    "description": "The muted line under the fact Your account and posts are deleted at once on the settings page Delete account."
+  },
+  "settings.account.delete.effect.final": {
+    "defaultMessage": "取り消せません",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.final.about. No full stop."
+  },
+  "settings.account.delete.effect.final.about": {
+    "defaultMessage": "考え直すための期間はありません。しばらく戻れるようにしておくには、代わりにアカウントを無効化してください。",
+    "description": "The muted line under the fact It cannot be undone on the settings page Delete account."
+  },
+  "settings.account.delete.effect.username": {
+    "defaultMessage": "ユーザー名は二度と使えません",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.username.about. No full stop."
+  },
+  "settings.account.delete.effect.username.about": {
+    "defaultMessage": "あなたを含め、誰もこのサーバーで {username} をもう一度登録できません。",
+    "description": "The muted line under the fact The username is never free again on the settings page Delete account. {username} is the account's username on this server with its @, as @name."
+  },
+  "settings.account.delete.effect.erased": {
+    "defaultMessage": "データは {days, number} 日後に消去されます",
+    "description": "A fact in the section What deleting does of the settings page Delete account. days is 7. Strong, over settings.account.delete.effect.erased.about. No full stop."
+  },
+  "settings.account.delete.effect.erased.about": {
+    "defaultMessage": "それまではサーバーに残りますが、誰にも見えません。",
+    "description": "The muted line under the fact The data is erased 7 days later on the settings page Delete account."
+  },
+  "settings.account.delete.first": {
+    "defaultMessage": "削除の前に",
+    "description": "The heading of the second section of the settings page Delete account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.delete.first.export": {
+    "defaultMessage": "削除したあとは、データをエクスポートできません",
+    "description": "The line under the row Export in the section Before you delete of the settings page Delete account. Without a full stop."
+  },
+  "settings.account.delete.act": {
+    "defaultMessage": "このアカウントを削除",
+    "description": "The heading of the last section of the settings page Delete account, over the button Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.act.about": {
+    "defaultMessage": "本人確認のあと、アカウントはすぐに削除され、ログアウトします。",
+    "description": "The line under the heading Delete this account on the settings page Delete account."
+  },
+  "settings.account.delete.submit": {
+    "defaultMessage": "アカウントを削除する",
+    "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "このアカウントを完全に削除するには、本人確認が必要です。",
+    "description": "In the dialog Confirm it's you, opened by the button Delete account on the settings page Delete account: why it asks."
   },
   "settings.security.sign_in": {
     "defaultMessage": "ログイン",

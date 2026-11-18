@@ -57,6 +57,9 @@ export const notificationSettingsPath = "/settings/notifications";
 /** The address of the settings' screen that exports the reader's data: the archive, and the CSV files. */
 export const dataExportPath = "/settings/account/export";
 
+/** The address of the settings' screen that moves the reader's account to another account. */
+export const accountMovePath = "/settings/account/move";
+
 /** The address of the settings' screen of the automatic deletion of the reader's old posts. */
 export const autoDeletePath = "/settings/account/auto-delete";
 

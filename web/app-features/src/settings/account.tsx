@@ -45,6 +45,7 @@ import {
   useTimeZone,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
+import { AccountDeparture, AccountEnd } from "./account-leave";
 import type { SettingsEntryProps } from "./entries";
 
 /** The address of the entry's screen. */
@@ -294,6 +295,8 @@ export function AccountSettings({ back }: SettingsEntryProps) {
       <AccountStatus />
       <AccountData />
       <AccountArrival />
+      <AccountDeparture />
+      <AccountEnd />
     </SettingsScreen>
   );
 }

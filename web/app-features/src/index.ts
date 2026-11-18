@@ -103,6 +103,15 @@ export {
   type AccountAutoDeleteProps,
 } from "./settings/account-auto-delete";
 export { AccountAliasesScreen, loadAccountAliases, useAccountAliasesTitle } from "./settings/account-aliases";
+export { AccountMoveScreen, loadAccountMoveSettings, useAccountMoveTitle } from "./settings/account-move";
+export {
+  AccountDeactivateScreen,
+  AccountDeleteScreen,
+  loadAccountDeactivateSettings,
+  loadAccountDeleteSettings,
+  useAccountDeactivateTitle,
+  useAccountDeleteTitle,
+} from "./settings/account-end";
 export { loadProfileEdit, ProfileEdit, useProfileEditTitle, type ProfileEditProps } from "./settings/profile-edit";
 export { FilterEdit, loadFilterEdit, useFilterEditTitle, type FilterEditProps } from "./settings/filter-edit";
 export { loadRelationshipSettings, RelationshipListScreen, useRelationshipListTitle } from "./settings/relationships";

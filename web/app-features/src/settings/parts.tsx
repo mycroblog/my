@@ -5,7 +5,8 @@
 // Security, Apps and Invites, a number and the dates of a row, in the reader's language and time zone; a value to
 // copy, with the button that copies it and what came of copying; the confirmation before what a row's button ends,
 // which asks no proof and says in the server's words why it did not happen; the way of the focus to the field a form
-// says is at fault; and the focus of a view that takes another's place, on what it says first.
+// says is at fault; and the focus of a view that takes another's place, on what it says first, at once or once the
+// dialog over it has left.
 
 import {
   Box,
@@ -21,7 +22,7 @@ import {
   wallTime,
 } from "@my/design-system";
 import { copyText } from "@my/platform";
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { stringsIn } from "../locale";
 import { saidOf, useGone } from "./confirmation";
 
@@ -165,6 +166,7 @@ const nothing = () => undefined;
 export function Asking({
   title,
   confirm,
+  cancel,
   run,
   onClose,
   onLeft,
@@ -172,6 +174,8 @@ export function Asking({
 }: {
   title: string;
   confirm: string;
+  /** The name of the button that closes it with nothing done, where Cancel would read as the confirmation (Cancel the move). */
+  cancel?: string | undefined;
   run: () => Promise<unknown>;
   onClose: () => void;
   /**
@@ -189,7 +193,7 @@ export function Asking({
   return (
     <ConfirmDialog
       title={title}
-      cancel={t("settings.confirm.cancel")}
+      cancel={cancel ?? t("settings.confirm.cancel")}
       confirm={confirm}
       busy={busy}
       onCancel={onClose}
@@ -252,4 +256,33 @@ export function useFocusOnArrival(target: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     target.current?.focus();
   }, [target]);
+}
+
+/**
+ * Gives the focus to `target` once the dialog over the screen has left, for what took a view's place under that
+ * dialog (the summary of an account that has just moved, in the form's place): `expect` says that `target` will hold
+ * what just happened, and `settle`, the same function at every render, is given to the dialog to call once it is out
+ * of the document (`left` of a confirmation, `onLeft` of `Asking`). Until then the dialog holds the focus; after, the
+ * control that opened it is gone with the view it stood in. A dialog that leaves with nothing expected moves nothing.
+ * `target` is a ref the screen makes and gives that element.
+ */
+export function useFocusAfterDialog(target: RefObject<HTMLElement | null>): { expect: () => void; settle: () => void } {
+  /** Each leaving of a dialog over the screen, counted. */
+  const [settled, setSettled] = useState(0);
+  /** Something was said and the focus has not been moved to it yet. */
+  const waits = useRef(false);
+  const [settle] = useState(() => () => {
+    setSettled((n) => n + 1);
+  });
+  useEffect(() => {
+    if (settled === 0 || !waits.current) return;
+    waits.current = false;
+    target.current?.focus();
+  }, [settled, target]);
+  return {
+    expect: () => {
+      waits.current = true;
+    },
+    settle,
+  };
 }

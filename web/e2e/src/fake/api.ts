@@ -735,6 +735,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     password: personOf(viewer).password,
     viewerId: visitor ? undefined : idOf(viewer),
     accountExists: (id) => usernameOf.has(id),
+    accountId: (username) => accountId.get(username),
     ownStatuses: () => posts.filter((p) => p.author === viewer && visible(p)).map((p) => statusOf(p)),
     settings: { ...defaultSettings, ...o.settings },
   });
@@ -762,7 +763,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const remote = domainOf(p.username);
     const own = p.username === viewer && !visitor;
     const username = remote === undefined ? p.username : p.username.slice(0, p.username.indexOf("@"));
-    const moved = movedOf(p.username);
+    // The reader's own account moves, and comes back, by the settings (settings.ts); another's by the seed.
+    const moved = own ? usernameOf.get(personal.movedTo() ?? "") : movedOf(p.username);
     return exact<Account>()({
       id: idOf(p.username),
       username,
