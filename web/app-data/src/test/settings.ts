@@ -24,6 +24,13 @@ export const kindOf = (error: ProblemError) => error.problem.type.split("/").at(
 /** Whether a read of the cache is marked for a new read. */
 export const marked = (data: AppData, key: QueryKey) => data.queryClient.getQueryState(key)?.isInvalidated;
 
+/** Resolves once `reads` reads of the cache are on their way, none by default: every read answered. */
+export async function settled(data: AppData, reads = 0): Promise<void> {
+  // A turn first: a read asked for in this turn starts in the next.
+  do await new Promise((turn) => setTimeout(turn, 0));
+  while (data.queryClient.isFetching() !== reads);
+}
+
 /** A confirmation with a passkey, which the fake accepts once. */
 export async function passkeyConfirmation(data: AppData): Promise<Extract<Confirmation, { kind: "passkey" }>> {
   const { data: began } = await data.api.POST("/passkeys/confirmation");

@@ -15,8 +15,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import * as partStories from "./settings-parts.stories";
 import {
+  CopyBlock,
   SettingRow,
   SettingsEmpty,
+  SettingsFacts,
   SettingsGroup,
   SettingsItem,
   SettingsList,
@@ -275,6 +277,68 @@ test("an empty list's place says so, then leads to adding", () => {
     true,
   );
   expect(section.queryAllByRole("list")).toHaveLength(0);
+});
+
+// ---- Facts, and what a reader copies ------------------------------------------------------------------------------
+
+test("the facts a section states are a list named by its label: a fact an item, the lines about it after it in their order, and nothing to press", () => {
+  render(
+    <SettingsSection heading="Permissions that need your attention" count="2">
+      <SettingsFacts
+        label="Permissions that need your attention"
+        items={[
+          { text: "Read your account, posts, and timelines", about: ["Can read your direct messages"] },
+          {
+            text: "Post and change things for you",
+            about: ["Can post, edit and delete posts as you", "Can change your profile"],
+          },
+          { text: "Receive push notifications" },
+        ]}
+      />
+    </SettingsSection>,
+  );
+
+  // The list is named by its label alone: the count beside the heading is the section's.
+  const list = within(screen.getByRole("list", { name: "Permissions that need your attention" }));
+  const [read, write, push, ...others] = list.getAllByRole("listitem").map((item) => item.textContent);
+  expect(others).toEqual([]);
+  expect(read).toMatch(/^Read your account, posts, and timelines\s*Can read your direct messages$/);
+  expect(write).toMatch(
+    /^Post and change things for you\s*Can post, edit and delete posts as you\s*Can change your profile$/,
+  );
+  expect(push).toBe("Receive push notifications");
+  expect([...list.queryAllByRole("button"), ...list.queryAllByRole("link")]).toHaveLength(0);
+});
+
+test("what a reader copies is a list named by its label, a value an item, whole; its action stands after the values, and its result in a status that is there from the start", () => {
+  const secret = "my_cs_Jq3vX8nB2mK7pL0wR5tY9uE4iO6aS1dF3gH8jZ2xC7v";
+  const block = (result?: string) => (
+    <CopyBlock
+      label="Client secret"
+      values={[secret, "q6b4k-rs"]}
+      action={<Button>Copy secret</Button>}
+      result={result}
+    />
+  );
+  const { rerender } = render(block());
+
+  const list = screen.getByRole("list", { name: "Client secret" });
+  expect(
+    within(list)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent),
+  ).toEqual([secret, "q6b4k-rs"]);
+  const copy = screen.getByRole("button", { name: "Copy secret" });
+  expect(before(list, copy)).toBe(true);
+  const place = screen.getByRole("status");
+  expect(place.textContent).toBe("");
+
+  rerender(block("Copied"));
+
+  // The same region, so that what comes into it is read.
+  expect(screen.getByRole("status") === place).toBe(true);
+  expect(place.textContent).toBe("Copied");
+  expect(screen.getByRole("button", { name: "Copy secret" }) === copy).toBe(true);
 });
 
 // ---- A setting's row ----------------------------------------------------------------------------------------------

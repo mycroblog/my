@@ -1,22 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import { authorizedAppsQuery } from "./authorized-apps";
 import {
   createOAuthApp,
   deleteOAuthApp,
   issueOAuthAppToken,
   oAuthAppQuery,
+  oAuthAppRegistrationOff,
   oAuthAppsQuery,
   rotateOAuthAppSecret,
   updateOAuthApp,
   useOAuthApp,
+  useOAuthAppRead,
+  useOAuthAppRegistrationOff,
   useOAuthApps,
+  useOAuthAppsRead,
   useOAuthAppWrites,
   type CreateOAuthApp,
 } from "./oauth-apps";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
-import { kindOf, refusal } from "./test/settings";
+import { kindOf, refusal, settled } from "./test/settings";
 
 const request = (more: Partial<CreateOAuthApp> = {}): CreateOAuthApp => ({
   name: "Reading list",
@@ -45,6 +50,140 @@ describe("useOAuthApps and useOAuthApp", () => {
     await data.queryClient.query(oAuthAppQuery(data, id));
     expect(probe(data, () => useOAuthApp(id))?.id).toBe(id);
   });
+});
+
+// That a read failed, or that the server knows no such app (`failed`, `missing`), is pinned on a client's render
+// (app-features, settings/apps/*.dom.test.tsx): to a hook rendered once on the server, as the probe renders it, a
+// read that failed is one that has not answered.
+describe("useOAuthAppsRead", () => {
+  test("is loading until the reader's own apps are read, whatever is read of the apps they authorized", async () => {
+    const { data } = fakeData();
+    await data.queryClient.query(authorizedAppsQuery(data));
+    expect(probe(data, useOAuthAppsRead).status).toBe("loading");
+
+    await data.queryClient.query(oAuthAppsQuery(data));
+
+    expect(probe(data, useOAuthAppsRead).status).toBe("read");
+  });
+
+  test("retry reads the list again when it could not be read", async () => {
+    const { data, fake } = fakeData();
+    const asked = fake.script("GET /oauth_apps", { fail: 500, times: 1 });
+    await data.queryClient.query(oAuthAppsQuery(data)).catch(() => undefined);
+    expect(probe(data, useOAuthAppsRead).status).not.toBe("read");
+
+    probe(data, useOAuthAppsRead).retry();
+    await asked.served(2);
+    await settled(data);
+
+    expect(probe(data, useOAuthAppsRead).status).toBe("read");
+    expect(probe(data, useOAuthApps)?.length).toBe(3);
+  });
+});
+
+describe("useOAuthAppRead", () => {
+  test("is loading until the app is read, then read", async () => {
+    const { data, confidential } = await read();
+    const id = confidential?.id ?? "";
+    expect(probe(data, () => useOAuthAppRead(id)).status).toBe("loading");
+
+    await data.queryClient.query(oAuthAppQuery(data, id));
+
+    expect(probe(data, () => useOAuthAppRead(id)).status).toBe("read");
+  });
+
+  test("retry reads the app again when the server could not answer", async () => {
+    const { data, fake, confidential } = await read();
+    const id = confidential?.id ?? "";
+    const asked = fake.script("GET /oauth_apps/{id}", { fail: 500, times: 1 });
+    await data.queryClient.query(oAuthAppQuery(data, id)).catch(() => undefined);
+    expect(probe(data, () => useOAuthAppRead(id)).status).not.toBe("read");
+
+    probe(data, () => useOAuthAppRead(id)).retry();
+    await asked.served(2);
+    await settled(data);
+
+    expect(probe(data, () => useOAuthAppRead(id)).status).toBe("read");
+    expect(probe(data, () => useOAuthApp(id))?.id).toBe(id);
+  });
+});
+
+describe("useOAuthAppRegistrationOff", () => {
+  test("is false before the list is read, and on a server that lets users register apps", async () => {
+    const { data } = fakeData();
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+
+    await data.queryClient.query(oAuthAppsQuery(data));
+
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+  });
+
+  test("is false before the list is read, and true as soon as it is on a server that does not, with no registration tried", async () => {
+    const { data, requests } = fakeData({ access: { oauthApps: "disabled" } });
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+
+    await data.queryClient.query(oAuthAppsQuery(data));
+
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(true);
+    expect(requests).toEqual(["GET /oauth_apps"]);
+  });
+});
+
+// A server whose list said the reader could register (`can_create`), and whose administrators turned registration off
+// since: the refusal of a registration is how the app learns it.
+describe("a registration refused because the administrators turned registration off", () => {
+  const off = {
+    type: "/api/v1/problems/oauth-app-registration-disabled",
+    title: "App registration is turned off",
+    status: 403,
+  };
+
+  test("is told from any other refusal", async () => {
+    const { data, fake } = fakeData();
+    fake.script("POST /oauth_apps", { fail: off, times: 1 });
+
+    expect(oAuthAppRegistrationOff(await refusal(createOAuthApp(data, request())))).toBe(true);
+    expect(oAuthAppRegistrationOff(await refusal(createOAuthApp(data, request({ name: " " }))))).toBe(false);
+    expect(oAuthAppRegistrationOff(new Error("test: no answer"))).toBe(false);
+  });
+
+  test("is written into the list the cache holds, its apps as they were, and registration is off from then on", async () => {
+    const { data, fake, apps } = await read();
+    fake.script("POST /oauth_apps", { fail: off });
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+
+    await refusal(createOAuthApp(data, request()));
+
+    expect(data.queryClient.getQueryData(oAuthAppsQuery(data).queryKey)).toEqual({ items: apps, can_create: false });
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(true);
+    expect(probe(data, useOAuthApps)?.map((a) => a.id)).toEqual(apps.map((a) => a.id));
+  });
+
+  test("writes no list where the cache holds none", async () => {
+    const { data, fake } = fakeData();
+    fake.script("POST /oauth_apps", { fail: off });
+
+    await refusal(createOAuthApp(data, request()));
+
+    expect(data.queryClient.getQueryData(oAuthAppsQuery(data).queryKey)).toBeUndefined();
+    expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+  });
+
+  for (const [what, fail] of [
+    ["a refused setting", { type: "about:blank", title: "This could not be done.", status: 422, field: "name" }],
+    ["too many apps", { type: "/api/v1/problems/too-many-oauth-apps", title: "Too many apps", status: 409 }],
+    ["another 403", { type: "about:blank", title: "Forbidden", status: 403 }],
+    ["a server that failed", { type: "about:blank", title: "Internal Server Error", status: 500 }],
+  ] as const)
+    test(`${what} leaves the list saying that the reader may register`, async () => {
+      const { data, fake, apps } = await read();
+      fake.script("POST /oauth_apps", { fail });
+
+      await refusal(createOAuthApp(data, request()));
+
+      expect(data.queryClient.getQueryData(oAuthAppsQuery(data).queryKey)).toEqual({ items: apps, can_create: true });
+      expect(probe(data, useOAuthAppRegistrationOff)).toBe(false);
+    });
 });
 
 describe("createOAuthApp", () => {

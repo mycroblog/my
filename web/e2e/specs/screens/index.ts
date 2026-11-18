@@ -8,6 +8,7 @@
 // reload aborts the unanswered request and the server drops the write.
 
 export { AccountNote } from "./account-note";
+export { Apps } from "./apps";
 export { ArticleText } from "./article";
 export { ArticleEditor, type Upload } from "./article-editor";
 export { Composer } from "./composer";

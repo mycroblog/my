@@ -273,6 +273,28 @@ test("a text field of the search type is a searchbox, and one of several lines t
   expect(bio.value).toBe("One\nTwo");
 });
 
+test("a text field of several lines shows as many rows as it is given, and is named and described as any other", () => {
+  render(
+    <TextField
+      id="redirect"
+      name="redirect_uris"
+      label="Redirect URIs"
+      hint="One per line."
+      multiline
+      rows={3}
+      defaultValue={"https://a.example/callback\nhttps://b.example/callback"}
+    />,
+  );
+
+  const field = screen.getByRole<HTMLTextAreaElement>("textbox", {
+    name: "Redirect URIs",
+    description: "One per line.",
+  });
+  // The attribute: happy-dom answers the property as the attribute's text.
+  expect(field.getAttribute("rows")).toBe("3");
+  expect(field.value).toBe("https://a.example/callback\nhttps://b.example/callback");
+});
+
 test("a text field carries what the browser and the keyboard need of it: its kind, autofill, its limits", async () => {
   const user = userEvent.setup();
   render(
