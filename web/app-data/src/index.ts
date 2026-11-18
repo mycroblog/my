@@ -237,6 +237,7 @@ export {
   useOAuthApp,
   useOAuthAppRead,
   useOAuthAppRegistrationOff,
+  useOAuthAppsRead,
   useOAuthApps,
   useOAuthAppWrites,
   type CreateOAuthApp,

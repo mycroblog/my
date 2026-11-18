@@ -8,8 +8,8 @@
 //   way to revoke it. The server's own web client is one of them.
 // - Your apps: each by its name, its type and the day it was registered, and that the administrators disabled it where
 //   they did; a row opens the app's screen (app.tsx), and Register an app the screen that registers one
-//   (register.tsx). Whether the server lets users register apps, the API says only by refusing a registration: from
-//   then on the section says so in the button's place, and the apps registered before stay listed.
+//   (register.tsx). Where the server's administrators turned registration off, which the list itself says, the
+//   section says so in the button's place, and the apps registered before stay listed.
 
 import {
   loadApps,

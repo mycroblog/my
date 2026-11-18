@@ -2,8 +2,8 @@
 
 // Apps, the entry of the settings at /settings/apps (#3206), and the screens under it, on the fake server: the entry
 // as an account reads it, the server's own web client among the apps it authorized and three apps of its own, one of
-// them disabled; with no app in either list; on a server whose administrators turned registration off, once a
-// registration was refused (the server says it nowhere else); while it loads, and when it could not be read. Under it:
+// them disabled; with no app in either list; on a server whose administrators turned registration off, which the list
+// of the reader's apps says; while it loads, and when it could not be read. Under it:
 // an authorized app of each kind of registration, the server's own web client, whose revocation signs every browser
 // out, and an address that names none; the form that registers an app; an app of the reader's, confidential, public
 // and disabled, and an address that names none; and the form that issues a token, also for a disabled app. What a
@@ -32,9 +32,9 @@ export const Entry: Story = {};
 export const NoApps: Story = {
   parameters: screen({ at: apps, server: { access: { authorizedApps: "none", oauthApps: "none" } } }),
 };
-/** A server that does not let users register apps, once it refused one: the section says so, with no way to register. */
+/** A server that does not let users register apps: the section says so, with no way to register. */
 export const RegistrationOff: Story = {
-  parameters: screen({ at: apps, server: { access: { oauthApps: "disabled" } }, registrationTried: true }),
+  parameters: screen({ at: apps, server: { access: { oauthApps: "disabled" } } }),
 };
 /** The entry while what it shows loads. */
 export const Loading: Story = { parameters: screen({ at: apps, state: "loading" }) };
@@ -58,9 +58,9 @@ export const AuthorizedMissing: Story = { parameters: screen({ at: authorized(9)
 
 /** Registering an app: the empty form. */
 export const Register: Story = { parameters: screen({ at: `${apps}/new` }) };
-/** The same form on a server that refused a registration: it says so in the form's place. */
+/** The same screen on a server that does not let users register apps: it says so in the form's place. */
 export const RegisterOff: Story = {
-  parameters: screen({ at: `${apps}/new`, server: { access: { oauthApps: "disabled" } }, registrationTried: true }),
+  parameters: screen({ at: `${apps}/new`, server: { access: { oauthApps: "disabled" } } }),
 };
 /** A confidential app: its client ID, a new secret, a token, its settings, and deleting it. */
 export const OwnConfidential: Story = { parameters: screen({ at: own(0) }) };

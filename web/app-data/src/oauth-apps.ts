@@ -2,8 +2,8 @@
 // The OAuth apps the reader registers for a bot, a script or a client of their own (ADR-0090): the list, one app, making
 // one (a confidential app's secret comes in that answer only), changing it, deleting it, making a new secret and issuing
 // a token of it for the reader's own account (the token is in that answer only). Each write puts what it changed in the
-// cache. Whether the server lets users register apps, the API says only by refusing a registration: the cache keeps
-// that refusal, for the screens to say so from then on.
+// cache. Whether the server lets users register apps, the list says (`can_create`), and a registration refused
+// because it does not corrects the list in the cache: the administrators turned registration off since it was read.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
@@ -36,9 +36,6 @@ export function oAuthAppQuery({ queries }: AppData, id: string) {
   return queries.queryOptions("get", "/oauth_apps/{id}", { params: { path: { id } } });
 }
 
-/** Where the cache keeps that the server refused a registration because its users may not register apps. */
-const registrationOffKey = ["local", "oauth-app-registration-off"] as const;
-
 /** Whether `error` is the server's refusal of a registration because its users may not register apps (the 403). */
 export function oAuthAppRegistrationOff(error: unknown): boolean {
   return error instanceof ProblemError && error.type === "/api/v1/problems/oauth-app-registration-disabled";
@@ -46,13 +43,17 @@ export function oAuthAppRegistrationOff(error: unknown): boolean {
 
 /**
  * Registers an app, and puts it in the cache. It rejects with the server's problem: a setting that breaks a rule (422,
- * `field` names it), 25 apps already (409), a server that does not let users register apps (403, which the cache
- * keeps: `useOAuthAppRegistrationOff`), too many an hour (429).
+ * `field` names it), 25 apps already (409), a server that does not let users register apps (403: the list in the cache
+ * then says so too, as `useOAuthAppRegistrationOff` reads it), too many an hour (429).
  */
 export async function createOAuthApp(data: AppData, request: CreateOAuthApp): Promise<OAuthAppCreated> {
   const { queryClient } = data;
   const { data: created } = await data.api.POST("/oauth_apps", { body: request }).catch((error: unknown) => {
-    if (oAuthAppRegistrationOff(error)) queryClient.setQueryData<boolean>(registrationOffKey, true);
+    // Turned off since the list was read: the list is corrected, for the screens that read it.
+    if (oAuthAppRegistrationOff(error))
+      queryClient.setQueryData<OAuthAppList>(oAuthAppsQuery(data).queryKey, (now) =>
+        now === undefined ? now : { ...now, can_create: false },
+      );
     throw error;
   });
   if (created === undefined) throw new Error("app-data: /oauth_apps answered without the app");
@@ -145,20 +146,27 @@ export function useOAuthAppRead(id: string): {
 }
 
 /**
- * Whether the server refused a registration of the reader's because its users may not register apps: false until it
- * did, since the API says so nowhere else, and for as long as the cache lives (it is emptied by signing out).
+ * Where the read of the reader's apps is, for a screen that needs the list alone (registering an app): `read` once the
+ * server answered, `failed` when it did not, with `retry`, which reads it again, and `loading` until then.
+ */
+export function useOAuthAppsRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+  const read = useQuery(oAuthAppsQuery(useAppData()));
+  return {
+    // What was read stays read: a later read of it that fails leaves the screen what it had.
+    status: read.data !== undefined ? "read" : read.status === "error" && !read.isFetching ? "failed" : "loading",
+    retry: () => {
+      void read.refetch();
+    },
+  };
+}
+
+/**
+ * Whether the server's administrators turned registration by users off, as the list of the reader's apps says
+ * (`can_create`: the instance's setting alone, not the most apps a user has nor how many an hour); false until the
+ * list is read. The apps registered before stay listed and keep working.
  */
 export function useOAuthAppRegistrationOff(): boolean {
-  return (
-    useQuery<boolean>({
-      queryKey: registrationOffKey,
-      // Never asked of the server: a refused registration writes it (createOAuthApp).
-      queryFn: () => false,
-      enabled: false,
-      staleTime: Infinity,
-      gcTime: Infinity,
-    }).data === true
-  );
+  return useQuery(oAuthAppsQuery(useAppData())).data?.can_create === false;
 }
 
 export type OAuthAppWrites = {

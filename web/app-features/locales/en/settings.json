@@ -825,7 +825,7 @@
   },
   "settings.apps.own.off": {
     "defaultMessage": "This server's administrators have turned off app registration, so you cannot register an app now. Apps registered before keep working.",
-    "description": "A sentence in the section Your apps, in the place of the button Register an app, and in the place of the form on the page Register an app, once the server refused a registration because its administrators do not let users register apps."
+    "description": "A sentence in the section Your apps, in the place of the button Register an app, and in the place of the form on the page Register an app, on a server whose administrators do not let users register apps."
   },
   "settings.apps.own.registered": {
     "defaultMessage": "Registered {date}",

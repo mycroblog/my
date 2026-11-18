@@ -12,7 +12,6 @@
 
 import {
   createAppData,
-  createOAuthApp,
   receiveHomeGap,
   receiveHomeStatuses,
   receiveNotification,
@@ -62,11 +61,6 @@ export type Fake = {
   call?: boolean;
   /** A newer build of the app waits (the service worker's), which a toast offers. */
   updateReady?: boolean;
-  /**
-   * The reader has tried to register an app before the story opens, and a server that does not let users register
-   * apps (`server.access.oauthApps: "disabled"`) refused it: the API says so nowhere else, and the app's data keeps it.
-   */
-  registrationTried?: boolean;
 };
 
 /** What the Stream panel offers a story: new posts and reconnections of the home timeline, or notifications. */
@@ -242,7 +236,6 @@ function StoryApp({
   server,
   call = false,
   updateReady = false,
-  registrationTried = false,
   stream,
 }: Fake & { stream: Stream | undefined }) {
   const [{ fake, data, router, watch }] = useState(() => {
@@ -259,11 +252,6 @@ function StoryApp({
       undefined,
       watch,
     );
-    // The refusal is the one place the server says its users may not register apps; the data keeps it.
-    if (registrationTried)
-      void createOAuthApp(data, { name: "A bot", redirect_uris: [], scope: "read", client_type: "public" }).catch(
-        () => undefined,
-      );
     const router = createAppRouter({
       data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },

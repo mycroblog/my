@@ -7,14 +7,19 @@
 // Apps, whose list holds the app.
 //
 // What the server refuses of a field shows under that field, and anything else right before the button, in the
-// server's words (25 apps already, too many registered within the hour). A server whose administrators turned
-// registration off answers so only to a registration: from then on the screen says it in the form's place, as the
-// section of Apps does.
+// server's words (25 apps already, too many registered within the hour). Where the server's administrators turned
+// registration off, which the list of the reader's apps says, the screen says so in the form's place from the first
+// read, as the section of Apps does, and offers no form; until that list is read it says that it loads, or that it
+// could not be read. Registration turned off while the form was open is told by the refusal, and the screen then says
+// the same.
 
 import {
   oAuthAppRegistrationOff,
+  oAuthAppsQuery,
   useOAuthAppRegistrationOff,
+  useOAuthAppsRead,
   useOAuthAppWrites,
+  type AppData,
   type OAuthAppCreated,
 } from "@my/app-data";
 import {
@@ -40,11 +45,20 @@ import {
   type AppFaults,
   type AppType,
 } from "./form";
-import { Once } from "./parts";
+import { Once, Unread } from "./parts";
+
+/**
+ * What the loader of the screen waits for: the list of the reader's apps, which says whether the server lets users
+ * register one, from the cache when it has it; a read that fails is the screen's to say.
+ */
+export async function loadAppRegister(data: AppData): Promise<void> {
+  await data.queryClient.query({ ...oAuthAppsQuery(data), staleTime: Infinity }).catch(() => undefined);
+}
 
 export function AppRegister({ onBack }: SettingsSubProps) {
   const { t } = stringsIn(useLocale().locale);
   const { create } = useOAuthAppWrites();
+  const { status, retry } = useOAuthAppsRead();
   const off = useOAuthAppRegistrationOff();
   const [type, setType] = useState<AppType>("confidential");
   const [busy, setBusy] = useState(false);
@@ -83,13 +97,25 @@ export function AppRegister({ onBack }: SettingsSubProps) {
     const request = { ...needed, client_type: type, ...(website === "" ? {} : { website }) };
     create(request).then(setMade, (error: unknown) => {
       setBusy(false);
-      // The screen says it in the form's place, from what the data keeps of the refusal.
+      // Turned off since the list was read: the data corrects the list, and the screen says it in the form's place.
       if (oAuthAppRegistrationOff(error)) return;
       const { faults: refused, refused: placed } = refusedOf(error);
       setFaults(refused);
       setSaid(placed.reason ?? t("settings.confirm.failed"));
     });
   };
+
+  const back = <BackButton onPress={onBack}>{t("settings.entry.apps")}</BackButton>;
+  // Whether the server lets users register apps is not known before the list is read: no form until then.
+  if (status !== "read")
+    return (
+      <SettingsScreen
+        sub
+        title={t("settings.apps.register")}
+        back={back}
+        notice={<Unread status={status} retry={retry} />}
+      />
+    );
 
   return (
     <form
@@ -102,7 +128,7 @@ export function AppRegister({ onBack }: SettingsSubProps) {
       <SettingsScreen
         sub
         title={t("settings.apps.register")}
-        back={<BackButton onPress={onBack}>{t("settings.entry.apps")}</BackButton>}
+        back={back}
         foot={
           off ? undefined : (
             <SubmitBar result={said === undefined ? undefined : <FormAlert>{said}</FormAlert>}>

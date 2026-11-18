@@ -1,14 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Registering an app, at /settings/apps/new, a screen under the settings' Apps (ADR-0090 §1): the form, and once the
-// app is registered its client ID and its secret, shown once. Back, in its head, goes to Apps. Without a session it
-// asks the reader to sign in.
+// app is registered its client ID and its secret, shown once; where the server does not let users register apps, that
+// in the form's place. Back, in its head, goes to Apps. Without a session it asks the reader to sign in.
 
-import { AppRegister, useAppsTitle } from "@my/app-features";
+import { AppRegister, loadAppRegister, useAppsTitle } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
+import { screenLoad } from "../screen-load";
 import { SettingsUnder } from "../shell/settings";
 
 export const Route = createFileRoute("/settings/apps/new")({
+  loader: ({ context }) => screenLoad(context, loadAppRegister),
   component: RegisterScreen,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },
