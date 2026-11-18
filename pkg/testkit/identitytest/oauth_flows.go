@@ -563,6 +563,68 @@ func oauthWebSignOutEndsTheBrowserSession(t *testing.T, e *AccountEnv) {
 	}
 }
 
+// sessionSignOutEndsTheWebClientsTokens checks that signing out of the browser ends the session and
+// the web client's token families that started from it, and nothing else (ADR-0090 §13).
+func sessionSignOutEndsTheWebClientsTokens(t *testing.T, e *AccountEnv) {
+	ctx := t.Context()
+	e.SessionUser(t)
+	e.ThirdPartyApp(t)
+	exchange := func(req appidentity.AuthorizationRequest, creds appidentity.ClientCredentials, session identity.Session) appidentity.IssuedTokens {
+		t.Helper()
+		got, err := e.Identity.ExchangeAuthorizationCode(ctx, appidentity.CodeExchange{
+			ClientCredentials: creds, Code: e.CodeInSession(t, req, session), RedirectURI: req.RedirectURI, CodeVerifier: ContractCodeVerifier,
+		})
+		if err != nil {
+			t.Fatalf("ExchangeAuthorizationCode(%s) = %v", creds.ClientID, err)
+		}
+		return got
+	}
+	appRequest := appidentity.AuthorizationRequest{
+		ResponseType: "code", ClientID: contractAppClientID, RedirectURI: contractAppRedirect,
+		CodeChallenge: identity.S256Challenge(ContractCodeVerifier), CodeChallengeMethod: "S256",
+	}
+
+	first := e.SignIn(t, appidentity.SignInInput{})
+	second := e.SignIn(t, appidentity.SignInInput{})
+	web := exchange(WebAuthorizationRequest(), WebCreds, first.Session)
+	rotated, err := e.Identity.RefreshWebClient(ctx, web.RefreshToken)
+	if err != nil {
+		t.Fatalf("RefreshWebClient = %v", err)
+	}
+	otherWeb := exchange(WebAuthorizationRequest(), WebCreds, second.Session)
+	app := exchange(appRequest, appCreds, first.Session)
+
+	for range 2 { // signing out twice with the same token is harmless
+		if err := e.Identity.SignOut(ctx, first.Token); err != nil {
+			t.Fatalf("SignOut = %v", err)
+		}
+	}
+	e.wantInvalidSession(t, first.Token, "the signed-out session")
+	e.WantAccess(t, rotated.AccessToken, false, "the web client's access token of the signed-out session")
+	_, err = e.Identity.RefreshWebClient(ctx, rotated.RefreshToken)
+	wantOAuthError(t, err, appidentity.OAuthInvalidGrant, "the web client's refresh token of the signed-out session")
+
+	// Another session, its family, and the third-party app are untouched.
+	if _, err := e.Identity.Authenticate(ctx, second.Token); err != nil {
+		t.Errorf("Authenticate(another session) = %v, want it to stay", err)
+	}
+	e.WantAccess(t, otherWeb.AccessToken, true, "the web client's token of another session")
+	otherRotated, err := e.Identity.RefreshWebClient(ctx, otherWeb.RefreshToken)
+	if err != nil {
+		t.Fatalf("RefreshWebClient(another session) = %v, want it to work", err)
+	}
+	e.WantAccess(t, app.AccessToken, true, "a third-party app's token authorized in the signed-out session")
+	if _, err := e.Identity.RefreshAccessToken(ctx, appidentity.RefreshRequest{ClientCredentials: appCreds, RefreshToken: app.RefreshToken}); err != nil {
+		t.Errorf("RefreshAccessToken(app) = %v, want it to work", err)
+	}
+
+	// An unknown token ends nothing.
+	if err := e.Identity.SignOut(ctx, "unknown"); err != nil {
+		t.Errorf("SignOut(unknown) = %v, want nil", err)
+	}
+	e.WantAccess(t, otherRotated.AccessToken, true, "the web client's token after signing out with an unknown token")
+}
+
 // WebTokensFor exchanges a code of the web client for tokens of an existing user.
 func (e *AccountEnv) WebTokensFor(t *testing.T, userID string) (appidentity.IssuedTokens, string) {
 	t.Helper()

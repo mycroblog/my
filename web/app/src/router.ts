@@ -14,26 +14,44 @@ import { routeTree } from "./routeTree.gen";
 import { navigationKind } from "./transitions";
 
 /**
- * What every route reads: the session's data (null without a session), the instance's configuration, and whether a
- * screen is in place yet (the first load has ended).
+ * What every route reads: the session's data (null without a session), the instance's configuration, whether a
+ * screen is in place yet (the first load has ended), and how the app is left for a page that loads anew (`leave`:
+ * signing out).
  */
-export type RouterContext = { data: AppData | null; config: RuntimeConfig; shown: () => boolean };
+export type RouterContext = {
+  data: AppData | null;
+  config: RuntimeConfig;
+  shown: () => boolean;
+  leave: (href: string) => void;
+};
 
-export type AppRouterOptions = Omit<RouterContext, "shown"> & {
+export type AppRouterOptions = Omit<RouterContext, "shown" | "leave"> & {
   /**
    * The path to start at in a history of the router's own, apart from the page's address (a screen's story);
    * without it the router follows the browser's history.
    */
   at?: string;
+  /**
+   * Leaves the app for `href`: a load of that page by default; a simulation of the app, which no page load may end,
+   * gives its own.
+   */
+  leave?: (href: string) => void;
 };
 
-export function createAppRouter({ data, config, at }: AppRouterOptions) {
+export function createAppRouter({
+  data,
+  config,
+  at,
+  leave = (href) => {
+    location.assign(href);
+  },
+}: AppRouterOptions) {
   // A navigation that skips the previous one's transition leaves no unhandled rejection.
   settleSkippedTransitions();
   let shown = false;
   const router = createRouter({
     routeTree,
-    context: { data, config, shown: () => shown },
+    context: { data, config, shown: () => shown, leave },
     ...(at === undefined ? {} : { history: createMemoryHistory({ initialEntries: [at] }) }),
     // Every match is stale at once, so that a screen entered again runs its loader, which returns what the cache holds
     // unless a write marked it stale. Not 0: a wall clock that steps back would make a match look fresh.

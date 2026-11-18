@@ -6,7 +6,7 @@
 // server needs, never while the reader is in a call.
 
 import { useServerActions, useServerState, useStatusPageUrl, type Instance } from "@my/app-data";
-import { FrameBanner, FrameBanners, Toast, useLocale } from "@my/design-system";
+import { dateFormat, FrameBanner, FrameBanners, Toast, useLocale, useTimeZone } from "@my/design-system";
 import { takeUpdate } from "@my/platform";
 import { useStrings } from "../locale";
 
@@ -14,11 +14,12 @@ import { useStrings } from "../locale";
 export function ServerBanners({ instance }: { instance: Instance | undefined }) {
   const t = useStrings();
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   const { connection } = useServerState();
   const statusPage = useStatusPageUrl();
   const closure = instance?.closure?.state === "announced" ? instance.closure : undefined;
   if (closure === undefined && connection === "online") return null;
-  const date = (iso: string) => new Intl.DateTimeFormat(locale, { dateStyle: "long" }).format(new Date(iso));
+  const date = (iso: string) => dateFormat(locale, timeZone, { dateStyle: "long" }).format(new Date(iso));
   const status =
     statusPage === undefined ? [] : [{ href: statusPage, label: t("app.status_page"), newTab: t("app.new_tab") }];
   return (

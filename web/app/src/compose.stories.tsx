@@ -19,7 +19,7 @@ import {
   type ComposeSpecimen,
   type ComposeTarget,
 } from "@my/app-features";
-import { MenuSheet, useLocale } from "@my/design-system";
+import { instantAt, MenuSheet, useLocale, wallTime } from "@my/design-system";
 import { images } from "@my/design-system/samples";
 import { createFakeApi, fakeHost, fakeOrigin, type FakeApi } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
@@ -156,10 +156,8 @@ type State = {
 
 /** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
 const dayAt = (days: number, hour: number) => {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  d.setHours(hour, 0, 0, 0);
-  return d.toISOString();
+  const today = wallTime(new Date(), undefined);
+  return instantAt({ ...today, day: today.day + days, hour, minute: 0 }, undefined).toISOString();
 };
 
 const nw = (): ComposeTarget => ({ kind: "new" });

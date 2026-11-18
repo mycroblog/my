@@ -6,6 +6,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./test/chunks": "./src/test/chunks.ts",
+    "./test/settings": "./src/test/settings.ts",
     "./editor": "./src/editor.tsx",
     "./preview": "./src/preview.tsx",
     "./samples": "./src/samples.tsx",

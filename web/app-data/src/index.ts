@@ -102,7 +102,15 @@ export {
   type FundingMeter,
   type Instance,
 } from "./instance";
-export { moderationCountsQuery, rightsOf, useModerationCount, useRights, type Permission, type Rights } from "./rights";
+export {
+  moderationCountsQuery,
+  rightsOf,
+  useModerationCount,
+  usePermissions,
+  useRights,
+  type Permission,
+  type Rights,
+} from "./rights";
 export {
   watchServer,
   webClientEpoch,
@@ -364,6 +372,16 @@ export {
 export { accountFollowsQuery, useAccountFollows, type AccountFollows, type FollowsList } from "./follows";
 export type { PagedList } from "./paged";
 export { usePollVote, voteInPoll, type PollVote } from "./polls";
+export {
+  preferencesQuery,
+  updatePreferences,
+  usePreferences,
+  usePreferencesRead,
+  useUpdatePreferences,
+  type LinkCardSize,
+  type Preferences,
+  type PreferencesChange,
+} from "./preferences";
 export { AppDataProvider } from "./provider";
 export {
   customEmojisQuery,
@@ -373,7 +391,7 @@ export {
   type PickerCustomEmoji,
   type StatusReactor,
 } from "./reactions";
-export { openSession, visitorData } from "./session";
+export { endSession, openSession, visitorData } from "./session";
 export {
   appPath,
   finishSignIn,

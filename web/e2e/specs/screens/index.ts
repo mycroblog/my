@@ -25,6 +25,7 @@ export { FollowRequests, Notifications, WaitingRequests } from "./notifications"
 export { ownProfileHeading, Profile } from "./profile";
 export { Reactors } from "./reactors";
 export { ForgotPassword, PasswordReset } from "./reset";
+export { DisplaySettings, Landing, Settings } from "./settings";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { SignUp } from "./sign-up";
 export { Thread } from "./thread";

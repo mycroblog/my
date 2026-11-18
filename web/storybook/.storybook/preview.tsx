@@ -7,7 +7,8 @@
 // among the device sizes of @my/devtools/sizes (ADR-0169 §1) and the minimum width every page must fit (ADR-0110 §10).
 // A component's story runs under the shortcuts of the app's keymap, its menus shown as the app shows them by the
 // viewport (a sheet on a phone, a popover from `tablet`), in the system's sans; a screen's story
-// (`parameters.screen`) is the whole app, which places its own. The loader asks @my/platform whether the browser runs
+// (`parameters.screen`) is the whole app, which places its own, and shows its reader's own language where their
+// account chose one. The loader asks @my/platform whether the browser runs
 // view transitions, which a story of the design system cannot ask itself (ADR-0028 §17). The accessibility panel
 // checks a story with the axe rules of the tags of ADR-0110 §9.
 
@@ -39,14 +40,17 @@ const viewports = {
   pc: { name: "PC", styles: px(sizes.pc), type: "desktop" },
 } as const;
 
-/** Puts the locale's language and direction on <html>, where the page's own styles and the browser read them. */
-function Html({ children }: { children: ReactNode }) {
+/**
+ * Puts the locale's language and direction on <html>, where the page's own styles and the browser read them. It stands
+ * before the story, not around it, so that a story of the whole app, which writes its reader's own there, writes last.
+ */
+function Html() {
   const { locale, direction } = useLocale();
   useLayoutEffect(() => {
     document.documentElement.lang = locale;
     document.documentElement.dir = direction;
   }, [locale, direction]);
-  return children;
+  return null;
 }
 
 const phone = `(width < ${String(breakpoint.tablet)}rem)`;
@@ -81,19 +85,18 @@ const page: Decorator = (Story, { globals, parameters }) => {
   return (
     <Theme theme={theme}>
       <I18nProvider locale={locale}>
-        <Html>
-          {parameters["screen"] === true ? (
-            <Story />
-          ) : (
-            <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>
-              <Menus>
-                <div style={{ fontFamily: fontFamily.sans }}>
-                  <Story />
-                </div>
-              </Menus>
-            </ShortcutProvider>
-          )}
-        </Html>
+        <Html />
+        {parameters["screen"] === true ? (
+          <Story />
+        ) : (
+          <ShortcutProvider keymap={keymap} mac={namesCommandKey()}>
+            <Menus>
+              <div style={{ fontFamily: fontFamily.sans }}>
+                <Story />
+              </div>
+            </Menus>
+          </ShortcutProvider>
+        )}
       </I18nProvider>
     </Theme>
   );

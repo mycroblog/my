@@ -1,19 +1,31 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Two modals over the page (modal.tsx), every word the caller's. The confirmation asks before what cannot be undone
+// The modals over the page (modal.tsx), every word the caller's but the name of a confirmation's close, which is the
+// design system's own where the caller gives none. The confirmation asks before what cannot be undone
 // (deleting a post): a small dialog in the middle of the viewport at every width, its title the question, one or two
 // sentences on what follows, and the pair of Cancel and the confirmation side by side at its end, the confirmation at
 // the end side; Escape and a press outside cancel. The panel shows something to read (a post's edit history) as the
 // composer does: a dialog of the main column's width over the dimmed page from `tablet`, a screen of its own on a
-// phone; its head holds the title and close at its end, and its body scrolls under the head.
+// phone; its head holds the title and close at its end, and its body scrolls under the head. The confirmation that
+// asks the reader to authenticate again (before changing the password, deleting the account) is the confirmation's
+// dialog with the proof in it: what it lets them do, the field of the proof (the password, a two-factor code) or none
+// where the confirmation itself proves it (a passkey, going to an external provider), another way to prove it, what
+// the server refused right before the pair, and the pair. The head of every modal ends with close, after its title;
+// a confirmation's close cancels, as its Cancel does.
+//
+// For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
+// the page behind is out of reach. The confirmation that asks to authenticate again is a form: the focus starts in
+// the field of the proof, Enter in it confirms, what the server refused is an alert that also describes the field,
+// and the focus goes back to the field for another try; while the proof is in flight nothing confirms it again.
 
-import { useId, type ReactElement, type ReactNode } from "react";
+import { useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
+import { FieldContext } from "./field";
 import { IconButton } from "./icon-button";
 import { Box, Row, Stack } from "./layout";
-import { useReader } from "./locale";
+import { stringsIn, useReader } from "./locale";
 import { ModalLayer } from "./modal";
 
 const confirm = tv({
@@ -26,11 +38,51 @@ const confirm = tv({
   },
 });
 
+/**
+ * The head of a small dialog: its title, which names the dialog (the slot of React Aria's over the page, `titleId`
+ * in a page's flow), and close at its end, as in every modal.
+ */
+function DialogHead({
+  title,
+  titleId,
+  className,
+  closeLabel,
+  onClose,
+  busy,
+}: {
+  title: string;
+  /** The title's id in the flow of a page; none over the page, where React Aria ties the title. */
+  titleId: string | undefined;
+  className: string;
+  closeLabel: string;
+  onClose: () => void;
+  busy: boolean;
+}) {
+  return (
+    <Row align="start" justify="between" gap="entry-caption">
+      {titleId === undefined ? (
+        <Heading slot="title" className={className}>
+          {title}
+        </Heading>
+      ) : (
+        <h2 id={titleId} className={className}>
+          {title}
+        </h2>
+      )}
+      <Row as="span" inline rigid bleedEnd="icon-button-inline">
+        <IconButton icon="close" label={closeLabel} onPress={onClose} isDisabled={busy} />
+      </Row>
+    </Row>
+  );
+}
+
 export type ConfirmDialogProps = {
   /** The question (Delete this post?). */
   title: string;
   /** What follows the confirmation, in a sentence or two. */
   children: ReactNode;
+  /** The close button's name, where the design system's own word (Close) does not fit; it cancels, as Cancel does. */
+  closeLabel?: string | undefined;
   /** The refusal's label (Cancel). */
   cancel: string;
   /** The confirmation's label, the verb of the title (Delete). */
@@ -43,10 +95,14 @@ export type ConfirmDialogProps = {
   layer?: boolean | undefined;
 };
 
-/** Asks before an action that cannot be undone: the question, what follows, then Cancel and the confirmation. */
+/**
+ * Asks before an action that cannot be undone: the question and close, what follows, then Cancel and the
+ * confirmation.
+ */
 export function ConfirmDialog({
   title,
   children,
+  closeLabel,
   cancel,
   confirm: confirmLabel,
   onCancel,
@@ -55,20 +111,19 @@ export function ConfirmDialog({
   layer = true,
 }: ConfirmDialogProps) {
   const s = confirm();
-  const { direction } = useReader(undefined);
+  const { lang, direction } = useReader(undefined);
   const titleId = useId();
   const textId = useId();
   const body = (
     <>
-      {layer ? (
-        <Heading slot="title" className={s.title()}>
-          {title}
-        </Heading>
-      ) : (
-        <h2 id={titleId} className={s.title()}>
-          {title}
-        </h2>
-      )}
+      <DialogHead
+        title={title}
+        titleId={layer ? undefined : titleId}
+        className={s.title()}
+        closeLabel={closeLabel ?? stringsIn(lang).t("dialog.close")}
+        onClose={onCancel}
+        busy={busy}
+      />
       <p id={textId} className={s.text()}>
         {children}
       </p>
@@ -109,6 +164,132 @@ export function ConfirmDialog({
       >
         {body}
       </Stack>
+    </ModalLayer>
+  );
+}
+
+export type ReauthDialogProps = {
+  /** What it asks (Confirm it's you). */
+  title: string;
+  /** What the proof lets the reader do, in a sentence. */
+  about: ReactNode;
+  /**
+   * The field of the proof (a `TextField`: the password, a two-factor code), which takes the focus as the dialog
+   * opens; none where the confirmation itself proves it (using a passkey, going to an external provider).
+   */
+  children?: ReactNode;
+  /** Another way to prove it, under the field (a `TextButton`: use the password instead). */
+  other?: ReactNode;
+  /** What the server refused, right before the pair (a `FormAlert`): read as it comes, and with the field. */
+  error?: ReactNode;
+  /** The close button's name; it cancels, as Cancel does. */
+  closeLabel: string;
+  cancel: string;
+  /** The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub). */
+  confirm: string;
+  onCancel: () => void;
+  /** The confirmation's press, or Enter in the field of the proof; never while the proof is in flight. */
+  onConfirm: () => void;
+  /** The proof in flight: the confirmation spins, nothing confirms again, and the dialog stays. */
+  busy?: boolean | undefined;
+  /** Over the page, or in the flow of a page (a story's specimen). */
+  layer?: boolean | undefined;
+};
+
+/** The field of a proof inside `root`, the first it holds. */
+const proofField = (root: HTMLElement | null) => root?.querySelector<HTMLElement>("input, textarea, select") ?? null;
+
+/**
+ * Asks the reader to authenticate again before something only they may do: what it lets them do, the proof, then
+ * Cancel and the confirmation. It is a form, which the confirmation sends.
+ */
+export function ReauthDialog({
+  title,
+  about,
+  children,
+  other,
+  error,
+  closeLabel,
+  cancel,
+  confirm: confirmLabel,
+  onCancel,
+  onConfirm,
+  busy = false,
+  layer = true,
+}: ReauthDialogProps) {
+  const s = confirm();
+  const { direction } = useReader(undefined);
+  const titleId = useId();
+  const textId = useId();
+  const errorId = useId();
+  const form = useRef<HTMLFormElement>(null);
+  const refused = error !== undefined && error !== null && error !== false;
+  // Over the page, the focus starts in the field of the proof, where there is one: the reader came to enter it.
+  useEffect(() => {
+    if (layer) proofField(form.current)?.focus();
+  }, [layer]);
+  // A proof refused: the focus goes back to the field, for another try.
+  useEffect(() => {
+    if (layer && refused && !busy) proofField(form.current)?.focus();
+  }, [layer, refused, busy]);
+  const body = (
+    <Stack
+      gap="dialog-gap"
+      as={
+        <form
+          ref={form}
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!busy) onConfirm();
+          }}
+        />
+      }
+    >
+      <DialogHead
+        title={title}
+        titleId={layer ? undefined : titleId}
+        className={s.title()}
+        closeLabel={closeLabel}
+        onClose={onCancel}
+        busy={busy}
+      />
+      <p id={textId} className={s.text()}>
+        {about}
+      </p>
+      {/* What the server refused describes the field of the proof. */}
+      <FieldContext value={refused ? { describedBy: errorId } : {}}>{children}</FieldContext>
+      {other !== undefined && <Row justify="start">{other}</Row>}
+      {refused && <div id={errorId}>{error}</div>}
+      <Row wrap align="center" justify="end" gap="dialog-row">
+        <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
+          {cancel}
+        </Button>
+        <Button kind="primary" size="form" busy={busy} type="submit">
+          {confirmLabel}
+        </Button>
+      </Row>
+    </Stack>
+  );
+  if (!layer)
+    return (
+      <Box
+        anchor
+        full
+        max="dialog"
+        role="dialog"
+        aria-labelledby={titleId}
+        aria-describedby={textId}
+        className={`box-border ${s.modal()} ${s.dialog()}`}
+        dir={direction}
+      >
+        {body}
+      </Box>
+    );
+  return (
+    <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panelClassName={s.modal()}>
+      <Dialog aria-describedby={textId} className={s.dialog()} dir={direction}>
+        {body}
+      </Dialog>
     </ModalLayer>
   );
 }

@@ -5,7 +5,7 @@
 // asks of the caller.
 
 import { expect, test } from "bun:test";
-import { I18nProvider, IconButton } from "@my/design-system";
+import { I18nProvider, IconButton, TimeZoneProvider } from "@my/design-system";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import {
@@ -206,6 +206,26 @@ test("the schedule form has one field of the date and the time, named by its lab
   expect(field.min).toBe(localInput(min));
   expect(field.max).toBe(localInput(max));
   expect(screen.getByText("Schedule")).not.toBeNull();
+});
+
+test("for a reader who chose a zone, the time, the zone's line and the field's limits are that zone's", () => {
+  const zone = "America/New_York";
+  // 03:30 UTC on Monday is 22:30 on Sunday there, whatever the device's zone.
+  const at = "2026-11-16T03:30:00Z";
+  render(
+    <TimeZoneProvider timeZone={zone}>
+      <ScheduleTime date={at} /> <ScheduleZone />
+      <ScheduleForm {...form} />
+    </TimeZoneProvider>,
+  );
+
+  expect(screen.getByRole("time").textContent).toBe("Sun, Nov 15, 10:30 PM");
+  expect(screen.getByText(/^America\/New_York · GMT-[45]$/).tagName).toBe("BDI");
+  const field = timeField();
+  expect(field.min).toBe(localInput(min, zone));
+  expect(field.max).toBe(localInput(max, zone));
+  // The value is the caller's, a date and a time of that zone already.
+  expect(field.value).toBe("2026-11-16T09:00");
 });
 
 test("the field is described by the reader's zone and the limits, and tells the caller the time chosen", () => {

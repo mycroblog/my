@@ -62,6 +62,13 @@ export function useRights(enabled = true): Rights {
   return !enabled || viewer === undefined ? none : rightsOf(viewer.permissions);
 }
 
+const noPermissions: readonly Permission[] = [];
+
+/** The permissions the viewer's roles grant, for what a screen offers them alone; none until the server answered. */
+export function usePermissions(): readonly Permission[] {
+  return useQuery(viewerQuery(useAppData())).data?.permissions ?? noPermissions;
+}
+
 /** What awaits the moderators that the viewer may see. */
 export function moderationCountsQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/admin/counts");

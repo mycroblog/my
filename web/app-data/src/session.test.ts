@@ -4,7 +4,8 @@ import { expect, test } from "bun:test";
 import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { TabGroup } from "@my/platform";
-import { openSession, SessionTokenSource } from "./session";
+import { preferencesQuery } from "./preferences";
+import { endSession, openSession, SessionTokenSource } from "./session";
 import { fakeBrowser } from "./test/tabs";
 
 const server = fakeOrigin;
@@ -201,6 +202,121 @@ test("a browser that refuses the lock refreshes in the tab", async () => {
   };
   const source = new SessionTokenSource(server, rotating.fetch, { tabs: refusing });
   expect(await source.getAccessToken()).toBe("t1");
+});
+
+/**
+ * A browser of two tabs signed in on a fake API, whose sign-in server trades the session's cookie for the token `a1`
+ * until the session ends: the first tab's data, which read the reader's preferences, the other tab's token source, and
+ * what the server was asked. The revocation (POST /oauth/revoke) is the fake's to answer.
+ */
+async function signedIn(options: Parameters<typeof createFakeApi>[0] = {}) {
+  const api = createFakeApi(options);
+  const browser = fakeBrowser();
+  const asked: { path: string; method: string; type: string | null; form: Record<string, string> }[] = [];
+  let answers = true;
+  let ended = false;
+  const fetch = async (request: Request): Promise<Response> => {
+    const path = new URL(request.url).pathname;
+    if (path === "/oauth/token/refresh")
+      return ended || api.revocations.length > 0
+        ? json(400, { error: "invalid_grant" })
+        : json(200, { access_token: "a1", token_type: "Bearer", expires_in: 3600 });
+    if (path !== "/oauth/revoke") return api.serve(request);
+    asked.push({
+      path,
+      method: request.method,
+      // The media type, without the charset a browser may name after it.
+      type: request.headers.get("Content-Type")?.split(";")[0] ?? null,
+      form: Object.fromEntries(new URLSearchParams(await request.clone().text())),
+    });
+    if (!answers) throw new TypeError("Failed to fetch");
+    return api.serve(request);
+  };
+  const data = await openSession({ server, fetch, tabs: browser.join() });
+  if (data === null) throw new Error("test: the browser has no session");
+  const other = new SessionTokenSource(server, fetch, { tabs: browser.join() });
+  expect(await other.getAccessToken()).toBe("a1");
+  await data.queryClient.query(preferencesQuery(data));
+  return {
+    api,
+    data,
+    other,
+    asked,
+    /** The server stops answering the revocation. */
+    cut: () => {
+      answers = false;
+    },
+    /** The server ends the session on its own: the cookie trades for no token from now on. */
+    end: () => {
+      ended = true;
+    },
+    /** How many answers the first tab's cache holds. */
+    cached: () => data.queryClient.getQueryCache().getAll().length,
+  };
+}
+
+/** What `settles` rejected with, or null when it resolved. */
+const refusal = (settles: Promise<unknown>): Promise<unknown> =>
+  settles.then(
+    () => null,
+    (error: unknown) => error,
+  );
+
+test("ending the session revokes its access token, as a form the token endpoint reads, and the server takes it", async () => {
+  const { api, data, asked } = await signedIn();
+
+  await endSession(data, "my-web");
+
+  expect(asked).toEqual([
+    {
+      path: "/oauth/revoke",
+      method: "POST",
+      type: "application/x-www-form-urlencoded",
+      form: { client_id: "my-web", token: "a1", token_type_hint: "access_token" },
+    },
+  ]);
+  expect(api.revocations).toEqual([{ clientId: "my-web", token: "a1" }]);
+});
+
+test("once the server took the revocation, the other tabs have no session and the cache holds nothing", async () => {
+  const { data, other, cached } = await signedIn();
+  expect(cached()).toBeGreaterThan(0);
+
+  await endSession(data, "my-web");
+
+  expect(cached()).toBe(0);
+  expect(await other.getAccessToken()).toBeNull();
+  expect(await data.connection?.tokenSource?.getAccessToken()).toBeNull();
+});
+
+for (const [what, options, cuts] of [
+  ["refuses the revocation", { revocation: "fails" }, false],
+  ["does not answer", {}, true],
+] as const)
+  test(`a server that ${what} ends nothing: it rejects, and the tabs and the cache are as they were`, async () => {
+    const { api, data, other, asked, cut, cached } = await signedIn(options);
+    if (cuts) cut();
+    const before = cached();
+
+    expect(await refusal(endSession(data, "my-web"))).toBeInstanceOf(Error);
+
+    expect(asked).toHaveLength(1);
+    expect(api.revocations).toEqual([]);
+    expect(cached()).toBe(before);
+    expect(await other.getAccessToken()).toBe("a1");
+    expect(await data.connection?.tokenSource?.getAccessToken()).toBe("a1");
+  });
+
+test("a session the server ended already has no token to revoke: nothing is asked, and the cache is emptied", async () => {
+  const { data, asked, end, cached } = await signedIn();
+  end();
+  // The server refuses the token the tab holds, and the cookie trades for no other.
+  expect(await data.connection?.tokenSource?.refresh?.("a1")).toBeNull();
+
+  await endSession(data, "my-web");
+
+  expect(asked).toEqual([]);
+  expect(cached()).toBe(0);
 });
 
 test("a message of another version of the client that it cannot read is left alone", async () => {

@@ -10,15 +10,20 @@
 import {
   Box,
   Button,
+  dateFormat,
   DateTimeField,
   FieldError,
   Icon,
+  instantAt,
   PressRow,
   Row,
   Spoken,
   Stack,
+  timeZoneName,
   useHeaded,
   useLocale,
+  useTimeZone,
+  wallTime,
   type IconName,
 } from "@my/design-system";
 import { useId, type ReactNode } from "react";
@@ -183,8 +188,8 @@ export function DraftRow({ lead, text, blank, warning, lang, marks, saved, openL
  * A moment as a scheduled post's time reads: the weekday, the date and the time in the reader's locale and zone; the
  * zone itself is `readerZone`'s, written once where the times are.
  */
-export function scheduleTime(date: Date | string, locale: string): string {
-  return new Intl.DateTimeFormat(locale, {
+export function scheduleTime(date: Date | string, locale: string, timeZone?: string): string {
+  return dateFormat(locale, timeZone, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -193,25 +198,29 @@ export function scheduleTime(date: Date | string, locale: string): string {
   }).format(new Date(date));
 }
 
-/** The reader's time zone, as its name and its offset read (Asia/Tokyo, GMT+9). */
-export function readerZone(locale: string, at = new Date()): string {
-  const name = Intl.DateTimeFormat().resolvedOptions().timeZone;
+/**
+ * The reader's time zone, as its name and its offset read (Asia/Tokyo, GMT+9): `timeZone` (`useTimeZone()`), the
+ * device's zone without one.
+ */
+export function readerZone(locale: string, at = new Date(), timeZone?: string): string {
+  const name = timeZoneName(timeZone);
   const offset =
-    new Intl.DateTimeFormat(locale, { timeZoneName: "shortOffset" })
+    dateFormat(locale, timeZone, { timeZoneName: "shortOffset" })
       .formatToParts(at)
       .find((p) => p.type === "timeZoneName")?.value ?? "";
   return offset === "" || offset === name ? name : `${name} · ${offset}`;
 }
 
 /**
- * The time a post goes out, in the reader's locale; isolated, so that it keeps its order in either direction, and
- * never broken inside, so that a line wraps around it.
+ * The time a post goes out, in the reader's locale and zone; isolated, so that it keeps its order in either direction,
+ * and never broken inside, so that a line wraps around it.
  */
 export function ScheduleTime({ date }: { date: Date | string }) {
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   return (
     <Box as="bdi" nowrap>
-      <time dateTime={new Date(date).toISOString()}>{scheduleTime(date, locale)}</time>
+      <time dateTime={new Date(date).toISOString()}>{scheduleTime(date, locale, timeZone)}</time>
     </Box>
   );
 }
@@ -219,18 +228,35 @@ export function ScheduleTime({ date }: { date: Date | string }) {
 /** The reader's time zone (`readerZone`), isolated and never broken inside, as `ScheduleTime` is. */
 export function ScheduleZone() {
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   return (
     <Box as="bdi" nowrap>
-      {readerZone(locale)}
+      {readerZone(locale, new Date(), timeZone)}
     </Box>
   );
 }
 
-/** A local date and time as a `datetime-local` field holds it (2026-11-16T09:00). */
-export const localInput = (d: Date) => {
+/**
+ * A moment as a `datetime-local` field holds it (2026-11-16T09:00): the date and the time of the reader's zone,
+ * `timeZone` (`useTimeZone()`), the device's without one.
+ */
+export const localInput = (d: Date, timeZone?: string) => {
   const p = (n: number) => String(n).padStart(2, "0");
-  return `${String(d.getFullYear())}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+  const { year, month, day, hour, minute } = wallTime(d, timeZone);
+  return `${String(year)}-${p(month)}-${p(day)}T${p(hour)}:${p(minute)}`;
 };
+
+/**
+ * The moment a `datetime-local` field's value names in the reader's zone (`localInput`'s other way); an invalid Date
+ * for a value that is no date and time, or whose date or time does not exist (February 30, 25:00), which a field the
+ * browser draws as plain text may hold.
+ */
+export function localInstant(value: string, timeZone?: string): Date {
+  const read = /^(\d{4,})-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
+  if (read === null) return new Date(Number.NaN);
+  const [year = 0, month = 0, day = 0, hour = 0, minute = 0] = read.slice(1).map(Number);
+  return instantAt({ year, month, day, hour, minute }, timeZone);
+}
 
 export type ScheduleFormProps = {
   /** The form's caption (Schedule). */
@@ -277,6 +303,7 @@ export function ScheduleForm({
   const headed = useHeaded();
   const id = useId();
   const { direction } = useLocale();
+  const timeZone = useTimeZone();
   return (
     <Stack
       gap="entry-line"
@@ -296,8 +323,8 @@ export function ScheduleForm({
           label={label}
           value={value}
           onChange={onChange}
-          min={localInput(min)}
-          max={localInput(max)}
+          min={localInput(min, timeZone)}
+          max={localInput(max, timeZone)}
           invalid={Boolean(error)}
           describedBy={`${id}-zone ${id}-note`}
         />

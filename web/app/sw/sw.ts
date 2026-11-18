@@ -11,7 +11,8 @@
 //   /theme/ and its icon and logos under /brand/ (ADR-0059), named by their revision, are cache first, at most 5 and
 //   30; the build's font splits, too large to precache, are cache first as a page first uses them, at most 300;
 // - the client API, the server's own pages and every other request are not answered by the worker at all;
-// - signing out (/auth/sign_out) deletes every cache;
+// - signing out deletes every cache: here on the server's own pages (/auth/sign_out), and from the page when the app
+//   signs out (src/sign-out.ts);
 // - a Web Push message (FR-206) is shown as a notification (push.ts), and a click on one opens its page.
 //
 // A new build: its worker precaches the new files beside the old ones and waits, while the old worker keeps the

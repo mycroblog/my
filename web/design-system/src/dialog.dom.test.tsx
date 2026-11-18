@@ -42,13 +42,15 @@ test("a confirmation is an alertdialog named by its title, and Tab never takes t
   }
 });
 
-test("a confirmation holds its question as a heading, what follows, then Cancel before the confirmation", async () => {
+test("a confirmation holds its question as a heading and close after it, what follows, then Cancel before the confirmation", async () => {
   const user = userEvent.setup();
   confirmation();
   const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
 
   expect(within(dialog).getByRole("heading", { name: "Delete this post?" })).not.toBeNull();
   expect(within(dialog).getByText("It cannot be undone.")).not.toBeNull();
+  await user.tab();
+  expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Close" }));
   await user.tab();
   expect(document.activeElement).toBe(within(dialog).getByRole("button", { name: "Cancel" }));
   await user.tab();

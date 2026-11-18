@@ -19,6 +19,7 @@ import {
   type VoiceRoom,
 } from "@my/app-data";
 import {
+  dateFormat,
   FrameAside,
   FrameFold,
   FrameFooter,
@@ -27,7 +28,9 @@ import {
   RelativeTime,
   SectionLine,
   SectionList,
+  timeZoneName,
   useLocale,
+  useTimeZone,
 } from "@my/design-system";
 import { useStrings } from "../locale";
 
@@ -95,8 +98,9 @@ const placeOf = (zone: string) => (zone.split("/").at(-1) ?? zone).replaceAll("_
 function useEventTime(event: ServerEvent): string {
   const t = useStrings();
   const { locale } = useLocale();
+  const timeZone = useTimeZone();
   const at = new Date(event.starts_at);
-  const here = new Intl.DateTimeFormat(locale, {
+  const here = dateFormat(locale, timeZone, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -105,10 +109,9 @@ function useEventTime(event: ServerEvent): string {
   }).format(at);
   let there: string;
   try {
-    if (new Intl.DateTimeFormat().resolvedOptions().timeZone === event.time_zone) return here;
-    there = new Intl.DateTimeFormat(locale, { hour: "numeric", minute: "2-digit", timeZone: event.time_zone }).format(
-      at,
-    );
+    if (timeZoneName(timeZone) === event.time_zone) return here;
+    // The event's zone is the options' own, which the platform refuses when it does not know it.
+    there = dateFormat(locale, timeZone, { hour: "numeric", minute: "2-digit", timeZone: event.time_zone }).format(at);
   } catch {
     // A time zone the browser does not know: the reader's time alone.
     return here;
@@ -138,7 +141,8 @@ function RoomLine({ room }: { room: VoiceRoom }) {
 function Funding({ meter }: { meter: FundingMeter }) {
   const t = useStrings();
   const { locale } = useLocale();
-  const month = new Intl.DateTimeFormat(locale, { month: "long", timeZone: "UTC" }).format(new Date(meter.starts_on));
+  // The month of a date of the calendar, which is no moment: read where it is written, in UTC.
+  const month = dateFormat(locale, "UTC", { month: "long" }).format(new Date(meter.starts_on));
   const caption = t("app.funding_caption", { covered: meter.covered ? "yes" : "no", month });
   return (
     <FrameSection id="around-funding" icon="funding" href="/about#funding" heading={t("app.funding")}>

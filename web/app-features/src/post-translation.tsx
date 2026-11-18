@@ -33,7 +33,7 @@ import {
 } from "@my/platform";
 import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "./locale";
-import { usePostAuthor, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
+import { usePostAuthor, usePostCardSize, type AuthorAction, type AuthorDone, type PostAuthor } from "./post-actions";
 import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
@@ -317,19 +317,21 @@ function AuthorDoneLine({ id, done, author }: { id: string; done: AuthorDone; au
  * whose translate and original actions it answers itself, every other action going to `onAction`. As the first line of the
  * post itself, after the screen's own line (a thread's heading of its replies), it says when the reader's reply or boost of it waits for an approval (post-approval.tsx).
  * Another's post offers its author's actions in its menu (post-actions.tsx), and once one is done shows what was done
- * in its place.
+ * in its place. Its link card shows in the size the reader chose, unless the screen names one (`cardSize`).
  */
 export function TranslatablePost(props: PostProps) {
   const { props: translation, act } = usePostTranslation(props.status, props.signIn !== undefined);
   const { onAction } = props;
   const approval = <ApprovalLine status={props.status} />;
   const author = usePostAuthor();
+  const cardSize = usePostCardSize();
   const shown = props.status.boost ?? props.status;
   const done = author?.done(shown.id);
   if (author !== undefined && done !== undefined) return <AuthorDoneLine id={shown.id} done={done} author={author} />;
   return (
     <Post
       {...props}
+      cardSize={props.cardSize ?? cardSize}
       // A visitor, who has no account to mute or block with, is offered none of it.
       authorMenu={
         author === undefined || props.signIn !== undefined ? undefined : <AuthorMenu status={shown} author={author} />

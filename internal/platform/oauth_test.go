@@ -169,6 +169,74 @@ func TestOAuthWebClientFlow(t *testing.T) {
 	}
 }
 
+// TestSignOutEndsTheWebClientsRefreshCookie checks that signing out of the browser over HTTP ends
+// the grant the web client got through that session: its refresh cookie no longer refreshes
+// (ADR-0090 §13).
+func TestSignOutEndsTheWebClientsRefreshCookie(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{"MY_DATABASE_URL": newDatabase(t, true)})
+	s := start(t, cfg, platform.ServeOptions{}, func(a *platform.App) {
+		_, err := a.Identity.CreateAdmin(t.Context(), identity.CreateAdminInput{
+			Username: "alice", Email: "alice@example.com", Password: "correct horse battery staple",
+		})
+		if err != nil {
+			t.Fatalf("CreateAdmin: %v", err)
+		}
+	})
+	c := &authClient{t: t, s: s, cookies: map[string]string{}}
+	redirect := "https://example.test" + platform.WebClientCallbackPath
+	verifier := strings.Repeat("v", 43)
+	authorize := authpages.PathAuthorize + "?" + url.Values{
+		"response_type": {"code"}, "client_id": {identity.DefaultWebClientID}, "redirect_uri": {redirect},
+		"state": {"s1"}, "code_challenge": {domain.S256Challenge(verifier)}, "code_challenge_method": {"S256"},
+	}.Encode()
+
+	if resp, _ := c.do(http.MethodPost, authpages.PathSignIn, c.form("email", "alice@example.com", "password", "correct horse battery staple"), nil); resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("sign-in = %d, want 303", resp.StatusCode)
+	}
+	session := c.cookies[authpages.CookieSession]
+	resp, _ := c.do(http.MethodGet, authorize, nil, nil)
+	back, err := url.Parse(resp.Header.Get("Location"))
+	if err != nil || back.Query().Get("code") == "" {
+		t.Fatalf("authorize = %d → %q, want the callback with a code", resp.StatusCode, resp.Header.Get("Location"))
+	}
+	resp, body := c.do(http.MethodPost, oauth.PathToken, url.Values{
+		"grant_type": {"authorization_code"}, "client_id": {identity.DefaultWebClientID}, "code": {back.Query().Get("code")},
+		"redirect_uri": {redirect}, "code_verifier": {verifier},
+	}, nil)
+	var issued map[string]any
+	if err := json.Unmarshal([]byte(body), &issued); err != nil || resp.StatusCode != http.StatusOK {
+		t.Fatalf("exchange = %d %q", resp.StatusCode, body)
+	}
+	access, _ := issued["access_token"].(string)
+	refreshCookie := c.cookies[oauth.CookieRefreshToken]
+	if access == "" || refreshCookie == "" {
+		t.Fatalf("exchange gave access token %q and refresh cookie %q", access, refreshCookie)
+	}
+
+	resp, _ = c.do(http.MethodPost, authpages.PathSignOut, c.form(), nil)
+	if resp.StatusCode != http.StatusSeeOther {
+		t.Fatalf("sign-out = %d, want 303", resp.StatusCode)
+	}
+	if _, err := s.app.Identity.Authenticate(t.Context(), session); err == nil {
+		t.Error("the signed-out session still authenticates")
+	}
+	if _, err := s.app.Identity.AuthenticateAccessToken(t.Context(), access); err == nil {
+		t.Error("the web client's access token still authenticates after the sign-out")
+	}
+
+	// The browser still holds the old refresh cookie.
+	c.cookies[oauth.CookieRefreshToken] = refreshCookie
+	resp, body = c.do(http.MethodPost, oauth.PathRefresh, url.Values{}, map[string]string{oauth.HeaderRefresh: "1"})
+	var refused map[string]any
+	if err := json.Unmarshal([]byte(body), &refused); err != nil {
+		t.Fatalf("refresh body %q: %v", body, err)
+	}
+	if resp.StatusCode != http.StatusBadRequest || refused["error"] != identity.OAuthInvalidGrant {
+		t.Errorf("refresh with the old cookie after the sign-out = %d %v, want 400 invalid_grant", resp.StatusCode, refused)
+	}
+}
+
 // TestOAuthWebClientPlainHTTPOnLocalhost checks the local setup of deploy/docker/example.env (host localhost:8080,
 // web_origin http://localhost:8080): the shell calls the API over plain HTTP, the authorization
 // endpoint answers with that issuer, and the code it returns works at the token endpoint, while the

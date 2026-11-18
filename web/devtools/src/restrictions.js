@@ -44,6 +44,18 @@
 //   `setTimeout`, `setInterval`, `Date.now()`, `new Date()`), a `timeout` option and a forced action (`force: true`);
 //   the demo server and the seed of src/ poll for readiness and remove their files by force. It refuses the methods by
 //   name on any object, and sees a name or a RegExp written in the file, not one held in a variable.
+//
+// - switch-in-form, settings-sections, heading-size, settings-count: the checks of ADR-0110 §6 that a type cannot
+//   hold, in the layers above @my/design-system: no switch in a form that has a submit button; a settings screen
+//   takes sections alone, and no control stands beside a section outside any; a heading of the second level takes no
+//   `size`; a group of the settings' menu and a section are written with seven things at most. Each reads the JSX one
+//   file writes out: what a list is mapped to and what another file renders, `settingsFindings` of
+//   @my/design-system/test/settings reads from the rendered tree. (That a control which saves at once takes its save
+//   state is a required prop of `Switch` and `SettingRow`.)
+//
+// - zone-dates: in the web client, only zone.tsx of @my/design-system reads the device's clock and builds a formatter
+//   of dates (ADR-0009 §3): no `Intl.DateTimeFormat`, no method of a Date that reads, sets or writes out the device's
+//   wall clock, no Date built from the parts of one. It refuses the methods by name on any object.
 
 import { rules as styles } from "./styles.js";
 
@@ -80,11 +92,20 @@ function keyName(/** @type {Node} */ property) {
 /** The layers above @my/design-system, by their directories of web/: no element of theirs gets a class or a style. */
 const ABOVE = new Set(["app-components", "app-features", "app"]);
 
-/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
-function create(context) {
+/** The name of the element, as written: `Button`, `ui.Button`. */
+function elementName(/** @type {Node} */ name) {
+  if (name.type === "JSXMemberExpression") return `${elementName(name.object)}.${name.property.name}`;
+  if (name.type === "JSXNamespacedName") return `${name.namespace.name}:${name.name.name}`;
+  return name.name;
+}
+
+/**
+ * How a file's names reach @my/design-system: `resolve`, the variable a name refers to at a node, and
+ * `isDesignSystem`, whether an expression is a binding of the package or a member of one.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function bindings(context) {
   const { sourceCode } = context;
-  const filename = String(context.filename).replaceAll("\\", "/");
-  const above = ABOVE.has(webDir(filename) ?? "") && !STORY_FILE.test(filename) && !TEST_FILE.test(filename);
 
   /** The variable that `name` refers to at `node`. */
   function resolve(/** @type {Node} */ node, /** @type {string} */ name) {
@@ -116,11 +137,14 @@ function create(context) {
     return false;
   }
 
-  /** The name of the element, as written: `Button`, `ui.Button`. */
-  function elementName(/** @type {Node} */ name) {
-    if (name.type === "JSXMemberExpression") return `${elementName(name.object)}.${name.property.name}`;
-    return name.name;
-  }
+  return { resolve, isDesignSystem };
+}
+
+/** @param {any} context The rule's context, as Oxlint gives it to a JS plugin. */
+function create(context) {
+  const filename = String(context.filename).replaceAll("\\", "/");
+  const above = ABOVE.has(webDir(filename) ?? "") && !STORY_FILE.test(filename) && !TEST_FILE.test(filename);
+  const { resolve, isDesignSystem } = bindings(context);
 
   function report(/** @type {Node} */ node, /** @type {string} */ prop, /** @type {string} */ component) {
     context.report({
@@ -643,10 +667,471 @@ function createE2EFlaky(context) {
   };
 }
 
+/** The value of a JSX attribute that a lint cannot read: an expression that is no literal. */
+const UNREAD = Symbol("unread");
+
+/**
+ * The value of the attribute `name` of an opening element as the file writes it: a string or a number, `true` for an
+ * attribute without a value, UNREAD for an expression that is no literal, and undefined without the attribute.
+ */
+function attribute(/** @type {Node} */ opening, /** @type {string} */ name) {
+  for (const a of opening.attributes) {
+    if (a.type !== "JSXAttribute" || a.name.type !== "JSXIdentifier" || a.name.name !== name) continue;
+    if (a.value === null) return true;
+    if (a.value.type === "Literal") return a.value.value;
+    if (a.value.type === "JSXExpressionContainer") {
+      const expression = unwrap(a.value.expression);
+      if (expression.type === "Literal") return expression.value;
+      if (expression.type === "TemplateLiteral" && expression.expressions.length === 0)
+        return expression.quasis[0].value.cooked;
+    }
+    return UNREAD;
+  }
+  return undefined;
+}
+
+/**
+ * The elements a JSX parent holds as the file writes them: its element children, through fragments, parentheses,
+ * conditions (`a && <X />`, `a ? <X /> : <Y />`) and arrays written out. `most` is how many of them one render shows
+ * at most (one branch of a condition); what an expression computes (a list mapped to elements) is not among them.
+ * `past(limit)` is the element with which they pass `limit`, the last of them when they do not.
+ * @returns {{ elements: Node[], most: number, past: (limit: number) => Node | undefined }}
+ */
+function heldElements(/** @type {Node[]} */ children) {
+  /** @type {Node[]} */
+  const elements = [];
+  /**
+   * Each child that holds elements: the first of them, and how many it shows at most.
+   * @type {{ first: Node, most: number }[]}
+   */
+  const slots = [];
+  /** @returns {number} How many elements `node` shows at most. */
+  function visit(/** @type {Node | null | undefined} */ node) {
+    if (!node) return 0;
+    const expression = unwrap(node);
+    switch (expression.type) {
+      case "JSXElement":
+        elements.push(expression);
+        return 1;
+      case "JSXFragment":
+        return expression.children.reduce((/** @type {number} */ sum, /** @type {Node} */ c) => sum + visit(c), 0);
+      case "JSXExpressionContainer":
+        return visit(expression.expression);
+      case "ArrayExpression":
+        return expression.elements.reduce((/** @type {number} */ sum, /** @type {Node} */ c) => sum + visit(c), 0);
+      case "LogicalExpression":
+        return Math.max(visit(expression.left), visit(expression.right));
+      case "ConditionalExpression":
+        return Math.max(visit(expression.consequent), visit(expression.alternate));
+      default:
+        return 0;
+    }
+  }
+  let most = 0;
+  for (const child of children) {
+    const before = elements.length;
+    const shown = visit(child);
+    most += shown;
+    const first = elements[before];
+    if (first !== undefined) slots.push({ first, most: shown });
+  }
+  function past(/** @type {number} */ limit) {
+    let sum = 0;
+    for (const slot of slots) {
+      sum += slot.most;
+      if (sum > limit) return slot.first;
+    }
+    return slots.at(-1)?.first;
+  }
+  return { elements, most, past };
+}
+
+/** The parts of @my/design-system that are a section of a settings screen. */
+const SECTION_PARTS = new Set(["SettingsSection", "StatusSummary"]);
+/** The parts of @my/design-system the reader acts on, and the rows that hold one: none stands outside a section. */
+const CONTROL_PARTS = new Set([
+  "BareTextArea",
+  "Button",
+  "CheckField",
+  "Chip",
+  "ChipLink",
+  "ChoiceField",
+  "ChoiceList",
+  "ChoiceSelect",
+  "DateTimeField",
+  "IconButton",
+  "LinkButton",
+  "MenuButton",
+  "NumberField",
+  "SearchField",
+  "Select",
+  "SettingRow",
+  "SettingsEmpty",
+  "SettingsList",
+  "SettingsListRow",
+  "Switch",
+  "TagInput",
+  "TextButton",
+  "TextField",
+  "TextLink",
+]);
+/** The elements of the DOM the reader acts on. */
+const CONTROL_ELEMENTS = new Set(["a", "button", "input", "select", "textarea"]);
+/** What is sent as a whole: a form of the DOM, the design system's, and a settings screen (with its submit bar). */
+const FORM_PARTS = new Set(["Form", "SettingsScreen"]);
+/** The most entries of a group of the settings' menu, and the most a section holds (ADR-0110 §6). */
+const SETTINGS_MOST = 7;
+
+/**
+ * How a rule of the settings reads a JSX element's name: `part`, the name of the part of @my/design-system it is
+ * (`Switch` of `ui.Switch`), and `tag`, the element of the DOM it is; undefined for anything else.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function elements(context) {
+  const { isDesignSystem } = bindings(context);
+  return {
+    part(/** @type {Node} */ name) {
+      if (name.type === "JSXNamespacedName") return undefined;
+      if (name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name)) return undefined;
+      if (!isDesignSystem(name, 0)) return undefined;
+      return name.type === "JSXMemberExpression" ? name.property.name : name.name;
+    },
+    tag: (/** @type {Node} */ name) =>
+      name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name) ? name.name : undefined,
+  };
+}
+
+/**
+ * switch-in-form (ADR-0110 §6): no switch (the `Switch` of @my/design-system, or any `role="switch"`) stands in a
+ * form that has a submit button. A form is a `<form>`, the design system's `Form`, or a `SettingsScreen`; its submit
+ * button is anything of `type="submit"`, or a `SubmitBar`. It sees a form and a switch written in one file.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createSwitchInForm(context) {
+  const { part, tag } = elements(context);
+  /** @type {{ node: Node, submit: boolean, switches: { node: Node, what: string }[] }[]} */
+  const forms = [];
+  return {
+    JSXElement(/** @type {Node} */ node) {
+      const name = node.openingElement.name;
+      if (tag(name) === "form" || FORM_PARTS.has(part(name) ?? "")) forms.push({ node, submit: false, switches: [] });
+    },
+    JSXOpeningElement(/** @type {Node} */ node) {
+      const form = forms.at(-1);
+      if (form === undefined) return;
+      const name = part(node.name);
+      if (name === "SubmitBar" || attribute(node, "type") === "submit") form.submit = true;
+      if (name === "Switch") form.switches.push({ node, what: "<Switch>" });
+      else if (attribute(node, "role") === "switch") form.switches.push({ node, what: 'role="switch"' });
+    },
+    "JSXElement:exit"(/** @type {Node} */ node) {
+      const form = forms.at(-1);
+      if (form?.node !== node) return;
+      forms.pop();
+      if (form.submit)
+        for (const found of form.switches)
+          context.report({
+            node: found.node,
+            message:
+              `\`${found.what}\` stands in a form that has a submit button: a switch saves as it is pressed, and a ` +
+              "form is saved as a whole when it is sent, so one screen would save in two ways (ADR-0110 §1 P1, §6). " +
+              "In a form, use a CheckField; or let every control of the screen save at once, each with its save " +
+              "state, and drop the submit button.",
+          });
+      // What a form inside another holds is the outer form's too.
+      const outer = forms.at(-1);
+      if (outer === undefined) return;
+      outer.submit ||= form.submit;
+      if (!form.submit) outer.switches.push(...form.switches);
+    },
+  };
+}
+
+/**
+ * settings-sections (ADR-0110 §5, §6): a settings screen takes sections alone, and a section and a control outside
+ * any section do not stand under one parent. It refuses, among the children a `SettingsScreen` is written with, an
+ * element of the DOM and a part of @my/design-system that is no section (`SettingsSection`, `StatusSummary`); and,
+ * under any other parent, a control (a control of the design system, a row that holds one, a control of the DOM)
+ * beside a section. A component of the file's own layer passes: what it renders is another file's.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createSettingsSections(context) {
+  const { part, tag } = elements(context);
+  /** @type {Set<Node>} */
+  const reported = new Set();
+
+  function report(/** @type {Node} */ element, /** @type {string} */ why) {
+    if (reported.has(element)) return;
+    reported.add(element);
+    context.report({
+      node: element.openingElement,
+      message: `\`<${elementName(element.openingElement.name)}>\` ${why}`,
+    });
+  }
+
+  function check(/** @type {Node} */ parent) {
+    const held = heldElements(parent.children).elements;
+    const names = held.map((element) => ({
+      element,
+      part: part(element.openingElement.name),
+      tag: tag(element.openingElement.name),
+    }));
+    if (parent.type === "JSXElement" && part(parent.openingElement.name) === "SettingsScreen") {
+      for (const child of names)
+        if (child.tag !== undefined || (child.part !== undefined && !SECTION_PARTS.has(child.part)))
+          report(
+            child.element,
+            "stands in a settings screen outside any section: a screen of the settings takes sections alone " +
+              "(SettingsSection, a StatusSummary first), so that everything on it stands under a heading that names " +
+              "it (ADR-0110 §5, §6). Put it in a SettingsSection; what ends the screen is its `foot`.",
+          );
+      return;
+    }
+    if (!names.some((child) => child.part !== undefined && SECTION_PARTS.has(child.part))) return;
+    for (const child of names)
+      if (
+        (child.part !== undefined && CONTROL_PARTS.has(child.part)) ||
+        (child.tag !== undefined && CONTROL_ELEMENTS.has(child.tag))
+      )
+        report(
+          child.element,
+          "stands beside a section, in none: a section under a heading and a control outside any section do not " +
+            "share a parent, or the reader cannot tell what the control belongs to (ADR-0110 §6). Put it in a " +
+            "section, under a heading of its own if it belongs to none of these.",
+        );
+  }
+
+  return { JSXElement: check, JSXFragment: check };
+}
+
+/**
+ * heading-size (ADR-0110 §6, G5): above @my/design-system, a heading of the second level takes no `size`: an `<h2>`,
+ * or any element given `level={2}`.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createHeadingSize(context) {
+  return {
+    JSXOpeningElement(/** @type {Node} */ node) {
+      if (attribute(node, "size") === undefined) return;
+      const name = elementName(node.name);
+      const level = attribute(node, "level");
+      if (name !== "h2" && level !== 2 && level !== "2") return;
+      context.report({
+        node,
+        message:
+          `\`<${name}>\` is a heading of the second level and gets \`size\`: a section's heading looks as its level ` +
+          "says, on every screen alike (ADR-0110 §6). Drop `size`; a heading that must look otherwise stands at " +
+          "another level, or is a part @my/design-system lacks.",
+      });
+    },
+  };
+}
+
+/**
+ * settings-count (ADR-0110 §6): a group of the settings' menu is written with seven entries at most, and a section
+ * with seven things to do at most, its `action` among them. It counts the elements written out as children (one
+ * branch of a condition), not what an expression computes: `settingsFindings` of @my/design-system/test/settings
+ * counts those in the rendered tree. It reports the child with which the group or the section passes seven (the last
+ * one, where the section's own action is the eighth).
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createSettingsCount(context) {
+  const { part } = elements(context);
+  return {
+    JSXElement(/** @type {Node} */ node) {
+      const name = part(node.openingElement.name);
+      if (name !== "SettingsGroup" && name !== "SettingsSection") return;
+      const group = name === "SettingsGroup";
+      const own = !group && attribute(node.openingElement, "action") !== undefined ? 1 : 0;
+      const held = heldElements(node.children);
+      const count = held.most + own;
+      if (count <= SETTINGS_MOST) return;
+      context.report({
+        node: held.past(SETTINGS_MOST)?.openingElement ?? node.openingElement,
+        message: group
+          ? `\`<SettingsGroup>\` holds ${count} entries: a group of the settings' menu has ${SETTINGS_MOST} at most, ` +
+            "more than a reader takes in at a glance (ADR-0110 §6). Split it into two groups, each under a heading."
+          : `\`<SettingsSection>\` holds ${count} things to do, its action among them: a section has ` +
+            `${SETTINGS_MOST} at most (ADR-0110 §6). Split it into two sections, each under a heading.`,
+      });
+    },
+  };
+}
+
+/** The methods of a Date that read the device's clock and calendar. */
+const LOCAL_READS = new Set([
+  "getFullYear",
+  "getYear",
+  "getMonth",
+  "getDate",
+  "getDay",
+  "getHours",
+  "getMinutes",
+  "getSeconds",
+  "getMilliseconds",
+  "getTimezoneOffset",
+]);
+/** The methods of a Date that set it by the device's clock and calendar. */
+const LOCAL_WRITES = new Set([
+  "setFullYear",
+  "setYear",
+  "setMonth",
+  "setDate",
+  "setHours",
+  "setMinutes",
+  "setSeconds",
+  "setMilliseconds",
+]);
+/** The methods that write a date or a time out in the device's zone (and a number in the device's locale). */
+const LOCAL_TEXTS = new Set([
+  "toLocaleString",
+  "toLocaleDateString",
+  "toLocaleTimeString",
+  "toDateString",
+  "toTimeString",
+]);
+
+/**
+ * zone-dates (ADR-0009 §3): in the web client, every date and time is shown in the reader's time zone, which
+ * zone.tsx of @my/design-system alone reads. It refuses, outside that file, an `Intl.DateTimeFormat` (constructed or
+ * called), a method of a Date that reads or sets the device's clock (`getHours`, `setDate`…), one that writes a date
+ * out in the device's zone (`toLocaleString`…), and a Date built from the parts of a wall clock (`new Date(2026, 0,
+ * 1)`). It refuses the methods by name on any object, a number's `toLocaleString` too.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createZoneDates(context) {
+  const { sourceCode } = context;
+  const fix =
+    "Format with `dateFormat(locale, useTimeZone(), options)` of @my/design-system, read a clock with `wallTime` and " +
+    "build a moment from one with `instantAt` (zone.tsx); a layer below the design system takes the zone as an argument.";
+
+  function report(/** @type {Node} */ node, /** @type {string} */ what, /** @type {string} */ why) {
+    context.report({ node, message: `\`${what}\` ${why} ${fix}` });
+  }
+
+  /** Whether the identifier `node` is the global of its name: no binding of the file shadows it. */
+  function isGlobal(/** @type {Node} */ node) {
+    for (let scope = sourceCode.getScope(node); scope; scope = scope.upper) {
+      const variable = scope.set.get(node.name);
+      if (variable && variable.defs.length > 0) return false;
+    }
+    return true;
+  }
+
+  /** Whether `node` is `Intl.DateTimeFormat`. */
+  function isDateTimeFormat(/** @type {Node} */ node) {
+    const callee = unwrap(node);
+    if (callee.type !== "MemberExpression") return false;
+    const object = unwrap(callee.object);
+    const name = callee.computed
+      ? callee.property.type === "Literal"
+        ? callee.property.value
+        : undefined
+      : callee.property.name;
+    return name === "DateTimeFormat" && object.type === "Identifier" && object.name === "Intl" && isGlobal(object);
+  }
+
+  const ownFormat =
+    "is a formatter of its own, which shows the device's time zone to a reader who chose another (ADR-0009 §3).";
+
+  return {
+    NewExpression(/** @type {Node} */ node) {
+      if (isDateTimeFormat(node.callee)) report(node, "Intl.DateTimeFormat", ownFormat);
+      const callee = unwrap(node.callee);
+      if (callee.type === "Identifier" && callee.name === "Date" && node.arguments.length > 1 && isGlobal(callee))
+        report(
+          node,
+          "Date(y,m,…)",
+          "builds a moment from the parts of the device's wall clock, not of the reader's time zone (ADR-0009 §3).",
+        );
+    },
+    CallExpression(/** @type {Node} */ node) {
+      if (isDateTimeFormat(node.callee)) {
+        report(node, "Intl.DateTimeFormat", ownFormat);
+        return;
+      }
+      const callee = unwrap(node.callee);
+      if (callee.type !== "MemberExpression") return;
+      const name = callee.computed
+        ? callee.property.type === "Literal" && typeof callee.property.value === "string"
+          ? callee.property.value
+          : undefined
+        : callee.property.name;
+      if (name === undefined) return;
+      if (LOCAL_READS.has(name))
+        report(
+          callee.property,
+          `.${name}()`,
+          "reads the device's clock and calendar, not the reader's time zone (ADR-0009 §3).",
+        );
+      else if (LOCAL_WRITES.has(name))
+        report(
+          callee.property,
+          `.${name}()`,
+          "sets a moment by the device's clock and calendar, not the reader's time zone (ADR-0009 §3).",
+        );
+      else if (LOCAL_TEXTS.has(name))
+        report(
+          callee.property,
+          `.${name}()`,
+          "writes a date out in the device's time zone, not the reader's (ADR-0009 §3); a number is written with " +
+            "`new Intl.NumberFormat(locale).format(n)`.",
+        );
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
     ...styles,
+    "zone-dates": {
+      meta: {
+        type: "problem",
+        docs: {
+          description:
+            "Disallow a date formatter of its own and a read of the device's clock outside zone.tsx of @my/design-system",
+        },
+        schema: [],
+      },
+      create: createZoneDates,
+    },
+    "settings-count": {
+      meta: {
+        type: "problem",
+        docs: {
+          description: "Disallow more than seven entries in a group of the settings' menu and in a section",
+        },
+        schema: [],
+      },
+      create: createSettingsCount,
+    },
+    "heading-size": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a size on a heading of the second level above @my/design-system" },
+        schema: [],
+      },
+      create: createHeadingSize,
+    },
+    "settings-sections": {
+      meta: {
+        type: "problem",
+        docs: {
+          description: "Disallow what is no section in a settings screen, and a control beside a section outside any",
+        },
+        schema: [],
+      },
+      create: createSettingsSections,
+    },
+    "switch-in-form": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a switch in a form that has a submit button" },
+        schema: [],
+      },
+      create: createSwitchInForm,
+    },
     "e2e-flaky": {
       meta: {
         type: "problem",

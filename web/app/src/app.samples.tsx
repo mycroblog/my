@@ -240,6 +240,10 @@ function StoryApp({
       data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
       at: pathOf(fake, at),
+      // A story's app has no page to load anew: what leaves it (signing out) goes there within it.
+      leave: (href) => {
+        void router.navigate({ href });
+      },
     });
     return { fake, data, router, watch };
   });

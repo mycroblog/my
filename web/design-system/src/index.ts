@@ -3,13 +3,15 @@
 // The design system of the web client (ADR-0025 §2–§6): its components, on React Aria Components, styled with
 // Tailwind from the tokens of @my/design-tokens, and its icons. An app loads @my/design-system/styles.css once, with
 // @my/design-system/emoji.css, the self-hosted Noto Color Emoji (ADR-0091 §9), and places React Aria's I18nProvider,
-// from which every part reads the locale and the direction (locale.ts).
+// from which every part reads the locale and the direction (locale.ts), and the TimeZoneProvider, from which it reads
+// the zone of the dates and times it shows (zone.tsx).
 
 export { Avatar, type AvatarProps, type AvatarSize } from "./avatar";
 export {
   Button,
   LinkButton,
   markedSurface,
+  raisedSurface,
   TextButton,
   TextLink,
   type ButtonKind,
@@ -49,7 +51,14 @@ export {
   type CustomEmojiProps,
   type UrlPartProps,
 } from "./content";
-export { ConfirmDialog, PanelDialog, type ConfirmDialogProps, type PanelDialogProps } from "./dialog";
+export {
+  ConfirmDialog,
+  PanelDialog,
+  ReauthDialog,
+  type ConfirmDialogProps,
+  type PanelDialogProps,
+  type ReauthDialogProps,
+} from "./dialog";
 export { Disclosure, type DisclosureProps } from "./disclosure";
 export {
   DiffMedia,
@@ -218,10 +227,13 @@ export {
   FrameBanners,
   FrameDock,
   FrameFold,
+  FrameFoot,
   FrameFooter,
+  FrameHead,
   FrameHeading,
   FrameMain,
   FrameMark,
+  FramePanel,
   FrameSection,
   FrameSide,
   focusFrameHeading,
@@ -235,8 +247,33 @@ export {
   Toast,
 } from "./shell";
 export { SearchField, type SearchFieldProps } from "./search-field";
+export { SaveState, type SaveStateProps } from "./save-state";
+export { useSaveState, type Saving } from "./saving";
+export {
+  NumberField,
+  Select,
+  type NumberFieldProps,
+  type SelectGroup,
+  type SelectOption,
+  type SelectProps,
+} from "./field";
+export {
+  SettingRow,
+  SettingsEmpty,
+  SettingsGroup,
+  SettingsItem,
+  SettingsList,
+  SettingsListRow,
+  SettingsMenu,
+  SettingsScreen,
+  SettingsSection,
+  StatusSummary,
+  SubmitBar,
+  type SettingRowProps,
+} from "./settings";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";
+export { dateFormat, instantAt, TimeZoneProvider, timeZoneName, useTimeZone, wallTime, type WallTime } from "./zone";
 // The app's router reaches the links of the parts through React Aria's RouterProvider, which the app places.
 export { I18nProvider, RouterProvider as NavigationProvider, useLocale } from "react-aria-components";
