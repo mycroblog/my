@@ -397,10 +397,8 @@ describe("once the server's own web client is revoked", () => {
     expect(screen.getAllByRole("alertdialog", { name: "Revoke mycroblog?" })).toHaveLength(1);
   });
 
-  // Defect: the screen and the shell around it are still drawn after the app emptied what it read, and they read
-  // the account again at once (the lists of apps and the account, three requests): with the fake, which still
-  // answers, the cache holds five answers again; a server that revoked the session's tokens refuses each request.
-  // The developers' words: no read after the revocation, and the cache is empty once the app has left and stays so.
+  // The screen and the shell around it are still drawn after the app emptied what it read: neither may read the
+  // account again (the lists of apps, the account), which a server that revoked the session's tokens would refuse.
   test("the app reads nothing of the account again, and what it read stays forgotten", async () => {
     const { app, readAgain } = await revoked();
 
