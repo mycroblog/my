@@ -105,6 +105,16 @@ function useWays(password: boolean): readonly Way[] {
   ];
 }
 
+/**
+ * Runs `onGone` once the dialog that calls this is out of the document: when the presence around it has let it go,
+ * after the motion of its leaving, React takes its nodes out and then runs this effect's cleanup. Until then the
+ * dialog holds the focus, and takes back one moved elsewhere. `onGone` is the same function for as long as the dialog
+ * is open, or a new one would run the one before it.
+ */
+export function useGone(onGone: () => void): void {
+  useEffect(() => onGone, [onGone]);
+}
+
 /** A write that waits for its confirmation, and what follows it. */
 type Asked = {
   readonly run: (confirmation: Confirmation) => Promise<unknown>;
@@ -126,11 +136,14 @@ type DialogProps = {
   onClose: () => void;
   /** The write ended, done or failed: the dialog leaves, and `asked.left` follows once it has. */
   onEnded: () => void;
+  /** The dialog is out of the document, its leaving's motion over. The same function for as long as it is open. */
+  onGone: () => void;
 };
 
-function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, onClose, onEnded }: DialogProps) {
+function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, onClose, onEnded, onGone }: DialogProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
+  useGone(onGone);
   const confirmWithPasskey = useConfirmWithPasskey();
   const { beginConfirmation } = useLinkedIdentityWrites();
   const [chosen, setChosen] = useState<string>();
@@ -271,9 +284,9 @@ export type Confirmed = {
   /**
    * Runs `run` once the reader has confirmed, with their confirmation: after the dialog, or at once with the
    * confirmation a login provider gave. `done` follows a write that succeeded; `failed`, with the error, one that
-   * failed for anything but its confirmation; `left` follows either once the dialog is gone from the page (at once
-   * where none was shown), which is when the screen can move the focus: until then the dialog keeps it. Cancelling
-   * the dialog runs none of them.
+   * failed for anything but its confirmation; `left` follows either once the dialog is out of the document, the
+   * motion of its leaving over (at once where none was shown), which is when the screen can move the focus: until
+   * then the dialog keeps it. Cancelling the dialog runs none of them.
    */
   ask: (
     run: (confirmation: Confirmation) => Promise<unknown>,
@@ -319,6 +332,12 @@ export function useConfirmation({
   const [asked, setAsked] = useState<Asked>();
   /** What follows the dialog's leaving, after a write that ended in it. */
   const afterLeaving = useRef<(() => void) | undefined>(undefined);
+  /** Runs it, once: the dialog's own word that it is out of the document. */
+  const [gone] = useState(() => () => {
+    const follows = afterLeaving.current;
+    afterLeaving.current = undefined;
+    follows?.();
+  });
 
   const ask: Confirmed["ask"] = (run, then) => {
     const next = { run, done: then?.done, failed: then?.failed, left: then?.left };
@@ -362,13 +381,7 @@ export function useConfirmation({
     busy,
     notice,
     dialog: (
-      <ModalPresence
-        onExited={() => {
-          const follows = afterLeaving.current;
-          afterLeaving.current = undefined;
-          follows?.();
-        }}
-      >
+      <ModalPresence>
         {asked !== undefined && (
           <ConfirmationDialog
             operation={operation}
@@ -384,6 +397,7 @@ export function useConfirmation({
               afterLeaving.current = asked.left;
               setAsked(undefined);
             }}
+            onGone={gone}
           />
         )}
       </ModalPresence>

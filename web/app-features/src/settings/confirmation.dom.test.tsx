@@ -348,10 +348,7 @@ describe("what follows a confirmation (`ask`'s `done`, `failed` and `left`)", ()
       if (heard.length < count) throw new Error(`test: heard ${heard.join(", ") || "nothing"}`);
     });
 
-  // The developer's interface: "`left` runs after `done` or `failed` once the dialog is no longer in the document".
-  // It runs while the dialog is still in the document, not exiting, and the dialog is gone a turn later: what `left`
-  // does (a status that takes the focus) then comes before the dialog leaves and gives the focus back to its button.
-  test.failing("a write that is done: `done`, then `left` once the dialog is no longer in the document", async () => {
+  test("a write that is done: `done`, then `left` once the dialog is no longer in the document", async () => {
     const { user, heard } = await asking(() => Promise.resolve());
 
     await user.click(screen.getByRole("button", { name: "Change" }));
@@ -361,8 +358,7 @@ describe("what follows a confirmation (`ask`'s `done`, `failed` and `left`)", ()
     expect(heard).toEqual(["done", "left"]);
   });
 
-  // The same defect as the test above, after a write that failed.
-  test.failing("a write that failed: `failed`, then `left` once the dialog is no longer in the document", async () => {
+  test("a write that failed: `failed`, then `left` once the dialog is no longer in the document", async () => {
     const { user, heard } = await asking(() => Promise.reject(new Error("test: the write failed")));
 
     await user.click(screen.getByRole("button", { name: "Change" }));

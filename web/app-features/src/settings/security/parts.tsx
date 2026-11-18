@@ -25,7 +25,7 @@ import {
 import { oneTimeCodeField } from "@my/platform";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
-import { saidOf } from "../confirmation";
+import { saidOf, useGone } from "../confirmation";
 import type { SettingsSubProps } from "../entries";
 
 /** The address of the Security entry, and of the screens under it. */
@@ -134,7 +134,7 @@ export function useFieldFault(fieldId: string): {
  * What a section says came of a change whose control went with what it changed (a row removed with its own button):
  * `line`, for the section's top, a status that holds the words of the last change done (`say`), or an alert for one
  * the server did not take (`refuse`). `settle` moves the focus to what was just said, and is called once the dialog
- * over the section has left (`onExited` of its `ModalPresence`, `left` of a confirmation): before, the dialog holds
+ * over the section is out of the document (`onLeft` of `Asking`, `left` of a confirmation): before, the dialog holds
  * the focus, and after, the button that opened it is gone and the focus would fall to the page. A screen reader then
  * reads what happened, and the keyboard stays in the section.
  */
@@ -151,6 +151,10 @@ export function useSectionResult(): {
   const [settled, setSettled] = useState(0);
   /** A change was said and the focus has not been moved to it yet. */
   const waits = useRef(false);
+  /** The same function at every render: a dialog keeps it to call as it leaves. */
+  const [settle] = useState(() => () => {
+    setSettled((n) => n + 1);
+  });
   useEffect(() => {
     if (settled === 0 || !waits.current) return;
     waits.current = false;
@@ -177,11 +181,12 @@ export function useSectionResult(): {
       waits.current = false;
       setTold(undefined);
     },
-    settle: () => {
-      setSettled((n) => n + 1);
-    },
+    settle,
   };
 }
+
+/** What follows the leaving of a dialog whose screen moves no focus. */
+const nothing = () => undefined;
 
 /**
  * Asks before `run` ends something, with a confirmation alone: confirmed, it spins until the server answered and
@@ -192,15 +197,23 @@ export function Asking({
   confirm,
   run,
   onClose,
+  onLeft,
   children,
 }: {
   title: string;
   confirm: string;
   run: () => Promise<unknown>;
   onClose: () => void;
+  /**
+   * The dialog is out of the document, the motion of its leaving over, however it was left: the moment to move the
+   * focus (`settle` of the section's result), for a screen that moves it. The same function for as long as the dialog
+   * is open.
+   */
+  onLeft?: (() => void) | undefined;
   children: string;
 }) {
   const { t } = stringsIn(useLocale().locale);
+  useGone(onLeft ?? nothing);
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string>();
   return (

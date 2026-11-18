@@ -259,7 +259,7 @@ function Passkeys({ limited }: { limited: boolean }) {
           </SettingsList>
         )}
       </SettingsSection>
-      <ModalPresence onExited={result.settle}>
+      <ModalPresence>
         {removing !== undefined && (
           <Asking
             title={t("settings.security.passkeys.remove.title", { name: removing.name })}
@@ -271,6 +271,7 @@ function Passkeys({ limited }: { limited: boolean }) {
             onClose={() => {
               setRemoving(undefined);
             }}
+            onLeft={result.settle}
           >
             {t("settings.security.passkeys.remove.text")}
           </Asking>
@@ -385,7 +386,7 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
         </SettingsList>
       </SettingsSection>
       {confirmation.dialog}
-      <ModalPresence onExited={result.settle}>
+      <ModalPresence>
         {unlinking !== undefined && (
           <Asking
             title={t("settings.security.linked.unlink.title", { provider: unlinking.provider_name })}
@@ -397,6 +398,7 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
             onClose={() => {
               setUnlinking(undefined);
             }}
+            onLeft={result.settle}
           >
             {t("settings.security.linked.unlink.text")}
           </Asking>
@@ -496,7 +498,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
           {t(changesPassword ? "settings.security.browsers.advice" : "settings.security.browsers.advice.no_password")}
         </SettingsNote>
       </SettingsSection>
-      <ModalPresence onExited={result.settle}>
+      <ModalPresence>
         {asking === "others" ? (
           <Asking
             key="others"
@@ -509,6 +511,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
             onClose={() => {
               setAsking(undefined);
             }}
+            onLeft={result.settle}
           >
             {t("settings.security.browsers.sign_out_others.text")}
           </Asking>
@@ -533,6 +536,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
               onClose={() => {
                 setAsking(undefined);
               }}
+              onLeft={result.settle}
             >
               {t("settings.security.browsers.sign_out.text")}
             </Asking>
