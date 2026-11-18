@@ -69,7 +69,7 @@ export async function profileForm(
  * signal given is the runtime's and never aborts: no test of the form gives a request up. On happy-dom, which keeps
  * the runtime's, nothing changes.
  */
-function runtimeSignals(): void {
+export function runtimeSignals(): void {
   const Signal = new Request(fakeOrigin).signal.constructor as typeof AbortSignal;
   if (Signal === globalThis.AbortSignal) return;
   const simulated = globalThis.AbortController;

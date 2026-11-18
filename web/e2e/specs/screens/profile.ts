@@ -73,6 +73,31 @@ export class Profile {
     });
   }
 
+  /** The button on the card of a person the reader blocks, which lifts the block. */
+  get unblockButton(): Locator {
+    return this.card.getByRole("button", { name: "Unblock", exact: true });
+  }
+
+  /** Opens the card's More, and returns its item named `name`. */
+  async moreItem(name: string): Promise<Locator> {
+    await this.card.getByRole("button", { name: "More", exact: true }).click();
+    return this.page.getByRole("menu", { name: "More", exact: true }).getByRole("menuitem", { name, exact: true });
+  }
+
+  /**
+   * Blocks the person from the card's More, Block… and its confirmation, which asks by the person's handle, and
+   * returns once the server has answered.
+   */
+  async block(): Promise<void> {
+    await (await this.moreItem("Block…")).click();
+    // The handle stands in the question between the marks that isolate its direction (U+2068, U+2069).
+    const handle = `${String.fromCodePoint(0x2068)}?@${escape(this.person.username)}${String.fromCodePoint(0x2069)}?`;
+    const asking = this.page.getByRole("alertdialog", { name: new RegExp(`^Block ${handle}\\?$`) });
+    await answered(this.page, { methods: ["POST"], path: /\/accounts\/[^/]+\/block$/ }, async () => {
+      await asking.getByRole("button", { name: "Block", exact: true }).click();
+    });
+  }
+
   /** The checkbox of the reader's list `name` in the submenu Add to list, checked while the list holds the person. */
   listChoice(name: string): Locator {
     return this.page

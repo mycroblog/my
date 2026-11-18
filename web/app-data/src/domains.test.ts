@@ -4,7 +4,7 @@ import { describe, expect, test } from "bun:test";
 import { ProblemError } from "@mycroblog/mykit";
 import { InfiniteQueryObserver } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
-import { domainMutesQuery, muteDomain, useMutedDomain } from "./domains";
+import { domainMutesQuery, muteDomain, useMutedDomain, useMutedDomains } from "./domains";
 import { notificationsQuery } from "./notifications";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
@@ -47,6 +47,38 @@ describe("useMutedDomain", () => {
     const { data } = fakeData({ domainMutes: ["photos.example"] });
     expect(mutedOf(data, "photos.example")).toBeUndefined();
     expect(probe(data, () => useMutedDomain(undefined))).toBeUndefined();
+  });
+});
+
+// The settings list the servers the reader mutes (#3202).
+describe("useMutedDomains", () => {
+  test("is empty and pending until the list is read, then holds the muted domains of every page, in the server's order, with no page left to ask for", async () => {
+    const muted = ["a.example", ...filler, "photos.example"];
+    const { data } = fakeData({ domainMutes: muted });
+    expect(probe(data, useMutedDomains)).toMatchObject({ items: [], status: "pending" });
+    await data.queryClient.query(domainMutesQuery(data));
+    const list = probe(data, useMutedDomains);
+    expect(list.status).toBe("success");
+    expect(list.items).toEqual(muted);
+    expect(list.hasNextPage).toBe(false);
+  });
+
+  test("reports an error when the list could not be read", async () => {
+    const { fake, data } = fakeData({ domainMutes: ["photos.example"] });
+    fake.script("GET /domain_mutes", { fail: 500 });
+    await data.queryClient.query(domainMutesQuery(data)).catch(() => undefined);
+    const queries = data.queryClient.getDefaultOptions().queries;
+    data.queryClient.setDefaultOptions({ queries: { ...queries, retryOnMount: false } });
+    expect(probe(data, useMutedDomains)).toMatchObject({ items: [], status: "error" });
+  });
+
+  test("no longer holds a server once its unmute resolved, and holds one once its mute did", async () => {
+    const { data } = fakeData({ domainMutes: ["photos.example", "social.example"] });
+    await data.queryClient.query(domainMutesQuery(data));
+    await muteDomain(data, "photos.example", false);
+    expect(probe(data, useMutedDomains).items).toEqual(["social.example"]);
+    await muteDomain(data, "ads.example", true);
+    expect([...probe(data, useMutedDomains).items].sort()).toEqual(["ads.example", "social.example"]);
   });
 });
 

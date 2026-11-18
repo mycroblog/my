@@ -7,6 +7,8 @@ import type { AppData } from "./app-data";
 import {
   deleteKeywordFilter,
   filterContexts,
+  filterLimitOf,
+  filterLimits,
   keywordFilterQuery,
   keywordFiltersQuery,
   saveKeywordFilter,
@@ -46,7 +48,68 @@ describe("filterContexts", () => {
   });
 });
 
+/** `count` filters of one word each, as the fake's settings take them. */
+const filtersOf = (count: number, words = 1) =>
+  Array.from({ length: count }, (_, i) => ({
+    title: `Filter ${String(i)}`,
+    action: "warn" as const,
+    contexts: ["home" as const],
+    keywords: Array.from({ length: words }, (_, k) => ({ keyword: `w${String(i)}-${String(k)}`, whole_word: true })),
+  }));
+
+/** Waits until nothing of `data` is being read. */
+async function idle(data: AppData) {
+  while (data.queryClient.isFetching() > 0) await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+// ADR-0157 §9.
+describe("filterLimits", () => {
+  test("are the most filters a reader has, words a filter and all the filters have, and characters a name and a word have", () => {
+    expect(filterLimits).toEqual({ filters: 100, filterWords: 100, words: 1000, title: 50, word: 100 });
+  });
+});
+
+describe("filterLimitOf", () => {
+  test("names the limit of filters for the server's refusal of one filter more", async () => {
+    const { data } = fakeData({ settings: { filters: filtersOf(100) } });
+    expect(filterLimitOf(await refusedWith(saveKeywordFilter(data, request)))).toBe("filters");
+  });
+
+  test("names the limit of words for the server's refusal of more words than all the filters have room for, and than one filter has", async () => {
+    const { data } = fakeData({ settings: { filters: filtersOf(10, 100) } });
+    expect(filterLimitOf(await refusedWith(saveKeywordFilter(data, request)))).toBe("words");
+    const one = fakeData({ settings: { filters: [] } });
+    const long = { ...request, keywords: filtersOf(1, 101)[0]?.keywords ?? [] };
+    expect(filterLimitOf(await refusedWith(saveKeywordFilter(one.data, long)))).toBe("words");
+  });
+
+  test("names none for another refusal, and for what is no problem of the server", async () => {
+    const { data } = fakeData();
+    expect(filterLimitOf(await refusedWith(saveKeywordFilter(data, { ...request, contexts: [] })))).toBeUndefined();
+    expect(filterLimitOf(await refusedWith(saveKeywordFilter(data, request, "gone")))).toBeUndefined();
+    expect(filterLimitOf(new TypeError("Failed to fetch"))).toBeUndefined();
+    expect(filterLimitOf(undefined)).toBeUndefined();
+  });
+});
+
 describe("useKeywordFilters", () => {
+  test("retry reads the filters again after a read that failed", async () => {
+    const { fake, data, requests } = fakeData();
+    fake.script("GET /filters", { times: 1, fail: 500 });
+    await data.queryClient.query(keywordFiltersQuery(data)).catch(() => undefined);
+    const queries = data.queryClient.getDefaultOptions().queries;
+    data.queryClient.setDefaultOptions({ queries: { ...queries, retryOnMount: false } });
+    const failed = probe(data, useKeywordFilters);
+    expect(failed.status).toBe("error");
+
+    failed.retry();
+    await idle(data);
+
+    expect(requests).toEqual(["GET /filters", "GET /filters"]);
+    expect(probe(data, useKeywordFilters)).toMatchObject({ status: "success" });
+    expect(probe(data, useKeywordFilters).filters).toHaveLength(3);
+  });
+
   test("is empty and pending until the filters are read, then lists them oldest first, an expired one marked", async () => {
     const { data } = fakeData();
     expect(probe(data, useKeywordFilters)).toMatchObject({ filters: [], status: "pending" });
@@ -79,6 +142,27 @@ describe("useKeywordFilters", () => {
 });
 
 describe("useKeywordFilter", () => {
+  test("retry reads the filter again after a read that failed", async () => {
+    const { fake, data, requests } = fakeData();
+    const [spoilers] = await listed(data);
+    const id = spoilers?.id ?? "";
+    fake.script("GET /filters/{id}", { times: 1, fail: 500 });
+    await data.queryClient.query(keywordFilterQuery(data, id)).catch(() => undefined);
+    const queries = data.queryClient.getDefaultOptions().queries;
+    data.queryClient.setDefaultOptions({ queries: { ...queries, retryOnMount: false } });
+    const failed = probe(data, () => useKeywordFilter(id));
+    expect(failed.filter).toBeUndefined();
+    expect(failed.error).toBeInstanceOf(Error);
+
+    failed.retry();
+    await idle(data);
+
+    expect(requests.filter((r) => r === `GET /filters/${id}`)).toHaveLength(2);
+    const { filter, error } = probe(data, () => useKeywordFilter(id));
+    expect(error).toBeNull();
+    expect(filter?.title).toBe("Spoilers");
+  });
+
   test("is the filter once read, with its words and where it applies", async () => {
     const { data } = fakeData();
     const [spoilers] = await listed(data);

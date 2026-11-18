@@ -18,6 +18,7 @@ export { EmojiPicker } from "./emoji-picker";
 export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
+export { FilterEditor, foldedBy, KeywordFilters } from "./keyword-filters";
 export { ListIndex } from "./lists";
 export { streamOpened } from "./stream";
 export { NotificationSettings } from "./notification-settings";
@@ -25,6 +26,7 @@ export { FollowRequests, Notifications, WaitingRequests } from "./notifications"
 export { Profile } from "./profile";
 export { ProfileForm, ProfileSettings } from "./profile-settings";
 export { Reactors } from "./reactors";
+export { Relationships } from "./relationships";
 export { DisplaySettings, Landing, Settings } from "./settings";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { Thread } from "./thread";
