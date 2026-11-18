@@ -9,16 +9,23 @@
 //   reader's zone; a filter that has an end keeps it (No change) unless another is chosen, and one that ended says so
 //   in words under its end, and that a new end turns it on again. While the form is sent, nothing in it can change.
 // - Its words, each a word or a phrase in a field named by its number for assistive technology alone, with Whole word
-//   and Remove on its line in a wide frame and under it on a phone (Remove at the row's end), in the order given: added from the section's head (the new one takes the focus), removed by the row's own button (the
-//   focus goes to the word that takes its place, or to what adds one). How many more the filter and all the reader's
-//   filters may take is said under the heading as the room runs short, and adding stops at the limit, which says why.
+//   and Remove on its line in a wide frame and under it on a phone (Remove at the row's end), in the order given:
+//   added from the section's head (the new one takes the focus), removed by the row's own button (the focus goes to
+//   the word that takes its place, to the one before it when it was the last, or to what adds one when none is left,
+//   as after a field of the profile is removed). How many more the filter and all the reader's filters may take is
+//   said under the heading as the room runs short, and adding stops at the limit, which says why.
 // - Where it applies, the five places of the server, every one for a new filter, a checkbox each a finger's height.
 // - Delete, after a confirmation, for a filter that is there.
 //
-// What is wrong stands under the input it is about, and the focus goes there: what the form finds before sending (no
-// name, no word, no place, a text too long, a time gone by), and what the server refuses of a member it names, in the
-// words of the rule the value breaks where the form knows it (the server says only that it is not valid), or of the
-// words when they pass the limit of a filter or of all of them; the submit bar says only that nothing was saved.
+// What is wrong stands under what it is about, which it describes, and the focus goes there, the error clear of the
+// submit bar (`focusRefusedField`). What the form finds before sending (no name, no word, no place, a text too long,
+// a time gone by) is marked all at once, each with its sentence, the focus on the first; each mark then goes as its
+// value is put right, and the bar's sentence with the last. What the server refuses of a member it names stands in
+// the words of the rule the value breaks where the form knows it (the server says only that it is not valid), else
+// in the server's (what the filter does, its end, its places, its words as a whole), and the limit of a filter's
+// words or of all of them under the words. The words as a whole are their list, which takes the focus, or what adds
+// a word while there is none; no word written, with a row to write it in, is that row's field. The submit bar says
+// only that nothing was saved.
 // Once saved or deleted the screen goes back to the list, and app-data reads the open timelines again, where a
 // matching post is then folded. Leaving with changes not saved is the app's to notice (`onUnsaved`): it holds the
 // reader back and gives `leaving`, and the screen asks whether to leave.
@@ -49,6 +56,7 @@ import {
   FeedNotice,
   FieldError,
   FieldNote,
+  focusRefusedField,
   FormAlert,
   ModalPresence,
   Row,
@@ -67,7 +75,7 @@ import {
   useTimeZone,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState } from "react";
-import { fieldError, placeRefusal, type FieldMembers, type Refused } from "../field-errors";
+import { placeRefusal, type FieldMembers } from "../field-errors";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
 import { ReadingNotice } from "./controls";
@@ -168,75 +176,105 @@ const written = (words: readonly Word[]): readonly Word[] => words.filter((w) =>
 const graphemes = (text: string) =>
   [...new Intl.Segmenter(undefined, { granularity: "grapheme" }).segment(text)].length;
 
-/** The inputs of the form, which what is wrong is placed on. */
-type Input = "title" | "words" | "contexts" | "action" | "ends" | `word:${number}`;
+/**
+ * What something wrong with the form is placed on: its name, what it does, its end (the choice, or the date and time
+ * while it ends at one), its words as a whole, the word of a key, and its places.
+ */
+type Input = "title" | "action" | "ends" | "words" | `word:${number}` | "contexts";
+
+/** Something wrong with the form: what it is about, and the sentence that stands under it. */
+type Wrong = { readonly input: Input; readonly text: string };
+
+/** What a member of the request answers to: an input, or the word at an index of the words sent. */
+type Named = Exclude<Input, `word:${number}`> | `sent:${number}`;
 
 /** Which input answers to which member of the request (`POST /filters`, `PATCH /filters/{id}`). */
-const members: FieldMembers<Input> = {
+const members: FieldMembers<Named> = {
   title: "title",
   keywords: "words",
-  "keywords[]": (index) => `word:${index}`,
-  "keywords[].keyword": (index) => `word:${index}`,
-  "keywords[].whole_word": (index) => `word:${index}`,
+  "keywords[]": (index) => `sent:${index}`,
+  "keywords[].keyword": (index) => `sent:${index}`,
+  "keywords[].whole_word": (index) => `sent:${index}`,
   contexts: "contexts",
   "contexts[]": () => "contexts",
   action: "action",
   expires_at: "ends",
 };
 
-/** Where the form's last save is; one refused, or stopped before sending, with the keys of the words it held. */
-type Sent =
-  | { readonly kind: "idle" | "sending" }
-  | { readonly kind: "refused"; readonly refused: Refused<Input>; readonly keys: readonly number[] };
+const isSent = (named: Named): named is `sent:${number}` => named.startsWith("sent:");
+
+/** The ids of what describes a control, in order, as `aria-describedby` takes them; undefined for none. */
+const describedBy = (...ids: (string | false)[]): string | undefined =>
+  ids.filter((id) => id !== false).join(" ") || undefined;
 
 /**
- * A failed save placed on the form: the limits of the words under them, of the filters in the submit bar; a member
- * the server names, under its input, in the words of the rule it breaks where the form knows it (a name, a word: the
- * server says only that the value is not valid), else in the server's; the submit bar then says only that nothing was
- * saved.
+ * A save that was not made: what is wrong, each thing under what it is about, in the form's order (`wrong`), and what
+ * the submit bar says where that is more than that something is marked (`reason`).
  */
-function placed(error: unknown, t: T): Refused<Input> {
+type Refusal = { readonly reason: string | undefined; readonly wrong: readonly Wrong[] };
+
+/**
+ * Where the form's last save is; one that was not made, `by` the form's own check before sending, which is made
+ * again as the form changes, or by the server.
+ */
+type Sent =
+  { readonly kind: "idle" | "sending" } | ({ readonly kind: "refused"; readonly by: "form" | "server" } & Refusal);
+
+/**
+ * A failed save placed on the form, whose words were sent in the order of `keys`: the limits of the words under them,
+ * of the filters in the submit bar; a member the server names, under its input, in the words of the rule it breaks
+ * where the form knows it (a name, a word: the server says only that the value is not valid), else in the server's;
+ * the submit bar then says only that nothing was saved.
+ */
+function placed(error: unknown, keys: readonly number[], t: T): Refusal {
+  const at = (input: Input, text: string): Refusal => ({ reason: undefined, wrong: [{ input, text }] });
   const limit = filterLimitOf(error);
   if (limit === "words")
-    return {
-      reason: undefined,
-      field: {
-        input: "words",
-        text: t("settings.filters.words.too_many", { filter: filterLimits.filterWords, max: filterLimits.words }),
-      },
-    };
-  if (limit === "filters") return { reason: t("settings.filters.full", { max: filterLimits.filters }) };
+    return at(
+      "words",
+      t("settings.filters.words.too_many", { filter: filterLimits.filterWords, max: filterLimits.words }),
+    );
+  if (limit === "filters") return { reason: t("settings.filters.full", { max: filterLimits.filters }), wrong: [] };
   const refused = placeRefusal(error, members);
-  const input = refused.field?.input;
-  if (input === undefined) return refused;
-  const text =
-    input === "title"
-      ? t("settings.filters.name.rule", { max: filterLimits.title })
-      : input.startsWith("word:")
-        ? t("settings.filters.word.rule", { max: filterLimits.word })
-        : (refused.field?.text ?? "");
-  return { reason: undefined, field: { input, text } };
+  const named = refused.field;
+  if (named === undefined) return { reason: refused.reason, wrong: [] };
+  if (named.input === "title") return at("title", t("settings.filters.name.rule", { max: filterLimits.title }));
+  if (isSent(named.input)) {
+    // A word the form did not send is no row's: the rule stands under the words.
+    const key = keys[Number(named.input.slice("sent:".length))];
+    return at(key === undefined ? "words" : `word:${key}`, t("settings.filters.word.rule", { max: filterLimits.word }));
+  }
+  return at(named.input, named.text);
 }
 
-/** What the form finds wrong before sending, the first thing, placed where it is; undefined when it can be sent. */
-function checked(form: Form, timeZone: string | undefined, t: T): Refused<Input> | undefined {
-  const at = (input: Input, text: string): Refused<Input> => ({ reason: undefined, field: { input, text } });
-  const word = (index: number): Input => `word:${index}`;
+/**
+ * What the form finds wrong before sending, every thing at once, each placed where it is, in the form's order; none
+ * when it can be sent. No word written is the first row's to put right, or the words' as a whole while there is no
+ * row.
+ */
+function checked(form: Form, timeZone: string | undefined, t: T): readonly Wrong[] {
+  const wrong: Wrong[] = [];
   const title = form.title.trim();
-  if (title === "") return at("title", t("settings.filters.name.missing"));
-  if (graphemes(title) > filterLimits.title)
-    return at("title", t("settings.filters.name.over", { max: filterLimits.title }));
-  const words = written(form.words);
-  if (words.length === 0) return at("words", t("settings.filters.words.missing"));
-  const long = words.findIndex((w) => graphemes(w.keyword.trim().normalize("NFKC")) > filterLimits.word);
-  if (long >= 0) return at(word(long), t("settings.filters.word.over", { max: filterLimits.word }));
-  if (form.contexts.length === 0) return at("contexts", t("settings.filters.contexts.missing"));
+  if (title === "") wrong.push({ input: "title", text: t("settings.filters.name.missing") });
+  else if (graphemes(title) > filterLimits.title)
+    wrong.push({ input: "title", text: t("settings.filters.name.over", { max: filterLimits.title }) });
   if (form.ends === "date") {
     const end = localInstant(form.date, timeZone);
-    if (Number.isNaN(end.getTime())) return at("ends", t("settings.filters.ends.date_missing"));
-    if (end.getTime() <= Date.now()) return at("ends", t("settings.filters.ends.date_past"));
+    if (Number.isNaN(end.getTime())) wrong.push({ input: "ends", text: t("settings.filters.ends.date_missing") });
+    else if (end.getTime() <= Date.now()) wrong.push({ input: "ends", text: t("settings.filters.ends.date_past") });
   }
-  return undefined;
+  const words = written(form.words);
+  const [row] = form.words;
+  if (words.length === 0)
+    wrong.push({
+      input: row === undefined ? "words" : `word:${row.key}`,
+      text: t("settings.filters.words.missing"),
+    });
+  for (const word of words)
+    if (graphemes(word.keyword.trim().normalize("NFKC")) > filterLimits.word)
+      wrong.push({ input: `word:${word.key}`, text: t("settings.filters.word.over", { max: filterLimits.word }) });
+  if (form.contexts.length === 0) wrong.push({ input: "contexts", text: t("settings.filters.contexts.missing") });
+  return wrong;
 }
 
 /** The request that saves `form`: a duration from now, a date in the reader's zone, or the end the filter has. */
@@ -283,16 +321,21 @@ function EditForm({
   // The keys of the words the reader adds follow those the form opened with.
   const [opened] = useState(base.words.length);
   const nextKey = useRef(base.words.length);
-  // What takes the focus once the form is drawn again: a word after one removed, what adds one, or what was refused.
-  const focusNext = useRef<string | undefined>(undefined);
+  // What takes the focus once the form is drawn again: a word after one removed, or what adds one; and what a save
+  // that was not made is about, whose error comes into view with it, clear of the submit bar.
+  const focusNext = useRef<{ readonly id: string; readonly refused: boolean } | undefined>(undefined);
   useEffect(() => {
-    if (focusNext.current === undefined) return;
-    document.getElementById(focusNext.current)?.focus();
+    const next = focusNext.current;
+    if (next === undefined) return;
     focusNext.current = undefined;
+    if (next.refused) focusRefusedField(next.id);
+    else document.getElementById(next.id)?.focus();
   });
 
   const busy = sent.kind === "sending" || deleting === "busy";
-  const refused = sent.kind === "refused" ? sent.refused : undefined;
+  const wrong = sent.kind === "refused" ? sent.wrong : [];
+  /** What is wrong with `input`, or undefined. */
+  const wrongWith = (input: Input) => wrong.find((w) => w.input === input)?.text;
   const unsaved = savedOf(form) !== savedOf(base);
   useEffect(() => {
     onUnsaved?.(unsaved);
@@ -307,51 +350,61 @@ function EditForm({
   const titleId = `${id}-title`;
   const addId = `${id}-add`;
   const limitId = `${id}-limit`;
-  const contextsErrorId = `${id}-contexts-error`;
-  const endsErrorId = `${id}-ends-error`;
+  const listId = `${id}-words`;
   const actionId = `${id}-action`;
   const endsId = `${id}-ends`;
   const dateId = `${id}-date`;
   const endedId = `${id}-ended`;
+  const wordId = (key: number) => `${id}-word-${String(key)}`;
+  const contextId = (context: FilterContext) => `${id}-context-${context}`;
+  /**
+   * The element of an input, which takes the focus when what is wrong is about it (`focusRefusedField`), its error at
+   * `<its id>-error`: a text's field, the control of a setting's row (the date and time while the filter ends at
+   * one, else the choice of its end), the list of the words or what adds one while there is none, the first place.
+   */
+  const elementOf = (input: Input): string => {
+    if (input === "title") return titleId;
+    if (input === "action") return `${actionId}-control`;
+    if (input === "ends") return form.ends === "date" ? `${dateId}-control` : `${endsId}-control`;
+    if (input === "words") return form.words.length === 0 ? addId : listId;
+    if (input === "contexts") return contextId(filterContexts[0] ?? "home");
+    return wordId(Number(input.slice("word:".length)));
+  };
+  const errorId = (input: Input) => `${elementOf(input)}-error`;
   const endedNote =
     filter?.expired === true && filter.expires_at !== undefined
       ? t("settings.filters.ends.ended", { date: date(filter.expires_at) })
       : undefined;
-  const wordId = (key: number) => `${id}-word-${String(key)}`;
-  const contextId = (context: FilterContext) => `${id}-context-${context}`;
 
-  /** A change of the form: what the last save said was about the form as it was. */
-  const change = (next: Partial<Form>) => {
-    setForm((now) => ({ ...now, ...next }));
-    setSent((was) => (was.kind === "refused" ? { kind: "idle" } : was));
+  /**
+   * A change of the form. What the server said was about the form as it was, and goes; what the form found itself is
+   * looked for again in the form as it now is, so that each mark goes as its value is put right, and the bar's
+   * sentence with the last of them.
+   */
+  const change = (patch: Partial<Form>) => {
+    const next = { ...form, ...patch };
+    setForm(next);
+    if (sent.kind !== "refused") return;
+    const left = sent.by === "form" ? checked(next, timeZone, t) : [];
+    setSent(left.length === 0 ? { kind: "idle" } : { ...sent, wrong: left });
   };
 
-  /** The element of an input that was refused, which takes the focus. */
-  const elementOf = (input: Input, keys: readonly number[]): string => {
-    if (input === "title") return titleId;
-    if (input === "contexts") return contextId(form.contexts[0] ?? "home");
-    if (input === "action") return `${actionId}-control`;
-    if (input === "ends") return `${endsId}-control`;
-    if (input === "words") {
-      const first = form.words[0];
-      return first === undefined ? addId : wordId(first.key);
-    }
-    const key = keys[Number(input.slice("word:".length))];
-    return key === undefined ? addId : wordId(key);
-  };
-  const refuse = (r: Refused<Input>, keys: readonly number[]) => {
-    setSent({ kind: "refused", refused: r, keys });
-    if (r.field !== undefined) focusNext.current = elementOf(r.field.input, keys);
+  /** A save that was not made: what is wrong is drawn, and the first of it takes the focus from the button. */
+  const refuse = (by: "form" | "server", refusal: Refusal) => {
+    setSent({ kind: "refused", by, ...refusal });
+    const [first] = refusal.wrong;
+    // What names nothing leaves the focus on the button, by the bar's alert.
+    if (first !== undefined) focusNext.current = { id: elementOf(first.input), refused: true };
   };
 
-  const sentKeys = written(form.words).map((w) => w.key);
   const save = () => {
     if (busy) return;
-    const wrong = checked(form, timeZone, t);
-    if (wrong !== undefined) {
-      refuse(wrong, sentKeys);
+    const found = checked(form, timeZone, t);
+    if (found.length > 0) {
+      refuse("form", { reason: undefined, wrong: found });
       return;
     }
+    const keys = written(form.words).map((w) => w.key);
     setSent({ kind: "sending" });
     writes.save(requestOf(form, filter, timeZone), filterId).then(
       () => {
@@ -359,7 +412,7 @@ function EditForm({
         onBack();
       },
       (error: unknown) => {
-        refuse(placed(error, t), sentKeys);
+        refuse("server", placed(error, keys, t));
       },
     );
   };
@@ -373,15 +426,9 @@ function EditForm({
       },
       () => {
         setDeleting(undefined);
-        setSent({ kind: "refused", refused: { reason: t("settings.filters.delete.failed") }, keys: sentKeys });
+        setSent({ kind: "refused", by: "server", reason: t("settings.filters.delete.failed"), wrong: [] });
       },
     );
-  };
-
-  /** What was refused of the word of `key`, placed by its place among the words sent. */
-  const wordError = (key: number) => {
-    const at = sent.kind === "refused" ? sent.keys.indexOf(key) : -1;
-    return at < 0 ? undefined : fieldError<Input>(refused, `word:${at}`);
   };
 
   // The room left for words: in this filter, and in all the reader's filters.
@@ -402,21 +449,27 @@ function EditForm({
     nextKey.current += 1;
     change({ words: [...form.words, { key, keyword: "", whole: false }] });
   };
+  const wordsHeading = t("settings.filters.words");
+  const actionError = wrongWith("action");
+  const endsError = wrongWith("ends");
+  const wordsError = wrongWith("words");
+  const contextsError = wrongWith("contexts");
+  // What adds a word is what the words' error is about while there is none.
+  const addDescribed = describedBy(
+    roomLine !== undefined && limitId,
+    wordsError !== undefined && form.words.length === 0 && errorId("words"),
+  );
   const add = (
     <Button
       id={addId}
       size="timeline"
       isDisabled={busy || room <= 0}
       onPress={addWord}
-      {...(roomLine === undefined ? {} : { "aria-describedby": limitId })}
+      {...(addDescribed === undefined ? {} : { "aria-describedby": addDescribed })}
     >
       {t("settings.filters.words.add")}
     </Button>
   );
-  const wordsHeading = t("settings.filters.words");
-  const wordsError = fieldError(refused, "words");
-  const contextsError = fieldError(refused, "contexts");
-  const endsError = fieldError(refused, "ends");
   const isNew = filterId === undefined;
 
   const endsChoices: Ends[] = [
@@ -444,12 +497,8 @@ function EditForm({
             result={
               sent.kind === "refused" ? (
                 <FormAlert>
-                  {sent.refused.reason ??
-                    t(
-                      sent.refused.field === undefined
-                        ? "settings.filters.save.failed"
-                        : "settings.filters.save.refused",
-                    )}
+                  {sent.reason ??
+                    t(sent.wrong.length === 0 ? "settings.filters.save.failed" : "settings.filters.save.refused")}
                 </FormAlert>
               ) : undefined
             }
@@ -472,7 +521,7 @@ function EditForm({
             }}
             readOnly={busy}
             end={<LimitCount left={filterLimits.title - graphemes(form.title.trim())} near={10} />}
-            error={fieldError(refused, "title")}
+            error={wrongWith("title")}
           />
           <SettingRow id={actionId} label={t("settings.filters.action")} form>
             <Select
@@ -485,9 +534,11 @@ function EditForm({
               onChange={(value) => {
                 change({ action: value === "hide" ? "hide" : "warn" });
               }}
+              describedBy={actionError === undefined ? undefined : errorId("action")}
               isDisabled={busy}
             />
           </SettingRow>
+          {actionError !== undefined && <FieldError id={errorId("action")}>{actionError}</FieldError>}
           <SettingRow id={endsId} label={t("settings.filters.ends")} form>
             <Select
               name="ends"
@@ -502,14 +553,10 @@ function EditForm({
                     : { ends },
                 );
               }}
-              describedBy={
-                [
-                  endedNote === undefined ? "" : endedId,
-                  endsError === undefined || form.ends === "date" ? "" : endsErrorId,
-                ]
-                  .filter((part) => part !== "")
-                  .join(" ") || undefined
-              }
+              describedBy={describedBy(
+                endedNote !== undefined && endedId,
+                endsError !== undefined && form.ends !== "date" && errorId("ends"),
+              )}
               isDisabled={busy}
             />
           </SettingRow>
@@ -518,6 +565,7 @@ function EditForm({
           {form.ends === "date" && (
             <SettingRow id={dateId} label={t("settings.filters.ends.date")} form>
               <DateTimeField
+                id={`${dateId}-control`}
                 label={t("settings.filters.ends.date")}
                 value={form.date}
                 onChange={(value) => {
@@ -525,12 +573,12 @@ function EditForm({
                 }}
                 min={localInput(new Date(), timeZone)}
                 invalid={endsError !== undefined}
-                describedBy={endsError === undefined ? undefined : endsErrorId}
+                describedBy={endsError === undefined ? undefined : errorId("ends")}
                 disabled={busy}
               />
             </SettingRow>
           )}
-          {endsError !== undefined && <FieldError id={endsErrorId}>{endsError}</FieldError>}
+          {endsError !== undefined && <FieldError id={errorId("ends")}>{endsError}</FieldError>}
         </SettingsSection>
         <SettingsSection
           heading={wordsHeading}
@@ -547,7 +595,11 @@ function EditForm({
           {form.words.length === 0 ? (
             <SettingsEmpty action={add}>{t("settings.filters.words.empty")}</SettingsEmpty>
           ) : (
-            <SettingsList label={wordsHeading}>
+            <SettingsList
+              label={wordsHeading}
+              id={listId}
+              describedBy={wordsError === undefined ? undefined : errorId("words")}
+            >
               {form.words.map((word, i) => (
                 <SettingsFieldRow
                   key={word.key}
@@ -565,7 +617,7 @@ function EditForm({
                       readOnly={busy}
                       // A word the reader just added is theirs to write: the button that added it may be gone.
                       autoFocus={word.key >= opened}
-                      error={wordError(word.key)}
+                      error={wrongWith(`word:${word.key}`)}
                     />
                   }
                 >
@@ -590,7 +642,7 @@ function EditForm({
                       // The button leaves with its word: the focus goes to the word that takes its place, the one
                       // before it, or what adds a first one.
                       const after = form.words[i + 1] ?? form.words[i - 1];
-                      focusNext.current = after === undefined ? addId : wordId(after.key);
+                      focusNext.current = { id: after === undefined ? addId : wordId(after.key), refused: false };
                       change({ words: form.words.filter((w) => w.key !== word.key) });
                     }}
                   >
@@ -600,7 +652,7 @@ function EditForm({
               ))}
             </SettingsList>
           )}
-          {wordsError !== undefined && <FieldError>{wordsError}</FieldError>}
+          {wordsError !== undefined && <FieldError id={errorId("words")}>{wordsError}</FieldError>}
         </SettingsSection>
         <SettingsSection heading={t("settings.filters.contexts")}>
           <Stack>
@@ -617,13 +669,13 @@ function EditForm({
                     contexts: on ? [...form.contexts, context] : form.contexts.filter((c) => c !== context),
                   });
                 }}
-                describedBy={contextsError === undefined ? undefined : contextsErrorId}
+                describedBy={contextsError === undefined ? undefined : errorId("contexts")}
                 touch
                 disabled={busy}
               />
             ))}
           </Stack>
-          {contextsError !== undefined && <FieldError id={contextsErrorId}>{contextsError}</FieldError>}
+          {contextsError !== undefined && <FieldError id={errorId("contexts")}>{contextsError}</FieldError>}
         </SettingsSection>
         {!isNew && (
           <SettingsSection heading={t("settings.filters.delete")} about={t("settings.filters.delete.about")}>

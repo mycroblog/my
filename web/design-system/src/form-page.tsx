@@ -835,9 +835,11 @@ const bare = tv({
 /**
  * A field of a date and a time (`datetime-local`) with no label of its own: `label` names it for assistive technology,
  * `value`, `min` and `max` are as the browser holds them (2026-11-16T09:00), `invalid` draws the line of a refusal,
- * and `describedBy` names the ids that describe it.
+ * and `describedBy` names the ids that describe it. With `id`, what holds it gives it the focus when its value is
+ * refused (`focusRefusedField`, its error at `<id>-error`), and a label of the page can be for it.
  */
 export function DateTimeField({
+  id,
   label,
   value,
   onChange,
@@ -847,6 +849,7 @@ export function DateTimeField({
   describedBy,
   disabled,
 }: {
+  id?: string | undefined;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -863,6 +866,7 @@ export function DateTimeField({
       shrink
       as={
         <input
+          id={id}
           type="datetime-local"
           className={bare().dateTime()}
           aria-label={label}

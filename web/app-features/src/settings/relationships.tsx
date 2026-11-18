@@ -6,16 +6,23 @@
 // entry shows every list at once with its count once the whole of it is read: a list of seven rows or fewer whole, a
 // longer one by its first five and the door to the whole list (a row that leads on, with its chevron), on a screen
 // under the entry (/settings/relationships/<list>) that pages through it, its section named by what it lists, since
-// the screen's title names the list. An account leads to its profile, and a muted one says what the mute covers (its notifications too, until
-// when) where the server says it.
+// the screen's title names the list. An account leads to its profile, and a muted one says what the mute covers (its
+// notifications too, until when) where the server says it.
+//
+// The entry reads the four lists itself, once, and gives each to its section: it says that it loads until every one
+// answered, and that the settings could not be read when none could. From then on its sections stay, and a list that
+// failed says so in its own section, asked for again only by the reader's Try again there; so does the next page of
+// a whole list, under the rows read so far.
 //
 // Each row is taken out of its list as the profile's and a post's menus undo the same: at once, with no confirmation
 // (Unblock, Unmute, the server's Unmute, the hashtag's Unfollow), through app-data's writes, which read the list again.
 // The row then keeps its place until the reader leaves the screen, its button gone and its result said in words in
-// its place (Unblocked), so that nothing moves under the finger and no second press undoes another row; the focus goes
-// to that result, named by the sentence of what was done. The heading's count follows the server. A write that failed
-// says so in the section's status, a polite live region there from the start, and leaves the row and the focus as
-// they were. An empty list says what it would hold and how something comes to be in it.
+// its place (Unblocked: a muted account's line of what the mute covers gives way to it), so that nothing moves under
+// the finger and no second press undoes another row: which rows a cut list shows, and its door, stay as they were
+// too. The focus goes to that result, named by the sentence of what was done. The heading's count follows the server.
+// A write that failed says so in the section's status, a polite live region there from the start, and leaves the row
+// and the focus as they were; the sentence goes as the next press on that row begins. An empty list says what it
+// would hold and how something comes to be in it.
 
 import { AccountLine, sentenceHandleOf } from "@my/app-components";
 import {
@@ -62,7 +69,7 @@ import type { SettingsEntryProps } from "./entries";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
-/** The lists of the entry, in its order. */
+/** The lists of the entry, in the order of its sections. */
 const relationshipLists = ["blocked", "muted", "servers", "hashtags"] as const;
 type RelationshipList = (typeof relationshipLists)[number];
 
@@ -115,10 +122,13 @@ type RowState = {
  * row taken out keeps its place among the rows until the reader leaves the screen (`kept`: the item and where it
  * stood), its actions gone and its result said in their place, so that nothing moves under the finger, and its
  * result takes the focus, where its button was; its sentence is that place's name, read once. A removal that failed
- * says so in `status`, a polite live region there from the start, the row and the focus left as they were.
+ * says so in `status`, a polite live region there from the start, the row and the focus left as they were; what it
+ * says of a row is gone as the next removal of that row begins, which then says what came of it.
  */
 export function useRemovals<I>(id: string) {
-  const [said, setSaid] = useState<{ readonly text: string; readonly n: number } | undefined>(undefined);
+  const [said, setSaid] = useState<{ readonly key: string; readonly text: string; readonly n: number } | undefined>(
+    undefined,
+  );
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   const [kept, setKept] = useState<ReadonlyMap<string, { item: I; at: number; result: SettingsRowResult }>>(new Map());
   const count = useRef(0);
@@ -132,6 +142,7 @@ export function useRemovals<I>(id: string) {
   const remove = (key: string, item: I, at: number, { write, shown, done, failed }: Removal) => {
     if (busy.has(key)) return;
     setBusy((now) => new Set(now).add(key));
+    setSaid((was) => (was?.key === key ? undefined : was));
     write()
       .then(
         () => {
@@ -141,7 +152,7 @@ export function useRemovals<I>(id: string) {
         },
         () => {
           count.current += 1;
-          setSaid({ text: failed, n: count.current });
+          setSaid({ key, text: failed, n: count.current });
         },
       )
       .finally(() => {
@@ -172,30 +183,35 @@ type ListOf<I> = {
 /**
  * A list's section: its rows, those the reader took out where they stood, or what stands in their place (that it
  * loads, that it failed, that it is empty), the status of its removals, and at the end the door to the whole list
- * (`capped`, on the entry) or the next page. On the entry its heading is the list's name with how many it holds, as
- * the server has it once the whole list is read; on the screen of the whole list, whose title is that name, the
- * heading is the count's sentence alone (9 servers).
+ * (`capped`, on the entry) or the next page, which says under the rows read so far that it could not be read, its
+ * button then the way to ask again. On the entry its heading is the list's name with how many it holds, as the
+ * server has it once the whole list is read; on the screen of the whole list, whose title is that name, the heading
+ * is the count's sentence alone (9 servers). The door and the rows a cut list shows are decided over the server's
+ * rows with those taken out put back, so that taking one out changes neither.
  */
 function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { capped: boolean; t: T }) {
   const { lang } = stringsIn(useLocale().locale);
   const id = useId();
   const { busy, kept, remove, status } = useRemovals<I>(id);
-  const whole = items.status === "success" && !items.hasNextPage;
+  // A next page that failed leaves the pages before it, under a status of `error`: the list is read all the same.
+  const read = items.status === "success" || items.failedNextPage;
+  const whole = read && !items.hasNextPage;
   const count = items.items.length;
   const heading = capped
     ? t("settings.relationships.list", { list })
-    : items.status === "success"
+    : read
       ? t("settings.relationships.count", { list, count, more: whole ? "no" : "yes" })
       : t("settings.relationships.list", { list });
-  const door = capped && (count > most || items.hasNextPage);
-  // The rows the server lists, then each the reader took out put back where it stood.
-  const shown: I[] = [...(door ? items.items.slice(0, few) : items.items)];
+  // The rows the server lists, with each the reader took out put back where it stood.
+  const listed: I[] = [...items.items];
   const taken = [...kept].sort((a, b) => a[1].at - b[1].at);
   for (const entry of taken) {
     const [key, { item, at }] = entry;
-    if (!shown.some((i) => keyOf(i) === key)) shown.splice(Math.min(at, shown.length), 0, item);
+    if (!listed.some((i) => keyOf(i) === key)) listed.splice(Math.min(at, listed.length), 0, item);
   }
-  const failedMore = items.status === "success" && items.error !== null && items.hasNextPage;
+  const door = capped && (listed.length > most || items.hasNextPage);
+  const shown = door ? listed.slice(0, few) : listed;
+  const failedMore = items.failedNextPage && items.hasNextPage && !items.isFetchingNextPage;
   const retry = (onPress: () => void) => (
     <Button size="timeline" touch onPress={onPress}>
       {t("settings.retry")}
@@ -204,7 +220,7 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
   const rows =
     items.status === "pending" ? (
       <SettingsEmpty>{t("settings.relationships.loading")}</SettingsEmpty>
-    ) : items.status === "error" ? (
+    ) : !read ? (
       <SettingsEmpty action={retry(items.refetch)}>{t("settings.relationships.failed_list")}</SettingsEmpty>
     ) : shown.length === 0 ? (
       <SettingsEmpty>{t("settings.relationships.empty", { list })}</SettingsEmpty>
@@ -227,23 +243,23 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
       </SettingsList>
     );
   const all = t("settings.relationships.all", { list });
-  const more = capped ? (
-    door && (
-      <SettingsList label={all}>
-        <SettingsListRow title={all} href={relationshipListPath(list)} />
-      </SettingsList>
-    )
-  ) : failedMore && !items.isFetchingNextPage ? (
-    <SettingsEmpty action={retry(items.fetchNextPage)}>{t("settings.relationships.failed_more")}</SettingsEmpty>
-  ) : (
-    items.hasNextPage && (
-      <Row justify="start">
-        <Button size="timeline" touch busy={items.isFetchingNextPage} onPress={items.fetchNextPage}>
-          {t("settings.relationships.more")}
-        </Button>
-      </Row>
-    )
-  );
+  const more = capped
+    ? door && (
+        <SettingsList label={all}>
+          <SettingsListRow title={all} href={relationshipListPath(list)} />
+        </SettingsList>
+      )
+    : items.hasNextPage && (
+        <Stack gap="screen-row-gap">
+          {failedMore && <SettingsEmpty>{t("settings.relationships.failed_more")}</SettingsEmpty>}
+          <Row justify="start">
+            {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
+            <Button size="timeline" touch busy={items.isFetchingNextPage} onPress={items.fetchNextPage}>
+              {t(failedMore ? "settings.retry" : "settings.relationships.more")}
+            </Button>
+          </Row>
+        </Stack>
+      );
   return (
     <SettingsSection
       heading={heading}
@@ -297,13 +313,16 @@ function removalOf(
   };
 }
 
+/** What a section is given: its list as it was read, whether the entry cuts it short, and the strings. */
+type SectionProps<I> = { items: PagedList<I>; capped: boolean; t: T };
+
 /** The blocked accounts: each its row, leading to its profile, with Unblock. */
-function Blocked({ capped, t }: { capped: boolean; t: T }) {
+function Blocked({ items, capped, t }: SectionProps<Account>) {
   const change = useChangeRelationship();
   return (
     <ListSection<Account>
       list="blocked"
-      items={useBlocks()}
+      items={items}
       keyOf={(account) => account.id}
       capped={capped}
       t={t}
@@ -352,13 +371,13 @@ function muteCovers(mute: MutedAccount, ends: (at: string) => string, t: T): Rea
 }
 
 /** The muted accounts: each its row, leading to its profile, what the mute covers under it, with Unmute. */
-function Muted({ capped, t }: { capped: boolean; t: T }) {
+function Muted({ items, capped, t }: SectionProps<MutedAccount>) {
   const change = useChangeRelationship();
   const ends = useEnds();
   return (
     <ListSection<MutedAccount>
       list="muted"
-      items={useMutes()}
+      items={items}
       keyOf={(mute) => mute.account.id}
       capped={capped}
       t={t}
@@ -385,12 +404,12 @@ function Muted({ capped, t }: { capped: boolean; t: T }) {
 }
 
 /** The muted servers: each its domain, with Unmute. */
-function Servers({ capped, t }: { capped: boolean; t: T }) {
+function Servers({ items, capped, t }: SectionProps<string>) {
   const mute = useMuteDomain();
   return (
     <ListSection<string>
       list="servers"
-      items={useMutedDomains()}
+      items={items}
       keyOf={(domain) => domain}
       capped={capped}
       t={t}
@@ -412,12 +431,12 @@ function Servers({ capped, t }: { capped: boolean; t: T }) {
 }
 
 /** The followed hashtags: each its name, with Unfollow. */
-function Hashtags({ capped, t }: { capped: boolean; t: T }) {
+function Hashtags({ items, capped, t }: SectionProps<FollowedHashtag>) {
   const follow = useFollowTag();
   return (
     <ListSection<FollowedHashtag>
       list="hashtags"
-      items={useFollowedHashtagList()}
+      items={items}
       keyOf={(tag) => tag.name.toLowerCase()}
       capped={capped}
       t={t}
@@ -439,70 +458,100 @@ function Hashtags({ capped, t }: { capped: boolean; t: T }) {
   );
 }
 
-/** The section of `list`. */
-function Section({ list, capped, t }: { list: RelationshipList; capped: boolean; t: T }) {
+/** The whole of each list, read by the screen that shows it alone. */
+function AllBlocked({ t }: { t: T }) {
+  return <Blocked items={useBlocks()} capped={false} t={t} />;
+}
+function AllMuted({ t }: { t: T }) {
+  return <Muted items={useMutes()} capped={false} t={t} />;
+}
+function AllServers({ t }: { t: T }) {
+  return <Servers items={useMutedDomains()} capped={false} t={t} />;
+}
+function AllHashtags({ t }: { t: T }) {
+  return <Hashtags items={useFollowedHashtagList()} capped={false} t={t} />;
+}
+
+/** The section of the whole of `list`. */
+function Whole({ list, t }: { list: RelationshipList; t: T }) {
   switch (list) {
     case "blocked":
-      return <Blocked capped={capped} t={t} />;
+      return <AllBlocked t={t} />;
     case "muted":
-      return <Muted capped={capped} t={t} />;
+      return <AllMuted t={t} />;
     case "servers":
-      return <Servers capped={capped} t={t} />;
+      return <AllServers t={t} />;
     case "hashtags":
-      return <Hashtags capped={capped} t={t} />;
+      return <AllHashtags t={t} />;
   }
 }
 
-/** Whether the read of every list is on its way, or every one failed, and the retry of them all. */
-function useReads(): { pending: boolean; failed: boolean; retry: () => void } {
-  const reads = [useBlocks(), useMutes(), useMutedDomains(), useFollowedHashtagList()];
-  return {
-    pending: reads.some((read) => read.status === "pending"),
-    failed: reads.every((read) => read.status === "error"),
-    retry: () => {
-      for (const read of reads) read.refetch();
-    },
-  };
-}
-
-/** The entry's screen: the four lists, a few rows of each, once they are read. */
+/**
+ * The entry's screen: the four lists, a few rows of each. It reads them here, once, for its sections: until every one
+ * answered it says that it loads, and when none could be read, that, with the retry of them all. Once its sections
+ * show they stay, whatever a list does then (read again after a row is taken out, or at the reader's Try again):
+ * each says in its own place that it loads or failed, and what the reader did in the others stands. A section that
+ * read its list itself would ask for a failed one again as it is drawn, and the screen, back at loading, would draw
+ * it again without end.
+ */
 export function RelationshipSettings({ back }: SettingsEntryProps) {
   const { t } = stringsIn(useLocale().locale);
-  const { pending, failed, retry } = useReads();
+  const blocked = useBlocks();
+  const muted = useMutes();
+  const servers = useMutedDomains();
+  const hashtags = useFollowedHashtagList();
+  const reads = [blocked, muted, servers, hashtags];
+  const pending = reads.some((read) => read.status === "pending");
+  const failed = reads.every((read) => read.status === "error");
+  const [opened, setOpened] = useState(false);
+  const open = opened || (!pending && !failed);
+  if (open && !opened) setOpened(true);
   const title = t("settings.entry.relationships");
-  if (pending || failed)
+  if (!open)
     return (
       <SettingsScreen
         icon="members"
         title={title}
         back={back}
-        notice={<ReadingNotice failed={!pending && failed} onRetry={retry} />}
+        notice={
+          <ReadingNotice
+            failed={!pending}
+            onRetry={() => {
+              for (const read of reads) read.refetch();
+            }}
+          />
+        }
       />
     );
   return (
     <SettingsScreen icon="members" title={title} back={back}>
-      {relationshipLists.map((list) => (
-        <Section key={list} list={list} capped t={t} />
-      ))}
+      <Blocked items={blocked} capped t={t} />
+      <Muted items={muted} capped t={t} />
+      <Servers items={servers} capped t={t} />
+      <Hashtags items={hashtags} capped t={t} />
     </SettingsScreen>
   );
 }
 
-/** The title of the screen of the whole of `list`; undefined for a part of the address that names no list. */
-export function useRelationshipListTitle(list: string): string | undefined {
+/**
+ * The title of the screen at `list`, the last part of an address under the entry: the list's name, or the entry's for
+ * a part that names no list, whose screen says so under it.
+ */
+export function useRelationshipListTitle(list: string): string {
   const { t } = stringsIn(useLocale().locale);
-  return isRelationshipList(list) ? t("settings.relationships.list", { list }) : undefined;
+  return isRelationshipList(list) ? t("settings.relationships.list", { list }) : t("settings.entry.relationships");
 }
 
 /** The screen under the entry that holds the whole of `list`, a page at a time; `onBack` goes back to the entry. */
 export function RelationshipListScreen({ list, onBack }: { list: string; onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
+  const title = useRelationshipListTitle(list);
   const back = <BackButton onPress={onBack}>{t("settings.entry.relationships")}</BackButton>;
   if (!isRelationshipList(list))
     return (
       <SettingsScreen
         sub
-        title={t("settings.entry.relationships")}
+        title={title}
         back={back}
         notice={
           <FeedNotice alert lead action={<TextLink href={entryPath}>{t("settings.entry.relationships")}</TextLink>}>
@@ -512,8 +561,8 @@ export function RelationshipListScreen({ list, onBack }: { list: string; onBack:
       />
     );
   return (
-    <SettingsScreen sub title={t("settings.relationships.list", { list })} back={back}>
-      <Section list={list} capped={false} t={t} />
+    <SettingsScreen sub title={title} back={back}>
+      <Whole list={list} t={t} />
     </SettingsScreen>
   );
 }

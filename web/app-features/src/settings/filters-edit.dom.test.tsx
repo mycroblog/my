@@ -836,9 +836,8 @@ describe("what the server refuses shows where it belongs", () => {
     expect(invalid()).toEqual([]);
   });
 
-  // Defect: the bar says that something is marked, the focus goes to Posts that match, and the server's words about
-  // it are shown nowhere.
-  test.failing("what the filter does: the server's words under Posts that match", async () => {
+  // The server's words about what the filter does are shown once, while the bar says that something is marked.
+  test("what the filter does: the server's words under Posts that match", async () => {
     await saveRefused({ fail: refusal("action", "The server does not take this action.") });
 
     expect(screen.queryAllByText("The server does not take this action.")).toHaveLength(1);
@@ -961,7 +960,8 @@ describe("what the server refuses shows where it belongs", () => {
       expect(describes("Choose at least one place.")).toBe(5);
     });
 
-    test.failing("no word", async () => {
+    // With no word and no row, the sentence describes a control.
+    test("no word", async () => {
       const form = await filterForm({}, { filter: 0 });
       await form.user.click(removeWord(2));
       await form.user.click(removeWord(1));

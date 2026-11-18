@@ -158,9 +158,8 @@ describe("a Save that is not sent moves the focus from the button to the field t
     expect(writes(form)).toEqual([]);
   });
 
-  // Defect: the date and time is the field that is marked and described by "Choose a date and time.", and the focus
-  // goes to Ends, the choice above it, which says nothing of what is wrong.
-  test.failing("no date and time: the date and time", async () => {
+  // The date and time is the field that is marked and described by "Choose a date and time.", and it takes the focus.
+  test("no date and time: the date and time", async () => {
     const form = await whole();
     await form.user.selectOptions(endsChoice(), "At a date and time");
     setEndsAt("");

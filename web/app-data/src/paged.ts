@@ -46,6 +46,11 @@ export type PagedList<T> = {
   readonly hasNextPage: boolean;
   /** Whether the next page is being fetched. */
   readonly isFetchingNextPage: boolean;
+  /**
+   * Whether the last fetch of a next page failed, the pages before it kept (`status` is then `error`, as after any
+   * fetch that failed, and `error` says why); it stays true while that page is asked for again, until a fetch succeeds.
+   */
+  readonly failedNextPage: boolean;
   /** Fetches the next page; does nothing while one is being fetched or when there is none. */
   readonly fetchNextPage: () => void;
   /** Fetches the list again from its first page: the reader's try again after the first page failed. */
@@ -69,6 +74,7 @@ export function wholeList<T>(query: {
     error: query.error as Error | null,
     hasNextPage: false,
     isFetchingNextPage: false,
+    failedNextPage: false,
     fetchNextPage: () => undefined,
     refetch: () => {
       void query.refetch();
@@ -85,6 +91,7 @@ export function usePagedList<T>(options: ReturnType<typeof pagedQuery<T>>, enabl
     error: query.error,
     hasNextPage: query.hasNextPage,
     isFetchingNextPage: query.isFetchingNextPage,
+    failedNextPage: query.isFetchNextPageError,
     fetchNextPage: () => {
       if (query.hasNextPage && !query.isFetchingNextPage) void query.fetchNextPage();
     },

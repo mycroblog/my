@@ -341,28 +341,25 @@ describe("undoing", () => {
     });
   }
 
-  // Defect: the sentence of the undo that failed stays in the section's status after the next press undid the row,
-  // beside "You unfollowed #photography." in the row: the section says both that it was done and that it was not.
-  test.failing(
-    "once the next press undid the row, the section no longer says that undoing it did not finish",
-    async () => {
-      const kind = lists[3];
-      const on = await entry();
-      const part = () => section(kind.name);
-      on.fake.script(kind.route, { times: 1, fail: 500 });
-      await on.user.click(undoOf(part(), first.hashtags.group, kind.undo));
-      await waitFor(() => {
-        expect(said(part())).toEqual([first.hashtags.failed]);
-      });
-      await on.user.click(undoOf(part(), first.hashtags.group, kind.undo));
-      await waitFor(() => {
-        if (within(part()).queryAllByText(kind.done).length === 0) throw new Error("test: the row does not say it yet");
-      });
-      await read(on);
+  // The sentence of the undo that failed leaves the section's status with the next press on that row: the section
+  // never says both that the row was undone and that undoing it did not finish.
+  test("once the next press undid the row, the section no longer says that undoing it did not finish", async () => {
+    const kind = lists[3];
+    const on = await entry();
+    const part = () => section(kind.name);
+    on.fake.script(kind.route, { times: 1, fail: 500 });
+    await on.user.click(undoOf(part(), first.hashtags.group, kind.undo));
+    await waitFor(() => {
+      expect(said(part())).toEqual([first.hashtags.failed]);
+    });
+    await on.user.click(undoOf(part(), first.hashtags.group, kind.undo));
+    await waitFor(() => {
+      if (within(part()).queryAllByText(kind.done).length === 0) throw new Error("test: the row does not say it yet");
+    });
+    await read(on);
 
-      expect(said(part()).join()).toBe("");
-    },
-  );
+    expect(said(part()).join()).toBe("");
+  });
 
   test("each undo of a section stands in its own row, and a second one does not take the first one's away", async () => {
     const on = await entry();
@@ -623,20 +620,16 @@ describe("before the lists are read", () => {
     ).toEqual(["Blocked accounts 2", "Muted accounts 1", "Muted servers 2", "Followed hashtags 2"]);
   });
 
-  // Defect: while one list keeps failing and the others answer, the entry stays at "Loading your settings…" and asks
-  // for the failing list again and again without end (eleven requests in a fifth of a second), in place of saying in
-  // that list's section that it could not be loaded.
-  test.failing(
-    "when one list alone cannot be read, its section says so with Try again, and the other sections show",
-    async () => {
-      const on = fakeData(some);
-      const failing = on.fake.script("GET /mutes", { fail: 500 });
-      await relationships(on);
-      await failing.arrived();
-      // Time for the other lists to come and for the screen to draw them: twenty turns of the event loop.
-      for (let turn = 0; turn < 20; turn += 1) await new Promise((resolve) => setTimeout(resolve, 0));
+  // While one list keeps failing and the others answer, the entry shows its sections, and that list's section says
+  // that it could not be loaded.
+  test("when one list alone cannot be read, its section says so with Try again, and the other sections show", async () => {
+    const on = fakeData(some);
+    const failing = on.fake.script("GET /mutes", { fail: 500 });
+    await relationships(on);
+    await failing.arrived();
+    // Time for the other lists to come and for the screen to draw them: twenty turns of the event loop.
+    for (let turn = 0; turn < 20; turn += 1) await new Promise((resolve) => setTimeout(resolve, 0));
 
-      expect(screen.queryAllByText("This list could not be loaded.")).toHaveLength(1);
-    },
-  );
+    expect(screen.queryAllByText("This list could not be loaded.")).toHaveLength(1);
+  });
 });

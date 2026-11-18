@@ -646,16 +646,32 @@ const list = tv({
 /**
  * What a section lists (the passkeys, the signed-in browsers, the filters), named by `label`: its rows. As the
  * `values` of a `SettingRow` (the languages a setting holds), it is the setting's own: set in from its start, its
- * rows close to each other.
+ * rows close to each other. With `id`, the list of a form (the words of a filter) takes the focus when what holds it
+ * gives it (no key leads to it), and `describedBy` names what is wrong with its rows as a whole, an error at
+ * `<id>-error` right under it, so that a refusal of them all is read with the list and comes into view
+ * (`focusRefusedField`).
  */
-export function SettingsList({ label, children }: { label: string; children: ReactNode }) {
+export function SettingsList({
+  label,
+  id,
+  describedBy,
+  children,
+}: {
+  label: string;
+  id?: string | undefined;
+  describedBy?: string | undefined;
+  children: ReactNode;
+}) {
   const s = list();
   const values = use(ValuesContext);
   return (
     <Stack
       as="ul"
       gap={values ? "screen-air" : undefined}
+      id={id}
+      tabIndex={id === undefined ? undefined : -1}
       aria-label={label}
+      aria-describedby={describedBy}
       className={values ? `${s.root()} ${s.values()}` : s.root()}
     >
       {children}
