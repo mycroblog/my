@@ -33,6 +33,14 @@ export function importRunning(error: unknown): boolean {
   return error instanceof ProblemError && error.type === "/api/v1/problems/import-in-progress";
 }
 
+/**
+ * Whether `error` is the server's refusal of a request larger than it takes (413): a file under the limit of its text
+ * whose request is still too large. The API names no limit of the request's size, so the client cannot tell it first.
+ */
+export function importTooLarge(error: unknown): boolean {
+  return error instanceof ProblemError && error.status === 413;
+}
+
 /** How often the list is read again while an import is in progress. */
 const runningRefetchMs = 10_000;
 

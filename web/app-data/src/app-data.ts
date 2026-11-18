@@ -138,6 +138,23 @@ function isClosed(queryClient: QueryClient): boolean {
 }
 
 /**
+ * What `asked` gives, while the session of `data` lasts: once the data is closed (`closeData`), before it is asked or
+ * before it settles, it never settles, so that nothing comes of an answer that arrives after the session ended (a file
+ * saved from a tab that another signed out). The data's API refuses only a request sent after the close.
+ */
+export function whileOpen<T>(data: AppData, asked: () => Promise<T>): Promise<T> {
+  const never = new Promise<never>(() => undefined);
+  if (isClosed(data.queryClient)) return never;
+  return asked().then(
+    (value) => (isClosed(data.queryClient) ? never : value),
+    (error: unknown) => {
+      if (isClosed(data.queryClient)) return never;
+      throw error;
+    },
+  );
+}
+
+/**
  * Ends what `data` reads and keeps, with its session: its cache of server data is emptied and stays empty, the reads
  * on their way are cancelled, the screens still drawn on it read nothing more, and no request of its API is sent
  * again (each rejects). Data on a cache that is not this module's has its cache emptied, and no more.

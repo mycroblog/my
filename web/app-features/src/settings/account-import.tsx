@@ -28,6 +28,7 @@ import {
   dataImportsQuery,
   importLimits,
   importRunning,
+  importTooLarge,
   refusalDetail,
   refusedField,
   useDataImports,
@@ -235,6 +236,10 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
   const [kind, setKind] = useState<ImportKind>("following");
   const [mode, setMode] = useState<ImportMode>("merge");
   const [file, setFile] = useState<Picked | undefined>(undefined);
+  // The name of the file picked last while the browser reads it, and how many were picked: a file read after another
+  // was picked is dropped.
+  const [reading, setReading] = useState<string | undefined>(undefined);
+  const picks = useRef(0);
   // What the form itself finds wrong with the file, or the server when the form is sent.
   const [found, setFound] = useState<string | undefined>(undefined);
   const [sent, setSent] = useState<Sent>({ kind: "idle" });
@@ -253,8 +258,14 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
     focusNext.current = undefined;
   });
 
-  /** What the server says of a file it refuses, for under the file's field: its words about the file, if it has some. */
-  const fileRefusal = (error: unknown): string | undefined => {
+  /** What the field says of a file too large to import, `name`. */
+  const tooLarge = (name: string) => t("settings.account.import.file.too_large", { name, max: importLimits.text });
+  /**
+   * What the server says of the file `name` it refuses, for under the file's field: its words about the file, if it
+   * has some; the screen's own sentence of a file too large where the request was larger than the server takes.
+   */
+  const fileRefusal = (error: unknown, name: string): string | undefined => {
+    if (importTooLarge(error)) return tooLarge(name);
     const named = refusedField(error);
     if (named !== undefined) return named.member === "text" ? named.detail : undefined;
     return refusalDetail(error);
@@ -262,8 +273,8 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
   // What importing the file would do, asked whenever the file, what it lists or how it is imported changes.
   const previewed = useImportPreview(file === undefined ? undefined : { kind, mode, text: file.text });
   const unread =
-    previewed.status === "error"
-      ? (fileRefusal(previewed.error) ?? t("settings.account.import.file.unread"))
+    previewed.status === "error" && file !== undefined
+      ? (fileRefusal(previewed.error, file.name) ?? t("settings.account.import.file.unread"))
       : undefined;
   const fileError = found ?? unread;
 
@@ -281,17 +292,26 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
 
   const pick = (picked: File) => {
     changed();
+    // Only the file picked last is kept: a file read meanwhile holds no place in the form, and while it is read the
+    // form holds no file, its name standing in the field and Import waiting.
+    picks.current += 1;
+    const n = picks.current;
+    setFile(undefined);
+    setReading(picked.name);
     picked.text().then(
       (text) => {
+        if (n !== picks.current) return;
+        setReading(undefined);
         // The server counts characters; only a text that may pass its limit is counted. A file too large is no file
-        // to import: the field holds none, and says which one it was.
+        // to import: the field holds none, and says which one it was. The API names no limit of the request's size,
+        // past which the server answers 413, said as the same sentence (fileRefusal).
         if (text.length > importLimits.text && Array.from(text).length > importLimits.text) {
-          setFile(undefined);
-          setFound(t("settings.account.import.file.too_large", { name: picked.name, max: importLimits.text }));
+          setFound(tooLarge(picked.name));
         } else setFile({ name: picked.name, text });
       },
       () => {
-        setFile(undefined);
+        if (n !== picks.current) return;
+        setReading(undefined);
         setFound(t("settings.account.import.file.unread"));
       },
     );
@@ -318,14 +338,14 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
           setSent({ kind: "refused", reason: t("settings.account.import.running") });
           return;
         }
-        const words = fileRefusal(error);
-        if (refusedField(error) !== undefined && words !== undefined) refuseFile(words);
+        const words = fileRefusal(error, file.name);
+        if ((importTooLarge(error) || refusedField(error) !== undefined) && words !== undefined) refuseFile(words);
         else setSent({ kind: "refused", reason: words ?? t("settings.account.import.failed") });
       },
     );
   };
   const send = () => {
-    if (busy) return;
+    if (busy || reading !== undefined) return;
     if (file === undefined) {
       refuseFile(found ?? t("settings.account.import.file.missing"));
       return;
@@ -373,7 +393,7 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
             <Button
               kind="primary"
               busy={busy}
-              isDisabled={previewed.status === "pending"}
+              isDisabled={reading !== undefined || previewed.status === "pending"}
               onPress={send}
               {...(removes === undefined ? {} : { "aria-describedby": removesId })}
             >
@@ -399,8 +419,10 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
             id={fileId}
             label={t("settings.account.import.file")}
             error={fileError}
-            choose={t("settings.account.import.file.choose", { chosen: file === undefined ? "no" : "yes" })}
-            file={file?.name}
+            choose={t("settings.account.import.file.choose", {
+              chosen: file === undefined && reading === undefined ? "no" : "yes",
+            })}
+            file={reading ?? file?.name}
             none={t("settings.account.import.file.none")}
             accept=".csv,text/csv,text/plain"
             onFile={pick}

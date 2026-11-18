@@ -58,6 +58,7 @@ export { AppRegister, loadAppRegister } from "./settings/apps/register";
 export { AppToken } from "./settings/apps/token";
 export {
   confirmationKeptKey,
+  forgetConfirmationKept,
   useConfirmation,
   useProviderReturn,
   type ConfirmationAct,

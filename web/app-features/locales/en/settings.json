@@ -1465,7 +1465,7 @@
   },
   "settings.account.import.file.too_large": {
     "defaultMessage": "“{name}” is too large: a file holds up to {max, number} characters. Choose a smaller one.",
-    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes, the field then holding no file, or when the server refused the request as too large (413) as it previewed or started the import, the field then keeping the file. name is the file's name; max is 1000000."
   },
   "settings.account.import.file.empty": {
     "defaultMessage": "Nothing in this file matches “What the file lists”. Check that choice, or choose another file.",

@@ -1465,7 +1465,7 @@
   },
   "settings.account.import.file.too_large": {
     "defaultMessage": "「{name}」は大きすぎます。ファイルは {max, number} 文字までです。小さいファイルを選んでください。",
-    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes, the field then holding no file, or when the server refused the request as too large (413) as it previewed or started the import, the field then keeping the file. name is the file's name; max is 1000000."
   },
   "settings.account.import.file.empty": {
     "defaultMessage": "このファイルには、「ファイルの内容」で選んだものがありません。選んだ内容を確認するか、別のファイルを選んでください。",

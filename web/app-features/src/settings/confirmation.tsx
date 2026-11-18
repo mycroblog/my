@@ -50,7 +50,7 @@ import {
   TextField,
   useLocale,
 } from "@my/design-system";
-import { PasskeyError, readTabValue, supportsPasskeys, writeTabValue } from "@my/platform";
+import { forgetTabValues, PasskeyError, readTabValue, supportsPasskeys, writeTabValue } from "@my/platform";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import type { SettingsAddress } from "./entries";
@@ -141,12 +141,23 @@ export type ConfirmationAct = {
   confirm: string;
 };
 
+/** What starts the key of every value the tab keeps for a confirmation. */
+const keptPrefix = "my.confirmation.";
+
 /**
  * Where the tab keeps the value of a screen's form across a provider's page, for `operation` (`kept` of
  * `useConfirmation`): a key of the tab's session storage.
  */
-export const confirmationKeptKey = (operation: ConfirmedOperation): string => `my.confirmation.${operation}.kept`;
+export const confirmationKeptKey = (operation: ConfirmedOperation): string => `${keptPrefix}${operation}.kept`;
 const keptKey = confirmationKeptKey;
+
+/**
+ * Forgets what this tab kept of every screen's form across a provider's page: what the reader entered goes with the
+ * session they entered it in.
+ */
+export function forgetConfirmationKept(): void {
+  forgetTabValues(keptPrefix);
+}
 
 type DialogProps = {
   operation: ConfirmedOperation;

@@ -2,10 +2,11 @@
 
 // Signing out from the app (ADR-0090 §13, ADR-0028 §3), after a confirmation alone: the session ends on the server,
 // through the web client's token revocation (@my/app-data), and only then what the session left in this browser goes:
-// this tab's cache of server data, the language and time zone kept for the first paint (reader.tsx), and every cache
-// of the Service Worker, with the worker (it installs anew on the next load). The app is then left for its start,
-// which loads anew, signed out: the post still being written and the timelines live in the page alone, and go with
-// it. Every other tab of the browser hears of it, empties its own cache of server data and loads anew at the start
+// this tab's cache of server data, the language and time zone kept for the first paint (reader.tsx), what the tab
+// kept of a form across a login provider's page (the account a move names), and every cache of the Service Worker,
+// with the worker (it installs anew on the next load). The app is then left for its start, which loads anew, signed
+// out: the post still being written and the timelines live in the page alone, and go with it. Every other tab of the
+// browser hears of it, empties its own cache of server data and what it kept of a form, and loads anew at the start
 // too, with what was being written there. What the reader saved on the server (their drafts) stays.
 //
 // When the app has no token to revoke with (the server had ended the token's family), the same is removed, but the
@@ -24,7 +25,7 @@
 // no token and an emptied cache.
 
 import { closeSession, endSession, type AppData, type SessionEnd } from "@my/app-data";
-import { SignOutDialog } from "@my/app-features";
+import { forgetConfirmationKept, SignOutDialog } from "@my/app-features";
 import { ModalPresence } from "@my/design-system";
 import { clearCaches } from "@my/platform";
 import { useRouter } from "@tanstack/react-router";
@@ -57,6 +58,7 @@ function leaveEnded({ data, leave }: Pick<Session, "data" | "leave">, href: stri
 /** What the session left in this browser, which goes with it. */
 async function removeKept(): Promise<void> {
   forgetChoice();
+  forgetConfirmationKept();
   // A browser that refuses to delete a cache keeps public files alone, which the next reader's worker replaces.
   await clearCaches().catch(() => undefined);
 }
@@ -75,10 +77,12 @@ async function signOut({ data, config, leave }: Session): Promise<void> {
 
 /**
  * What a tab does when the reader signed out in another tab of the browser: it empties its cache of server data and
- * leaves for the app's start, which loads anew, signed out. The tab that signed out removed what the browser kept.
+ * leaves for the app's start, which loads anew, signed out. The tab that signed out removed what the browser kept;
+ * what this tab kept of a form across a provider's page is this tab's alone, and goes here.
  */
 export function followSignOut({ data, leave }: Pick<RouterContext, "data" | "leave">): void {
   data?.queryClient.clear();
+  forgetConfirmationKept();
   leaveEnded({ data, leave }, startPath);
 }
 

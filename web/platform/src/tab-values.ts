@@ -22,3 +22,13 @@ export function writeTabValue(key: string, value: string | null): void {
     // The browser keeps nothing: the value goes with the page.
   }
 }
+
+/** Forgets every value this tab keeps under a key that starts with `prefix`; a browser that keeps nothing ignores it. */
+export function forgetTabValues(prefix: string): void {
+  try {
+    const keys = Array.from({ length: sessionStorage.length }, (_, i) => sessionStorage.key(i));
+    for (const key of keys) if (key?.startsWith(prefix) === true) sessionStorage.removeItem(key);
+  } catch {
+    // The browser keeps nothing: there is nothing to forget.
+  }
+}

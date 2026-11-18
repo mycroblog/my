@@ -4,7 +4,7 @@
 // they follow, which another server imports. While an archive is being built, the list is read again every 10 seconds.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
-import type { AppData } from "./app-data";
+import { whileOpen, type AppData } from "./app-data";
 import { useAppData } from "./provider";
 
 /** An export of the viewer's data, built in the background. */
@@ -55,22 +55,35 @@ function fileName(disposition: string | null, fallback: string): string {
   return name === undefined || name === "" ? fallback : name;
 }
 
-/** The archive of the export of `id`, once it is ready; it rejects with the problem (not ready, gone). */
-export async function downloadDataExport({ api }: AppData, id: string): Promise<SavedFile> {
-  const { data, response } = await api.GET("/exports/{id}/archive", { params: { path: { id } }, parseAs: "blob" });
-  return {
-    blob: data ?? new Blob([]),
-    name: fileName(response.headers.get("Content-Disposition"), `export-${id}.zip`),
-  };
+/**
+ * The archive of the export of `id`, once it is ready; it rejects with the problem (not ready, gone). Once the
+ * session of `app` ended, it never settles: no file is saved for a session that is over (`whileOpen`).
+ */
+export function downloadDataExport(app: AppData, id: string): Promise<SavedFile> {
+  return whileOpen(app, async () => {
+    const { data, response } = await app.api.GET("/exports/{id}/archive", {
+      params: { path: { id } },
+      parseAs: "blob",
+    });
+    return {
+      blob: data ?? new Blob([]),
+      name: fileName(response.headers.get("Content-Disposition"), `export-${id}.zip`),
+    };
+  });
 }
 
-/** The CSV of what the viewer has of `kind` now; it rejects with the problem. */
-export async function exportCsv({ api }: AppData, kind: CsvKind): Promise<SavedFile> {
-  const { data, response } = await api.GET("/csv_exports/{kind}", {
-    params: { path: { kind } },
-    parseAs: "blob",
+/**
+ * The CSV of what the viewer has of `kind` now; it rejects with the problem. Once the session of `app` ended, it
+ * never settles, as `downloadDataExport`.
+ */
+export function exportCsv(app: AppData, kind: CsvKind): Promise<SavedFile> {
+  return whileOpen(app, async () => {
+    const { data, response } = await app.api.GET("/csv_exports/{kind}", {
+      params: { path: { kind } },
+      parseAs: "blob",
+    });
+    return { blob: data ?? new Blob([]), name: fileName(response.headers.get("Content-Disposition"), `${kind}.csv`) };
   });
-  return { blob: data ?? new Blob([]), name: fileName(response.headers.get("Content-Disposition"), `${kind}.csv`) };
 }
 
 export type DataExports = {
