@@ -1270,5 +1270,137 @@
   "settings.apps.scope.write_voice": {
     "defaultMessage": "通話のルームの開始・参加・退出と、ホストの操作",
     "description": "A permission on the page of an authorized app (the scope write:voice). The same words as the consent page's (server:auth.authorize.scope.write_voice)."
+  },
+  "settings.invites.own": {
+    "defaultMessage": "作成した招待",
+    "description": "A section heading on the Invites page of the settings, over the list of the invites the reader created; also the name of that list for assistive technology, and the title of an invite's page until the invite is read."
+  },
+  "settings.invites.own.about": {
+    "defaultMessage": "招待された人は、招待のリンクを開いて登録するか、登録画面で招待コードを入力します。",
+    "description": "The line under the heading Your invites: how an invite is used. An invite has a code and a link that holds the code; the sign-up page has a field named Invite code (auth.sign_up.invite_label)."
+  },
+  "settings.invites.none": {
+    "defaultMessage": "{may, select, yes {招待はまだありません。作成すると、招待する人に送るリンクができます。} other {招待はありません。}}",
+    "description": "In the place of the list of the reader's invites while it is empty. may is yes for a reader who may create an invite, over the button Create invite, and other for a reader who may not, under the summary that says why (settings.invites.cannot)."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "招待を作成",
+    "description": "The button on the Invites page that opens the page where the reader creates an invite; the title of that page, and the button at its end that creates the invite."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "{state, select, usable {{date} まで使える} revoked {取り消し済み} expired {{date} に期限切れ} exhausted {使い切り} other {招待を作れない間は使えない}}",
+    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{max, number} 回のうち {uses, number} 回使用",
+    "description": "A muted line of an invite's row, under its state: uses is how many people signed up with the invite, max how many it allows. Not a sentence: no full stop."
+  },
+  "settings.invites.ends": {
+    "defaultMessage": "期限: {date}",
+    "description": "A muted line of an invite's row, for an invite that does not work while the reader may not create invites: when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+  },
+  "settings.invites.left": {
+    "defaultMessage": "あと {left, number} 件作れます。同時に持てる使える招待は {max, number} 件までです。",
+    "description": "A sentence in the section Your invites when the reader is one invite short of the most usable invites the server allows: left is how many more they can create (1), max the most usable invites one account may have at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "{max, plural, =0 {このサーバーでは、いま利用者が招待を作れません。} other {使える招待の数の上限 (# 件) に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。}}",
+    "description": "A sentence in the section Your invites, in place of the button Create invite, and on the page Create invite in the form's place, when the reader has as many usable invites as the server allows. max is that number; 0 means the server's administrators let no user create invites for now. The same words as the server's refusal (errors.invites.too_many), with the number."
+  },
+  "settings.invites.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the list Your invites that shows the next, older invites."
+  },
+  "settings.invites.cannot": {
+    "defaultMessage": "招待を作れません。",
+    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The same words as the server's refusal (errors.invites.not_allowed)."
+  },
+  "settings.invites.cannot.reason": {
+    "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。} other {いまは招待を作れません。}}",
+    "description": "Under the title You cannot create invites (settings.invites.cannot): why the reader may not create invites now. reason is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value names no cause. The same sentences as the server's refusal (errors.invites.not_allowed_detail), which the list of invites gives only as the reason's name."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "招待リンク",
+    "description": "A section heading on the page of a usable invite, and on the page Create invite once the invite is created, over the invite's link shown to copy; also the name of that link for assistive technology."
+  },
+  "settings.invites.link.about": {
+    "defaultMessage": "招待する人にこのリンクを送ってください。登録画面で招待コード {code} を入力しても登録できます。",
+    "description": "The line under the heading Invite link: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "リンクをコピー",
+    "description": "The button under an invite's link, which copies the link."
+  },
+  "settings.invites.copied": {
+    "defaultMessage": "コピーしました",
+    "description": "Beside the button Copy link of an invite, once the link was copied. The same words as the Apps pages' (settings.apps.copied)."
+  },
+  "settings.invites.copy_failed": {
+    "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
+    "description": "Beside the button Copy link of an invite, when the browser refused to copy. The same words as the Apps pages' (settings.apps.copy_failed)."
+  },
+  "settings.invites.status": {
+    "defaultMessage": "状態",
+    "description": "A section heading on an invite's page, over what the invite allows now (settings.invites.state) and how often it was used; also the name of that list for assistive technology."
+  },
+  "settings.invites.revoke.heading": {
+    "defaultMessage": "招待を取り消す",
+    "description": "A section heading on the page of an invite that works, or would work again, over the row that revokes it; also the name of that list for assistive technology."
+  },
+  "settings.invites.revoke.row": {
+    "defaultMessage": "この招待を使えなくする",
+    "description": "The name of the row in the section Revoke invite: what revoking gives."
+  },
+  "settings.invites.revoke.about": {
+    "defaultMessage": "リンクと招待コードはすぐに使えなくなり、元に戻せません。この招待で登録した人のアカウントはそのまま残ります。",
+    "description": "The line under settings.invites.revoke.row, and the text of the confirmation under settings.invites.revoke.title: what stops working, that it cannot be undone, and what stays."
+  },
+  "settings.invites.revoke.title": {
+    "defaultMessage": "招待 {code} を取り消しますか？",
+    "description": "The title of the confirmation before an invite is revoked. code is the invite's code, 16 letters and digits; it is not translated."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "The button at the end of the row settings.invites.revoke.row, which asks before revoking the invite; and the button of that confirmation (settings.invites.revoke.title)."
+  },
+  "settings.invites.new.heading": {
+    "defaultMessage": "新しい招待",
+    "description": "A section heading on the page Create invite, over the two settings of the invite: how many people can sign up with it, and how long it works."
+  },
+  "settings.invites.new.uses": {
+    "defaultMessage": "登録できる人数",
+    "description": "The label of a number field on the page Create invite: how many people can sign up with the invite."
+  },
+  "settings.invites.new.uses.about": {
+    "defaultMessage": "{max, number} 人まで。",
+    "description": "The line under the label People who can sign up: max is the most people the server allows for one invite."
+  },
+  "settings.invites.new.life": {
+    "defaultMessage": "有効期間",
+    "description": "The label of a choice on the page Create invite: how long the invite works, from when it is created. Its options are lengths of time (settings.invites.new.life.option): Works for, 7 days."
+  },
+  "settings.invites.new.life.option": {
+    "defaultMessage": "{unit, select, days {{count, plural, other {# 日}}} hours {{count, plural, other {# 時間}}} other {{count, plural, other {# 分}}}}",
+    "description": "An option of the choice Works for on the page Create invite: a length of time. unit is days, hours, or other (minutes); count is how many of them."
+  },
+  "settings.invites.new.refused": {
+    "defaultMessage": "{field, select, max_uses {このサーバーでは、1 つの招待でその人数を登録できなくなりました。人数を減らして、もう一度作成してください。} other {このサーバーでは、その期間の招待を作れなくなりました。短い期間を選んで、もう一度作成してください。}}",
+    "description": "An alert before the button Create invite when the server refused the invite because a value is over what it allows now: its administrators lowered a limit after the page was opened, and the page then shows the new limits. field is max_uses (too many people) or other (too long a time)."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "招待を作成しました。",
+    "description": "On the page Create invite once the invite is created, over its link shown to copy."
+  },
+  "settings.invites.created.done": {
+    "defaultMessage": "完了",
+    "description": "The button at the end of the page Create invite once the invite is created and its link is shown. It goes back to the Invites page, whose list holds the invite and its link."
+  },
+  "settings.invites.missing": {
+    "defaultMessage": "この招待は一覧にありません。アドレスを確かめてください。",
+    "description": "In place of an invite's page of the settings at an address that names no invite of the reader's. The link to the Invites page follows it on the same line (settings.invites.missing.all)."
+  },
+  "settings.invites.missing.all": {
+    "defaultMessage": "招待の一覧を見る",
+    "description": "The link after settings.invites.missing that opens the Invites page of the settings."
   }
 }

@@ -43,9 +43,18 @@ export type AccessOptions = {
   /**
    * The reader's invites: one in each state by default (and two more usable); `none` has none; `not-allowed` is a
    * reader who may no longer create invites (every invite that would work is then `creator_ineligible`); `at-cap` holds
-   * as many usable invites as the instance allows.
+   * as many usable invites as the instance allows; `many` has twenty older, expired ones after the default six, more
+   * than a page of the list.
    */
-  invites?: "all-states" | "none" | "not-allowed" | "at-cap";
+  invites?: "all-states" | "none" | "not-allowed" | "at-cap" | "many";
+  /**
+   * Why a reader who may not create invites (`invites: "not-allowed"`) may not, which the list and the refusal of a
+   * new invite say: the server lets only some accounts create them (`not_permitted`) by default; `unknown` is a
+   * refusal that names no cause. A server that takes no new account (the fake's `registrations: "closed"`, a closure)
+   * lets nobody, whatever this says (`registration_closed`), and leaves the invites of a reader who otherwise may as
+   * they are.
+   */
+  invitesRefusal?: Exclude<Schema<"InvitesNotAllowedReason">, "registration_closed"> | "unknown";
 };
 
 /** What the handlers need of the fake that holds them. */
@@ -53,10 +62,14 @@ export type AccessContext = {
   options: AccessOptions;
   /** The username and password of the reader. */
   viewer: { username: string; password: string };
-  /** When the fake started, the origin it answers as, and whether the instance is a one-person server. */
+  /**
+   * When the fake started, the origin it answers as, whether the instance is a one-person server, and whether it takes
+   * no new account (its registration mode is `closed`).
+   */
   started: number;
   origin: string;
   singleUser: boolean;
+  registrationClosed: boolean;
   problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   notFound: () => Refusal;
   idAt: (ms: number, n: number) => string;
@@ -93,6 +106,20 @@ export const loginProviderIds = (
   oidc: idAt(started - 90 * day, 71_001),
   mastodon: idAt(started - 60 * day, 71_002),
 });
+
+/** How long ago each of the reader's invites was created, newest first: the default six, then the older ones of `many`. */
+const inviteAges: readonly number[] = [
+  ...[2 * hour, 1 * day, 3 * day, 10 * day, 12 * day, 14 * day],
+  ...Array.from({ length: 20 }, (_, n) => (40 + n) * day),
+];
+
+/**
+ * The IDs of the fake's invites of the reader, for a fake started at `started`, as the list has them: two that work
+ * (the second used once), a revoked one, an expired one, one used up, and one whose creator was not eligible, by
+ * default; then the twenty older, expired ones of `invites: "many"`.
+ */
+export const inviteIds = (started: number, idAt: AccessContext["idAt"]): readonly string[] =>
+  inviteAges.map((ago, n) => idAt(started - ago, 76_001 + n));
 
 /**
  * The IDs of the fake's apps, for a fake started at `started`: the apps the reader authorized, as the list has them
@@ -392,7 +419,24 @@ export function accessHandlers(c: AccessContext): Handlers {
     default_max_uses: 1,
     default_expires_in: 7 * 24 * 3600,
   };
-  const canCreate = o.invites !== "not-allowed";
+  /** Whether the reader's own standing lets them create invites, whatever the registration mode. */
+  const eligible = o.invites !== "not-allowed";
+  /** Why the reader may not create invites now, the first cause that holds; undefined while they may. */
+  const refusal: Schema<"InvitesNotAllowedReason"> | "unknown" | undefined = c.registrationClosed
+    ? "registration_closed"
+    : eligible
+      ? undefined
+      : (o.invitesRefusal ?? "not_permitted");
+  const canCreate = refusal === undefined;
+  /** The sentence of each cause, as the server's catalog has it (`errors.invites.not_allowed_detail`). */
+  const refusalDetail: Record<Schema<"InvitesNotAllowedReason"> | "unknown", string> = {
+    registration_closed: "This server takes no new accounts now, so no invite can be created.",
+    not_permitted:
+      "Only some accounts can create invites on this server. Ask its administrators to let you create them.",
+    not_approved: "Your registration is not approved. A moderator needs to approve it before you can create invites.",
+    restricted: "A moderation action keeps your account from creating invites for now.",
+    unknown: "You cannot create invites now.",
+  };
 
   const code = (n: number) =>
     `${(n * 2_654_435_761).toString(36).padStart(8, "k")}${(n * 40_503 + 99_991).toString(36).padStart(8, "m")}`.slice(
@@ -434,12 +478,15 @@ export function accessHandlers(c: AccessContext): Handlers {
   if (o.invites === "at-cap")
     while (invites.filter((i) => stateOf(i) === "usable").length < limits.max_active)
       invites.unshift(invite(100 + invites.length, (invites.length + 1) * hour, 7 * day, 0, 1));
+  // Older ones, long expired, which a second page of the list holds.
+  if (o.invites === "many")
+    for (const [n, ago] of inviteAges.entries()) if (n >= 6) invites.push(invite(n + 1, ago, 7 * day, 1, 2));
 
   function stateOf(i: StoredInvite): Schema<"AdminInviteState"> {
     if (i.revoked) return "revoked";
     if (Date.parse(i.expires_at) <= Date.now()) return "expired";
     if (i.uses >= i.max_uses) return "exhausted";
-    if (i.ineligible || !canCreate) return "creator_ineligible";
+    if (i.ineligible || !eligible) return "creator_ineligible";
     return "usable";
   }
   const inviteBody = ({ revoked: _revoked, ineligible: _ineligible, ...rest }: StoredInvite): Invite => ({
@@ -753,6 +800,7 @@ export function accessHandlers(c: AccessContext): Handlers {
         body: {
           ...body,
           can_create: canCreate,
+          ...(refusal === undefined || refusal === "unknown" ? {} : { cannot_create_reason: refusal }),
           usable: invites.filter((i) => stateOf(i) === "usable").length,
           limits,
         },
@@ -760,8 +808,12 @@ export function accessHandlers(c: AccessContext): Handlers {
     },
     "POST /invites": ({ body }) => {
       if (c.singleUser) return singleUserRefusal();
-      if (!canCreate)
-        return problem(403, "You may not create invites", { type: "/api/v1/problems/invites-not-allowed" });
+      if (refusal !== undefined)
+        return problem(403, "You cannot create invites.", {
+          type: "/api/v1/problems/invites-not-allowed",
+          detail: refusalDetail[refusal],
+          ...(refusal === "unknown" ? {} : { reason: refusal }),
+        });
       const maxUses = body?.max_uses ?? limits.default_max_uses;
       const expiresIn = body?.expires_in ?? limits.default_expires_in;
       if (!Number.isInteger(maxUses) || maxUses < 1 || maxUses > limits.max_uses)

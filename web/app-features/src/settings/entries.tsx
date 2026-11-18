@@ -4,13 +4,25 @@
 // at /settings/<path>. The menu (menu.tsx), the screen at an entry's address (screen.tsx) and the route's loader read
 // this list alone, so an entry is added here and nowhere else: its declaration in `settingsEntries`, at its place in
 // the menu's order, with its screen. A group with no entry to show is not drawn.
+//
+// What an entry's conditions read of the reader is one hook's (`useSettingsFacts`). A fact no screen of the app has
+// read before the menu paints (whether the reader may create invites) is read by the settings' loader
+// (`loadSettingsFacts`), so that the menu comes with every entry it has instead of gaining one a moment later.
 
-import { usePermissions, type AppData, type Permission } from "@my/app-data";
+import {
+  loadInviteRight,
+  useInstance,
+  useMayInvite,
+  usePermissions,
+  type AppData,
+  type Permission,
+} from "@my/app-data";
 import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { AppsSettings, loadAppsSettings } from "./apps/apps";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { InvitesSettings, loadInvitesSettings } from "./invites/invites";
 import { loadSecuritySettings, SecuritySettings } from "./security/security";
 
 /** The groups of the menu, in its order, each under its heading. */
@@ -65,6 +77,13 @@ export type SettingsSubProps = SettingsAddress & {
 export type SettingsFacts = {
   /** The permissions of the reader's account; none until the server said them. */
   readonly permissions: readonly Permission[];
+  /** Whether the server is one person's (ADR-0152), which has no invites; false until the server said so. */
+  readonly singleUser: boolean;
+  /**
+   * Whether the reader may create invites now (ADR-0106 §14): by a permission of their account or because the server
+   * lets everyone, which only the list of their invites says; false until the server said so.
+   */
+  readonly mayInvite: boolean;
 };
 
 /** An entry of the settings. */
@@ -79,6 +98,11 @@ export type SettingsEntry = {
   readonly hint: MessageId;
   /** Whether the menu lists it and its screen opens for this reader; for every reader without it. */
   readonly shown?: (facts: SettingsFacts) => boolean;
+  /**
+   * Whether the menu lists it, for an entry whose screen still opens at its address for a reader the menu does not
+   * offer it to (the invites of a reader who may not create any now); wherever it is shown without it.
+   */
+  readonly listed?: (facts: SettingsFacts) => boolean;
   /** How many things on its screen wait for the reader, the badge at the row's end; none without it, or at zero. */
   readonly count?: (facts: SettingsFacts) => number | undefined;
   /** Its screen: a `SettingsScreen` of the design system, headed by the entry's glyph and name. */
@@ -116,22 +140,54 @@ export const settingsEntries: readonly SettingsEntry[] = [
     Screen: AppsSettings,
     load: loadAppsSettings,
   },
+  {
+    // A one-person server has no invites (ADR-0152 §4). Elsewhere the menu offers them to a reader who may create
+    // one (ADR-0106 §18), and the screen says to any other who opens its address why they may not.
+    path: "invites",
+    group: "access",
+    icon: "invite",
+    name: "settings.entry.invites",
+    hint: "settings.entry.invites.hint",
+    shown: (facts) => !facts.singleUser,
+    listed: (facts) => facts.mayInvite,
+    Screen: InvitesSettings,
+    load: loadInvitesSettings,
+  },
 ];
 
 /** What the conditions and the counts of the entries read of the reader. */
 function useSettingsFacts(): SettingsFacts {
-  return { permissions: usePermissions() };
+  return {
+    permissions: usePermissions(),
+    singleUser: useInstance()?.single_user === true,
+    mayInvite: useMayInvite(),
+  };
 }
 
-/** An entry as the menu shows it to this reader. */
-export type ShownEntry = SettingsEntry & { readonly waiting: number | undefined };
+/**
+ * Reads what the entries' conditions read that the app has not read by the time the settings open (whether the reader
+ * may create invites), for the settings' loader to wait for.
+ */
+export async function loadSettingsFacts(data: AppData): Promise<void> {
+  await loadInviteRight(data);
+}
 
-/** The entries the reader is shown, in the menu's order, each with how many things wait on its screen. */
+/** An entry as the settings show it to this reader. */
+export type ShownEntry = SettingsEntry & {
+  readonly waiting: number | undefined;
+  /** Whether the menu lists it; its screen opens at its address either way. */
+  readonly inMenu: boolean;
+};
+
+/**
+ * The entries whose screens open for the reader, in the menu's order, each with how many things wait on its screen
+ * and whether the menu lists it.
+ */
 export function useShownEntries(): readonly ShownEntry[] {
   const facts = useSettingsFacts();
   return settingsEntries
     .filter((entry) => entry.shown?.(facts) ?? true)
-    .map((entry) => ({ ...entry, waiting: entry.count?.(facts) }));
+    .map((entry) => ({ ...entry, waiting: entry.count?.(facts), inMenu: entry.listed?.(facts) ?? true }));
 }
 
 /** Reads what the screen of the entry at `path` shows; nothing for an address that names no entry. */

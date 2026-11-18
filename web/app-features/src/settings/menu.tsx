@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The menu of the settings (ADR-0110 §5): the entries the reader is shown (entries.tsx) in their groups, a group with
+// The menu of the settings (ADR-0110 §5): the entries it lists for the reader (entries.tsx) in their groups, a group with
 // none left out, and Sign out…, apart at its end, which leads to the confirmation the app shows at `signOutHref`. At
 // /settings it is the screen, each entry with a line of what its screen holds; beside an entry's screen it is compact,
 // the entry the reader is at marked.
@@ -19,7 +19,7 @@ type MenuProps = {
 
 function Menu({ compact, current, signOutHref }: MenuProps & { compact: boolean; current?: string | undefined }) {
   const { t } = stringsIn(useLocale().locale);
-  const entries = useShownEntries();
+  const entries = useShownEntries().filter((entry) => entry.inMenu);
   return (
     <SettingsMenu
       label={t("settings.menu")}

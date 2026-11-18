@@ -8,7 +8,14 @@
 // for a session that ended on it.
 
 import type { Instance } from "@my/app-data";
-import { SettingsBeside, settingsEntryPath, type SettingsAddress, type SettingsSubProps } from "@my/app-features";
+import {
+  SettingsBeside,
+  settingsEntryPath,
+  SettingsMissing,
+  useSettingsTitle,
+  type SettingsAddress,
+  type SettingsSubProps,
+} from "@my/app-features";
 import { FrameAside } from "@my/design-system";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import type { ComponentType } from "react";
@@ -44,34 +51,41 @@ export function useSettingsAddress(): SettingsAddress {
   };
 }
 
-/**
- * A screen under the entry at `entry` (/settings/security/password), under its name: for a signed-in reader the
- * screen, whose way back and whose end lead to the entry, or to `under`, the screen it stands under where that is not
- * the entry's (an app's screen, for the screen that issues its token); without a session it asks the reader to sign
- * in.
- */
-export function SettingsUnder({
-  entry,
-  under,
-  title,
-  signedIn,
-  Screen,
-}: {
+type UnderProps = {
   entry: string;
   /** The address of the screen it stands under, where that is not the entry's. */
   under?: string | undefined;
   title: string;
-  signedIn: boolean;
   Screen: ComponentType<SettingsSubProps>;
-}) {
+};
+
+/**
+ * A screen under the entry at `entry` (/settings/security/password), under its name: for a signed-in reader the
+ * screen, whose way back and whose end lead to the entry, or to `under`, the screen it stands under where that is not
+ * the entry's (an app's screen, for the screen that issues its token); under an entry the reader does not have (the
+ * invites, on a one-person server), that the address names no screen, as the entry's own address says; without a
+ * session it asks the reader to sign in.
+ */
+export function SettingsUnder({ signedIn, ...screen }: UnderProps & { signedIn: boolean }) {
+  const t = useStrings();
+  if (signedIn) return <Under {...screen} />;
+  return (
+    <>
+      <ScreenHeading>{t("app.settings")}</ScreenHeading>
+      <SignedOut />
+    </>
+  );
+}
+
+function Under({ entry, under, title, Screen }: UnderProps) {
   const t = useStrings();
   const router = useRouter();
   const address = useSettingsAddress();
-  if (!signedIn)
+  if (useSettingsTitle(entry) === undefined)
     return (
       <>
         <ScreenHeading>{t("app.settings")}</ScreenHeading>
-        <SignedOut />
+        <SettingsMissing />
       </>
     );
   return (

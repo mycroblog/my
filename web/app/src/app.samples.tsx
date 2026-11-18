@@ -40,7 +40,8 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 export type Fake = {
   /**
    * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind, `{app:own:0}` and
-   * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized),
+   * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized,
+   * `{invite:0}` the ID of the reader's invite at that index of their list),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members,
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
@@ -153,7 +154,9 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 /**
  * The app's path of `at`: a path as it is, with the ID of the fake's login provider of a kind in place of each
  * `{provider:<kind>}` (what a provider's return leaves in the fragment) and the ID of the fake's app at an index of the
- * apps the reader authorized or registered in place of each `{app:authorized:<index>}` and `{app:own:<index>}`, the page of the announcement of `announcement:<key>`, the list of who
+ * apps the reader authorized or registered in place of each `{app:authorized:<index>}` and `{app:own:<index>}`, and
+ * the ID of the reader's invite at an index of their list in place of each `{invite:<index>}`, the page of the
+ * announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
  * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
  * person of `held:<username>`, the page of the reader's newest notification of `notification:<type>`, else the page of
@@ -165,7 +168,8 @@ function pathOf(fake: FakeApi, at: string): string {
       .replace(/\{provider:(github|oidc|mastodon)\}/g, (_, kind: FakeLoginProviderKind) => fake.loginProviderId(kind))
       .replace(/\{app:(authorized|own):(\d+)\}/g, (_, list: "authorized" | "own", index: string) =>
         fake.appId(list, Number(index)),
-      );
+      )
+      .replace(/\{invite:(\d+)\}/g, (_, index: string) => fake.inviteId(Number(index)));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

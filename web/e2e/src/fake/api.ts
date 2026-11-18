@@ -69,7 +69,14 @@ import {
 } from "../scenario";
 import { articleHtml, serverHtml } from "./html";
 import { createScripts, type Script, type Scripted } from "./script";
-import { accessHandlers, appIds, loginProviderIds, type AccessOptions, type FakeLoginProviderKind } from "./access";
+import {
+  accessHandlers,
+  appIds,
+  inviteIds,
+  loginProviderIds,
+  type AccessOptions,
+  type FakeLoginProviderKind,
+} from "./access";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
 type Account = Schema<"Account">;
@@ -516,6 +523,12 @@ export type FakeApi = {
    * registered (`own`: a confidential, a public and a disabled one); an ID that names no app past them.
    */
   appId: (list: "authorized" | "own", index: number) => string;
+  /**
+   * The ID of the reader's invite at `index` of their list as it is by default (two that work, the second used once,
+   * a revoked one, an expired one, one used up, one whose creator was not eligible), then of the twenty older ones of
+   * `access.invites: "many"`; an ID that names none past them.
+   */
+  inviteId: (index: number) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -3329,6 +3342,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       started,
       origin: fakeOrigin,
       singleUser: o.singleUser === true,
+      registrationClosed: instanceBody.registrations.mode === "closed",
       problem,
       notFound,
       idAt,
@@ -3548,5 +3562,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     notificationPath,
     loginProviderId: (kind) => loginProviderIds(started, idAt)[kind],
     appId: (list, index) => appIds(started, idAt)[list][index] ?? idAt(started, 74_990),
+    inviteId: (index) => inviteIds(started, idAt)[index] ?? idAt(started, 76_990),
   };
 }

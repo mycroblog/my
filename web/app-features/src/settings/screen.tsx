@@ -2,7 +2,8 @@
 
 // The screen at an entry's address, /settings/<path> (ADR-0110 §5): the screen the entry declares (entries.tsx),
 // headed by the way back to the menu where the menu does not stand beside it; an address that names no entry the
-// reader is shown says so once, in a notice whose link leads to all the settings.
+// reader is shown says so once, in a notice whose link leads to all the settings, and so does the address of a screen
+// under such an entry (`SettingsMissing`, which the app places there).
 
 import { BackButton, FeedNotice, TextLink, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
@@ -22,14 +23,22 @@ export type SettingsEntryScreenProps = Omit<SettingsEntryProps, "back"> & {
   onBack: () => void;
 };
 
+/**
+ * In a screen's place, at an address of the settings that names no screen the reader is shown (no entry, or a screen
+ * under an entry they do not have): it says so once, with the link to all the settings.
+ */
+export function SettingsMissing() {
+  const { t } = stringsIn(useLocale().locale);
+  return (
+    <FeedNotice alert lead action={<TextLink href="/settings">{t("settings.not_found.all")}</TextLink>}>
+      {t("settings.not_found")}
+    </FeedNotice>
+  );
+}
+
 export function SettingsEntryScreen({ entry, onBack, ...given }: SettingsEntryScreenProps) {
   const { t } = stringsIn(useLocale().locale);
   const found = useShownEntries().find((e) => e.path === entry);
-  if (found === undefined)
-    return (
-      <FeedNotice alert lead action={<TextLink href="/settings">{t("settings.not_found.all")}</TextLink>}>
-        {t("settings.not_found")}
-      </FeedNotice>
-    );
+  if (found === undefined) return <SettingsMissing />;
   return <found.Screen back={<BackButton onPress={onBack}>{t("settings.back")}</BackButton>} {...given} />;
 }

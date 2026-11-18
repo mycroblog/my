@@ -22,6 +22,8 @@ export type Address = {
   fragmentsRead: number;
   /** The addresses the screen left for by a load of the page, in their order. */
   left: string[];
+  /** How many times the screen said the server ended the reader's session with what they did on it. */
+  sessionsEnded: number;
 };
 
 /** The props of a settings screen that come from its route, counted in `address`. */
@@ -36,10 +38,19 @@ export const addressProps = (address: Address) => ({
   leave: (href: string) => {
     address.left.push(href);
   },
+  onSessionEnded: () => {
+    address.sessionsEnded += 1;
+  },
 });
 
 /** An address with `fragment`, at which nothing happened yet. */
-export const addressAt = (fragment = ""): Address => ({ fragment, backs: 0, fragmentsRead: 0, left: [] });
+export const addressAt = (fragment = ""): Address => ({
+  fragment,
+  backs: 0,
+  fragmentsRead: 0,
+  left: [],
+  sessionsEnded: 0,
+});
 
 /**
  * Draws a settings screen on the server `on`, in the main landmark as the shell places it, once the shell read the

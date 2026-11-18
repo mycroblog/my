@@ -61,6 +61,7 @@ to your account and signs them out.
 
 ## Settings
 
-"Settings" in the navigation opens the settings. They hold "Display and posting", "Security" and "Apps". Under
-"Security" you manage your password, passkeys, two-factor authentication, linked accounts, and signed-in browsers;
-"Apps" lists the apps you allowed to use your account, which you can revoke there, and the apps you registered.
+"Settings" in the navigation opens the settings. They hold "Display and posting", "Security" and "Apps", and "Invites"
+when you can create invites. Under "Security" you manage your password, passkeys, two-factor authentication, linked
+accounts, and signed-in browsers; "Apps" lists the apps you allowed to use your account, which you can revoke there,
+and the apps you registered.
