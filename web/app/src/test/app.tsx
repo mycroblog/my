@@ -57,6 +57,22 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
 };
 
 /**
+ * The address of the page the app is served from, as the DOM of the process gave it before any test of the app ran.
+ * A press the app leaves to the browser (a download's link, the sign-in's page, a page of another server) makes
+ * happy-dom follow it and move the page's address for every later test of the process, in whichever file: at
+ * `about:blank` or a `blob:` address no link of the app is of the page's origin, and every link of a later test then
+ * does nothing.
+ */
+const page = document.URL;
+
+/** Puts the page back at the app's address without loading it, as happy-dom lets a test do. */
+function atThePage(): void {
+  const dom = Reflect.get(globalThis, "happyDOM") as { setURL?: (url: string) => void } | undefined;
+  if (dom?.setURL === undefined) throw new Error("test: renderApp runs on happy-dom, which can set the page's address");
+  if (document.URL !== page) dom.setURL(page);
+}
+
+/**
  * Renders the app at the path `at`, on a fake API of its own, and returns once the first screen is in place. The
  * reader is the fake's (`viewer`, yuki by default), or a visitor (`visitor: true`).
  */
@@ -64,6 +80,9 @@ export async function renderApp(
   at: string,
   { locale = "en", on, unasked = false, ...options }: AppOptions = {},
 ): Promise<TestApp> {
+  // Each test starts on the app's page, and leaves it there for the next, whatever its presses made the DOM follow.
+  atThePage();
+  onTestFinished(atThePage);
   const { fake, watch, data, visitor } = on ?? fakeApp(options);
   // What the app started ends with the test that rendered it, in whichever file it is.
   onTestFinished(() => {
