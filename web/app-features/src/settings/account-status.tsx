@@ -22,11 +22,12 @@ import {
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
+  Stack,
   useLocale,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { moderationActionPath, useActionDate } from "./account";
-import { ReadingNotice } from "./parts";
+import { moderationActionPath } from "./account";
+import { ReadingNotice, useMoment } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -86,7 +87,7 @@ function appealLine(action: ModerationAction, date: (at: string) => string, t: T
 
 /** The rows of `actions`, each the door to its action's screen. */
 function ActionList({ label, actions, t }: { label: string; actions: readonly ModerationAction[]; t: T }) {
-  const date = useActionDate(false);
+  const date = useMoment(false);
   return (
     <SettingsList label={label}>
       {actions.map((action) => (
@@ -112,7 +113,9 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
   const title = t("settings.account.status");
   const back = <BackButton onPress={onBack}>{t("settings.entry.account")}</BackButton>;
   const pending = active.status === "pending" || all.status === "pending";
-  if (pending || active.status === "error" || all.status === "error")
+  // A next page that failed leaves the pages before it, under a status of `error`: the list is read all the same.
+  const failed = (list: typeof all) => list.status === "error" && !list.failedNextPage;
+  if (pending || failed(active) || failed(all))
     return (
       <SettingsScreen
         sub
@@ -134,7 +137,7 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
   const past = all.items.filter((action) => action.state !== "active");
   const activeHeading = t("settings.account.actions.active");
   const pastHeading = t("settings.account.actions.past");
-  const failedMore = all.error !== null && all.hasNextPage;
+  const failedMore = all.failedNextPage && all.hasNextPage && !all.isFetchingNextPage;
   return (
     <SettingsScreen sub title={title} back={back}>
       <SettingsSection heading={activeHeading} count={active.hasNextPage ? undefined : count(active.items.length)}>
@@ -150,24 +153,16 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
         ) : (
           !all.hasNextPage && <SettingsEmpty>{t("settings.account.actions.past.empty")}</SettingsEmpty>
         )}
-        {failedMore && !all.isFetchingNextPage ? (
-          <SettingsEmpty
-            action={
-              <Button size="timeline" touch onPress={all.fetchNextPage}>
-                {t("settings.retry")}
-              </Button>
-            }
-          >
-            {t("settings.account.actions.failed_more")}
-          </SettingsEmpty>
-        ) : (
-          all.hasNextPage && (
+        {all.hasNextPage && (
+          <Stack gap="screen-row-gap">
+            {failedMore && <SettingsEmpty>{t("settings.account.actions.failed_more")}</SettingsEmpty>}
             <Row justify="start">
+              {/* One button, which stays as its name changes, and the focus with it: Show more, then Try again. */}
               <Button size="timeline" touch busy={all.isFetchingNextPage} onPress={all.fetchNextPage}>
-                {t("settings.account.actions.more")}
+                {t(failedMore ? "settings.retry" : "settings.account.actions.more")}
               </Button>
             </Row>
-          )
+          </Stack>
         )}
       </SettingsSection>
     </SettingsScreen>

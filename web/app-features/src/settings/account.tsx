@@ -33,7 +33,6 @@ import {
 } from "@my/app-data";
 import {
   Button,
-  dateFormat,
   LinkButton,
   SettingsEmpty,
   SettingsList,
@@ -42,11 +41,11 @@ import {
   SettingsSection,
   StatusSummary,
   useLocale,
-  useTimeZone,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { AccountDeparture, AccountEnd } from "./account-leave";
 import type { SettingsEntryProps } from "./entries";
+import { useMoment as useActionDate } from "./parts";
 
 /** The address of the entry's screen. */
 const accountPath = "/settings/account";
@@ -81,15 +80,10 @@ export async function loadAccountSettings(data: AppData): Promise<void> {
 }
 
 /**
- * A moment of an action (when it ends, when it was appealed), as the reader's locale and zone write it: its day and
- * its time, or its day alone without `time`, joined so that a line never breaks inside it.
+ * A moment as the reader's locale and zone write it: `useMoment` of parts.tsx, which every entry of the settings
+ * writes its dates with, under the name the screens under this entry import it by.
  */
-export function useActionDate(time = true): (at: string) => string {
-  const { locale } = useLocale();
-  const zone = useTimeZone();
-  const format = dateFormat(locale, zone, time ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
-  return (at) => format.format(new Date(at)).replaceAll(" ", " ");
-}
+export { useActionDate };
 
 /**
  * A sentence with each number joined to the word after it (a counter of ja, 「365 日」; "365 days"), so that a line never

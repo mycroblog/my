@@ -18,7 +18,6 @@ import {
   type KeywordFilter,
 } from "@my/app-data";
 import {
-  dateFormat,
   LinkButton,
   SettingsEmpty,
   SettingsList,
@@ -26,12 +25,11 @@ import {
   SettingsScreen,
   SettingsSection,
   useLocale,
-  useTimeZone,
   type SettingsFactLine,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import type { SettingsEntryProps } from "./entries";
-import { ReadingNotice } from "./parts";
+import { ReadingNotice, useMoment } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -39,10 +37,10 @@ type T = ReturnType<typeof stringsIn>["t"];
 export const filtersPath = "/settings/filters";
 
 /** The address of the editor of a new filter. */
-const newFilterPath = `${filtersPath}/new`;
+export const newFilterPath = `${filtersPath}/new`;
 
 /** The address of the editor of the filter of `id`. */
-const filterPath = (id: string): string => `${filtersPath}/${id}`;
+export const filterPath = (id: string): string => `${filtersPath}/${id}`;
 
 /** What the route's loader waits for: the reader's filters, from the cache when it has them. */
 export async function loadFilterSettings(data: AppData): Promise<void> {
@@ -55,14 +53,6 @@ function placesOf(contexts: readonly FilterContext[], lang: string, t: T): strin
     .filter((c) => contexts.includes(c))
     .map((context) => t("settings.filters.place", { context }));
   return new Intl.ListFormat(lang, { type: "conjunction" }).format(named);
-}
-
-/** When a filter ends or ended, as the reader's locale and zone write it: its day, and with `time` its time too. */
-export function useFilterDate(time = true): (at: string) => string {
-  const { locale } = useLocale();
-  const zone = useTimeZone();
-  const format = dateFormat(locale, zone, time ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
-  return (at) => format.format(new Date(at));
 }
 
 /**
@@ -89,7 +79,7 @@ function factsOf(filter: KeywordFilter, lang: string, date: (at: string) => stri
 export function FilterSettings({ back }: SettingsEntryProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const { filters, status, retry } = useKeywordFilters();
-  const date = useFilterDate(false);
+  const date = useMoment(false);
   const title = t("settings.entry.filters");
   if (status !== "success")
     return (

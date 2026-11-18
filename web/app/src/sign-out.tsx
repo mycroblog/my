@@ -17,8 +17,13 @@
 // A session the server ended with what the reader did on a screen (revoking the server's own web client among the
 // authorized apps, which ends every browser's) leaves the same way, with no question and no revocation, since
 // nothing is left to revoke or to refuse: the same is removed, the other tabs follow, and the app starts again.
+//
+// Each of these ways leaves by a load of the page, and says first that the session is ending (`sessionEnding`): from
+// then on a form with changes that are not saved holds the reader back no more (unsaved-guard.ts). The browser's own
+// question before the unload would come after the session is gone, and staying would leave the form over a tab with
+// no token and an emptied cache.
 
-import { closeSession, endSession, type SessionEnd } from "@my/app-data";
+import { closeSession, endSession, type AppData, type SessionEnd } from "@my/app-data";
 import { SignOutDialog } from "@my/app-features";
 import { ModalPresence } from "@my/design-system";
 import { clearCaches } from "@my/platform";
@@ -31,6 +36,23 @@ import { serverSignInPath } from "./sign-in";
 const startPath = "/";
 
 type Session = Pick<RouterContext, "data" | "config" | "leave">;
+
+/** The data whose session is ending: the app is leaving for a page that loads anew. */
+const ending = new WeakSet<AppData>();
+
+/**
+ * Whether the session of `data` is ending, the app on its way out by a load of the page (signed out here or in
+ * another tab, or the session ended by the server): nothing holds the reader on a screen from then on.
+ */
+export function sessionEnding(data: AppData | null): boolean {
+  return data !== null && ending.has(data);
+}
+
+/** Leaves the app for `href`, the session of `data` over: it is said to be ending first, so that nothing holds the unload. */
+function leaveEnded({ data, leave }: Pick<Session, "data" | "leave">, href: string): void {
+  if (data !== null) ending.add(data);
+  leave(href);
+}
 
 /** What the session left in this browser, which goes with it. */
 async function removeKept(): Promise<void> {
@@ -48,7 +70,7 @@ async function signOut({ data, config, leave }: Session): Promise<void> {
   let end: SessionEnd = "revoked";
   if (data === null) await removeKept();
   else end = await endSession(data, config.clientId, removeKept);
-  leave(end === "revoked" ? startPath : serverSignInPath);
+  leaveEnded({ data, leave }, end === "revoked" ? startPath : serverSignInPath);
 }
 
 /**
@@ -57,7 +79,7 @@ async function signOut({ data, config, leave }: Session): Promise<void> {
  */
 export function followSignOut({ data, leave }: Pick<RouterContext, "data" | "leave">): void {
   data?.queryClient.clear();
-  leave(startPath);
+  leaveEnded({ data, leave }, startPath);
 }
 
 /**
@@ -69,7 +91,7 @@ export function followSignOut({ data, leave }: Pick<RouterContext, "data" | "lea
 export async function leaveEndedSession({ data, leave }: Pick<Session, "data" | "leave">): Promise<void> {
   if (data === null) await removeKept();
   else await closeSession(data, removeKept);
-  leave(startPath);
+  leaveEnded({ data, leave }, startPath);
 }
 
 /** The confirmation of signing out, over the page while `asking`; confirmed, it signs out and the app leaves. */

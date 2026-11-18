@@ -12,6 +12,11 @@
 // is disabled (`postHeld`) until the post is changed. An appeal the server did not take says why there, with what to
 // do. The refusal, and what is said of its appeal, last as long as the post stays as it was refused: a change of it
 // is a new post to send.
+//
+// Appeal is offered for as long as that read has not said that there is an appeal: while it is on its way, and when
+// it failed, too. The server is the one that knows: it refuses a second appeal itself, and the alert then says that
+// the refusal was appealed already; a way to read again would be one more state for the same end. A refusal whose
+// last moment to appeal, where the server said one, has passed offers none, and the alert says that the time passed.
 
 import { appealRefusalOf, refusedField, useAppeals, type HookAppeal, type HookRefusal } from "@my/app-data";
 import { ConfirmDialog, FormAlert, TextButton, useLocale } from "@my/design-system";
@@ -33,8 +38,8 @@ export const postHeld = (appeal: HookAppeal | null | undefined): boolean =>
 
 /**
  * The alert of a refused post its author may appeal: that the review did not accept it, with Appeal, then where the
- * appeal stands. `appeal` is the appeal as the server has it (null for none, undefined until it answered), and `text`
- * the post's text, which the appeal carries.
+ * appeal stands. `appeal` is the appeal as the server has it (null for none, undefined until it answered and when it
+ * could not be read: Appeal is offered then as for none), and `text` the post's text, which the appeal carries.
  */
 export function RefusedAppeal({
   refusal,
@@ -78,12 +83,17 @@ export function RefusedAppeal({
       </FormAlert>
     );
   const retry = asked.kind === "failed" && asked.reason === "other";
+  // The last moment to appeal, where the refusal said one, has passed: nothing is offered, and the alert says so.
+  const passed = refusal.deadline !== undefined && Date.parse(refusal.deadline) <= Date.now();
+  if (passed) return <FormAlert>{t("compose.refused.appeal.failed", { reason: "closed" })}</FormAlert>;
   return (
     <>
       <FormAlert
         action={
-          // Offered once the server said there is no appeal yet, and again after one that got no answer.
-          appeal === null && (asked.kind !== "failed" || retry) ? (
+          // Offered while no appeal of the refusal is known, whether the server said there is none, has not
+          // answered yet, or could not be asked (it says itself that one was made already, which the alert then
+          // says), and again after one that got no answer.
+          asked.kind !== "failed" || retry ? (
             <TextButton
               onPress={() => {
                 setAsked({ kind: "asking" });

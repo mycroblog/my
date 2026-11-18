@@ -12,13 +12,11 @@
 import { profileLimits, type Account, type ProfileChange } from "@my/app-data";
 import { CharCount, PictureField, TextField, useLocale } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactElement } from "react";
+import { charsOf } from "./chars";
 import { stringsIn } from "./locale";
 
 /** The address of the form where the reader edits their profile, under the settings' entry Profile. */
 export const profileEditPath = "/settings/profile/edit";
-
-/** The characters of a text as the server counts them (code points). */
-const charsOf = (text: string) => Array.from(text).length;
 
 /** A picture of the profile as the reader left it in a form. */
 export type PickedPicture = {

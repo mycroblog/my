@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the screens of the settings' entries share, each once: the notice in a screen's sections' place until what it
-// shows is read, when it could not be, or when its address names nothing of the reader's (every entry's); and, for
+// shows is read, when it could not be, or when its address names nothing of the reader's (every entry's); a moment
+// with its year, as every entry that says when something ends or happened writes it (`useMoment`); and, for
 // Security, Apps and Invites, a number and the dates of a row, in the reader's language and time zone; a value to
 // copy, with the button that copies it and what came of copying; the confirmation before what a row's button ends,
 // which asks no proof and says in the server's words why it did not happen; the way of the focus to the field a form
@@ -110,6 +111,22 @@ export function useDates(): { day: (iso: string) => string; hour: (iso: string) 
       .replaceAll(" ", noBreak);
   };
   return { day: (iso) => format(iso, {}), hour: (iso) => format(iso, { hour: "numeric" }) };
+}
+
+/**
+ * A moment (when a mute or a filter ends, when an action was taken or appealed) as the reader's language and time zone
+ * write it, with its year: its day and its time to the minute, or its day alone without `time`. It holds together as
+ * a date of `useDates` does: its spaces do not break.
+ */
+export function useMoment(time = true): (iso: string) => string {
+  const { locale } = useLocale();
+  const timeZone = useTimeZone();
+  const format = dateFormat(
+    locale,
+    timeZone,
+    time ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" },
+  );
+  return (iso) => format.format(new Date(iso)).replaceAll(" ", noBreak);
 }
 
 /** Copying `text`, and what came of the last copy, in words; undefined until one was asked. */

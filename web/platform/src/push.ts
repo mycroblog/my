@@ -152,9 +152,13 @@ function madeWith(subscription: PushSubscription, key: string): boolean {
 /**
  * Subscribes this browser to the pushes of the server whose application key is `key` (base64url), through the app's
  * Service Worker, and returns the subscription to register with the server. A subscription the browser holds with
- * another key (the server's changed) is ended first, since a browser keeps one. It rejects when the browser refuses.
+ * another key (the server's changed) is ended first, since a browser keeps one. It rejects when the browser refuses,
+ * and at once when the page has no Service Worker registered (its registration failed, or the build has none): the
+ * browser's `ready` waits for a worker without end, and would never settle then.
  */
 export async function subscribePush(key: string): Promise<PushSubscriptionData> {
+  if ((await navigator.serviceWorker.getRegistration()) === undefined)
+    throw new Error("platform: no Service Worker is registered, so there is nothing to subscribe through");
   const registration = await navigator.serviceWorker.ready;
   const held = await registration.pushManager.getSubscription();
   if (held !== null && !madeWith(held, key)) await held.unsubscribe();

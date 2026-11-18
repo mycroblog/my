@@ -591,6 +591,10 @@
     "defaultMessage": "Sent. Open the link in the email to receive email again.",
     "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
   },
+  "settings.notifications.email_stopped.verified": {
+    "defaultMessage": "Your address is already verified. Email to it is on again.",
+    "description": "On the notification settings page, in the place of the notice settings.notifications.email_stopped once the reader pressed Send the verification email (settings.notifications.email_stopped.verify) and the server answered that the address is verified already: no email was sent, the notice is gone, and the server sends email to the address again. A status that takes the focus the button left."
+  },
   "settings.notifications.email_stopped.wait": {
     "defaultMessage": "{minutes, plural, =0 {You asked for the email too many times. Try again later.} one {You asked for the email too many times. Try again in # minute.} other {You asked for the email too many times. Try again in # minutes.}}",
     "description": "Beside the button Send the verification email on the notification settings page when the server refused to send another one so soon; the same sentence as on the sign-up status page (server:auth.status.resend_rate_limited). minutes is how long the server asks the reader to wait, rounded up to whole minutes, or 0 when the server did not say."
@@ -1226,6 +1230,10 @@
   "settings.account.action.posts.gone": {
     "defaultMessage": "{count, plural, one {# post is no longer on this server, so it cannot be opened.} other {# posts are no longer on this server, so they cannot be opened.}}",
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
+  },
+  "settings.account.action.posts.failed": {
+    "defaultMessage": "{count, plural, one {# post could not be loaded.} other {# posts could not be loaded.}}",
+    "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on could not be read from the server now (it did not answer, or failed), which is not to say they are deleted (settings.account.action.posts.gone counts those). count is 1 or more."
   },
   "settings.account.action.not_found": {
     "defaultMessage": "This moderation action is not listed on your account. Check the address.",

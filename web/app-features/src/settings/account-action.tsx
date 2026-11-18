@@ -13,20 +13,23 @@
 //   moderators to know, up to the server's limit, with that it is sent once and the last moment to send it said over
 //   the field. Once appealed, where the appeal stands, in a sentence that reads whole by itself, when it was sent and
 //   decided, a line each, what the reader wrote, and the moderators' answer. Never appealed and no longer appealable,
-//   that it is so, with the day the time passed.
+//   that it is so, with the day the time passed: an action whose last moment to appeal had passed as the screen
+//   opened has no form, whatever it said when it was read.
 //
-// What came of sending is said in the appeal's status, a polite live region there from the start, which takes the
-// focus: the form is gone once the appeal is sent, the status says only that it was, and the cache holds the action as
-// the server answered it, so the lists and the menu's count follow. What is wrong with what the reader wrote (nothing,
-// too much, what the server refuses of it) stands under the field, which takes the focus and comes into view with it,
-// the submit bar saying only that nothing was sent. A server that refuses the appeal itself (the time passed, the
-// action no longer appealable, appealed from elsewhere meanwhile, the action gone) ends the form: no field, no submit
-// bar, no last day; the status says what happened and what to do, with the link to the server's About page where
-// that is where to turn, and what the reader wrote stays under it to be read and copied; the cache holds the action
-// as no longer appealable, or the action is read again where the server has more to say of it. A server that could
-// not be reached says so in the submit bar, and the form stays as it was. Leaving with an appeal written that can
-// still be sent is the app's to notice (`onUnsaved`): it holds the reader back and gives `leaving`, and the screen
-// asks whether to leave.
+// What came of sending is said in the appeal's status, which comes with its words and takes the focus (read once, as
+// the focus reaches it): the form is gone once the appeal is sent, the status says only that it was, and the cache
+// holds the action as the server answered it, so the lists and the menu's count follow. What is wrong with what the
+// reader wrote (nothing, too much, what the server refuses of it) stands under the field, which takes the focus and
+// comes into view with it, the submit bar saying only that nothing was sent. A server that refuses the appeal itself
+// (the time passed, the action no longer appealable, appealed from elsewhere meanwhile, the action gone) ends the
+// form: no field, no submit bar, no last day; the status says what happened and what to do, with the link to the
+// server's About page where that is where to turn, and what the reader wrote stays to be read and copied, under the
+// status, or under the appeal that stands where the action was appealed from elsewhere; the cache holds the action as
+// no longer appealable, or the action is read again where the server has more to say of it, and one the lists no
+// longer hold stays on the screen as it was read, with the status and the text, until the reader leaves. A server
+// that could not be reached says so in the submit bar, and the form stays as it was. Leaving with an appeal written
+// that can still be sent is the app's to notice (`onUnsaved`): it holds the reader back and gives `leaving`, and the
+// screen asks whether to leave.
 
 import { plainText, statusPath } from "@my/app-components";
 import {
@@ -53,6 +56,7 @@ import {
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   Stack,
@@ -61,13 +65,13 @@ import {
   TextLink,
   useLocale,
 } from "@my/design-system";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
 import { formatParts } from "../slots";
-import { accountStatusPath, useActionDate } from "./account";
+import { accountStatusPath } from "./account";
 import { appealPassed, endsLine, useStatusWords } from "./account-status";
-import { ReadingNotice } from "./parts";
+import { ReadingNotice, useFocusOnArrival, useMoment } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -111,11 +115,14 @@ function excerptOf(content: string): string | undefined {
   return letters.length > excerptLength ? `${letters.slice(0, excerptLength).join("")}…` : text;
 }
 
-/** The posts an action is about: each one the server still shows a link to its page, and how many it no longer does. */
+/**
+ * The posts an action is about: each one the server still shows a link to its page, how many it no longer does, and
+ * how many could not be read, which are not said to be gone.
+ */
 function Posts({ ids, t }: { ids: readonly string[]; t: T }) {
   const { lang } = stringsIn(useLocale().locale);
-  const date = useActionDate();
-  const { statuses, gone, pending } = useActionStatuses(ids);
+  const date = useMoment();
+  const { statuses, gone, failed, pending } = useActionStatuses(ids);
   const heading = t("settings.account.action.section.posts");
   return (
     <SettingsSection heading={heading} count={new Intl.NumberFormat(lang).format(ids.length)}>
@@ -140,6 +147,11 @@ function Posts({ ids, t }: { ids: readonly string[]; t: T }) {
           {t("settings.account.action.posts.gone", { count: gone })}
         </Box>
       )}
+      {failed > 0 && (
+        <Box as="p" tone="muted" breaks="phrase">
+          {t("settings.account.action.posts.failed", { count: failed })}
+        </Box>
+      )}
     </SettingsSection>
   );
 }
@@ -158,6 +170,24 @@ function Written({ label, children }: { label: string; children: string }) {
   );
 }
 
+/**
+ * What came of sending the appeal (that it was sent, or why the server refused it): a status that comes with its
+ * words and takes the focus the form's button left, as the settings' other results that take the focus do
+ * (`SettingsResult`). It is read as the focus reaches it, once: words put into a live region that was there, which
+ * then takes the focus, may be read twice.
+ */
+function AppealResult({ children }: { children: ReactNode }) {
+  const said = useRef<HTMLParagraphElement>(null);
+  useFocusOnArrival(said);
+  return (
+    <SettingsResult ref={said}>
+      <Box as="span" breaks="phrase">
+        {children}
+      </Box>
+    </SettingsResult>
+  );
+}
+
 /** Where the form's last send is; one that was not sent, with what is wrong with what the reader wrote, if that is why. */
 type Sent = { readonly kind: "idle" | "sending" } | { readonly kind: "refused"; readonly field: string | undefined };
 
@@ -169,33 +199,37 @@ function ActionView({
   leaving,
 }: Omit<ModerationActionProps, "id"> & { action: ModerationAction; reread: () => void }) {
   const { t } = stringsIn(useLocale().locale);
-  const date = useActionDate();
+  const date = useMoment();
   const id = useId();
   const appeals = useAppeals();
   const [text, setText] = useState("");
   const [sent, setSent] = useState<Sent>({ kind: "idle" });
-  // What came of sending (that it was sent, or why the server refused it), each a new element of the status, which
-  // takes the focus.
+  // What came of sending (that it was sent, or why the server refused it), each a new status, which takes the focus
+  // as it comes.
   const [said, setSaid] = useState<{ readonly what: "sent" | AppealRefusal; readonly n: number } | undefined>(
     undefined,
   );
   const count = useRef(0);
-  // What takes the focus once the screen is drawn again: the status, or the field that was refused.
-  const focusNext = useRef<"status" | "field" | undefined>(undefined);
+  // Whether the field that was refused takes the focus once the screen is drawn again.
+  const focusField = useRef(false);
   const fieldId = `${id}-appeal`;
-  const statusId = `${id}-status`;
   useEffect(() => {
-    if (focusNext.current === "field") focusRefusedField(fieldId);
-    else if (focusNext.current === "status") document.getElementById(statusId)?.focus();
-    focusNext.current = undefined;
+    if (focusField.current) focusRefusedField(fieldId);
+    focusField.current = false;
   });
 
   const { appeal } = action;
+  // The last moment to appeal, where the server says one, had passed as the screen opened: there is no form, whatever
+  // the action as it was read says. One that passes while the reader writes is the server's to say, as they send.
+  const [passed] = useState(() => appealPassed(action));
   // A refusal of the appeal itself ends the form, whatever the action read before it says.
   const ended = said !== undefined && said.what !== "sent";
-  const open = action.appealable && appeal === undefined && !ended;
+  const open = action.appealable && appeal === undefined && !ended && !passed;
   const busy = sent.kind === "sending";
   const unsaved = open && text.trim() !== "";
+  // What the reader wrote and did not send, once there is no form to hold it, however the form ended (the server
+  // refused the appeal, or the action was read again with an appeal made elsewhere): it stays to be read and copied.
+  const unsent = !open && said?.what !== "sent" ? text.trim() : "";
   useEffect(() => {
     onUnsaved?.(unsaved);
   }, [onUnsaved, unsaved]);
@@ -210,11 +244,10 @@ function ActionView({
     count.current += 1;
     setSaid({ what, n: count.current });
     setSent({ kind: "idle" });
-    focusNext.current = "status";
   };
   const refuse = (field: string | undefined) => {
     setSent({ kind: "refused", field });
-    if (field !== undefined) focusNext.current = "field";
+    if (field !== undefined) focusField.current = true;
   };
   const left = appealLimits.text - Array.from(text.trim()).length;
   const send = () => {
@@ -239,7 +272,9 @@ function ActionView({
         const reason = appealRefusalOf(error);
         if (reason !== undefined) {
           // The form ends, and the status says what the server said. An action that can no longer be appealed is
-          // held so in the cache; one appealed from elsewhere, or gone, is read again for what the server has of it.
+          // held so in the cache; one appealed from elsewhere, or gone, is read again for what the server has of it:
+          // the appeal that stands shows over what was written here, and an action the lists no longer hold stays
+          // on this screen as it was read (`ModerationActionScreen`).
           if (reason === "appealed" || reason === "gone") reread();
           say(reason);
           return;
@@ -251,21 +286,17 @@ function ActionView({
   };
 
   const deadline = action.appeal_deadline === undefined ? "" : date(action.appeal_deadline);
-  const status = (
-    <Box as="p" id={statusId} role="status" tabIndex={-1} breaks="phrase">
-      {said !== undefined && (
-        <span key={said.n}>
-          {said.what === "sent"
-            ? t("settings.account.appeal.sent")
-            : formatParts(
-                t,
-                "settings.account.appeal.refused",
-                { reason: said.what === "gone" ? "other" : said.what },
-                { about: <TextLink href={aboutPath}>{t("settings.account.appeal.about_page")}</TextLink> },
-              )}
-        </span>
-      )}
-    </Box>
+  const status = said !== undefined && (
+    <AppealResult key={said.n}>
+      {said.what === "sent"
+        ? t("settings.account.appeal.sent")
+        : formatParts(
+            t,
+            "settings.account.appeal.refused",
+            { reason: said.what === "gone" ? "other" : said.what },
+            { about: <TextLink href={aboutPath}>{t("settings.account.appeal.about_page")}</TextLink> },
+          )}
+    </AppealResult>
   );
   return (
     <>
@@ -329,8 +360,8 @@ function ActionView({
               : undefined
           }
         >
-          {/* The status keeps its place from the start, with no room of its own until it says something. */}
-          <Stack gap={said === undefined ? undefined : "screen-row-gap"}>
+          {/* What came of sending, first; then where the appeal stands; then what was written and not sent. */}
+          <Stack gap="screen-row-gap">
             {status}
             {appeal !== undefined ? (
               <Stack gap="screen-row-gap">
@@ -369,20 +400,21 @@ function ActionView({
                 end={<LimitCount left={left} near={100} />}
                 error={sent.kind === "refused" ? sent.field : undefined}
               />
-            ) : ended ? (
-              // The status said why nothing was sent: what the reader wrote stays, to be read and copied.
-              text.trim() !== "" && (
-                <Stack gap="hair">
-                  <Written label={t("settings.account.appeal.unsent")}>{text.trim()}</Written>
-                  <Box as="p" text="caption" tone="muted" breaks="phrase">
-                    {t("settings.account.appeal.unsent.about")}
-                  </Box>
-                </Stack>
-              )
             ) : (
-              <Box as="p" tone="muted" breaks="phrase">
-                {t("settings.account.appeal.closed", { deadline: appealPassed(action) ? "yes" : "no", date: deadline })}
-              </Box>
+              // A form the server ended says why in the status; an action that was never open to appeal, here.
+              !ended && (
+                <Box as="p" tone="muted" breaks="phrase">
+                  {t("settings.account.appeal.closed", { deadline: passed ? "yes" : "no", date: deadline })}
+                </Box>
+              )
+            )}
+            {unsent !== "" && (
+              <Stack gap="hair">
+                <Written label={t("settings.account.appeal.unsent")}>{unsent}</Written>
+                <Box as="p" text="caption" tone="muted" breaks="phrase">
+                  {t("settings.account.appeal.unsent.about")}
+                </Box>
+              </Stack>
             )}
           </Stack>
         </SettingsSection>
@@ -405,13 +437,22 @@ function ActionView({
   );
 }
 
-/** The screen: the action once it is found among the reader's, and until then that it loads. */
+/**
+ * The screen: the action once it is found among the reader's, and until then that it loads. Once shown, the action
+ * stays as it was last read until the reader leaves, whatever a later read of the list says: a list that no longer
+ * holds it (the server answered an appeal of it with 404) would otherwise take the screen away, with why the appeal
+ * was not sent, what the reader wrote, and the focus.
+ */
 export function ModerationActionScreen({ id, onBack, onUnsaved, leaving }: ModerationActionProps) {
   const { t } = stringsIn(useLocale().locale);
   const words = useStatusWords();
   const { action, status, retry, reread } = useOwnModerationAction(id);
-  if (action !== undefined)
-    return <ActionView action={action} reread={reread} onBack={onBack} onUnsaved={onUnsaved} leaving={leaving} />;
+  // What the screen last showed of the action, kept as it draws.
+  const [last, setLast] = useState(action);
+  if (action !== undefined && action !== last) setLast(action);
+  const shown = action ?? last;
+  if (shown !== undefined)
+    return <ActionView action={shown} reread={reread} onBack={onBack} onUnsaved={onUnsaved} leaving={leaving} />;
   return (
     <SettingsScreen
       sub

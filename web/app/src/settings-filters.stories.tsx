@@ -54,11 +54,14 @@ export const Edit: Story = { parameters: screen({ at: "filter:0" }) };
 export const EditEnding: Story = { parameters: screen({ at: "filter:1" }) };
 /** The editor of Marathon week, which ended: keeping its end keeps it expired, another end brings it back. */
 export const EditExpired: Story = { parameters: screen({ at: "filter:2" }) };
-/** On a server that refuses the name: after Save, the refusal stands under the name, which takes the focus. */
+/**
+ * On a server that refuses the name: after a change and Save, the refusal stands under the name, which takes the
+ * focus. (Save on the filter as it is sends nothing and goes back to the list.)
+ */
 export const EditRefused: Story = {
   parameters: screen({ at: "filter:0", server: { settings: { filterSave: "title" } } }),
 };
-/** On a server that never answers: Save stays busy, and nothing can be changed meanwhile. */
+/** On a server that never answers: after a change, Save stays busy, and nothing can be changed meanwhile. */
 export const EditSaving: Story = {
   parameters: screen({ at: "filter:0", server: { settings: { filterSave: "waits" } } }),
 };

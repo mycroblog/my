@@ -61,6 +61,7 @@ import {
 } from "@my/design-system";
 import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/editor";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { charsOf } from "../chars";
 import { fieldError } from "../field-errors";
 import { stringsIn } from "../locale";
 import { formatParts } from "../slots";
@@ -68,7 +69,6 @@ import {
   articleFromServer,
   articleFromSource,
   articleVisibilities,
-  charsOf,
   emptyArticle,
   lengthRatio,
   limitState,

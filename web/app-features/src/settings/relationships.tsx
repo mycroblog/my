@@ -47,7 +47,6 @@ import {
   BackButton,
   Box,
   Button,
-  dateFormat,
   FeedNotice,
   Row,
   SettingsEmpty,
@@ -59,13 +58,12 @@ import {
   Stack,
   TextLink,
   useLocale,
-  useTimeZone,
   type SettingsRowResult,
 } from "@my/design-system";
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import type { SettingsEntryProps } from "./entries";
-import { ReadingNotice } from "./parts";
+import { ReadingNotice, useMoment } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -274,14 +272,6 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
   );
 }
 
-/** When a mute ends, as the reader's locale and zone write it. */
-function useEnds(): (at: string) => string {
-  const { locale } = useLocale();
-  const zone = useTimeZone();
-  const format = dateFormat(locale, zone, { dateStyle: "medium", timeStyle: "short" });
-  return (at) => format.format(new Date(at));
-}
-
 /** The button that takes a row out of its list, its name `label`, with what it runs. */
 function RemoveButton({ label, state, removal }: { label: string; state: RowState; removal: Removal }) {
   return (
@@ -373,7 +363,7 @@ function muteCovers(mute: MutedAccount, ends: (at: string) => string, t: T): Rea
 /** The muted accounts: each its row, leading to its profile, what the mute covers under it, with Unmute. */
 function Muted({ items, capped, t }: SectionProps<MutedAccount>) {
   const change = useChangeRelationship();
-  const ends = useEnds();
+  const ends = useMoment();
   return (
     <ListSection<MutedAccount>
       list="muted"

@@ -4,7 +4,7 @@
 // hashtags they follow. A write puts what the server answered into the cache: the viewer's own account, and the copy
 // of it the profile shows, and marks the places that carry the account's name and picture.
 import { ProblemError, type components } from "@mycroblog/mykit";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, type QueryClient } from "@tanstack/react-query";
 import {
   accountByIdQuery,
   featuredHashtagsQuery,
@@ -17,6 +17,7 @@ import { refusalDetail, refusedField, uploadAttachment } from "./compose";
 import { inOrder } from "./in-order";
 import { wholeList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
+import { readOf, type ScreenRead } from "./reads";
 
 /** The viewer's own account: the profile with the choices only its owner reads. */
 export type CredentialAccount = components["schemas"]["CredentialAccount"];
@@ -45,19 +46,52 @@ export const profileLimits = { displayName: 30, note: 500, fieldText: 255, field
 /** A picture of the profile. */
 export type ProfilePicture = "avatar" | "header";
 
+/**
+ * The document the writes of the viewer's account are one of (`updateProfile`, `chooseBadge`), each sent once the
+ * ones before it were answered.
+ */
+const credentialsWrites = "/accounts/update_credentials";
+
 /** The picture each failed upload of a profile change was of, by the error the change rejected with. */
 const uploadsFailed = new WeakMap<object, ProfilePicture>();
 
-/** The media of a picture to set: its ID once uploaded, empty to remove it, undefined to leave it. */
+/**
+ * The media each picked file was uploaded as, by session, until a change that carries it is saved: a change that
+ * was not saved (the other picture's upload failed, the server refused the change) is sent again with the files
+ * as they are, and a file already uploaded is not uploaded a second time. A file picked anew is another file.
+ */
+const uploaded = new WeakMap<QueryClient, WeakMap<File, string>>();
+
+/** The uploads kept of the session of `data`. */
+function uploadsOf({ queryClient }: AppData): WeakMap<File, string> {
+  let kept = uploaded.get(queryClient);
+  if (kept === undefined) {
+    kept = new WeakMap();
+    uploaded.set(queryClient, kept);
+  }
+  return kept;
+}
+
+/** The media of a picture that is no file to upload: empty to remove it, undefined to leave it. */
+const unpicked = (file: null | undefined): string | undefined => (file === null ? "" : undefined);
+
+/**
+ * The media of a picture to set: its ID once uploaded (the one it was uploaded as, for a file a change that was not
+ * saved had uploaded), empty to remove it, undefined to leave it.
+ */
 async function pictureId(
   data: AppData,
   picture: ProfilePicture,
   file: File | null | undefined,
 ): Promise<string | undefined> {
-  if (file === undefined) return undefined;
-  if (file === null) return "";
+  if (file === undefined || file === null) return unpicked(file);
+  const kept = uploadsOf(data);
+  const had = kept.get(file);
+  if (had !== undefined) return had;
   try {
-    return (await uploadAttachment(data, file)).id;
+    const { id } = await uploadAttachment(data, file);
+    kept.set(file, id);
+    return id;
   } catch (error) {
     if (typeof error === "object" && error !== null) uploadsFailed.set(error, picture);
     throw error;
@@ -104,23 +138,46 @@ export function pictureRefusal(error: unknown): string | undefined {
  * viewer's own, and as the profile of the account; the posts, notifications and lists that carry the account are read
  * again when they open. It rejects with the server's problem, or with the error of an upload that failed, and
  * nothing is changed then; `failedPicture` says which picture such an error is about.
+ *
+ * Every answer is the whole account, so the changes are sent one at a time, in the order made, each once the ones
+ * before it were answered (`inOrder`, with `chooseBadge`, which reads the account again): two on their way at once
+ * could be answered crossed, the older account put back over the newer. A change that uploads nothing takes its
+ * place in that order as it is made; one with a picture, once its pictures are uploaded, outside that order, each
+ * file once: a change made again after it failed sends the media its files were uploaded as, but for a picture the
+ * server refused in the change itself, which is uploaded anew.
  */
-export async function updateProfile(data: AppData, change: ProfileChange): Promise<CredentialAccount> {
+export function updateProfile(data: AppData, change: ProfileChange): Promise<CredentialAccount> {
   const { avatar, header, ...fields } = change;
-  const [avatarId, headerId] = [await pictureId(data, "avatar", avatar), await pictureId(data, "header", header)];
-  const { data: saved } = await data.api.PATCH("/accounts/update_credentials", {
-    body: {
-      ...fields,
-      ...(avatarId === undefined ? {} : { avatar_media_id: avatarId }),
-      ...(headerId === undefined ? {} : { header_media_id: headerId }),
-    },
-  });
-  if (saved === undefined) throw new Error("app-data: update_credentials answered without an account");
-  const { queryClient } = data;
-  queryClient.setQueryData(viewerQuery(data).queryKey, saved);
-  queryClient.setQueryData(accountByIdQuery(data, saved.id).queryKey, saved);
-  await markAccountLists(queryClient, saved.id, "later");
-  return saved;
+  const files = [avatar, header].filter((file): file is File => file instanceof File);
+  const kept = uploadsOf(data);
+  const write = (avatarId: string | undefined, headerId: string | undefined) =>
+    inOrder(data, credentialsWrites, async () => {
+      const { data: saved } = await data.api
+        .PATCH("/accounts/update_credentials", {
+          body: {
+            ...fields,
+            ...(avatarId === undefined ? {} : { avatar_media_id: avatarId }),
+            ...(headerId === undefined ? {} : { header_media_id: headerId }),
+          },
+        })
+        .catch((error: unknown) => {
+          // Media the server does not take as this picture is not sent again: a retry uploads the file anew.
+          const refused = failedPicture(error);
+          const file = refused === "avatar" ? avatar : refused === "header" ? header : undefined;
+          if (file instanceof File) kept.delete(file);
+          throw error;
+        });
+      if (saved === undefined) throw new Error("app-data: update_credentials answered without an account");
+      // The media are the account's pictures now.
+      for (const file of files) kept.delete(file);
+      const { queryClient } = data;
+      queryClient.setQueryData(viewerQuery(data).queryKey, saved);
+      queryClient.setQueryData(accountByIdQuery(data, saved.id).queryKey, saved);
+      await markAccountLists(queryClient, saved.id, "later");
+      return saved;
+    });
+  if (!(avatar instanceof File) && !(header instanceof File)) return write(unpicked(avatar), unpicked(header));
+  return (async () => write(await pictureId(data, "avatar", avatar), await pictureId(data, "header", header)))();
 }
 
 /** Changes the viewer's profile, from a screen (`updateProfile`). */
@@ -134,35 +191,20 @@ export function useCredentials(): CredentialAccount | undefined {
   return useQuery(viewerQuery(useAppData())).data;
 }
 
-/** Where a read is, for a screen that shows what it read whole: until it answered, when it did not, once it did. */
-type ReadStatus = "loading" | "failed" | "read";
-
 /**
  * Where the reads of what a screen of the profile's settings shows are: the viewer's own account, and with `lists`
  * the badges they may show and the hashtags they feature too (not read without it). `loading` until the server
  * answered them all, `failed` when it did not answer one, with `retry`, which reads again those that failed. A list
  * that is `read` is the server's, not the empty one of a read still on its way, so a change of it replaces what the
- * server holds and nothing else.
+ * server holds and nothing else. What was read stays `read`: a later read of it that fails leaves the screen what it
+ * had (`readOf`).
  */
-export function useProfileRead({ lists = false }: { lists?: boolean } = {}): {
-  status: ReadStatus;
-  retry: () => void;
-} {
+export function useProfileRead({ lists = false }: { lists?: boolean } = {}): ScreenRead {
   const data = useAppData();
   const account = useQuery(viewerQuery(data));
   const badges = useQuery({ ...badgeChoicesQuery(data), enabled: lists });
   const featured = useQuery({ ...ownFeaturedHashtagsQuery(data), enabled: lists });
-  const reads = lists ? [account, badges, featured] : [account];
-  return {
-    status: reads.some((r) => r.status === "error")
-      ? "failed"
-      : reads.every((r) => r.status === "success")
-        ? "read"
-        : "loading",
-    retry: () => {
-      for (const r of reads) if (r.status === "error") void r.refetch();
-    },
-  };
+  return readOf(lists ? [account, badges, featured] : [account]);
 }
 
 // ---- Badges --------------------------------------------------------------------------------------------------------
@@ -183,18 +225,24 @@ export function useBadgeChoices(): readonly BadgeChoice[] {
 /**
  * Shows the badge of the role of `roleId` on the viewer's profile, or stops showing it, and resolves once the cache
  * holds the choice as saved and the viewer's account, which carries the badges they show, is read again. It rejects
- * with the server's problem (404: a role the viewer does not hold, or without a badge).
+ * with the server's problem (404: a role the viewer does not hold, or without a badge). It is one of the writes of
+ * the account (`updateProfile`), sent and read again in their order: its read of the account, on its way while a
+ * later change of the profile is answered, would put the older account back.
  */
-export async function chooseBadge(data: AppData, roleId: string, displayed: boolean): Promise<void> {
-  const { data: saved } = await data.api.PUT("/preferences/badges/{role_id}", {
-    params: { path: { role_id: roleId } },
-    body: { displayed },
+export function chooseBadge(data: AppData, roleId: string, displayed: boolean): Promise<void> {
+  return inOrder(data, credentialsWrites, async () => {
+    const { data: saved } = await data.api.PUT("/preferences/badges/{role_id}", {
+      params: { path: { role_id: roleId } },
+      body: { displayed },
+    });
+    if (saved !== undefined)
+      data.queryClient.setQueryData<components["schemas"]["BadgeChoiceList"]>(
+        badgeChoicesQuery(data).queryKey,
+        (now) =>
+          now === undefined ? now : { ...now, items: now.items.map((c) => (c.role_id === saved.role_id ? saved : c)) },
+      );
+    await data.queryClient.invalidateQueries({ queryKey: viewerQuery(data).queryKey });
   });
-  if (saved !== undefined)
-    data.queryClient.setQueryData<components["schemas"]["BadgeChoiceList"]>(badgeChoicesQuery(data).queryKey, (now) =>
-      now === undefined ? now : { ...now, items: now.items.map((c) => (c.role_id === saved.role_id ? saved : c)) },
-    );
-  await data.queryClient.invalidateQueries({ queryKey: viewerQuery(data).queryKey });
 }
 
 /** Shows or hides a role badge, from a screen (`chooseBadge`). */

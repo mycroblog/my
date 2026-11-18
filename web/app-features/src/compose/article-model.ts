@@ -25,6 +25,7 @@ import {
   type Status,
   type Visibility,
 } from "@my/app-data";
+import { charsOf } from "../chars";
 import type { FieldMembers } from "../field-errors";
 import { keptPolicy, policyChange } from "./model";
 
@@ -185,9 +186,6 @@ export const writtenArticle = (d: ArticleDraft) =>
   d.summary.trim() !== "" ||
   d.cover !== undefined ||
   d.tags.length > 0;
-
-/** The characters of a text, as the server counts them (code points). */
-export const charsOf = (text: string) => Array.from(text).length;
 
 /** What keeps an article from being published. */
 export type ArticleProblems = {

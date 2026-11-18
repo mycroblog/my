@@ -116,25 +116,37 @@ export function useOwnModerationAction(id: string): {
   };
 }
 
+/** Whether `error` is the server's answer that a post is not there for the viewer: not found, or gone. */
+const postGone = (error: unknown): boolean =>
+  error instanceof ProblemError && (error.status === 404 || error.status === 410);
+
 /**
  * The posts an action is about (its `status_ids`) as the viewer may open them now: those the server still shows them,
- * in the action's order, and how many it no longer does (deleted, by the action or since); `pending` until the
- * server answered for every one.
+ * in the action's order; how many it no longer does (`gone`: the server answered 404 or 410, or the viewer deleted
+ * the post here: deleted, by the action or since); and how many could not be read for any other reason (`failed`:
+ * no answer, an error of the server), which are not known to be gone and are counted apart. `pending` until the
+ * server answered for every one, both counts 0 until then.
  */
 export function useActionStatuses(ids: readonly string[]): {
   readonly statuses: readonly Status[];
   readonly gone: number;
+  readonly failed: number;
   readonly pending: boolean;
 } {
   const data = useAppData();
   const show = useShadow();
   const reads = useQueries({ queries: ids.map((id) => ({ ...statusQuery(data, id), retry: false })) });
-  const statuses = reads.flatMap((read) => {
+  const statuses: Status[] = [];
+  let gone = 0;
+  let failed = 0;
+  for (const read of reads) {
     const shown = read.data === undefined ? undefined : show(read.data);
-    return shown === undefined ? [] : [shown];
-  });
+    if (shown !== undefined) statuses.push(shown);
+    else if (read.data !== undefined || postGone(read.error)) gone += 1;
+    else if (read.isError) failed += 1;
+  }
   const pending = reads.some((read) => read.isPending);
-  return { statuses, gone: pending ? 0 : ids.length - statuses.length, pending };
+  return { statuses, gone: pending ? 0 : gone, failed: pending ? 0 : failed, pending };
 }
 
 /**
@@ -196,7 +208,7 @@ export function hookAppealQuery(data: AppData, id: string) {
 
 /**
  * The viewer's appeal of the hook decision of `id`: null when they made none, undefined until the server answered,
- * and while there is no decision to ask about (`enabled` false).
+ * when it could not be read, and while there is no decision to ask about (`enabled` false).
  */
 export function useHookAppeal(id: string, enabled = true): HookAppeal | null | undefined {
   return useQuery({ ...hookAppealQuery(useAppData(), id), enabled }).data;

@@ -340,7 +340,6 @@ export {
   useStillAsking,
 } from "./follow-requests";
 export {
-  changePushAlerts,
   notificationSettingsQuery,
   notificationSoundOn,
   pushSubscriptionQuery,

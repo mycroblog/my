@@ -27,8 +27,12 @@
 // a word while there is none; no word written, with a row to write it in, is that row's field. The submit bar says
 // only that nothing was saved.
 // Once saved or deleted the screen goes back to the list, and app-data reads the open timelines again, where a
-// matching post is then folded. Leaving with changes not saved is the app's to notice (`onUnsaved`): it holds the
-// reader back and gives `leaving`, and the screen asks whether to leave.
+// matching post is then folded; Save on a filter that is there and was not changed sends nothing and goes back. A
+// confirmed delete keeps its confirmation busy until the screen has gone back. Leaving with changes not saved is the
+// app's to notice (`onUnsaved`): it holds the reader back and gives `leaving`, and the screen asks whether to leave.
+// A form on its way to the server is not unsaved: the reader who leaves then is not held, the save goes on, moves
+// them nowhere once it is done, and says in the settings' toast (unsaved.tsx), by the filter's name and with the way
+// back to its editor, that it failed.
 
 import { localInput, localInstant } from "@my/app-components";
 import {
@@ -78,8 +82,9 @@ import { useEffect, useId, useRef, useState } from "react";
 import { placeRefusal, type FieldMembers } from "../field-errors";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
-import { filtersPath, useFilterDate } from "./filters";
-import { ReadingNotice } from "./parts";
+import { filterPath, filtersPath, newFilterPath } from "./filters";
+import { ReadingNotice, useMoment } from "./parts";
+import { reportUnsaved } from "./unsaved";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -311,7 +316,7 @@ function EditForm({
   const { locale } = useLocale();
   const { t, lang } = stringsIn(locale);
   const timeZone = useTimeZone();
-  const date = useFilterDate();
+  const date = useMoment();
   const id = useId();
   const writes = useKeywordFilterWrites();
   const [base] = useState(() => formOf(filter));
@@ -336,16 +341,21 @@ function EditForm({
   const wrong = sent.kind === "refused" ? sent.wrong : [];
   /** What is wrong with `input`, or undefined. */
   const wrongWith = (input: Input) => wrong.find((w) => w.input === input)?.text;
-  const unsaved = savedOf(form) !== savedOf(base);
+  const changed = savedOf(form) !== savedOf(base);
+  // A form on its way to the server is not one the reader would lose by leaving: the save, or the delete, goes on.
+  const unsaved = changed && !busy;
   useEffect(() => {
     onUnsaved?.(unsaved);
   }, [onUnsaved, unsaved]);
-  useEffect(
-    () => () => {
+  // Whether the screen has left: what a save or a delete still on its way then comes to moves nothing on screen.
+  const left = useRef(false);
+  useEffect(() => {
+    left.current = false;
+    return () => {
+      left.current = true;
       onUnsaved?.(false);
-    },
-    [onUnsaved],
-  );
+    };
+  }, [onUnsaved]);
 
   const titleId = `${id}-title`;
   const addId = `${id}-add`;
@@ -404,15 +414,25 @@ function EditForm({
       refuse("form", { reason: undefined, wrong: found });
       return;
     }
+    // A filter that is there and was not changed has nothing to send: the screen goes back as after a save.
+    if (filterId !== undefined && !changed) {
+      onBack();
+      return;
+    }
     const keys = written(form.words).map((w) => w.key);
+    const name = form.title.trim();
     setSent({ kind: "sending" });
     writes.save(requestOf(form, filter, timeZone), filterId).then(
       () => {
+        // The reader who left meanwhile stays where they went.
+        if (left.current) return;
         onUnsaved?.(false);
         onBack();
       },
       (error: unknown) => {
-        refuse("server", placed(error, keys, t));
+        // No form is left to say it: the settings' toast names the filter and leads back to its editor.
+        if (left.current) reportUnsaved(name, filterId === undefined ? newFilterPath : filterPath(filterId));
+        else refuse("server", placed(error, keys, t));
       },
     );
   };
@@ -421,10 +441,13 @@ function EditForm({
     setDeleting("busy");
     writes.remove(filterId).then(
       () => {
+        // The confirmation stays as it is, busy, until the screen has gone back; a reader who left stays there.
+        if (left.current) return;
         onUnsaved?.(false);
         onBack();
       },
       () => {
+        if (left.current) return;
         setDeleting(undefined);
         setSent({ kind: "refused", by: "server", reason: t("settings.filters.delete.failed"), wrong: [] });
       },
@@ -450,7 +473,6 @@ function EditForm({
     change({ words: [...form.words, { key, keyword: "", whole: false }] });
   };
   const wordsHeading = t("settings.filters.words");
-  const actionError = wrongWith("action");
   const endsError = wrongWith("ends");
   const wordsError = wrongWith("words");
   const contextsError = wrongWith("contexts");
@@ -523,7 +545,7 @@ function EditForm({
             end={<LimitCount left={filterLimits.title - graphemes(form.title.trim())} near={10} />}
             error={wrongWith("title")}
           />
-          <SettingRow id={actionId} label={t("settings.filters.action")} form>
+          <SettingRow id={actionId} label={t("settings.filters.action")} form error={wrongWith("action")}>
             <Select
               name="action"
               options={(["warn", "hide"] as const).map((action) => ({
@@ -534,12 +556,16 @@ function EditForm({
               onChange={(value) => {
                 change({ action: value === "hide" ? "hide" : "warn" });
               }}
-              describedBy={actionError === undefined ? undefined : errorId("action")}
               isDisabled={busy}
             />
           </SettingRow>
-          {actionError !== undefined && <FieldError id={errorId("action")}>{actionError}</FieldError>}
-          <SettingRow id={endsId} label={t("settings.filters.ends")} form>
+          {/* What is wrong with the end is the date's while the filter ends at one, else the choice's. */}
+          <SettingRow
+            id={endsId}
+            label={t("settings.filters.ends")}
+            form
+            error={form.ends === "date" ? undefined : endsError}
+          >
             <Select
               name="ends"
               options={endsChoices.map((choice) => ({ value: choice, label: endsLabel(choice) }))}
@@ -553,17 +579,15 @@ function EditForm({
                     : { ends },
                 );
               }}
-              describedBy={describedBy(
-                endedNote !== undefined && endedId,
-                endsError !== undefined && form.ends !== "date" && errorId("ends"),
-              )}
+              describedBy={endedNote === undefined ? undefined : endedId}
               isDisabled={busy}
             />
           </SettingRow>
           {/* An expired filter says in words, under its end, that it acts nowhere and how it comes back. */}
           {endedNote !== undefined && <FieldNote id={endedId}>{endedNote}</FieldNote>}
           {form.ends === "date" && (
-            <SettingRow id={dateId} label={t("settings.filters.ends.date")} form>
+            <SettingRow id={dateId} label={t("settings.filters.ends.date")} form error={endsError}>
+              {/* The field reads nothing of its row: it is told that it is marked, and by what. */}
               <DateTimeField
                 id={`${dateId}-control`}
                 label={t("settings.filters.ends.date")}
@@ -573,12 +597,11 @@ function EditForm({
                 }}
                 min={localInput(new Date(), timeZone)}
                 invalid={endsError !== undefined}
-                describedBy={endsError === undefined ? undefined : errorId("ends")}
+                describedBy={endsError === undefined ? undefined : `${dateId}-error`}
                 disabled={busy}
               />
             </SettingRow>
           )}
-          {endsError !== undefined && <FieldError id={errorId("ends")}>{endsError}</FieldError>}
         </SettingsSection>
         <SettingsSection
           heading={wordsHeading}

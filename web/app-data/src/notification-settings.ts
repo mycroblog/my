@@ -11,6 +11,7 @@ import { instanceQuery } from "./instance";
 import { preferencesQuery } from "./preferences";
 import { notificationSettingsQuery, pushSubscriptionQuery } from "./push";
 import { useAppData } from "./provider";
+import { readOf, type ScreenRead } from "./reads";
 
 /** The rows of the viewer's notification settings. */
 export type NotificationSettings = components["schemas"]["NotificationSettings"];
@@ -51,27 +52,18 @@ export function useNotificationSettings(): NotificationSettings | undefined {
 /**
  * Where the reads of what the screen of the notification settings shows are: the rows, the policy, the grant's Web
  * Push subscription, the viewer's preferences and the instance. `loading` until the server answered them all, `failed`
- * when it did not answer one, with `retry`, which reads again those that failed.
+ * when it did not answer one, with `retry`, which reads again those that failed. What was read stays `read`: a later
+ * read of it that fails leaves the screen what it had (`readOf`).
  */
-export function useNotificationSettingsRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+export function useNotificationSettingsRead(): ScreenRead {
   const data = useAppData();
-  const reads = [
+  return readOf([
     useQuery(notificationSettingsQuery(data)),
     useQuery(notificationPolicyQuery(data)),
     useQuery(pushSubscriptionQuery(data)),
     useQuery(preferencesQuery(data)),
     useQuery(instanceQuery(data)),
-  ];
-  return {
-    status: reads.some((r) => r.status === "error")
-      ? "failed"
-      : reads.every((r) => r.status === "success")
-        ? "read"
-        : "loading",
-    retry: () => {
-      for (const r of reads) if (r.status === "error") void r.refetch();
-    },
-  };
+  ]);
 }
 
 /** Changes cells of the notification settings, from a screen (`changeNotificationSettings`). */
@@ -102,23 +94,25 @@ function retryAfterMs(header: string | null): number | undefined {
 /**
  * Sends the viewer a new verification email, whose link lifts the stop of email to their address after a hard bounce
  * (`Preferences.email_suppression`): `sent` once it is queued, or the wait the server asks for when it sent as many as
- * it sends for now (a 429). An address that is no longer stopped has nothing to verify: the preferences are read
- * again, and it is `sent`. It rejects with any other problem.
+ * it sends for now (a 429). An address the server says is verified already (a 409) has nothing to verify and no
+ * email was sent: it is `verified`, told at once, and the preferences, which then say that email to the address is
+ * no longer stopped, are read again without being waited for. It rejects with any other problem.
  */
-export async function resendVerificationEmail(data: AppData): Promise<"sent" | VerificationWait> {
+export async function resendVerificationEmail(data: AppData): Promise<"sent" | "verified" | VerificationWait> {
   try {
     await data.api.POST("/accounts/email/verification");
   } catch (error) {
     if (error instanceof ProblemError && error.status === 429)
       return { waitMs: retryAfterMs(error.headers.get("Retry-After")) };
     if (!(error instanceof ProblemError && error.status === 409)) throw error;
-    await data.queryClient.invalidateQueries({ queryKey: preferencesQuery(data).queryKey });
+    void data.queryClient.invalidateQueries({ queryKey: preferencesQuery(data).queryKey });
+    return "verified";
   }
   return "sent";
 }
 
 /** Sends a new verification email, from a screen (`resendVerificationEmail`). */
-export function useResendVerificationEmail(): () => Promise<"sent" | VerificationWait> {
+export function useResendVerificationEmail(): () => Promise<"sent" | "verified" | VerificationWait> {
   const data = useAppData();
   return () => resendVerificationEmail(data);
 }

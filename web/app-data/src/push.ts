@@ -169,19 +169,11 @@ export async function turnPushOff(data: AppData, accountId: string): Promise<voi
 }
 
 /**
- * Changes the kinds this device's subscription pushes to `alerts`, and resolves once the cache holds the subscription
- * as the server answered. The browser's subscription (made with the server's `key`) is registered again with the new
- * kinds. It rejects with the server's problem, or when the browser refuses.
- */
-export async function changePushAlerts(data: AppData, key: string, alerts: readonly NotificationType[]): Promise<void> {
-  await registerPush(data, await subscribePush(key), alerts);
-}
-
-/**
  * Turns the pushes of `kinds` (those of rows of the settings) on or off for this device's subscription, the others
  * staying as they are, and resolves once the cache holds the subscription as the server answered. Each change starts
  * from what the one before it left, so that changes made together all hold. It rejects with the server's problem,
- * when the browser refuses, or when the grant has no subscription.
+ * when the browser refuses or has no Service Worker of the app to subscribe through (at once: the changes after it
+ * do not wait for a worker that never comes), or when the grant has no subscription.
  */
 function changePushKinds(data: AppData, key: string, kinds: readonly NotificationType[], on: boolean): Promise<void> {
   return inOrder(data, subscriptionWrites, async () => {
@@ -205,7 +197,6 @@ export type PushSwitch = {
   readonly permission: NotificationPermissionState;
   readonly turnOn: (alerts: readonly NotificationType[]) => Promise<PushTurnOn>;
   readonly turnOff: () => Promise<void>;
-  readonly changeAlerts: (alerts: readonly NotificationType[]) => Promise<void>;
   /** Turns the pushes of `kinds` on or off, the others staying (`changePushKinds`). */
   readonly changeKinds: (kinds: readonly NotificationType[], on: boolean) => Promise<void>;
 };
@@ -237,7 +228,6 @@ export function usePushSwitch(): PushSwitch {
       return turnPushOn(data, ready.id, ready.key, alerts);
     },
     turnOff: () => turnPushOff(data, need().id),
-    changeAlerts: (alerts) => changePushAlerts(data, need().key, alerts),
     changeKinds: (kinds, on) => changePushKinds(data, need().key, kinds, on),
   };
 }

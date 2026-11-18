@@ -16,14 +16,16 @@
 // names none leaves it on Save, by the bar's alert. A text over its limit is not sent: the focus goes to it the same
 // way, and its count, once it shows, is read with the field. Leaving with changes not saved is the app's to notice
 // (`onUnsaved` tells it there are some): it holds the reader back and gives `leaving`, and the screen asks whether to
-// leave without saving.
+// leave without saving. A form on its way to the server is not unsaved: the reader who leaves then is not held, the
+// save goes on, and says in the settings' toast (unsaved.tsx), with the way back to this form, that it failed. A save
+// made again after one that failed uploads no picture a second time (app-data keeps what each file was uploaded as).
 
 import { fieldError, placeRefusal, type FieldMembers, type Refused } from "../field-errors";
 import {
   failedPicture,
   MediaFailedError,
+  pictureRefusal,
   profileLimits,
-  refusalDetail,
   refusedField,
   useCredentials,
   useProfileRead,
@@ -53,15 +55,18 @@ import {
   useLocale,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState } from "react";
+import { charsOf } from "../chars";
 import { stringsIn } from "../locale";
 import {
   limitCount,
   ProfileAvatarField,
   ProfileNameField,
+  profileEditPath,
   usePickedPicture,
   useProfileIdentity,
 } from "../profile-identity";
 import { ReadingNotice } from "./parts";
+import { reportUnsaved } from "./unsaved";
 
 /** What the route's loader waits for: the reader's own account, from the cache when it has it. */
 export async function loadProfileEdit(data: AppData): Promise<void> {
@@ -108,9 +113,6 @@ const members: FieldMembers<Input> = {
 /** A field of the profile as the form holds it: the pair, and a key of its own, which no other pair ever had. */
 type Pair = ProfileField & { readonly key: number };
 
-/** The characters of a text as the server counts them (code points). */
-const charsOf = (text: string) => Array.from(text).length;
-
 /** The pairs to save: those with something written, in their order. */
 const written = (pairs: readonly Pair[]): readonly Pair[] =>
   pairs.filter((p) => p.name.trim() !== "" || p.value.trim() !== "");
@@ -147,7 +149,7 @@ function placed(error: unknown, fields: readonly ProfileField[], t: ReturnType<t
         text:
           error instanceof MediaFailedError
             ? t("settings.profile.picture.failed", { reason: "processing" })
-            : (refusalDetail(error) ?? t("settings.profile.picture.failed", { reason: "upload" })),
+            : (pictureRefusal(error) ?? t("settings.profile.picture.failed", { reason: "upload" })),
       },
     };
   const named = refusedField(error);
@@ -222,15 +224,20 @@ function EditForm({
   const noteChanged = note !== base.note;
   const fieldsChanged = !sameFields(fields, base.fields);
   const unsaved = identity.changed || header.file !== undefined || noteChanged || fieldsChanged;
+  // A form on its way to the server is not one the reader would lose by leaving: the save goes on without them.
+  const held = unsaved && !busy;
   useEffect(() => {
-    onUnsaved?.(unsaved);
-  }, [onUnsaved, unsaved]);
-  useEffect(
-    () => () => {
+    onUnsaved?.(held);
+  }, [onUnsaved, held]);
+  // Whether the screen has left: what a save still on its way then comes to changes nothing of a form that is gone.
+  const left = useRef(false);
+  useEffect(() => {
+    left.current = false;
+    return () => {
+      left.current = true;
       onUnsaved?.(false);
-    },
-    [onUnsaved],
-  );
+    };
+  }, [onUnsaved]);
 
   const nameId = `${id}-name`;
   const noteId = `${id}-note`;
@@ -275,12 +282,19 @@ function EditForm({
     setSent({ kind: "sending" });
     update(change).then(
       () => {
+        // The profile is saved, and shows so wherever the reader went.
+        if (left.current) return;
         identity.saved();
         header.reset();
         setBase({ note, fields });
         setSent({ kind: "saved" });
       },
       (error: unknown) => {
+        // No form is left to say it: the settings' toast names the profile and leads back to this form.
+        if (left.current) {
+          reportUnsaved(t("settings.entry.profile"), profileEditPath);
+          return;
+        }
         const refusal = placed(error, fields, t);
         const keys = sending.map((pair) => pair.key);
         // What the refusal names takes the focus from Save; one that names nothing leaves it there, by the bar's alert.

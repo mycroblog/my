@@ -64,6 +64,7 @@ import {
   SettingsFacts,
   SettingsList,
   SettingsListRow,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   StatusSummary,
@@ -71,12 +72,12 @@ import {
   useLocale,
 } from "@my/design-system";
 import { pushNeedsInstall, trySound } from "@my/platform";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
 import { Choice, Toggle } from "./controls";
 import type { SettingsEntryProps } from "./entries";
-import { ReadingNotice } from "./parts";
+import { ReadingNotice, useFocusOnArrival } from "./parts";
 import { Said, useSaving } from "./saving";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -111,20 +112,21 @@ function pushRefusal(serves: boolean, push: PushSwitch, t: T): string | undefine
 }
 
 /**
- * Web Push for this device, on or off, as the prompt over the notifications turns it on: every kind the reader gets.
- * Where it cannot be turned on, it is off and disabled, and the line under it says why: from the moment the reader
- * refuses the browser's question too, since the browser blocks the site from then on. Where the browser tells that
- * they allowed the site again in its settings, the switch is theirs again without a reload, and what it said of the
- * refusal is gone (`Toggle`).
+ * Web Push for this device, on or off (`on`: the grant has a subscription and the browser lets the site notify), as
+ * the prompt over the notifications turns it on: every kind the reader gets, the browser asked again where its
+ * permission is not given. Where it cannot be turned on, it is off and disabled, and the line under it says why: from
+ * the moment the reader refuses the browser's question too, since the browser blocks the site from then on. Where the
+ * browser tells that they allowed the site again in its settings, the switch is theirs again without a reload, and
+ * what it said of the refusal is gone (`Toggle`).
  */
-function PushToggle({ push, refusal, t }: { push: PushSwitch; refusal: string | undefined; t: T }) {
+function PushToggle({ push, on, refusal, t }: { push: PushSwitch; on: boolean; refusal: string | undefined; t: T }) {
   const kinds = useNotificationKinds();
   return (
     <Toggle
       page={page}
       label={t("settings.notifications.push")}
       about={t("notifications.push_offer")}
-      on={refusal === undefined && push.subscription !== null && push.subscription !== undefined}
+      on={on}
       fixed={refusal}
       onChange={async (on) => {
         if (!on) {
@@ -520,16 +522,26 @@ const minutesOf = (waitMs: number | undefined) => (waitMs === undefined ? 0 : Ma
 /**
  * Why the server stopped sending email to the reader's address. After a bounce, its action sends the verification
  * email whose link lifts the stop, and what came of it stands beside it, until the next press; after a complaint
- * there is no such step.
+ * there is no such step. A server that answers that the address is verified already sent no email and has lifted the
+ * stop: the summary has nothing more to say, and the screen says what happened in its place (`onVerified`).
  */
-function EmailStopped({ kind, t }: { kind: NonNullable<Preferences["email_suppression"]>["kind"]; t: T }) {
+function EmailStopped({
+  kind,
+  onVerified,
+  t,
+}: {
+  kind: NonNullable<Preferences["email_suppression"]>["kind"];
+  onVerified: () => void;
+  t: T;
+}) {
   const resend = useResendVerificationEmail();
   const [sending, setSending] = useState<Sending | null>(null);
   const send = () => {
     setSending("sending");
     resend().then(
       (answer) => {
-        setSending(answer === "sent" ? "sent" : minutesOf(answer.waitMs));
+        if (answer === "verified") onVerified();
+        else setSending(answer === "sent" ? "sent" : minutesOf(answer.waitMs));
       },
       () => {
         setSending("failed");
@@ -567,6 +579,21 @@ function EmailStopped({ kind, t }: { kind: NonNullable<Preferences["email_suppre
   );
 }
 
+/**
+ * That the address is verified already and email to it is on again, in the place of the summary that said it was
+ * stopped, which went with the stop: a status that takes the focus the summary's button left, so that a screen
+ * reader reads what came of the press and a keyboard stays where it was.
+ */
+function EmailVerified({ t }: { t: T }) {
+  const said = useRef<HTMLParagraphElement>(null);
+  useFocusOnArrival(said);
+  return (
+    <SettingsResult ref={said}>
+      <SaveState state="saved">{t("settings.notifications.email_stopped.verified")}</SaveState>
+    </SettingsResult>
+  );
+}
+
 // ---- The screen ----------------------------------------------------------------------------------------------------
 
 /** The sections of the screen, once what they show is read. */
@@ -584,8 +611,17 @@ function Sections({
   const push = usePushSwitch();
   const sound = useNotificationSound();
   const refusal = pushRefusal(instance?.push_server_key !== undefined, push, t);
-  const pushing = refusal === undefined && push.subscription !== null && push.subscription !== undefined;
+  // Web Push is on for this device while the grant has a subscription and the browser lets the site notify: a
+  // permission taken back to "ask" in the browser's settings leaves the server's subscription as it was, with a
+  // browser that shows nothing for it, so the switch is off and turning it on asks again.
+  const pushing =
+    refusal === undefined &&
+    push.permission === "granted" &&
+    push.subscription !== null &&
+    push.subscription !== undefined;
   const emails = instance?.sends_email === true;
+  // The server said the address is verified already: said in the summary's place until the reader leaves.
+  const [verified, setVerified] = useState(false);
   const cells = useCells(
     [
       "in_app",
@@ -598,9 +634,21 @@ function Sections({
   const stopped = emails ? preferences.email_suppression : undefined;
   return (
     <>
-      {stopped !== undefined && <EmailStopped kind={stopped.kind} t={t} />}
+      {verified ? (
+        <EmailVerified t={t} />
+      ) : (
+        stopped !== undefined && (
+          <EmailStopped
+            kind={stopped.kind}
+            onVerified={() => {
+              setVerified(true);
+            }}
+            t={t}
+          />
+        )
+      )}
       <SettingsSection heading={t("settings.notifications.section.device")}>
-        <PushToggle push={push} refusal={refusal} t={t} />
+        <PushToggle push={push} on={pushing} refusal={refusal} t={t} />
         <Sound t={t} />
       </SettingsSection>
       {sections.map((section, i) => {

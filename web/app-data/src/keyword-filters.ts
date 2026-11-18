@@ -97,8 +97,30 @@ async function reloadFiltered(data: AppData): Promise<void> {
       (queryKey[1].startsWith("/timelines/") ||
         queryKey[1] === "/notifications" ||
         queryKey[1] === "/accounts/{id}/statuses" ||
-        queryKey[1] === "/statuses/{id}/context" ||
-        queryKey[1] === "/bookmarks"),
+        queryKey[1] === "/statuses/{id}/context"),
+  });
+}
+
+/**
+ * Forgets what the cache holds of the filter of `id`, which the server no longer has: at once while no screen shows
+ * it, else once the screen that does has left. Removed under a screen that reads it, the query would be built anew
+ * and read again from a server that answers 404, the screen taken down under the reader for it.
+ */
+function forgetFilter(data: AppData, id: string): void {
+  const cache = data.queryClient.getQueryCache();
+  const query = cache.find({ queryKey: keywordFilterQuery(data, id).queryKey, exact: true });
+  if (query === undefined) return;
+  if (query.getObserversCount() === 0) {
+    cache.remove(query);
+    return;
+  }
+  const stop = cache.subscribe((event) => {
+    if (event.query !== query) return;
+    if (event.type === "removed") stop();
+    else if (event.type === "observerRemoved" && query.getObserversCount() === 0) {
+      stop();
+      cache.remove(query);
+    }
   });
 }
 
@@ -125,11 +147,16 @@ export async function saveKeywordFilter(
   return saved;
 }
 
-/** Deletes the filter of `id`, and resolves once the list is without it and the open timelines are loaded again. */
+/**
+ * Deletes the filter of `id`, and resolves once the list is without it and the open timelines are loaded again. What
+ * the cache holds of the filter alone goes too: at once, or, while a screen shows it (its editor, which asked for
+ * this), once that screen has left, so that the editor stays as it is until then and reads nothing of a filter that
+ * is gone.
+ */
 export async function deleteKeywordFilter(data: AppData, id: string): Promise<void> {
   const { api, queryClient } = data;
   await api.DELETE("/filters/{id}", { params: { path: { id } } });
-  queryClient.removeQueries({ queryKey: keywordFilterQuery(data, id).queryKey, exact: true });
+  forgetFilter(data, id);
   queryClient.setQueryData<components["schemas"]["KeywordFilterCollection"]>(
     keywordFiltersQuery(data).queryKey,
     (now) => (now === undefined ? now : { ...now, items: now.items.filter((f) => f.id !== id) }),
