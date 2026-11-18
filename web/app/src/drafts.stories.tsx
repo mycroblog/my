@@ -14,8 +14,9 @@ import { useNarrowViewport } from "./shell/viewport";
 const hoursFrom = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
 /** A moment `days` days from now at `hour` o'clock, local time. */
 const dayAt = (days: number, hour: number, minute = 0) => {
-  const today = wallTime(new Date(), undefined);
-  return instantAt({ ...today, day: today.day + days, hour, minute }, undefined).toISOString();
+  // The day is read off the calendar that many days on: a day counted past its month's end names no moment.
+  const then = wallTime(new Date(Date.now() + days * 86_400_000), undefined);
+  return instantAt({ ...then, hour, minute }, undefined).toISOString();
 };
 
 const words = {
