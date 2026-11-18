@@ -15,6 +15,7 @@ import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
 import { browserCaches, ownDevice } from "./test/device";
+import { followSignOut, leaveEndedSession } from "./sign-out";
 import { fakeApp, fakeTabs, withoutToken } from "./test/server";
 import { rail } from "./test/viewport";
 
@@ -461,6 +462,58 @@ describe("signing out", () => {
     expect(app.fake.revocations).toEqual([]);
     expect(app.data.queryClient.getQueryCache().getAll()).toHaveLength(0);
     expect(caches()).toEqual([]);
+  });
+
+  // What a confirmation under way kept in the tab (`my.confirmation.*`, a provider's return) is the session's: no
+  // later session of the tab finds it, however this one ends (this tab's sign-out, another tab's, the server's end).
+  // What a part forgets of it is the feature's (settings/confirmation.dom.test.tsx) and the platform's (tab-values).
+  /** Gives the tab's storage what two confirmations kept, and returns the keys of a confirmation it holds. */
+  const keptConfirmations = () => {
+    sessionStorage.clear();
+    sessionStorage.setItem("my.confirmation.link", "kept");
+    sessionStorage.setItem("my.confirmation.account_move", "kept");
+    return () => Object.keys(sessionStorage).filter((key) => key.startsWith("my.confirmation."));
+  };
+
+  test("following a sign-out made in another tab leaves nothing a confirmation kept in this tab", () => {
+    const kept = keptConfirmations();
+    const { data } = fakeApp();
+
+    followSignOut({ data, leave: () => undefined });
+
+    expect(kept()).toEqual([]);
+  });
+
+  test("leaving a session the server ended leaves nothing a confirmation kept in the tab", async () => {
+    const kept = keptConfirmations();
+    const { data } = withoutToken(fakeApp());
+
+    await leaveEndedSession({ data, leave: () => undefined });
+
+    expect(kept()).toEqual([]);
+  });
+
+  test("Sign out leaves nothing a confirmation kept in the tab", async () => {
+    const kept = keptConfirmations();
+    const app = await renderApp("/settings");
+
+    await signedOut(app);
+
+    expect(app.left()).toEqual(["/"]);
+    expect(kept()).toEqual([]);
+  });
+
+  test("a sign-out whose revocation the server fails removes nothing a confirmation kept", async () => {
+    const kept = keptConfirmations();
+    const app = await renderApp("/settings?sign_out=true", { revocation: "fails" });
+    await read(app);
+
+    await app.user.click(within(await confirmation()).getByRole("button", { name: "Sign out" }));
+
+    await screen.findByRole("alert");
+    expect(app.left()).toEqual([]);
+    expect(kept().sort()).toEqual(["my.confirmation.account_move", "my.confirmation.link"]);
+    sessionStorage.clear();
   });
 
   test("a revocation the server fails leaves the confirmation open, saying so, removes nothing, and the app stays", async () => {

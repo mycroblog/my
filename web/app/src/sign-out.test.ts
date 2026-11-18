@@ -3,7 +3,9 @@
 // What a tab of the app does once the reader signed out in another tab of the browser (#3198): it empties what it
 // read of the account and leaves for the start by a load of the page, where the app opens without a session. That a
 // tab hears of it, and of nothing less, is the data's (app-data, session.test.ts); that the app's entry listens, a test
-// in a browser with two tabs (web/e2e/specs/settings.spec.ts); what the tab that signs out does, settings.dom.test.tsx.
+// in a browser with two tabs (web/e2e/specs/settings.spec.ts); what the tab that signs out does, settings.dom.test.tsx,
+// which also holds that each way a session ends leaves nothing a confirmation kept in the tab's storage, which this
+// file's runtime has not.
 
 import { expect, test } from "bun:test";
 import { preferencesQuery } from "@my/app-data";

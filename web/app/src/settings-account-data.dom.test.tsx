@@ -902,6 +902,36 @@ describe("Delete old posts automatically under a limit of the server", () => {
     expect(ageField().getAttribute("aria-invalid")).toBe("true");
   });
 
+  // The server's refusal of one member of the save reaches its field, which says the field's rule.
+  test("a threshold the server refuses is marked invalid and described by its rule", async () => {
+    const app = await autoDeleteOn(deleting(policy));
+    const field = () => main().getByRole("textbox", { name: "Keep posts favourited at least" });
+    await app.user.click(field());
+    await app.user.clear(field());
+    await app.user.type(field(), "10");
+    await app.user.tab();
+    await waitFor(() => {
+      if (app.data.queryClient.isFetching() > 0) throw new Error("test: still counting");
+    });
+    app.fake.script("PUT /preferences/auto_delete", {
+      fail: {
+        type: "about:blank",
+        title: "This could not be saved.",
+        status: 422,
+        field: "keep_min_favourites",
+        detail: "Enter a number from 0 to 1,000.",
+      },
+    });
+
+    await app.user.click(saveButton());
+
+    await waitFor(() => {
+      if (!describedBy(field()).includes("Enter a whole number from 0 to 1,000,000."))
+        throw new Error(`test: the field is described by ${JSON.stringify(describedBy(field()))}`);
+    });
+    expect(field().getAttribute("aria-invalid")).toBe("true");
+  });
+
   test("a change not saved holds the way back until the reader chooses to leave", async () => {
     const app = await autoDeleteOn(deleting(policy));
     await ageOf(app, "120");

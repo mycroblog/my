@@ -26,7 +26,7 @@ import {
   words,
 } from "../test/security";
 import { settingsOn, type Access, type Given } from "../test/settings";
-import { useConfirmation } from "./confirmation";
+import { confirmationKeptKey, forgetConfirmationKept, useConfirmation } from "./confirmation";
 import { SettingsEntryScreen } from "./screen";
 
 /**
@@ -422,3 +422,18 @@ for (const button of ["Cancel", "Close"])
     await user.click(offered("Linked accounts", "Example SSO", "Link"));
     expect(password(await proving()).value).toBe("");
   });
+
+// What the tab keeps of a confirmation under way (a provider's return) is the session's: the app forgets it as the
+// session ends (web/app, sign-out.test.ts and settings.dom.test.tsx).
+test("forgetConfirmationKept removes from the tab's storage what any confirmation kept, and nothing else", () => {
+  sessionStorage.clear();
+  sessionStorage.setItem(confirmationKeptKey("password_change"), "kept");
+  sessionStorage.setItem(confirmationKeptKey("account_deletion"), "kept");
+  sessionStorage.setItem("my.other", "stays");
+
+  forgetConfirmationKept();
+
+  expect(Object.keys(sessionStorage).filter((key) => key.startsWith("my.confirmation."))).toEqual([]);
+  expect(sessionStorage.getItem("my.other")).toBe("stays");
+  sessionStorage.clear();
+});

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
-import { dataImportsQuery, previewDataImport, startDataImport, type ImportRequest } from "./imports";
+import { dataImportsQuery, importTooLarge, previewDataImport, startDataImport, type ImportRequest } from "./imports";
 import { fakeData } from "./test/data";
 import { refusedWith } from "./test/refused";
 
@@ -59,6 +59,33 @@ describe("startDataImport", () => {
     expect([refused.status, refused.type]).toEqual([409, "/api/v1/problems/import-in-progress"]);
     const { items } = await data.queryClient.query({ ...dataImportsQuery(data), staleTime: Infinity });
     expect(items.filter((i) => i.state === "in_progress")).toHaveLength(1);
+  });
+});
+
+describe("importTooLarge", () => {
+  test("a preview or a start the server refuses as too large (413) is too large", async () => {
+    const { fake, data } = fakeData();
+    fake.script("POST /imports/preview", {
+      fail: { type: "about:blank", title: "Request Entity Too Large", status: 413 },
+    });
+    fake.script("POST /imports", { fail: 413 });
+
+    const previewed = await refusedWith(previewDataImport(data, mutes));
+    const started = await refusedWith(startDataImport(data, mutes));
+
+    expect([importTooLarge(previewed), importTooLarge(started)]).toEqual([true, true]);
+  });
+
+  test("another refusal, and what is no refusal, is not", async () => {
+    const { data } = fakeData();
+    await startDataImport(data, mutes);
+    const running = await refusedWith(startDataImport(data, mutes));
+
+    expect([importTooLarge(running), importTooLarge(new Error("offline")), importTooLarge(undefined)]).toEqual([
+      false,
+      false,
+      false,
+    ]);
   });
 });
 
