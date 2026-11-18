@@ -38,6 +38,8 @@ export type Demo = {
   stateFile: string;
   /** The file that holds the settings (MY_*) under which `bin/my` runs against the server's database (runMyOn). */
   envFile: string;
+  /** The file the server logs to, which holds the mail it does not send (mail.ts); none when it logs to the output. */
+  logFile?: string;
   /** The fake push service that the server's Web Push sends reach. */
   push: DemoPush;
   /** Stops the server and removes the directory. */
@@ -243,7 +245,7 @@ export async function startDemo(o: DemoOptions): Promise<Demo> {
     const envFile = join(o.dir, "my-env.json");
     const settings = Object.fromEntries(Object.entries(env).filter(([k]) => k.startsWith("MY_")));
     writeFileSync(envFile, JSON.stringify(settings, null, 2), { mode: 0o600 });
-    return { url, state, stateFile, envFile, push, stop };
+    return { url, state, stateFile, envFile, ...(o.output === "file" ? { logFile: log } : {}), push, stop };
   } catch (err) {
     failed(err);
     await stop();
