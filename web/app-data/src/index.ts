@@ -141,6 +141,108 @@ export {
 } from "./accounts";
 export { domainMutesQuery, muteDomain, useMutedDomain, useMuteDomain } from "./domains";
 export {
+  confirmationFields,
+  confirmWithPasskey,
+  useConfirmWithPasskey,
+  type Confirmation,
+  type ConfirmedOperation,
+  type PasskeyAssertion,
+} from "./confirmation";
+export {
+  changePassword,
+  passwordStatusQuery,
+  removePassword,
+  useHasPassword,
+  usePasswordWrites,
+  type PasswordRemoval,
+  type PasswordStatus,
+  type PasswordWrites,
+} from "./password";
+export {
+  addPasskey,
+  deletePasskey,
+  passkeysQuery,
+  usePasskeys,
+  usePasskeyWrites,
+  type Passkey,
+  type PasskeyWrites,
+} from "./passkeys";
+export {
+  disableTotp,
+  enableTotp,
+  regenerateRecoveryCodes,
+  setUpTotp,
+  twoFactorQuery,
+  useTwoFactor,
+  useTwoFactorWrites,
+  type TotpSetup,
+  type TwoFactor,
+  type TwoFactorWrites,
+} from "./two-factor";
+export {
+  beginExternalConfirmation,
+  beginLinkIdentity,
+  linkedIdentitiesQuery,
+  readExternalOutcome,
+  unlinkIdentity,
+  useLinkedIdentities,
+  useLinkedIdentityWrites,
+  type ExternalErrorReason,
+  type ExternalOutcome,
+  type ExternalStart,
+  type LinkableLoginProvider,
+  type LinkedIdentities,
+  type LinkedIdentity,
+  type LinkedIdentityWrites,
+} from "./linked-identities";
+export {
+  browserSessionsQuery,
+  revokeBrowserSession,
+  revokeOtherBrowserSessions,
+  useBrowserSessions,
+  useBrowserSessionWrites,
+  type BrowserSession,
+  type BrowserSessionWrites,
+} from "./browser-sessions";
+export {
+  authorizedAppsQuery,
+  revokeAuthorizedApp,
+  useAuthorizedApps,
+  useRevokeAuthorizedApp,
+  type AuthorizedApp,
+} from "./authorized-apps";
+export {
+  createOAuthApp,
+  deleteOAuthApp,
+  issueOAuthAppToken,
+  oAuthAppQuery,
+  oAuthAppsQuery,
+  rotateOAuthAppSecret,
+  updateOAuthApp,
+  useOAuthApp,
+  useOAuthApps,
+  useOAuthAppWrites,
+  type CreateOAuthApp,
+  type OAuthApp,
+  type OAuthAppCreated,
+  type OAuthAppToken,
+  type OAuthAppWrites,
+  type UpdateOAuthApp,
+} from "./oauth-apps";
+export {
+  createOwnInvite,
+  ownInvitesQuery,
+  revokeOwnInvite,
+  useOwnInvites,
+  useOwnInviteWrites,
+  type CreateOwnInvite,
+  type InviteState,
+  type MemberInviteLimits,
+  type OwnInvite,
+  type OwnInvites,
+  type OwnInviteWrites,
+} from "./invites";
+export {
   cachePostedStatus,
   choiceOf,
   defaultComposeSettings,

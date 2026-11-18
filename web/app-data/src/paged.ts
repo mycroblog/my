@@ -17,13 +17,13 @@ const nextCursor = (page: Page<unknown>) =>
  * The infinite query of a list whose key is `queryKey` (the operation's, without a cursor), each page read by `fetch`
  * with the cursor of the page before.
  */
-export function pagedQuery<T>(
+export function pagedQuery<T, P extends Page<T> = Page<T>>(
   queryKey: readonly unknown[],
-  fetch: (cursor: string | undefined, signal: AbortSignal) => Promise<Page<T> | undefined>,
+  fetch: (cursor: string | undefined, signal: AbortSignal) => Promise<P | undefined>,
 ) {
   return infiniteQueryOptions({
     queryKey,
-    queryFn: async ({ pageParam, signal }): Promise<Page<T>> => {
+    queryFn: async ({ pageParam, signal }): Promise<P> => {
       // The client rejects an error answer, so the page is set whenever it resolves.
       const page = await fetch(pageParam, signal);
       if (page === undefined) throw new Error(`app-data: ${String(queryKey[1])} answered without a page`);
@@ -52,11 +52,24 @@ export type PagedList<T> = {
   readonly refetch: () => void;
 };
 
+/** A list whose pages carry more than items (`P`): the first page, which is the newest read of it, shows that more. */
+export type PagedListOf<T, P extends Page<T>> = PagedList<T> & { readonly firstPage: P | undefined };
+
 /** The list of `options` (a `pagedQuery`), for a screen; nothing is fetched while `enabled` is false. */
 export function usePagedList<T>(options: ReturnType<typeof pagedQuery<T>>, enabled = true): PagedList<T> {
+  const { firstPage: _firstPage, ...list } = usePagedListOf<T, Page<T>>(options, enabled);
+  return list;
+}
+
+/** The list of `options` whose pages carry more than items, with its first page. */
+export function usePagedListOf<T, P extends Page<T>>(
+  options: ReturnType<typeof pagedQuery<T, P>>,
+  enabled = true,
+): PagedListOf<T, P> {
   const query = useInfiniteQuery({ ...options, enabled });
   return {
     items: query.data?.pages.flatMap((page) => page.items) ?? [],
+    firstPage: query.data?.pages[0],
     status: query.status,
     error: query.error,
     hasNextPage: query.hasNextPage,
