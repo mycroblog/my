@@ -1,32 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the screens of the settings' Security share: their addresses; the notice in the sections' place until what
-// they show is read, or when it could not be; the dates of their rows, in the reader's time zone; the confirmation
-// before what a row's button ends (removing a passkey, unlinking an account, signing a browser out), which asks no
-// proof and says in the server's words why it did not happen (the last way to sign in cannot be removed); what a
-// section says came of such a change, which takes the focus the row's button left behind; what is wrong with a
-// field's value, under the field, which takes the focus; and the dialog that asks for a two-factor code.
+// What the screens of the settings' Security share, beside what every entry's do (../parts.tsx): their addresses;
+// how few recovery codes are few; what a section says came of a change whose control went with it (a passkey removed,
+// an account unlinked, a browser signed out), which takes the focus the row's button left behind; what is wrong with
+// a field's value, under the field, which takes the focus; and the dialog that asks for a two-factor code.
 
-import {
-  Box,
-  ConfirmDialog,
-  dateFormat,
-  FeedNotice,
-  FormAlert,
-  ReauthDialog,
-  SaveState,
-  SettingsResult,
-  TextButton,
-  TextField,
-  useLocale,
-  useTimeZone,
-  wallTime,
-} from "@my/design-system";
+import { FormAlert, ReauthDialog, SaveState, SettingsResult, TextField, useLocale } from "@my/design-system";
 import { oneTimeCodeField } from "@my/platform";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
-import { saidOf, useGone } from "../confirmation";
+import { saidOf } from "../confirmation";
 import type { SettingsSubProps } from "../entries";
+import { useFaultFocus } from "../parts";
 
 /** The address of the Security entry, and of the screens under it. */
 export const securityPath = "/settings/security";
@@ -35,6 +20,12 @@ export const securityPaths = {
   twoFactor: `${securityPath}/two-factor`,
   passkey: `${securityPath}/passkey`,
 } as const;
+
+/**
+ * How few recovery codes are left before Security says how many on the row of two-factor authentication, and its
+ * screen asks to make new ones.
+ */
+export const fewCodes = 3;
 
 /**
  * What a screen under Security takes of what its route gives every screen under an entry: its address and the way
@@ -55,49 +46,11 @@ export function useSecurityTitle(screen: keyof typeof securityPaths): string {
 }
 
 /**
- * The `notice` of a settings screen while it has no section to show: that what it shows is being read, or that it
- * could not be, with the way to try again; none once it is read.
- */
-export function useReadingNotice(status: "loading" | "failed" | "read", retry: () => void): ReactNode {
-  const { t } = stringsIn(useLocale().locale);
-  if (status === "read") return undefined;
-  return status === "failed" ? (
-    <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-      {t("settings.failed")}
-    </FeedNotice>
-  ) : (
-    <FeedNotice>{t("settings.loading")}</FeedNotice>
-  );
-}
-
-/** The space a line does not break at (U+00A0), by its number: written out, it reads as any space. */
-const noBreak = String.fromCharCode(0xa0);
-
-/**
- * A day (`day`) and an hour of a day (`hour`, what the server keeps of a last use) as the reader's language and time
- * zone write them, short, with the year only when it is not this one. A date holds together: its spaces do not break,
- * so that the line it stands in wraps before or after it.
- */
-export function useDates(): { day: (iso: string) => string; hour: (iso: string) => string } {
-  const { locale } = useLocale();
-  const timeZone = useTimeZone();
-  const [now] = useState(() => new Date());
-  const format = (iso: string, more: Intl.DateTimeFormatOptions) => {
-    const date = new Date(iso);
-    const year = wallTime(date, timeZone).year === wallTime(now, timeZone).year ? {} : { year: "numeric" as const };
-    return dateFormat(locale, timeZone, { month: "short", day: "numeric", ...year, ...more })
-      .format(date)
-      .replaceAll(" ", noBreak);
-  };
-  return { day: (iso) => format(iso, {}), hour: (iso) => format(iso, { hour: "numeric" }) };
-}
-
-/**
  * What is wrong with a field's value, under the field of `fieldId` (its `words`, a `TextField`'s `error`): the
  * screen's own check, or what the server refused of that member of the request. `say` puts the words there and, once
  * they stand under the field, moves the focus into it, so that a screen reader reads the field with what is wrong and
  * the reader corrects it at once. Under a dialog that still holds the focus, `say(words, false)` waits, and `focus`
- * moves it once the dialog has left; with nothing wrong, `focus` does nothing.
+ * moves it once the dialog has left; with nothing wrong, `focus` does nothing (`useFaultFocus`, on the field's ID).
  */
 export function useFieldFault(fieldId: string): {
   words: string | undefined;
@@ -106,17 +59,7 @@ export function useFieldFault(fieldId: string): {
   focus: () => void;
 } {
   const [words, setWords] = useState<string>();
-  /** Each ask to move the focus, counted: the same words said again ask again. */
-  const [asked, setAsked] = useState(0);
-  useEffect(() => {
-    if (asked === 0) return;
-    // Only a field that says something is wrong takes the focus: the words stand under it by now.
-    const field = document.getElementById(fieldId);
-    if (field?.getAttribute("aria-invalid") === "true") field.focus();
-  }, [asked, fieldId]);
-  const focus = () => {
-    setAsked((n) => n + 1);
-  };
+  const focus = useFaultFocus(fieldId);
   return {
     words,
     say: (said, move = true) => {
@@ -183,63 +126,6 @@ export function useSectionResult(): {
     },
     settle,
   };
-}
-
-/** What follows the leaving of a dialog whose screen moves no focus. */
-const nothing = () => undefined;
-
-/**
- * Asks before `run` ends something, with a confirmation alone: confirmed, it spins until the server answered and
- * closes; refused, it says why in place of what it explained, and the confirmation tries again.
- */
-export function Asking({
-  title,
-  confirm,
-  run,
-  onClose,
-  onLeft,
-  children,
-}: {
-  title: string;
-  confirm: string;
-  run: () => Promise<unknown>;
-  onClose: () => void;
-  /**
-   * The dialog is out of the document, the motion of its leaving over, however it was left: the moment to move the
-   * focus (`settle` of the section's result), for a screen that moves it. The same function for as long as the dialog
-   * is open.
-   */
-  onLeft?: (() => void) | undefined;
-  children: string;
-}) {
-  const { t } = stringsIn(useLocale().locale);
-  useGone(onLeft ?? nothing);
-  const [busy, setBusy] = useState(false);
-  const [said, setSaid] = useState<string>();
-  return (
-    <ConfirmDialog
-      title={title}
-      cancel={t("settings.confirm.cancel")}
-      confirm={confirm}
-      busy={busy}
-      onCancel={onClose}
-      onConfirm={() => {
-        setBusy(true);
-        run().then(onClose, (error: unknown) => {
-          setBusy(false);
-          setSaid(saidOf(error, t));
-        });
-      }}
-    >
-      {said === undefined ? (
-        children
-      ) : (
-        <Box as="span" role="alert">
-          {said}
-        </Box>
-      )}
-    </ConfirmDialog>
-  );
 }
 
 /**

@@ -10,6 +10,7 @@ import { linkedIdentitiesQuery } from "./linked-identities";
 import { passkeysQuery } from "./passkeys";
 import { passwordStatusQuery } from "./password";
 import { useAppData } from "./provider";
+import { readOf, type ScreenRead } from "./reads";
 import { twoFactorQuery } from "./two-factor";
 
 /** Reads what the Security screen shows, from the cache where it holds it; a read that fails is the screen's to say. */
@@ -28,26 +29,17 @@ export async function loadSecurity(data: AppData): Promise<void> {
  * Where the reads of the Security screen are: `read` once the server answered them all, `failed` when it did not
  * answer one, with `retry`, which reads again those that failed, and `loading` until then.
  */
-export function useSecurityRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+export function useSecurityRead(): ScreenRead {
   const data = useAppData();
-  const reads = useQueries({
-    queries: [
-      passwordStatusQuery(data),
-      passkeysQuery(data),
-      twoFactorQuery(data),
-      linkedIdentitiesQuery(data),
-      browserSessionsQuery(data),
-    ],
-  });
-  // What was read stays read: a later read of it that fails leaves the screen what it had.
-  return {
-    status: reads.every((read) => read.data !== undefined)
-      ? "read"
-      : reads.some((read) => read.status === "error" && !read.isFetching)
-        ? "failed"
-        : "loading",
-    retry: () => {
-      for (const read of reads) if (read.status === "error") void read.refetch();
-    },
-  };
+  return readOf(
+    useQueries({
+      queries: [
+        passwordStatusQuery(data),
+        passkeysQuery(data),
+        twoFactorQuery(data),
+        linkedIdentitiesQuery(data),
+        browserSessionsQuery(data),
+      ],
+    }),
+  );
 }

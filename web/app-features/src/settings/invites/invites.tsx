@@ -27,6 +27,7 @@ import {
 } from "@my/design-system";
 import { stringsIn } from "../../locale";
 import type { SettingsEntryProps } from "../entries";
+import { numberIn } from "../parts";
 import { CannotInvite, invitesPaths, Unread, useInviteFacts } from "./parts";
 
 /** What the loader of a screen of the Invites waits for: the first page of the list, from the cache when it has it. */
@@ -67,7 +68,7 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
       <SettingsSection
         heading={t("settings.invites.own")}
         // The list is counted once its last page is read.
-        count={items.length === 0 || list.hasNextPage ? undefined : new Intl.NumberFormat(locale).format(items.length)}
+        count={items.length === 0 || list.hasNextPage ? undefined : numberIn(locale, items.length)}
         about={t("settings.invites.own.about")}
         // The empty list's place is the one that adds while there is none.
         action={may && items.length > 0 ? create : undefined}

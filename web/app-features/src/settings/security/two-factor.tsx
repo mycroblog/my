@@ -27,7 +27,6 @@ import {
 import {
   BackButton,
   Button,
-  CopyBlock,
   FormAlert,
   ModalPresence,
   QrFrame,
@@ -43,44 +42,12 @@ import {
   TextField,
   useLocale,
 } from "@my/design-system";
-import { copyText, oneTimeCodeField } from "@my/platform";
+import { oneTimeCodeField } from "@my/platform";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
-import { CodeDialog, useDates, useFieldFault, useReadingNotice, type SecuritySubProps } from "./parts";
-
-/** How few recovery codes are left before the screen asks to make new ones. */
-const fewCodes = 3;
-
-/** Copying `text`, and what came of the last copy, in words; undefined until one was asked. */
-function useCopy(text: string): { copy: () => void; result: string | undefined } {
-  const { t } = stringsIn(useLocale().locale);
-  const [copied, setCopied] = useState<boolean>();
-  return {
-    copy: () => {
-      void copyText(text).then(setCopied);
-    },
-    result: copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed"),
-  };
-}
-
-/** What the reader copies and keeps, with Copy. */
-function Kept({ label, values }: { label: string; values: readonly string[] }) {
-  const { t } = stringsIn(useLocale().locale);
-  const { copy, result } = useCopy(values.join("\n"));
-  return (
-    <CopyBlock
-      label={label}
-      values={values}
-      action={
-        <Button size="timeline" onPress={copy}>
-          {t("settings.security.two_factor.copy")}
-        </Button>
-      }
-      result={result}
-    />
-  );
-}
+import { Kept, useDates, useFocusOnArrival, useReadingNotice } from "../parts";
+import { CodeDialog, fewCodes, useFieldFault, type SecuritySubProps } from "./parts";
 
 /** Off: the secret for the authenticator app, the code the app makes from it, and Turn on. */
 function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readonly string[]) => void }) {
@@ -167,7 +134,11 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
                 size={setup.qr_code.size}
                 path={setup.qr_code.path}
               />
-              <Kept label={t("settings.security.two_factor.setup.key")} values={[setup.secret]} />
+              <Kept
+                label={t("settings.security.two_factor.setup.key")}
+                values={[setup.secret]}
+                copy={t("settings.security.two_factor.copy")}
+              />
             </SettingsSection>
             <SettingsSection heading={t("settings.security.two_factor.verify")}>
               <TextField
@@ -195,9 +166,7 @@ function Codes({ codes, said, onDone }: { codes: readonly string[]; said: string
   const { t } = stringsIn(useLocale().locale);
   // It took another view's place, whose focus went with it: its title takes the focus, as a screen's heading does.
   const title = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    title.current?.focus();
-  }, []);
+  useFocusOnArrival(title);
   return (
     <SettingsScreen
       sub
@@ -218,7 +187,11 @@ function Codes({ codes, said, onDone }: { codes: readonly string[]; said: string
         <SettingsResult>
           <SaveState state="saved">{said}</SaveState>
         </SettingsResult>
-        <Kept label={t("settings.security.two_factor.recovery")} values={codes} />
+        <Kept
+          label={t("settings.security.two_factor.recovery")}
+          values={codes}
+          copy={t("settings.security.two_factor.copy")}
+        />
       </SettingsSection>
     </SettingsScreen>
   );

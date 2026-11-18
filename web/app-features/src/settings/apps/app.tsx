@@ -42,16 +42,8 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
-import { Asking } from "../security/parts";
-import {
-  AppAccessFields,
-  AppIdentityFields,
-  missingOf,
-  readApp,
-  refusedOf,
-  useFaultFocus,
-  type AppFaults,
-} from "./form";
+import { Asking, useFaultFocus } from "../parts";
+import { AppAccessFields, AppIdentityFields, missingOf, readApp, refusedOf, type AppFaults } from "./form";
 import { appsPaths, Kept, Once, Unread, type AppScreenProps } from "./parts";
 
 /**

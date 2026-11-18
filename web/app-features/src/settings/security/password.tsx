@@ -26,7 +26,8 @@ import {
 import { useId, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf, useConfirmation, useProviderReturn } from "../confirmation";
-import { securityPaths, useFieldFault, useReadingNotice, type SecuritySubProps } from "./parts";
+import { useReadingNotice } from "../parts";
+import { securityPaths, useFieldFault, type SecuritySubProps } from "./parts";
 
 /** The least and the most characters of a password (the API's `new_password`). */
 const passwordLength = { min: 8, max: 128 } as const;

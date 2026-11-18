@@ -31,16 +31,13 @@ import {
 } from "@my/design-system";
 import { stringsIn } from "../../locale";
 import type { SettingsEntryProps } from "../entries";
-import { useDates } from "../security/parts";
+import { numberIn, useDates } from "../parts";
 import { appsPaths, originOf, Unread } from "./parts";
 
 /** What the route's loader waits for: the two lists, from the cache when it has them. */
 export async function loadAppsSettings(data: AppData): Promise<void> {
   await loadApps(data);
 }
-
-/** How a number reads in the reader's language. */
-const numberIn = (locale: string, n: number) => new Intl.NumberFormat(locale).format(n);
 
 /** Authorized apps: each with where it comes from and when it last used the account, leading to its screen. */
 function Authorized() {

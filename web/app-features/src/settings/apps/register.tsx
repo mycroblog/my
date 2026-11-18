@@ -36,6 +36,7 @@ import {
 import { useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
+import { useFaultFocus } from "../parts";
 import {
   AppAccessFields,
   AppIdentityFields,
@@ -43,7 +44,6 @@ import {
   missingOf,
   readApp,
   refusedOf,
-  useFaultFocus,
   type AppFaults,
   type AppType,
 } from "./form";

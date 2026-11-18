@@ -36,10 +36,11 @@ import {
   SubmitBar,
   useLocale,
 } from "@my/design-system";
-import { useEffect, useId, useRef, useState } from "react";
+import { useId, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
 import type { SettingsSubProps } from "../entries";
+import { useFaultFocus, useFocusOnArrival } from "../parts";
 import { CannotInvite, InviteLink, InviteStatus, Unread } from "./parts";
 
 const minute = 60;
@@ -85,9 +86,7 @@ function wholeOf(fields: FormData, name: string): number | undefined {
 function Created({ invite, onDone }: { invite: OwnInvite; onDone: () => void }) {
   const { t } = stringsIn(useLocale().locale);
   const said = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    said.current?.focus();
-  }, []);
+  useFocusOnArrival(said);
   return (
     <SettingsScreen
       sub
@@ -116,9 +115,7 @@ function Created({ invite, onDone }: { invite: OwnInvite; onDone: () => void }) 
  */
 function AtCapRefused({ children }: { children: string }) {
   const said = useRef<HTMLParagraphElement>(null);
-  useEffect(() => {
-    said.current?.focus();
-  }, []);
+  useFocusOnArrival(said);
   return <SettingsResult ref={said}>{children}</SettingsResult>;
 }
 
@@ -139,12 +136,9 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
   const { limits, usable, canCreate } = list;
   const limitsKey = limits === undefined ? "" : `${String(limits.max_uses)}:${String(limits.max_expires_in)}`;
   const fieldIds = { max_uses: `${id}-uses`, expires_in: `${id}-life` } as const;
-  const overId = over === undefined ? undefined : `${fieldIds[over.field]}-control`;
   // The field the server refused takes the focus once its words stand under it, and again when new limits give the
   // form new fields (the list read again after the refusal), so that the focus does not fall to the page.
-  useEffect(() => {
-    if (overId !== undefined) document.getElementById(overId)?.focus();
-  }, [over, overId, limitsKey]);
+  const focusOver = useFaultFocus(over === undefined ? "" : `${fieldIds[over.field]}-control`, limitsKey);
 
   if (made !== undefined) return <Created invite={made} onDone={onBack} />;
 
@@ -199,8 +193,12 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
       if (invitesNotAllowed(error)) return;
       // A value over what the server allows now stands under its field; anything else beside the button.
       const field = inviteValueRefused(error);
-      if (field === undefined) setSaid(saidOf(error, t));
-      else setOver({ field, said: t("settings.invites.new.refused", { field }) });
+      if (field === undefined) {
+        setSaid(saidOf(error, t));
+        return;
+      }
+      setOver({ field, said: t("settings.invites.new.refused", { field }) });
+      focusOver();
     });
   };
 

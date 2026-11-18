@@ -11,6 +11,7 @@ import { viewerQuery } from "./accounts";
 import type { AppData } from "./app-data";
 import { authorizedAppsQuery } from "./authorized-apps";
 import { useAppData } from "./provider";
+import { readOf, type ScreenRead } from "./reads";
 import { removeCached, writeCached } from "./written";
 
 /** An OAuth app of the reader's. */
@@ -184,14 +185,12 @@ export function useOAuthAppTokenRead(id: string): {
   retry: () => void;
 } {
   const app = useOAuthAppRead(id);
-  const account = useQuery(viewerQuery(useAppData()));
-  const failed = account.status === "error" && !account.isFetching;
+  const account = readOf([useQuery(viewerQuery(useAppData()))]);
   return {
-    // What was read stays read: a later read of it that fails leaves the screen what it had.
-    status: app.status !== "read" ? app.status : account.data !== undefined ? "read" : failed ? "failed" : "loading",
+    status: app.status !== "read" ? app.status : account.status,
     retry: () => {
       if (app.status === "failed") app.retry();
-      if (failed) void account.refetch();
+      account.retry();
     },
   };
 }
@@ -200,11 +199,11 @@ export function useOAuthAppTokenRead(id: string): {
  * Where the read of the reader's apps is, for a screen that needs the list alone (registering an app): `read` once the
  * server answered, `failed` when it did not, with `retry`, which reads it again, and `loading` until then.
  */
-export function useOAuthAppsRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+export function useOAuthAppsRead(): ScreenRead {
   const read = useQuery(oAuthAppsQuery(useAppData()));
   return {
-    // What was read stays read: a later read of it that fails leaves the screen what it had.
-    status: read.data !== undefined ? "read" : read.status === "error" && !read.isFetching ? "failed" : "loading",
+    status: readOf([read]).status,
+    // It reads the list again wherever its read is, not only once it failed.
     retry: () => {
       void read.refetch();
     },

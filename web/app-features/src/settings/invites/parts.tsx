@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the screens of the settings' Invites share (ADR-0106 §14, §15, §18): their addresses; what stands in a
-// screen's sections' place until the invites are read, when they could not be, or when its address names no invite of
-// the reader's; the summary that says why the reader may not create invites, in the words of the server's refusal for
-// that cause (the list gives the cause by its name alone); the lines that say what an invite allows now, as the sign-up
-// page takes it (one the server says is usable does not work while it takes no new account), and how often it was
-// used; the invite's link, shown to copy; and its state as a section of a screen.
+// What the screens of the settings' Invites share (ADR-0106 §14, §15, §18), beside what every entry's do
+// (../parts.tsx): their addresses; the words of the notice in a screen's sections' place when its address names no
+// invite of the reader's; the summary that says why the reader may not create invites, in the words of the server's
+// refusal for that cause (the list gives the cause by its name alone); the lines that say what an invite allows now,
+// as the sign-up page takes it (one the server says is usable does not work while it takes no new account), and how
+// often it was used; the invite's link, shown to copy; and its state as a section of a screen.
 
 import {
   inviteStateNow,
@@ -14,22 +14,10 @@ import {
   type InvitesNotAllowedReason,
   type OwnInvite,
 } from "@my/app-data";
-import {
-  Button,
-  CopyBlock,
-  FeedNotice,
-  SettingsList,
-  SettingsListRow,
-  SettingsSection,
-  StatusSummary,
-  TextButton,
-  TextLink,
-  useLocale,
-} from "@my/design-system";
-import { copyText } from "@my/platform";
-import { useEffect, useRef, useState } from "react";
+import { SettingsList, SettingsListRow, SettingsSection, StatusSummary, useLocale } from "@my/design-system";
+import { useEffect, useRef } from "react";
 import { stringsIn } from "../../locale";
-import { useDates } from "../security/parts";
+import { Kept, ReadingNotice, useDates } from "../parts";
 
 /** The address of the Invites entry, and of the screens under it. */
 export const invitesPath = "/settings/invites";
@@ -52,18 +40,12 @@ export function useInviteCreateTitle(): string {
  */
 export function Unread({ status, retry }: { status: "loading" | "failed" | "missing"; retry: () => void }) {
   const { t } = stringsIn(useLocale().locale);
-  if (status === "missing")
-    return (
-      <FeedNotice alert action={<TextLink href={invitesPath}>{t("settings.invites.missing.all")}</TextLink>}>
-        {t("settings.invites.missing")}
-      </FeedNotice>
-    );
-  return status === "failed" ? (
-    <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-      {t("settings.failed")}
-    </FeedNotice>
-  ) : (
-    <FeedNotice>{t("settings.loading")}</FeedNotice>
+  return (
+    <ReadingNotice
+      status={status}
+      retry={retry}
+      missing={{ said: t("settings.invites.missing"), all: t("settings.invites.missing.all"), href: invitesPath }}
+    />
   );
 }
 
@@ -139,28 +121,12 @@ export function useInviteFacts(): (invite: OwnInvite) => InviteFacts {
  */
 export function InviteLink({ invite, about = true }: { invite: OwnInvite; about?: boolean }) {
   const { t } = stringsIn(useLocale().locale);
-  const [copied, setCopied] = useState<boolean>();
   return (
     <SettingsSection
       heading={t("settings.invites.link")}
       about={about ? t("settings.invites.link.about", { code: invite.code }) : undefined}
     >
-      <CopyBlock
-        label={t("settings.invites.link")}
-        values={[invite.url]}
-        action={
-          <Button
-            kind="primary"
-            size="timeline"
-            onPress={() => {
-              void copyText(invite.url).then(setCopied);
-            }}
-          >
-            {t("settings.invites.copy")}
-          </Button>
-        }
-        result={copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed")}
-      />
+      <Kept label={t("settings.invites.link")} values={[invite.url]} copy={t("settings.invites.copy")} primary />
     </SettingsSection>
   );
 }

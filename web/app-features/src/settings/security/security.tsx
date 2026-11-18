@@ -74,7 +74,8 @@ import { useState } from "react";
 import { stringsIn } from "../../locale";
 import { providerFailure, saidOf, useConfirmation, useProviderName, useProviderReturn } from "../confirmation";
 import type { SettingsAddress, SettingsEntryProps } from "../entries";
-import { Asking, securityPath, securityPaths, useDates, useReadingNotice, useSectionResult } from "./parts";
+import { Asking, numberIn, useDates, useReadingNotice } from "../parts";
+import { fewCodes, securityPath, securityPaths, useSectionResult } from "./parts";
 import { browserOf } from "./user-agent";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -86,12 +87,6 @@ export async function loadSecuritySettings(data: AppData): Promise<void> {
     data.queryClient.query({ ...instanceQuery(data), staleTime: Infinity }).catch(() => undefined),
   ]);
 }
-
-/** How few recovery codes are left before the row of two-factor authentication says how many. */
-const fewCodes = 3;
-
-/** How a number reads in the reader's language. */
-const numberIn = (locale: string, n: number) => new Intl.NumberFormat(locale).format(n);
 
 /**
  * Sign-in: the password, which opens the screen that changes or sets it; two-factor authentication once it is on,

@@ -4,12 +4,13 @@
 // changes one share: its name and its website, which the consent page shows; its redirect URIs, one on a line; and
 // its scopes, the most it may ask for, by their names with spaces between. The fields keep what the reader types, and
 // the form reads them as it is sent (`readApp`): a field left empty that an app needs says so under itself before
-// anything is sent (`missingOf`), and what the server refuses of a field shows there too (`refusedOf`). The type,
-// confidential or public, is chosen once, as the app is registered, between the two with what each means.
+// anything is sent (`missingOf`), and what the server refuses of a field shows there too (`refusedOf`); the first
+// field at fault then takes the focus (`useFaultFocus` of ../parts.tsx, on the form). The type, confidential or
+// public, is chosen once, as the app is registered, between the two with what each means.
 
 import type { OAuthApp } from "@my/app-data";
 import { ChoiceList, TextField, useLocale } from "@my/design-system";
-import { useEffect, useId, useState, type RefObject } from "react";
+import { useId } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { stringsIn } from "../../locale";
 import { scopesOf } from "./scopes";
@@ -77,25 +78,6 @@ export function refusedOf(error: unknown): { faults: AppFaults; refused: Refused
     if (text !== undefined) faults[field] = text;
   }
   return { faults, refused };
-}
-
-/**
- * Moves the focus to the first field of a form that says something is wrong with its value, so that a screen reader
- * reads the field with what is wrong and the reader corrects it at once: `form` is the form's ref, which the screen
- * makes and gives its form, and the function returned asks, each time the form said its faults (its own check before
- * sending, or what the server refused of a field), once those words stand under their fields. With no field at fault
- * it moves nothing: what the server refused of the whole stands right before the button, which keeps the focus.
- */
-export function useFaultFocus(form: RefObject<HTMLFormElement | null>): () => void {
-  /** Each ask, counted: the same faults said again ask again. */
-  const [asked, setAsked] = useState(0);
-  useEffect(() => {
-    if (asked === 0) return;
-    form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus();
-  }, [asked, form]);
-  return () => {
-    setAsked((n) => n + 1);
-  };
 }
 
 type FieldsProps = {

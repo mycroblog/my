@@ -27,7 +27,7 @@ import {
 import { useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSessionProps, SettingsSubProps } from "../entries";
-import { Asking, useDates } from "../security/parts";
+import { Asking, numberIn, useDates } from "../parts";
 import { originOf, Unread, type AppScreenProps } from "./parts";
 import { groupedScopes } from "./scopes";
 
@@ -94,7 +94,7 @@ export function AuthorizedAppScreen({
           <SettingsSection
             key={risk}
             heading={t("settings.apps.permissions", { risk })}
-            count={new Intl.NumberFormat(locale).format(scopes.length)}
+            count={numberIn(locale, scopes.length)}
           >
             <SettingsFacts
               label={t("settings.apps.permissions", { risk })}

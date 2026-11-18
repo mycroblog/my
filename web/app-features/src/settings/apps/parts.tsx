@@ -1,27 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the screens of the settings' Apps share: their addresses; what stands in a screen's sections' place until what
-// it shows is read, when it could not be, or when its address names no app of the reader's; a value to copy, under the
-// button that copies it; and the screen that shows what the server gives only once (a new app's secret, a token):
-// what happened first, then each value under its own name, a secret under the plain statement that it is not shown
-// again, with its Copy, and the way on at the screen's end.
+// What the screens of the settings' Apps share, beside what every entry's do (../parts.tsx): their addresses; the
+// words of the notice in a screen's sections' place when its address names no app of the reader's; a value of an app
+// to copy, whose button names it; and the screen that shows what the server gives only once (a new app's secret, a
+// token): what happened first, then each value under its own name, a secret under the plain statement that it is not
+// shown again, with its Copy, and the way on at the screen's end.
 
 import type { AuthorizedApp } from "@my/app-data";
-import {
-  Button,
-  CopyBlock,
-  FeedNotice,
-  SettingsScreen,
-  SettingsSection,
-  StatusSummary,
-  SubmitBar,
-  TextButton,
-  TextLink,
-  useLocale,
-} from "@my/design-system";
-import { copyText } from "@my/platform";
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { Button, SettingsScreen, SettingsSection, StatusSummary, SubmitBar, useLocale } from "@my/design-system";
+import { useRef, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
+import { Kept as KeptValues, ReadingNotice, useFocusOnArrival } from "../parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -67,45 +56,22 @@ export type AppScreenProps = {
  */
 export function Unread({ status, retry }: { status: "loading" | "failed" | "missing"; retry: () => void }) {
   const { t } = stringsIn(useLocale().locale);
-  if (status === "missing")
-    return (
-      <FeedNotice alert action={<TextLink href={appsPath}>{t("settings.apps.missing.all")}</TextLink>}>
-        {t("settings.apps.missing")}
-      </FeedNotice>
-    );
-  return status === "failed" ? (
-    <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-      {t("settings.failed")}
-    </FeedNotice>
-  ) : (
-    <FeedNotice>{t("settings.loading")}</FeedNotice>
+  return (
+    <ReadingNotice
+      status={status}
+      retry={retry}
+      missing={{ said: t("settings.apps.missing"), all: t("settings.apps.missing.all"), href: appsPath }}
+    />
   );
 }
 
 /** What a value to copy is, which names its button: two of them may stand on one screen. */
 export type KeptWhat = "client_id" | "secret" | "access_token" | "refresh_token";
 
-/** A value the reader copies and keeps, named `label`, with the button that copies it and what came of copying. */
+/** A value of an app that the reader copies and keeps, named `label`, under the button that names what it copies. */
 export function Kept({ what, label, value }: { what: KeptWhat; label: string; value: string }) {
   const { t } = stringsIn(useLocale().locale);
-  const [copied, setCopied] = useState<boolean>();
-  return (
-    <CopyBlock
-      label={label}
-      values={[value]}
-      action={
-        <Button
-          size="timeline"
-          onPress={() => {
-            void copyText(value).then(setCopied);
-          }}
-        >
-          {t("settings.apps.copy", { what })}
-        </Button>
-      }
-      result={copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed")}
-    />
-  );
+  return <KeptValues label={label} values={[value]} copy={t("settings.apps.copy", { what })} />;
 }
 
 /**
@@ -132,9 +98,7 @@ export function Once({
   // It took another view's place, whose focus went with it (the form's button, the confirmation's): the sentence
   // that says what happened takes the focus, so that a screen reader reads it first.
   const happened = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    happened.current?.focus();
-  }, []);
+  useFocusOnArrival(happened);
   return (
     <SettingsScreen
       sub

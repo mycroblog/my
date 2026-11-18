@@ -25,7 +25,8 @@ import { PasskeyError, supportsPasskeys } from "@my/platform";
 import { useId, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf, useConfirmation, useProviderReturn } from "../confirmation";
-import { securityPaths, useFieldFault, useReadingNotice, type SecuritySubProps } from "./parts";
+import { useReadingNotice } from "../parts";
+import { securityPaths, useFieldFault, type SecuritySubProps } from "./parts";
 
 /** The most characters of a passkey's name (the API's `name`). */
 const nameLength = 64;

@@ -26,7 +26,7 @@ import {
 import { useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
-import { Asking } from "../security/parts";
+import { Asking } from "../parts";
 import { InviteLink, InviteStatus, Unread, useInviteFacts } from "./parts";
 
 /** What the screen of one invite is given by the route that places it, beside what every screen under an entry is. */

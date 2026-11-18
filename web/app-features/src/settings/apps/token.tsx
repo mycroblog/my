@@ -30,7 +30,8 @@ import {
 import { useId, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
-import { refusedOf, useFaultFocus } from "./form";
+import { useFaultFocus } from "../parts";
+import { refusedOf } from "./form";
 import { Once, Unread, type AppScreenProps } from "./parts";
 import { scopesOf } from "./scopes";
 
