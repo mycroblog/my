@@ -432,31 +432,41 @@ export function FeedItem({ id, position, children }: { id: string; position: num
 const notice = tv({
   slots: {
     // Wrapping between phrases, never inside a word of ja, as a caption does.
-    root: "text-caption text-muted-text [word-break:auto-phrase]",
+    root: "[word-break:auto-phrase]",
     action: "whitespace-nowrap",
   },
-  // Centered under a feed; at the start in a form, as its fields read.
-  variants: { start: { true: { root: "text-start" }, false: { root: "text-center" } } },
+  variants: {
+    // Centered under a feed; at the start in a form, as its fields read.
+    start: { true: { root: "text-start" }, false: { root: "text-center" } },
+    // A caption, muted, after what a screen shows; or the screen's one sentence, as its text reads, its action a link.
+    lead: {
+      true: { root: "text-body text-text", action: "text-accent-text" },
+      false: { root: "text-caption text-muted-text" },
+    },
+  },
 });
 
 /**
  * A line after a feed's entries, centered and muted: that it loads, that it failed (`alert`), or that it has none,
  * with an action after it (a `TextButton`, such as trying again), apart from words by a middle dot and from a full
  * sentence by its stop alone (sentence.ts); wrapping between phrases. `start` lines it up at the start instead, in a
- * form.
+ * form. `lead`: it is all the screen has to say (an address that names nothing), so it reads as the screen's text, in
+ * its size and its color at the start, and its action, the one way on, in the links' color.
  */
 export function FeedNotice({
   alert = false,
   start = false,
+  lead = false,
   action,
   children,
 }: {
   alert?: boolean | undefined;
   start?: boolean | undefined;
+  lead?: boolean | undefined;
   action?: ReactNode;
   children: ReactNode;
 }) {
-  const s = notice({ start });
+  const s = notice({ start: start || lead, lead });
   return (
     <p role={alert ? "alert" : "status"} className={s.root()}>
       {children}

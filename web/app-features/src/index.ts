@@ -71,6 +71,7 @@ export { SettingsBeside, settingsEntryPath, SettingsIndex } from "./settings/men
 export { loadProfileEdit, ProfileEdit, useProfileEditTitle, type ProfileEditProps } from "./settings/profile-edit";
 export { SettingsEntryScreen, useSettingsTitle, type SettingsEntryScreenProps } from "./settings/screen";
 export { SignOutDialog, type SignOutDialogProps } from "./settings/sign-out";
+export { UnsavedSettings } from "./settings/unsaved";
 export { loadReactors, ReactorList } from "./thread/reactors";
 export { loadThread, Thread } from "./thread/thread";
 export { HomeTimeline, loadHomeTimeline } from "./timeline/home";

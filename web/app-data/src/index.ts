@@ -284,6 +284,7 @@ export {
   updatePreferences,
   usePreferences,
   usePreferencesRead,
+  useSavedPreferences,
   useUpdatePreferences,
   type LinkCardSize,
   type Preferences,
@@ -298,7 +299,7 @@ export {
   type PickerCustomEmoji,
   type StatusReactor,
 } from "./reactions";
-export { endSession, openSession, visitorData } from "./session";
+export { endSession, onSignedOutElsewhere, openSession, visitorData, type SessionEnd } from "./session";
 export {
   appPath,
   finishSignIn,

@@ -7,7 +7,7 @@
 // beside its confirmation, and the row that opens what waits elsewhere. Everything sits on the page's one surface,
 // apart by space; a raised surface marks only a control (the current tab) and what a field found.
 
-import { useId, type ReactElement, type ReactNode, type Ref } from "react";
+import { createContext, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { Button, Link, Tab, TabList, TabPanel, Tabs } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Byline, Stamp } from "./entry";
@@ -722,22 +722,38 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
 
 const back = tv({
   slots: {
-    root: "text-caption",
+    root: "",
     button: [
       "cursor-pointer rounded-control border-0 bg-transparent p-0",
-      "text-caption text-muted-text outline-hidden [font-family:inherit]",
-      "data-hovered:text-text data-focus-visible:shadow-focus",
+      "outline-hidden [font-family:inherit] data-focus-visible:shadow-focus",
     ],
+  },
+  variants: {
+    lead: {
+      // The reader's one way back: as the text reads, a finger's target tall.
+      true: { root: "text-body", button: "min-h-icon-button-touch text-body text-text" },
+      false: { root: "text-caption", button: "text-caption text-muted-text data-hovered:text-text" },
+    },
   },
 });
 
-/** Back to where the reader came from, muted and small, at the start of the screen. */
+/**
+ * Whether the way back a screen is headed by is the reader's only one (a screen of the settings, whose menu is not
+ * beside it): a `BackButton` under it reads as the text does and is a finger's target tall.
+ */
+export const BackLead = createContext(false);
+
+/**
+ * Back to where the reader came from, muted and small, at the start of the screen; where it is the reader's only way
+ * back (`BackLead`), in the text's size and color, a finger's target tall.
+ */
 export function BackButton({ onPress, children }: { onPress: () => void; children: string }) {
-  const s = back();
+  const lead = use(BackLead);
+  const s = back({ lead });
   return (
     <p className={s.root()}>
       <Row inline align="center" gap="entry-caption" as={<Button className={s.button()} onPress={onPress} />}>
-        <Icon name="back" place="caption" />
+        <Icon name="back" place={lead ? "action" : "caption"} />
         {children}
       </Row>
     </p>

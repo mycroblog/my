@@ -8,6 +8,7 @@ import { finishSignIn } from "@my/app-data";
 import { FeedNotice } from "@my/design-system";
 import { createFileRoute } from "@tanstack/react-router";
 import { useStrings } from "../locale";
+import { forgetChoice } from "../reader";
 import { ScreenHeading } from "../shell/heading";
 import { signInOptions, signInPath } from "../sign-in";
 
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/login/callback")({
   staticData: { scroll: "top" },
   loader: async ({ context }) => {
     const returnTo = await finishSignIn(signInOptions(context.config), new URL(location.href));
+    // A new session starts: what the device kept of the reader before is not this session's.
+    forgetChoice();
     location.replace(returnTo);
   },
   component: SigningIn,

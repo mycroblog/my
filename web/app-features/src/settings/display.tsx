@@ -58,6 +58,9 @@ export async function loadDisplaySettings(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
+/** The address of the entry's page, which a change that could not be said in place leads back to. */
+const page = "/settings/display";
+
 /** The value of the option that follows the browser, and of the post language that follows the display language. */
 const browser = "";
 const undetermined = "und";
@@ -120,6 +123,7 @@ function InteractionDefaults({
   const options = interactionChoices.map((choice) => ({ value: choiceValue(choice), label: choiceText(choice, t) }));
   return interactions.map((kind) => (
     <Choice
+      page={page}
       key={kind}
       label={t(interactionLabel[kind])}
       options={options}
@@ -149,8 +153,8 @@ function TimelineLanguages({
   t: T;
 }) {
   const id = useId();
-  const { state, save } = useSaving();
   const name = t("settings.display.timeline_languages");
+  const { state, save } = useSaving(name, page);
   // The choice holds no language: what it says is that all show, or that one more can be added.
   const first = t(
     chosen.length === 0 ? "settings.display.timeline_languages.all" : "settings.display.timeline_languages.add",
@@ -212,6 +216,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
     <>
       <SettingsSection heading={t("settings.display.section.region")}>
         <Choice
+          page={page}
           label={t("settings.display.language")}
           about={t("settings.display.language.about")}
           options={[
@@ -224,6 +229,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
           onChoose={(value) => change(value === browser ? { locale_follows_browser: true } : { locale: value })}
         />
         <Choice
+          page={page}
           label={t("settings.display.time_zone")}
           options={[
             { value: browser, label: follows },
@@ -237,6 +243,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
       </SettingsSection>
       <SettingsSection heading={t("settings.display.section.display")}>
         <Choice
+          page={page}
           label={t("settings.display.link_cards")}
           options={[
             { value: "large" satisfies LinkCardSize, label: t("settings.display.link_cards.large") },
@@ -248,6 +255,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
       </SettingsSection>
       <SettingsSection heading={t("settings.display.section.posts")} about={t("settings.display.section.posts.about")}>
         <Choice
+          page={page}
           label={t("settings.display.audience")}
           about={t(`compose.visibility.${visibility}.about` as MessageId, { server: instance?.domain ?? "" })}
           options={visibilityOptions(visibility, instance?.single_user_account !== undefined, t)}
@@ -255,6 +263,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
           onChoose={(value) => change({ default_visibility: value as Visibility })}
         />
         <Choice
+          page={page}
           label={t("settings.display.post_language")}
           options={[
             { value: undetermined, label: t("settings.display.post_language.display") },
@@ -266,6 +275,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
           onChoose={(value) => change({ default_post_language: value })}
         />
         <Toggle
+          page={page}
           label={t("settings.display.media_description")}
           about={t("settings.display.media_description.about")}
           on={serverRequires || preferences.require_media_description}
@@ -291,6 +301,7 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
           t={t}
         />
         <Toggle
+          page={page}
           label={t("settings.display.auto_insert")}
           about={t("settings.display.auto_insert.about")}
           on={preferences.timeline_auto_insert}

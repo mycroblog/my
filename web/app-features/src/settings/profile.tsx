@@ -68,6 +68,9 @@ export async function loadProfileSettings(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
+/** The address of the entry's page, which a change that could not be said in place leads back to. */
+const page = "/settings/profile";
+
 const followsAudiences = ["public", "followers", "private"] as const satisfies readonly FollowsVisibility[];
 
 /**
@@ -124,8 +127,8 @@ function FeaturedHashtags({ t }: { t: T }) {
   const id = useId();
   const names = useOwnFeaturedHashtags().map((tag) => tag.name);
   const set = useSetFeaturedHashtags();
-  const { state, save } = useSaving();
   const label = t("settings.profile.hashtags");
+  const { state, save } = useSaving(label, page);
   const full = names.length >= profileLimits.featuredHashtags;
   const has = (tag: string) => names.some((name) => name.toLowerCase() === tag.toLowerCase());
   return (
@@ -175,6 +178,7 @@ function Sections({ account }: { account: CredentialAccount }) {
         <OwnProfile account={account} t={t} />
         <FeaturedHashtags t={t} />
         <Toggle
+          page={page}
           label={t("settings.profile.bot")}
           about={t("settings.profile.bot.about")}
           on={account.bot}
@@ -191,6 +195,7 @@ function Sections({ account }: { account: CredentialAccount }) {
             {badges.map((badge) => (
               <Stack as="li" key={badge.role_id}>
                 <Toggle
+                  page={page}
                   label={t("settings.profile.badge", { label: badge.label })}
                   on={badge.displayed}
                   onChange={(displayed) => chooseBadge(badge.role_id, displayed)}
@@ -202,12 +207,14 @@ function Sections({ account }: { account: CredentialAccount }) {
       )}
       <SettingsSection heading={t("settings.profile.section.follows")}>
         <Toggle
+          page={page}
           label={t("settings.profile.locked")}
           about={t("settings.profile.locked.about")}
           on={account.locked}
           onChange={(locked) => change({ locked })}
         />
         <Choice
+          page={page}
           label={t("settings.profile.follows_visibility")}
           about={t("settings.profile.follows_visibility.about")}
           options={followsAudiences.map((who) => ({
@@ -223,12 +230,14 @@ function Sections({ account }: { account: CredentialAccount }) {
       </SettingsSection>
       <SettingsSection heading={t("settings.profile.section.discovery")}>
         <Toggle
+          page={page}
           label={t("settings.profile.discoverable")}
           about={t("settings.profile.discoverable.about")}
           on={account.discoverable}
           onChange={(discoverable) => change({ discoverable })}
         />
         <Toggle
+          page={page}
           label={t("settings.profile.indexable")}
           about={t("settings.profile.indexable.about", {
             where: enginesOut ? "server" : postSearch ? "both" : "engines",
@@ -238,6 +247,7 @@ function Sections({ account }: { account: CredentialAccount }) {
           onChange={(indexable) => change({ indexable })}
         />
         <Toggle
+          page={page}
           label={t("settings.profile.ai_opt_out")}
           about={t("settings.profile.ai_opt_out.about", { server: ai ?? "allow" })}
           on={aiFixed ? true : account.ai_opt_out}
@@ -245,6 +255,7 @@ function Sections({ account }: { account: CredentialAccount }) {
           onChange={(ai_opt_out) => change({ ai_opt_out })}
         />
         <Toggle
+          page={page}
           label={t("settings.profile.feed")}
           // Until the reader sets it, the feed follows what they chose for search, also where the switch above shows
           // what the server enforces instead.

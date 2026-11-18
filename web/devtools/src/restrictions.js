@@ -55,7 +55,12 @@
 //
 // - zone-dates: in the web client, only zone.tsx of @my/design-system reads the device's clock and builds a formatter
 //   of dates (ADR-0009 §3): no `Intl.DateTimeFormat`, no method of a Date that reads, sets or writes out the device's
-//   wall clock, no Date built from the parts of one. It refuses the methods by name on any object.
+//   wall clock, no Date built from the parts of one or from a date and time written with no zone
+//   (`new Date("2026-11-16T09:00")`, `Date.parse("…")`), and no new Date written out as it is (`String(new Date())`, in
+//   a template, `.toString()`). It refuses the methods by name on any object. It has no types, so it does not see a
+//   date and time held in a variable (`new Date(value)`, `Date.parse(value)`: the API's timestamps, which name their
+//   zone, are read so), nor a Date held in one and written out by coercion (`String(date)`, `${date}`,
+//   `date.toString()`, `"" + date`).
 
 import { rules as styles } from "./styles.js";
 
@@ -995,8 +1000,13 @@ const LOCAL_TEXTS = new Set([
  * zone-dates (ADR-0009 §3): in the web client, every date and time is shown in the reader's time zone, which
  * zone.tsx of @my/design-system alone reads. It refuses, outside that file, an `Intl.DateTimeFormat` (constructed or
  * called), a method of a Date that reads or sets the device's clock (`getHours`, `setDate`…), one that writes a date
- * out in the device's zone (`toLocaleString`…), and a Date built from the parts of a wall clock (`new Date(2026, 0,
- * 1)`). It refuses the methods by name on any object, a number's `toLocaleString` too.
+ * out in the device's zone (`toLocaleString`…), a Date built from the parts of a wall clock (`new Date(2026, 0,
+ * 1)`) or from a date and time written out with no zone (`new Date("2026-11-16T09:00")`, `Date.parse` of one), and a
+ * new Date written out as it is, which is the device's wall clock in English (`String(new Date())`, a new Date in a
+ * template, `new Date().toString()`). It refuses the methods by name on any object, a number's `toLocaleString` too.
+ * What it cannot see, for want of types: a date and time held in a variable (`new Date(value)`, `Date.parse(value)`,
+ * which is how the API's timestamps, zoned, are read), and a Date held in a variable and written out by coercion
+ * (`String(date)`, a template, `date.toString()`, a concatenation).
  * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
  */
 function createZoneDates(context) {
@@ -1033,17 +1043,57 @@ function createZoneDates(context) {
 
   const ownFormat =
     "is a formatter of its own, which shows the device's time zone to a reader who chose another (ADR-0009 §3).";
+  const noZone =
+    "reads a date and time written with no zone on the device's wall clock, not in the reader's time zone (ADR-0009 §3).";
+  const writtenOut =
+    "writes a moment out as the device's wall clock, in English, not in the reader's time zone and language (ADR-0009 §3).";
+
+  /** Whether `node` is the global `Date`. */
+  function isDate(/** @type {Node} */ node) {
+    const callee = unwrap(node);
+    return callee.type === "Identifier" && callee.name === "Date" && isGlobal(callee);
+  }
+
+  /** Whether `node` builds a Date (`new Date(…)`). */
+  function isNewDate(/** @type {Node} */ node) {
+    const built = unwrap(node);
+    return built.type === "NewExpression" && isDate(built.callee);
+  }
+
+  /** The text of `node` when it is a string written in the file: a literal, or a template with no expression. */
+  function written(/** @type {Node | undefined} */ node) {
+    const arg = node && unwrap(node);
+    if (!arg) return undefined;
+    if (arg.type === "Literal" && typeof arg.value === "string") return arg.value;
+    if (arg.type === "TemplateLiteral" && arg.expressions.length === 0) return arg.quasis[0]?.value.cooked ?? undefined;
+    return undefined;
+  }
+
+  /**
+   * Whether the date `text` is read on the device's wall clock: it names no zone (no `Z`, no offset, no GMT or UTC at
+   * its end), and is not a date alone in the form of ISO 8601 (2026-11-16), which the language reads as UTC.
+   */
+  function zoneless(/** @type {string | undefined} */ text) {
+    if (text === undefined || text.trim() === "") return false;
+    if (/^\d{4}(-\d{2}(-\d{2})?)?$/.test(text.trim())) return false;
+    return !/(Z|[+-]\d{2}:?\d{2}|GMT|UTC)$/i.test(text.trim());
+  }
 
   return {
     NewExpression(/** @type {Node} */ node) {
       if (isDateTimeFormat(node.callee)) report(node, "Intl.DateTimeFormat", ownFormat);
-      const callee = unwrap(node.callee);
-      if (callee.type === "Identifier" && callee.name === "Date" && node.arguments.length > 1 && isGlobal(callee))
+      if (!isDate(node.callee)) return;
+      if (node.arguments.length > 1)
         report(
           node,
           "Date(y,m,…)",
           "builds a moment from the parts of the device's wall clock, not of the reader's time zone (ADR-0009 §3).",
         );
+      else if (zoneless(written(node.arguments[0]))) report(node, 'Date("…")', noZone);
+    },
+    TemplateLiteral(/** @type {Node} */ node) {
+      for (const expression of node.expressions)
+        if (isNewDate(expression)) report(expression, "${new Date(…)}", writtenOut);
     },
     CallExpression(/** @type {Node} */ node) {
       if (isDateTimeFormat(node.callee)) {
@@ -1051,6 +1101,11 @@ function createZoneDates(context) {
         return;
       }
       const callee = unwrap(node.callee);
+      if (callee.type === "Identifier" && callee.name === "String" && isGlobal(callee)) {
+        if (node.arguments.length === 1 && isNewDate(node.arguments[0]))
+          report(node, "String(new Date(…))", writtenOut);
+        return;
+      }
       if (callee.type !== "MemberExpression") return;
       const name = callee.computed
         ? callee.property.type === "Literal" && typeof callee.property.value === "string"
@@ -1058,6 +1113,14 @@ function createZoneDates(context) {
           : undefined
         : callee.property.name;
       if (name === undefined) return;
+      if (name === "parse" && isDate(callee.object)) {
+        if (zoneless(written(node.arguments[0]))) report(node, 'Date.parse("…")', noZone);
+        return;
+      }
+      if (name === "toString" && isNewDate(callee.object)) {
+        report(callee.property, "new Date(…).toString()", writtenOut);
+        return;
+      }
       if (LOCAL_READS.has(name))
         report(
           callee.property,
