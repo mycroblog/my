@@ -262,6 +262,8 @@ export {
   type SelectProps,
 } from "./field";
 export {
+  CopyBlock,
+  QrFrame,
   SettingRow,
   SettingsEmpty,
   SettingsFacts,
@@ -272,6 +274,8 @@ export {
   SettingsFieldRow,
   SettingsListRow,
   SettingsMenu,
+  SettingsNote,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   StatusSummary,

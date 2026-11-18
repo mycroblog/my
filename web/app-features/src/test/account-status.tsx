@@ -203,7 +203,16 @@ export const drawnPart = (
 export const drawnEntry = (from: Server = {}, drawing: Drawing = {}): Promise<Drawn> =>
   drawnPart(
     from,
-    (told) => <SettingsEntryScreen entry="account" onBack={() => told.push("back")} languages={["en", "ja"]} />,
+    (told) => (
+      <SettingsEntryScreen
+        entry="account"
+        onBack={() => told.push("back")}
+        languages={["en", "ja"]}
+        fragment=""
+        onFragmentRead={() => undefined}
+        leave={() => undefined}
+      />
+    ),
     drawing,
   );
 

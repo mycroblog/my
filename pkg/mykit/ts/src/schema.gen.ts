@@ -1549,7 +1549,8 @@ export interface paths {
         };
         /**
          * List the OAuth apps that the authenticated user registered
-         * @description The apps that the user registered and has not deleted, oldest first.
+         * @description The apps that the user registered and has not deleted, oldest first, and whether the user
+         *     may register one now (`can_create`).
          */
         get: operations["listOAuthApps"];
         put?: never;
@@ -8906,7 +8907,8 @@ export interface paths {
          * List the user's own invites
          * @description The invites that the user created as a member, newest first, with how they
          *     have been used, and what the user may do: whether they may create an invite now
-         *     (`can_create`), the caps of the instance settings, and how many usable invites they hold.
+         *     (`can_create`) and why not (`cannot_create_reason`), the caps of the instance settings,
+         *     and how many usable invites they hold.
          *     A user who may no longer create invites still lists and revokes the ones they made; an
          *     otherwise usable one is then `creator_ineligible`. Invites of the staff
          *     (`/admin/invites`) are not listed.
@@ -8923,7 +8925,8 @@ export interface paths {
          *     person who signs up with it is approved at once. The user may create one when the
          *     instance setting `invite_creators` is `everyone` or their roles have `create_invites`,
          *     their account is neither suspended nor limited, their registration is approved, and the
-         *     registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`.
+         *     registration mode is not `closed`; otherwise a 403 `/api/v1/problems/invites-not-allowed`
+         *     whose `reason` says which.
          *     `max_uses` defaults to 1 and `expires_in` to 7 days (or the caps when they are lower); a
          *     value over the cap of the instance settings (`member_invite_max_uses`,
          *     `member_invite_max_lifetime_seconds`) is a 422 naming it. A user who already holds
@@ -11922,6 +11925,23 @@ export interface components {
          * @enum {string}
          */
         InviteCreatorKind: "staff" | "member";
+        /**
+         * @description The problem of a user who may not create invites of their own now (403,
+         *     `/api/v1/problems/invites-not-allowed`); `reason` says why, and `detail` says it to the
+         *     user. Another 403 has none.
+         */
+        InvitesNotAllowedProblem: components["schemas"]["Problem"] & {
+            reason?: components["schemas"]["InvitesNotAllowedReason"];
+        };
+        /**
+         * @description Why the user may not create invites of their own now, the first that holds of
+         *     `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+         *     `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+         *     roles lack `create_invites`; `not_approved`: the registration of the account is not
+         *     approved; `restricted`: the account is suspended or limited.
+         * @enum {string}
+         */
+        InvitesNotAllowedReason: "registration_closed" | "not_permitted" | "not_approved" | "restricted";
         /** @description An invite that the user created as a member, which always has a limit of uses and an expiry. */
         OwnInvite: {
             id: components["schemas"]["Id"];
@@ -11953,9 +11973,11 @@ export interface components {
              *     `everyone` or the user's roles have `create_invites`, the account is neither
              *     suspended nor limited, its registration is approved, and the registration mode is
              *     not `closed`. It does not count the cap of usable invites (`usable` against
-             *     `limits.max_active`).
+             *     `limits.max_active`). When it is false, `cannot_create_reason` says why; when it is
+             *     true, `cannot_create_reason` is omitted.
              */
             can_create: boolean;
+            cannot_create_reason?: components["schemas"]["InvitesNotAllowedReason"];
             /** @description How many usable invites the user holds now, which `limits.max_active` bounds. */
             usable: number;
             limits: components["schemas"]["MemberInviteLimits"];
@@ -16844,6 +16866,13 @@ export interface components {
         /** @description The OAuth apps that the authenticated user registered, oldest first; there are at most 25. */
         OAuthAppList: {
             items: components["schemas"]["OAuthApp"][];
+            /**
+             * @description Whether the user may register an app now: the instance setting `user_app_registration`
+             *     is on. When it is false, `POST /oauth_apps` answers 403
+             *     `/api/v1/problems/oauth-app-registration-disabled`. It does not count the cap of 25
+             *     apps (the length of `items`) or the rate limit of registrations.
+             */
+            can_create: boolean;
         };
         /** @description A new secret of a confidential OAuth app. */
         OAuthAppSecret: {
@@ -17527,7 +17556,7 @@ export interface components {
          *     - `/api/v1/problems/invites-not-allowed` (403): the user may not create invites of their
          *       own now: the instance setting `invite_creators` and the user's roles do not let them, the
          *       account is suspended or limited, its registration is not approved, or the registration is
-         *       `closed`.
+         *       `closed`. Its `reason` says which.
          *     - `/api/v1/problems/too-many-invites` (409): the user already holds as many usable invites
          *       as the instance setting `member_invite_max_active` allows. Revoke one or wait for one to
          *       expire or be used up.
@@ -20085,6 +20114,18 @@ export interface components {
             };
             content: {
                 "application/problem+json": components["schemas"]["LoginProviderProblem"];
+            };
+        };
+        /** @description The user may not create invites of their own now; nothing was created. */
+        InvitesNotAllowedProblem: {
+            headers: {
+                /** @description The locale of `title` and `detail`. */
+                "Content-Language"?: string;
+                "Cache-Control": components["headers"]["CacheControl"];
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["InvitesNotAllowedProblem"];
             };
         };
         /** @description The OAuth app. */
@@ -30038,6 +30079,7 @@ export interface operations {
         };
         responses: {
             201: components["responses"]["OwnInvite"];
+            403: components["responses"]["InvitesNotAllowedProblem"];
             default: components["responses"]["Problem"];
         };
     };

@@ -2,8 +2,9 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Keeps the fakes of the test build out of the server (ADR-0015 §6, ADR-0015 §9). The test-only build tag e2e_fakes
-# adds fakes that record payments as paid, accept any push message, keep a search index in memory, and translate
-# nothing: none of them may reach a released binary, and the test build must have them all.
+# adds fakes that record payments as paid, accept any push message, keep a search index in memory, translate nothing,
+# write mail to the log instead of sending it, and sign anyone in as an OpenID Connect provider: none of them may reach
+# a released binary, and the test build must have them all.
 #
 #   scripts/go-fakes.sh                  fail when cmd/my without e2e_fakes depends on a fake or on a package that only
 #                                        tests may link, or when cmd/my with e2e_fakes lacks a fake; builds nothing
@@ -17,6 +18,8 @@ set -euo pipefail
 
 # fake_packages prints the packages of the fakes that only a build with e2e_fakes may link into cmd/my.
 fake_packages() {
+  echo "github.com/mycroblog/my/internal/adapter/mail/fake"
+  echo "github.com/mycroblog/my/internal/adapter/oidc/fake"
   echo "github.com/mycroblog/my/internal/adapter/payment/fake"
   echo "github.com/mycroblog/my/internal/adapter/pushservice/fake"
   echo "github.com/mycroblog/my/internal/adapter/search/fake"
@@ -37,7 +40,7 @@ check_deps() {
   for pkg in $(fake_packages); do
     if [[ ",$tags," == *,e2e_fakes,* ]]; then
       if ! grep -qFx "$pkg" <<<"$deps"; then
-        echo "cmd/my built with -tags '$tags' does not depend on $pkg, which e2e_fakes adds: wire it in a file of internal/platform with the constraint //go:build e2e_fakes" >&2
+        echo "cmd/my built with -tags '$tags' does not depend on $pkg, which e2e_fakes adds: wire it in a file of internal/platform or cmd/my with the constraint //go:build e2e_fakes" >&2
         status=1
       fi
     elif grep -qFx "$pkg" <<<"$deps"; then

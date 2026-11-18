@@ -65,7 +65,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { useActionDate } from "./account";
-import { ReadingNotice } from "./controls";
+import { ReadingNotice } from "./parts";
 
 /** What the route's loader waits for: the reader's policy, from the cache when it has it. */
 export async function loadAccountAutoDelete(data: AppData): Promise<void> {
@@ -581,8 +581,8 @@ export function AccountAutoDelete({ onBack, onUnsaved, leaving }: AccountAutoDel
               loading: t("settings.account.auto_delete.loading"),
               failed: t("settings.account.auto_delete.failed"),
             }}
-            failed={status === "error"}
-            onRetry={retry}
+            status={status === "error" ? "failed" : "loading"}
+            retry={retry}
           />
         }
       />

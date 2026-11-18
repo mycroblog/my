@@ -214,6 +214,43 @@ func memberInvitesCreate(t *testing.T, e *AccountEnv) {
 	}
 }
 
+// memberInvitesRefusal checks that a user who may not create invites is told why, at the
+// creation and in the listing: one user for each cause, which the instance setting, the state
+// of the registration, moderation, and the registration mode make (#3116).
+func memberInvitesRefusal(t *testing.T, e *AccountEnv) {
+	ctx := t.Context()
+	m := e.memberInvites(identity.RegistrationApproval)
+	alice := e.inviter(t, "alice")
+	bob := e.Register(t, "bob")
+	carol, err := m.SignUp(ctx, SignUpInput("carol"))
+	if err != nil || carol.State != identity.RegistrationPending {
+		t.Fatalf("SignUp without an invite = %+v, %v; want pending", carol.State, err)
+	}
+	refused := func(name, userID string, want identity.InviteRefusal) {
+		t.Helper()
+		_, err := m.CreateOwnInvite(ctx, appidentity.CreateOwnInviteInput{UserID: userID})
+		var refusal *appidentity.InvitesNotAllowedError
+		if !errors.As(err, &refusal) || refusal.Reason != want || !errors.Is(err, appidentity.ErrInvitesNotAllowed) {
+			t.Errorf("%s: CreateOwnInvite = %v, want ErrInvitesNotAllowed with the reason %s", name, err, want)
+		}
+		own, err := m.ListOwnInvites(ctx, userID, "", 10)
+		if err != nil || own.MayCreate || own.Refusal != want {
+			t.Errorf("%s: ListOwnInvites = may create %t, refusal %q, %v; want false, %s", name, own.MayCreate, own.Refusal, err, want)
+		}
+	}
+
+	if own, err := m.ListOwnInvites(ctx, alice.User.ID, "", 10); err != nil || !own.MayCreate || own.Refusal != "" {
+		t.Errorf("a holder of create_invites: ListOwnInvites = may create %t, refusal %q, %v; want true, none", own.MayCreate, own.Refusal, err)
+	}
+	refused("without create_invites", bob.User.ID, identity.InviteRefusalNotPermitted)
+	m.set(func(m *memberInvites) { m.settings.Everyone = true })
+	refused("a pending registration", carol.User.ID, identity.InviteRefusalNotApproved)
+	m.set(func(m *memberInvites) { m.restricted[bob.AccountID] = true })
+	refused("suspended or limited", bob.User.ID, identity.InviteRefusalRestricted)
+	m.set(func(m *memberInvites) { m.mode = identity.RegistrationClosed })
+	refused("closed", alice.User.ID, identity.InviteRefusalRegistrationClosed)
+}
+
 // memberInvitesSignUp checks the invites at sign-up in every mode, and the creator's check
 // (ADR-0106 §16, §17).
 func memberInvitesSignUp(t *testing.T, e *AccountEnv) {

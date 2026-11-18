@@ -15,8 +15,10 @@ import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
 import * as partStories from "./settings-parts.stories";
 import {
+  CopyBlock,
   SettingRow,
   SettingsEmpty,
+  SettingsFacts,
   SettingsGroup,
   SettingsItem,
   SettingsList,
@@ -277,6 +279,98 @@ test("an empty list's place says so, then leads to adding", () => {
   expect(section.queryAllByRole("list")).toHaveLength(0);
 });
 
+// ---- Facts, and what a reader copies ------------------------------------------------------------------------------
+
+test("the facts a section states are a list named by its label: a fact an item, the lines about it after it in their order, and nothing to press", () => {
+  render(
+    <SettingsSection heading="Permissions that need your attention" count="2">
+      <SettingsFacts
+        label="Permissions that need your attention"
+        items={[
+          { text: "Read your account, posts, and timelines", about: ["Can read your direct messages"] },
+          {
+            text: "Post and change things for you",
+            about: ["Can post, edit and delete posts as you", "Can change your profile"],
+          },
+          { text: "Receive push notifications" },
+        ]}
+      />
+    </SettingsSection>,
+  );
+
+  // The list is named by its label alone: the count beside the heading is the section's.
+  const list = within(screen.getByRole("list", { name: "Permissions that need your attention" }));
+  const [read, write, push, ...others] = list.getAllByRole("listitem").map((item) => item.textContent);
+  expect(others).toEqual([]);
+  expect(read).toMatch(/^Read your account, posts, and timelines\s*Can read your direct messages$/);
+  expect(write).toMatch(
+    /^Post and change things for you\s*Can post, edit and delete posts as you\s*Can change your profile$/,
+  );
+  expect(push).toBe("Receive push notifications");
+  expect([...list.queryAllByRole("button"), ...list.queryAllByRole("link")]).toHaveLength(0);
+});
+
+test("what a reader copies is a list named by its label, a value an item, whole; its action stands after the values, and its result in a status that is there from the start", () => {
+  const secret = "my_cs_Jq3vX8nB2mK7pL0wR5tY9uE4iO6aS1dF3gH8jZ2xC7v";
+  const block = (result?: string) => (
+    <CopyBlock
+      label="Client secret"
+      values={[secret, "q6b4k-rs"]}
+      action={<Button>Copy secret</Button>}
+      result={result}
+    />
+  );
+  const { rerender } = render(block());
+
+  const list = screen.getByRole("list", { name: "Client secret" });
+  expect(
+    within(list)
+      .getAllByRole("listitem")
+      .map((item) => item.textContent),
+  ).toEqual([secret, "q6b4k-rs"]);
+  const copy = screen.getByRole("button", { name: "Copy secret" });
+  expect(before(list, copy)).toBe(true);
+  const place = screen.getByRole("status");
+  expect(place.textContent).toBe("");
+
+  rerender(block("Copied"));
+
+  // The same region, so that what comes into it is read.
+  expect(screen.getByRole("status") === place).toBe(true);
+  expect(place.textContent).toBe("Copied");
+  expect(screen.getByRole("button", { name: "Copy secret" }) === copy).toBe(true);
+});
+
+// A row of something that does not work now (`inactive`) differs to the eye alone: what a reader of the page's tree
+// gets is the row it would be otherwise, and its facts say that it does not work.
+test("a row of something that does not work now is the same link by the same name, neither disabled nor hidden: its facts say so", () => {
+  render(
+    <SettingsList label="Invites">
+      <SettingsListRow title="k17wdrqp" facts={["Usable until Nov 25", "Used 0 of 1 time"]} href="/invites/1" />
+      <SettingsListRow title="k3np5b83" inactive facts={["Revoked", "Used 0 of 3 times"]} href="/invites/2" />
+      <SettingsListRow title="k4vlj2ys" inactive facts={["Expired Nov 15"]} />
+    </SettingsList>,
+  );
+
+  const list = within(screen.getByRole("list", { name: "Invites" }));
+  expect(list.getAllByRole("listitem").map((row) => row.textContent.replace(/\s+/g, " "))).toEqual([
+    "k17wdrqp Usable until Nov 25 Used 0 of 1 time",
+    "k3np5b83 Revoked Used 0 of 3 times",
+    "k4vlj2ys Expired Nov 15",
+  ]);
+  const works = list.getByRole("link", { name: /^k17wdrqp\s*Usable until Nov 25\s*Used 0 of 1 time$/ });
+  const revoked = list.getByRole("link", { name: /^k3np5b83\s*Revoked\s*Used 0 of 3 times$/ });
+  expect(revoked.getAttribute("href")).toBe("/invites/2");
+  // Nothing but its words tells the one that does not work from the one that does.
+  const told = (link: HTMLElement) =>
+    link
+      .getAttributeNames()
+      .filter((name) => name.startsWith("aria-") || name === "tabindex")
+      .map((name) => [name, link.getAttribute(name)]);
+  expect(told(revoked)).toEqual(told(works));
+  expect(list.getAllByRole("link")).toHaveLength(2);
+});
+
 // ---- A setting's row ----------------------------------------------------------------------------------------------
 
 const sizes = [
@@ -412,6 +506,60 @@ test("a row of a form saved as a whole has no place for a save state", () => {
     ["action", "large"],
   ]);
 });
+
+// A value the server refused when the form was sent is said at its row (`error`), where the reader changes it.
+for (const [kind, role, field] of [
+  ["a choice", "combobox", <Select key="choice" name="value" options={sizes} />],
+  ["a number", "textbox", <NumberField key="number" name="value" min={1} max={10} defaultValue={3} />],
+] as const) {
+  /** The row in a form saved as a whole, with the line about it or without, and what is wrong with its value. */
+  const row = (given: { about?: string; error?: string }) => (
+    <form aria-label="Invite">
+      <SettingRow id="refused" label="Works for" form {...given}>
+        {field}
+      </SettingRow>
+    </form>
+  );
+  /** What describes the control, part by part, in the order it is read. */
+  const described = (control: HTMLElement) =>
+    (control.getAttribute("aria-describedby") ?? "")
+      .split(" ")
+      .filter((id) => id !== "")
+      .map((id) => document.getElementById(id)?.textContent ?? "");
+  const about = "Up to 30 days.";
+  const error = "This server no longer allows that long. Choose a shorter time.";
+
+  test(`${kind} in a row of a form whose value was refused is marked invalid and described by the line about it, then by what is wrong, which stands under that line and is no alert`, () => {
+    const { rerender } = render(row({ about }));
+    const control = screen.getByRole(role, { name: "Works for" });
+    expect(control.getAttribute("aria-invalid")).not.toBe("true");
+    expect(described(control)).toEqual([about]);
+
+    rerender(row({ about, error }));
+
+    expect(screen.getByRole(role, { name: "Works for" }) === control).toBe(true);
+    expect(control.getAttribute("aria-invalid")).toBe("true");
+    expect(described(control)).toEqual([about, error]);
+    expect(before(screen.getByText(about), screen.getByText(error))).toBe(true);
+    expect(screen.queryAllByRole("alert")).toHaveLength(0);
+    expect(screen.queryAllByRole("status")).toHaveLength(0);
+
+    // Sent again: the row is as it was before the refusal.
+    rerender(row({ about }));
+
+    expect(control.getAttribute("aria-invalid")).not.toBe("true");
+    expect(described(control)).toEqual([about]);
+    expect(screen.queryAllByText(error)).toHaveLength(0);
+  });
+
+  test(`${kind} in a row with no line about it is described by what is wrong alone`, () => {
+    render(row({ error }));
+
+    const control = screen.getByRole(role, { name: "Works for" });
+    expect(control.getAttribute("aria-invalid")).toBe("true");
+    expect(described(control)).toEqual([error]);
+  });
+}
 
 // ADR-0110 §6: a control that saves at once takes its save state as a required prop. The compiler holds it
 // (web:typecheck reads this file): each line below is an error, and stops being one if the prop becomes optional.

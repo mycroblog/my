@@ -482,7 +482,8 @@ export const formPage = {
  * space of the row of the requests, between its parts and inside it; the air left past an entry's focus ring; and in a
  * row of faces (who reacted), the least width of its glyph and count, how far a face overlaps the one before, and the
  * ring of the page's surface that cuts it out of that one; and how far a face of a conversation's people tucks under
- * the one before, little enough that each stays recognisable; and the padding of the surface under what a field found.
+ * the one before, little enough that each stays recognisable; the padding of the surface under what a field found;
+ * and the side of a QR code for a phone's camera to read.
  */
 export const screen = {
   tabGap: 0.25,
@@ -508,6 +509,7 @@ export const screen = {
   faceCut: 0.125,
   faceTuck: 0.25,
   foundPadding: 0.75,
+  qr: 11,
 } as const;
 
 /**

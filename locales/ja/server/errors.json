@@ -613,7 +613,11 @@
   },
   "errors.invites.not_allowed": {
     "defaultMessage": "招待を作れません。",
-    "description": "Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts."
+    "description": "Title of the HTTP 403 API error when the user may not create invites of their own; the detail says why."
+  },
+  "errors.invites.not_allowed_detail": {
+    "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。} other {いまは招待を作れません。}}",
+    "description": "Detail of the HTTP 403 API error when the user may not create invites of their own, shown under the title \"You cannot create invites.\" {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value is a refusal that names no cause."
   },
   "errors.invites.too_many": {
     "defaultMessage": "使える招待の数の上限に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。",

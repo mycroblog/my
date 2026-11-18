@@ -70,8 +70,6 @@ func (s *Server) inviteProblem(ctx context.Context, err error) *problem {
 		p = s.fieldProblem(ctx, "max_uses", l.ServerErrorsInvalidValue())
 	case errors.Is(err, identity.ErrInviteExpiryOverCap):
 		p = s.fieldProblem(ctx, "expires_in", l.ServerErrorsInvalidValue())
-	case errors.Is(err, appidentity.ErrInvitesNotAllowed):
-		p = s.problem(ctx, http.StatusForbidden, ProblemTypeInvitesNotAllowed, l.ServerErrorsInvitesNotAllowed(), "")
 	case errors.Is(err, appidentity.ErrTooManyInvites):
 		p = s.problem(ctx, http.StatusConflict, ProblemTypeTooManyInvites, l.ServerErrorsInvitesTooMany(), "")
 	case errors.Is(err, appidentity.ErrRegistrationClosed):
@@ -80,6 +78,38 @@ func (s *Server) inviteProblem(ctx context.Context, err error) *problem {
 		return nil
 	}
 	return &p
+}
+
+// invitesNotAllowedProblem returns the 403 of a user who may not create invites of their own
+// now, with the cause as its reason and, in the user's words, as its detail; it reports false
+// for another error. An appidentity.ErrInvitesNotAllowed that names no cause has no reason.
+func (s *Server) invitesNotAllowedProblem(ctx context.Context, err error) (InvitesNotAllowedProblemApplicationProblemPlusJSONResponse, bool) {
+	if !errors.Is(err, appidentity.ErrInvitesNotAllowed) {
+		return InvitesNotAllowedProblemApplicationProblemPlusJSONResponse{}, false
+	}
+	var refusal identity.InviteRefusal
+	if na := (*appidentity.InvitesNotAllowedError)(nil); errors.As(err, &na) {
+		refusal = na.Reason
+	}
+	l := s.Localizer(ctx)
+	body, headers := s.NewProblem(ctx, http.StatusForbidden, ProblemTypeInvitesNotAllowed,
+		l.ServerErrorsInvitesNotAllowed(), l.ServerErrorsInvitesNotAllowedDetail(string(refusal)))
+	return InvitesNotAllowedProblemApplicationProblemPlusJSONResponse{
+		Body: InvitesNotAllowedProblem{
+			Type: body.Type, Title: body.Title, Status: body.Status, Detail: body.Detail, RequestId: body.RequestId,
+			Reason: invitesNotAllowedReason(refusal),
+		},
+		Headers: InvitesNotAllowedProblemResponseHeaders{CacheControl: headers.CacheControl, ContentLanguage: headers.ContentLanguage},
+	}, true
+}
+
+// invitesNotAllowedReason returns the reason of the API for a refusal, nil for none.
+func invitesNotAllowedReason(r identity.InviteRefusal) *InvitesNotAllowedReason {
+	if r == "" {
+		return nil
+	}
+	out := InvitesNotAllowedReason(r)
+	return &out
 }
 
 // ListOwnInvites serves GET /api/v1/invites, newest first. The cursor is the ID of the last
@@ -104,6 +134,7 @@ func (s *Server) ListOwnInvites(ctx context.Context, req ListOwnInvitesRequestOb
 	caps := own.Caps
 	page := OwnInvitePage{
 		Items: make([]OwnInvite, 0, len(list)), CanCreate: own.MayCreate, Usable: own.Usable,
+		CannotCreateReason: invitesNotAllowedReason(own.Refusal),
 		Limits: MemberInviteLimits{
 			MaxActive: caps.MaxActive, MaxUses: caps.MaxUses, MaxExpiresIn: int(caps.MaxExpiresIn / time.Second),
 			DefaultMaxUses: caps.DefaultUses(), DefaultExpiresIn: int(caps.DefaultExpiresIn() / time.Second),
@@ -145,6 +176,9 @@ func (s *Server) CreateOwnInvite(ctx context.Context, req CreateOwnInviteRequest
 	}
 	st, err := s.o.OwnInvites.CreateOwnInvite(ctx, in)
 	if err != nil {
+		if p, ok := s.invitesNotAllowedProblem(ctx, err); ok {
+			return CreateOwnInvite403ApplicationProblemPlusJSONResponse{p}, nil
+		}
 		if p := s.inviteProblem(ctx, err); p != nil {
 			return CreateOwnInvitedefaultApplicationProblemPlusJSONResponse(*p), nil
 		}

@@ -10,8 +10,9 @@
 // asks the reader to authenticate again (before changing the password, deleting the account) is the confirmation's
 // dialog with the proof in it: what it lets them do, the field of the proof (the password, a two-factor code) or none
 // where the confirmation itself proves it (a passkey, going to an external provider), another way to prove it, what
-// the server refused right before the pair, and the pair. The head of every modal ends with close, after its title;
-// a confirmation's close cancels, as its Cancel does.
+// the server refused right before the pair, and the pair; where the reader has no way to prove it here, it says so
+// and has Cancel alone. The head of every modal ends with close, after its title; a confirmation's close cancels, as
+// its Cancel does.
 //
 // For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
 // the page behind is out of reach. The confirmation that asks to authenticate again is a form: the focus starts in
@@ -185,11 +186,14 @@ export type ReauthDialogProps = {
   /** The close button's name; it cancels, as Cancel does. */
   closeLabel: string;
   cancel: string;
-  /** The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub). */
-  confirm: string;
+  /**
+   * The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub); none where the
+   * reader has no way to prove it here, and the dialog only says so (`error`): Cancel and close are then its ways out.
+   */
+  confirm?: string | undefined;
   onCancel: () => void;
   /** The confirmation's press, or Enter in the field of the proof; never while the proof is in flight. */
-  onConfirm: () => void;
+  onConfirm?: (() => void) | undefined;
   /** The proof in flight: the confirmation spins, nothing confirms again, and the dialog stays. */
   busy?: boolean | undefined;
   /** Over the page, or in the flow of a page (a story's specimen). */
@@ -240,7 +244,7 @@ export function ReauthDialog({
           ref={form}
           onSubmit={(e) => {
             e.preventDefault();
-            if (!busy) onConfirm();
+            if (!busy) onConfirm?.();
           }}
         />
       }
@@ -264,9 +268,11 @@ export function ReauthDialog({
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
         </Button>
-        <Button kind="primary" size="form" busy={busy} type="submit">
-          {confirmLabel}
-        </Button>
+        {confirmLabel !== undefined && (
+          <Button kind="primary" size="form" busy={busy} type="submit">
+            {confirmLabel}
+          </Button>
+        )}
       </Row>
     </Stack>
   );

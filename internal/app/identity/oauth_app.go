@@ -86,9 +86,11 @@ type OAuthAppChanges struct {
 	Scope        *string
 }
 
-// userAppRegistration reports whether users may register clients (the instance setting
-// user_app_registration); without the setting, they may.
-func (s *Service) userAppRegistration(ctx context.Context) (bool, error) {
+// MayRegisterOAuthApps reports whether users may register clients now: the instance setting
+// user_app_registration is on, or the service has no such setting. It is the rule by which
+// RegisterOAuthApp refuses with ErrOAuthAppRegistrationDisabled before it reads its input; it
+// does not count the clients a user has (ErrTooManyOAuthApps).
+func (s *Service) MayRegisterOAuthApps(ctx context.Context) (bool, error) {
 	if s.d.UserAppRegistration == nil {
 		return true, nil
 	}
@@ -160,7 +162,7 @@ func (s *Service) oauthApp(ctx context.Context, c identity.OAuthClient) (OAuthAp
 // ErrOAuthAppRegistrationDisabled while the instance setting is off, and ErrTooManyOAuthApps
 // when the user has identity.MaxOwnedOAuthClients clients.
 func (s *Service) RegisterOAuthApp(ctx context.Context, userID string, in OAuthAppInput) (RegisteredOAuthApp, error) {
-	if allowed, err := s.userAppRegistration(ctx); err != nil {
+	if allowed, err := s.MayRegisterOAuthApps(ctx); err != nil {
 		return RegisteredOAuthApp{}, err
 	} else if !allowed {
 		return RegisteredOAuthApp{}, ErrOAuthAppRegistrationDisabled

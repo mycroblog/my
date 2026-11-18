@@ -48,9 +48,18 @@ const besideFilters = (at: string) => [
   ["Notifications", "/settings/notifications", null],
   ["Relationships", "/settings/relationships", null],
   ["Keyword filters", list, "page"],
+  ["Security", "/settings/security", null],
+  ["Apps", "/settings/apps", null],
+  ["Invites", "/settings/invites", null],
   ["Account and data", "/settings/account", null],
   ["Sign out…", `${at}?sign_out=true`, null],
 ];
+
+/**
+ * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
+ * read as the app opens there, and the entry comes with the answer.
+ */
+const withInvites = () => screen.findByRole("link", { name: "Invites" });
 
 /** Waits until the list is drawn: its section is in place. */
 const listRead = () => main().findByRole("region", { name: /^Filters/ });
@@ -113,6 +122,7 @@ describe("the list", () => {
     expect(app.path()).toBe(list);
     expect(heading()).toBe("Keyword filters");
     expect(app.title()).toContain("Keyword filters");
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideFilters(list));
     expect(listed()).toEqual(["Spoilers", "Election season", "Marathon week"]);
   });
@@ -127,6 +137,7 @@ describe("the list", () => {
     expect(app.path()).toBe(fresh);
     expect(heading()).toBe("New filter");
     expect(app.title()).toContain("New filter");
+    await withInvites();
     // The editor is a screen of the same entry: the menu beside it still marks Keyword filters.
     expect(beside().flatMap(rows)).toEqual(besideFilters(fresh));
 
@@ -148,6 +159,7 @@ describe("the list", () => {
     expect(app.path()).toBe(app.fake.filterPath(1));
     expect(heading()).toBe("Edit filter");
     expect(app.title()).toContain("Edit filter");
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideFilters(app.fake.filterPath(1)));
   });
 
@@ -176,6 +188,7 @@ describe("the editor", () => {
 
     const missing = await main().findByRole("alert");
     expect(missing.textContent).toMatch(/^This filter does not exist\. It may have been deleted\.\s*See all filters$/);
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideFilters(`${list}/nothing`));
 
     await app.user.click(within(missing).getByRole("link", { name: "See all filters" }));

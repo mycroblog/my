@@ -437,7 +437,7 @@
   },
   "errors.invites.not_allowed": {
     "defaultMessage": "Vous ne pouvez pas créer d’invitations.",
-    "description": "Title of the HTTP 403 API error when the user may not create invites of their own: the server lets only some users create them, or the account is restricted or not yet approved, or the server takes no new accounts."
+    "description": "Title of the HTTP 403 API error when the user may not create invites of their own; the detail says why."
   },
   "errors.invites.too_many": {
     "defaultMessage": "Vous avez déjà le nombre maximal d’invitations utilisables. Révoquez-en une, ou attendez qu’une expire ou soit épuisée.",

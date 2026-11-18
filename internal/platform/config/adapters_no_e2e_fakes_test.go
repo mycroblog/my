@@ -30,6 +30,26 @@ func TestLoadRejectsFakePaymentsWithoutTheTag(t *testing.T) {
 	}
 }
 
+// A build without the tag e2e_fakes rejects mail = fake before start, in any profile, and does not
+// offer it among the values.
+func TestLoadRejectsFakeMailWithoutTheTag(t *testing.T) {
+	for _, profile := range []string{"development", "production"} {
+		_, _, err := Load(source(with(minimal(), "MY_MAIL", "fake", "MY_MAIL_FROM", "noreply@example.test", "MY_PROFILE", profile), nil))
+		var ve *ValidationError
+		if !errors.As(err, &ve) || len(ve.Issues) != 1 {
+			t.Fatalf("Load() with mail = fake, profile = %s: %v, want one issue", profile, err)
+		}
+		want := `mail (MY_MAIL): "fake" is only in test builds: the build tag e2e_fakes adds its adapter, and released binaries never have it`
+		if got := ve.Issues[0].String(); got != want {
+			t.Errorf("issue = %q, want %q", got, want)
+		}
+	}
+	_, _, err := Load(source(with(minimal(), "MY_MAIL", "other"), nil))
+	if err == nil || strings.Contains(err.Error(), "fake") {
+		t.Errorf("Load() with an unknown mailer: %v, want an error that does not offer fake", err)
+	}
+}
+
 // A build without the tag e2e_fakes rejects search = fake before start, in any profile, and does
 // not offer it among the values (ADR-0149 §3). The default is none.
 func TestLoadRejectsFakeSearchWithoutTheTag(t *testing.T) {

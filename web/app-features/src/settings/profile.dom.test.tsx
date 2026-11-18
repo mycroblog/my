@@ -36,7 +36,14 @@ async function drawn({ data }: FakeData): Promise<UserEvent> {
   return renderFeature(
     data,
     <main>
-      <SettingsEntryScreen entry="profile" onBack={() => undefined} languages={["en", "ja"]} />
+      <SettingsEntryScreen
+        entry="profile"
+        onBack={() => undefined}
+        languages={["en", "ja"]}
+        fragment=""
+        onFragmentRead={() => undefined}
+        leave={() => undefined}
+      />
     </main>,
   );
 }

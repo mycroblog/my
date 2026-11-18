@@ -5,21 +5,10 @@
 // the server's answer (the preferences do, the profile does not), says where the change is in the line under its name
 // (saving.tsx), and goes back to what the server has when the server does not take it; each gives its name and its
 // page's address (`page`), by which a change that fails once its control is gone is still told. One the server decides
-// (`fixed`) cannot be changed, and the line under it says why. And the notice that stands in a screen's place until
-// the server answered what it shows.
+// (`fixed`) cannot be changed, and the line under it says why.
 
-import {
-  Button,
-  FeedNotice,
-  Select,
-  SettingRow,
-  Switch,
-  useLocale,
-  type SelectGroup,
-  type SelectOption,
-} from "@my/design-system";
+import { Select, SettingRow, Switch, type SelectGroup, type SelectOption } from "@my/design-system";
 import { useId, useState } from "react";
-import { stringsIn } from "../locale";
 import { useSaving } from "./saving";
 
 /**
@@ -111,38 +100,5 @@ export function Choice({
     <SettingRow id={id} label={label} about={about} save={state}>
       <Select options={options} value={shown} onChange={choose} />
     </SettingRow>
-  );
-}
-
-/**
- * What a settings screen says in its sections' place (`notice` of a `SettingsScreen`) until what it shows is read, as
- * the screen's text reads, at its start: that it loads, or that it could not be read, with Try again after it, a
- * button whose target is a finger's on a touch screen. A screen that reads one thing says it by name (`words`: the
- * account's status), as the part of its entry that reads the same does; without them, the settings.
- */
-export function ReadingNotice({
-  failed,
-  onRetry,
-  words,
-}: {
-  failed: boolean;
-  onRetry: () => void;
-  words?: { readonly loading: string; readonly failed: string } | undefined;
-}) {
-  const { t } = stringsIn(useLocale().locale);
-  return failed ? (
-    <FeedNotice
-      alert
-      lead
-      action={
-        <Button size="timeline" touch onPress={onRetry}>
-          {t("settings.retry")}
-        </Button>
-      }
-    >
-      {words?.failed ?? t("settings.failed")}
-    </FeedNotice>
-  ) : (
-    <FeedNotice lead>{words?.loading ?? t("settings.loading")}</FeedNotice>
   );
 }

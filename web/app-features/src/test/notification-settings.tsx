@@ -73,7 +73,14 @@ export async function drawnOn(on: FakeData, locale?: string): Promise<UserEvent>
   return renderFeature(
     on.data,
     <main>
-      <SettingsEntryScreen entry="notifications" onBack={() => undefined} languages={["en", "ja"]} />
+      <SettingsEntryScreen
+        entry="notifications"
+        onBack={() => undefined}
+        languages={["en", "ja"]}
+        fragment=""
+        onFragmentRead={() => undefined}
+        leave={() => undefined}
+      />
     </main>,
     locale,
   );

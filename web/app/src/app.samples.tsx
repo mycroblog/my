@@ -19,7 +19,14 @@ import {
   type AppData,
 } from "@my/app-data";
 import { enterCall, leaveCall, type Call } from "@my/app-features";
-import { createFakeApi, fakeHost, fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
+import {
+  createFakeApi,
+  fakeHost,
+  fakeOrigin,
+  type FakeApi,
+  type FakeLoginProviderKind,
+  type FakeOptions,
+} from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { StoryContext } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
@@ -32,7 +39,10 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
   /**
-   * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
+   * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind, `{app:own:0}` and
+   * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized,
+   * `{invite:0}` the ID of the reader's invite at that index of their list),
+   * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
@@ -143,7 +153,11 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 }
 
 /**
- * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
+ * The app's path of `at`: a path as it is, with the ID of the fake's login provider of a kind in place of each
+ * `{provider:<kind>}` (what a provider's return leaves in the fragment) and the ID of the fake's app at an index of the
+ * apps the reader authorized or registered in place of each `{app:authorized:<index>}` and `{app:own:<index>}`, and
+ * the ID of the reader's invite at an index of their list in place of each `{invite:<index>}`, the page of the
+ * announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
  * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the editor of the reader's keyword
  * filter of `filter:<index>`, the held-back notifications of the
@@ -151,7 +165,13 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
  * the scenario post of that key.
  */
 function pathOf(fake: FakeApi, at: string): string {
-  if (at.startsWith("/")) return at;
+  if (at.startsWith("/"))
+    return at
+      .replace(/\{provider:(github|oidc|mastodon)\}/g, (_, kind: FakeLoginProviderKind) => fake.loginProviderId(kind))
+      .replace(/\{app:(authorized|own):(\d+)\}/g, (_, list: "authorized" | "own", index: string) =>
+        fake.appId(list, Number(index)),
+      )
+      .replace(/\{invite:(\d+)\}/g, (_, index: string) => fake.inviteId(Number(index)));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
@@ -215,7 +235,24 @@ function useSampleCall(call: boolean) {
   }, [call]);
 }
 
-function StoryApp({
+/** Where the app starts again once its session ended. */
+const startPath = "/";
+
+/**
+ * The app of a story. When it leaves for its start, which it does once its session ended (signing out, revoking the
+ * server's own web client), it starts anew there with no session, on a server of its own, as a page that loads anew
+ * does: the data of the ended session reads nothing more.
+ */
+function StoryApp(props: Fake & { stream: Stream | undefined }) {
+  const [restarted, setRestarted] = useState(false);
+  return restarted ? (
+    <StoryPage key="restarted" {...props} at={startPath} signedOut onRestart={setRestarted} />
+  ) : (
+    <StoryPage {...props} onRestart={setRestarted} />
+  );
+}
+
+function StoryPage({
   at,
   state = "normal",
   failFirst = false,
@@ -225,7 +262,8 @@ function StoryApp({
   call = false,
   updateReady = false,
   stream,
-}: Fake & { stream: Stream | undefined }) {
+  onRestart,
+}: Fake & { stream: Stream | undefined; onRestart: (restarted: true) => void }) {
   const [{ fake, data, router, watch }] = useState(() => {
     const fake = createFakeApi({
       failFirst,
@@ -250,9 +288,11 @@ function StoryApp({
       data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },
       at: pathOf(fake, at),
-      // A story's app has no page to load anew: what leaves it (signing out) goes there within it.
+      // A story's app has no page to load anew: leaving for the start, it starts anew there (`StoryApp`), and what
+      // leaves it for anywhere else (a login provider's page) goes there within it.
       leave: (href) => {
-        void router.navigate({ href });
+        if (href === startPath) onRestart(true);
+        else void router.navigate({ href });
       },
     });
     return { fake, data, router, watch };

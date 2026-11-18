@@ -5,7 +5,7 @@ import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { TabGroup } from "@my/platform";
 import { preferencesQuery } from "./preferences";
-import { endSession, onSignedOutElsewhere, openSession, SessionTokenSource } from "./session";
+import { closeSession, endSession, onSignedOutElsewhere, openSession, SessionTokenSource } from "./session";
 import { fakeBrowser } from "./test/tabs";
 
 const server = fakeOrigin;
@@ -215,8 +215,10 @@ async function signedIn(options: Parameters<typeof createFakeApi>[0] = {}) {
   const asked: { path: string; method: string; type: string | null; form: Record<string, string> }[] = [];
   let answers = true;
   let ended = false;
+  const seen: string[] = [];
   const fetch = async (request: Request): Promise<Response> => {
     const path = new URL(request.url).pathname;
+    seen.push(`${request.method} ${path}`);
     if (path === "/oauth/token/refresh")
       return ended || api.revocations.length > 0
         ? json(400, { error: "invalid_grant" })
@@ -249,6 +251,8 @@ async function signedIn(options: Parameters<typeof createFakeApi>[0] = {}) {
     other,
     asked,
     heard,
+    /** Everything the server was asked, the trades of the cookie too, each as `METHOD /path`. */
+    seen,
     /** One more tab of the browser, with the app's data in it. */
     tab: async () => {
       const opened = await openSession({ server, fetch, tabs: browser.join() });
@@ -366,6 +370,49 @@ test("what the tab cleans is cleaned once the server took the revocation and bef
     "another tab hears the sign-out",
   ]);
   expect(heard).toEqual(["ended", "signed_out"]);
+});
+
+// A session the reader ended by another way than signing out here: they revoked the server's own web client, whose
+// tokens are the session of every browser (ADR-0090 §5). The server has ended it; the tab only has to follow.
+test("closing a session the server ended asks the server nothing: the tab forgets its token and empties the cache, then cleans what it is given to clean, and only then are the other tabs told, as after a sign-out", async () => {
+  const { data, other, asked, heard, seen, tab, end, cached } = await signedIn();
+  expect(cached()).toBeGreaterThan(0);
+  const order: string[] = [];
+  onSignedOutElsewhere(await tab(), () => order.push("another tab hears the sign-out"));
+  // The server took the revocation of the web client: the cookie trades for no token from now on.
+  end();
+  const before = seen.length;
+
+  await closeSession(data, async () => {
+    order.push(`cleaning with ${String(cached())} answers cached, the others told ${JSON.stringify(heard)}`);
+    // What a tab removes takes its turns: nobody is told meanwhile.
+    await new Promise((turn) => setTimeout(turn, 0));
+    order.push(`cleaned, the others told ${JSON.stringify(heard)}`);
+  });
+
+  expect(order).toEqual([
+    "cleaning with 0 answers cached, the others told []",
+    "cleaned, the others told []",
+    "another tab hears the sign-out",
+  ]);
+  expect(heard).toEqual(["ended", "signed_out"]);
+  expect(seen.slice(before)).toEqual([]);
+  expect(asked).toEqual([]);
+  expect(cached()).toBe(0);
+  // Neither this tab nor another has a token to go on with.
+  expect(await data.connection?.tokenSource?.getAccessToken()).toBeNull();
+  expect(await other.getAccessToken()).toBeNull();
+});
+
+test("closing a session with nothing to clean empties the cache and tells the other tabs all the same", async () => {
+  const { data, heard, seen, cached } = await signedIn();
+  const before = seen.length;
+
+  await closeSession(data);
+
+  expect(cached()).toBe(0);
+  expect(heard).toEqual(["ended", "signed_out"]);
+  expect(seen.slice(before)).toEqual([]);
 });
 
 test("a tab hears of a sign-out in another tab: not of its own, not once it stopped listening, and not of a session that merely ended", async () => {

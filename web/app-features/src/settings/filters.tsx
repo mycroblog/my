@@ -30,8 +30,8 @@ import {
   type SettingsFactLine,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { ReadingNotice } from "./controls";
 import type { SettingsEntryProps } from "./entries";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -97,7 +97,7 @@ export function FilterSettings({ back }: SettingsEntryProps) {
         icon="filter"
         title={title}
         back={back}
-        notice={<ReadingNotice failed={status === "error"} onRetry={retry} />}
+        notice={<ReadingNotice status={status === "error" ? "failed" : "loading"} retry={retry} />}
       />
     );
   const full = filters.length >= filterLimits.filters;

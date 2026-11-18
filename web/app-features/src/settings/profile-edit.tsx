@@ -61,7 +61,7 @@ import {
   usePickedPicture,
   useProfileIdentity,
 } from "../profile-identity";
-import { ReadingNotice } from "./controls";
+import { ReadingNotice } from "./parts";
 
 /** What the route's loader waits for: the reader's own account, from the cache when it has it. */
 export async function loadProfileEdit(data: AppData): Promise<void> {
@@ -443,7 +443,7 @@ export function ProfileEdit({ onBack, onUnsaved, leaving }: ProfileEditProps) {
         sub
         title={t("settings.profile.edit")}
         back={<BackButton onPress={onBack}>{t("settings.entry.profile")}</BackButton>}
-        notice={<ReadingNotice failed={status === "failed"} onRetry={retry} />}
+        notice={<ReadingNotice status={status === "failed" ? "failed" : "loading"} retry={retry} />}
       />
     );
   return <EditForm account={account} onBack={onBack} onUnsaved={onUnsaved} leaving={leaving} />;

@@ -26,7 +26,7 @@ import {
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { moderationActionPath, useActionDate } from "./account";
-import { ReadingNotice } from "./controls";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -121,8 +121,8 @@ export function AccountStatusScreen({ onBack }: { onBack: () => void }) {
         notice={
           <ReadingNotice
             words={words}
-            failed={!pending}
-            onRetry={() => {
+            status={!pending ? "failed" : "loading"}
+            retry={() => {
               active.refetch();
               all.refetch();
             }}

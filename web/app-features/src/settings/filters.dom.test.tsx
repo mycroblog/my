@@ -27,7 +27,14 @@ async function drawn({ data }: FakeData, locale = "en"): Promise<{ user: UserEve
   const user = renderFeature(
     data,
     <main>
-      <SettingsEntryScreen entry="filters" onBack={() => told.push("back")} languages={["en", "ja"]} />
+      <SettingsEntryScreen
+        entry="filters"
+        onBack={() => told.push("back")}
+        languages={["en", "ja"]}
+        fragment=""
+        onFragmentRead={() => undefined}
+        leave={() => undefined}
+      />
     </main>,
     locale,
   );

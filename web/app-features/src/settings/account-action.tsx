@@ -67,7 +67,7 @@ import { LimitCount } from "../profile-identity";
 import { formatParts } from "../slots";
 import { accountStatusPath, useActionDate } from "./account";
 import { appealPassed, endsLine, useStatusWords } from "./account-status";
-import { ReadingNotice } from "./controls";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -423,7 +423,7 @@ export function ModerationActionScreen({ id, onBack, onUnsaved, leaving }: Moder
             {t("settings.account.action.not_found")}
           </FeedNotice>
         ) : (
-          <ReadingNotice words={words} failed={status === "error"} onRetry={retry} />
+          <ReadingNotice words={words} status={status === "error" ? "failed" : "loading"} retry={retry} />
         )
       }
     />

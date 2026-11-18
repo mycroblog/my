@@ -262,12 +262,12 @@ const form = tv({
     widget: "min-h-form-page-widget",
   },
   variants: {
-    // A textarea starts at a control's height, or as tall as the lines it is said to open with (`rows`), and the
-    // reader may make it taller.
-    multiline: {
+    // A textarea starts at a control's height, or as tall as the lines it says it shows (`rows`), and the reader may
+    // make it taller.
+    height: {
       // A line as tall as the field: a field cuts what reaches under a shorter line (the tail of a g).
-      false: { input: "h-control-form leading-(--control-form-height)" },
-      true: { input: "h-control-form resize-y py-control-timeline-inline" },
+      line: { input: "h-control-form leading-(--control-form-height)" },
+      area: { input: "h-control-form resize-y py-control-timeline-inline" },
       rows: { input: "min-h-control-form resize-y py-control-timeline-inline" },
     },
     strong: { true: { caution: "font-label" } },
@@ -380,9 +380,12 @@ export type TextFieldProps = {
   required?: boolean | undefined;
   minLength?: number | undefined;
   maxLength?: number | undefined;
-  /** A textarea of a few rows instead of a line. */
+  /** A textarea instead of a line: a control's height at rest, which the reader may make taller. */
   multiline?: boolean | undefined;
-  /** How many lines a multiline field opens with (a bio: three); a control's height without it. */
+  /**
+   * How many lines a multiline field shows at rest, where one is too few (a bio: three; addresses, one a line); a
+   * control's height without it.
+   */
   rows?: number | undefined;
   readOnly?: boolean | undefined;
   /** A link at the end of the label's line (Forgot your password?). */
@@ -428,7 +431,7 @@ export function TextField({
   onChange,
   labelHidden = false,
 }: TextFieldProps) {
-  const s = form({ multiline: multiline && rows !== undefined ? "rows" : multiline });
+  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
   const holder = use(FieldContext);
   const described = idsOf(
     describedBy,
@@ -500,16 +503,23 @@ export function TextField({
 
 /**
  * Puts the focus on the field of `id` that was refused (a `TextField`, either field of a `PairField`, the button of a
- * `PictureField`, a `PairList`), and brings its error (`${id}-error`), right under it, into view with it: a browser
- * scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which grows as it
- * says that nothing was sent), and the error under the field would stay behind it. The error comes into view once the
- * page has measured that bar again, a frame after the one that drew the refusal.
+ * `PictureField`, a `PairList`, the control of a `SettingRow`), and brings its error, right under it, into view with
+ * it: a browser scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which
+ * grows as it says that nothing was sent), and the error under the field would stay behind it. The error is the one at
+ * `${id}-error`, else the one among what describes the field (a `SettingRow`'s, which stands at the row's id). It comes
+ * into view once the page has measured that bar again, a frame after the one that drew the refusal.
  */
 export function focusRefusedField(id: string): void {
-  document.getElementById(id)?.focus();
+  const field = document.getElementById(id);
+  field?.focus();
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const error = document.getElementById(`${id}-error`);
+      const described = field
+        ?.getAttribute("aria-describedby")
+        ?.split(/\s+/)
+        .find((by) => by.endsWith("-error"));
+      const error =
+        document.getElementById(`${id}-error`) ?? (described === undefined ? null : document.getElementById(described));
       // A DOM that lays nothing out (a test's) has nothing to scroll.
       if (error !== null && "scrollIntoView" in error) error.scrollIntoView({ block: "nearest" });
     });

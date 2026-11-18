@@ -1838,5 +1838,1117 @@
   "settings.account.aliases.full": {
     "defaultMessage": "別名は上限の {max, number} 件に達しています。追加するには、どれかを削除してください。",
     "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
+  },
+  "settings.security.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "A section heading on the Security page of the settings, over the rows that open the password's page and, once it is on, the page of two-factor authentication. A noun: how the reader signs in."
+  },
+  "settings.security.two_factor.off": {
+    "defaultMessage": "二要素認証はオフです",
+    "description": "The sentence of the status summary at the top of the Security page of the settings while two-factor authentication is off. It is the one place the page says so."
+  },
+  "settings.security.two_factor.off.about": {
+    "defaultMessage": "パスワードを知った人はだれでもログインできます。認証アプリのコードがそれを防ぎます。",
+    "description": "Under settings.security.two_factor.off in the status summary: what it means that two-factor authentication is off, and what turning it on does. The authenticator app is an app on the reader's phone that shows six-digit codes."
+  },
+  "settings.security.two_factor.off.about.passwordless": {
+    "defaultMessage": "オンにすると、ログインのたびに認証アプリのコードも必要になります。パスキーや連携したアカウントをほかの人に使われても、ログインされません。",
+    "description": "Under settings.security.two_factor.off in the status summary, in place of settings.security.two_factor.off.about, for an account that no password signs in (it has none, or the server limits sign-in to other services): what turning two-factor authentication on does for it. It must not speak of a password."
+  },
+  "settings.security.two_factor.turn_on": {
+    "defaultMessage": "オンにする",
+    "description": "The button of the status summary that leads to the page where the reader turns two-factor authentication on, and the button at the end of that page that turns it on once the code is entered."
+  },
+  "settings.security.two_factor.on": {
+    "defaultMessage": "オン",
+    "description": "The line under Two-factor authentication in its row when the server did not say since when it is on: it is turned on. With the date, the line is settings.security.two_factor.since."
+  },
+  "settings.security.two_factor.since": {
+    "defaultMessage": "{date} からオン",
+    "description": "The line under Two-factor authentication in its row. date is the day it was turned on, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.security.two_factor.codes_left": {
+    "defaultMessage": "{count, plural, =0 {リカバリーコードは残っていません} other {リカバリーコードは残り # 個}}",
+    "description": "A second line under Two-factor authentication in its row, under settings.security.two_factor.since, when few recovery codes are left (three or fewer). A recovery code signs the reader in once when they cannot use their authenticator app. count is how many are unused."
+  },
+  "settings.security.two_factor.setup": {
+    "defaultMessage": "認証アプリに追加",
+    "description": "The heading of the first section of the page that turns two-factor authentication on: it shows a QR code and a setup key."
+  },
+  "settings.security.two_factor.setup.about": {
+    "defaultMessage": "認証アプリで QR コードを読み取るか、セットアップキーを手で入力してください。",
+    "description": "The line under the heading Add to your authenticator app."
+  },
+  "settings.security.two_factor.setup.qr": {
+    "defaultMessage": "セットアップキーの QR コード",
+    "description": "The name of the QR code on the page that turns two-factor authentication on, for assistive technology."
+  },
+  "settings.security.two_factor.setup.key": {
+    "defaultMessage": "セットアップキー",
+    "description": "The name of the secret text shown under the QR code, which the reader may type into their authenticator app in place of scanning the code; for assistive technology."
+  },
+  "settings.security.two_factor.setup.expired": {
+    "defaultMessage": "認証アプリの設定の有効期限が切れました。新しい QR コードを読み取り、新しく追加した項目のコードを入力してください。",
+    "description": "An alert beside the button Turn on when the reader took longer than the server keeps a setup (15 minutes): the page now shows a new QR code, and the entry the reader added to their app from the old one no longer works."
+  },
+  "settings.security.two_factor.copy": {
+    "defaultMessage": "コピー",
+    "description": "The button under the setup key, and under the recovery codes, that copies them."
+  },
+  "settings.security.two_factor.verify": {
+    "defaultMessage": "コードを入力",
+    "description": "The heading of the second section of the page that turns two-factor authentication on, with the field Authentication code."
+  },
+  "settings.security.two_factor.code": {
+    "defaultMessage": "認証コード",
+    "description": "The label of the field for a two-factor code: on the page that turns two-factor authentication on, and in the dialog that asks for a code before turning it off or making new recovery codes. The same words as the sign-in page's (auth.two_factor.code_label)."
+  },
+  "settings.security.two_factor.code.hint": {
+    "defaultMessage": "認証アプリにいま表示されている 6 桁のコード",
+    "description": "The hint under the label Authentication code on the page that turns two-factor authentication on."
+  },
+  "settings.security.two_factor.code.missing": {
+    "defaultMessage": "認証アプリに表示されているコードを入力してください。",
+    "description": "The error under the field Authentication code when the reader pressed Turn on with the field empty."
+  },
+  "settings.security.two_factor.code.title": {
+    "defaultMessage": "コードを入力",
+    "description": "The title of the dialog that asks for a two-factor code before two-factor authentication is turned off or the recovery codes are made again."
+  },
+  "settings.security.two_factor.enabled": {
+    "defaultMessage": "二要素認証をオンにしました。",
+    "description": "At the top of the page that shows the recovery codes right after two-factor authentication was turned on."
+  },
+  "settings.security.two_factor.recovery": {
+    "defaultMessage": "リカバリーコード",
+    "description": "The title and the section heading of the page that shows the recovery codes once; the name of the row about them on the page of two-factor authentication; and the name of the list of codes for assistive technology."
+  },
+  "settings.security.two_factor.recovery.once": {
+    "defaultMessage": "認証アプリを使えないとき、それぞれのコードで 1 回ずつログインできます。安全な場所に保管してください。このコードは二度と表示されません。",
+    "description": "The line under the heading Recovery codes on the page that shows them once. It must say plainly that the codes will not be shown again."
+  },
+  "settings.security.two_factor.recovery.regenerated": {
+    "defaultMessage": "新しいリカバリーコードを作りました。以前のコードは使えません。",
+    "description": "At the top of the page that shows the recovery codes right after the reader made new ones."
+  },
+  "settings.security.two_factor.recovery.left": {
+    "defaultMessage": "{count, plural, other {残り # 個。認証アプリを使えないとき、それぞれ 1 回ずつログインできます。}}",
+    "description": "The line under Recovery codes in its row on the page of two-factor authentication. count is how many recovery codes are unused (more than three)."
+  },
+  "settings.security.two_factor.recovery.few": {
+    "defaultMessage": "{count, plural, =0 {コードは残っていません。認証アプリを使えないときにログインできるよう、新しいコードを作ってください。} other {残り # 個。なくなる前に、新しいコードを作ってください。}}",
+    "description": "As settings.security.two_factor.recovery.left, when three or fewer recovery codes are unused: it asks the reader to make new ones."
+  },
+  "settings.security.two_factor.recovery.regenerate": {
+    "defaultMessage": "新しいコードを作る",
+    "description": "The button at the end of the row Recovery codes, which asks for a two-factor code first; and the button of that dialog."
+  },
+  "settings.security.two_factor.recovery.regenerate.about": {
+    "defaultMessage": "新しいリカバリーコードを作るには、認証アプリのコードか、まだ使っていないリカバリーコードを入力してください。いまのコードは使えなくなります。",
+    "description": "The sentence of the dialog Enter a code (settings.security.two_factor.code.title) before new recovery codes are made."
+  },
+  "settings.security.two_factor.on.heading": {
+    "defaultMessage": "二要素認証はオンです",
+    "description": "The heading of the first section of the page of two-factor authentication while it is on; also the name of the list of its one row, Recovery codes, for assistive technology."
+  },
+  "settings.security.two_factor.on.about": {
+    "defaultMessage": "どの方法でログインしても、そのあとに認証アプリのコードを入力します。",
+    "description": "A sentence under the heading Two-factor authentication is on: what it does. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
+  },
+  "settings.security.two_factor.on.about.since": {
+    "defaultMessage": "どの方法でログインしても、そのあとに認証アプリのコードを入力します。{date} からオンです。",
+    "description": "As settings.security.two_factor.on.about, with the day it was turned on. date is written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.security.two_factor.turn_off.title": {
+    "defaultMessage": "二要素認証をオフにする",
+    "description": "The heading of the last section of the page of two-factor authentication, which stands apart and holds the button Turn off."
+  },
+  "settings.security.two_factor.turn_off.about": {
+    "defaultMessage": "オフにすると、認証アプリのコードなしでログインできるようになります。",
+    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
+  },
+  "settings.security.two_factor.turn_off.confirm": {
+    "defaultMessage": "二要素認証をオフにするには、認証アプリのコードか、まだ使っていないリカバリーコードを入力してください。",
+    "description": "The sentence of the dialog Enter a code (settings.security.two_factor.code.title) before two-factor authentication is turned off."
+  },
+  "settings.security.two_factor.turn_off": {
+    "defaultMessage": "オフにする",
+    "description": "The button of the section settings.security.two_factor.turn_off.title, which asks for a two-factor code first; and the button of that dialog."
+  },
+  "settings.security.providers_only": {
+    "defaultMessage": "このサーバーでは、ほかのサービスでしかログインできないため、いまはパスワードの設定やパスキーの追加はできません。",
+    "description": "A sentence in the Sign-in section of the Security page of the settings, and in the place of the form on the pages that set a password or add a passkey, on a server whose administrators limit sign-in to external login providers (another service, such as GitHub). The same words as the sign-in page's notice (auth.sign_in.login_providers_only)."
+  },
+  "settings.security.password": {
+    "defaultMessage": "パスワード",
+    "description": "A row of the Sign-in section of the Security page of the settings that opens the password's page, where the reader changes their password or sets one; and the title of that page."
+  },
+  "settings.security.password.caption": {
+    "defaultMessage": "パスワードを変更",
+    "description": "The line under Password in its row, for an account that has a password: what its page does. Removing the password is a row of its own (settings.security.password.remove)."
+  },
+  "settings.security.password.none": {
+    "defaultMessage": "未設定",
+    "description": "The line under Password in its row, for an account that has no password (it signs in with a passkey or a linked account): its page sets one."
+  },
+  "settings.security.password.change": {
+    "defaultMessage": "パスワードを変更",
+    "description": "On the password's page, for an account that has a password: the heading of the section with the field New password, and the button at the end of the page that changes the password."
+  },
+  "settings.security.password.set": {
+    "defaultMessage": "パスワードを設定",
+    "description": "On the password's page, for an account that has no password: the heading of the section with the field New password, and the button at the end of the page that sets the password."
+  },
+  "settings.security.password.ends": {
+    "defaultMessage": "ほかのブラウザとアプリからログアウトします。パスキーと二要素認証はそのまま残ります。",
+    "description": "The line under the heading Change password or Set a password: what happens besides the password changing, said before the reader does it."
+  },
+  "settings.security.password.new": {
+    "defaultMessage": "新しいパスワード",
+    "description": "The label of the field for the new password on the password's page."
+  },
+  "settings.security.password.new.hint": {
+    "defaultMessage": "{min, number}〜{max, number} 文字",
+    "description": "The hint under the label New password: how long a password may be. min and max are numbers of characters."
+  },
+  "settings.security.password.new.invalid": {
+    "defaultMessage": "{min, number}〜{max, number} 文字にしてください。",
+    "description": "The error under the field New password when what the reader entered is too short or too long. min and max are numbers of characters."
+  },
+  "settings.security.password.change.confirm": {
+    "defaultMessage": "パスワードを変更するには、本人確認が必要です。",
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader changes their password."
+  },
+  "settings.security.password.set.confirm": {
+    "defaultMessage": "パスワードを設定するには、本人確認が必要です。",
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when a reader without a password sets one."
+  },
+  "settings.security.password.set.done": {
+    "defaultMessage": "パスワードを設定し、ほかのブラウザとアプリからログアウトしました。",
+    "description": "Beside the button on the password's page once a reader who had no password set one."
+  },
+  "settings.security.password.changed": {
+    "defaultMessage": "パスワードを変更し、ほかのブラウザとアプリからログアウトしました。",
+    "description": "Beside the button Change password, on the password's page, once the password was changed."
+  },
+  "settings.security.password.remove": {
+    "defaultMessage": "パスワードを削除",
+    "description": "The name of the last row of the Sign-in section of the Security page of the settings, for an account that has a password. The line under it says what removing does, or why it cannot be removed; the button Remove is at the row's end."
+  },
+  "settings.security.password.remove.about": {
+    "defaultMessage": "削除すると、パスキーか連携したアカウントでログインします。ほかのブラウザとアプリからはログアウトします。",
+    "description": "The line under Remove password in its row, for an account that has a passkey or a linked account: what removing the password does, said before."
+  },
+  "settings.security.password.remove.unused": {
+    "defaultMessage": "いまはこのサーバーのログインにパスワードを使えません。削除すると、ほかのブラウザとアプリからログアウトします。",
+    "description": "The line under Remove password in its row, in place of settings.security.password.remove.about, on a server that limits sign-in to other services (external login providers): the password signs nobody in now, and what removing it does."
+  },
+  "settings.security.password.remove.last": {
+    "defaultMessage": "パスワードは、ログインに使える唯一の手段です。削除するには、先にパスキーを追加するか、アカウントを連携してください。",
+    "description": "The line under Remove password in its row, in place of settings.security.password.remove.about, for an account with no passkey and no linked account: why the password cannot be removed, and what to do first. The row then has no button."
+  },
+  "settings.security.password.remove.submit": {
+    "defaultMessage": "削除",
+    "description": "The button at the end of the row Remove password. It asks the reader to confirm it's them, then removes the password."
+  },
+  "settings.security.password.remove.confirm": {
+    "defaultMessage": "パスワードを削除するには、本人確認が必要です。",
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader removes their password. The password itself is not a way to confirm this."
+  },
+  "settings.security.password.removed": {
+    "defaultMessage": "パスワードを削除し、ほかのブラウザとアプリからログアウトしました。",
+    "description": "At the top of the Sign-in section of the Security page once the password was removed."
+  },
+  "settings.security.two_factor": {
+    "defaultMessage": "二要素認証",
+    "description": "A row of the Sign-in section of the Security page of the settings, shown once two-factor authentication is on, that opens its page; and the title of that page."
+  },
+  "settings.security.passkeys": {
+    "defaultMessage": "パスキー",
+    "description": "A section heading on the Security page of the settings, over the list of the account's passkeys; also the name of that list for assistive technology."
+  },
+  "settings.security.passkeys.about": {
+    "defaultMessage": "パスワードの代わりに、端末の画面ロックでログインします。",
+    "description": "The line under the heading Passkeys: what a passkey is for. The screen lock is the device's fingerprint, face or PIN check. An account without a password reads it too, so it says a password, not your password."
+  },
+  "settings.security.passkeys.unused": {
+    "defaultMessage": "いまはこのサーバーのログインにパスキーを使えず、追加もできません。登録済みのパスキーは削除できます。",
+    "description": "The line under the heading Passkeys, in place of settings.security.passkeys.about, on a server that limits sign-in to external login providers, for an account that still holds passkeys."
+  },
+  "settings.security.passkeys.add": {
+    "defaultMessage": "パスキーを追加",
+    "description": "The button at the end of the heading Passkeys (or under settings.security.passkeys.none) that leads to the page where the reader names a new passkey; the title of that page; and the button at its end that adds the passkey."
+  },
+  "settings.security.passkeys.none": {
+    "defaultMessage": "パスキーはまだありません。追加したパスキーがここに表示されます。",
+    "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey. The line above it (settings.security.passkeys.about) says what a passkey is for, so this one does not."
+  },
+  "settings.security.passkeys.added": {
+    "defaultMessage": "{date} に追加",
+    "description": "The line under a passkey's name in the list of passkeys. date is the day it was added, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.security.passkeys.remove": {
+    "defaultMessage": "削除",
+    "description": "The button at the end of a passkey's row, which asks before removing it; and the button of that confirmation (settings.security.passkeys.remove.title) that removes it."
+  },
+  "settings.security.passkeys.remove.title": {
+    "defaultMessage": "パスキー「{name}」を削除しますか？",
+    "description": "The question of the confirmation before a passkey is removed. name is the name the reader gave the passkey."
+  },
+  "settings.security.passkeys.remove.text": {
+    "defaultMessage": "このパスキーではログインできなくなります。取り消せません。パスキーは、端末の設定で削除するまで端末に残ります。",
+    "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does, and that it cannot be undone. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
+  },
+  "settings.security.passkeys.removed": {
+    "defaultMessage": "パスキー「{name}」を削除しました。",
+    "description": "At the top of the section Passkeys once a passkey was removed: its row is gone, and this line takes the keyboard's focus and is read by a screen reader. name is the name the reader gave the passkey."
+  },
+  "settings.security.passkeys.new": {
+    "defaultMessage": "新しいパスキー",
+    "description": "The heading of the section with the field Name on the page Add a passkey."
+  },
+  "settings.security.passkeys.add.about": {
+    "defaultMessage": "パスキーを使うと、パスワードの代わりに、この端末の画面ロック (指紋、顔、PIN) でログインできます。二要素認証がオンのときは、コードの入力も必要です。",
+    "description": "The line under the heading New passkey on the page Add a passkey: what a passkey does."
+  },
+  "settings.security.passkeys.name": {
+    "defaultMessage": "名前",
+    "description": "The label of the field for the name of a new passkey."
+  },
+  "settings.security.passkeys.name.hint": {
+    "defaultMessage": "ほかのパスキーと区別するための名前です (例: 端末の名前)",
+    "description": "The hint under the label Name on the page Add a passkey."
+  },
+  "settings.security.passkeys.name.invalid": {
+    "defaultMessage": "{max, number} 文字以内で名前を入力してください。",
+    "description": "The error under the field Name on the page Add a passkey when it is empty or too long. max is a number of characters."
+  },
+  "settings.security.passkeys.add.confirm": {
+    "defaultMessage": "パスキーを追加するには、本人確認が必要です。確認のあと、ブラウザがパスキーの作成を求めます。",
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader adds a passkey."
+  },
+  "settings.security.passkeys.add.failed": {
+    "defaultMessage": "{reason, select, cancelled {パスキーを追加できませんでした。ブラウザのダイアログが閉じられたか、時間切れになりました。もう一度試してください。} exists {この端末には、このアカウントのパスキーがすでにあります。そのパスキーを使うか、別の端末でパスキーを追加してください。} unsupported {このブラウザではパスキーを使えません。別のブラウザか端末で試してください。} other {パスキーを追加できませんでした。もう一度試してください。}}",
+    "description": "An alert beside the button Add a passkey when the browser made no passkey. reason says why: cancelled (the reader closed the browser's own dialog, or it timed out), exists (the device already holds a passkey of this account), unsupported (the browser has no passkeys), other (anything else)."
+  },
+  "settings.security.linked": {
+    "defaultMessage": "連携したアカウント",
+    "description": "A section heading on the Security page of the settings, over the list of the other services (external login providers) the reader can sign in with and of their accounts there that are linked to this account; also the name of that list for assistive technology."
+  },
+  "settings.security.linked.about": {
+    "defaultMessage": "ほかのサービスのアカウントでログインします。",
+    "description": "The line under the heading Linked accounts: what linking an account is for."
+  },
+  "settings.security.linked.not_linked": {
+    "defaultMessage": "未連携",
+    "description": "The line under the name of another service in the list of linked accounts, when the reader has linked no account there."
+  },
+  "settings.security.linked.since": {
+    "defaultMessage": "{date} に連携",
+    "description": "The line under the name of another service in the list of linked accounts, when the reader has linked an account there. date is the day it was linked, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.security.linked.since.unavailable": {
+    "defaultMessage": "{date} に連携。このサービスでは、いまはログインできません。",
+    "description": "As settings.security.linked.since, for a service the server's administrators turned off: the link stays, but it signs nobody in for now."
+  },
+  "settings.security.linked.link": {
+    "defaultMessage": "連携",
+    "description": "The button at the end of the row of another service the reader has linked no account at. It asks the reader to confirm it's them, then goes to that service to sign in."
+  },
+  "settings.security.linked.unlink": {
+    "defaultMessage": "連携を解除",
+    "description": "The button at the end of the row of a linked account, which asks before unlinking it; and the button of that confirmation (settings.security.linked.unlink.title)."
+  },
+  "settings.security.linked.unlink.title": {
+    "defaultMessage": "{provider} のアカウントの連携を解除しますか？",
+    "description": "The question of the confirmation before a linked account is unlinked. provider is the name of the other service as the server's administrators wrote it (GitHub); it is not translated."
+  },
+  "settings.security.linked.unlink.text": {
+    "defaultMessage": "このアカウントでのログインと本人確認ができなくなります。あとでもう一度連携できます。",
+    "description": "Under settings.security.linked.unlink.title in the confirmation: what unlinking does, and that it can be undone by linking again."
+  },
+  "settings.security.linked.unlinked": {
+    "defaultMessage": "{provider} のアカウントの連携を解除しました。",
+    "description": "At the top of the section Linked accounts once a linked account was unlinked; it takes the keyboard's focus and is read by a screen reader. provider is the name of the other service as the administrators wrote it (GitHub); it is not translated."
+  },
+  "settings.security.linked.confirm": {
+    "defaultMessage": "アカウントを連携するには、本人確認が必要です。確認のあと、ほかのサービスでログインして、ここに戻ります。",
+    "description": "The sentence of the dialog Confirm it's you (settings.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
+  },
+  "settings.security.linked.done": {
+    "defaultMessage": "{provider} のアカウントを連携しました。このアカウントでログインできます。",
+    "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there, and the account holds a link at that service. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
+  },
+  "settings.confirm.external.error": {
+    "defaultMessage": "{reason, select, denied {このサーバーでは、ほかのサービスのそのアカウントは使えません。別のアカウントで試すか、管理者に問い合わせてください。} linked_elsewhere {ほかのサービスのそのアカウントは、このサーバーの別のアカウントと連携しています。先にそちらで連携を解除するか、ほかのサービスの別のアカウントを連携してください。} already_linked {そのサービスのアカウントはすでに連携しています。別のアカウントを連携するには、先に連携を解除してください。} mismatch {ほかのサービスでログインしたアカウントは、このアカウントと連携していません。連携したアカウントでもう一度試してください。} unavailable {そのサービスはいま使えません。あとでもう一度試すか、別の方法を使ってください。} rate_limited {試行回数が多すぎます。しばらく待ってから、もう一度試してください。} expired {時間がかかりすぎました。もう一度試してください。} other {ほかのサービスでのログインが完了しませんでした。もう一度試してください。}}",
+    "description": "An alert on a page of the settings when the browser comes back from another service (an external login provider) without the link or the confirmation the reader went there for. reason says why: denied (the server's conditions refuse that account), linked_elsewhere (another user of this server links it), already_linked, mismatch (the reader signed in at the service with an account other than the linked one), unavailable (the service is turned off), rate_limited, expired, other (anything else)."
+  },
+  "settings.security.browsers": {
+    "defaultMessage": "ログイン中のブラウザ",
+    "description": "A section heading on the Security page of the settings, over the list of the browsers signed in to the account; also the name of that list for assistive technology."
+  },
+  "settings.security.browsers.name": {
+    "defaultMessage": "{os} の {browser}",
+    "description": "The name of a browser in the list of signed-in browsers. browser and os are product names, not translated (Firefox, macOS)."
+  },
+  "settings.security.browsers.unknown": {
+    "defaultMessage": "不明なブラウザ",
+    "description": "The name of a browser in the list of signed-in browsers when the server kept no record of which browser signed in."
+  },
+  "settings.security.browsers.signed_in": {
+    "defaultMessage": "ログイン日: {date}",
+    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from. In ja the three facts of a browser are labels (ログイン日:, ログイン元:, 最終利用:)."
+  },
+  "settings.security.browsers.signed_in.from": {
+    "defaultMessage": "ログイン元: {ip}",
+    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now, and it must say so on its own: each fact is a line of its own. ip is an IP address."
+  },
+  "settings.security.browsers.signed_in.from.unknown": {
+    "defaultMessage": "ログイン元: 不明",
+    "description": "As settings.security.browsers.signed_in.from, when the server kept no record of the address the browser signed in from."
+  },
+  "settings.security.browsers.current": {
+    "defaultMessage": "このブラウザ",
+    "description": "The first line under a browser's name in the list of signed-in browsers: marks the browser the reader is using now, before what is known of its sign-in."
+  },
+  "settings.security.browsers.sign_out": {
+    "defaultMessage": "ログアウト",
+    "description": "The button at the end of a row of the list of signed-in browsers, on every browser but the one the reader is using. It asks before signing that browser out."
+  },
+  "settings.security.browsers.sign_out.title": {
+    "defaultMessage": "{browser} をログアウトしますか？",
+    "description": "The question of the confirmation before one browser is signed out. browser is the browser's name as the list shows it (settings.security.browsers.name: Firefox on macOS), or the text it sent of itself. A browser the list names Unknown browser gets settings.security.browsers.sign_out.title.unknown."
+  },
+  "settings.security.browsers.sign_out.title.unknown": {
+    "defaultMessage": "この不明なブラウザをログアウトしますか？",
+    "description": "The question of the confirmation before one browser is signed out, in place of settings.security.browsers.sign_out.title, for a browser the list names Unknown browser (settings.security.browsers.unknown)."
+  },
+  "settings.security.browsers.sign_out.text": {
+    "defaultMessage": "そのブラウザでアカウントを使うには、もう一度ログインが必要になります。パスワード、二要素認証、アプリはそのまま残ります。",
+    "description": "Under settings.security.browsers.sign_out.title in the confirmation: what signing a browser out does and what it leaves."
+  },
+  "settings.security.browsers.sign_out.confirm": {
+    "defaultMessage": "ログアウトする",
+    "description": "The button of the confirmations settings.security.browsers.sign_out.title and settings.security.browsers.sign_out_others.title that signs out."
+  },
+  "settings.security.browsers.signed_out": {
+    "defaultMessage": "{browser} をログアウトしました。",
+    "description": "At the top of the section Signed-in browsers once one browser was signed out: its row is gone, and this line takes the keyboard's focus and is read by a screen reader. browser is the browser's name as the list showed it (settings.security.browsers.name: Firefox on macOS), or the text it sent of itself. A browser the list named Unknown browser gets settings.security.browsers.signed_out.unknown."
+  },
+  "settings.security.browsers.signed_out.unknown": {
+    "defaultMessage": "不明なブラウザをログアウトしました。",
+    "description": "As settings.security.browsers.signed_out, for a browser the list named Unknown browser (settings.security.browsers.unknown)."
+  },
+  "settings.security.browsers.sign_out_others": {
+    "defaultMessage": "ほかをすべてログアウト",
+    "description": "The button at the end of the heading Signed-in browsers, shown when another browser is signed in. It asks before signing out every browser but the one the reader is using."
+  },
+  "settings.security.browsers.sign_out_others.title": {
+    "defaultMessage": "ほかのブラウザをすべてログアウトしますか？",
+    "description": "The question of the confirmation before every browser but the reader's own is signed out."
+  },
+  "settings.security.browsers.sign_out_others.text": {
+    "defaultMessage": "このブラウザ以外でアカウントを使うには、もう一度ログインが必要になります。パスワード、二要素認証、アプリはそのまま残ります。",
+    "description": "Under settings.security.browsers.sign_out_others.title in the confirmation: what it does and what it leaves."
+  },
+  "settings.security.browsers.signed_out_others": {
+    "defaultMessage": "ほかのブラウザをすべてログアウトしました。",
+    "description": "At the top of the section Signed-in browsers once every browser but the reader's own was signed out; it takes the keyboard's focus and is read by a screen reader."
+  },
+  "settings.security.browsers.advice": {
+    "defaultMessage": "心当たりのないログインがあるときは、そのブラウザをログアウトし、パスワードを変更して、アカウントを使えるアプリを確認してください。",
+    "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize, for an account that can change its password. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps. An account that cannot gets settings.security.browsers.advice.no_password."
+  },
+  "settings.security.browsers.advice.no_password": {
+    "defaultMessage": "心当たりのないログインがあるときは、そのブラウザをログアウトし、アカウントを使えるアプリを確認してください。",
+    "description": "As settings.security.browsers.advice, for an account that has no password, or cannot change it on this server: it does not speak of changing the password, and only the link settings.security.browsers.advice.apps follows it."
+  },
+  "settings.security.browsers.advice.password": {
+    "defaultMessage": "パスワードを変更",
+    "description": "A link after settings.security.browsers.advice that opens the password's page."
+  },
+  "settings.security.browsers.advice.apps": {
+    "defaultMessage": "アプリを確認",
+    "description": "A link after settings.security.browsers.advice that opens the Apps page of the settings, which lists the apps the reader allowed to use their account."
+  },
+  "settings.confirm.title": {
+    "defaultMessage": "本人確認",
+    "description": "The title of the dialog that asks the reader to authenticate again before something only they may do in the settings (changing the password, adding a passkey, linking an account, deleting the account)."
+  },
+  "settings.confirm.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the close button of the dialog Confirm it's you and of the dialog Enter a code; it cancels. Also the one button of the dialog Confirm it's you when the account has no way to confirm in this browser."
+  },
+  "settings.confirm.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button that cancels, in the dialog Confirm it's you, in the dialog Enter a code, and in the confirmations of the Security page (removing a passkey, unlinking an account, signing a browser out) and of the Apps pages (revoking an app, making a new secret, deleting an app)."
+  },
+  "settings.confirm.password": {
+    "defaultMessage": "現在のパスワード",
+    "description": "The label of the password field in the dialog Confirm it's you."
+  },
+  "settings.confirm.submit": {
+    "defaultMessage": "確認",
+    "description": "The button of the dialog Confirm it's you that sends the password the reader entered."
+  },
+  "settings.confirm.passkey": {
+    "defaultMessage": "パスキーを使う",
+    "description": "The button of the dialog Confirm it's you when the reader confirms with a passkey: the browser then asks for one."
+  },
+  "settings.confirm.provider": {
+    "defaultMessage": "{provider} で続ける",
+    "description": "The button of the dialog Confirm it's you when the reader confirms by signing in again at another service they linked. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
+  },
+  "settings.confirm.provider.about": {
+    "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻り、始めた操作をもう一度行います。",
+    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
+  },
+  "settings.confirm.other.password": {
+    "defaultMessage": "代わりにパスワードを使う",
+    "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
+  },
+  "settings.confirm.other.passkey": {
+    "defaultMessage": "代わりにパスキーを使う",
+    "description": "A text button in the dialog Confirm it's you that changes the way to confirm to a passkey."
+  },
+  "settings.confirm.other.provider": {
+    "defaultMessage": "代わりに {provider} で続ける",
+    "description": "A text button in the dialog Confirm it's you that changes the way to confirm to signing in again at another service the reader linked. provider is the name of the service; it is not translated."
+  },
+  "settings.confirm.passkey.failed": {
+    "defaultMessage": "{reason, select, cancelled {パスキーを使えませんでした。もう一度試すか、別の方法で確認してください。} unsupported {このブラウザではパスキーを使えません。別の方法で確認するか、別のブラウザで試してください。} other {パスキーを確認できませんでした。もう一度試すか、別の方法で確認してください。}}",
+    "description": "An alert in the dialog Confirm it's you when the browser gave no passkey. reason says why: cancelled (the reader closed the browser's own dialog, or it timed out), unsupported (the browser has no passkeys), other (anything else)."
+  },
+  "settings.confirm.none": {
+    "defaultMessage": "このブラウザには本人確認の手段がありません。パスキーを使えるブラウザか端末で試してください。",
+    "description": "An alert in the dialog Confirm it's you for an account that can confirm with nothing in this browser (it has no password and no linked account, and the browser cannot use its passkeys)."
+  },
+  "settings.confirm.returned": {
+    "defaultMessage": "{provider} で本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
+    "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service as the administrators wrote it (GitHub); it is not translated. Without a name, the page shows settings.confirm.returned.unknown."
+  },
+  "settings.confirm.returned.unknown": {
+    "defaultMessage": "ほかのサービスで本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
+    "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.failed": {
+    "defaultMessage": "サーバーに接続できなかったため、完了できませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "An alert on the Security pages and the Apps pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
+  },
+  "settings.apps.authorized": {
+    "defaultMessage": "許可したアプリ",
+    "description": "A section heading on the Apps page of the settings, over the list of the apps the reader allowed to use their account (the server's own web app among them); also the name of that list for assistive technology, and the title of the page of one such app until its name is read."
+  },
+  "settings.apps.authorized.origin": {
+    "defaultMessage": "{registration, select, first_party {このサーバーの Web アプリ} user {{owner} が登録したアプリ} user_unknown {このサーバーの利用者が登録したアプリ} metadata_document {提供元: {host}} other {自己申告で登録されたアプリ}}",
+    "description": "Where an authorized app comes from: in the line under its name in the list, and on its own page. registration says how it was registered: first_party (the web app of this server, the one the reader is using), user (a user of this server registered it; owner is that user's handle, @hana), user_unknown (the same, when the user cannot be named), metadata_document (it is identified by a document at an address; host is that address's host name, which the server verified), other (it registered itself, and everything it says of itself is its own claim). The same words as the consent page's (server:auth.authorize.origin.*)."
+  },
+  "settings.apps.authorized.about": {
+    "defaultMessage": "アカウントの利用を許可したアプリです。使わなくなったアプリや心当たりのないアプリは、許可を取り消してください。",
+    "description": "The line under the heading Authorized apps: what the list holds, and what to do about an app in it."
+  },
+  "settings.apps.authorized.none": {
+    "defaultMessage": "いまアカウントを使えるアプリはありません。アプリにアカウントの利用を許可すると、ここに表示されます。",
+    "description": "In the place of the list of authorized apps while it is empty."
+  },
+  "settings.last_used": {
+    "defaultMessage": "最終利用: {date}",
+    "description": "A line of its own under the name of something that uses the account, in a list of the settings (a signed-in browser, an authorized app), and under the day an app was authorized on its own page. date is the day and the hour it last used the account, written out in the reader's language (Mar 3, 2 PM)."
+  },
+  "settings.apps.authorized.unused": {
+    "defaultMessage": "利用の記録なし",
+    "description": "In the place of settings.apps.authorized.last_used when the server has recorded no use of the account by the app."
+  },
+  "settings.apps.authorized.website": {
+    "defaultMessage": "申告されたサイト: {url}",
+    "description": "A line under where an authorized app comes from, on the app's own page: the app's home page, which is the app's own claim and not verified by the server. url is the address the app declared. The same words as the consent page's (server:auth.authorize.website)."
+  },
+  "settings.apps.authorized.since": {
+    "defaultMessage": "{date} に許可",
+    "description": "On the page of an authorized app: when the reader first allowed it. date is the day, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.apps.own": {
+    "defaultMessage": "登録したアプリ",
+    "description": "A section heading on the Apps page of the settings, over the list of the apps the reader registered as their developer; also the name of that list for assistive technology."
+  },
+  "settings.apps.own.about": {
+    "defaultMessage": "ボットやスクリプト、自作のクライアントのために登録したアプリです。",
+    "description": "The line under the heading Your apps: what registering an app is for. A client is a program that uses the account through the server's programming interface."
+  },
+  "settings.apps.own.none": {
+    "defaultMessage": "まだアプリを登録していません。登録すると、アプリのクライアント ID とトークンを取得できます。",
+    "description": "In the place of the list of the reader's own apps while it is empty, over the button Register an app and under the line settings.apps.own.about, which says what an app is registered for: this line does not repeat it."
+  },
+  "settings.apps.own.off": {
+    "defaultMessage": "サーバーの管理者が、アプリの登録をオフにしています。登録済みのアプリは引き続き使えます。",
+    "description": "A sentence in the section Your apps, in the place of the button Register an app, and in the place of the form on the page Register an app, on a server whose administrators do not let users register apps."
+  },
+  "settings.apps.own.registered": {
+    "defaultMessage": "{date} に登録",
+    "description": "A line under the name of one of the reader's own apps in the list, under the line of its type. date is the day it was registered, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.apps.own.disabled": {
+    "defaultMessage": "無効",
+    "description": "The state at the end of the row of one of the reader's own apps: the server's administrators disabled it."
+  },
+  "settings.apps.type": {
+    "defaultMessage": "{type, select, confidential {コンフィデンシャル} other {パブリック}}",
+    "description": "The type of an OAuth app, in a developer's words, as a line under an app's name in the list of the reader's own apps. confidential: the app can keep a secret (a server, a bot). other: a public app, which cannot (an app on a phone or in a browser)."
+  },
+  "settings.apps.missing": {
+    "defaultMessage": "このアプリは一覧にありません。許可が取り消されたか、削除された可能性があります。",
+    "description": "In place of the page of one app (an authorized app, or one of the reader's own) at an address that names none of them; the link settings.apps.missing.all follows it on the same line."
+  },
+  "settings.apps.missing.all": {
+    "defaultMessage": "アプリの一覧を見る",
+    "description": "The link after settings.apps.missing that opens the Apps page of the settings."
+  },
+  "settings.apps.about": {
+    "defaultMessage": "このアプリについて",
+    "description": "The heading of the first section of the page of an authorized app: where it comes from, its website, when the reader allowed it and when it last used the account; also the name of that list for assistive technology."
+  },
+  "settings.apps.unverified": {
+    "defaultMessage": "このサーバーが確認していないアプリです。名前はアプリ自身の申告です。",
+    "description": "A sentence on the page of an authorized app that is not the server's own. The same words as the consent page's (server:auth.authorize.unverified)."
+  },
+  "settings.apps.permissions": {
+    "defaultMessage": "{risk, select, caution {特に注意が必要な権限} write {変更できる権限} other {読み取りだけの権限}}",
+    "description": "A section heading on the page of an authorized app, over the permissions of one weight the reader granted it; also the name of that list for assistive technology. risk is caution (permissions that read direct messages, act as the reader, or administer the server), write (permissions that change something), or other (permissions that only read). The same words as the consent page's (server:auth.authorize.group)."
+  },
+  "settings.apps.caution.dm": {
+    "defaultMessage": "ダイレクトメッセージを読めます",
+    "description": "The line under a permission on the page of an authorized app: the app can read direct messages. The same words as the consent page's (server:auth.authorize.caution.dm)."
+  },
+  "settings.apps.caution.post": {
+    "defaultMessage": "あなたとして投稿・編集・削除ができます",
+    "description": "The line under a permission on the page of an authorized app: the app can post, edit or delete posts as the reader. The same words as the consent page's (server:auth.authorize.caution.post)."
+  },
+  "settings.apps.caution.profile": {
+    "defaultMessage": "プロフィールを変更できます",
+    "description": "The line under a permission on the page of an authorized app: the app can change the reader's profile. The same words as the consent page's (server:auth.authorize.caution.profile)."
+  },
+  "settings.apps.revoke.heading": {
+    "defaultMessage": "許可を取り消す",
+    "description": "The heading of the last section of the page of an authorized app, which takes back what the reader allowed it; also the name of its one row's list for assistive technology."
+  },
+  "settings.apps.revoke.row": {
+    "defaultMessage": "このアプリによるアカウントの利用を止める",
+    "description": "The name of the row in the section Revoke access: what revoking gives."
+  },
+  "settings.apps.revoke.about": {
+    "defaultMessage": "このアプリは、アカウントの読み取りも変更もできなくなります。もう一度使うには、アプリからあらためて許可してください。",
+    "description": "The line under settings.apps.revoke.row, for an app that is not the server's own: what revoking does, said before."
+  },
+  "settings.apps.revoke.about.web": {
+    "defaultMessage": "いま使っているこのアプリです。取り消すと、このブラウザを含むすべてのブラウザからログアウトします。",
+    "description": "The line under settings.apps.revoke.row, in place of settings.apps.revoke.about, for the server's own web app, the one the reader is using: what revoking it does."
+  },
+  "settings.apps.revoke.title": {
+    "defaultMessage": "{app} の許可を取り消しますか？",
+    "description": "The question of the confirmation before an authorized app is revoked. app is the app's name as the app gives it."
+  },
+  "settings.apps.revoke.text": {
+    "defaultMessage": "このアプリは、すぐにアカウントを使えなくなります。あとでアプリからもう一度許可できます。",
+    "description": "Under settings.apps.revoke.title in the confirmation, for an app that is not the server's own: that the app can no longer use the account from that moment, and that it can be undone by allowing the app again."
+  },
+  "settings.apps.revoke.text.web": {
+    "defaultMessage": "いま使っているこのアプリです。取り消すと、このブラウザを含むすべてのブラウザからすぐにログアウトします。そのあと、もう一度ログインできます。",
+    "description": "Under settings.apps.revoke.title in the confirmation, for the server's own web app, the one the reader is using: revoking it signs every browser out, this one too, and the reader can sign in again."
+  },
+  "settings.apps.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "The button at the end of the row settings.apps.revoke.row, which asks before revoking; and the button of that confirmation (settings.apps.revoke.title) that revokes."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "アプリを登録",
+    "description": "The button at the end of the heading Your apps (or under settings.apps.own.none) that leads to the page where the reader registers an app; the title of that page; and the button at its end that registers the app."
+  },
+  "settings.apps.form.identity": {
+    "defaultMessage": "名前と Web サイト",
+    "description": "The heading of the first section of the form that registers an app, with the fields Name and Website."
+  },
+  "settings.apps.form.name": {
+    "defaultMessage": "名前",
+    "description": "The label of the field for the name of an app the reader registers."
+  },
+  "settings.apps.form.name.hint": {
+    "defaultMessage": "アプリを許可する画面に表示されます。{max, number} 文字以内で入力してください。",
+    "description": "The hint under the label Name of an app. max is a number of characters."
+  },
+  "settings.apps.form.website": {
+    "defaultMessage": "Web サイト",
+    "description": "The label of the field for the address of the home page of an app the reader registers."
+  },
+  "settings.apps.form.website.hint": {
+    "defaultMessage": "省略できます。https または http のアドレスで、同じ画面に表示されます。",
+    "description": "The hint under the label Website of an app: the field may stay empty; the same page is the one where people allow the app."
+  },
+  "settings.apps.form.authorization": {
+    "defaultMessage": "認可",
+    "description": "The heading of the second section of the form that registers an app, with the fields Redirect URIs and Scopes and the setting Type: what the app may ask for when someone allows it. A developer's word (OAuth)."
+  },
+  "settings.apps.form.redirect_uris": {
+    "defaultMessage": "リダイレクト URI",
+    "description": "The label of the field for the redirect URIs of an app the reader registers. A developer's word (OAuth): the addresses the server may send the browser back to once someone allowed the app."
+  },
+  "settings.apps.form.redirect_uris.hint": {
+    "defaultMessage": "アプリが許可されたあとに、サーバーがブラウザを戻せるアドレスです。1 行に 1 つ、{max, number} 個まで入力できます。https のアドレス、com.example.app:/callback のような独自スキームのアドレス、または http://127.0.0.1 (ポートは問いません) を指定します。",
+    "description": "The hint under the label Redirect URIs: what a redirect URI is for, then how to enter them. max is how many an app may have. com.example.app:/callback and http://127.0.0.1 are examples to keep as they are."
+  },
+  "settings.apps.form.scope": {
+    "defaultMessage": "スコープ",
+    "description": "The label of the field for the scopes of an app the reader registers, and of the field for the scopes of a token they issue. A developer's word (OAuth): the names of the permissions, such as read or write:statuses."
+  },
+  "settings.apps.form.scope.hint": {
+    "defaultMessage": "アプリが要求できる上限です。read write:statuses のようにスペースで区切って入力します。admin、admin:read、admin:write、write:supporters は指定できません。",
+    "description": "The hint under the label Scopes of an app. read, write:statuses, admin, admin:read, admin:write and write:supporters are names of scopes, to keep as they are."
+  },
+  "settings.apps.form.type": {
+    "defaultMessage": "種類",
+    "description": "The heading of the section of the form that registers an app in which the reader chooses whether the app is confidential or public; also the name of that choice for assistive technology."
+  },
+  "settings.apps.form.type.about": {
+    "defaultMessage": "種類によって、アプリがシークレットを持つかどうかが決まります。あとから変更できません。",
+    "description": "The line under the heading Type on the page Register an app: what the choice decides, and that it is final."
+  },
+  "settings.apps.form.type.choice": {
+    "defaultMessage": "{type, select, confidential {コンフィデンシャル: サーバーやボットのように、シークレットを安全に保管できるアプリ} other {パブリック: モバイルやブラウザのアプリのように、シークレットを保管できないアプリ}}",
+    "description": "One of the two choices of the type of an app the reader registers, with what it means. type is confidential, or other (public). The first word is the type's name, as settings.apps.type has it. No full stop: it is a choice."
+  },
+  "settings.apps.form.type.fixed": {
+    "defaultMessage": "{type, select, confidential {コンフィデンシャルのアプリで、シークレットがあります。} other {パブリックのアプリで、シークレットはありません。}}種類は変更できません。別の種類にするには、新しいアプリを登録してください。",
+    "description": "A sentence at the end of the section App settings on the page of an app the reader registered: the app's type, which is shown and cannot be changed. type is confidential, or other (public)."
+  },
+  "settings.apps.form.missing": {
+    "defaultMessage": "{field, select, name {名前を入力してください。} redirect_uris {リダイレクト URI を 1 つ以上入力してください。} other {スコープを 1 つ以上入力してください。}}",
+    "description": "The error under a field of the form of an app when the reader sent it with that field empty. field is name, redirect_uris, or other (the scopes)."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "「{name}」を登録しました",
+    "description": "The sentence that heads the page shown right after the reader registered an app, over the app's client ID and, for a confidential app, its secret. name is the name they gave it. No full stop: it is a heading."
+  },
+  "settings.apps.registered.about": {
+    "defaultMessage": "クライアント ID は、アプリのページでいつでも確認できます。シークレットが表示されるのは、この 1 回だけです。",
+    "description": "Under settings.apps.registered, for a confidential app: which of the two values under it the reader finds again later, and which not."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "サーバーの管理者がこのアプリを無効にしています",
+    "description": "The sentence of the status summary at the top of the page of one of the reader's own apps while the server's administrators have it disabled. No full stop: it is a heading."
+  },
+  "settings.apps.disabled.about": {
+    "defaultMessage": "{type, select, confidential {このアプリのトークンはすべて使えなくなり、元に戻りません。管理者が有効に戻すまで、このアプリは許可できず、新しいトークンも取得できません。シークレットの再発行、設定の変更、アプリの削除はできます。} other {このアプリのトークンはすべて使えなくなり、元に戻りません。管理者が有効に戻すまで、このアプリは許可できず、新しいトークンも取得できません。設定の変更とアプリの削除はできます。}}",
+    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled (every token of it was revoked, and stays revoked when the app is enabled again: people allow it again then), and what the reader may still do on the page, where the way to a token is then not offered. type is confidential (the app has a secret, which can still be made again), or other (a public app)."
+  },
+  "settings.apps.credentials": {
+    "defaultMessage": "認証情報",
+    "description": "The heading of the section of the page of one of the reader's own apps that shows its client ID and offers a new secret and a token; also the name of that section's list for assistive technology."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "クライアント ID",
+    "description": "The name of the public identifier of an app: the heading over it on the page that shows a new app's values, and the name of the value shown to copy, for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.secret": {
+    "defaultMessage": "クライアントシークレット",
+    "description": "The name of the secret of a confidential app: of the row about it on the app's page, the heading over the secret on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.secret.caption": {
+    "defaultMessage": "発行したときにだけ表示されます。なくした場合は、再発行してください。",
+    "description": "The line under Client secret in its row on the page of a confidential app."
+  },
+  "settings.apps.once.about": {
+    "defaultMessage": "いまコピーして、安全な場所に保管してください。二度と表示されません。",
+    "description": "The line under the heading of a value the server shows only once (Client secret, Access token, Refresh token), right over the value, on the page that shows it right after it was made. It must say plainly that the value will not be shown again."
+  },
+  "settings.apps.secret.none": {
+    "defaultMessage": "パブリックのアプリにはシークレットがありません。クライアント ID は、アプリのページでいつでも確認できます。",
+    "description": "Under settings.apps.registered, in place of settings.apps.registered.about, for a public app: the page shows its client ID alone."
+  },
+  "settings.apps.secret.rotate": {
+    "defaultMessage": "再発行",
+    "description": "The button at the end of the row Client secret, which asks before making a new secret; and the button of that confirmation (settings.apps.secret.rotate.title)."
+  },
+  "settings.apps.secret.rotate.title": {
+    "defaultMessage": "{app} のシークレットを再発行しますか？",
+    "description": "The question of the confirmation before a new secret of a confidential app is made. app is the name the reader gave the app."
+  },
+  "settings.apps.secret.rotate.text": {
+    "defaultMessage": "いまのシークレットはすぐに使えなくなり、元に戻せません。トークンの更新には新しいシークレットが必要です。発行済みのトークンは引き続き使えます。",
+    "description": "Under settings.apps.secret.rotate.title in the confirmation: what making a new secret ends, that it cannot be undone, and what keeps working."
+  },
+  "settings.apps.secret.rotated": {
+    "defaultMessage": "新しいシークレットを発行しました",
+    "description": "The sentence that heads the page that shows the new secret of a confidential app right after the reader made it. No full stop: it is a heading."
+  },
+  "settings.apps.secret.rotated.about": {
+    "defaultMessage": "以前のシークレットは使えません。トークンの更新には、新しいシークレットが必要です。",
+    "description": "Under settings.apps.secret.rotated: what the new secret means for the app."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "{what, select, client_id {クライアント ID をコピー} secret {シークレットをコピー} access_token {アクセストークンをコピー} other {リフレッシュトークンをコピー}}",
+    "description": "The button under a value of an app shown to copy, which copies it. what is client_id, secret, access_token, or other (the refresh token): a page may show two of them, so each button names what it copies."
+  },
+  "settings.copy.copied": {
+    "defaultMessage": "コピーしました",
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), once it was copied."
+  },
+  "settings.copy.failed": {
+    "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), when the browser refused to copy."
+  },
+  "settings.once.done": {
+    "defaultMessage": "完了する",
+    "description": "The button at the end of a page of the settings that shows once what the reader must keep or pass on (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token; a new invite's link). It goes back to the page the reader came from."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "アプリの設定",
+    "description": "The heading of the section of the page of one of the reader's own apps that holds the form to change it: its name, website, redirect URIs and scopes."
+  },
+  "settings.apps.edit.about": {
+    "defaultMessage": "変更は、次にアプリが許可されるときから反映されます。発行済みのトークンのスコープは変わりません。",
+    "description": "The line under the heading App settings: what a change reaches."
+  },
+  "settings.apps.edit.submit": {
+    "defaultMessage": "変更を保存",
+    "description": "The button at the end of the page of one of the reader's own apps that saves the form App settings."
+  },
+  "settings.apps.delete.heading": {
+    "defaultMessage": "アプリを削除",
+    "description": "The heading of the last section of the page of one of the reader's own apps; also the name of its one row's list for assistive technology."
+  },
+  "settings.apps.delete.row": {
+    "defaultMessage": "このアプリを完全に削除する",
+    "description": "The name of the row in the section Delete app."
+  },
+  "settings.apps.delete.about": {
+    "defaultMessage": "このアプリのトークンは、ほかの人が許可した分も含めて、すぐに使えなくなります。元に戻せません。",
+    "description": "The line under settings.apps.delete.row, and under settings.apps.delete.title in the confirmation: what deleting the app ends, and that it cannot be undone."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "{app} を削除しますか？",
+    "description": "The question of the confirmation before one of the reader's own apps is deleted. app is the name the reader gave the app."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "削除",
+    "description": "The button at the end of the row settings.apps.delete.row, which asks before deleting the app; and the button of that confirmation (settings.apps.delete.title)."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "トークンを発行",
+    "description": "A row of the section Credentials on the page of one of the reader's own apps, which opens the page where the reader issues a token of the app for their own account; the title of that page; and the button at its end that issues the token. The developers' guide names it by these words."
+  },
+  "settings.apps.token.caption": {
+    "defaultMessage": "許可の画面を通さずに、自分のアカウントのアクセストークンとリフレッシュトークンを発行します",
+    "description": "The line under Issue token in its row: what its page gives."
+  },
+  "settings.apps.token.heading": {
+    "defaultMessage": "自分のアカウントのトークン",
+    "description": "The heading of the section with the field Scopes on the page Issue token."
+  },
+  "settings.apps.token.about": {
+    "defaultMessage": "このアプリのアクセストークンとリフレッシュトークンを、自分のアカウントに発行します。許可の画面もリダイレクトもありません。",
+    "description": "The line under the heading Token for your own account on the page Issue token: what issuing a token does."
+  },
+  "settings.apps.token.scope.hint": {
+    "defaultMessage": "アプリのスコープの範囲で、スペースで区切って入力します。空にすると、はじめに入っていたスコープになります。",
+    "description": "The hint under the label Scopes on the page Issue token. The field starts with the scopes of the app that the reader's account may put in a token: all of them, but the permission scopes (admin:manage_invites) of permissions the account does not have. A field the reader emptied asks for those same scopes."
+  },
+  "settings.apps.token.admin": {
+    "defaultMessage": "admin:manage_invites のような権限のスコープを持てるのは、ここで発行するトークンだけです。指定できるのは、自分のアカウントが持つ権限のスコープに限られます。アプリを許可する画面でアプリが要求しても、拒否されます。",
+    "description": "A sentence under the field Scopes on the page Issue token. A permission scope is a scope named admin: and a permission of the server's staff (admin:manage_invites, to keep as it is); the reader can choose only those of the permissions their own account has, and no request on the page where people allow the app (the consent page) may ask for one, whoever allows."
+  },
+  "settings.apps.token.disabled": {
+    "defaultMessage": "サーバーの管理者がこのアプリを無効にしているため、有効に戻るまでトークンを発行できません。",
+    "description": "A sentence in the place of the form on the page Issue token, for an app the server's administrators disabled."
+  },
+  "settings.apps.token.issued": {
+    "defaultMessage": "トークンを発行しました",
+    "description": "The sentence that heads the page that shows an access token and a refresh token right after the reader issued them. No full stop: it is a heading."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "アクセストークン",
+    "description": "The name of the access token: the heading over it on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "リフレッシュトークン",
+    "description": "The name of the refresh token: the heading over it on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.token.facts": {
+    "defaultMessage": "スコープは {scope} です。アクセストークンの有効期間は {minutes, plural, other {# 分}}です。そのあとはリフレッシュトークンで新しい組を取得します。リフレッシュトークンは 1 回だけ使えます。",
+    "description": "Under settings.apps.token.issued, over the access token and the refresh token shown once. scope is the names of the scopes the token has, separated by spaces (read write:statuses); minutes is how long the access token works."
+  },
+  "settings.apps.scope.admin": {
+    "defaultMessage": "アカウントに許された範囲での、サーバーの管理",
+    "description": "A permission on the page of an authorized app (the scope admin). The same words as the consent page's (server:auth.authorize.scope.admin)."
+  },
+  "settings.apps.scope.admin_read": {
+    "defaultMessage": "アカウントに許された範囲での、管理用データの読み取り",
+    "description": "A permission on the page of an authorized app (the scope admin:read). The same words as the consent page's (server:auth.authorize.scope.admin_read)."
+  },
+  "settings.apps.scope.admin_write": {
+    "defaultMessage": "アカウントに許された範囲での、管理用データの変更",
+    "description": "A permission on the page of an authorized app (the scope admin:write). The same words as the consent page's (server:auth.authorize.scope.admin_write)."
+  },
+  "settings.apps.scope.admin_permission": {
+    "defaultMessage": "アカウントの権限 {permission} の使用",
+    "description": "A permission on the page of an authorized app, for a permission scope admin:<permission>. permission is the name of a permission of the server's staff, such as manage_invites. The same words as the consent page's (server:auth.authorize.scope.admin_permission)."
+  },
+  "settings.apps.scope.follow": {
+    "defaultMessage": "アカウントのフォロー・ブロック・ミュート",
+    "description": "A permission on the page of an authorized app (the scope follow). The same words as the consent page's (server:auth.authorize.scope.follow)."
+  },
+  "settings.apps.scope.push": {
+    "defaultMessage": "プッシュ通知の受信",
+    "description": "A permission on the page of an authorized app (the scope push). The same words as the consent page's (server:auth.authorize.scope.push)."
+  },
+  "settings.apps.scope.read": {
+    "defaultMessage": "アカウント・投稿・タイムラインの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read). The same words as the consent page's (server:auth.authorize.scope.read)."
+  },
+  "settings.apps.scope.read_accounts": {
+    "defaultMessage": "アカウント、プロフィール、設定の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:accounts). The same words as the consent page's (server:auth.authorize.scope.read_accounts)."
+  },
+  "settings.apps.scope.read_blocks": {
+    "defaultMessage": "ブロックしているアカウントの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:blocks). The same words as the consent page's (server:auth.authorize.scope.read_blocks)."
+  },
+  "settings.apps.scope.read_bookmarks": {
+    "defaultMessage": "ブックマークの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:bookmarks). The same words as the consent page's (server:auth.authorize.scope.read_bookmarks)."
+  },
+  "settings.apps.scope.read_custom_emojis": {
+    "defaultMessage": "あなたが作ったカスタム絵文字と、作成の申請の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:custom_emojis). The same words as the consent page's (server:auth.authorize.scope.read_custom_emojis)."
+  },
+  "settings.apps.scope.read_direct": {
+    "defaultMessage": "あなたが送受信するダイレクトメッセージの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:direct). The same words as the consent page's (server:auth.authorize.scope.read_direct)."
+  },
+  "settings.apps.scope.read_events": {
+    "defaultMessage": "あなたに見えるイベントの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:events). The same words as the consent page's (server:auth.authorize.scope.read_events)."
+  },
+  "settings.apps.scope.read_filters": {
+    "defaultMessage": "キーワードフィルタの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:filters). The same words as the consent page's (server:auth.authorize.scope.read_filters)."
+  },
+  "settings.apps.scope.read_finance": {
+    "defaultMessage": "アカウントに許された範囲での、サーバーの費用と収入の集計の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:finance). The same words as the consent page's (server:auth.authorize.scope.read_finance)."
+  },
+  "settings.apps.scope.read_follows": {
+    "defaultMessage": "フォロー、フォローリクエスト、リスト、新しい投稿を通知するアカウントの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:follows). The same words as the consent page's (server:auth.authorize.scope.read_follows)."
+  },
+  "settings.apps.scope.read_mutes": {
+    "defaultMessage": "ミュートしているアカウントとドメインの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:mutes). The same words as the consent page's (server:auth.authorize.scope.read_mutes)."
+  },
+  "settings.apps.scope.read_notifications": {
+    "defaultMessage": "通知の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:notifications). The same words as the consent page's (server:auth.authorize.scope.read_notifications)."
+  },
+  "settings.apps.scope.read_reports": {
+    "defaultMessage": "自分の通報と、その対応状況の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:reports). The same words as the consent page's (server:auth.authorize.scope.read_reports)."
+  },
+  "settings.apps.scope.read_statuses": {
+    "defaultMessage": "投稿とタイムラインの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:statuses). The same words as the consent page's (server:auth.authorize.scope.read_statuses)."
+  },
+  "settings.apps.scope.read_supporters": {
+    "defaultMessage": "サポーターのプランの加入状況の読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:supporters). The same words as the consent page's (server:auth.authorize.scope.read_supporters)."
+  },
+  "settings.apps.scope.read_voice": {
+    "defaultMessage": "あなたに見える通話のルームの読み取り",
+    "description": "A permission on the page of an authorized app (the scope read:voice). The same words as the consent page's (server:auth.authorize.scope.read_voice)."
+  },
+  "settings.apps.scope.write": {
+    "defaultMessage": "あなたに代わっての投稿と変更",
+    "description": "A permission on the page of an authorized app (the scope write). The same words as the consent page's (server:auth.authorize.scope.write)."
+  },
+  "settings.apps.scope.write_accounts": {
+    "defaultMessage": "プロフィールと設定の変更",
+    "description": "A permission on the page of an authorized app (the scope write:accounts). The same words as the consent page's (server:auth.authorize.scope.write_accounts)."
+  },
+  "settings.apps.scope.write_blocks": {
+    "defaultMessage": "アカウントのブロックと解除",
+    "description": "A permission on the page of an authorized app (the scope write:blocks). The same words as the consent page's (server:auth.authorize.scope.write_blocks)."
+  },
+  "settings.apps.scope.write_bookmarks": {
+    "defaultMessage": "ブックマークの追加と削除",
+    "description": "A permission on the page of an authorized app (the scope write:bookmarks). The same words as the consent page's (server:auth.authorize.scope.write_bookmarks)."
+  },
+  "settings.apps.scope.write_custom_emojis": {
+    "defaultMessage": "カスタム絵文字の作成の申請と、あなたが作った絵文字の変更・削除",
+    "description": "A permission on the page of an authorized app (the scope write:custom_emojis). The same words as the consent page's (server:auth.authorize.scope.write_custom_emojis)."
+  },
+  "settings.apps.scope.write_events": {
+    "defaultMessage": "イベントの作成・変更・中止、出欠の回答と招待",
+    "description": "A permission on the page of an authorized app (the scope write:events). The same words as the consent page's (server:auth.authorize.scope.write_events)."
+  },
+  "settings.apps.scope.write_favourites": {
+    "defaultMessage": "お気に入りと絵文字リアクションの追加と削除",
+    "description": "A permission on the page of an authorized app (the scope write:favourites). The same words as the consent page's (server:auth.authorize.scope.write_favourites)."
+  },
+  "settings.apps.scope.write_filters": {
+    "defaultMessage": "キーワードフィルタの作成、変更、削除",
+    "description": "A permission on the page of an authorized app (the scope write:filters). The same words as the consent page's (server:auth.authorize.scope.write_filters)."
+  },
+  "settings.apps.scope.write_follows": {
+    "defaultMessage": "アカウントのフォローと解除、フォローリクエストへの応答、リストの変更、新しい投稿の通知の登録",
+    "description": "A permission on the page of an authorized app (the scope write:follows). The same words as the consent page's (server:auth.authorize.scope.write_follows)."
+  },
+  "settings.apps.scope.write_media": {
+    "defaultMessage": "画像・動画・音声のアップロードと説明の編集",
+    "description": "A permission on the page of an authorized app (the scope write:media). The same words as the consent page's (server:auth.authorize.scope.write_media)."
+  },
+  "settings.apps.scope.write_mutes": {
+    "defaultMessage": "アカウント・ドメイン・スレッドのミュートと解除",
+    "description": "A permission on the page of an authorized app (the scope write:mutes). The same words as the consent page's (server:auth.authorize.scope.write_mutes)."
+  },
+  "settings.apps.scope.write_notifications": {
+    "defaultMessage": "通知の既読と消去",
+    "description": "A permission on the page of an authorized app (the scope write:notifications). The same words as the consent page's (server:auth.authorize.scope.write_notifications)."
+  },
+  "settings.apps.scope.write_reports": {
+    "defaultMessage": "アカウントと投稿のモデレーターへの通報",
+    "description": "A permission on the page of an authorized app (the scope write:reports). The same words as the consent page's (server:auth.authorize.scope.write_reports)."
+  },
+  "settings.apps.scope.write_statuses": {
+    "defaultMessage": "投稿の作成・編集・削除・ブースト・ピン留め、アンケートへの投票、引用できる相手の設定",
+    "description": "A permission on the page of an authorized app (the scope write:statuses). The same words as the consent page's (server:auth.authorize.scope.write_statuses)."
+  },
+  "settings.apps.scope.write_supporters": {
+    "defaultMessage": "サポーターのプランへの加入と、加入の変更・解約・解約の取り消し",
+    "description": "A permission on the page of an authorized app (the scope write:supporters). The same words as the consent page's (server:auth.authorize.scope.write_supporters)."
+  },
+  "settings.apps.scope.write_voice": {
+    "defaultMessage": "通話のルームの開始・参加・退出と、ホストの操作",
+    "description": "A permission on the page of an authorized app (the scope write:voice). The same words as the consent page's (server:auth.authorize.scope.write_voice)."
+  },
+  "settings.invites.own": {
+    "defaultMessage": "作成した招待",
+    "description": "A section heading on the Invites page of the settings, over the list of the invites the reader created; also the name of that list for assistive technology, and the title of an invite's page until the invite is read."
+  },
+  "settings.invites.own.about": {
+    "defaultMessage": "招待された人は、招待のリンクを開いて登録するか、登録画面で招待コードを入力します。",
+    "description": "The line under the heading Your invites: how an invite is used. An invite has a code and a link that holds the code; the sign-up page has a field named Invite code (auth.sign_up.invite_label)."
+  },
+  "settings.invites.none": {
+    "defaultMessage": "{may, select, yes {招待はまだありません。作成すると、招待する人に送るリンクができます。} other {招待はありません。}}",
+    "description": "In the place of the list of the reader's invites while it is empty. may is yes for a reader who may create an invite, over the button Create invite, and other for a reader who may not, under the summary that says why (settings.invites.cannot)."
+  },
+  "settings.invites.create": {
+    "defaultMessage": "招待を作成",
+    "description": "The button on the Invites page that opens the page where the reader creates an invite; the title of that page, and the button at its end that creates the invite."
+  },
+  "settings.invites.state": {
+    "defaultMessage": "{state, select, usable {{date} まで使える} revoked {取り消し済み} expired {{date} に期限切れ} exhausted {使い切り} registration_closed {新規登録の停止中は使えない} other {招待を作れない間は使えない}}",
+    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), registration_closed (the server takes no new accounts now, so nobody can sign up with the invite until it does again), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+  },
+  "settings.invites.uses": {
+    "defaultMessage": "{max, number} 回のうち {uses, number} 回使用",
+    "description": "A muted line of an invite's row, under its state: uses is how many people signed up with the invite, max how many it allows. Not a sentence: no full stop."
+  },
+  "settings.invites.ends": {
+    "defaultMessage": "期限: {date}",
+    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when the invite expires, whether it works again before that or not. The word of the state Expired (settings.invites.state), so that it is not read as the day the server takes new accounts again. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+  },
+  "settings.invites.left": {
+    "defaultMessage": "あと {left, number} 件作れます。使える招待は、同時に {max, number} 件まで持てます。",
+    "description": "A sentence in the section Your invites when the reader is one invite short of the most usable invites the server allows: left is how many more they can create (1), max the most usable invites one account may have at once."
+  },
+  "settings.invites.full": {
+    "defaultMessage": "{max, plural, =0 {このサーバーでは、いま利用者が招待を作れません。} other {使える招待の数の上限 (# 件) に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。}}",
+    "description": "A sentence in the section Your invites, in place of the button Create invite, and on the page Create invite in the form's place, when the reader has as many usable invites as the server allows. max is that number; 0 means the server's administrators let no user create invites for now. The same words as the server's refusal (errors.invites.too_many), with the number."
+  },
+  "settings.invites.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the list Your invites that shows the next, older invites."
+  },
+  "settings.invites.failed_more": {
+    "defaultMessage": "この一覧の続きを読み込めませんでした。",
+    "description": "Under the list Your invites on the settings' page Invites, when its next, older invites could not be read after Show more (the network, the server); the button under it then reads Try again (settings.retry) and asks for them again."
+  },
+  "settings.invites.cannot": {
+    "defaultMessage": "招待を作れません",
+    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
+  },
+  "settings.invites.cannot.reason": {
+    "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。} other {いまは招待を作れません。}}",
+    "description": "Under the title You cannot create invites (settings.invites.cannot): why the reader may not create invites now. reason is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value names no cause. The same sentences as the server's refusal (errors.invites.not_allowed_detail), which the list of invites gives only as the reason's name."
+  },
+  "settings.invites.link": {
+    "defaultMessage": "招待リンク",
+    "description": "A section heading on the page of a usable invite, and on the page Create invite once the invite is created, over the invite's link shown to copy; also the name of that link for assistive technology."
+  },
+  "settings.invites.link.about": {
+    "defaultMessage": "招待する人にこのリンクを送ってください。登録画面で招待コード {code} を入力しても登録できます。",
+    "description": "The line under the heading Invite link on an invite's page, and under the title The invite is created (settings.invites.created) once one is created: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
+  },
+  "settings.invites.copy": {
+    "defaultMessage": "リンクをコピー",
+    "description": "The button under an invite's link, which copies the link."
+  },
+  "settings.invites.status": {
+    "defaultMessage": "状態",
+    "description": "A section heading on an invite's page, over what the invite allows now (settings.invites.state) and how often it was used; also the name of that list for assistive technology."
+  },
+  "settings.invites.revoke.heading": {
+    "defaultMessage": "招待を取り消す",
+    "description": "A section heading on the page of an invite that works, or would work again, over the row that revokes it; also the name of that list for assistive technology."
+  },
+  "settings.invites.revoke.row": {
+    "defaultMessage": "この招待を使えなくする",
+    "description": "The name of the row in the section Revoke invite: what revoking gives."
+  },
+  "settings.invites.revoke.about": {
+    "defaultMessage": "リンクと招待コードはすぐに使えなくなり、元に戻せません。この招待で登録した人のアカウントはそのまま残ります。",
+    "description": "The line under settings.invites.revoke.row, and the text of the confirmation under settings.invites.revoke.title: what stops working, that it cannot be undone, and what stays."
+  },
+  "settings.invites.revoke.title": {
+    "defaultMessage": "招待 {code} を取り消しますか？",
+    "description": "The title of the confirmation before an invite is revoked. code is the invite's code, 16 letters and digits; it is not translated."
+  },
+  "settings.invites.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "The button at the end of the row settings.invites.revoke.row, which asks before revoking the invite; and the button of that confirmation (settings.invites.revoke.title)."
+  },
+  "settings.invites.new.heading": {
+    "defaultMessage": "新しい招待",
+    "description": "A section heading on the page Create invite, over the two settings of the invite: how many people can sign up with it, and how long it works."
+  },
+  "settings.invites.new.uses": {
+    "defaultMessage": "登録できる人数",
+    "description": "The label of a number field on the page Create invite: how many people can sign up with the invite."
+  },
+  "settings.invites.new.uses.about": {
+    "defaultMessage": "{max, number} 人まで。",
+    "description": "The line under the label People who can sign up: max is the most people the server allows for one invite."
+  },
+  "settings.invites.new.life": {
+    "defaultMessage": "有効期間",
+    "description": "The label of a choice on the page Create invite: how long the invite works, from when it is created. Its options are lengths of time (settings.invites.new.life.option): Works for, 7 days."
+  },
+  "settings.invites.new.life.option": {
+    "defaultMessage": "{unit, select, days {{count, plural, other {# 日}}} hours {{count, plural, other {# 時間}}} other {{count, plural, other {# 分}}}}",
+    "description": "An option of the choice Works for on the page Create invite: a length of time. unit is days, hours, or other (minutes); count is how many of them."
+  },
+  "settings.invites.new.refused": {
+    "defaultMessage": "{field, select, max_uses {このサーバーでは、1 つの招待でその人数を登録できなくなりました。人数を減らして、もう一度作成してください。} other {このサーバーでは、その期間の招待を作れなくなりました。短い期間を選んで、もう一度作成してください。}}",
+    "description": "An alert before the button Create invite when the server refused the invite because a value is over what it allows now: its administrators lowered a limit after the page was opened, and the page then shows the new limits. field is max_uses (too many people) or other (too long a time)."
+  },
+  "settings.invites.created": {
+    "defaultMessage": "招待を作成しました",
+    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy. No full stop: it is a heading."
+  },
+  "settings.invites.missing": {
+    "defaultMessage": "この招待は一覧にありません。アドレスを確かめてください。",
+    "description": "In place of an invite's page of the settings at an address that names no invite of the reader's. The link to the Invites page follows it on the same line (settings.invites.missing.all)."
+  },
+  "settings.invites.missing.all": {
+    "defaultMessage": "招待の一覧を見る",
+    "description": "The link after settings.invites.missing that opens the Invites page of the settings."
   }
 }

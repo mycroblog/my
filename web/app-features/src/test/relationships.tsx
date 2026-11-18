@@ -80,7 +80,14 @@ export async function relationships(
     data,
     <main>
       {list === undefined ? (
-        <SettingsEntryScreen entry="relationships" onBack={() => told.push("back")} languages={["en", "ja"]} />
+        <SettingsEntryScreen
+          entry="relationships"
+          onBack={() => told.push("back")}
+          languages={["en", "ja"]}
+          fragment=""
+          onFragmentRead={() => undefined}
+          leave={() => undefined}
+        />
       ) : (
         <RelationshipListScreen list={list} onBack={() => told.push("back")} />
       )}

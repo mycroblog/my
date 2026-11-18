@@ -9,6 +9,16 @@ import { answered } from "./write";
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+/**
+ * The heading of the profile of the person of this server whose username is `username`, whatever their display name:
+ * it tells whose account a signed-in person's own profile (the navigation's Profile) is.
+ */
+export function ownProfileHeading(page: Page, username: string): Locator {
+  return page
+    .getByRole("main")
+    .getByRole("heading", { level: 1, name: new RegExp(`^.+ \\(@${escape(username)}@[^)]+\\)$`) });
+}
+
 export class Profile {
   readonly page: Page;
   readonly person: Person;

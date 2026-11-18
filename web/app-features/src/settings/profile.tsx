@@ -52,8 +52,9 @@ import {
 import { useId } from "react";
 import { stringsIn } from "../locale";
 import { profileEditPath } from "../profile-identity";
-import { Choice, ReadingNotice, Toggle, useChoice } from "./controls";
+import { Choice, Toggle, useChoice } from "./controls";
 import type { SettingsEntryProps } from "./entries";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -284,7 +285,7 @@ export function ProfileSettings({ back }: SettingsEntryProps) {
       icon="profile"
       title={t("settings.entry.profile")}
       back={back}
-      notice={read ? undefined : <ReadingNotice failed={status === "failed"} onRetry={retry} />}
+      notice={read ? undefined : <ReadingNotice status={status === "failed" ? "failed" : "loading"} retry={retry} />}
     >
       {read && <Sections account={account} />}
     </SettingsScreen>

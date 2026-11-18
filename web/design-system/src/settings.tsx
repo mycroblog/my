@@ -14,7 +14,10 @@
 // menu is not beside the screen; a screen under an entry (`sub`: changing the password, one filter) keeps its head at
 // every width, the way back leading to its entry. A section holds rows: a setting (its name over a line about it, the
 // control at the row's end), a list of what the reader keeps there with its one add action in the section's head, or
-// what stands in the list's place while it is empty, which leads to adding. The status summary heads a screen while
+// what stands in the list's place while it is empty, which leads to adding; the facts it states, which are not
+// pressed and stand closer than rows; a sentence that is no setting, with the
+// links to where the reader acts on it; what they copy and keep (recovery codes, a key), with the action that copies
+// it; or a QR code for a camera, dark on light in either scheme. The status summary heads a screen while
 // something there is to do: the state as a glyph and a sentence, what it means, and the next thing to do. A state is
 // always words and a glyph, on no surface of its own: a tile is what can be pressed.
 //
@@ -29,16 +32,18 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import { createContext, Fragment, use, useId, type ReactElement, type ReactNode } from "react";
+import { createContext, Fragment, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { raisedSurface } from "./button";
-import { FieldContext } from "./field";
+import { raisedSurface, TextLink } from "./button";
+import { describedBy, FieldContext } from "./field";
+import { FieldError } from "./form-page";
 import { Icon, type IconName } from "./icons";
-import { Box, Layers, Row, Stack } from "./layout";
+import { Box, Grid, Layers, Row, Stack } from "./layout";
 import { BackLead, ScreenTitle } from "./list";
 import { useReader } from "./locale";
 import { SaveControlContext } from "./save-state";
+import { actionJoint } from "./sentence";
 import { FrameFoot, FrameHead, FramePanel } from "./shell";
 
 /** Whether the menu stands beside a screen, on the page, its entries their glyph and name alone. */
@@ -247,11 +252,13 @@ const screen = tv({ base: "text-body" });
  * what ends it (a `SubmitBar`). Its head is the entry's glyph and name under `back`, the way to the menu, where the
  * menu is not beside the screen. `sub`, a screen under an entry: its name under the way back to that entry, at every
  * width. While it has no section to show, `notice` stands in their place: that what it shows is being read, or could
- * not be, with the way to try again (a `FeedNotice`).
+ * not be, with the way to try again (a `FeedNotice`). A screen that takes another's place under the same address
+ * (the recovery codes, once two-factor authentication is on) moves the focus to its title, which `titleRef` reaches.
  */
 export function SettingsScreen({
   icon,
   title,
+  titleRef,
   back,
   sub = false,
   notice,
@@ -261,6 +268,8 @@ export function SettingsScreen({
   /** The entry's glyph; a screen under an entry has none. */
   icon?: IconName | undefined;
   title: string;
+  /** Reaches the title, which then can take the focus. */
+  titleRef?: Ref<HTMLHeadingElement> | undefined;
   /** The way back (a `BackButton`): to the menu, or to the entry of a screen under it. */
   back?: ReactNode;
   sub?: boolean;
@@ -271,7 +280,7 @@ export function SettingsScreen({
 }) {
   // The way back is the reader's only one where it shows: as the text reads, a finger's target tall.
   const head = (
-    <ScreenTitle glyph={icon} back={back === undefined ? undefined : <BackLead value>{back}</BackLead>}>
+    <ScreenTitle glyph={icon} back={back === undefined ? undefined : <BackLead value>{back}</BackLead>} ref={titleRef}>
       {title}
     </ScreenTitle>
   );
@@ -452,11 +461,17 @@ export type SettingRowProps = {
        */
       save: ReactNode | null;
       form?: undefined;
+      error?: undefined;
     }
   | {
       /** It is a field of a form saved as a whole: the form's submit bar says what came of sending. */
       form: true;
       save?: undefined;
+      /**
+       * What is wrong with the value the form sent (one the server no longer allows), right under the row: the
+       * control is marked and described by it, and its id, `<id>-control`, is what the screen moves the focus to.
+       */
+      error?: string | undefined;
     }
 );
 
@@ -469,7 +484,8 @@ export type SettingRowProps = {
  * (`save`, ADR-0110 §6), which stands in the place of the line about it, or, with no such line, with the name: under
  * it beside the control, in the room the row's height holds (the name, at the middle of the control until then, gives
  * way to it), and beside it when the name has a line to itself; the control stays where it is. Or it is a field of a
- * form saved as a whole (`form`), with no state of its own. What the setting holds beyond its control's value
+ * form saved as a whole (`form`), with no state of its own, and what is wrong with the value it sent (`error`) right
+ * under the line about it, the control marked invalid and described by it. What the setting holds beyond its control's value
  * (`values`) stands close under the row. The row names its control (`id`, the control's `labelledBy`, which a
  * `Select` and a `NumberField` take from the row by themselves), describes it by the line about it and by the save
  * state, and a press on the name puts the focus on it.
@@ -484,6 +500,7 @@ export function SettingRow({
   wide = false,
   save,
   form,
+  error,
   children,
 }: SettingRowProps) {
   const s = row();
@@ -494,6 +511,8 @@ export function SettingRow({
   const controlId = `${id}-control`;
   const aboutId = `${id}-about`;
   const stateId = `${id}-state`;
+  const errorId = `${id}-error`;
+  const wrong = error !== undefined && error !== "";
   // The state's place, a live region that is there before the state is.
   const state = saves && (
     <span id={stateId} role="status">
@@ -513,13 +532,18 @@ export function SettingRow({
       }
       state={below === undefined && state}
       under={
-        below !== undefined && (
-          <Layers>
-            <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
-              {below}
-            </span>
-            {state}
-          </Layers>
+        (below !== undefined || wrong) && (
+          <Stack gap="hair">
+            {below !== undefined && (
+              <Layers>
+                <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
+                  {below}
+                </span>
+                {state}
+              </Layers>
+            )}
+            {wrong && <FieldError id={errorId}>{error}</FieldError>}
+          </Stack>
         )
       }
       control={
@@ -527,9 +551,10 @@ export function SettingRow({
           value={{
             id: controlId,
             labelledBy: id,
-            describedBy: below === undefined ? undefined : aboutId,
+            describedBy: describedBy(below !== undefined && aboutId, wrong && errorId),
             stateBy: saying ? stateId : undefined,
             disabled: isDisabled || undefined,
+            invalid: wrong || undefined,
           }}
         >
           {children}
@@ -548,7 +573,8 @@ export function SettingRow({
 
 const summary = tv({
   slots: {
-    title: "text-body font-strong [word-break:auto-phrase]",
+    // Where the screen moves the focus to it, the ring a keyboard's focus shows.
+    title: "rounded-control text-body font-strong outline-hidden [word-break:auto-phrase] focus-visible:shadow-focus",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
   },
 });
@@ -560,10 +586,13 @@ const summary = tv({
  * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed. An action
  * that is done in place (it sends an email) says what came of it beside itself (`result`, a `SaveState`), in a polite
  * live region that is there from the start.
+ * A view that takes another's place to say what came of it (an invite created) moves the focus to its title, which
+ * `titleRef` reaches, so that a screen reader reads what happened first.
  */
 export function StatusSummary({
   icon,
   title,
+  titleRef,
   about,
   action,
   result,
@@ -572,6 +601,8 @@ export function StatusSummary({
   icon: IconName;
   /** The state, as a sentence ("Two-factor authentication is off"). */
   title: string;
+  /** Reaches the title, which then can take the focus. */
+  titleRef?: Ref<HTMLHeadingElement> | undefined;
   about: string;
   action?: ReactNode;
   /** What came of the action done in place; `null` while it has nothing to say. Only with an `action`. */
@@ -587,7 +618,7 @@ export function StatusSummary({
           <Icon name={icon} place="action" />
         </Row>
         <Stack grow gap="hair">
-          <Heading id={id} className={s.title()}>
+          <Heading id={id} ref={titleRef} tabIndex={titleRef === undefined ? undefined : -1} className={s.title()}>
             {title}
           </Heading>
           <p className={s.about()}>{about}</p>
@@ -640,6 +671,10 @@ const list = tv({
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
     empty: "text-muted-text [word-break:auto-phrase]",
+  },
+  variants: {
+    // What the row names does not work now: its title muted too, with no hue and no surface.
+    inactive: { true: { title: "text-muted-text" } },
   },
 });
 
@@ -727,10 +762,13 @@ function FactLine({ line }: { line: SettingsFactLine }) {
  * row's title, so that one Remove is told from the next). With `result`, what came of the reader's action stands in
  * the caption's place and `end` is gone: the row keeps its place. With `href`, the whole row opens the screen under
  * the entry that holds it (changing the password, one filter), a chevron at its end in place of buttons.
+ * `inactive`, a thing that does not work now (a revoked invite): its title in the muted color, so that the ones that
+ * work stand out in a list of both.
  */
 export function SettingsListRow({
   icon,
   title,
+  inactive = false,
   caption,
   facts,
   standing,
@@ -741,6 +779,8 @@ export function SettingsListRow({
 }: {
   icon?: IconName | undefined;
   title: string;
+  /** Whether what it names does not work now. */
+  inactive?: boolean | undefined;
   caption?: string | undefined;
   /**
    * What is known of it, a line each (which browser this is, when it signed in, when it was last used): a line too
@@ -757,7 +797,7 @@ export function SettingsListRow({
   end?: ReactNode;
   result?: SettingsRowResult | undefined;
 }) {
-  const s = list();
+  const s = list({ inactive });
   const titleId = useId();
   const value = use(ValuesContext);
   const named = (
@@ -977,6 +1017,162 @@ export function SettingsFacts({
         </Stack>
       ))}
     </Stack>
+  );
+}
+
+const note = tv({
+  slots: {
+    root: "[word-break:auto-phrase]",
+    link: "whitespace-nowrap",
+    // The values to copy, on the page's surface, in the code's face; a long one breaks anywhere.
+    values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
+    value: "wrap-anywhere tabular-nums",
+    result: "text-caption text-muted-text",
+    // What a section says came of a change: where the screen moves the focus to it, the ring a keyboard's focus shows.
+    said: "rounded-control outline-hidden focus-visible:shadow-focus",
+    // A QR code is dark on light whatever the scheme, or a camera does not read it.
+    qr: "rounded-control bg-surface p-screen-air text-text [color-scheme:light]",
+    code: "size-screen-qr fill-current",
+  },
+  variants: {
+    instead: {
+      // In an action's place: the text's own size and color, a row's gap more before it than the description has.
+      true: { root: "pt-screen-row-gap text-body text-text" },
+      false: { root: "text-caption text-muted-text" },
+    },
+  },
+  defaultVariants: { instead: false },
+});
+
+/**
+ * A sentence in a section that is no setting and no state of a control: what a list's rows mean for the reader, what
+ * an action there will do, why one cannot be done; then the links to where they act on it (the password's screen, the
+ * apps), each a link of the text. Muted, at the caption's size. `instead`, the sentence that stands in the place of
+ * an action the reader cannot take now and says why (no Create invite at the cap): in the text's size and color, set
+ * apart from the section's description, still words and no tile.
+ */
+export function SettingsNote({
+  links,
+  instead = false,
+  children,
+}: {
+  /** Where the reader acts on what the sentence says, after it. */
+  links?: readonly { href: string; label: string }[] | undefined;
+  /** Whether it says why an action of the section is not there. */
+  instead?: boolean | undefined;
+  children: string;
+}) {
+  return (
+    <p className={note({ instead }).root()}>
+      {children}
+      {/* The first link meets the sentence as an action does; each next one stands a middle dot after the one before. */}
+      {links?.map((link, i) => (
+        <Fragment key={link.href}>
+          {i === 0 ? actionJoint(children) : actionJoint(link.label)}
+          {/* A link's few words hold together: the line wraps before it, never inside it. */}
+          <span className={note().link()}>
+            <TextLink href={link.href}>{link.label}</TextLink>
+          </span>
+        </Fragment>
+      ))}
+    </p>
+  );
+}
+
+/**
+ * What came of something the reader did in a section, in a line of it (a `SaveState`: a passkey removed, a browser
+ * signed out), read as it comes (`role="status"`). Given a `ref`, it takes the focus that the control which did it
+ * left behind when that control went with what it changed (the row's own button): the screen moves the focus there
+ * once the confirmation over the section has left, so that a keyboard stays in the section and a screen reader reads
+ * what happened.
+ */
+export function SettingsResult({
+  ref,
+  children,
+}: {
+  ref?: Ref<HTMLParagraphElement> | undefined;
+  children: ReactNode;
+}) {
+  return (
+    <p ref={ref} role="status" tabIndex={ref === undefined ? undefined : -1} className={note().said()}>
+      {children}
+    </p>
+  );
+}
+
+/**
+ * What the reader copies and keeps (recovery codes, the key of an authenticator app, a secret shown once), named by
+ * `label`: the values in the code's face on the page's surface, each on a line of its own, two side by side where
+ * they fit, and under them the action that copies them all (`action`, a `Button`) with what came of it right after
+ * (`result`, read as it comes). A press on the values selects them all, for a reader who copies by hand.
+ */
+export function CopyBlock({
+  label,
+  values,
+  action,
+  result,
+}: {
+  label: string;
+  values: readonly string[];
+  action: ReactNode;
+  /** What came of copying, in a word or two (Copied). */
+  result?: string | undefined;
+}) {
+  const s = note();
+  return (
+    <Stack gap="screen-row-gap">
+      <Grid
+        as="ul"
+        columns={values.length > 1 ? 2 : 1}
+        gap="screen-air"
+        gapX="shell-edge"
+        aria-label={label}
+        className={s.values()}
+      >
+        {values.map((value) => (
+          <li key={value} className={s.value()}>
+            {value}
+          </li>
+        ))}
+      </Grid>
+      <Row wrap align="center" gap="screen-row-gap">
+        <Row as="span" inline rigid>
+          {action}
+        </Row>
+        <span role="status" className={s.result()}>
+          {result}
+        </span>
+      </Row>
+    </Stack>
+  );
+}
+
+/**
+ * A QR code for a camera to read (the key of an authenticator app), named by `label`: the dark modules of `path`,
+ * one unit a module, in a square view box of `size` modules that holds the quiet zone, dark on light in either
+ * scheme.
+ */
+export function QrFrame({ label, size, path }: { label: string; size: number; path: string }) {
+  const s = note();
+  return (
+    <Row justify="start">
+      <Box className={s.qr()}>
+        <Box
+          display="block"
+          as={
+            <svg
+              role="img"
+              aria-label={label}
+              viewBox={`0 0 ${String(size)} ${String(size)}`}
+              shapeRendering="crispEdges"
+              className={s.code()}
+            />
+          }
+        >
+          <path d={path} />
+        </Box>
+      </Box>
+    </Row>
   );
 }
 

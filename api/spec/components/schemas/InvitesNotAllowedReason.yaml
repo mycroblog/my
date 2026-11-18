@@ -1,0 +1,9 @@
+# SPDX-License-Identifier: MIT
+description: |
+  Why the user may not create invites of their own now, the first that holds of
+  `registration_closed`: the registration mode is `closed`, which takes no new accounts;
+  `not_permitted`: the instance setting `invite_creators` is not `everyone` and the user's
+  roles lack `create_invites`; `not_approved`: the registration of the account is not
+  approved; `restricted`: the account is suspended or limited.
+type: string
+enum: [registration_closed, not_permitted, not_approved, restricted]

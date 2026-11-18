@@ -151,6 +151,132 @@ export {
 } from "./accounts";
 export { domainMutesQuery, muteDomain, useMutedDomain, useMutedDomains, useMuteDomain } from "./domains";
 export {
+  confirmationFields,
+  confirmationRefused,
+  confirmWithPasskey,
+  useConfirmWithPasskey,
+  type Confirmation,
+  type ConfirmedOperation,
+  type PasskeyAssertion,
+} from "./confirmation";
+export {
+  changePassword,
+  passwordStatusQuery,
+  removePassword,
+  useHasPassword,
+  usePasswordWrites,
+  type PasswordRemoval,
+  type PasswordStatus,
+  type PasswordWrites,
+} from "./password";
+export {
+  addPasskey,
+  deletePasskey,
+  passkeysQuery,
+  usePasskeys,
+  usePasskeyWrites,
+  type Passkey,
+  type PasskeyWrites,
+} from "./passkeys";
+export {
+  disableTotp,
+  enableTotp,
+  regenerateRecoveryCodes,
+  setUpTotp,
+  totpSetupExpired,
+  totpSetupQuery,
+  twoFactorQuery,
+  useTotpSetup,
+  useTwoFactor,
+  useTwoFactorWrites,
+  type TotpSetup,
+  type TwoFactor,
+  type TwoFactorWrites,
+} from "./two-factor";
+export {
+  beginExternalConfirmation,
+  beginLinkIdentity,
+  linkedIdentitiesQuery,
+  readExternalOutcome,
+  unlinkIdentity,
+  useLinkedIdentities,
+  useLinkedIdentityWrites,
+  type ExternalErrorReason,
+  type ExternalOutcome,
+  type ExternalStart,
+  type LinkableLoginProvider,
+  type LinkedIdentities,
+  type LinkedIdentity,
+  type LinkedIdentityWrites,
+} from "./linked-identities";
+export {
+  browserSessionsQuery,
+  revokeBrowserSession,
+  revokeOtherBrowserSessions,
+  useBrowserSessions,
+  useBrowserSessionWrites,
+  type BrowserSession,
+  type BrowserSessionWrites,
+} from "./browser-sessions";
+export { loadSecurity, useSecurityRead } from "./security";
+export { loadApps, useAppsRead } from "./apps";
+export {
+  authorizedAppsQuery,
+  revokeAuthorizedApp,
+  useAuthorizedApps,
+  useRevokeAuthorizedApp,
+  type AuthorizedApp,
+} from "./authorized-apps";
+export {
+  createOAuthApp,
+  deleteOAuthApp,
+  issueOAuthAppToken,
+  oAuthAppRegistrationOff,
+  oAuthAppQuery,
+  oAuthAppsQuery,
+  rotateOAuthAppSecret,
+  updateOAuthApp,
+  useOAuthApp,
+  useOAuthAppRead,
+  useOAuthAppRegistrationOff,
+  useOAuthAppsRead,
+  useOAuthAppTokenRead,
+  useOAuthApps,
+  useOAuthAppWrites,
+  type CreateOAuthApp,
+  type OAuthApp,
+  type OAuthAppCreated,
+  type OAuthAppToken,
+  type OAuthAppWrites,
+  type UpdateOAuthApp,
+} from "./oauth-apps";
+export {
+  createOwnInvite,
+  invitesNotAllowed,
+  invitesNotAllowedReason,
+  inviteStateNow,
+  inviteValueRefused,
+  loadInviteRight,
+  loadOwnInvites,
+  ownInvitesQuery,
+  revokeOwnInvite,
+  useInviteRightKnown,
+  useMayInvite,
+  useOwnInviteFound,
+  useOwnInviteRead,
+  useOwnInvites,
+  useOwnInviteWrites,
+  type CreateOwnInvite,
+  type InvitesNotAllowedReason,
+  type InviteState,
+  type InviteStateNow,
+  type MemberInviteLimits,
+  type OwnInvite,
+  type OwnInviteRead,
+  type OwnInvites,
+  type OwnInviteWrites,
+} from "./invites";
+export {
   cachePostedStatus,
   choiceOf,
   defaultComposeSettings,
@@ -161,6 +287,7 @@ export {
   refusal,
   refusalDetail,
   refusedField,
+  refusedMember,
   ruleOf,
   saveDraft,
   uploadAttachment,
@@ -305,7 +432,7 @@ export {
   type PickerCustomEmoji,
   type StatusReactor,
 } from "./reactions";
-export { endSession, onSignedOutElsewhere, openSession, visitorData, type SessionEnd } from "./session";
+export { closeSession, endSession, onSignedOutElsewhere, openSession, visitorData, type SessionEnd } from "./session";
 export {
   appPath,
   finishSignIn,

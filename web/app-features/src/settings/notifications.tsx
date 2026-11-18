@@ -74,8 +74,9 @@ import { pushNeedsInstall, trySound } from "@my/platform";
 import { useState } from "react";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
-import { Choice, ReadingNotice, Toggle } from "./controls";
+import { Choice, Toggle } from "./controls";
 import type { SettingsEntryProps } from "./entries";
+import { ReadingNotice } from "./parts";
 import { Said, useSaving } from "./saving";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -634,7 +635,7 @@ export function NotificationSettings({ back }: SettingsEntryProps) {
       icon="notifications"
       title={t("settings.entry.notifications")}
       back={back}
-      notice={read ? undefined : <ReadingNotice failed={status === "failed"} onRetry={retry} />}
+      notice={read ? undefined : <ReadingNotice status={status === "failed" ? "failed" : "loading"} retry={retry} />}
     >
       {read && <Sections settings={settings} policy={policy} preferences={preferences} />}
     </SettingsScreen>

@@ -64,8 +64,8 @@ import {
 } from "@my/design-system";
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { ReadingNotice } from "./controls";
 import type { SettingsEntryProps } from "./entries";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -515,8 +515,8 @@ export function RelationshipSettings({ back }: SettingsEntryProps) {
         back={back}
         notice={
           <ReadingNotice
-            failed={!pending}
-            onRetry={() => {
+            status={!pending ? "failed" : "loading"}
+            retry={() => {
               for (const read of reads) read.refetch();
             }}
           />

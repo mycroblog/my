@@ -18,6 +18,7 @@ export {
   type FakeSeed,
   type FakeStreamEvent,
 } from "./api";
+export { fakeExternalConfirmation, fakeTotpCode, type AccessOptions, type FakeLoginProviderKind } from "./access";
 export { apps as scenarioApps, instance as scenarioInstance } from "../scenario";
 export { serverHtml } from "./html";
 export { memberNotificationRows, moderatorNotificationRows, type FakeNotificationRow } from "./settings";

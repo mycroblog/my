@@ -29,6 +29,8 @@
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
+// How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are access.ts's.
+//
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
 // `newNotification` make one. A test scripts an operation with `script` (script.ts). The token revocation the app
 // signs out through (POST /oauth/revoke) is no operation of the client API: the fake answers it itself, keeps it
@@ -69,6 +71,14 @@ import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } 
 import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { createScripts, type Script, type Scripted } from "./script";
+import {
+  accessHandlers,
+  appIds,
+  inviteIds,
+  loginProviderIds,
+  type AccessOptions,
+  type FakeLoginProviderKind,
+} from "./access";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
 type Account = Schema<"Account">;
@@ -393,6 +403,11 @@ export type FakeOptions = {
    */
   uploads?: "processing" | "refused";
   /**
+   * How the reader's account stands in the settings (access.ts): its password, passkeys, two-factor authentication,
+   * linked accounts, signed-in browsers, authorized apps, own OAuth apps and invites; a typical account by default.
+   */
+  access?: AccessOptions;
+  /**
    * The token revocation, which the app signs out through (POST /oauth/revoke, no operation of the client API), fails
    * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
    */
@@ -547,6 +562,20 @@ export type FakeApi = {
   heldPath: (username: string) => string;
   /** The app's address of the reader's newest notification of `type`: where a push or an email about it leads. */
   notificationPath: (type: string) => string;
+  /** The ID of the fake's login provider of `kind`, as a provider's return names it in the address's fragment. */
+  loginProviderId: (kind: FakeLoginProviderKind) => string;
+  /**
+   * The ID of the fake's app at `index` of the apps the reader authorized (`authorized`: the server's web client, an
+   * app that registered itself, one known by its metadata document, one a user registered) or of the apps the reader
+   * registered (`own`: a confidential, a public and a disabled one); an ID that names no app past them.
+   */
+  appId: (list: "authorized" | "own", index: number) => string;
+  /**
+   * The ID of the reader's invite at `index` of their list as it is by default (two that work, the second used once,
+   * a revoked one, an expired one, one used up, one whose creator was not eligible), then of the twenty older ones of
+   * `access.invites: "many"`; an ID that names none past them.
+   */
+  inviteId: (index: number) => string;
 };
 
 /** An answer that never comes. */
@@ -1984,7 +2013,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     registrations: {
       mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
     },
-    login_providers_only: false,
+    login_providers_only: o.access?.providersOnly === true,
     limits: {
       max_post_characters: 500,
       require_media_description: o.requiresDescriptions === true,
@@ -3484,6 +3513,21 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ownDrafts.splice(ownDrafts.indexOf(d), 1);
       return { status: 201, body: publish(d) };
     },
+
+    // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
+
+    ...accessHandlers({
+      options: o.access ?? {},
+      viewer: { username: viewer, password: personOf(viewer).password },
+      started,
+      origin: fakeOrigin,
+      singleUser: o.singleUser === true,
+      registrationClosed: instanceBody.registrations.mode === "closed",
+      problem,
+      notFound,
+      idAt,
+      page,
+    }),
   };
 
   /**
@@ -3701,5 +3745,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     conversationPath,
     heldPath,
     notificationPath,
+    loginProviderId: (kind) => loginProviderIds(started, idAt)[kind],
+    appId: (list, index) => appIds(started, idAt)[list][index] ?? idAt(started, 74_990),
+    inviteId: (index) => inviteIds(started, idAt)[index] ?? idAt(started, 76_990),
   };
 }

@@ -44,7 +44,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import { useActionDate } from "./account";
-import { ReadingNotice } from "./controls";
+import { ReadingNotice } from "./parts";
 import { useRemovals } from "./relationships";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -245,8 +245,8 @@ export function AccountAliasesScreen({ onBack }: { onBack: () => void }) {
         notice={
           <ReadingNotice
             words={{ loading: t("settings.account.aliases.loading"), failed: t("settings.account.aliases.failed") }}
-            failed={status === "error"}
-            onRetry={retry}
+            status={status === "error" ? "failed" : "loading"}
+            retry={retry}
           />
         }
       />

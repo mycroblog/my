@@ -42,9 +42,10 @@ import { useId } from "react";
 import { asksApproval, choiceText, interactionChoices, interactions } from "../interactions";
 import { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
-import { Choice, ReadingNotice, Toggle } from "./controls";
+import { Choice, Toggle } from "./controls";
 import type { SettingsEntryProps } from "./entries";
 import { languageOptions, ownName, withLanguage } from "./languages";
+import { ReadingNotice } from "./parts";
 import { useSaving } from "./saving";
 import { timeZoneOptions, withTimeZone } from "./time-zones";
 
@@ -322,7 +323,11 @@ export function DisplaySettings({ back, languages }: SettingsEntryProps) {
       icon="display"
       title={t("settings.entry.display")}
       back={back}
-      notice={preferences === undefined ? <ReadingNotice failed={status === "failed"} onRetry={retry} /> : undefined}
+      notice={
+        preferences === undefined ? (
+          <ReadingNotice status={status === "failed" ? "failed" : "loading"} retry={retry} />
+        ) : undefined
+      }
     >
       {preferences !== undefined && <Sections preferences={preferences} languages={languages} />}
     </SettingsScreen>

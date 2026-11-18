@@ -53,9 +53,18 @@ const besideRelationships = (at: string) => [
   ["Notifications", "/settings/notifications", null],
   ["Relationships", entry, "page"],
   ["Keyword filters", "/settings/filters", null],
+  ["Security", "/settings/security", null],
+  ["Apps", "/settings/apps", null],
+  ["Invites", "/settings/invites", null],
   ["Account and data", "/settings/account", null],
   ["Sign out…", `${at}?sign_out=true`, null],
 ];
+
+/**
+ * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
+ * read as the app opens there, and the entry comes with the answer.
+ */
+const withInvites = () => screen.findByRole("link", { name: "Invites" });
 
 /** Waits until the entry's lists are drawn: its sections are in place. */
 const entryRead = () => main().findByRole("region", { name: /^Blocked accounts/ });
@@ -78,6 +87,7 @@ describe("the entry", () => {
     expect(app.path()).toBe(entry);
     expect(heading()).toBe("Relationships");
     expect(app.title()).toContain("Relationships");
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideRelationships(entry));
     // Its four lists, as the feature draws them.
     expect(main().getAllByRole("region")).toHaveLength(4);
@@ -116,6 +126,7 @@ describe("the whole of a list", () => {
     expect(heading()).toBe("Muted servers");
     expect(app.title()).toContain("Muted servers");
     expect(main().getAllByRole("listitem")).toHaveLength(9);
+    await withInvites();
     // A screen of the same entry: the menu beside it still marks Relationships.
     expect(beside().flatMap(rows)).toEqual(besideRelationships(`${entry}/servers`));
 
@@ -147,6 +158,7 @@ describe("the whole of a list", () => {
     const missing = await main().findByRole("alert");
     expect(missing.textContent).toMatch(/^This settings page does not exist\. Check the address\.\s*Relationships$/);
     expect(main().queryAllByRole("listitem")).toHaveLength(0);
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideRelationships(`${entry}/nothing`));
 
     await app.user.click(within(missing).getByRole("link", { name: "Relationships" }));

@@ -17,7 +17,7 @@
 // that the reader signed out, so that it leaves too (`onSignedOutElsewhere`).
 import { createClient, type TokenSource } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
-import { createAppData, type AppData } from "./app-data";
+import { closeData, createAppData, type AppData } from "./app-data";
 import type { ServerWatch } from "./server";
 
 /** The endpoint that trades the cookie for an access token, and the header it requires. */
@@ -283,17 +283,16 @@ export type SessionEnd = "revoked" | "unrevoked";
 /**
  * Ends the browser's session of `data`, signing out (ADR-0090 §13): revokes its access token as the web client
  * `clientId`, which ends the session on the server and deletes its cookie; without a token it sends nothing. Then it
- * forgets this tab's token and empties its cache of server data, runs `clean` (what the caller removes of the
- * browser), and only then tells the other tabs that the reader signed out, so that a tab that loads anew finds the
- * browser cleaned. It resolves with which of the two happened, and rejects, with nothing changed, when the server did
- * not take the revocation (no answer, or an error).
+ * closes the session in this browser (`closeSession`, with `clean`: what the caller removes of the browser). It
+ * resolves with which of the two happened, and rejects, with nothing changed, when the server did not take the
+ * revocation (no answer, or an error).
  */
 export async function endSession(
   data: AppData,
   clientId: string,
   clean: () => Promise<void> = () => Promise.resolve(),
 ): Promise<SessionEnd> {
-  const { connection, watch, queryClient } = data;
+  const { connection, watch } = data;
   const tokenSource = connection?.tokenSource;
   // Data that connects with no token (a simulated server's) names none.
   const token = tokenSource === undefined ? "" : await tokenSource.getAccessToken();
@@ -308,22 +307,42 @@ export async function endSession(
     );
     if (!response.ok) throw new Error(`app-data: ${revokePath} answered ${String(response.status)}`);
   }
-  const session = tokenSource instanceof SessionTokenSource ? tokenSource : undefined;
-  session?.forget();
-  queryClient.clear();
-  await clean();
-  session?.tellSignedOut();
+  await closeSession(data, clean);
   return token === null ? "unrevoked" : "revoked";
 }
 
 /**
+ * Closes the session of `data` in this browser, with nothing asked of the server: what ending a session leaves to do
+ * once the server ended it, by the revocation of `endSession` or by something else the reader did (revoking the
+ * server's own web client among the authorized apps, which ends every browser's session). It forgets this tab's
+ * token and closes the data (`closeData`: its cache of server data is emptied and stays empty, and the screens still
+ * drawn read nothing more of a server that would refuse them), runs `clean` (what the caller removes of the browser),
+ * and only then tells the other tabs that the reader signed out, so that a tab that loads anew finds the browser
+ * cleaned.
+ */
+export async function closeSession(data: AppData, clean: () => Promise<void> = () => Promise.resolve()): Promise<void> {
+  const tokenSource = data.connection?.tokenSource;
+  const session = tokenSource instanceof SessionTokenSource ? tokenSource : undefined;
+  session?.forget();
+  // The screens stay drawn until the page loads anew: the data reads and keeps nothing for them from here on.
+  closeData(data);
+  await clean();
+  session?.tellSignedOut();
+}
+
+/**
  * Calls `listener` when the reader signs out of the session of `data` in another tab of the browser, until the
- * function it returns is called: this tab's token is forgotten by then, and what it shows is no session's any more.
- * Nothing for data that is no browser session's.
+ * function it returns is called: this tab's token is forgotten by then, its data is closed (its cache of server data
+ * empty, and nothing more asked of the server), and what it shows is no session's any more. Nothing for data that is
+ * no browser session's.
  */
 export function onSignedOutElsewhere(data: AppData, listener: () => void): () => void {
   const tokenSource = data.connection?.tokenSource;
-  return tokenSource instanceof SessionTokenSource ? tokenSource.onSignedOut(listener) : () => undefined;
+  if (!(tokenSource instanceof SessionTokenSource)) return () => undefined;
+  return tokenSource.onSignedOut(() => {
+    closeData(data);
+    listener();
+  });
 }
 
 /**

@@ -14,3 +14,6 @@ export const Approval = authStory("sign-up", "approval");
 export const External = authStory("sign-up", "external");
 export const ProvidersOnly = authStory("sign-up", "providers-only");
 export const Closed = authStory("sign-up", "closed");
+export const InviteOnly = authStory("sign-up", "invite-only");
+export const InviteLink = authStory("sign-up", "invite-link");
+export const InviteInvalid = authStory("sign-up", "invite-invalid");

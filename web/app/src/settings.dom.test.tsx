@@ -46,6 +46,9 @@ const displayHint = "Language, time zone, link previews, defaults for new posts,
 const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
 const relationshipsHint = "Blocked accounts, muted accounts, muted servers, followed hashtags";
 const filtersHint = "Words and phrases that fold or hide posts";
+const securityHint = "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers";
+const appsHint = "Apps you allowed to use your account, apps you registered";
+const invitesHint = "Invite codes and links to bring people to this server";
 const accountHint =
   "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion";
 
@@ -54,6 +57,12 @@ const accountHint =
  * the fake's is in effect and can be appealed.
  */
 const counted = (menu: HTMLElement, label = "1 item to check") => within(menu).findByText(label);
+
+/**
+ * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
+ * read as the app opens there, and the entry comes with the answer.
+ */
+const withInvites = () => screen.findByRole("link", { name: "Invites" });
 
 describe("the menu", () => {
   test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
@@ -68,9 +77,10 @@ describe("the menu", () => {
     expect(app.title()).toContain("Settings");
     const menu = main().getByRole("navigation", { name: "Settings" });
     await counted(menu);
-    // Three groups have entries; a group without one is not drawn.
-    expect(groups(menu)).toEqual(["General", "People and filters", "Account"]);
-    const [profile, display, notifications, relationships, filters, account, ...others] = rows(menu);
+    // Every group has an entry; a group without one is not drawn.
+    expect(groups(menu)).toEqual(["General", "People and filters", "Sign-in and access", "Account"]);
+    const [profile, display, notifications, relationships, filters, security, apps, invites, account, ...others] =
+      rows(menu);
     // An entry's row says its name, then what it holds.
     expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
     expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
@@ -82,6 +92,13 @@ describe("the menu", () => {
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
     expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
     expect(filters?.slice(1)).toEqual(["/settings/filters", null]);
+    expect(security?.[0]).toMatch(new RegExp(`^Security\\s*${securityHint}$`));
+    expect(security?.slice(1)).toEqual(["/settings/security", null]);
+    expect(apps?.[0]).toMatch(new RegExp(`^Apps\\s*${appsHint}$`));
+    expect(apps?.slice(1)).toEqual(["/settings/apps", null]);
+    // The reader may create invites, which the settings read before the menu opens.
+    expect(invites?.[0]).toMatch(new RegExp(`^Invites\\s*${invitesHint}$`));
+    expect(invites?.slice(1)).toEqual(["/settings/invites", null]);
     // Then how many things wait there, as its badge and as what the badge means.
     expect(account?.[0]).toMatch(new RegExp(`^Account and data\\s*${accountHint}\\s*1\\s*1 item to check$`));
     expect(account?.slice(1)).toEqual(["/settings/account", null]);
@@ -125,17 +142,21 @@ describe("an entry", () => {
     expect(heading()).toBe("Display and posting");
     expect(app.title()).toContain("Display and posting");
     expect(app.path()).toBe("/settings/display");
+    await withInvites();
     const [menu, ...others] = beside();
     if (menu === undefined) throw new Error("test: no settings menu beside the screen");
     expect(others).toHaveLength(0);
     await counted(menu);
-    expect(groups(menu)).toEqual(["General", "People and filters", "Account"]);
+    expect(groups(menu)).toEqual(["General", "People and filters", "Sign-in and access", "Account"]);
     expect(rows(menu)).toEqual([
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
       ["Notifications", "/settings/notifications", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
+      ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
+      ["Invites", "/settings/invites", null],
       ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
@@ -153,6 +174,7 @@ describe("an entry", () => {
     );
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
+    await withInvites();
     for (const menu of beside()) await counted(menu);
     expect(beside().flatMap(rows)).toEqual([
       ["Profile", "/settings/profile", null],
@@ -160,6 +182,9 @@ describe("an entry", () => {
       ["Notifications", "/settings/notifications", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
+      ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
+      ["Invites", "/settings/invites", null],
       ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
@@ -223,6 +248,9 @@ describe("the display language", () => {
       ["通知", "/settings/notifications", null],
       ["つながり", "/settings/relationships", null],
       ["キーワードフィルタ", "/settings/filters", null],
+      ["セキュリティ", "/settings/security", null],
+      ["アプリ", "/settings/apps", null],
+      ["招待", "/settings/invites", null],
       ["アカウントとデータ 1確認が必要な項目 1 件", "/settings/account", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);

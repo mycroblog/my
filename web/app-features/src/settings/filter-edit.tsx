@@ -78,8 +78,8 @@ import { useEffect, useId, useRef, useState } from "react";
 import { placeRefusal, type FieldMembers } from "../field-errors";
 import { stringsIn } from "../locale";
 import { LimitCount } from "../profile-identity";
-import { ReadingNotice } from "./controls";
 import { filtersPath, useFilterDate } from "./filters";
+import { ReadingNotice } from "./parts";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -757,8 +757,8 @@ export function FilterEdit({ id, onBack, onUnsaved, leaving }: FilterEditProps) 
         back={back}
         notice={
           <ReadingNotice
-            failed={all.status === "error" || one.error !== null}
-            onRetry={() => {
+            status={all.status === "error" || one.error !== null ? "failed" : "loading"}
+            retry={() => {
               all.retry();
               one.retry();
             }}

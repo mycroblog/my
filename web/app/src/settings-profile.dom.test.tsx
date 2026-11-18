@@ -52,9 +52,18 @@ const besideProfile = (at: string) => [
   ["Notifications", "/settings/notifications", null],
   ["Relationships", "/settings/relationships", null],
   ["Keyword filters", "/settings/filters", null],
+  ["Security", "/settings/security", null],
+  ["Apps", "/settings/apps", null],
+  ["Invites", "/settings/invites", null],
   ["Account and data", "/settings/account", null],
   ["Sign out…", `${at}?sign_out=true`, null],
 ];
+
+/**
+ * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
+ * read as the app opens there, and the entry comes with the answer.
+ */
+const withInvites = () => screen.findByRole("link", { name: "Invites" });
 
 /** Waits until the entry's controls are drawn: its settings are read. */
 const entryRead = () => main().findByRole("textbox", { name: "Featured hashtags" });
@@ -113,6 +122,7 @@ describe("the entry", () => {
     expect(app.path()).toBe(entry);
     expect(heading()).toBe("Profile");
     expect(app.title()).toContain("Profile");
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideProfile(entry));
   });
 
@@ -126,6 +136,7 @@ describe("the entry", () => {
     expect(app.path()).toBe(form);
     expect(heading()).toBe("Edit profile");
     expect(app.title()).toContain("Edit profile");
+    await withInvites();
     // The form is a screen of the same entry: the menu beside it still marks Profile.
     expect(beside().flatMap(rows)).toEqual(besideProfile(form));
 
@@ -154,6 +165,7 @@ describe("the form", () => {
     expect((await formRead()).value).toBe("Yuki 雪");
     expect(heading()).toBe("Edit profile");
     expect(app.path()).toBe(form);
+    await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideProfile(form));
   });
 

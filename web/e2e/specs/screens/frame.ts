@@ -80,6 +80,11 @@ export class Frame {
     return this.page.getByRole("main").getByRole("heading", { level: 1, name, exact: true });
   }
 
+  /** The heading of the screen, whatever it names. */
+  get anyHeading(): Locator {
+    return this.page.getByRole("main").getByRole("heading", { level: 1 });
+  }
+
   /** Opens the composer of a new post. */
   async newPost(): Promise<Composer> {
     await this.navigation.getByRole("button", { name: "New post", exact: true }).click();

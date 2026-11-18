@@ -59,7 +59,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 A service that you run beside the server, one that hands out invites or records costs, say, can call the admin API for one permission without a plugin.
 
 1. Sign up an account for the service, and grant it a role with only the permissions the service needs (for invites, a role with `manage_invites`; [granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
-2. Signed in as that account, register an app in **Settings → Your apps** whose scopes include the permission scope, `admin:` and the permission: `admin:manage_invites`.
+2. Signed in as that account, register an app in **Settings → Apps → Your apps** whose scopes include the permission scope, `admin:` and the permission: `admin:manage_invites`.
 3. Issue a token to the account from the app, with that scope, and give the service the access token and the refresh token.
 
 - The token reaches only the operations of the permissions its scopes name, and only while the account's roles keep them; the audit log records what it does as the account's actions.
