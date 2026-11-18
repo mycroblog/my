@@ -3,8 +3,12 @@
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
 import {
   notificationSettingsQuery,
+  notificationSoundOn,
   pushSubscriptionQuery,
   rememberPushPromptClosed,
+  setNotificationSound,
+  turnPushOff,
+  turnPushOn,
   useNotificationKinds,
   usePushSubscription,
   useRegisterPush,
@@ -12,6 +16,7 @@ import {
 } from "./push";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
+import { refusedWith } from "./test/refused";
 
 describe("usePushSubscription", () => {
   test("is undefined until it is read, the server's once read, and null when the server has none (a 404)", async () => {
@@ -168,4 +173,89 @@ describe("rememberPushPromptClosed", () => {
       rememberPushPromptClosed("yuki", true);
     }).not.toThrow();
   });
+});
+
+describe("turnPushOff", () => {
+  let kept: Map<string, string>;
+  beforeEach(() => {
+    kept = new Map();
+    globalThis.localStorage = deviceStorage(kept);
+  });
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "localStorage");
+  });
+
+  test("deletes the server's subscription, and the cache holds none; the prompt stays closed on this device", async () => {
+    const { data, requests } = fakeData({ push: true, pushState: "subscribed" });
+    await data.queryClient.query(pushSubscriptionQuery(data));
+    expect(probe(data, usePushSubscription)).not.toBeNull();
+    rememberPushPromptClosed("yuki", true);
+    await turnPushOff(data, "yuki");
+    expect(requests.filter((r) => !r.startsWith("GET "))).toEqual(["DELETE /push/subscription"]);
+    expect(probe(data, usePushSubscription)).toBeNull();
+    expect(JSON.parse(kept.get("my:push-prompt-closed") ?? "[]")).toEqual(["yuki"]);
+  });
+
+  test("rejects when the server refuses, and the cache keeps the subscription", async () => {
+    const { fake, data } = fakeData({ push: true, pushState: "subscribed" });
+    fake.script("DELETE /push/subscription", { fail: 500 });
+    await data.queryClient.query(pushSubscriptionQuery(data));
+    const before = probe(data, usePushSubscription);
+    await refusedWith(turnPushOff(data, "yuki"));
+    expect(probe(data, usePushSubscription)).toEqual(before);
+  });
+});
+
+describe("the notification sound", () => {
+  beforeEach(() => {
+    globalThis.localStorage = deviceStorage();
+  });
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "localStorage");
+  });
+
+  test("is off until the device is told otherwise, and then is what it was told", () => {
+    expect(notificationSoundOn()).toBe(false);
+    setNotificationSound(true);
+    expect(notificationSoundOn()).toBe(true);
+    setNotificationSound(false);
+    expect(notificationSoundOn()).toBe(false);
+  });
+
+  test("is off on a device that keeps nothing, and setting it does not fail", () => {
+    const refuse = () => {
+      throw new DOMException("The storage is blocked", "SecurityError");
+    };
+    globalThis.localStorage = {
+      length: 0,
+      clear: refuse,
+      getItem: refuse,
+      key: refuse,
+      removeItem: refuse,
+      setItem: refuse,
+    };
+    expect(notificationSoundOn()).toBe(false);
+    expect(() => {
+      setNotificationSound(true);
+    }).not.toThrow();
+  });
+});
+
+describe("turnPushOn", () => {
+  afterEach(() => {
+    Reflect.deleteProperty(globalThis, "Notification");
+  });
+
+  for (const [permission, outcome] of [
+    ["denied", "blocked"],
+    ["default", "closed"],
+  ] as const)
+    test(`is ${outcome} when the person's answer to the browser's question is ${permission}, and asks the server nothing`, async () => {
+      const { data, requests } = fakeData({ push: true });
+      Object.assign(globalThis, {
+        Notification: { permission: "default", requestPermission: () => Promise.resolve(permission) },
+      });
+      expect(await turnPushOn(data, "yuki", "key", ["mention"])).toBe(outcome);
+      expect(requests.filter((r) => !r.startsWith("GET "))).toEqual([]);
+    });
 });
