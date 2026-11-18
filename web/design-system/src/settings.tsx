@@ -20,19 +20,36 @@
 //
 // A neutral control on a raised surface takes the page's surface (`raisedSurface`); the accent stays the one primary
 // action's of a screen, and nothing here takes another hue.
+//
+// For assistive technology: the menu is a navigation, each group a region named by its heading, the entry the reader
+// is at the current page, a count read by its label. A section is a region named by its heading, one level under the
+// screen's own. A setting's row names its control by its name and describes it by the line about it and by its save
+// state, whose place is a polite live region from the start. A save state and what came of sending a form are read
+// as they come, and the focus stays where it is. What the rules of ADR-0110 §6 ask of a rendered screen, and the lint
+// cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
+// (`data-settings-…`).
 
 import { createContext, use, useId, type ReactElement, type ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface } from "./button";
+import { describedBy, FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
 import { Box, Layers, Row, Stack } from "./layout";
 import { ScreenTitle } from "./list";
 import { useReader } from "./locale";
+import { SaveControlContext } from "./save-state";
 import { FrameFoot, FrameHead, FramePanel } from "./shell";
 
 /** Whether the menu stands beside a screen, on the page, its entries their glyph and name alone. */
 const CompactContext = createContext(false);
+
+/**
+ * The level of a section's heading: one under the screen's own name. The head of an entry's screen is the screen's
+ * heading again, hidden where the menu beside it marks the entry, so its sections stand right under the screen's
+ * heading; a screen under an entry keeps its head, and its sections stand under that.
+ */
+const SectionLevelContext = createContext<2 | 3>(3);
 
 const menu = tv({
   slots: {
@@ -124,11 +141,11 @@ export function SettingsGroup({ heading, children }: { heading: string; children
     </>
   );
   return compact ? (
-    <Stack as="section" gap="screen-air" aria-labelledby={id}>
+    <Stack as="section" gap="screen-air" aria-labelledby={id} data-settings-group="">
       {parts}
     </Stack>
   ) : (
-    <FramePanel as={<section aria-labelledby={id} />} gap="screen-air">
+    <FramePanel as={<section aria-labelledby={id} data-settings-group="" />} gap="screen-air">
       {parts}
     </FramePanel>
   );
@@ -170,7 +187,7 @@ export function SettingsItem({
   hint?: string | undefined;
   /** How many things wait there for the reader; none or zero shows no badge. */
   count: number | undefined;
-  /** What the count is, for assistive technology ("1 unread"). */
+  /** What the count is, for assistive technology ("1 unread"); without it, the number alone is read. */
   countLabel?: string | undefined;
   href: string;
   current?: boolean;
@@ -180,7 +197,8 @@ export function SettingsItem({
   const s = menu({ compact });
   const shown = useCount(count);
   return (
-    // The row fills the entry.
+    // The row fills the entry. Its parts are a space apart in its name ("Security Password, passkeys…", "Account and
+    // data 1 unread"), which no box of the row shows.
     <Stack as="li">
       <LinkRow as={<Link href={href} className={s.item()} {...(current ? { "aria-current": "page" as const } : {})} />}>
         <Row as="span" inline rigid className={s.glyph()}>
@@ -188,11 +206,25 @@ export function SettingsItem({
         </Row>
         <Stack as="span" grow>
           <span className={s.title()}>{label}</span>
-          {hint !== undefined && !compact && <span className={s.hint()}>{hint}</span>}
+          {hint !== undefined && !compact && (
+            <>
+              {" "}
+              <span className={s.hint()}>{hint}</span>
+            </>
+          )}
         </Stack>
         {shown !== undefined && (
           <>
-            <Row as="span" inline rigid align="center" justify="center" className={s.badge()} aria-hidden="true">
+            {" "}
+            <Row
+              as="span"
+              inline
+              rigid
+              align="center"
+              justify="center"
+              className={s.badge()}
+              aria-hidden={countLabel === undefined ? undefined : "true"}
+            >
               {shown}
             </Row>
             {countLabel !== undefined && <span className="sr-only">{countLabel}</span>}
@@ -239,9 +271,9 @@ export function SettingsScreen({
     </ScreenTitle>
   );
   return (
-    <Stack gap="shell-edge" className={screen()}>
-      {sub ? head : <FrameHead>{head}</FrameHead>}
-      {children}
+    <Stack gap="shell-edge" className={screen()} data-settings-screen="">
+      {sub ? <div data-frame-head="">{head}</div> : <FrameHead>{head}</FrameHead>}
+      <SectionLevelContext value={sub ? 3 : 2}>{children}</SectionLevelContext>
       {foot}
     </Stack>
   );
@@ -256,9 +288,10 @@ const section = tv({
 });
 
 /**
- * A section of a settings screen, a raised surface under its heading, with how many it lists after it, muted, a line
- * that describes it, and `action` at the end of the heading's line (the one add action of its list): what it holds
- * one under another, seven actions at most.
+ * A section of a settings screen, a raised surface under its heading, which names it as a region, with how many it
+ * lists after it, muted, a line that describes it, and `action` at the end of the heading's line (the one add action
+ * of its list). What it holds stands one under another, each one thing the reader may do there (a setting, a list,
+ * what stands in an empty list's place): seven at most, `action` among them (ADR-0110 §6).
  */
 export function SettingsSection({
   heading,
@@ -277,11 +310,12 @@ export function SettingsSection({
 }) {
   const id = useId();
   const s = section();
+  const Heading = `h${use(SectionLevelContext)}` as const;
   return (
-    <FramePanel as={<section aria-labelledby={id} {...raisedSurface} />} gap="screen-row-gap">
+    <FramePanel as={<section aria-labelledby={id} data-settings-section="" {...raisedSurface} />} gap="screen-row-gap">
       <Stack gap="hair">
         <Row wrap align="center" justify="between" gap="screen-tabs-gap">
-          <h3 id={id} className={s.heading()}>
+          <Heading id={id} className={s.heading()}>
             {heading}
             {count !== undefined && (
               <>
@@ -289,9 +323,9 @@ export function SettingsSection({
                 <span className={s.count()}>{count}</span>
               </>
             )}
-          </h3>
+          </Heading>
           {action !== undefined && (
-            <Row as="span" inline rigid push="end">
+            <Row as="span" inline rigid push="end" data-settings-action="">
               {action}
             </Row>
           )}
@@ -311,49 +345,93 @@ const row = tv({
     // save state finds its room there and no control moves, beside the name or under it.
     reserve: "min-h-icon-button-touch",
     label: "[word-break:auto-phrase]",
+    // The name of a setting that cannot be changed now, muted as every disabled label is.
+    off: "text-muted-text",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
     // The line about the setting while the save state stands in its place: it keeps its room.
     covered: "invisible",
   },
 });
 
-/**
- * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
- * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
- * the name, as a field under its label. A control that saves at once gives its save state (`save`, a `SaveState`,
- * `null` while it has nothing to say), which stands in the place of the line about it; the name's block keeps that
- * room from the start. The control is named by the row's name (`id`, its `labelledBy`).
- */
-export function SettingRow({
-  id,
-  label,
-  about,
-  save,
-  children,
-}: {
+export type SettingRowProps = {
   /** The id of the name, which names the control. */
   id: string;
   label: string;
   about?: string | undefined;
-  save?: ReactNode | null | undefined;
+  /** It cannot be changed now: its control is disabled, and `reason` says why, in place of the line about it. */
+  isDisabled?: boolean | undefined;
+  reason?: string | undefined;
   children: ReactNode;
-}) {
+} & (
+  | {
+      /**
+       * The save state of its control, which saves at once (a `SaveState`), in the place of the line about it;
+       * `null` while it has nothing to say.
+       */
+      save: ReactNode | null;
+      form?: undefined;
+    }
+  | {
+      /** It is a field of a form saved as a whole: the form's submit bar says what came of sending. */
+      form: true;
+      save?: undefined;
+    }
+);
+
+/**
+ * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
+ * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
+ * the name, as a field under its label. Its control either saves at once, and the row takes its save state (`save`,
+ * ADR-0110 §6), which stands in the place of the line about it, the name's block keeping that room from the start;
+ * or it is a field of a form saved as a whole (`form`), with no state of its own. The row names its control (`id`,
+ * the control's `labelledBy`, which a `Select` and a `NumberField` take from the row by themselves), describes it by
+ * the line about it and by the save state, and a press on the name puts the focus on it.
+ */
+export function SettingRow({ id, label, about, isDisabled = false, reason, save, form, children }: SettingRowProps) {
   const s = row();
-  const saving = save !== undefined && save !== null;
+  const saves = form !== true;
+  const saying = saves && save !== undefined && save !== null && save !== false;
+  const below = isDisabled && reason !== undefined ? reason : about;
+  // The control takes this id from the row where it has none of its own.
+  const controlId = `${id}-control`;
+  const aboutId = `${id}-about`;
+  const stateId = `${id}-state`;
   return (
     <Row wrap align="center" gap="screen-row-gap" className={s.root()}>
-      <Stack grow="setting" pack="center" className={save === undefined ? undefined : s.reserve()}>
-        <span id={id} className={s.label()}>
+      <Stack grow="setting" pack="center" className={saves ? s.reserve() : undefined}>
+        <label id={id} htmlFor={controlId} className={isDisabled ? `${s.label()} ${s.off()}` : s.label()}>
           {label}
-        </span>
-        {(about !== undefined || saving) && (
+        </label>
+        {(below !== undefined || saves) && (
           <Layers>
-            {about !== undefined && <span className={saving ? `${s.about()} ${s.covered()}` : s.about()}>{about}</span>}
-            {saving && save}
+            {below !== undefined && (
+              <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
+                {below}
+              </span>
+            )}
+            {/* The state's place, a live region that is there before the state is. */}
+            {saves && (
+              <span id={stateId} role="status">
+                <SaveControlContext value={() => document.getElementById(controlId)?.focus()}>
+                  {saying && save}
+                </SaveControlContext>
+              </span>
+            )}
           </Layers>
         )}
       </Stack>
-      <Box grow="control">{children}</Box>
+      <Box grow="control">
+        <FieldContext
+          value={{
+            id: controlId,
+            labelledBy: id,
+            describedBy: describedBy(below !== undefined && aboutId, saying && stateId),
+            disabled: isDisabled || undefined,
+          }}
+        >
+          {children}
+        </FieldContext>
+      </Box>
     </Row>
   );
 }
@@ -386,16 +464,17 @@ export function StatusSummary({
 }) {
   const id = useId();
   const s = summary();
+  const Heading = `h${use(SectionLevelContext)}` as const;
   return (
-    <FramePanel as={<section aria-labelledby={id} {...raisedSurface} />} gap="screen-row-gap">
+    <FramePanel as={<section aria-labelledby={id} data-settings-section="" {...raisedSurface} />} gap="screen-row-gap">
       <Row align="start" gap="screen-row-gap">
         <Row as="span" inline line rigid align="center">
           <Icon name={icon} place="action" />
         </Row>
         <Stack grow gap="hair">
-          <h3 id={id} className={s.title()}>
+          <Heading id={id} className={s.title()}>
             {title}
-          </h3>
+          </Heading>
           <p className={s.about()}>{about}</p>
         </Stack>
       </Row>
@@ -435,8 +514,9 @@ export function SettingsList({ label, children }: { label: string; children: Rea
 
 /**
  * A row of a section's list: its glyph, a title over a caption, a state in a word or two at its end, in muted words
- * with no surface (`state`), and what the reader may do with it (`end`: one or two buttons). With `href`, the whole row opens the screen under the entry
- * that holds it (changing the password, one filter), a chevron at its end in place of buttons.
+ * with no surface (`state`), and what the reader may do with it (`end`: one or two buttons, a group named by the
+ * row's title, so that one Remove is told from the next). With `href`, the whole row opens the screen under the
+ * entry that holds it (changing the password, one filter), a chevron at its end in place of buttons.
  */
 export function SettingsListRow({
   icon,
@@ -454,6 +534,8 @@ export function SettingsListRow({
   end?: ReactNode;
 }) {
   const s = list();
+  const titleId = useId();
+  // Its parts are a space apart in what assistive technology reads of the row, which no box of it shows.
   const parts = (
     <>
       {icon !== undefined && (
@@ -462,13 +544,23 @@ export function SettingsListRow({
         </Row>
       )}
       <Stack as="span" grow>
-        <bdi className={s.title()}>{title}</bdi>
-        {caption !== undefined && <span className={s.caption()}>{caption}</span>}
+        <bdi id={titleId} className={s.title()}>
+          {title}
+        </bdi>
+        {caption !== undefined && (
+          <>
+            {" "}
+            <span className={s.caption()}>{caption}</span>
+          </>
+        )}
       </Stack>
       {state !== undefined && (
-        <Box as="span" words className={s.state()}>
-          {state}
-        </Box>
+        <>
+          {" "}
+          <Box as="span" words className={s.state()}>
+            {state}
+          </Box>
+        </>
       )}
     </>
   );
@@ -486,8 +578,8 @@ export function SettingsListRow({
   return (
     <Row as="li" align="center" gap="screen-row-gap" className={s.row()}>
       {parts}
-      {end !== undefined && (
-        <Row as="span" inline rigid align="center" gap="screen-tabs-gap">
+      {end !== undefined && end !== null && end !== false && (
+        <Row as="span" inline rigid align="center" gap="screen-tabs-gap" role="group" aria-labelledby={titleId}>
           {end}
         </Row>
       )}
@@ -496,14 +588,18 @@ export function SettingsListRow({
 }
 
 /**
- * What stands in a list's place while it is empty: a sentence, and the action that adds the first one, which the
- * section's head then leaves out.
+ * What stands in a list's place while it is empty (ADR-0110 §5): a sentence, and the action that adds the first one,
+ * which is then the one place to add from: the section's head leaves its `action` out.
  */
 export function SettingsEmpty({ action, children }: { action?: ReactNode; children: string }) {
   return (
     <Stack gap="screen-row-gap">
       <p className={list().empty()}>{children}</p>
-      {action !== undefined && <Row justify="start">{action}</Row>}
+      {action !== undefined && (
+        <Row justify="start" data-settings-action="">
+          {action}
+        </Row>
+      )}
     </Stack>
   );
 }
@@ -511,13 +607,15 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
 /**
  * The submit bar of a form saved as a whole: its button (`children`, the screen's primary action) at the end, and
  * what came of sending right before it, in the same place every time (`result`: a `SaveState` once saved, a
- * `FormAlert` when refused). It ends the screen and stays at the bottom of the viewport while the form is longer.
+ * `FormAlert` when refused). It ends the screen and stays at the bottom of the viewport while the form is longer,
+ * the page keeping what takes the focus clear of it. The result's place is a polite live region from the start, so
+ * that assistive technology hears what came of sending (a `FormAlert` at once, as an alert).
  */
 export function SubmitBar({ result, children }: { result?: ReactNode; children: ReactNode }) {
   return (
     <FrameFoot>
       <Row wrap align="center" justify="end" gap="screen-row-gap">
-        {result !== undefined && <Box>{result}</Box>}
+        <Box role="status">{result}</Box>
         <Row as="span" inline rigid>
           {children}
         </Row>

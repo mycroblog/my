@@ -49,7 +49,7 @@ const words = {
     rename: "Rename",
     members: "Members",
     delete: "Delete list…",
-    count: (n: number) => `${n.toLocaleString("en")} ${n === 1 ? "member" : "members"}`,
+    count: (n: number) => `${new Intl.NumberFormat("en").format(n)} ${n === 1 ? "member" : "members"}`,
     empty: "No lists yet. Your lists show here, each with the posts of its members.",
     loading: "Loading your lists…",
     failed: "Your lists could not be loaded.",

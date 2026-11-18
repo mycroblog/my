@@ -6,13 +6,16 @@
 // is the primary action's and the links'): off, a muted thumb at the track's start on the raised surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
-// why; assistive technology reads the line as the switch's description. A switch that saves as it is pressed (a
-// setting) takes its save state (`save`): it stands in the description's place while it has something to say, the
-// description keeping its room, and the row is a finger's target tall, so that nothing under it moves.
+// why; assistive technology reads the line as the switch's description. A switch saves as it is pressed, so it
+// always takes its save state (`save`, ADR-0110 §6): it stands in the description's place while it has something to
+// say, the description keeping its room, and the row is a finger's target tall, so that nothing under it moves. The
+// state's place is a polite live region from the start, and the state there describes the switch: assistive
+// technology hears it as it comes, and again with the switch.
 
-import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
+import { useId, useRef, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { SaveControlContext } from "./save-state";
 
 const toggle = tv({
   slots: {
@@ -94,10 +97,10 @@ export type SwitchProps = {
   /** The name it posts under in a form, when it is in one. */
   name?: string | undefined;
   /**
-   * It saves as it is pressed: its save state (a `SaveState`), in the description's place while there is one; `null`
-   * while it has nothing to say.
+   * Its save state (a `SaveState`), in the description's place while there is one; `null` while it has nothing to
+   * say. A switch saves as it is pressed, so it never goes without.
    */
-  save?: ReactNode | null | undefined;
+  save: ReactNode | null;
 };
 
 /** A setting on or off: its label and description at the row's start, the track at its end. */
@@ -113,16 +116,20 @@ export function Switch({
   save,
 }: SwitchProps) {
   const s = toggle();
+  const stateId = useId();
+  const input = useRef<HTMLInputElement>(null);
   const below = isDisabled && reason !== undefined ? reason : description;
-  const saving = save !== undefined && save !== null;
+  const saying = save !== undefined && save !== null && save !== false;
   return (
     <ToggleFrame
-      className={save === undefined ? s.root() : `${s.root()} ${s.saves()}`}
+      className={`${s.root()} ${s.saves()}`}
       {...(isSelected === undefined ? {} : { isSelected })}
       {...(defaultSelected === undefined ? {} : { defaultSelected })}
       {...(onChange === undefined ? {} : { onChange })}
       {...(name === undefined ? {} : { name })}
       isDisabled={isDisabled}
+      inputRef={input}
+      {...(saying ? { "aria-describedby": stateId } : {})}
     >
       <SwitchButton className={s.button()}>
         <TogglePlace at="label" className={s.label()}>
@@ -133,15 +140,14 @@ export function Switch({
         </TogglePlace>
       </SwitchButton>
       {below !== undefined && (
-        <ToggleNote slot="description" className={saving ? `${s.description()} ${s.covered()}` : s.description()}>
+        <ToggleNote slot="description" className={saying ? `${s.description()} ${s.covered()}` : s.description()}>
           {below}
         </ToggleNote>
       )}
-      {saving && (
-        <TogglePlace at="state" className="">
-          {save}
-        </TogglePlace>
-      )}
+      {/* The state's place, a live region that is there before the state is. */}
+      <TogglePlace at="state" className="" id={stateId} role="status">
+        <SaveControlContext value={() => input.current?.focus()}>{saying && save}</SaveControlContext>
+      </TogglePlace>
     </ToggleFrame>
   );
 }

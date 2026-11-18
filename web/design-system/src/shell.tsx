@@ -52,11 +52,14 @@ const frame = tv({
     // On a phone, a disclosure's toggle is its label's width and little more, wherever on the page it stands, what
     // lies over the frame too (`--disclosure-toggle-inline` on the page, which disclosure.tsx reads).
     // On a phone, the page's scroller keeps what it scrolls into view (the focus, a match of find in page) clear of the
-    // dock: its scroll padding at the end is `--shell-dock`, the height the dock covers (useDockHeight).
+    // dock: its scroll padding at the end is `--shell-dock`, the height the dock covers (useDockHeight). At every
+    // width it keeps it clear of what is held at the viewport's bottom over the screen (`--shell-foot`, the height of
+    // a `FrameFoot`), above the dock on a phone.
     root: [
       "box-border min-h-dvh bg-surface font-sans text-text [body:has(&)]:m-0 [html:has(&)]:bg-surface",
       "[--shell-call:0rem] has-[[data-frame-call]]:[--shell-call:var(--shell-call-bar)]",
-      "max-tablet:[html:has(&)]:scroll-pb-[var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))]",
+      "[html:has(&)]:scroll-pb-[var(--shell-foot,0px)]",
+      "max-tablet:[html:has(&)]:scroll-pb-[calc(var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))+var(--shell-foot,0px))]",
       "max-tablet:[html:has(&)]:[--disclosure-toggle-inline:var(--disclosure-padding)]",
       "tablet:flex tablet:justify-center tablet:gap-shell-gap tablet:px-shell-edge desktop:gap-shell-gap-wide",
     ],
@@ -424,17 +427,48 @@ export function FramePanel({
  * marks its entry): its title and the way back, under `wide` alone.
  */
 export function FrameHead({ children }: { children: ReactNode }) {
-  return <div className="wide:hidden">{children}</div>;
+  return (
+    <div className="wide:hidden" data-frame-head="">
+      {children}
+    </div>
+  );
+}
+
+/**
+ * Keeps `--shell-foot` on the document the height of what is held at the viewport's bottom over the screen (`el`),
+ * which the frame adds to the page's scroll padding at the end: what takes the focus under it scrolls clear of it.
+ */
+function useFootHeight(el: RefObject<HTMLElement | null>): void {
+  useEffect(() => {
+    const foot = el.current;
+    if (foot === null) return;
+    const root = document.documentElement;
+    const measure = () => {
+      root.style.setProperty("--shell-foot", `${String(Math.ceil(foot.getBoundingClientRect().height))}px`);
+    };
+    const sizes = typeof ResizeObserver === "undefined" ? undefined : new ResizeObserver(measure);
+    sizes?.observe(foot);
+    measure();
+    return () => {
+      sizes?.disconnect();
+      root.style.removeProperty("--shell-foot");
+    };
+  }, [el]);
 }
 
 /**
  * What ends a long screen and stays in reach (the submit bar of a form saved as a whole): at the screen's end, and
  * held at the bottom of the viewport, above the dock on a phone, while the end is further down; on the page's surface
- * at the column's width, the viewport's on a phone, over what scrolls under it.
+ * at the column's width, the viewport's on a phone, over what scrolls under it. What takes the focus under it scrolls
+ * clear of it (`--shell-foot`).
  */
 export function FrameFoot({ children }: { children: ReactNode }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useFootHeight(ref);
   return (
     <div
+      ref={ref}
+      data-frame-foot=""
       className={[
         "sticky bottom-0 z-1 -mx-shell-edge bg-surface px-shell-edge py-shell-inset",
         "max-tablet:bottom-[var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))] tablet:mx-0 tablet:px-0",

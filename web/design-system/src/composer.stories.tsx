@@ -42,7 +42,7 @@ const words = {
     empty: "No suggestions",
     failed: "The notification could not be dismissed.",
     retry: "Try again",
-    uses: (n: number) => `${n.toLocaleString("en")} posts`,
+    uses: (n: number) => `${new Intl.NumberFormat("en").format(n)} posts`,
   },
   ja: {
     title: "新しい投稿",
@@ -62,7 +62,7 @@ const words = {
     empty: "候補はありません",
     failed: "通知を消せませんでした。",
     retry: "もう一度試す",
-    uses: (n: number) => `${n.toLocaleString("ja")} 件`,
+    uses: (n: number) => `${new Intl.NumberFormat("ja").format(n)} 件`,
   },
   ar: {
     title: "منشور جديد",
@@ -82,7 +82,7 @@ const words = {
     empty: "لا توجد اقتراحات",
     failed: "تعذّر تجاهل الإشعار.",
     retry: "حاول مرة أخرى",
-    uses: (n: number) => `${n.toLocaleString("ar")} منشور`,
+    uses: (n: number) => `${new Intl.NumberFormat("ar").format(n)} منشور`,
   },
 } as const;
 

@@ -269,6 +269,7 @@ export {
   SettingsSection,
   StatusSummary,
   SubmitBar,
+  type SettingRowProps,
 } from "./settings";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";

@@ -4,8 +4,9 @@
 // reader's language (the toolbar's locale; ja, else en): the save state of a control that saves at once, in a
 // setting's row and in a switch; the status summary, with something to do and with all well; a list with its one add
 // action, and empty, where what stands in its place leads to adding; the submit bar of a form saved as a whole, at
-// rest, sending, saved and refused; a choice from a long list and a number; and the confirmation that asks the reader
-// to authenticate again, by each proof.
+// rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
+// to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; and a
+// number field given a number outside what it takes.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
@@ -27,10 +28,6 @@ import {
 import { Switch } from "./switch";
 
 const en = {
-  saving: "Saving…",
-  saved: "Saved",
-  failed: "Couldn't save.",
-  retry: "Try again",
   section: "Display",
   zone: "Time zone",
   cards: "Link previews",
@@ -70,6 +67,10 @@ const en = {
   language: "Language",
   ends: "Ends after",
   endsAbout: "Empty, it stays until you delete it",
+  range: "From 1 to 365 days",
+  zoneOff: "This server sets one time zone for everyone.",
+  endsOff: "Only a filter that warns can end.",
+  arriveOff: "This server has turned live updates off.",
   days: "days",
   threshold: "Hide posts with more than",
   mentions: "mentions",
@@ -90,10 +91,6 @@ const en = {
 };
 
 const ja: typeof en = {
-  saving: "保存しています…",
-  saved: "保存しました",
-  failed: "保存できませんでした。",
-  retry: "もう一度試す",
   section: "表示",
   zone: "タイムゾーン",
   cards: "リンクのプレビュー",
@@ -133,6 +130,10 @@ const ja: typeof en = {
   language: "言語",
   ends: "終了までの日数",
   endsAbout: "空のままなら、削除するまで続きます",
+  range: "1〜365日",
+  zoneOff: "このサーバーでは、全員が同じタイムゾーンを使います。",
+  endsOff: "終了を設定できるのは、警告を表示するフィルターだけです。",
+  arriveOff: "このサーバーではリアルタイムの更新がオフになっています。",
   days: "日",
   threshold: "これより多いメンションの投稿を隠す",
   mentions: "件",
@@ -163,18 +164,12 @@ const zones = ["Tokyo (UTC+9)", "Lisbon (UTC+0)", "Los Angeles (UTC−8)"].map((
 
 function SaveStates() {
   const w = useWords();
-  const retry = <TextButton>{w.retry}</TextButton>;
+  // The words of each state are the design system's own.
   const states = [
     null,
-    <SaveState key="saving" state="saving">
-      {w.saving}
-    </SaveState>,
-    <SaveState key="saved" state="saved">
-      {w.saved}
-    </SaveState>,
-    <SaveState key="failed" state="failed" action={retry}>
-      {w.failed}
-    </SaveState>,
+    <SaveState key="saving" state="saving" />,
+    <SaveState key="saved" state="saved" />,
+    <SaveState key="failed" state="failed" onRetry={() => undefined} />,
   ];
   return (
     <Column>
@@ -316,7 +311,7 @@ function SubmitBars() {
       </Column>
       <Column>
         {field(2)}
-        <SubmitBar result={<SaveState state="saved">{w.saved}</SaveState>}>
+        <SubmitBar result={<SaveState state="saved" />}>
           <Button kind="primary">{w.save}</Button>
         </SubmitBar>
       </Column>
@@ -355,29 +350,70 @@ function Fields() {
     <Column>
       {/* On a raised surface, the fields take the page's. */}
       <SettingsSection heading={w.section}>
-        <SettingRow id="field-language" label={w.language}>
+        <SettingRow id="field-language" label={w.language} form>
           <Select labelledBy="field-language" options={languages} />
         </SettingRow>
-        <SettingRow id="field-zone" label={w.zone}>
+        <SettingRow id="field-zone" label={w.zone} form>
           <Select labelledBy="field-zone" options={grouped} />
         </SettingRow>
-        <SettingRow id="field-ends" label={w.ends} about={w.endsAbout}>
-          <NumberField labelledBy="field-ends" defaultValue="30" unit={w.days} />
+        <SettingRow id="field-ends" label={w.ends} about={w.endsAbout} form>
+          <NumberField labelledBy="field-ends" defaultValue={30} min={1} unit={w.days} />
         </SettingRow>
-        <SettingRow id="field-threshold" label={w.threshold}>
-          <NumberField labelledBy="field-threshold" defaultValue="5" unit={w.mentions} />
+        <SettingRow id="field-threshold" label={w.threshold} form>
+          <NumberField labelledBy="field-threshold" defaultValue={5} min={0} unit={w.mentions} />
         </SettingRow>
       </SettingsSection>
       {/* On the page, they are on the neutral surface of a control. */}
-      <SettingRow id="page-language" label={w.language}>
+      <SettingRow id="page-language" label={w.language} form>
         <Select labelledBy="page-language" options={languages} />
       </SettingRow>
-      <SettingRow id="page-ends" label={w.ends}>
-        <NumberField labelledBy="page-ends" defaultValue="30" unit={w.days} />
+      <SettingRow id="page-ends" label={w.ends} form>
+        <NumberField labelledBy="page-ends" defaultValue={30} min={1} unit={w.days} />
       </SettingRow>
-      <SettingRow id="page-off" label={w.zone}>
+      <SettingRow id="page-off" label={w.zone} form>
         <Select labelledBy="page-off" options={grouped} isDisabled />
       </SettingRow>
+    </Column>
+  );
+}
+
+/** What cannot be changed now: the name muted, the reason in the place of the line about it, the control disabled. */
+function Disabled() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.section}>
+        <SettingRow id="off-zone" label={w.zone} isDisabled reason={w.zoneOff} save={null}>
+          <Select options={grouped} />
+        </SettingRow>
+        <SettingRow id="off-ends" label={w.ends} about={w.endsAbout} isDisabled reason={w.endsOff} save={null}>
+          <NumberField defaultValue={30} min={1} unit={w.days} />
+        </SettingRow>
+        <Switch label={w.arrive} description={w.arriveAbout} isDisabled reason={w.arriveOff} save={null} />
+      </SettingsSection>
+    </Column>
+  );
+}
+
+/**
+ * A number field given a number outside what it takes, over the most and under the least, shows the nearest it
+ * takes; and a field with none.
+ */
+function NumberRange() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.section}>
+        <SettingRow id="range-over" label={w.ends} about={w.range} save={null}>
+          <NumberField defaultValue={400} min={1} max={365} unit={w.days} />
+        </SettingRow>
+        <SettingRow id="range-under" label={w.ends} about={w.range} save={null}>
+          <NumberField defaultValue={0} min={1} max={365} unit={w.days} />
+        </SettingRow>
+        <SettingRow id="range-none" label={w.ends} about={w.endsAbout} save={null}>
+          <NumberField min={1} max={365} unit={w.days} />
+        </SettingRow>
+      </SettingsSection>
     </Column>
   );
 }
@@ -426,6 +462,28 @@ function Reauth() {
   );
 }
 
+/** The proof in flight: the confirmation spins, and neither close nor Cancel answers. */
+function ReauthInFlight() {
+  const w = useWords();
+  return (
+    <div className="grid justify-items-start gap-shell-section p-shell-edge">
+      <ReauthDialog
+        title={w.confirmTitle}
+        about={w.confirmAbout}
+        closeLabel={w.close}
+        cancel={w.cancel}
+        confirm={w.confirm}
+        onCancel={() => undefined}
+        onConfirm={() => undefined}
+        busy
+        layer={false}
+      >
+        <TextField id="reauth-busy" name="password" type="password" label={w.password} />
+      </ReauthDialog>
+    </div>
+  );
+}
+
 // Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Settings parts", tags: ["themes"] } satisfies Meta;
 export default meta;
@@ -444,3 +502,9 @@ export const SubmitBarStates: Story = { render: () => <SubmitBars /> };
 export const ChoiceAndNumber: Story = { render: () => <Fields /> };
 /** Authenticating again: by the password, a two-factor code, a passkey, an external provider, and refused. */
 export const AuthenticateAgain: Story = { render: () => <Reauth /> };
+/** Authenticating again while the proof is in flight. */
+export const AuthenticatingAgain: Story = { render: () => <ReauthInFlight /> };
+/** A setting that cannot be changed now, with its reason: a choice, a number, a switch. */
+export const DisabledSettings: Story = { render: () => <Disabled /> };
+/** A number field given a number over its most and under its least, and none. */
+export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

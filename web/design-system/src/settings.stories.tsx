@@ -82,7 +82,6 @@ const en = {
     account: ["Account and data", "Export and import, auto-delete, move, moderation history, delete"],
     supporter: ["Supporter membership", "Your plan and your payments"],
   },
-  saved: "Saved",
   display: {
     display: "Display",
     language: "Language",
@@ -197,7 +196,6 @@ const ja: typeof en = {
     account: ["アカウントとデータ", "エクスポートとインポート、自動削除、引っ越し、モデレーションの履歴、削除"],
     supporter: ["サポーター", "プランと支払い"],
   },
-  saved: "保存しました",
   display: {
     display: "表示",
     language: "言語",
@@ -409,7 +407,7 @@ function Display({ back }: { back: ReactNode }) {
         <SettingRow id="display-language" label={d.language} save={null}>
           <Select labelledBy="display-language" options={languages} defaultValue="English" />
         </SettingRow>
-        <SettingRow id="display-zone" label={d.timeZone} save={<SaveState state="saved">{w.saved}</SaveState>}>
+        <SettingRow id="display-zone" label={d.timeZone} save={<SaveState state="saved" />}>
           <Select labelledBy="display-zone" options={zones} defaultValue="Tokyo (UTC+9)" />
         </SettingRow>
         <SettingRow id="display-cards" label={d.cards} about={d.cardsAbout} save={null}>
@@ -558,11 +556,11 @@ function Filter({ back }: { back: ReactNode }) {
         ))}
       </SettingsSection>
       <SettingsSection heading={f.what}>
-        <SettingRow id="filter-action" label={f.matching}>
+        <SettingRow id="filter-action" label={f.matching} form>
           <Select labelledBy="filter-action" name="action" options={pick(f.warn, f.hide)} />
         </SettingRow>
-        <SettingRow id="filter-ends" label={f.ends} about={f.endsAbout}>
-          <NumberField labelledBy="filter-ends" name="days" defaultValue="30" unit={f.days} />
+        <SettingRow id="filter-ends" label={f.ends} about={f.endsAbout} form>
+          <NumberField labelledBy="filter-ends" name="days" defaultValue={30} min={1} unit={f.days} />
         </SettingRow>
       </SettingsSection>
     </SettingsScreen>

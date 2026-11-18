@@ -7,6 +7,7 @@
 import { rootPx, text } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { ago, NameLine, visibilityLabel, type Visibility } from "./samples";
+import { instantAt, wallTime } from "./zone";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 
@@ -16,7 +17,8 @@ const hour = 60 * minute;
 const day = 24 * hour;
 
 // Last year is December 20 of the year before.
-const lastYear = () => new Date(new Date().getFullYear() - 1, 11, 20, 18, 30);
+const lastYear = () =>
+  instantAt({ year: wallTime(new Date(), undefined).year - 1, month: 12, day: 20, hour: 18, minute: 30 }, undefined);
 const ages = {
   "just now": () => ago(2 * second),
   "45 seconds": () => ago(45 * second),
