@@ -9,10 +9,12 @@
 // timelines) is the app's test and each feature's; what shows while a change is on its way, preferences.dom.test.tsx.
 
 import { describe, expect, onTestFinished, test } from "bun:test";
-import { instanceQuery, type PreferencesChange } from "@my/app-data";
+import { instanceQuery, ruleOf, type PreferencesChange } from "@my/app-data";
 import type { FakeOptions } from "@my/e2e/fake";
 import { act, screen, waitFor, within } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
+import { choiceText, interactionChoices } from "../interactions";
+import { stringsIn } from "../locale";
 import { fakeData, renderFeature, type FakeData } from "../test/feature";
 import { SettingsEntryScreen } from "./screen";
 
@@ -94,6 +96,8 @@ const shownLanguages = () =>
 
 const describing = "Require media descriptions";
 const arriving = "Show new posts as they arrive";
+/** The choices of who may reply to, boost and quote a new post, in the order of the screen. */
+const kinds = ["Who can reply", "Who can boost", "Who can quote"] as const;
 
 /** An account's own choices, none of them a new account's. */
 const own = {
@@ -123,7 +127,7 @@ describe("each control is at what the server holds", () => {
     expect(chosen("Time zone")).toBe("Same as the browser");
     expect(chosen("Link previews in posts")).toBe("Large");
     expect(chosen("Who can see it")).toBe("Public");
-    expect(chosen("Who can quote")).toBe("Anyone");
+    expect(kinds.map(chosen)).toEqual(["Anyone", "Anyone", "Anyone"]);
     expect(chosen("Post language")).toBe("Same as the display language");
     expect(toggle(describing).checked).toBe(false);
     expect(chosen("Languages to show")).toBe("All languages");
@@ -138,7 +142,7 @@ describe("each control is at what the server holds", () => {
     expect(chosen("Time zone")).toBe("Tokyo (GMT+9)");
     expect(chosen("Link previews in posts")).toBe("Small");
     expect(chosen("Who can see it")).toBe("Followers only");
-    expect(chosen("Who can quote")).toBe("Followers");
+    expect(kinds.map(chosen)).toEqual(["Anyone", "Anyone", "Followers"]);
     expect(chosen("Post language")).toBe("日本語");
     expect(toggle(describing).checked).toBe(true);
     expect(shownLanguages()).toEqual([
@@ -190,8 +194,31 @@ const changes: readonly Change[] = [
     act: pick("Who can see it", "Followers only"),
     sends: { default_visibility: "private" },
   },
+  // Who can reply, boost and quote: each choice sends its own kind alone, and one with approval lets everyone else ask.
+  {
+    what: "who can reply to a new post, others with the author's approval",
+    act: pick("Who can reply", "Followers, others with your approval"),
+    sends: { default_interaction_policy: { reply: { automatic: "followers", manual: "everyone" } } },
+  },
+  {
+    what: "who can boost a new post",
+    act: pick("Who can boost", "People you mention"),
+    sends: { default_interaction_policy: { announce: { automatic: "mentioned" } } },
+  },
   {
     what: "who can quote a new post",
+    act: pick("Who can quote", "Only you"),
+    sends: { default_interaction_policy: { quote: { automatic: "nobody" } } },
+  },
+  {
+    what: "who can quote a new post, without the approval the account's default had",
+    from: {
+      default_interaction_policy: {
+        reply: { automatic: "followers", manual: "everyone" },
+        announce: { automatic: "followers", manual: "everyone" },
+        quote: { automatic: "nobody", manual: "everyone" },
+      },
+    },
     act: pick("Who can quote", "Only you"),
     sends: { default_interaction_policy: { quote: { automatic: "nobody" } } },
   },
@@ -240,6 +267,76 @@ describe("a change is saved at once, with a PATCH of that preference alone", () 
       expect((await sent.served()).body).toEqual(sends);
       expect(sent.seen).toHaveLength(1);
     });
+});
+
+describe("who can reply to, boost and quote a new post", () => {
+  // The composer's words for the choices of one post, in its order.
+  const seven = [
+    "Anyone",
+    "Followers",
+    "Followers, others with your approval",
+    "People you mention",
+    "People you mention, others with your approval",
+    "Only you",
+    "Only you, others with your approval",
+  ];
+
+  test("each kind offers the seven choices the composer offers for one post, in its words, from the list both read", async () => {
+    await read();
+
+    for (const kind of kinds) expect([kind, offered(kind)]).toEqual([kind, seven]);
+    // The list the composer's menu is made of: an audience, and for all but everyone, the same with approval.
+    const { t } = stringsIn("en");
+    expect(interactionChoices.map((one) => choiceText(one, t))).toEqual(seven);
+    expect(interactionChoices.map(ruleOf)).toEqual([
+      { automatic: "everyone" },
+      { automatic: "followers" },
+      { automatic: "followers", manual: "everyone" },
+      { automatic: "mentioned" },
+      { automatic: "mentioned", manual: "everyone" },
+      { automatic: "nobody" },
+      { automatic: "nobody", manual: "everyone" },
+    ]);
+  });
+
+  test("a stored default with anyone asking for approval reads as “…, others with your approval”, and one the list has is all the choice offers", async () => {
+    await read({
+      preferences: {
+        default_interaction_policy: {
+          reply: { automatic: "followers", manual: "everyone" },
+          // Whoever may ask, it is approval: the screen has one word for it.
+          announce: { automatic: "nobody", manual: "followers" },
+          quote: { automatic: "mentioned" },
+        },
+      },
+    });
+
+    expect(kinds.map(chosen)).toEqual([
+      "Followers, others with your approval",
+      "Only you, others with your approval",
+      "People you mention",
+    ]);
+    for (const kind of kinds) expect([kind, offered(kind)]).toEqual([kind, seven]);
+  });
+
+  test("the three stand in a section of their own, after the new post's other defaults and before the timelines", async () => {
+    await read();
+
+    expect(screen.getAllByRole("region").map((part) => within(part).getAllByRole("heading")[0]?.textContent)).toEqual([
+      "Language and region",
+      "Display",
+      "New posts",
+      "Who can reply, boost and quote",
+      "Timelines",
+    ]);
+    /** The controls of the section titled `title` that bear one of `names`, in the section's order. */
+    const holds = (title: string, names: readonly string[]) =>
+      names.filter((name) => section(title).queryAllByRole("combobox", { name }).length === 1);
+    const defaults = ["Who can see it", "Post language", ...kinds];
+    expect(holds("Who can reply, boost and quote", defaults)).toEqual([...kinds]);
+    expect(holds("New posts", defaults)).toEqual(["Who can see it", "Post language"]);
+    expect(section("New posts").getAllByRole("switch", { name: describing })).toHaveLength(1);
+  });
 });
 
 describe("the timelines' languages", () => {

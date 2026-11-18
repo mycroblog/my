@@ -284,11 +284,14 @@ const sizes = [
   { value: "small", label: "Small" },
 ];
 
-for (const [kind, role, field] of [
-  ["a choice", "combobox", <Select key="choice" options={sizes} />],
-  ["a number", "textbox", <NumberField key="number" min={1} unit="days" />],
+// A number's unit stands beside its field and is part of what describes it, after the row's own line: "… days".
+for (const [kind, role, field, unit] of [
+  ["a choice", "combobox", <Select key="choice" options={sizes} />, ""],
+  ["a number", "textbox", <NumberField key="number" min={1} unit="days" />, " days"],
 ] as const) {
-  test(`${kind} in a setting's row is named by the row's label, described by the line about it, and a press on the name focuses it`, async () => {
+  const then = unit === "" ? "" : ", then its unit";
+
+  test(`${kind} in a setting's row is named by the row's label, described by the line about it${then}, and a press on the name focuses it`, async () => {
     const user = userEvent.setup();
     render(
       <SettingRow id="setting" label="Link previews" about="How large a link's card is in a post" save={null}>
@@ -297,7 +300,7 @@ for (const [kind, role, field] of [
     );
     const control = screen.getByRole(role, {
       name: "Link previews",
-      description: "How large a link's card is in a post",
+      description: `How large a link's card is in a post${unit}`,
     });
 
     await user.click(screen.getByText("Link previews"));
@@ -305,7 +308,7 @@ for (const [kind, role, field] of [
     expect(document.activeElement === control).toBe(true);
   });
 
-  test(`${kind} in a row that cannot be changed now is disabled and described by the reason, in place of the line about it`, async () => {
+  test(`${kind} in a row that cannot be changed now is disabled and described by the reason, in place of the line about it${then}`, async () => {
     const user = userEvent.setup();
     render(
       <SettingRow
@@ -321,7 +324,7 @@ for (const [kind, role, field] of [
     );
     const control = screen.getByRole<HTMLSelectElement | HTMLInputElement>(role, {
       name: "Link previews",
-      description: "This server shows every card small.",
+      description: `This server shows every card small.${unit}`,
     });
     expect(control.disabled).toBe(true);
     expect(screen.queryAllByText("How large a link's card is in a post")).toHaveLength(0);
@@ -358,6 +361,24 @@ test("a row's save state stands in a status region that is there from the start,
   expect(screen.getByRole("status") === place).toBe(true);
   expect(place.textContent).toBe("");
   expect(described("How large a link's card is in a post")).toHaveLength(1);
+});
+
+test("a number in a row is described by the line about it, then its unit, then its save state while one stands", () => {
+  const row = (save: ReactNode) => (
+    <SettingRow id="keep" label="Keep posts for" about="Older posts are deleted" save={save}>
+      <NumberField min={1} unit="days" />
+    </SettingRow>
+  );
+  const described = (description: string | RegExp) =>
+    screen.queryAllByRole("textbox", { name: "Keep posts for", description });
+  const { rerender } = render(row(<SaveState state="saved" />));
+
+  expect(described(/^Older posts are deleted\s+days\s+Saved$/)).toHaveLength(1);
+
+  rerender(row(null));
+
+  // The state gone, the unit stays: it is the field's, not the save's.
+  expect(described(/^Older posts are deleted\s+days$/)).toHaveLength(1);
 });
 
 test("a row with no line about it describes its control by its save state alone, and by nothing at rest", () => {
