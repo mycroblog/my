@@ -45,6 +45,8 @@ const menu = () =>
 const marksSecurity = (path: string) => [
   ["Display and posting", "/settings/display", null],
   ["Security", security, "page"],
+  ["Apps", "/settings/apps", null],
+  ["Invites", "/settings/invites", null],
   ["Sign out…", `${path}?sign_out=true`, null],
 ];
 
