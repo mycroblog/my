@@ -401,7 +401,9 @@ describe("what the reader did on a screen under the entry shows in the list", ()
     on.fake.script("GET /invites", {
       change: (body) => ({ ...body, can_create: false, cannot_create_reason: "restricted" as const }),
     });
-    const why = "A moderation action keeps your account from creating invites for now.";
+    // Why, and where the action stands and can be appealed (#3115).
+    const why =
+      "A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.";
 
     await app.user.click(main().getByRole("button", { name: "Create invite" }));
 

@@ -152,11 +152,14 @@ describe("the whole of a list", () => {
       expect(app.path()).toBe(`${entry}/${list}`);
     });
 
-  test("at an address that names no list says that the page does not exist, with the menu still marking the entry, and leads to the entry", async () => {
+  test("at an address that names no list says under the entry's title, Relationships, that the page does not exist, with the menu still marking the entry, and leads to the entry", async () => {
     const app = await renderApp(`${entry}/nothing`, some);
 
     const missing = await main().findByRole("alert");
     expect(missing.textContent).toMatch(/^This settings page does not exist\. Check the address\.\s*Relationships$/);
+    // No list's name is known: the screen and the page are titled as the entry is.
+    expect(heading()).toBe("Relationships");
+    expect(app.title()).toContain("Relationships");
     expect(main().queryAllByRole("listitem")).toHaveLength(0);
     await withInvites();
     expect(beside().flatMap(rows)).toEqual(besideRelationships(`${entry}/nothing`));

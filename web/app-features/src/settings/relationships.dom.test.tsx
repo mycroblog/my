@@ -384,6 +384,34 @@ describe("undoing", () => {
     expect(within(part()).queryAllByRole("button")).toHaveLength(0);
   });
 
+  // Seven rows show whole, and eight as five: after an undo among eight the server lists seven, and the section stays
+  // as the reader found it.
+  test("an undo in a list of eight shown as five keeps the five rows, the undone one in its place saying what was done, with the count one less and the way to the whole list", async () => {
+    const on = await entry(serverOf({ servers: 8 }));
+    const part = () => section("Muted servers");
+    expect(headed("Muted servers")).toBe("Muted servers 8");
+
+    await on.user.click(undoOf(part(), "server-02.example", "Unmute"));
+
+    await waitFor(() => {
+      if (within(part()).queryAllByText("Unmuted").length === 0) throw new Error("test: the row does not say it yet");
+    });
+    await read(on);
+    expect(texts(part()).map((row) => row.replace(/\s/g, ""))).toEqual([
+      "server-01.exampleUnmute",
+      "server-02.exampleUnmutedYouunmutedtheserverserver-02.example.",
+      "server-03.exampleUnmute",
+      "server-04.exampleUnmute",
+      "server-05.exampleUnmute",
+    ]);
+    expect(headed("Muted servers")).toBe("Muted servers 7");
+    expect(
+      within(part())
+        .queryAllByRole("link", { name: "See all muted servers" })
+        .map((door) => door.getAttribute("href")),
+    ).toEqual(["/settings/relationships/servers"]);
+  });
+
   test("the row kept after an undo is gone when the screen is left and opened again", async () => {
     const on = await entry();
     await on.user.click(undoOf(section("Blocked accounts"), "@quickdeals", "Unblock"));
@@ -499,6 +527,47 @@ describe("the whole list", () => {
       expect(cursors()[1]).not.toBeNull();
       expect(screen.queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
     });
+
+  test("Show more that fails keeps the rows and says once, above its button, that the rest could not be loaded; the button, now Try again, keeps the focus, and its next press reads the rest", async () => {
+    const on = await whole("blocked", serverOf({ blocked: 22 }));
+    const rest = "The rest of this list could not be loaded.";
+    const asked = () => on.requests.filter((r) => r.startsWith("GET /blocks"));
+    const failing = on.fake.script("GET /blocks", { fail: 500 });
+    const more = screen.getByRole("button", { name: "Show more" });
+
+    await on.user.click(more);
+
+    const again = await screen.findByRole("button", { name: "Try again" });
+    await read(on);
+    expect(screen.getAllByRole("listitem")).toHaveLength(20);
+    expect(screen.getAllByRole("heading").map((heading) => plain(heading.textContent))[1]).toBe(
+      "More than 20 accounts",
+    );
+    const [line, ...others] = screen.getAllByText(rest);
+    expect(others).toEqual([]);
+    expect(line !== undefined && (line.compareDocumentPosition(again) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0).toBe(
+      true,
+    );
+    // The same button under another name: the focus the press left on it stays.
+    expect(again === more).toBe(true);
+    expect(document.activeElement === again).toBe(true);
+    expect(screen.queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
+    expect(asked()).toHaveLength(2);
+    failing.end();
+
+    await on.user.click(again);
+
+    await waitFor(() => {
+      expect(screen.getAllByRole("listitem")).toHaveLength(22);
+    });
+    await read(on);
+    // The page that failed was asked for again, and no other.
+    expect(asked()).toHaveLength(3);
+    expect(asked()[2]).toBe(asked()[1] ?? "");
+    expect(screen.getAllByRole("heading").map((heading) => plain(heading.textContent))[1]).toBe("22 accounts");
+    expect(screen.queryAllByText(rest)).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: /^(Show more|Try again)$/ })).toHaveLength(0);
+  });
 
   test("of the muted servers reads the list whole, with nothing left to show more of", async () => {
     const { requests } = await whole("servers", serverOf({ servers: 41 }));

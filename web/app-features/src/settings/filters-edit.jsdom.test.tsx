@@ -7,6 +7,7 @@
 import { describe, expect, test } from "bun:test";
 import { screen, waitFor } from "@testing-library/react";
 import {
+  actionChoice,
   addWord,
   alerts,
   endsAt,
@@ -21,7 +22,9 @@ import {
   submitButton,
   wordField,
   words,
+  wordsList,
   writes,
+  type DrawnFilter,
 } from "../test/filter-form";
 
 /** What has the focus, in words: for the error of a test that waits for it. */
@@ -72,14 +75,15 @@ describe("the words", () => {
     expect(wordField(2).value).toBe("polling");
   });
 
-  // Described: Remove moves the focus to the next word, or to Add a word. With no word after the one removed and
-  // others before it, the focus goes to the word before it instead.
-  test.failing("Remove of the last of several words moves the focus to Add a word", async () => {
+  // As Remove field N of the profile's form: the focus stays among the words while one is left, on the next word, or
+  // on the one before when none follows.
+  test("Remove of the last of several words moves the focus to the word before it", async () => {
     const form = await filterForm({}, { filter: 0 });
 
     await form.user.click(removeWord(2));
 
-    expect(await focusAtRest(addWord)).toBe(true);
+    await focused(() => wordField(1), "Word or phrase 1");
+    expect(words()).toEqual([["finale", true]]);
   });
 
   test("Remove of the only word moves the focus to Add a word", async () => {
@@ -158,16 +162,53 @@ describe("a Save that is not sent moves the focus from the button to the field t
     expect(writes(form)).toEqual([]);
   });
 
-  // The date and time is the field that is marked and described by "Choose a date and time.", and it takes the focus.
-  test("no date and time: the date and time", async () => {
-    const form = await whole();
-    await form.user.selectOptions(endsChoice(), "At a date and time");
-    setEndsAt("");
+  // The date and time is the field that is marked and described by what is wrong with it, and it takes the focus.
+  for (const [what, value] of [
+    ["no date and time", ""],
+    ["a date and time that is past", "2020-01-01T10:00"],
+  ] as const)
+    test(`${what}: the date and time`, async () => {
+      const form = await whole();
+      await form.user.selectOptions(endsChoice(), "At a date and time");
+      setEndsAt(value);
 
-    await form.user.click(submitButton());
+      await form.user.click(submitButton());
 
-    expect(await focusAfterRefusal(endsAt)).toBe(true);
-  });
+      expect(await focusAfterRefusal(endsAt)).toBe(true);
+    });
+
+  // Everything left out is marked at once, and the focus goes to the first of it in the form's order: the name, the
+  // date and time, the words, the places.
+  for (const [what, leave, name, field] of [
+    [
+      "no date and time and a blank word",
+      async (form: DrawnFilter) => {
+        await form.user.selectOptions(endsChoice(), "At a date and time");
+        setEndsAt("");
+        await rewrite(form.user, wordField(1), "");
+      },
+      "Ends at",
+      endsAt,
+    ],
+    [
+      "a blank word and no place",
+      async (form: DrawnFilter) => {
+        await rewrite(form.user, wordField(1), "");
+        for (const one of placeNames) await form.user.click(place(one));
+      },
+      "Word or phrase 1",
+      () => wordField(1),
+    ],
+  ] as const)
+    test(`${what}: the first of them, ${name}`, async () => {
+      const form = await whole();
+      await leave(form);
+
+      await form.user.click(submitButton());
+
+      await focused(field, name);
+      expect(writes(form)).toEqual([]);
+    });
 
   // The same helper on a field that does take the focus: what the defect's test above waits for does come.
   test("no name, read as the defect's test reads it: Name", async () => {
@@ -185,11 +226,13 @@ describe("a Save the server refuses moves the focus to the field its problem nam
   const refusal = (field: string) =>
     ({ type: "about:blank", title: "This could not be done.", status: 422, field, detail: "Not this." }) as const;
 
-  // The member the problem names, and the field that takes the focus, in the editor of Spoilers.
+  // The member the problem names, and the field that takes the focus, in the editor of Spoilers. The words as a
+  // whole are no one word's: their list takes the focus, which is no control and no stop of Tab.
   for (const [member, name, field] of [
     ["title", "Name", nameField],
+    ["action", "Posts that match", actionChoice],
     ["keywords[1].keyword", "Word or phrase 2", () => wordField(2)],
-    ["keywords", "Word or phrase 1", () => wordField(1)],
+    ["keywords", "the list Words", wordsList],
     ["contexts", "Home and lists", () => place("Home and lists")],
     ["expires_at", "Ends", endsChoice],
   ] as const)
@@ -202,6 +245,27 @@ describe("a Save the server refuses moves the focus to the field its problem nam
       await focused(field, name);
       expect(form.told.includes("back")).toBe(false);
     });
+
+  test("more words than a filter or all the filters can have: the list Words", async () => {
+    const form = await filterForm({}, { filter: 0 });
+    form.fake.script("PATCH /filters/{id}", {
+      times: 1,
+      fail: {
+        type: "/api/v1/problems/too-many-filter-keywords",
+        title: "You have as many words in your filters as you may",
+        status: 422,
+      },
+    });
+
+    await form.user.click(submitButton());
+
+    await focused(wordsList, "the list Words");
+    // From the list, Tab goes on into its first word; and back from the word, Tab passes the list.
+    await form.user.tab();
+    await focused(() => wordField(1), "Word or phrase 1");
+    await form.user.tab({ shift: true });
+    expect(document.activeElement === wordsList()).toBe(false);
+  });
 
   test("a refusal that names no field leaves the focus on the button", async () => {
     const form = await filterForm({}, { filter: 0 });

@@ -99,6 +99,8 @@ export const words = () =>
       within(row).getByRole<HTMLInputElement>("textbox").value,
       within(row).getByRole<HTMLInputElement>("checkbox", { name: "Whole word" }).checked,
     ]);
+/** The list of the words, there while the editor has a row: what is wrong with the words as a whole describes it. */
+export const wordsList = () => screen.getByRole("list", { name: "Words" });
 export const addWord = () => screen.getByRole<HTMLButtonElement>("button", { name: "Add a word" });
 /** The places a filter applies, in the editor's order. */
 export const placeNames = ["Home and lists", "Notifications", "Public timelines", "Threads", "Profiles"] as const;

@@ -21,6 +21,16 @@ export const notLoaded = /^Your settings could not be loaded\.\s*Try again$/;
 export const sendThis = (code: string) =>
   `Send this link to the person you invite. They can also enter the invite code ${code} on the sign-up page.`;
 
+/**
+ * What the summary says to an account that a moderation action keeps from creating invites (#3115), in English and in
+ * Japanese: why, and where in the settings the action stands and can be appealed. That the place is named as the
+ * settings name it is settings/account-status-words.test.ts.
+ */
+export const keptByModeration = [
+  "A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.",
+  "モデレーションの処分により、いまはこのアカウントで招待を作れません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。",
+] as const;
+
 /** The reader's invites as the fake holds them, newest first: all of them, in one page of the server's most. */
 export const heldInvites = async (fake: FakeApi): Promise<OwnInvite[]> =>
   (await heldBy<{ items: OwnInvite[] }>(fake, "/invites?limit=40")).items;

@@ -2,11 +2,12 @@
 
 // On jsdom: happy-dom gives the focus to any element that is asked to take it, so it cannot tell an alert that can
 // take the focus from one that cannot, nor whether the part a refusal names (#3200), a list of pairs among them, can
-// take the focus a form gives it (ADR-0171 §4).
+// take the focus a form gives it (ADR-0171 §4). What is wrong with the part is then brought into view, which is
+// read here beside the focus.
 
-import { expect, test } from "bun:test";
-import { PairField, PairList, PictureField } from "@my/design-system";
-import { act, render, screen, within } from "@testing-library/react";
+import { expect, onTestFinished, test } from "bun:test";
+import { PairField, PairList, PictureField, Select, SettingRow } from "@my/design-system";
+import { act, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Button } from "./button";
 import { FormActions, FormAlert, TextField, focusRefusedField } from "./form-page";
@@ -129,6 +130,79 @@ test("focusRefusedField moves the focus to the list of pairs, which what is wron
   await user.tab({ shift: true });
   expect(focused(screen.getByRole("button", { name: "Choose an image" }))).toBe(true);
 });
+
+/**
+ * The parts the page was asked to bring into view, in the order it was asked, until the test ends: jsdom has no
+ * `scrollIntoView`, so one that keeps what it is called on stands in its place. Where the page then lands is a layout
+ * test's.
+ */
+function broughtIntoView(): Element[] {
+  const asked: Element[] = [];
+  Object.defineProperty(Element.prototype, "scrollIntoView", {
+    configurable: true,
+    value(this: Element) {
+      asked.push(this);
+    },
+  });
+  onTestFinished(() => {
+    Reflect.deleteProperty(Element.prototype, "scrollIntoView");
+  });
+  return asked;
+}
+
+// What is wrong with a text field stands at the field's id with -error. A setting's row names its control and what is
+// wrong with it apart (`<row>-control`, `<row>-error`), so there the part is found among what describes the control:
+// the one whose id ends in -error, after the line about the row.
+for (const [what, role, name, wrong, field] of [
+  [
+    "a text field",
+    "textbox",
+    "Display name",
+    "This name is too long.",
+    <TextField key="field" id="name" name="name" label="Display name" error="This name is too long." />,
+  ],
+  [
+    "the control of a setting's row",
+    "combobox",
+    "Works for",
+    "This server no longer allows that long.",
+    <SettingRow
+      key="row"
+      id="works"
+      label="Works for"
+      about="Up to 30 days."
+      error="This server no longer allows that long."
+      form
+    >
+      <Select name="life" options={[{ value: "week", label: "1 week" }]} />
+    </SettingRow>,
+  ],
+] as const)
+  test(`focusRefusedField moves the focus to ${what} by its id, then brings what is wrong with it into view: the one part that says so among those that describe it`, async () => {
+    const asked = broughtIntoView();
+    render(
+      <>
+        {field}
+        <Button>Save</Button>
+      </>,
+    );
+    const control = screen.getByRole(role, { name });
+    const described = (control.getAttribute("aria-describedby") ?? "").split(" ");
+
+    act(() => {
+      screen.getByRole("button", { name: "Save" }).focus();
+      focusRefusedField(control.id);
+    });
+
+    expect(focused(control)).toBe(true);
+    await waitFor(() => {
+      if (asked.length === 0) throw new Error("test: nothing was brought into view yet");
+    });
+    // One part, however often it is asked for.
+    const parts = [...new Set(asked)];
+    expect(parts.map((part) => part.textContent)).toEqual([wrong]);
+    expect(parts.map((part) => described.includes(part.id))).toEqual([true]);
+  });
 
 test("focusRefusedField leaves the focus on Save when no part bears the id", () => {
   const refuse = refusedForm();

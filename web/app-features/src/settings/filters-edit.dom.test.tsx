@@ -36,6 +36,7 @@ import {
   wholeWord,
   wordField,
   words,
+  wordsList,
   writes,
   type DrawnFilter,
 } from "../test/filter-form";
@@ -670,11 +671,13 @@ describe("what the reader left out is said before anything is sent", () => {
     expect(sent.seen.map((request) => request.body.title)).toEqual(["😀".repeat(50)]);
   });
 
-  for (const [rows, how] of [
-    [1, "its one row left blank"],
-    [0, "no row at all"],
+  // What is marked is where a word goes: the blank row's field, or with no row the button that adds one, which holds
+  // no value to call wrong.
+  for (const [rows, how, where] of [
+    [1, "its one row left blank", "its field, which is marked"],
+    [0, "no row at all", "Add a word, and nothing is marked as a wrong value"],
   ] as const)
-    test(`no word, with ${how}: the sentence under the words, and nothing is sent; a word written is taken`, async () => {
+    test(`no word, with ${how}: the sentence under the words describes ${where}, and nothing is sent; a word written is taken`, async () => {
       const form = await whole();
       const missing = "Add at least one word or phrase.";
       if (rows === 0) await form.user.click(removeWord(1));
@@ -683,6 +686,9 @@ describe("what the reader left out is said before anything is sent", () => {
       await refused(form);
 
       expect(section("Words").getAllByText(missing)).toHaveLength(1);
+      expect(invalid()).toEqual(rows === 0 ? [] : ["Word or phrase 1"]);
+      expect(describedBy(rows === 0 ? addWord() : wordField(1))).toEqual([missing]);
+      expect(addWord().getAttribute("aria-invalid")).toBeNull();
       expect(said()).toEqual([marked]);
       expect(writes(form)).toEqual([]);
       expect(nameField().value).toBe("Sourdough");
@@ -691,9 +697,46 @@ describe("what the reader left out is said before anything is sent", () => {
       await rewrite(form.user, wordField(1), "levain");
 
       expect(section("Words").queryAllByText(missing)).toHaveLength(0);
+      expect(invalid()).toEqual([]);
+      expect([describedBy(wordField(1)), describedBy(addWord())]).toEqual([[], []]);
       await saved(form);
       expect(writes(form)).toEqual(["POST /filters"]);
     });
+
+  test("everything left out is marked at once, with the focus on the first of it; each mark goes as its value is put right, and what the bar says with the last", async () => {
+    const form = await filterForm();
+    const noPlace = "Choose at least one place.";
+    /** What describes each place. */
+    const places = () => placeNames.map((name) => describedBy(place(name)));
+    await form.user.selectOptions(endsChoice(), "At a date and time");
+    setEndsAt("");
+    for (const name of placeNames) await form.user.click(place(name));
+
+    await refused(form);
+
+    // No name, no date and time, a blank word and no place, in the form's order.
+    expect(invalid()).toEqual(["Name", "Ends at", "Word or phrase 1"]);
+    expect(places()).toEqual(placeNames.map(() => [noPlace]));
+    expect(document.activeElement === nameField()).toBe(true);
+    expect(writes(form)).toEqual([]);
+
+    // The editor checks itself again at each change, while its own check stands.
+    await rewrite(form.user, nameField(), "Sourdough");
+    expect(invalid()).toEqual(["Ends at", "Word or phrase 1"]);
+    expect(describedBy(nameField())).toEqual([nameHint]);
+    setEndsAt("2099-02-03T04:05");
+    expect(invalid()).toEqual(["Word or phrase 1"]);
+    await rewrite(form.user, wordField(1), "levain");
+    expect(invalid()).toEqual([]);
+    expect(places()).toEqual(placeNames.map(() => [noPlace]));
+    expect(alerts()).toEqual([marked]);
+
+    await form.user.click(place("Threads"));
+
+    expect(places()).toEqual(placeNames.map(() => []));
+    expect(alerts()).toEqual([]);
+    expect(writes(form)).toEqual([]);
+  });
 
   test("a word of 101 characters: that it is too long, under that word alone; of 100, it is sent", async () => {
     const form = await whole();
@@ -829,21 +872,41 @@ describe("what the server refuses shows where it belongs", () => {
     expect(describedBy(endsChoice())).toEqual(["The server does not take this end."]);
   });
 
-  test("the words as a whole: the server's words under the words", async () => {
-    await saveRefused({ fail: refusal("keywords", "The server does not take these words.") });
-
-    expect(section("Words").getAllByText("The server does not take these words.")).toHaveLength(1);
+  /** What is wrong with the words as a whole stands once, under their list, which it describes; no word is marked or described. */
+  function expectOfTheWords(sentence: string) {
+    const [line, ...others] = section("Words").getAllByText(sentence);
+    expect(others).toEqual([]);
+    expect(describedBy(wordsList())).toEqual([sentence]);
+    expect(
+      line !== undefined && (wordsList().compareDocumentPosition(line) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0,
+    ).toBe(true);
     expect(invalid()).toEqual([]);
+    expect([1, 2].map((n) => describedBy(wordField(n)))).toEqual([[], []]);
+    expect(describedBy(addWord())).toEqual([]);
+  }
+
+  test("the words as a whole: the server's words under the words describe their list, and no word is marked", async () => {
+    const form = await filterForm({}, { filter: 0 });
+    expect(describedBy(wordsList())).toEqual([]);
+    form.fake.script("PATCH /filters/{id}", {
+      times: 1,
+      fail: refusal("keywords", "The server does not take these words."),
+    });
+
+    await refused(form);
+
+    expectOfTheWords("The server does not take these words.");
   });
 
-  // The server's words about what the filter does are shown once, while the bar says that something is marked.
-  test("what the filter does: the server's words under Posts that match", async () => {
+  test("what the filter does: the server's words under Posts that match describe the choice, shown once", async () => {
     await saveRefused({ fail: refusal("action", "The server does not take this action.") });
 
     expect(screen.queryAllByText("The server does not take this action.")).toHaveLength(1);
+    expect(describedBy(actionChoice())).toEqual(["The server does not take this action."]);
+    expect(describedBy(endsChoice())).toEqual([]);
   });
 
-  test("more words than a filter or all the filters can have: the sentence of the limits under the words", async () => {
+  test("more words than a filter or all the filters can have: the sentence of the limits under the words describes their list, and no word is marked", async () => {
     await saveRefused({
       fail: {
         type: "/api/v1/problems/too-many-filter-keywords",
@@ -852,12 +915,20 @@ describe("what the server refuses shows where it belongs", () => {
       },
     });
 
-    expect(
-      section("Words").getAllByText(
-        "A filter has at most 100 words, and all your filters 1,000 in all. Remove some first.",
-      ),
-    ).toHaveLength(1);
-    expect(invalid()).toEqual([]);
+    expectOfTheWords("A filter has at most 100 words, and all your filters 1,000 in all. Remove some first.");
+  });
+
+  test("what the server refused is no longer said once anything of the editor is changed, another field than the one refused too", async () => {
+    const form = await saveRefused({ fail: refusal("contexts", "The server does not take these places.") });
+    expect(describedBy(place("Home and lists"))).toEqual(["The server does not take these places."]);
+
+    await form.user.click(wholeWord(1));
+
+    expect(placeNames.map((name) => describedBy(place(name)))).toEqual(placeNames.map(() => []));
+    expect(screen.queryAllByText("The server does not take these places.")).toHaveLength(0);
+    expect(alerts()).toEqual([]);
+    // Nothing was sent by the change: the first Save alone.
+    expect(writes(form)).toEqual([`PATCH /filters/${form.id ?? ""}`]);
   });
 
   test("more filters than a reader can have: the sentence of the limit beside the button, and nothing is marked", async () => {
@@ -934,19 +1005,21 @@ describe("what the server refuses shows where it belongs", () => {
     expect(describedBy(wordField(1))).toEqual([]);
   });
 
-  // Defect: the bar says "fix what is marked", and for these nothing is marked for assistive technology: the sentence
-  // stands under the words as a text that describes no control, and no field says that its value is not valid. The
-  // places' sentence, which describes each place, is the passing case of the same check.
-  describe("what the bar calls marked is a sentence that describes a control", () => {
-    /** The controls that the element saying `sentence` describes. */
+  // The bar says "fix what is marked": each sentence it means is marked for assistive technology too, as what
+  // describes the part it is about. That part is a control, or for the words as a whole their list, which is no
+  // control and holds no value to call wrong.
+  describe("what the bar calls marked is a sentence that describes the part it is about", () => {
+    /** How many parts the element saying `sentence` describes: the controls of the editor, and the lists. */
     const describes = (sentence: string) => {
-      /** The id a control names the sentence by: the element's own, or that of the part it stands in. */
+      /** The id a part names the sentence by: the element's own, or that of the part it stands in. */
       const idOf = (line: HTMLElement | null): string => (line === null ? "" : line.id || idOf(line.parentElement));
       const ids = screen.queryAllByText(sentence).map((line) => idOf(line));
       return [
         ...screen.queryAllByRole("textbox"),
+        ...screen.queryAllByRole("combobox"),
         ...screen.queryAllByRole("checkbox"),
         ...screen.queryAllByRole("button"),
+        ...screen.queryAllByRole("list"),
       ].filter((control) =>
         (control.getAttribute("aria-describedby") ?? "").split(" ").some((id) => id !== "" && ids.includes(id)),
       ).length;
@@ -970,10 +1043,10 @@ describe("what the server refuses shows where it belongs", () => {
       expect(describes("Add at least one word or phrase.")).toBeGreaterThan(0);
     });
 
-    test.failing("the words as a whole, refused by the server", async () => {
+    test("the words as a whole, refused by the server: the list of the words", async () => {
       await saveRefused({ fail: refusal("keywords", "The server does not take these words.") });
 
-      expect(describes("The server does not take these words.")).toBeGreaterThan(0);
+      expect(describes("The server does not take these words.")).toBe(1);
     });
   });
 });

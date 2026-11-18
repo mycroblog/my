@@ -19,6 +19,7 @@ import {
   createForm,
   headings,
   heldInvites,
+  keptByModeration,
   loading,
   notLoaded,
   refusalOn,
@@ -286,9 +287,7 @@ describe("when the server refuses", () => {
     await screen.findByRole("region", { name: cannot });
     await atRest({ data });
     expect(sections()).toEqual([cannot]);
-    expect(words(section(cannot))).toMatch(
-      inOrder(cannot, "A moderation action keeps your account from creating invites for now."),
-    );
+    expect(words(section(cannot))).toMatch(inOrder(cannot, keptByModeration[0]));
     expect(controls()).toEqual([]);
     expect(screen.queryAllByRole("alert")).toHaveLength(0);
   });

@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Where a restriction says to appeal (#3115): the sentences the server answers an account restricted in part with name
-// the place of the settings where the action stands and can be appealed, by the names the settings give that place.
-// The server's catalog and the client's are two files a change may move apart, so the names are held together here,
-// in each language. That each sentence says a next step, and that none of them stays on the copy lint's reviewed list
+// Where a restriction says to appeal (#3115): the sentences the server answers an account restricted in part with,
+// and the one the settings' Invites say in its place, name the place of the settings where the action stands and can
+// be appealed, by the names the settings give that place. The server's catalog and the client's are two files a
+// change may move apart, so the names are held together here, in each language. That each sentence says a next step, and that none of them stays on the copy lint's reviewed list
 // of errors without one (tools/i18n/no-step.json), is the lint's own rule: it refuses a listed error that says its
 // step, and an error that says none and is not listed (tools/i18n, copy.test.ts).
 
@@ -45,6 +45,15 @@ for (const [language, quoted, appeal] of languages) {
     [
       "a supporter plan a restricted account asks for",
       branchOf(server, "errors.supporters.ineligible_detail", "restricted"),
+    ],
+    [
+      "an invite an account kept from creating invites asks for",
+      branchOf(server, "errors.invites.not_allowed_detail", "restricted"),
+    ],
+    // The settings say the same to such an account before it asks, in a sentence of the client's own catalog.
+    [
+      "an invite, as the settings' Invites say it beforehand,",
+      branchOf(settings, "settings.invites.cannot.reason", "restricted"),
     ],
   ] as const;
 
