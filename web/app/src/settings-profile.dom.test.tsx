@@ -28,11 +28,18 @@ const heading = () =>
     .map((title) => title.textContent)
     .join();
 
-/** The rows of a settings menu: each link's words, where it leads, and whether it is the entry the reader is at. */
+/**
+ * The rows of a settings menu: each link's words, where it leads, and whether it is the entry the reader is at. A row's
+ * count is left out: it comes with a read of its own (settings.dom.test.tsx holds it).
+ */
 const rows = (menu: HTMLElement) =>
   within(menu)
     .getAllByRole("link")
-    .map((link) => [link.textContent, link.getAttribute("href"), link.getAttribute("aria-current")]);
+    .map((link) => [
+      link.textContent.replace(/\s*\d+\s*\d+ items? to check$/, ""),
+      link.getAttribute("href"),
+      link.getAttribute("aria-current"),
+    ]);
 
 /** The settings' menus outside the screen: the one the frame places beside an entry. */
 const beside = () =>
@@ -45,6 +52,7 @@ const besideProfile = (at: string) => [
   ["Notifications", "/settings/notifications", null],
   ["Relationships", "/settings/relationships", null],
   ["Keyword filters", "/settings/filters", null],
+  ["Account and data", "/settings/account", null],
   ["Sign out…", `${at}?sign_out=true`, null],
 ];
 
