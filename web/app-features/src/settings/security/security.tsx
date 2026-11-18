@@ -3,10 +3,14 @@
 // Security, the entry of the settings at /settings/security (FR-002, FR-004, FR-005, FR-010, FR-012): how the account
 // signs in and where it is signed in.
 //
-// - While two-factor authentication is off, the status summary says so and is the one door to turning it on; once on,
-//   its row in Sign-in is the door, its state in words at the row's end, and the recovery codes left where few are.
-// - Sign-in: the password, which opens its screen (password.tsx), and two-factor authentication once on
-//   (two-factor.tsx).
+// - While two-factor authentication is off, the status summary says so and is the one door to turning it on, with
+//   the reason that fits the account: a password that may leak where one signs it in, else its other ways in. Once on,
+//   its row in Sign-in is the door, its state the muted line under its name, with the recovery codes left where few
+//   are.
+// - Sign-in: the password, which opens the screen that changes or sets it (password.tsx); two-factor authentication
+//   once on (two-factor.tsx); and last, removing the password, after a confirmation that it's the reader
+//   (confirmation.tsx, never by the password itself), only where a passkey or a linked account remains to sign in
+//   with: otherwise the row says why not and has no button.
 // - Passkeys (ADR-0106 §26): each by its name and the day it was added, with Remove after a confirmation; Add leads to
 //   the screen that names one (passkey.tsx).
 // - Linked accounts (ADR-0106 §3.5–§3.7, §6): the login providers the server offers to link an account at and the
@@ -14,14 +18,16 @@
 //   (confirmation.tsx) and then leaves the app for the provider, which sends the browser back here with what happened
 //   in the fragment of the address: the section says it, once. Unlink asks a confirmation alone.
 // - Signed-in browsers (ADR-0090 §11, §13): each by its browser and operating system, or the `User-Agent` itself when
-//   it names neither; the day and the address it signed in from, worded as the sign-in's, not as where it is now; when
-//   it was last used; and which one is this browser. Each other signs out after a confirmation alone, as all the
-//   others do at once, and a sentence says what to do about a sign-in the reader does not recognize.
+//   it names neither; then, each on a line of its own, that it is this browser, the day and the address it signed in
+//   from, worded as the sign-in's, not as where it is now, and when it was last used. Each other signs out after a
+//   confirmation alone, as all the others do at once, and a sentence says what to do about a sign-in the reader does
+//   not recognize.
 //
 // Where the server limits sign-in to login providers (ADR-0106 §21–§22), a password cannot be set and a passkey
-// cannot be added: Sign-in says so, the password's row stays only for an account that has one (to remove it), and
-// Passkeys is absent unless the account holds some, which it may still remove. Removing the last way to sign in is the
-// server's to refuse: the confirmation then says why, in the server's words.
+// cannot be added: Sign-in says so and has no door to the password's screen, a password the account has can still be
+// removed, and Passkeys is absent unless the account holds some, which it may still remove. Removing the last
+// passkey or link an account signs in with is the server's to refuse: the confirmation then says why, in the server's
+// words.
 
 import {
   instanceQuery,
@@ -34,6 +40,7 @@ import {
   useLinkedIdentityWrites,
   usePasskeys,
   usePasskeyWrites,
+  usePasswordWrites,
   useSecurityRead,
   useTwoFactor,
   type AppData,
@@ -63,7 +70,7 @@ import { useState } from "react";
 import { stringsIn } from "../../locale";
 import { providerFailure, saidOf, useConfirmation, useProviderName, useProviderReturn } from "../confirmation";
 import type { SettingsAddress, SettingsEntryProps } from "../entries";
-import { Asking, Reading, securityPath, securityPaths, useDates } from "./parts";
+import { Asking, securityPath, securityPaths, useDates, useReadingNotice } from "./parts";
 import { browserOf } from "./user-agent";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -82,53 +89,117 @@ const fewCodes = 3;
 /** How a number reads in the reader's language. */
 const numberIn = (locale: string, n: number) => new Intl.NumberFormat(locale).format(n);
 
-/** Sign-in: the password, and two-factor authentication once it is on. */
-function SignIn({ limited }: { limited: boolean }) {
+/**
+ * Sign-in: the password, which opens the screen that changes or sets it; two-factor authentication once it is on,
+ * its state the muted line under its name; and last, for an account that has a password, removing it, here and not
+ * on the password's screen, whose one button changes the password.
+ */
+function SignIn({
+  limited,
+  returned,
+  leave,
+}: {
+  limited: boolean;
+  returned: ExternalOutcome | null;
+  leave: SettingsAddress["leave"];
+}) {
   const { t } = stringsIn(useLocale().locale);
   const { day } = useDates();
   const hasPassword = useHasPassword() === true;
   const twoFactor = useTwoFactor();
+  const passkeys = usePasskeys() ?? [];
+  const linked = useLinkedIdentities()?.items ?? [];
+  const { remove } = usePasswordWrites();
+  const [result, setResult] = useState<{ done: boolean; said: string }>();
+  const removing = useConfirmation({
+    operation: "password_removal",
+    about: t("settings.security.password.remove.confirm"),
+    returnTo: securityPath,
+    returned,
+    leave,
+    password: false,
+  });
   const left = twoFactor?.recovery_codes_remaining;
-  // A password that cannot be set has no row; one the account has can still be removed.
-  const password = hasPassword || !limited;
   const on = twoFactor?.enabled === true;
+  // Another way to sign in remains: a passkey, or a linked account.
+  const removable = passkeys.length > 0 || linked.length > 0;
+
+  const removePassword = () => {
+    setResult(undefined);
+    removing.ask(
+      (confirmed) =>
+        // The dialog of a removal offers no password (`password: false`).
+        confirmed.kind === "password"
+          ? Promise.reject(new Error("settings: the password does not confirm its own removal"))
+          : remove(confirmed),
+      {
+        done: () => {
+          setResult({ done: true, said: t("settings.security.password.removed") });
+        },
+        failed: (error) => {
+          setResult({ done: false, said: saidOf(error, t) });
+        },
+      },
+    );
+  };
   return (
-    <SettingsSection heading={t("settings.security.sign_in")}>
-      {limited && <SettingsNote>{t("settings.security.providers_only")}</SettingsNote>}
-      {(password || on) && (
-        <SettingsList label={t("settings.security.sign_in")}>
-          {password && (
-            <SettingsListRow
-              icon="security"
-              title={t("settings.security.password")}
-              caption={t(
-                !hasPassword
-                  ? "settings.security.password.none"
-                  : limited
-                    ? "settings.security.password.unused"
-                    : "settings.security.password.caption",
-              )}
-              href={securityPaths.password}
-            />
-          )}
-          {on && (
-            <SettingsListRow
-              icon="time"
-              title={t("settings.security.two_factor")}
-              caption={
-                left !== undefined && left <= fewCodes
-                  ? t("settings.security.two_factor.codes_left", { count: left })
-                  : twoFactor.enrolled_at === undefined
-                    ? undefined
-                    : t("settings.security.two_factor.since", { date: day(twoFactor.enrolled_at) })
-              }
-              state={t("settings.security.two_factor.on")}
-              href={securityPaths.twoFactor}
-            />
-          )}
-        </SettingsList>
-      )}
-    </SettingsSection>
+    <>
+      <SettingsSection heading={t("settings.security.sign_in")}>
+        {limited && <SettingsNote>{t("settings.security.providers_only")}</SettingsNote>}
+        {removing.notice}
+        {result !== undefined &&
+          (result.done ? <SaveState state="saved">{result.said}</SaveState> : <FormAlert>{result.said}</FormAlert>)}
+        {/* A password that cannot be set or changed has no door; one the account has can still be removed. */}
+        {(!limited || hasPassword || on) && (
+          <SettingsList label={t("settings.security.sign_in")}>
+            {!limited && (
+              <SettingsListRow
+                icon="security"
+                title={t("settings.security.password")}
+                caption={t(hasPassword ? "settings.security.password.caption" : "settings.security.password.none")}
+                href={securityPaths.password}
+              />
+            )}
+            {on && (
+              <SettingsListRow
+                icon="twoFactor"
+                title={t("settings.security.two_factor")}
+                facts={[
+                  twoFactor.enrolled_at === undefined
+                    ? t("settings.security.two_factor.on")
+                    : t("settings.security.two_factor.since", { date: day(twoFactor.enrolled_at) }),
+                  ...(left !== undefined && left <= fewCodes
+                    ? [t("settings.security.two_factor.codes_left", { count: left })]
+                    : []),
+                ]}
+                href={securityPaths.twoFactor}
+              />
+            )}
+            {hasPassword && (
+              <SettingsListRow
+                icon="delete"
+                title={t("settings.security.password.remove")}
+                caption={t(
+                  !removable
+                    ? "settings.security.password.remove.last"
+                    : limited
+                      ? "settings.security.password.remove.unused"
+                      : "settings.security.password.remove.about",
+                )}
+                end={
+                  removable ? (
+                    <Button size="timeline" busy={removing.busy} onPress={removePassword}>
+                      {t("settings.security.password.remove.submit")}
+                    </Button>
+                  ) : undefined
+                }
+              />
+            )}
+          </SettingsList>
+        )}
+      </SettingsSection>
+      {removing.dialog}
+    </>
   );
 }
 
@@ -246,8 +317,8 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
             {t("settings.security.linked.done", { provider: nameOf(returned.provider) })}
           </SaveState>
         )}
-        {/* What a confirmation of the link came to is the confirmation's to say. */}
-        {returned?.kind === "error" && returned.operation !== "link" && (
+        {/* What a confirmation came to is the confirmation's to say, where its operation is asked from. */}
+        {returned?.kind === "error" && returned.operation === undefined && (
           <FormAlert>{providerFailure(returned, t)}</FormAlert>
         )}
         {confirmation.notice}
@@ -331,19 +402,20 @@ function Browsers() {
   const { revoke, revokeOthers } = useBrowserSessionWrites();
   const [asking, setAsking] = useState<BrowserSession | "others">();
   const others = sessions.some((session) => !session.current);
-  // The place is the sign-in's, not where the browser is now (ADR-0090 §11); what was not recorded is unknown.
-  const caption = (session: BrowserSession) =>
+  // Each fact on a line of its own, short enough for a phone beside the row's button, the reader's own browser said
+  // first. The address stands right under the sign-in it is of, not as where the browser is now (ADR-0090 §11); what
+  // was not recorded is unknown.
+  const facts = (session: BrowserSession) =>
     [
+      session.current ? t("settings.security.browsers.current") : undefined,
+      t("settings.security.browsers.signed_in", { date: day(session.signed_in_at) }),
       session.ip === undefined
-        ? t("settings.security.browsers.signed_in.unknown", { date: day(session.signed_in_at) })
-        : t("settings.security.browsers.signed_in", { date: day(session.signed_in_at), ip: session.ip }),
+        ? t("settings.security.browsers.signed_in.from.unknown")
+        : t("settings.security.browsers.signed_in.from", { ip: session.ip }),
       session.last_used_at === undefined
         ? undefined
         : t("settings.security.browsers.last_used", { date: hour(session.last_used_at) }),
-      session.current ? t("settings.security.browsers.current") : undefined,
-    ]
-      .filter((part) => part !== undefined)
-      .join(" · ");
+    ].filter((fact) => fact !== undefined);
   return (
     <>
       <SettingsSection
@@ -368,7 +440,7 @@ function Browsers() {
               key={session.id}
               icon="public"
               title={browserName(session, t)}
-              caption={caption(session)}
+              facts={facts(session)}
               end={
                 session.current ? undefined : (
                   <Button
@@ -430,16 +502,24 @@ function Browsers() {
 function Sections({ fragment, onFragmentRead, leave }: SettingsAddress) {
   const { t } = stringsIn(useLocale().locale);
   const twoFactor = useTwoFactor();
+  const hasPassword = useHasPassword() === true;
   const limited = useInstance()?.login_providers_only === true;
   const returned = useProviderReturn({ fragment, onFragmentRead });
   return (
     <>
-      {/* While it is off, the summary is the one place that says so and the one door to it. */}
+      {/*
+        While it is off, the summary is the one place that says so and the one door to it. Its reason is the
+        account's own: a password that may leak, where one signs it in; else the other ways it signs in with.
+      */}
       {twoFactor?.enabled === false && (
         <StatusSummary
           icon="caution"
           title={t("settings.security.two_factor.off")}
-          about={t("settings.security.two_factor.off.about")}
+          about={t(
+            hasPassword && !limited
+              ? "settings.security.two_factor.off.about"
+              : "settings.security.two_factor.off.about.passwordless",
+          )}
           action={
             <LinkButton kind="primary" href={securityPaths.twoFactor}>
               {t("settings.security.two_factor.turn_on")}
@@ -447,7 +527,7 @@ function Sections({ fragment, onFragmentRead, leave }: SettingsAddress) {
           }
         />
       )}
-      <SignIn limited={limited} />
+      <SignIn limited={limited} returned={returned} leave={leave} />
       <Passkeys limited={limited} />
       <Linked returned={returned} leave={leave} />
       <Browsers />
@@ -459,13 +539,10 @@ function Sections({ fragment, onFragmentRead, leave }: SettingsAddress) {
 export function SecuritySettings({ back, fragment, onFragmentRead, leave }: SettingsEntryProps) {
   const { t } = stringsIn(useLocale().locale);
   const { status, retry } = useSecurityRead();
+  const notice = useReadingNotice(status, retry);
   return (
-    <SettingsScreen icon="security" title={t("settings.entry.security")} back={back}>
-      {status === "read" ? (
-        <Sections fragment={fragment} onFragmentRead={onFragmentRead} leave={leave} />
-      ) : (
-        <Reading status={status} retry={retry} />
-      )}
+    <SettingsScreen icon="security" title={t("settings.entry.security")} back={back} notice={notice}>
+      {status === "read" && <Sections fragment={fragment} onFragmentRead={onFragmentRead} leave={leave} />}
     </SettingsScreen>
   );
 }

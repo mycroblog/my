@@ -572,6 +572,8 @@ const list = tv({
     glyph: "text-muted-text",
     title: "[word-break:auto-phrase]",
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
+    // A fact is a few words around a date or an address: it breaks at its spaces alone, so that neither is cut.
+    fact: "text-caption text-muted-text [word-break:keep-all]",
     // A state at the row's end: words alone, muted, with no surface, which is a button's.
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
@@ -600,8 +602,8 @@ export function SettingsList({ label, children }: { label: string; children: Rea
 }
 
 /**
- * A row of a section's list: its glyph, a title over a caption, a state in a word or two at its end, in muted words
- * with no surface (`state`), and what the reader may do with it (`end`: one or two buttons, a group named by the
+ * A row of a section's list: its glyph, a title over a caption or over the facts known of it, one a line (`facts`), a
+ * state in a word or two at its end, in muted words with no surface (`state`), and what the reader may do with it (`end`: one or two buttons, a group named by the
  * row's title, so that one Remove is told from the next). With `href`, the whole row opens the screen under the
  * entry that holds it (changing the password, one filter), a chevron at its end in place of buttons.
  */
@@ -609,6 +611,7 @@ export function SettingsListRow({
   icon,
   title,
   caption,
+  facts,
   state,
   href,
   end,
@@ -616,6 +619,11 @@ export function SettingsListRow({
   icon?: IconName | undefined;
   title: string;
   caption?: string | undefined;
+  /**
+   * What is known of it, each fact short and on a line of its own (which browser this is, when it signed in, when it
+   * was last used): a line too long for the row breaks between its words, never inside one, in ja too.
+   */
+  facts?: readonly string[] | undefined;
   state?: string | undefined;
   href?: string | undefined;
   end?: ReactNode;
@@ -641,6 +649,12 @@ export function SettingsListRow({
             <span className={s.caption()}>{caption}</span>
           </>
         )}
+        {facts?.map((fact) => (
+          <Fragment key={fact}>
+            {" "}
+            <span className={s.fact()}>{fact}</span>
+          </Fragment>
+        ))}
       </Stack>
       {state !== undefined && (
         <>

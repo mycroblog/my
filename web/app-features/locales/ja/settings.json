@@ -287,13 +287,17 @@
     "defaultMessage": "パスワードを知った人はだれでもログインできます。認証アプリのコードがそれを防ぎます。",
     "description": "Under settings.security.two_factor.off in the status summary: what it means that two-factor authentication is off, and what turning it on does. The authenticator app is an app on the reader's phone that shows six-digit codes."
   },
+  "settings.security.two_factor.off.about.passwordless": {
+    "defaultMessage": "有効にすると、ログインのたびに認証アプリのコードも必要になります。パスキーや連携したアカウントをほかの人に使われても、ログインされません。",
+    "description": "Under settings.security.two_factor.off in the status summary, in place of settings.security.two_factor.off.about, for an account that no password signs in (it has none, or the server limits sign-in to other services): what turning two-factor authentication on does for it. It must not speak of a password."
+  },
   "settings.security.two_factor.turn_on": {
     "defaultMessage": "有効にする",
     "description": "The button of the status summary that leads to the page where the reader turns two-factor authentication on, and the button at the end of that page that turns it on once the code is entered."
   },
   "settings.security.two_factor.on": {
     "defaultMessage": "オン",
-    "description": "The state at the end of the row Two-factor authentication: it is turned on."
+    "description": "The line under Two-factor authentication in its row when the server did not say since when it is on: it is turned on. With the date, the line is settings.security.two_factor.since."
   },
   "settings.security.two_factor.since": {
     "defaultMessage": "{date} から有効",
@@ -301,7 +305,7 @@
   },
   "settings.security.two_factor.codes_left": {
     "defaultMessage": "{count, plural, =0 {リカバリーコードは残っていません} other {リカバリーコードは残り # 個}}",
-    "description": "The line under Two-factor authentication in its row when few recovery codes are left (three or fewer). A recovery code signs the reader in once when they cannot use their authenticator app. count is how many are unused."
+    "description": "A second line under Two-factor authentication in its row, under settings.security.two_factor.since, when few recovery codes are left (three or fewer). A recovery code signs the reader in once when they cannot use their authenticator app. count is how many are unused."
   },
   "settings.security.two_factor.setup": {
     "defaultMessage": "認証アプリに追加",
@@ -393,7 +397,7 @@
   },
   "settings.security.two_factor.on.heading": {
     "defaultMessage": "二要素認証は有効です",
-    "description": "The heading of the section of the page of two-factor authentication while it is on; also the name of the list of its two rows for assistive technology."
+    "description": "The heading of the first section of the page of two-factor authentication while it is on; also the name of the list of its one row, Recovery codes, for assistive technology."
   },
   "settings.security.two_factor.on.about": {
     "defaultMessage": "ログインするとき、パスワードまたはパスキーのあとに、認証アプリのコードを入力します。",
@@ -405,11 +409,11 @@
   },
   "settings.security.two_factor.turn_off.title": {
     "defaultMessage": "二要素認証を無効にする",
-    "description": "The name of the second row on the page of two-factor authentication."
+    "description": "The heading of the last section of the page of two-factor authentication, which stands apart and holds the button Turn off."
   },
   "settings.security.two_factor.turn_off.about": {
     "defaultMessage": "無効にすると、パスワードまたはパスキーだけでログインできるようになります。",
-    "description": "The line under settings.security.two_factor.turn_off.title: what turning it off means."
+    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means."
   },
   "settings.security.two_factor.turn_off.confirm": {
     "defaultMessage": "二要素認証を無効にするには、認証アプリのコードか、まだ使っていないリカバリーコードを入力してください。",
@@ -417,7 +421,7 @@
   },
   "settings.security.two_factor.turn_off": {
     "defaultMessage": "無効にする",
-    "description": "The button at the end of the row settings.security.two_factor.turn_off.title, which asks for a two-factor code first; and the button of that dialog."
+    "description": "The button of the section settings.security.two_factor.turn_off.title, which asks for a two-factor code first; and the button of that dialog."
   },
   "settings.security.providers_only": {
     "defaultMessage": "このサーバーでは、ほかのサービスでしかログインできないため、いまはパスワードの設定やパスキーの追加はできません。",
@@ -425,19 +429,15 @@
   },
   "settings.security.password": {
     "defaultMessage": "パスワード",
-    "description": "A row of the Sign-in section of the Security page of the settings that opens the password's page, and the title of that page."
+    "description": "A row of the Sign-in section of the Security page of the settings that opens the password's page, where the reader changes their password or sets one; and the title of that page."
   },
   "settings.security.password.caption": {
-    "defaultMessage": "パスワードの変更と削除",
-    "description": "The line under Password in its row, for an account that has a password: what its page does."
+    "defaultMessage": "パスワードを変更",
+    "description": "The line under Password in its row, for an account that has a password: what its page does. Removing the password is a row of its own (settings.security.password.remove)."
   },
   "settings.security.password.none": {
     "defaultMessage": "未設定",
-    "description": "The line under Password in its row, for an account that has no password (it signs in with a passkey or a linked account)."
-  },
-  "settings.security.password.unused": {
-    "defaultMessage": "いまはこのサーバーのログインに使えません",
-    "description": "The line under Password in its row, for an account that has a password on a server that limits sign-in to external login providers: the password signs nobody in now."
+    "description": "The line under Password in its row, for an account that has no password (it signs in with a passkey or a linked account): its page sets one."
   },
   "settings.security.password.change": {
     "defaultMessage": "パスワードを変更",
@@ -477,27 +477,27 @@
   },
   "settings.security.password.changed": {
     "defaultMessage": "パスワードを変更し、ほかのブラウザとアプリからログアウトしました。",
-    "description": "Beside the button Change password once the password was changed."
+    "description": "Beside the button Change password, on the password's page, once the password was changed."
   },
   "settings.security.password.remove": {
     "defaultMessage": "パスワードを削除",
-    "description": "The heading of the section of the password's page that removes the password, for an account that has one; also the name of its one row's list for assistive technology."
-  },
-  "settings.security.password.remove.title": {
-    "defaultMessage": "パスワードなしでログイン",
-    "description": "The name of the row in the section Remove password: what removing the password gives."
+    "description": "The name of the last row of the Sign-in section of the Security page of the settings, for an account that has a password. The line under it says what removing does, or why it cannot be removed; the button Remove is at the row's end."
   },
   "settings.security.password.remove.about": {
     "defaultMessage": "削除すると、パスキーか連携したアカウントでログインします。ほかのブラウザとアプリからはログアウトします。",
-    "description": "The line under settings.security.password.remove.title, for an account that has a passkey or a linked account: what removing the password does, said before."
+    "description": "The line under Remove password in its row, for an account that has a passkey or a linked account: what removing the password does, said before."
+  },
+  "settings.security.password.remove.unused": {
+    "defaultMessage": "いまはこのサーバーのログインにパスワードを使えません。削除すると、ほかのブラウザとアプリからログアウトします。",
+    "description": "The line under Remove password in its row, in place of settings.security.password.remove.about, on a server that limits sign-in to other services (external login providers): the password signs nobody in now, and what removing it does."
   },
   "settings.security.password.remove.last": {
     "defaultMessage": "パスワードは、ログインに使える唯一の手段です。削除するには、先にパスキーを追加するか、アカウントを連携してください。",
-    "description": "The line under settings.security.password.remove.title, in place of settings.security.password.remove.about, for an account with no passkey and no linked account: why the password cannot be removed, and what to do first. The row then has no button."
+    "description": "The line under Remove password in its row, in place of settings.security.password.remove.about, for an account with no passkey and no linked account: why the password cannot be removed, and what to do first. The row then has no button."
   },
   "settings.security.password.remove.submit": {
     "defaultMessage": "削除",
-    "description": "The button at the end of the row settings.security.password.remove.title. It asks the reader to confirm it's them, then removes the password."
+    "description": "The button at the end of the row Remove password. It asks the reader to confirm it's them, then removes the password."
   },
   "settings.security.password.remove.confirm": {
     "defaultMessage": "パスワードを削除するには、本人確認が必要です。",
@@ -505,7 +505,7 @@
   },
   "settings.security.password.removed": {
     "defaultMessage": "パスワードを削除し、ほかのブラウザとアプリからログアウトしました。",
-    "description": "Beside the button on the password's page once the password was removed."
+    "description": "At the top of the Sign-in section of the Security page once the password was removed."
   },
   "settings.security.two_factor": {
     "defaultMessage": "二要素認証",
@@ -640,20 +640,24 @@
     "description": "The name of a browser in the list of signed-in browsers when the server kept no record of which browser signed in."
   },
   "settings.security.browsers.signed_in": {
-    "defaultMessage": "{date} に {ip} からログイン",
-    "description": "In the line under a browser's name in the list of signed-in browsers. It must read as where the browser was when it signed in, not where it is now. date is the day of the sign-in, written out in the reader's language (Mar 3, 2026); ip is an IP address."
+    "defaultMessage": "{date} にログイン",
+    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from."
   },
-  "settings.security.browsers.signed_in.unknown": {
-    "defaultMessage": "{date} にログイン (接続元は不明)",
-    "description": "As settings.security.browsers.signed_in, when the server kept no record of the address the browser signed in from."
+  "settings.security.browsers.signed_in.from": {
+    "defaultMessage": "ログイン元: {ip}",
+    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now: in en it continues the line above (Signed in Mar 3 / from 203.0.113.24), so it starts in lower case. ip is an IP address."
+  },
+  "settings.security.browsers.signed_in.from.unknown": {
+    "defaultMessage": "ログイン元: 不明",
+    "description": "As settings.security.browsers.signed_in.from, when the server kept no record of the address the browser signed in from."
   },
   "settings.security.browsers.last_used": {
     "defaultMessage": "最終利用: {date}",
-    "description": "In the line under a browser's name in the list of signed-in browsers, after a middle dot. date is the day and the time, to the hour, the browser last used the account, written out in the reader's language (Mar 3, 2026, 2:00 PM)."
+    "description": "A line of its own under a browser's name in the list of signed-in browsers, after the lines of its sign-in. date is the day and the hour the browser last used the account, written out in the reader's language (Mar 3, 2 PM)."
   },
   "settings.security.browsers.current": {
     "defaultMessage": "このブラウザ",
-    "description": "In the line under a browser's name in the list of signed-in browsers, after a middle dot: marks the browser the reader is using now."
+    "description": "The first line under a browser's name in the list of signed-in browsers: marks the browser the reader is using now, before what is known of its sign-in."
   },
   "settings.security.browsers.sign_out": {
     "defaultMessage": "ログアウト",

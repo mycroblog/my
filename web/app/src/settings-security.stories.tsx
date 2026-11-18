@@ -2,12 +2,12 @@
 
 // Security, the entry of the settings at /settings/security (#3205), and the screens under it, on the fake server:
 // the entry as an account reads it, with two-factor authentication off (the status summary is the one door to it) and
-// on (its row is); for an account without a password, without passkeys, and alone in its one browser; on a server
-// without login providers, and on one that limits sign-in to them (no password to set, no passkey to add); and as the
-// browser comes back from a login provider, with each thing that may have happened there in the fragment of the
-// address. Under it: the password's screen, for an account with one, without one, whose password is its only way to
-// sign in, and back from a provider's confirmation; adding a passkey; and two-factor authentication, off (the setup)
-// and on. What a press alone reaches is the parts' own, in the design system's Settings parts: the confirmation that
+// on (its row is); for an account without a password, without passkeys, whose password is its only way to sign in
+// (it cannot be removed, and its row says why), and alone in its one browser; on a server without login providers,
+// and on one that limits sign-in to them (no password to set, no passkey to add); and as the browser comes back from
+// a login provider, with each thing that may have happened there in the fragment of the address. Under it: the
+// password's screen, for an account with one, without one, and back from a provider's confirmation; adding a
+// passkey; and two-factor authentication, off (the setup) and on. What a press alone reaches is the parts' own, in the design system's Settings parts: the confirmation that
 // asks to authenticate again by each proof, the recovery codes shown once, and a confirmation before something ends
 // (its List management).
 
@@ -37,6 +37,10 @@ export const TwoFactorOn: Story = { parameters: screen({ at: security, server: {
 export const NoPassword: Story = { parameters: screen({ at: security, server: { access: { password: false } } }) };
 /** An account without passkeys: the sentence and Add in the list's place. */
 export const NoPasskeys: Story = { parameters: screen({ at: security, server: { access: { passkeys: 0 } } }) };
+/** The password is the only way to sign in: it cannot be removed, and its row says why, with no button. */
+export const PasswordOnlyWay: Story = {
+  parameters: screen({ at: security, server: { access: { passkeys: 0, linked: "none" } } }),
+};
 /** A server that limits sign-in to login providers, for an account without passkeys: Passkeys is absent. */
 export const PasskeysNotOffered: Story = {
   parameters: screen({ at: security, server: { access: { providersOnly: true, passkeys: 0, twoFactor: true } } }),
@@ -83,6 +87,12 @@ export const ProviderConfirmed: Story = {
 export const ProviderMismatch: Story = {
   parameters: screen({ at: `${security}#external_error=mismatch&operation=link&provider={provider:github}` }),
 };
+/** Back from GitHub, which confirmed removing the password: Sign-in says to press Remove again. */
+export const ProviderConfirmedRemoval: Story = {
+  parameters: screen({
+    at: `${security}#external_confirmation=${fakeExternalConfirmation}&operation=password_removal&provider={provider:github}`,
+  }),
+};
 /** The address the server sends the browser back to by default leads to Security, with what happened. */
 export const ProviderDefaultReturn: Story = {
   parameters: screen({ at: "/settings/linked-accounts#linked={provider:github}" }),
@@ -90,15 +100,11 @@ export const ProviderDefaultReturn: Story = {
 
 // ---- The password ---------------------------------------------------------------------------------------------------
 
-/** The password of an account that has one, and other ways to sign in: change it, or remove it. */
+/** The password of an account that has one: the new password, and right after it the button that changes it. */
 export const Password: Story = { parameters: screen({ at: password }) };
 /** An account without a password sets one. */
 export const PasswordUnset: Story = { parameters: screen({ at: password, server: { access: { password: false } } }) };
-/** The password is the only way to sign in: it cannot be removed, and the row says why. */
-export const PasswordOnlyWay: Story = {
-  parameters: screen({ at: password, server: { access: { passkeys: 0, linked: "none" } } }),
-};
-/** A server that limits sign-in to login providers: no password to change, and the one the account has to remove. */
+/** A server that limits sign-in to login providers: no password to set or change, and the screen says so. */
 export const PasswordLimited: Story = {
   parameters: screen({ at: password, server: { access: { providersOnly: true } } }),
 };

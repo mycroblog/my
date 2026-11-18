@@ -61,4 +61,5 @@ to your account and signs them out.
 
 ## Settings
 
-"Settings" in the navigation opens the settings. They hold "Display and posting".
+"Settings" in the navigation opens the settings. They hold "Display and posting" and "Security". Under "Security" you
+manage your password, passkeys, two-factor authentication, linked accounts, and signed-in browsers.

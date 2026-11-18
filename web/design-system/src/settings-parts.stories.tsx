@@ -7,7 +7,8 @@
 // rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
 // to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; a
 // number field given a number outside what it takes; what the reader copies and keeps (recovery codes shown once,
-// before and after copying); the key of an authenticator app as a QR code and as text; and a sentence of a section
+// before and after copying); the key of an authenticator app as a QR code and as text; and rows that say what is
+// known of each thing, one fact a line, under which a sentence of the section stands
 // with the links to where the reader acts on it.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -43,7 +44,6 @@ const en = {
   arriveAbout: "Off, a button over the timeline counts them until you ask",
   alt: "Ask for a description of media",
   twoFactor: "Two-factor authentication",
-  on: "On",
   twoFactorOff: "Two-factor authentication is off",
   twoFactorOn: "Two-factor authentication is on",
   offAbout: "Anyone who learns your password can sign in. A code from your phone stops them.",
@@ -51,7 +51,8 @@ const en = {
   turnOn: "Turn on",
   signIn: "Sign-in",
   passwordAbout: "Changed 3 months ago",
-  twoFactorRow: "A code from your phone · 8 recovery codes left",
+  twoFactorSince: "On since Nov 6",
+  twoFactorCodes: "2 recovery codes left",
   passkeys: "Passkeys",
   passkeysAbout: "Sign in with your device's lock in place of the password.",
   add: "Add a passkey",
@@ -108,6 +109,11 @@ const en = {
   enter: "Enter the code",
   codeHint: "The six-digit code your authenticator app shows now",
   browsers: "Signed-in browsers",
+  thisBrowser: "This browser",
+  signedIn: "Signed in Nov 15",
+  from: "from 203.0.113.24",
+  lastUsed: "Last used Nov 18, 2 PM",
+  signOut: "Sign out",
   advice: "Don't recognize a sign-in? Change your password, then check which apps can use your account.",
   changePassword: "Change password",
   apps: "Check your apps",
@@ -124,7 +130,6 @@ const ja: typeof en = {
   arriveAbout: "オフのときは、タイムラインの上のボタンが件数を知らせます",
   alt: "メディアの説明を確認する",
   twoFactor: "二要素認証",
-  on: "オン",
   twoFactorOff: "二要素認証はオフです",
   twoFactorOn: "二要素認証はオンです",
   offAbout: "パスワードを知った人はだれでもログインできます。スマートフォンのコードがそれを防ぎます。",
@@ -132,7 +137,8 @@ const ja: typeof en = {
   turnOn: "有効にする",
   signIn: "ログイン",
   passwordAbout: "3か月前に変更",
-  twoFactorRow: "スマートフォンのコード · リカバリーコード残り8個",
+  twoFactorSince: "11月6日 から有効",
+  twoFactorCodes: "リカバリーコードは残り 2 個",
   passkeys: "パスキー",
   passkeysAbout: "パスワードの代わりに、端末のロックでログインします。",
   add: "パスキーを追加",
@@ -189,6 +195,11 @@ const ja: typeof en = {
   enter: "コードを入力",
   codeHint: "認証アプリにいま表示されている6桁のコード",
   browsers: "ログイン中のブラウザ",
+  thisBrowser: "このブラウザ",
+  signedIn: "11月15日 にログイン",
+  from: "ログイン元: 203.0.113.24",
+  lastUsed: "最終利用: 11月18日 14時",
+  signOut: "ログアウト",
   advice: "心当たりのないログインがあるときは、パスワードを変更し、アカウントを使えるアプリを確認してください。",
   changePassword: "パスワードを変更",
   apps: "アプリを確認",
@@ -258,7 +269,7 @@ function Summaries() {
       />
       {/* All well, where a screen says so. */}
       <StatusSummary icon="accepted" title={w.twoFactorOn} about={w.onAbout} />
-      {/* Once it is on, its row is its door, its state in words at the row's end; the summary is gone. */}
+      {/* Once it is on, its row is its door, its state said once, in the muted line under its name; the summary is gone. */}
       <SettingsSection heading={w.signIn}>
         <SettingsList label={w.signIn}>
           <SettingsListRow
@@ -268,10 +279,9 @@ function Summaries() {
             href="/settings/security/password"
           />
           <SettingsListRow
-            icon="time"
+            icon="twoFactor"
             title={w.twoFactor}
-            caption={w.twoFactorRow}
-            state={w.on}
+            facts={[w.twoFactorSince, w.twoFactorCodes]}
             href="/settings/security/two-factor"
           />
         </SettingsList>
@@ -602,14 +612,27 @@ function Authenticator() {
   );
 }
 
-/** A sentence of a section, after its list, with the links to where the reader acts on it. */
+/**
+ * Rows that say what is known of each thing, one fact a line, and after the list a sentence of the section with the
+ * links to where the reader acts on it.
+ */
 function Notes() {
   const w = useWords();
   return (
     <Column>
       <SettingsSection heading={w.browsers}>
         <SettingsList label={w.browsers}>
-          <SettingsListRow icon="public" title="Firefox on macOS" caption="Tokyo" />
+          <SettingsListRow
+            icon="public"
+            title="Firefox on macOS"
+            facts={[w.thisBrowser, w.signedIn, w.from, w.lastUsed]}
+          />
+          <SettingsListRow
+            icon="public"
+            title="Safari on iPhone"
+            facts={[w.signedIn, w.from, w.lastUsed]}
+            end={<Button size="timeline">{w.signOut}</Button>}
+          />
         </SettingsList>
         <SettingsNote
           links={[
@@ -650,7 +673,7 @@ export const DisabledSettings: Story = { render: () => <Disabled /> };
 export const CodesToKeep: Story = { render: () => <Kept /> };
 /** Setting an authenticator app up: its key as a QR code and as text, then the code the app makes. */
 export const AuthenticatorSetup: Story = { render: () => <Authenticator /> };
-/** A sentence of a section with the links to where the reader acts on it. */
+/** Rows of facts, one a line, and a sentence of the section with the links to where the reader acts on it. */
 export const NoteWithLinks: Story = { render: () => <Notes /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

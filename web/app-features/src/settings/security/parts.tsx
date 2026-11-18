@@ -20,7 +20,7 @@ import {
   wallTime,
 } from "@my/design-system";
 import { oneTimeCodeField } from "@my/platform";
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
 
@@ -44,9 +44,13 @@ export function useSecurityTitle(screen: keyof typeof securityPaths): string {
   );
 }
 
-/** In the sections' place: that what the screen shows loads, or that it could not be read, with the way to try again. */
-export function Reading({ status, retry }: { status: "loading" | "failed"; retry: () => void }) {
+/**
+ * The `notice` of a settings screen while it has no section to show: that what it shows is being read, or that it
+ * could not be, with the way to try again; none once it is read.
+ */
+export function useReadingNotice(status: "loading" | "failed" | "read", retry: () => void): ReactNode {
   const { t } = stringsIn(useLocale().locale);
+  if (status === "read") return undefined;
   return status === "failed" ? (
     <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
       {t("settings.failed")}
@@ -56,9 +60,13 @@ export function Reading({ status, retry }: { status: "loading" | "failed"; retry
   );
 }
 
+/** The space a line does not break at (U+00A0), by its number: written out, it reads as any space. */
+const noBreak = String.fromCharCode(0xa0);
+
 /**
  * A day (`day`) and an hour of a day (`hour`, what the server keeps of a last use) as the reader's language and time
- * zone write them, short, with the year only when it is not this one.
+ * zone write them, short, with the year only when it is not this one. A date holds together: its spaces do not break,
+ * so that the line it stands in wraps before or after it.
  */
 export function useDates(): { day: (iso: string) => string; hour: (iso: string) => string } {
   const { locale } = useLocale();
@@ -67,7 +75,9 @@ export function useDates(): { day: (iso: string) => string; hour: (iso: string) 
   const format = (iso: string, more: Intl.DateTimeFormatOptions) => {
     const date = new Date(iso);
     const year = wallTime(date, timeZone).year === wallTime(now, timeZone).year ? {} : { year: "numeric" as const };
-    return dateFormat(locale, timeZone, { month: "short", day: "numeric", ...year, ...more }).format(date);
+    return dateFormat(locale, timeZone, { month: "short", day: "numeric", ...year, ...more })
+      .format(date)
+      .replaceAll(" ", noBreak);
   };
   return { day: (iso) => format(iso, {}), hour: (iso) => format(iso, { hour: "numeric" }) };
 }

@@ -7,8 +7,9 @@
 //   wrong code says so under its field; a setup that expired is replaced by a new one, and the screen says so.
 // - Turned on, or the recovery codes made again: the recovery codes, shown this once, with Copy and the plain statement
 //   that they are not shown again; I saved them goes back to Security.
-// - On, it says since when, how many recovery codes are left (and to make new ones where few are), and offers to make
-//   them again and to turn it off, each after a code of the app or an unused recovery code, asked in a dialog.
+// - On, it says since when and how many recovery codes are left (and to make new ones where few are), with the way to
+//   make them again; and last, in a section of its own, apart, the way to turn it off. Each asks first for a code of
+//   the app or an unused recovery code, in a dialog.
 
 import {
   refusedField,
@@ -26,6 +27,7 @@ import {
   FormAlert,
   ModalPresence,
   QrFrame,
+  Row,
   SaveState,
   SettingsList,
   SettingsListRow,
@@ -41,7 +43,7 @@ import { useId, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
 import type { SettingsSubProps } from "../entries";
-import { CodeDialog, Reading, useDates } from "./parts";
+import { CodeDialog, useDates, useReadingNotice } from "./parts";
 
 /** How few recovery codes are left before the screen asks to make new ones. */
 const fewCodes = 3;
@@ -89,6 +91,7 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
   const [busy, setBusy] = useState(false);
   const [fault, setFault] = useState<string>();
   const [said, setSaid] = useState<string>();
+  const reading = useReadingNotice(setup !== undefined ? "read" : status === "failed" ? "failed" : "loading", restart);
 
   const submit = () => {
     const code = typed.trim();
@@ -126,6 +129,7 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
         sub
         title={t("settings.security.two_factor")}
         back={back}
+        notice={reading}
         foot={
           setup === undefined ? undefined : (
             <SubmitBar result={said === undefined ? undefined : <FormAlert>{said}</FormAlert>}>
@@ -136,9 +140,7 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
           )
         }
       >
-        {setup === undefined ? (
-          <Reading status={status === "failed" ? "failed" : "loading"} retry={restart} />
-        ) : (
+        {setup !== undefined && (
           <>
             <SettingsSection
               heading={t("settings.security.two_factor.setup")}
@@ -245,21 +247,23 @@ function Manage({
                 </Button>
               }
             />
-            <SettingsListRow
-              title={t("settings.security.two_factor.turn_off.title")}
-              caption={t("settings.security.two_factor.turn_off.about")}
-              end={
-                <Button
-                  size="timeline"
-                  onPress={() => {
-                    setAsking("off");
-                  }}
-                >
-                  {t("settings.security.two_factor.turn_off")}
-                </Button>
-              }
-            />
           </SettingsList>
+        </SettingsSection>
+        {/* What ends it stands last, in a section of its own, apart from what keeps it working. */}
+        <SettingsSection
+          heading={t("settings.security.two_factor.turn_off.title")}
+          about={t("settings.security.two_factor.turn_off.about")}
+        >
+          <Row justify="start">
+            <Button
+              size="timeline"
+              onPress={() => {
+                setAsking("off");
+              }}
+            >
+              {t("settings.security.two_factor.turn_off")}
+            </Button>
+          </Row>
         </SettingsSection>
       </SettingsScreen>
       <ModalPresence>
@@ -294,14 +298,11 @@ export function SecurityTwoFactor({ onBack }: SettingsSubProps) {
   const [made, setMade] = useState<{ codes: readonly string[]; said: string }>();
   /** Turned off here: the screen is being left for Security, and starts no new setup meanwhile. */
   const [turnedOff, setTurnedOff] = useState(false);
+  const reading = useReadingNotice(status === "failed" ? "failed" : "loading", retry);
   const back = <BackButton onPress={onBack}>{t("settings.entry.security")}</BackButton>;
   if (made !== undefined) return <Codes codes={made.codes} said={made.said} onDone={onBack} />;
   if (twoFactor === undefined || turnedOff)
-    return (
-      <SettingsScreen sub title={t("settings.security.two_factor")} back={back}>
-        <Reading status={status === "failed" ? "failed" : "loading"} retry={retry} />
-      </SettingsScreen>
-    );
+    return <SettingsScreen sub title={t("settings.security.two_factor")} back={back} notice={reading} />;
   if (twoFactor.enabled)
     return (
       <Manage
