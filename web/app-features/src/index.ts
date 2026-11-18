@@ -125,3 +125,4 @@ export { FindPeople, loadPeople } from "./people/people";
 export { Search } from "./search/search";
 export { ListMembers, loadListMembers } from "./timeline/list-members";
 export { loadTagTimeline, TagTimeline } from "./timeline/tag";
+export { useWelcomeTitle, Welcome, type WelcomeProps, type WelcomeSpecimen } from "./welcome/welcome";

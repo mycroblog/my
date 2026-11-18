@@ -29,7 +29,8 @@ If the server sends email, it sends a link to confirm your email address. Open i
 Until the account is approved and the address is confirmed, you can sign in but you only see what you are waiting for
 ("Your account is not ready yet").
 
-After sign-up, while you follow no one, your home timeline shows people the server suggests, if it suggests any.
+After sign-up, the app offers to set a display name and an avatar, which you can skip; while you follow no one, your
+home timeline then shows people the server suggests, if it suggests any.
 
 ## Signing in
 

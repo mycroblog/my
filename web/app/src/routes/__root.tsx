@@ -3,8 +3,9 @@
 // The root of every screen: the app's shell around the screen's route, with the links of the design system's parts
 // navigating through the router (but to the server's own pages, with a page load), unless the server's maintenance or
 // its closure takes the place of every screen (ADR-0088 §2, §10). A visitor at / gets the landing page in place of the
-// shell, and the article editor stands without it, its menus in a sheet on a phone as the shell's. An address the app has no screen for shows its own heading inside
-// the shell.
+// shell, and the article editor stands without it, its menus in a sheet on a phone as the shell's; the welcome step of
+// a signed-in reader is a page of its own before the app, without the shell too. An address the app has no screen for
+// shows its own heading inside the shell.
 
 import { useInstance, useServerState, useWritesInFlight } from "@my/app-data";
 import { FeedNotice, MenuSheet, NavigationProvider } from "@my/design-system";
@@ -20,6 +21,7 @@ import { ClosedPage, MaintenancePage, pageServer } from "../shell/pages";
 import { useScreenScroll } from "../shell/scroll";
 import { Shell } from "../shell/shell";
 import { useNarrowViewport } from "../shell/viewport";
+import { useShowsWelcome } from "../shell/welcome";
 import { isServerPage } from "../sign-in";
 
 export const Route = createRootRouteWithContext<RouterContext>()({
@@ -96,7 +98,10 @@ function ServerPage({ signedIn, children }: { signedIn: boolean; children: React
 function Screens({ pathname, signedIn, serverName }: { pathname: string; signedIn: boolean; serverName: string }) {
   const operator = useInstance()?.single_user_account;
   const narrow = useNarrowViewport();
+  const welcome = useShowsWelcome();
   if (!signedIn && pathname === "/" && operator === undefined) return <Landing serverName={serverName} />;
+  // The welcome step of a signed-in reader is a page of its own; a visitor is asked to sign in, in the shell.
+  if (signedIn && welcome) return <Outlet />;
   // The article editor is a screen of its own, with no navigation around it; its menus and its schedule's form open as
   // the shell's do, in a sheet on a phone.
   if (isArticleEditor(pathname))

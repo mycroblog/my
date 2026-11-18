@@ -1,0 +1,38 @@
+{
+  "welcome.title": {
+    "defaultMessage": "Welcome to {name}",
+    "description": "The title of the welcome step, the page a new account sees once after signing up, before the home timeline: it asks for a display name and an avatar, both optional. name is the server's name (Example Social). Also the title of the browser tab."
+  },
+  "welcome.lead": {
+    "defaultMessage": "Add a display name and an avatar so that people recognize you.",
+    "description": "The first line under the title of the welcome step of a new account: what the step is for. The display name and the avatar are the two fields under it (settings.profile.name, settings.profile.avatar)."
+  },
+  "welcome.later": {
+    "defaultMessage": "Both are optional, and you can change them later under “Profile” in the settings.",
+    "description": "The second line under the title of the welcome step of a new account: neither the display name nor the avatar has to be given, and where they are changed later. The quoted word is the entry of the settings (settings.entry.profile)."
+  },
+  "welcome.continue": {
+    "defaultMessage": "Continue",
+    "description": "The primary button of the welcome step of a new account: it saves the display name and the avatar the reader gave, if any, and goes on to the home timeline."
+  },
+  "welcome.skip": {
+    "defaultMessage": "Skip for now",
+    "description": "The quiet button under Continue on the welcome step of a new account: it goes on to the home timeline and saves nothing. The reader can set the display name and the avatar later in the settings."
+  },
+  "welcome.loading": {
+    "defaultMessage": "Loading your account…",
+    "description": "On the page of the welcome step while the reader's account is being read from the server, before the step or the home timeline shows."
+  },
+  "welcome.save.failed": {
+    "defaultMessage": "Your display name and avatar could not be saved. Try again, or skip for now.",
+    "description": "Before the Continue button of the welcome step when saving failed and the server gave no reason (no connection). Skip for now is the button under Continue (welcome.skip)."
+  },
+  "welcome.save.picture_failed": {
+    "defaultMessage": "Nothing was saved, because the image could not be used. See the note under the avatar.",
+    "description": "Before the Continue button of the welcome step when the avatar the reader picked could not be uploaded or was refused; what is wrong stands under the avatar (welcome.picture.failed, or the server's own words)."
+  },
+  "welcome.picture.failed": {
+    "defaultMessage": "{reason, select, processing {The server could not process this image. Choose another one.} other {This image could not be uploaded. Try again, or choose another one.}}",
+    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
+  }
+}

@@ -34,16 +34,19 @@ export type PickedPicture = {
   readonly reset: () => void;
 };
 
+/** A picture as picked: the file, and the address it shows from. */
+type Picked = { readonly file: File; readonly url: string };
+
 /**
  * A picture of the profile in a form: `current` is the account's (its address, undefined for none), which shows until
  * the reader picks a file, which then shows from the device, or removes the picture. `onChange` hears each pick and
- * removal.
+ * removal. `start` is a picture a story's specimen opens the form with, as if picked, at an address of the story's own.
  */
-export function usePickedPicture(current: string | undefined, onChange?: () => void): PickedPicture {
-  const [picked, setPicked] = useState<{ file: File; url: string } | null | undefined>(undefined);
+export function usePickedPicture(current: string | undefined, onChange?: () => void, start?: Picked): PickedPicture {
+  const [picked, setPicked] = useState<Picked | null | undefined>(start);
   /** The address made for the file that shows, given back to the browser once another takes its place. */
   const made = useRef<string | undefined>(undefined);
-  const put = (next: { file: File; url: string } | null | undefined) => {
+  const put = (next: Picked | null | undefined) => {
     if (made.current !== undefined) URL.revokeObjectURL(made.current);
     made.current = next?.url;
     setPicked(next);
@@ -90,17 +93,25 @@ export type ProfileIdentity = {
   readonly saved: () => void;
 };
 
+/** What a story's specimen of a form opens the identity with, as if the reader had written and picked it. */
+export type IdentityStart = {
+  readonly displayName?: string | undefined;
+  /** The picture picked, and the address it shows from, which stays the story's own. */
+  readonly avatar?: Picked | undefined;
+};
+
 /**
  * The name and the avatar of `account`, the reader's own, for a form to change; `onChange` hears each change of
- * either (a form forgets there what its last save said).
+ * either (a form forgets there what its last save said). `start` is what a story's specimen opens the form with.
  */
 export function useProfileIdentity(
   account: Pick<Account, "display_name" | "username" | "avatar">,
   onChange?: () => void,
+  start?: IdentityStart,
 ): ProfileIdentity {
   const [base, setBase] = useState(account.display_name);
-  const [displayName, setName] = useState(account.display_name);
-  const avatar = usePickedPicture(account.avatar?.medium.url ?? account.avatar?.small.url, onChange);
+  const [displayName, setName] = useState(start?.displayName ?? account.display_name);
+  const avatar = usePickedPicture(account.avatar?.medium.url ?? account.avatar?.small.url, onChange, start?.avatar);
   const renamed = displayName !== base;
   return {
     displayName,
