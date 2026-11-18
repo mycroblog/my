@@ -23,7 +23,7 @@
 // A field in a setting's row takes its name, what describes it and whether it can be changed from the row
 // (`FieldContext`), so that no caller ties them by hand.
 
-import { createContext, use, useEffect, useRef, useState, type ReactElement, type ReactNode } from "react";
+import { createContext, use, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { Input as AriaInput, NumberField as AriaNumberField } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Icon } from "./icons";
@@ -37,6 +37,8 @@ type FieldHolder = {
   labelledBy?: string | undefined;
   /** The ids of what the holder says of the field, after what the field's own props say. */
   describedBy?: string | undefined;
+  /** The id of the place of the field's save state while it has one, the last of what describes the field. */
+  stateBy?: string | undefined;
   /** The field cannot be changed now. */
   disabled?: boolean | undefined;
 };
@@ -171,7 +173,7 @@ export function Select({
           className={s.select()}
           aria-label={label}
           aria-labelledby={labelledBy ?? (label === undefined ? holder.labelledBy : undefined)}
-          aria-describedby={describedBy(described, holder.describedBy)}
+          aria-describedby={describedBy(described, holder.describedBy, holder.stateBy)}
           value={chosen}
           disabled={disabled}
           onChange={(e) => {
@@ -221,8 +223,8 @@ export type NumberFieldProps = {
 const WHOLE: Intl.NumberFormatOptions = { maximumFractionDigits: 0, useGrouping: false };
 
 /**
- * A number (days, a threshold): a short field, its figures at its end, and its unit after it. In a setting's row it
- * is named and described by the row.
+ * A number (days, a threshold): a short field, its figures at its end, and its unit after it, which describes it to
+ * assistive technology ("Ends after, 30, days"). In a setting's row it is named and described by the row.
  */
 export function NumberField({
   id,
@@ -272,7 +274,9 @@ export function NumberField({
   };
   const ownId = id ?? holder.id;
   const named = labelledBy ?? (label === undefined ? holder.labelledBy : undefined);
-  const about = describedBy(described, holder.describedBy);
+  // Its unit is part of what describes it: after what is said about it, before its save state.
+  const unitId = useId();
+  const about = describedBy(described, holder.describedBy, unit !== undefined && unitId, holder.stateBy);
   return (
     <Row
       inline
@@ -304,7 +308,11 @@ export function NumberField({
       }
     >
       <NumberFrame as={<AriaInput className={s.number()} />} />
-      {unit !== undefined && <span className={s.unit()}>{unit}</span>}
+      {unit !== undefined && (
+        <span id={unitId} className={s.unit()}>
+          {unit}
+        </span>
+      )}
     </Row>
   );
 }

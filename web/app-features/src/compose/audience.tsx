@@ -4,13 +4,14 @@
 // (ADR-0155): a glyph of the visibility that opens the audience menu (the one menu of the design system). The menu holds a
 // row for who can see it, which opens the visibilities the writing may have (an article is never direct, ADR-0160), and
 // one for who may reply, boost and quote, whose submenu has a row per kind with who may do it now, each opening its
-// audiences and, under them, whether others may ask for the author's approval.
+// audiences and, under them, whether others may ask for the author's approval. The kinds, the audiences and how a
+// choice reads are the ones the settings offer for the account's new posts too (../interactions.ts).
 
 import type { Audience, Interaction, InteractionChoice, Visibility } from "@my/app-data";
 import { MenuButton, MenuGroup, MenuItem, type IconName } from "@my/design-system";
+import { audiences, choiceText, interactions } from "../interactions";
 import type { stringsIn } from "../locale";
 import type { MessageId } from "../messages.gen";
-import { interactions } from "./model";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -31,7 +32,6 @@ const audienceIcon: Record<Audience, IconName> = {
   mentioned: "direct",
   nobody: "profile",
 };
-const audiences: readonly Audience[] = ["everyone", "followers", "mentioned", "nobody"];
 const interactionIcon: Record<Interaction, IconName> = { reply: "reply", announce: "boost", quote: "quote" };
 
 /**
@@ -39,13 +39,6 @@ const interactionIcon: Record<Interaction, IconName> = { reply: "reply", announc
  * kind of interaction.
  */
 export type AudiencePanel = "audience" | "visibility" | "permissions" | Interaction;
-
-/** Who may do it, as the value of its row: the audience, and that others may ask, which anyone needs not. */
-const choiceText = (choice: InteractionChoice, t: T) =>
-  t("compose.permission.now", {
-    audience: t(`compose.audience.${choice.audience}`),
-    approval: choice.approval && choice.audience !== "everyone" ? "yes" : "no",
-  });
 
 /** Who may reply, boost and quote, as the value of their row: one value for all three, or none where they differ. */
 function permissionsText(policy: Policy, t: T): string {

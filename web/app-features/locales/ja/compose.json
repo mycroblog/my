@@ -173,19 +173,19 @@
   },
   "compose.audience.everyone": {
     "defaultMessage": "誰でも",
-    "description": "A choice of the permissions submenu: anyone who may see the post. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
+    "description": "A choice of the permissions submenu: anyone who may see the post. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.followers": {
     "defaultMessage": "フォロワー",
-    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.mentioned": {
     "defaultMessage": "メンションした人",
-    "description": "A choice of the permissions submenu: the accounts the post mentions."
+    "description": "A choice of the permissions submenu: the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.nobody": {
     "defaultMessage": "自分だけ",
-    "description": "A choice of the permissions submenu: the author alone. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
+    "description": "A choice of the permissions submenu: the author alone. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.approval": {
     "defaultMessage": "ほかの人も、承認すればできるようにする",
@@ -193,7 +193,7 @@
   },
   "compose.permission.now": {
     "defaultMessage": "{audience}{approval, select, yes {、ほかの人は承認すれば} other {}}",
-    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval). Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote), for a default that is none of Anyone, Followers and Only you alone (set from another app)."
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval). Also each option of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote): every audience alone, and every audience but Anyone with approval yes."
   },
   "compose.visibility.public": {
     "defaultMessage": "公開",

@@ -23,6 +23,7 @@ import {
   type Visibility,
 } from "@my/app-data";
 import type { FieldMembers } from "../field-errors";
+import { interactions } from "../interactions";
 
 /**
  * What the composer was opened for: a new post, a reply to or a quote of a post, an edit of the reader's post, or a
@@ -120,9 +121,6 @@ export const nearChars = 20;
 
 /** The new poll: two empty options, a day. */
 export const newPoll: PollDraft = { options: ["", ""], duration: 86400, multiple: false, hideTotals: false };
-
-/** The kinds of interaction whose permissions a post sets, as the permissions submenu lists them. */
-export const interactions: readonly Interaction[] = ["reply", "announce", "quote"];
 
 /** The visibilities from the widest, as the audience menu lists them. */
 export const visibilities: readonly Visibility[] = ["public", "local", "unlisted", "private", "direct"];

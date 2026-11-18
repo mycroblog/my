@@ -28,8 +28,9 @@ export const MenuSignedOut: Story = { parameters: screen({ at: menu, signedOut: 
 /** Display and posting, as a new account has it: the language and the time zone follow the browser. */
 export const Display: Story = { parameters: screen({ at: display }) };
 /**
- * Display and posting with the account's own choices: a time zone, small link previews, posts to the followers that
- * only they may quote, in Japanese, and timelines of two languages that hold new posts back. The language still
+ * Display and posting with the account's own choices: a time zone, small link previews, posts to the followers, in
+ * Japanese, that the followers may reply to at once and others with approval, anyone may boost and the followers may
+ * quote, and timelines of two languages that hold new posts back. The language still
  * follows the browser, so that the toolbar's locale shows the screen in each.
  */
 export const DisplayChosen: Story = {
@@ -43,7 +44,7 @@ export const DisplayChosen: Story = {
         link_card_size: "small",
         default_visibility: "private",
         default_interaction_policy: {
-          reply: { automatic: "everyone" },
+          reply: { automatic: "followers", manual: "everyone" },
           announce: { automatic: "everyone" },
           quote: { automatic: "followers" },
         },

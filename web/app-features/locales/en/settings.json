@@ -156,8 +156,16 @@
     "description": "The heading of the section of the Display and posting page of the settings about what the composer starts a new post with."
   },
   "settings.display.section.posts.about": {
-    "defaultMessage": "A new post starts with the audience, quote setting and language chosen here. You can change them in each post.",
-    "description": "The line under the heading New posts: the first three choices of the section (Who can see it, Who can quote, Post language) are only where a post starts; the composer changes them for one post. It leaves out the fourth, asking for a description of media."
+    "defaultMessage": "A new post starts with the audience and language chosen here. You can change them in each post.",
+    "description": "The line under the heading New posts: the first two choices of the section (Who can see it, Post language) are only where a post starts; the composer changes them for one post. It leaves out the third, requiring a description of media. Who can reply, boost and quote has a section of its own (settings.display.section.interactions)."
+  },
+  "settings.display.section.interactions": {
+    "defaultMessage": "Who can reply, boost and quote",
+    "description": "The heading of the section of the Display and posting page of the settings about who may reply to, boost and quote the account's new posts by default; the composer's words for it (compose.permissions). Its three choices are Who can reply, Who can boost and Who can quote (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "settings.display.section.interactions.about": {
+    "defaultMessage": "A new post starts with the reply, boost and quote settings chosen here. You can change them in each post.",
+    "description": "The line under the heading Who can reply, boost and quote on the Display and posting page of the settings: the three choices of the section are only where a post starts; the composer changes them for one post (compose.permissions)."
   },
   "settings.display.section.timelines": {
     "defaultMessage": "Timelines",
@@ -203,9 +211,17 @@
     "defaultMessage": "Who can see it",
     "description": "The label of the choice of the visibility a new post starts with, in the New posts section of the Display and posting page of the settings; the composer's words for it (compose.audience). Its options are the composer's visibilities (compose.visibility.*)."
   },
+  "settings.display.reply": {
+    "defaultMessage": "Who can reply",
+    "description": "The label of the choice of who may reply to a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.reply). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.boost": {
+    "defaultMessage": "Who can boost",
+    "description": "The label of the choice of who may boost a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.announce). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
   "settings.display.quote": {
     "defaultMessage": "Who can quote",
-    "description": "The label of the choice of who may quote a new post unless the reader changes it in the post, in the New posts section of the Display and posting page of the settings; the composer's words for it (compose.interaction.quote). Its options are the composer's audiences (compose.audience.everyone, compose.audience.followers, compose.audience.nobody)."
+    "description": "The label of the choice of who may quote a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.quote). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
   },
   "settings.display.post_language": {
     "defaultMessage": "Post language",

@@ -47,13 +47,14 @@ unless you choose "Everyone". A list you cannot open says so in place of the acc
 
 | Timeline | What it shows |
 | --- | --- |
-| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "Local" by the people you follow, and the public posts and posts set to "Local" of the hashtags you follow, from people you do not follow. Posts you have not seen yet are counted ("new posts"), or inserted by themselves when you turn on "Show new posts automatically". |
+| Home | Your posts, and the posts and boosts of the people you follow. It also shows posts set to "Local" by the people you follow, and the public posts and posts set to "Local" of the hashtags you follow, from people you do not follow. New posts show at the top as they arrive. While you read further down, the "new posts" button over the timeline counts the ones that came in above you. If you turn off "Show new posts as they arrive" (under "Timelines" in the "Display and posting" settings), new posts wait until you press that button. |
 | Local | The public posts, and the posts set to "Local", of the accounts of this server. |
 | Federated | The public posts of the accounts of this server and of the accounts of other servers that this server knows. "Local" and "Quiet public" posts are not on it. |
 
 The Local and Federated timelines are for everyone who uses the server, whether you follow them or not. A server's
-operators can turn either one off, or show it only to people who are signed in; the page then says so. The settings under
-"Languages of your timelines" limit the timelines to the languages you check.
+operators can turn either one off, or show it only to people who are signed in; the page then says so.
+"Languages to show", under "Timelines" in the "Display and posting" settings, limits every timeline to the languages
+you choose; posts with no language set still show.
 
 A hashtag page (for example `#cats`) shows the public posts and the posts set to "Local" with that tag.
 

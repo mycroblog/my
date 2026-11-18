@@ -409,7 +409,13 @@ export function TextField({
 }: TextFieldProps) {
   const s = form({ multiline });
   const holder = use(FieldContext);
-  const described = idsOf(describedBy, hint && `${id}-hint`, error && `${id}-error`, holder.describedBy);
+  const described = idsOf(
+    describedBy,
+    hint && `${id}-hint`,
+    error && `${id}-error`,
+    holder.describedBy,
+    holder.stateBy,
+  );
   const common = {
     id,
     name,

@@ -33,7 +33,7 @@ import { createContext, use, useId, type ReactElement, type ReactNode } from "re
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface } from "./button";
-import { describedBy, FieldContext } from "./field";
+import { FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
 import { Box, Layers, Row, Stack } from "./layout";
 import { ScreenTitle } from "./list";
@@ -487,7 +487,8 @@ export function SettingRow({
           value={{
             id: controlId,
             labelledBy: id,
-            describedBy: describedBy(below !== undefined && aboutId, saying && stateId),
+            describedBy: below === undefined ? undefined : aboutId,
+            stateBy: saying ? stateId : undefined,
             disabled: isDisabled || undefined,
           }}
         >
