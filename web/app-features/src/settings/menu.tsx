@@ -3,11 +3,11 @@
 // The menu of the settings (ADR-0110 §5): the entries it lists for the reader (entries.tsx) in their groups, a group with
 // none left out, and Sign out…, apart at its end, which leads to the confirmation the app shows at `signOutHref`. At
 // /settings it is the screen, each entry with a line of what its screen holds; beside an entry's screen it is compact,
-// the entry the reader is at marked.
+// the entry the reader is at marked. It paints nothing until the server has said which entries it lists, then all at once.
 
 import { SettingsGroup, SettingsItem, SettingsMenu, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
-import { settingsGroups, useShownEntries } from "./entries";
+import { settingsGroups, useSettingsFactsKnown, useShownEntries } from "./entries";
 
 /** The address of the screen of the entry at `path`. */
 export const settingsEntryPath = (path: string): string => `/settings/${path}`;
@@ -20,6 +20,9 @@ type MenuProps = {
 function Menu({ compact, current, signOutHref }: MenuProps & { compact: boolean; current?: string | undefined }) {
   const { t } = stringsIn(useLocale().locale);
   const entries = useShownEntries().filter((entry) => entry.inMenu);
+  const known = useSettingsFactsKnown();
+  // Nothing until the entries it lists are known, so that none comes after the others painted.
+  if (!known) return null;
   return (
     <SettingsMenu
       label={t("settings.menu")}

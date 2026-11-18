@@ -7,11 +7,14 @@
 //
 // What an entry's conditions read of the reader is one hook's (`useSettingsFacts`). A fact no screen of the app has
 // read before the menu paints (whether the reader may create invites) is read by the settings' loader
-// (`loadSettingsFacts`), so that the menu comes with every entry it has instead of gaining one a moment later.
+// (`loadSettingsFacts`), so that the menu comes with every entry it has instead of gaining one a moment later; on the
+// app's first load, whose loader does not wait, the menu paints its entries once that fact is known
+// (`useSettingsFactsKnown`).
 
 import {
   loadInviteRight,
   useInstance,
+  useInviteRightKnown,
   useMayInvite,
   usePermissions,
   type AppData,
@@ -174,6 +177,14 @@ function useSettingsFacts(): SettingsFacts {
  */
 export async function loadSettingsFacts(data: AppData): Promise<void> {
   await loadInviteRight(data);
+}
+
+/**
+ * Whether the server has answered every fact the entries' conditions read (whether the reader may create invites),
+ * for the menu to paint its entries once, with every one it has: on the app's first load the loader does not wait.
+ */
+export function useSettingsFactsKnown(): boolean {
+  return useInviteRightKnown();
 }
 
 /** An entry as the settings show it to this reader. */

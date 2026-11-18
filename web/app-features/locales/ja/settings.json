@@ -1041,15 +1041,15 @@
   },
   "settings.copy.copied": {
     "defaultMessage": "コピーしました",
-    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token), once it was copied."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), once it was copied."
   },
   "settings.copy.failed": {
     "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
-    "description": "Beside a button of the settings that copies a value shown to copy and keep, when the browser refused to copy."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), when the browser refused to copy."
   },
   "settings.once.done": {
     "defaultMessage": "完了する",
-    "description": "The button at the end of a page of the settings that shows once what the reader must keep (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token). It goes back to the page the reader came from."
+    "description": "The button at the end of a page of the settings that shows once what the reader must keep or pass on (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token; a new invite's link). It goes back to the page the reader came from."
   },
   "settings.apps.edit": {
     "defaultMessage": "アプリの設定",
@@ -1296,8 +1296,8 @@
     "description": "The button on the Invites page that opens the page where the reader creates an invite; the title of that page, and the button at its end that creates the invite."
   },
   "settings.invites.state": {
-    "defaultMessage": "{state, select, usable {{date} まで使える} revoked {取り消し済み} expired {{date} に期限切れ} exhausted {使い切り} other {招待を作れない間は使えない}}",
-    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "defaultMessage": "{state, select, usable {{date} まで使える} revoked {取り消し済み} expired {{date} に期限切れ} exhausted {使い切り} registration_closed {新規登録の停止中は使えない} other {招待を作れない間は使えない}}",
+    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), registration_closed (the server takes no new accounts now, so nobody can sign up with the invite until it does again), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.uses": {
     "defaultMessage": "{max, number} 回のうち {uses, number} 回使用",
@@ -1305,7 +1305,7 @@
   },
   "settings.invites.ends": {
     "defaultMessage": "期限: {date}",
-    "description": "A muted line of an invite's row, for an invite that does not work while the reader may not create invites: when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.left": {
     "defaultMessage": "あと {left, number} 件作れます。同時に持てる使える招待は {max, number} 件までです。",
@@ -1333,19 +1333,11 @@
   },
   "settings.invites.link.about": {
     "defaultMessage": "招待する人にこのリンクを送ってください。登録画面で招待コード {code} を入力しても登録できます。",
-    "description": "The line under the heading Invite link: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
+    "description": "The line under the heading Invite link on an invite's page, and under the title The invite is created (settings.invites.created) once one is created: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
   },
   "settings.invites.copy": {
     "defaultMessage": "リンクをコピー",
     "description": "The button under an invite's link, which copies the link."
-  },
-  "settings.invites.copied": {
-    "defaultMessage": "コピーしました",
-    "description": "Beside the button Copy link of an invite, once the link was copied. The same words as the Apps pages' (settings.apps.copied)."
-  },
-  "settings.invites.copy_failed": {
-    "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
-    "description": "Beside the button Copy link of an invite, when the browser refused to copy. The same words as the Apps pages' (settings.apps.copy_failed)."
   },
   "settings.invites.status": {
     "defaultMessage": "状態",
@@ -1397,11 +1389,7 @@
   },
   "settings.invites.created": {
     "defaultMessage": "招待を作成しました。",
-    "description": "On the page Create invite once the invite is created, over its link shown to copy."
-  },
-  "settings.invites.created.done": {
-    "defaultMessage": "完了",
-    "description": "The button at the end of the page Create invite once the invite is created and its link is shown. It goes back to the Invites page, whose list holds the invite and its link."
+    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy."
   },
   "settings.invites.missing": {
     "defaultMessage": "この招待は一覧にありません。アドレスを確かめてください。",

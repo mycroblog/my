@@ -3,15 +3,21 @@
 // What the screens of the settings' Invites share (ADR-0106 §14, §15, §18): their addresses; what stands in a
 // screen's sections' place until the invites are read, when they could not be, or when its address names no invite of
 // the reader's; the summary that says why the reader may not create invites, in the words of the server's refusal for
-// that cause (the list gives the cause by its name alone); the lines that say what an invite allows now and how often
-// it was used; the invite's link, shown to copy; and its state as a section of a screen.
+// that cause (the list gives the cause by its name alone); the lines that say what an invite allows now, as the sign-up
+// page takes it (one the server says is usable does not work while it takes no new account), and how often it was
+// used; the invite's link, shown to copy; and its state as a section of a screen.
 
-import type { InvitesNotAllowedReason, OwnInvite } from "@my/app-data";
+import {
+  inviteStateNow,
+  useOwnInvites,
+  type InviteStateNow,
+  type InvitesNotAllowedReason,
+  type OwnInvite,
+} from "@my/app-data";
 import {
   Button,
   CopyBlock,
   FeedNotice,
-  SaveState,
   SettingsList,
   SettingsListRow,
   SettingsSection,
@@ -73,44 +79,63 @@ export function CannotInvite({ reason }: { reason: InvitesNotAllowedReason | und
   );
 }
 
+/** What is known of an invite, as `useInviteFacts` says it. */
+export type InviteFacts = {
+  /** What it allows a person who would sign up with it now (`inviteStateNow`). */
+  now: InviteStateNow;
+  /** Whether someone can sign up with it now. */
+  works: boolean;
+  /** What it allows now, with the hour it ends or ended where that is what the state turns on. */
+  state: string;
+  /** How often it was used out of how many, and, for one that does not work for now, when it ends. */
+  more: readonly string[];
+};
+
 /**
- * What is known of an invite, each a short line: what it allows now (`state`, with the hour it ends or ended where
- * that is what the state turns on), how often it was used out of how many, and, for one that does not work while the
- * reader may not create invites, when it ends.
+ * What is known of an invite, each a short line: what it allows now (`state`), how often it was used out of how many,
+ * and, for one that does not work for now (while the reader may not create invites, or while the server takes no new
+ * account, when the server still says `usable` but the sign-up page takes no invite), when it ends.
  */
-export function useInviteFacts(): (invite: OwnInvite) => { state: string; more: readonly string[] } {
+export function useInviteFacts(): (invite: OwnInvite) => InviteFacts {
   const { t } = stringsIn(useLocale().locale);
   const { hour } = useDates();
+  const { registrationClosed } = useOwnInvites();
   return (invite) => {
     const date = hour(invite.expires_at);
+    const now = inviteStateNow(invite, registrationClosed);
     return {
-      state: t("settings.invites.state", { state: invite.state, date }),
+      now,
+      works: now === "usable",
+      state: t("settings.invites.state", { state: now, date }),
       more: [
         t("settings.invites.uses", { uses: invite.uses, max: invite.max_uses }),
-        ...(invite.state === "creator_ineligible" ? [t("settings.invites.ends", { date })] : []),
+        ...(now === "creator_ineligible" || now === "registration_closed"
+          ? [t("settings.invites.ends", { date })]
+          : []),
       ],
     };
   };
 }
 
 /**
- * The link of an invite that works, shown to copy, with the button that copies it and what came of copying; `said`
- * stands over it (that the invite was just created).
+ * The link of an invite that works, shown to copy, with the button that copies it, the screen's primary action, and
+ * what came of copying; under the line that says what to do with it, unless the screen says that before (`about`
+ * false: a summary that the invite was just created).
  */
-export function InviteLink({ invite, said }: { invite: OwnInvite; said?: string | undefined }) {
+export function InviteLink({ invite, about = true }: { invite: OwnInvite; about?: boolean }) {
   const { t } = stringsIn(useLocale().locale);
   const [copied, setCopied] = useState<boolean>();
   return (
     <SettingsSection
       heading={t("settings.invites.link")}
-      about={t("settings.invites.link.about", { code: invite.code })}
+      about={about ? t("settings.invites.link.about", { code: invite.code }) : undefined}
     >
-      {said !== undefined && <SaveState state="saved">{said}</SaveState>}
       <CopyBlock
         label={t("settings.invites.link")}
         values={[invite.url]}
         action={
           <Button
+            kind="primary"
             size="timeline"
             onPress={() => {
               void copyText(invite.url).then(setCopied);
@@ -119,9 +144,7 @@ export function InviteLink({ invite, said }: { invite: OwnInvite; said?: string 
             {t("settings.invites.copy")}
           </Button>
         }
-        result={
-          copied === undefined ? undefined : t(copied ? "settings.invites.copied" : "settings.invites.copy_failed")
-        }
+        result={copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed")}
       />
     </SettingsSection>
   );

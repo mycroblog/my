@@ -133,6 +133,15 @@ const en = {
     ["Post and change things for you", ["Can post, edit and delete posts as you", "Can change your profile"]],
   ] as [string, string[]][],
   read: ["Read your bookmarks", "Read your keyword filters", "Read the accounts and domains you mute"],
+  invites: "Your invites",
+  invitesAbout: "A person signs up with an invite's link, or enters its code on the sign-up page.",
+  invitesFull: "You have as many usable invites as allowed (2). Revoke one, or wait until one expires or is used up.",
+  inviteRows: [
+    ["k17wdrqpmmmm30em", true, ["Usable until Nov 25, 2 PM", "Used 0 of 1 time"]],
+    ["k2fsrjhemmmm3vnp", true, ["Usable until Nov 23, 4 PM", "Used 1 of 5 times"]],
+    ["k3np5b83mmmm4qws", false, ["Revoked", "Used 0 of 3 times"]],
+    ["k4vlj2ysmmmm5m5v", false, ["Expired Nov 15, 4 PM", "Used 1 of 1 time"]],
+  ] as [string, boolean, string[]][],
 };
 
 const ja: typeof en = {
@@ -232,6 +241,16 @@ const ja: typeof en = {
     ["あなたに代わっての投稿と変更", ["あなたとして投稿・編集・削除ができます", "プロフィールを変更できます"]],
   ],
   read: ["ブックマークの読み取り", "キーワードフィルタの読み取り", "ミュートしているアカウントとドメインの読み取り"],
+  invites: "作成した招待",
+  invitesAbout: "招待された人は、招待のリンクを開いて登録するか、登録画面で招待コードを入力します。",
+  invitesFull:
+    "使える招待の数の上限 (2 件) に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。",
+  inviteRows: [
+    ["k17wdrqpmmmm30em", true, ["11月25日 14時 まで使える", "1 回のうち 0 回使用"]],
+    ["k2fsrjhemmmm3vnp", true, ["11月23日 16時 まで使える", "5 回のうち 1 回使用"]],
+    ["k3np5b83mmmm4qws", false, ["取り消し済み", "3 回のうち 0 回使用"]],
+    ["k4vlj2ysmmmm5m5v", false, ["11月15日 16時 に期限切れ", "1 回のうち 1 回使用"]],
+  ],
 };
 
 const useWords = () => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
@@ -720,6 +739,33 @@ function Facts() {
   );
 }
 
+/**
+ * A list of things that work and things that do not: the title of one that does not is muted, so that the ones that
+ * work stand out; and the sentence in the place of the add action the reader cannot take, apart from the description.
+ */
+function Working() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.invites} count={String(w.inviteRows.length)} about={w.invitesAbout}>
+        <SettingsNote instead>{w.invitesFull}</SettingsNote>
+        <SettingsList label={w.invites}>
+          {w.inviteRows.map(([title, works, facts], i) => (
+            <SettingsListRow
+              key={title}
+              icon="invite"
+              title={title}
+              inactive={!works}
+              facts={facts}
+              href={`/settings/invites/${String(i)}`}
+            />
+          ))}
+        </SettingsList>
+      </SettingsSection>
+    </Column>
+  );
+}
+
 const meta = { title: "Settings parts", tags: ["themes"] } satisfies Meta;
 export default meta;
 
@@ -751,5 +797,7 @@ export const NoteWithLinks: Story = { render: () => <Notes /> };
 export const SecretToKeep: Story = { render: () => <Secret /> };
 /** Facts a section states, with and without a line about them: one distance between them, and under each heading. */
 export const StatedFacts: Story = { render: () => <Facts /> };
+/** Rows that work and rows that do not, muted, and the sentence that says why the add action is not there. */
+export const WorkingAndNot: Story = { render: () => <Working /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

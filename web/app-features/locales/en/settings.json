@@ -1041,15 +1041,15 @@
   },
   "settings.copy.copied": {
     "defaultMessage": "Copied",
-    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token), once it was copied."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), once it was copied."
   },
   "settings.copy.failed": {
     "defaultMessage": "Could not copy. Select the text and copy it yourself.",
-    "description": "Beside a button of the settings that copies a value shown to copy and keep, when the browser refused to copy."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token, an invite's link), when the browser refused to copy."
   },
   "settings.once.done": {
     "defaultMessage": "Finish",
-    "description": "The button at the end of a page of the settings that shows once what the reader must keep (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token). It goes back to the page the reader came from."
+    "description": "The button at the end of a page of the settings that shows once what the reader must keep or pass on (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token; a new invite's link). It goes back to the page the reader came from."
   },
   "settings.apps.edit": {
     "defaultMessage": "App settings",
@@ -1296,8 +1296,8 @@
     "description": "The button on the Invites page that opens the page where the reader creates an invite; the title of that page, and the button at its end that creates the invite."
   },
   "settings.invites.state": {
-    "defaultMessage": "{state, select, usable {Usable until {date}} revoked {Revoked} expired {Expired {date}} exhausted {Used up} other {Not usable while you cannot create invites}}",
-    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "defaultMessage": "{state, select, usable {Usable until {date}} revoked {Revoked} expired {Expired {date}} exhausted {Used up} registration_closed {Not usable while sign-ups are closed} other {Not usable while you cannot create invites}}",
+    "description": "The first muted line of an invite's row in the list Your invites, and the name of the row under Status on the invite's page: what the invite allows now. state is usable (people can sign up with it until date), revoked (the reader revoked it), expired (it ended at date), exhausted (as many people signed up with it as it allows), registration_closed (the server takes no new accounts now, so nobody can sign up with the invite until it does again), or other (the reader may not create invites now, so the invite does not work until they may again). date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.uses": {
     "defaultMessage": "Used {uses, number} of {max, plural, one {# time} other {# times}}",
@@ -1305,7 +1305,7 @@
   },
   "settings.invites.ends": {
     "defaultMessage": "Ends {date}",
-    "description": "A muted line of an invite's row, for an invite that does not work while the reader may not create invites: when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.left": {
     "defaultMessage": "You can create {left, plural, one {# more invite} other {# more invites}}. You can have {max, plural, one {# usable invite} other {# usable invites}} at a time.",
@@ -1333,19 +1333,11 @@
   },
   "settings.invites.link.about": {
     "defaultMessage": "Send this link to the person you invite. They can also enter the invite code {code} on the sign-up page.",
-    "description": "The line under the heading Invite link: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
+    "description": "The line under the heading Invite link on an invite's page, and under the title The invite is created (settings.invites.created) once one is created: what to do with the link. code is the invite's code, 16 letters and digits, which the sign-up page takes in its field Invite code (auth.sign_up.invite_label); it is not translated."
   },
   "settings.invites.copy": {
     "defaultMessage": "Copy link",
     "description": "The button under an invite's link, which copies the link."
-  },
-  "settings.invites.copied": {
-    "defaultMessage": "Copied",
-    "description": "Beside the button Copy link of an invite, once the link was copied. The same words as the Apps pages' (settings.apps.copied)."
-  },
-  "settings.invites.copy_failed": {
-    "defaultMessage": "Could not copy. Select the text and copy it yourself.",
-    "description": "Beside the button Copy link of an invite, when the browser refused to copy. The same words as the Apps pages' (settings.apps.copy_failed)."
   },
   "settings.invites.status": {
     "defaultMessage": "Status",
@@ -1397,11 +1389,7 @@
   },
   "settings.invites.created": {
     "defaultMessage": "The invite is created.",
-    "description": "On the page Create invite once the invite is created, over its link shown to copy."
-  },
-  "settings.invites.created.done": {
-    "defaultMessage": "Done",
-    "description": "The button at the end of the page Create invite once the invite is created and its link is shown. It goes back to the Invites page, whose list holds the invite and its link."
+    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy."
   },
   "settings.invites.missing": {
     "defaultMessage": "This invite is not among your invites. Check the address.",

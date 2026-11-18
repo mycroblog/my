@@ -540,7 +540,8 @@ export function SettingRow({
 
 const summary = tv({
   slots: {
-    title: "text-body font-strong [word-break:auto-phrase]",
+    // Where the screen moves the focus to it, the ring a keyboard's focus shows.
+    title: "rounded-control text-body font-strong outline-hidden [word-break:auto-phrase] focus-visible:shadow-focus",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
   },
 });
@@ -549,11 +550,14 @@ const summary = tv({
  * The status summary that heads a screen while something there is to do (the security's, while two-factor
  * authentication is off): the state as its glyph and a sentence, what it means, and the next thing to do in a word or
  * two (a `Button`, the screen's primary action). It is the one place the screen says it and the one door to it: no
- * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed.
+ * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed. A view that
+ * takes another's place to say what came of it (an invite created) moves the focus to its title, which `titleRef`
+ * reaches, so that a screen reader reads what happened first.
  */
 export function StatusSummary({
   icon,
   title,
+  titleRef,
   about,
   action,
 }: {
@@ -561,6 +565,8 @@ export function StatusSummary({
   icon: IconName;
   /** The state, as a sentence ("Two-factor authentication is off"). */
   title: string;
+  /** Reaches the title, which then can take the focus. */
+  titleRef?: Ref<HTMLHeadingElement> | undefined;
   about: string;
   action?: ReactNode;
 }) {
@@ -574,7 +580,7 @@ export function StatusSummary({
           <Icon name={icon} place="action" />
         </Row>
         <Stack grow gap="hair">
-          <Heading id={id} className={s.title()}>
+          <Heading id={id} ref={titleRef} tabIndex={titleRef === undefined ? undefined : -1} className={s.title()}>
             {title}
           </Heading>
           <p className={s.about()}>{about}</p>
@@ -608,6 +614,10 @@ const list = tv({
     chevron: "text-muted-text",
     empty: "text-muted-text [word-break:auto-phrase]",
   },
+  variants: {
+    // What the row names does not work now: its title muted too, with no hue and no surface.
+    inactive: { true: { title: "text-muted-text" } },
+  },
 });
 
 /**
@@ -634,11 +644,14 @@ export function SettingsList({ label, children }: { label: string; children: Rea
  * A row of a section's list: its glyph, a title over a caption or over the facts known of it, one a line (`facts`), a
  * state in a word or two at its end, in muted words with no surface (`state`), and what the reader may do with it (`end`: one or two buttons, a group named by the
  * row's title, so that one Remove is told from the next). With `href`, the whole row opens the screen under the
- * entry that holds it (changing the password, one filter), a chevron at its end in place of buttons.
+ * entry that holds it (changing the password, one filter), a chevron at its end in place of buttons. `inactive`, a
+ * thing that does not work now (a revoked invite): its title in the muted color, so that the ones that work stand out
+ * in a list of both.
  */
 export function SettingsListRow({
   icon,
   title,
+  inactive = false,
   caption,
   facts,
   state,
@@ -647,6 +660,8 @@ export function SettingsListRow({
 }: {
   icon?: IconName | undefined;
   title: string;
+  /** Whether what it names does not work now. */
+  inactive?: boolean | undefined;
   caption?: string | undefined;
   /**
    * What is known of it, each fact short and on a line of its own (which browser this is, when it signed in, when it
@@ -657,7 +672,7 @@ export function SettingsListRow({
   href?: string | undefined;
   end?: ReactNode;
 }) {
-  const s = list();
+  const s = list({ inactive });
   const titleId = useId();
   const value = use(ValuesContext);
   // Its parts are a space apart in what assistive technology reads of the row, which no box of it shows.
@@ -767,7 +782,7 @@ export function SettingsFacts({
 
 const note = tv({
   slots: {
-    root: "text-caption text-muted-text [word-break:auto-phrase]",
+    root: "[word-break:auto-phrase]",
     link: "whitespace-nowrap",
     // The values to copy, on the page's surface, in the code's face; a long one breaks anywhere.
     values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
@@ -779,23 +794,36 @@ const note = tv({
     qr: "rounded-control bg-surface p-screen-air text-text [color-scheme:light]",
     code: "size-screen-qr fill-current",
   },
+  variants: {
+    instead: {
+      // In an action's place: the text's own size and color, a row's gap more before it than the description has.
+      true: { root: "pt-screen-row-gap text-body text-text" },
+      false: { root: "text-caption text-muted-text" },
+    },
+  },
+  defaultVariants: { instead: false },
 });
 
 /**
  * A sentence in a section that is no setting and no state of a control: what a list's rows mean for the reader, what
  * an action there will do, why one cannot be done; then the links to where they act on it (the password's screen, the
- * apps), each a link of the text. Muted, at the caption's size.
+ * apps), each a link of the text. Muted, at the caption's size. `instead`, the sentence that stands in the place of
+ * an action the reader cannot take now and says why (no Create invite at the cap): in the text's size and color, set
+ * apart from the section's description, still words and no tile.
  */
 export function SettingsNote({
   links,
+  instead = false,
   children,
 }: {
   /** Where the reader acts on what the sentence says, after it. */
   links?: readonly { href: string; label: string }[] | undefined;
+  /** Whether it says why an action of the section is not there. */
+  instead?: boolean | undefined;
   children: string;
 }) {
   return (
-    <p className={note().root()}>
+    <p className={note({ instead }).root()}>
       {children}
       {/* The first link meets the sentence as an action does; each next one stands a middle dot after the one before. */}
       {links?.map((link, i) => (

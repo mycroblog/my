@@ -25,6 +25,18 @@ export type MemberInviteLimits = components["schemas"]["MemberInviteLimits"];
 export type InviteState = components["schemas"]["AdminInviteState"];
 
 /**
+ * What an invite allows a person who would sign up with it now: its state (`InviteState`), or `registration_closed`
+ * for one the server reports `usable` while it takes no new account, whose sign-up page then takes no invite
+ * (ADR-0106 §17): the server judges an invite by its creator's standing alone, whatever the registration mode.
+ */
+export type InviteStateNow = InviteState | "registration_closed";
+
+/** What `invite` allows now (`InviteStateNow`), on a server that takes no new account when `registrationClosed`. */
+export function inviteStateNow(invite: OwnInvite, registrationClosed: boolean): InviteStateNow {
+  return invite.state === "usable" && registrationClosed ? "registration_closed" : invite.state;
+}
+
+/**
  * Why the reader may not create invites now: the server takes no new account (`registration_closed`), it lets only
  * some accounts create invites (`not_permitted`), the reader's registration is not approved (`not_approved`), or a
  * moderation action is on their account (`restricted`).
@@ -156,6 +168,11 @@ export type OwnInvites = PagedList<OwnInvite> & {
   readonly usable: number | undefined;
   /** The caps and defaults of the instance. */
   readonly limits: MemberInviteLimits | undefined;
+  /**
+   * Whether the server takes no new account now, while no invite can be used whatever its state says
+   * (`inviteStateNow`); false until the instance is read.
+   */
+  readonly registrationClosed: boolean;
 };
 
 /**
@@ -164,7 +181,8 @@ export type OwnInvites = PagedList<OwnInvite> & {
  */
 export function useOwnInvites(enabled = true): OwnInvites {
   const data = useAppData();
-  const alone = useQuery(instanceQuery(data)).data?.single_user === true;
+  const instance = useQuery(instanceQuery(data)).data;
+  const alone = instance?.single_user === true;
   const { firstPage, ...list } = usePagedListOf<OwnInvite, OwnInvitePage>(ownInvitesQuery(data), enabled && !alone);
   return {
     ...list,
@@ -172,6 +190,7 @@ export function useOwnInvites(enabled = true): OwnInvites {
     cannotCreateReason: firstPage?.can_create === false ? firstPage.cannot_create_reason : undefined,
     usable: firstPage?.usable,
     limits: firstPage?.limits,
+    registrationClosed: instance?.registrations.mode === "closed",
   };
 }
 
@@ -243,6 +262,20 @@ export async function loadInviteRight(data: AppData): Promise<void> {
 export function useMayInvite(): boolean {
   const offered = takesInvites(useQuery(instanceQuery(useAppData())).data);
   return useOwnInvites(offered).canCreate === true && offered;
+}
+
+/**
+ * Whether the server has answered whether the reader may create invites (`useMayInvite`): the instance was read, and,
+ * unless it takes no invites, the first page of the reader's invites was read or could not be. The settings' menu
+ * paints its entries once it has, so that it never gains one a moment after it painted, on the app's first load too,
+ * whose loader does not wait.
+ */
+export function useInviteRightKnown(): boolean {
+  const instance = useQuery(instanceQuery(useAppData()));
+  const offered = takesInvites(instance.data);
+  const list = useOwnInvites(offered);
+  if (instance.status === "pending") return false;
+  return !offered || list.status !== "pending";
 }
 
 export type OwnInviteWrites = {

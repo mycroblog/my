@@ -2,10 +2,12 @@
 
 // An invite of the reader's, the screen under Invites at /settings/invites/{id} (ADR-0106 §18), titled by its code:
 //
-// - Invite link, while the invite is usable: its link, to copy, and that its code works on the sign-up page too.
+// - Invite link, while the invite works: its link, to copy (the screen's primary action), and that its code works on
+//   the sign-up page too.
 // - Status: what it allows now and how often it was used out of how many.
-// - Revoke invite, while it works or would work again (a reader who may not create invites now may again): after a
-//   confirmation that says its link and its code stop working, for good; revoked, the screen goes back to Invites.
+// - Revoke invite, while it works or would work again (a reader who may not create invites now may again, a server
+//   that takes no new account now may again): after a confirmation that says its link and its code stop working, for
+//   good; revoked, the screen goes back to Invites.
 //
 // The API reads no invite alone: the screen finds it in the list (app-data's `useOwnInviteRead`). An address that
 // names no invite of the reader's says so in the sections' place, with the way to the list.
@@ -25,7 +27,7 @@ import { useState } from "react";
 import { stringsIn } from "../../locale";
 import type { SettingsSubProps } from "../entries";
 import { Asking } from "../security/parts";
-import { InviteLink, InviteStatus, Unread } from "./parts";
+import { InviteLink, InviteStatus, Unread, useInviteFacts } from "./parts";
 
 /** What the screen of one invite is given by the route that places it, beside what every screen under an entry is. */
 export type InviteScreenProps = {
@@ -43,6 +45,7 @@ export function OwnInviteScreen({ id, onBack }: SettingsSubProps & InviteScreenP
   const { t } = stringsIn(useLocale().locale);
   const { invite, status, retry } = useOwnInviteRead(id);
   const { revoke } = useOwnInviteWrites();
+  const factsOf = useInviteFacts();
   const [asking, setAsking] = useState(false);
   const back = <BackButton onPress={onBack}>{t("settings.entry.invites")}</BackButton>;
   if (invite === undefined)
@@ -55,13 +58,13 @@ export function OwnInviteScreen({ id, onBack }: SettingsSubProps & InviteScreenP
       />
     );
 
-  const usable = invite.state === "usable";
+  const { now, works } = factsOf(invite);
   return (
     <>
       <SettingsScreen sub title={invite.code} back={back}>
-        {usable && <InviteLink invite={invite} />}
+        {works && <InviteLink invite={invite} />}
         <InviteStatus invite={invite} />
-        {(usable || invite.state === "creator_ineligible") && (
+        {(works || now === "creator_ineligible" || now === "registration_closed") && (
           <SettingsSection heading={t("settings.invites.revoke.heading")}>
             <SettingsList label={t("settings.invites.revoke.heading")}>
               <SettingsListRow

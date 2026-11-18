@@ -2,8 +2,9 @@
 
 // Creating an invite, the screen under Invites at /settings/invites/new (ADR-0106 §15): a form saved as a whole, how
 // many people can sign up with the invite and how long it works, each within what the server allows and starting from
-// its default (one person, seven days, or the most it allows where that is less). Created, the screen shows the
-// invite's link to copy in the form's place, and the button at its end goes back to Invites, whose list holds it.
+// its default (one person, seven days, or the most it allows where that is less). Created, the screen says so first,
+// in a summary that takes the focus, then shows the invite's link to copy in the form's place (Copy link the primary
+// action), and Finish, neutral, at its end goes back to Invites, whose list holds it.
 //
 // What the server refuses stands right before the button: a value over what it allows now, in the client's words (the
 // administrators lowered a limit after the screen opened, and the form then offers the new limits), and anything else
@@ -28,10 +29,11 @@ import {
   SettingsNote,
   SettingsScreen,
   SettingsSection,
+  StatusSummary,
   SubmitBar,
   useLocale,
 } from "@my/design-system";
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
 import type { SettingsSubProps } from "../entries";
@@ -72,6 +74,39 @@ function wholeOf(fields: FormData, name: string): number | undefined {
   return Number.isInteger(number) && number >= 1 ? number : undefined;
 }
 
+/**
+ * The invite just created, in the form's place: that it is created, first, with what to do with its link, a summary
+ * whose title takes the focus that the form's button left; then its link to copy, the screen's primary action, and its
+ * state; Finish, neutral, goes back to Invites.
+ */
+function Created({ invite, onDone }: { invite: OwnInvite; onDone: () => void }) {
+  const { t } = stringsIn(useLocale().locale);
+  const said = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    said.current?.focus();
+  }, []);
+  return (
+    <SettingsScreen
+      sub
+      title={t("settings.invites.create")}
+      foot={
+        <SubmitBar>
+          <Button onPress={onDone}>{t("settings.once.done")}</Button>
+        </SubmitBar>
+      }
+    >
+      <StatusSummary
+        icon="accepted"
+        title={t("settings.invites.created")}
+        titleRef={said}
+        about={t("settings.invites.link.about", { code: invite.code })}
+      />
+      <InviteLink invite={invite} about={false} />
+      <InviteStatus invite={invite} />
+    </SettingsScreen>
+  );
+}
+
 export function InviteCreate({ onBack }: SettingsSubProps) {
   const { t } = stringsIn(useLocale().locale);
   const id = useId();
@@ -83,23 +118,7 @@ export function InviteCreate({ onBack }: SettingsSubProps) {
   const [made, setMade] = useState<OwnInvite>();
   const title = t("settings.invites.create");
 
-  if (made !== undefined)
-    return (
-      <SettingsScreen
-        sub
-        title={title}
-        foot={
-          <SubmitBar>
-            <Button kind="primary" onPress={onBack}>
-              {t("settings.invites.created.done")}
-            </Button>
-          </SubmitBar>
-        }
-      >
-        <InviteLink invite={made} said={t("settings.invites.created")} />
-        <InviteStatus invite={made} />
-      </SettingsScreen>
-    );
+  if (made !== undefined) return <Created invite={made} onDone={onBack} />;
 
   const back = <BackButton onPress={onBack}>{t("settings.entry.invites")}</BackButton>;
   const { limits, usable, canCreate } = list;

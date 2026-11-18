@@ -3,13 +3,14 @@
 // Invites, the entry of the settings at /settings/invites (FR-011, ADR-0106 §14, §15, §18): the invites the reader
 // created, newest first, as the server lists them, each by its code with what it allows now (usable until an hour,
 // revoked, expired, used up, not usable while the reader may not create invites) and how often it was used out of how
-// many; a row opens the invite's screen (invite.tsx), which holds its link to copy and the way to revoke it. Create
-// invite opens the screen that creates one (create.tsx).
+// many; the code of one that does not work now is muted, so that the ones that work stand out. A row opens the invite's
+// screen (invite.tsx), which holds its link to copy and the way to revoke it. Create invite opens the screen that
+// creates one (create.tsx).
 //
 // The menu offers the entry only to a reader who may create invites (entries.tsx). One who may not and opens the
 // address reads why in a summary at the screen's top, with no way to create, and still finds the invites they made.
-// A reader who has as many usable invites as the server allows reads so in the button's place, and one who can
-// create a single one more, that it is the last.
+// A reader who has as many usable invites as the server allows reads so in the button's place, in the text's color
+// apart from the description, and one who can create a single one more, that it is the last.
 
 import { loadOwnInvites, useOwnInvites, type AppData } from "@my/app-data";
 import {
@@ -70,7 +71,7 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
         action={may && items.length > 0 ? create : undefined}
       >
         {canCreate && left === 0 && (
-          <SettingsNote>{t("settings.invites.full", { max: limits.max_active })}</SettingsNote>
+          <SettingsNote instead>{t("settings.invites.full", { max: limits.max_active })}</SettingsNote>
         )}
         {canCreate && left === 1 && (
           <SettingsNote>{t("settings.invites.left", { left, max: limits.max_active })}</SettingsNote>
@@ -82,12 +83,13 @@ export function InvitesSettings({ back }: SettingsEntryProps) {
         ) : (
           <SettingsList label={t("settings.invites.own")}>
             {items.map((invite) => {
-              const { state, more } = factsOf(invite);
+              const { works, state, more } = factsOf(invite);
               return (
                 <SettingsListRow
                   key={invite.id}
                   icon="invite"
                   title={invite.code}
+                  inactive={!works}
                   facts={[state, ...more]}
                   href={invitesPaths.invite(invite.id)}
                 />
