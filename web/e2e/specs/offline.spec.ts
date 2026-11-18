@@ -5,8 +5,10 @@
 // network again, which serves the build of now, never a page the worker kept.
 
 import { controlledBy } from "../src/service-worker";
-import { Frame } from "./screens";
+import { Frame, Landing, Settings } from "./screens";
 import { expect, person, test } from "./test";
+
+const offlineNotice = "You are offline. What you see may be out of date until you reconnect.";
 
 test("offline, a navigation opens the app from its shell and says so; online, it reaches the network again", async ({
   page,
@@ -20,9 +22,7 @@ test("offline, a navigation opens the app from its shell and says so; online, it
   await page.goto("/local");
   const frame = new Frame(page);
   await expect(frame.navigation).toBeVisible();
-  await expect(
-    page.getByText("You are offline. What you see may be out of date until you reconnect.", { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByText(offlineNotice, { exact: true })).toBeVisible();
 
   await context.setOffline(false);
   let fetched = 0;
@@ -37,4 +37,29 @@ test("offline, a navigation opens the app from its shell and says so; online, it
   await page.goto("/notifications");
   await expect(frame.heading("Notifications")).toBeVisible();
   expect(fetched).toBe(1);
+});
+
+// Signing out unregisters the app's Service Worker and deletes its caches (#3198): the next load registers a worker
+// anew, which keeps the shell again.
+test("after a sign-out and a new sign-in, a navigation without the network still opens the app from its shell", async ({
+  page,
+  context,
+  signIn,
+  fresh,
+}) => {
+  const reader = await fresh.person();
+  await signIn(reader);
+  await controlledBy(page);
+  const settings = new Settings(page);
+  await settings.goTo();
+  await settings.signOut();
+  await expect(new Landing(page).signIn).toBeVisible();
+
+  await signIn(reader);
+  await controlledBy(page);
+
+  await context.setOffline(true);
+  await page.goto("/local");
+  await expect(new Frame(page).navigation).toBeVisible();
+  await expect(page.getByText(offlineNotice, { exact: true })).toBeVisible();
 });

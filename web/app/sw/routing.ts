@@ -70,8 +70,8 @@ export function classify(request: RequestFacts, origin: string): Handling {
 
 /**
  * Whether a request is the reader signing out on the server's own pages (/auth/sign_out, posted or followed): every
- * cache goes with it. The app's own sign-out deletes them from the page, once the server ended the session
- * (src/sign-out.ts).
+ * cache goes with it, and the worker. The app's own sign-out deletes them from the page, once the server ended the
+ * session (src/sign-out.tsx).
  */
 export function signsOut(url: string, origin: string): boolean {
   const parsed = new URL(url);

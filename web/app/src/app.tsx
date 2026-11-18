@@ -15,11 +15,20 @@ import type { createAppRouter } from "./router";
 
 const mac = namesCommandKey();
 
-export function AppRoot({ router, visitor }: { router: ReturnType<typeof createAppRouter>; visitor: AppData }) {
+export function AppRoot({
+  router,
+  visitor,
+  unasked = false,
+}: {
+  router: ReturnType<typeof createAppRouter>;
+  visitor: AppData;
+  /** The server could not say whether the browser has a session: the app shows as signed out without knowing it. */
+  unasked?: boolean;
+}) {
   const { data } = router.options.context;
   return (
     <AppDataProvider data={data ?? visitor}>
-      <Reader signedIn={data !== null}>
+      <Reader signedIn={data !== null} unasked={unasked}>
         <ShortcutProvider keymap={keymap} mac={mac}>
           <RouterProvider router={router} />
         </ShortcutProvider>

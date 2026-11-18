@@ -10,12 +10,12 @@
 // (preferences.dom.test.tsx). Whether the menu shows beside the screen or before it is the width's, a layout test.
 
 import { describe, expect, test } from "bun:test";
-import { preferencesQuery } from "@my/app-data";
+import { onSignedOutElsewhere, preferencesQuery } from "@my/app-data";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
 import { browserCaches, ownDevice } from "./test/device";
-import { fakeApp } from "./test/server";
+import { fakeApp, fakeTabs, withoutToken } from "./test/server";
 import { rail } from "./test/viewport";
 
 /** The title of the screen in place, as its heading says it. */
@@ -213,6 +213,75 @@ describe("the display language", () => {
   });
 });
 
+// The row that would say so is gone with its screen: the app says it over whatever screen the reader is on.
+describe("a change whose save fails after the reader left the screen", () => {
+  const notSaved = "“Link previews in posts” could not be saved. Open the settings and change it again.";
+
+  /** The toasts that say a setting was not saved. */
+  const toasts = () => screen.queryAllByRole("status").filter((toast) => toast.textContent.startsWith(notSaved));
+
+  /** The reader chose small link previews and went to their lists; then the server failed the save. */
+  async function leftBeforeTheAnswer() {
+    // The server holds the browser's language and the device's zone: the one change sent is the reader's.
+    const zone = new Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const on = fakeApp({ preferences: { locale: "en", time_zone: zone } });
+    const app = await renderApp("/settings/display", { on });
+    await main().findByRole("combobox", { name: "Link previews in posts" });
+    const sent = on.fake.script("PATCH /preferences", { hold: "request", fail: 500 });
+    await app.user.selectOptions(main().getByRole("combobox", { name: "Link previews in posts" }), "Small");
+    await sent.arrived();
+    await app.navigate("/lists");
+    expect(toasts()).toHaveLength(0);
+    sent.release();
+    const [toast, ...others] = await waitFor(() => {
+      if (toasts().length === 0) throw new Error("test: no toast says that the setting was not saved");
+      return toasts();
+    });
+    if (toast === undefined) throw new Error("test: no toast");
+    expect(others).toHaveLength(0);
+    return { app, toast };
+  }
+
+  test("a toast names the setting that was not saved, and Open settings leads to its screen and takes the toast away", async () => {
+    const { app, toast } = await leftBeforeTheAnswer();
+    expect(app.path()).toBe("/lists");
+    expect(
+      within(toast)
+        .getAllByRole("button")
+        .map((button) => button.getAttribute("aria-label") ?? button.textContent),
+    ).toEqual(["Open settings", "Close"]);
+
+    await app.user.click(within(toast).getByRole("button", { name: "Open settings" }));
+
+    await main().findByRole("combobox", { name: "Link previews in posts" });
+    expect(app.path()).toBe("/settings/display");
+    expect(toasts()).toHaveLength(0);
+    // The control is at what the server holds: the change was not kept.
+    expect(main().getByRole<HTMLSelectElement>("combobox", { name: "Link previews in posts" }).value).toBe("large");
+  });
+
+  test("while the reader is still on the screen, the row says so and no toast does", async () => {
+    const app = await renderApp("/settings/display", { preferencesFail: "save" });
+    const size = await main().findByRole("combobox", { name: "Link previews in posts" });
+
+    await app.user.selectOptions(size, "Small");
+
+    await main().findByRole("button", { name: "Try again" });
+    expect(toasts()).toHaveLength(0);
+  });
+
+  test("Close takes the toast away and leaves the reader where they are", async () => {
+    const { app, toast } = await leftBeforeTheAnswer();
+
+    await app.user.click(within(toast).getByRole("button", { name: "Close" }));
+
+    await waitFor(() => {
+      if (toasts().length > 0) throw new Error("test: the toast is still there");
+    });
+    expect(app.path()).toBe("/lists");
+  });
+});
+
 /** The confirmation of signing out, once it is open. */
 const confirmation = () => screen.findByRole("alertdialog", { name: "Sign out of this browser?" });
 
@@ -293,20 +362,45 @@ describe("signing out", () => {
     expect(app.path()).toBe("/settings/display");
   });
 
-  test("Sign out revokes the session's token, empties what the browser kept of the account, and leaves for the start by a load of the page", async () => {
-    const caches = browserCaches("shell", "home-timeline");
-    const app = await renderApp("/settings");
+  // Signing out removes what the browser kept of the account and leaves by a load of the page: for the start once
+  // the server took the token's revocation, and, when the session had no token left to revoke, for the server's own
+  // sign-in page, which knows whether the browser still has a session there.
+  /** Signs out from the menu's row and its confirmation, and returns once the app left by a load of the page. */
+  async function signedOut(app: TestApp) {
     await read(app);
     await app.user.click(main().getByRole("link", { name: "Sign out…" }));
-
     await app.user.click(within(await confirmation()).getByRole("button", { name: "Sign out" }));
-
     await waitFor(() => {
       if (app.left().length === 0) throw new Error("test: the app did not leave yet");
     });
+  }
+
+  test("Sign out revokes the session's token, empties what the browser kept of the account, tells the reader's other tabs, and leaves for the start", async () => {
+    const caches = browserCaches("shell", "home-timeline");
+    // A browser with the app in one tab and the same session in another.
+    const { on, tab } = await fakeTabs();
+    const elsewhere: string[] = [];
+    onSignedOutElsewhere(await tab(), () => elsewhere.push("the other tab hears the sign-out"));
+    const app = await renderApp("/settings", { on });
+
+    await signedOut(app);
+
     expect(app.left()).toEqual(["/"]);
-    // The app's client and the token of its session; a test's connection has no token source.
-    expect(app.fake.revocations).toEqual([{ clientId: "my-web", token: "" }]);
+    expect(app.fake.revocations).toEqual([{ clientId: "my-web", token: "a1" }]);
+    expect(app.data.queryClient.getQueryCache().getAll()).toHaveLength(0);
+    expect(caches()).toEqual([]);
+    expect(elsewhere).toEqual(["the other tab hears the sign-out"]);
+  });
+
+  test("Sign out of a session the server ended already revokes nothing, empties what the browser kept all the same, and leaves for the server's sign-in page", async () => {
+    const caches = browserCaches("shell", "home-timeline");
+    // The session has no token left to revoke: only the server knows whether the browser is still signed in there.
+    const app = await renderApp("/settings", { on: withoutToken(fakeApp()) });
+
+    await signedOut(app);
+
+    expect(app.left()).toEqual(["/auth/sign_in"]);
+    expect(app.fake.revocations).toEqual([]);
     expect(app.data.queryClient.getQueryCache().getAll()).toHaveLength(0);
     expect(caches()).toEqual([]);
   });

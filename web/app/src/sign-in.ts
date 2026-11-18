@@ -9,6 +9,12 @@ import type { RuntimeConfig } from "./config";
 /** The path of the app's sign-in, which the signed-out shell links to. */
 export const signInPath = "/login";
 
+/**
+ * The server's own sign-in page (internal/interface/authpages, PathSignIn): to a browser signed in to the server's
+ * pages it shows who is signed in, with Sign out; to any other, the sign-in form.
+ */
+export const serverSignInPath = "/auth/sign_in";
+
 /** The server's registration page (internal/interface/authpages, PathSignUp), which the landing page links to. */
 export const signUpPath = "/auth/sign_up";
 

@@ -143,6 +143,18 @@
     "defaultMessage": "もう一度試す",
     "description": "The button after settings.failed that reads the settings from the server again."
   },
+  "settings.unsaved": {
+    "defaultMessage": "「{setting}」を保存できませんでした。設定を開いて、もう一度変更してください。",
+    "description": "A toast at the bottom of the screen, when a change of a setting was not saved (the network, the server, or a value the server refused) and the reader had already left the settings page, so that the row of the setting cannot say it: the setting went back to what it was. setting is the setting's name as its row shows it (Show new posts as they arrive). Its button opens the page of that setting (settings.unsaved.open)."
+  },
+  "settings.unsaved.open": {
+    "defaultMessage": "設定を開く",
+    "description": "The button of the toast settings.unsaved: it opens the settings page that holds the setting which was not saved."
+  },
+  "settings.unsaved.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the close button of the toast settings.unsaved, for assistive technology: it puts the toast away."
+  },
   "settings.display.section.region": {
     "defaultMessage": "言語と地域",
     "description": "The heading of the first section of the Display and posting page of the settings, over the display language and the time zone."
@@ -164,7 +176,7 @@
     "description": "The heading of the section of the Display and posting page of the settings about who may reply to, boost and quote the account's new posts by default; the composer's words for it (compose.permissions). Its three choices are Who can reply, Who can boost and Who can quote (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "settings.display.section.interactions.about": {
-    "defaultMessage": "新しい投稿は、ここで選んだ返信・ブースト・引用できる人で書きはじめます。投稿ごとに変えられます。",
+    "defaultMessage": "新しい投稿は、ここで選んだ設定で書きはじめます。投稿ごとに変えられます。",
     "description": "The line under the heading Who can reply, boost and quote on the Display and posting page of the settings: the three choices of the section are only where a post starts; the composer changes them for one post (compose.permissions)."
   },
   "settings.display.section.timelines": {

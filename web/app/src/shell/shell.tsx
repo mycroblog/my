@@ -10,7 +10,8 @@
 // reader is in at their end; the tab bar on a phone holds its first part and Menu, which holds the rest too, counting
 // the unread direct messages and marked while something waits inside, with the call's bar above it. On a phone a new post
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
-// server's notices stand at the top of the main column, the update's toast in the dock; the column beside the main one
+// server's notices stand at the top of the main column, the update's toast and that of a setting that was not saved in
+// the dock; the column beside the main one
 // holds what is around the reader, and beside a screen of the settings their menu (settings.tsx), the settings staying
 // the marked place. Where the reader is comes from the router; the frame lays the regions out by the
 // viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's
@@ -27,7 +28,7 @@ import {
   useUnreadNotifications,
   type Instance,
 } from "@my/app-data";
-import { ComposeLayer, leaveCall, muteCall, PostActions, useCall, type Call } from "@my/app-features";
+import { ComposeLayer, leaveCall, muteCall, PostActions, UnsavedSettings, useCall, type Call } from "@my/app-features";
 import {
   CallBar,
   Frame,
@@ -350,7 +351,12 @@ export function Shell({
               <FrameAction icon="signIn" label={t("app.sign_in_action")} labelled onPress={signIn} />
             )
           }
-          toasts={<UpdateToast inCall={call !== null} />}
+          toasts={
+            <>
+              {signedIn && <UnsavedSettings onOpen={go} />}
+              <UpdateToast inCall={call !== null} />
+            </>
+          }
         />
         {signedIn && (
           <ComposeLayer

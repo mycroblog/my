@@ -61,6 +61,9 @@ export async function loadDisplaySettings(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
+/** The address of the entry's page, which a change that could not be said in place leads back to. */
+const page = "/settings/display";
+
 /** The value of the option that follows the browser, and of the post language that follows the display language. */
 const browser = "";
 const undetermined = "und";
@@ -81,7 +84,7 @@ function Choice({
   onChoose: (value: string) => Promise<unknown>;
 }) {
   const id = useId();
-  const { state, save } = useSaving();
+  const { state, save } = useSaving(label, page);
   return (
     <SettingRow id={id} label={label} about={about} save={state}>
       <Select
@@ -111,7 +114,7 @@ function Toggle({
   /** Saves the state chosen. */
   onChange: (on: boolean) => Promise<unknown>;
 }) {
-  const { state, save } = useSaving();
+  const { state, save } = useSaving(label, page);
   return (
     <Switch
       label={label}
@@ -214,8 +217,8 @@ function TimelineLanguages({
   t: T;
 }) {
   const id = useId();
-  const { state, save } = useSaving();
   const name = t("settings.display.timeline_languages");
+  const { state, save } = useSaving(name, page);
   // The choice holds no language: what it says is that all show, or that one more can be added.
   const first = t(
     chosen.length === 0 ? "settings.display.timeline_languages.all" : "settings.display.timeline_languages.add",

@@ -27,7 +27,7 @@ export function SettingsEntryScreen({ entry, onBack, ...given }: SettingsEntrySc
   const found = useShownEntries().find((e) => e.path === entry);
   if (found === undefined)
     return (
-      <FeedNotice alert action={<TextLink href="/settings">{t("settings.not_found.all")}</TextLink>}>
+      <FeedNotice alert lead action={<TextLink href="/settings">{t("settings.not_found.all")}</TextLink>}>
         {t("settings.not_found")}
       </FeedNotice>
     );
