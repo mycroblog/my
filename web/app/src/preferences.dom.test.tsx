@@ -2,21 +2,23 @@
 
 // The app following the account's preferences (#3199): the language it reads in and says the page is in (ADR-0009 §2,
 // §5), the time zone its times read in, and what the device keeps of both, so that the app opened again paints first
-// as the account chose, before its preferences are read. A reader without an account follows the browser, and nothing
-// is asked of the server about them. Yuki reads; the browser's language is the test's (en unless it says otherwise),
+// as the account chose, before its preferences are read, and forgets once the reader signed out. An account that
+// follows the browser is told the browser's language and the device's zone where the server holds others, once and
+// without a word to the reader. A reader without an account follows the browser, and nothing is asked of the server
+// about them or sent to it. Yuki reads; the browser's language is the test's (en unless it says otherwise),
 // and the device's zone is Tokyo's, which the tests set and put back. What each part does with a zone is its own test
 // (the design system's zone and time, app-components' drafts, post-details and edit-history); what a preference does
 // to a timeline and to a post's link card is the features'.
 
-import { afterAll, beforeAll, describe, expect, onTestFinished, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
 import { localInput, scheduleTime } from "@my/app-components";
 import { preferencesQuery, updatePreferences } from "@my/app-data";
 import { dateFormat } from "@my/design-system";
 import { scenario, type FakeOptions } from "@my/e2e/fake";
-import { writeDeviceValue } from "@my/platform";
 import { cleanup, fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type AppOptions } from "./test/app";
 import { newPost, paste } from "./test/composer";
+import { ownDevice } from "./test/device";
 import { feedOf, postOf } from "./test/posts";
 import { fakeApp, type FakeApp } from "./test/server";
 
@@ -33,18 +35,6 @@ afterAll(() => {
 
 const newYork = "America/New_York";
 const tokyo = "Asia/Tokyo";
-
-/**
- * A device that keeps nothing of a reader's choice when the test begins, and again when it ends: what one test's app
- * left there is not the next test's first paint. Where the device keeps it is all a test knows of how.
- */
-function ownDevice() {
-  const forget = () => {
-    writeDeviceValue("my:reader-choice", null);
-  };
-  forget();
-  onTestFinished(forget);
-}
 
 /** The app at `at`, alone in the document: opened again on the same device when a test opened one before. */
 function opened(at: string, options: AppOptions = {}) {
@@ -117,7 +107,8 @@ describe("the language", () => {
 
   test("a language chosen shows at once, before the server answers, and one the server refuses is taken back", async () => {
     ownDevice();
-    const app = await opened("/lists");
+    // The server holds the browser's language and the device's zone: the app has nothing of its own to send it.
+    const app = await opened("/lists", { preferences: { locale: "en", time_zone: tokyo } });
     await waitFor(() => {
       if (!hasPreferences(app)) throw new Error("test: the preferences are not read yet");
     });
@@ -341,10 +332,110 @@ describe("the app opened again on the device", () => {
 
     expect([page().lang, heading()]).toEqual(["en", lists.en]);
   });
+
+  test("keeps the account's choice while signing out did not finish, and forgets it once the reader signed out", async () => {
+    ownDevice();
+    /** Presses the confirmation's own button, ログアウトする, on the settings' menu in Japanese. */
+    const signOut = async (app: Awaited<ReturnType<typeof opened>>) => {
+      await reads("ja", "設定");
+      const asking = await screen.findByRole("alertdialog", { name: "このブラウザからログアウトしますか？" });
+      await app.user.click(within(asking).getByRole("button", { name: "ログアウトする" }));
+    };
+    const refused = await opened("/settings?sign_out=true", { preferences: japanese, revocation: "fails" });
+    await signOut(refused);
+    await screen.findByRole("alert");
+
+    // Still signed in: the app opened again paints as the account chose.
+    const kept = await openedUnread("/settings?sign_out=true", { preferences: japanese });
+    expect([page().lang, heading()]).toEqual(["ja", "設定"]);
+    kept.read.release();
+    await signOut(kept.app);
+    await waitFor(() => {
+      if (kept.app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+
+    // Signed out: whoever opens the app next on this device, its first paint is the browser's.
+    await openedUnread("/lists", { preferences: japanese });
+    expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
+});
+
+describe("an account that follows the browser", () => {
+  const paris = "Europe/Paris";
+  // What the server holds of the account's language and zone, and what the app, in English on a device in Tokyo, sends.
+  const held = [
+    [
+      "another language and another zone",
+      { locale: "fr", time_zone: paris },
+      [{ locale: "en", locale_follows_browser: true, time_zone: tokyo, time_zone_follows_browser: true }],
+    ],
+    ["another language", { locale: "fr", time_zone: tokyo }, [{ locale: "en", locale_follows_browser: true }]],
+    ["another zone", { locale: "en", time_zone: paris }, [{ time_zone: tokyo, time_zone_follows_browser: true }]],
+    ["the browser's language and the device's zone", { locale: "en", time_zone: tokyo }, []],
+  ] as const;
+
+  for (const [what, preferences, sends] of held)
+    test(`and whose server holds ${what} is sent ${sends.length === 0 ? "nothing" : "them once, still following"}`, async () => {
+      ownDevice();
+      const on = fakeApp({ preferences });
+      const sent = on.fake.script("PATCH /preferences");
+      const app = await opened("/lists", { on });
+      if (sends.length > 0) await sent.served();
+      else
+        await waitFor(() => {
+          if (!hasPreferences(on)) throw new Error("test: the preferences are not read yet");
+        });
+
+      // The app moves on with the preferences read: whatever it sends of them by itself, it has sent.
+      await app.navigate("/bookmarks");
+      await app.navigate("/lists");
+
+      expect(sent.seen.map((request) => request.body)).toEqual([...sends]);
+      const { data: stored } = await on.data.api.GET("/preferences");
+      expect(stored).toMatchObject({
+        locale: "en",
+        locale_follows_browser: true,
+        time_zone: tokyo,
+        time_zone_follows_browser: true,
+      });
+    });
+
+  test("no more: an account that chose its language and its zone is sent nothing, whatever the browser's are", async () => {
+    ownDevice();
+    const on = fakeApp({
+      preferences: { locale: "ja", locale_follows_browser: false, time_zone: paris, time_zone_follows_browser: false },
+    });
+    const sent = on.fake.script("PATCH /preferences");
+    const app = await opened("/lists", { on });
+    await reads("ja", lists.ja);
+
+    await app.navigate("/bookmarks");
+    await app.navigate("/lists");
+
+    expect(sent.seen).toHaveLength(0);
+  });
+
+  test("and whose update the server fails is not sent it again, though the account is read again", async () => {
+    ownDevice();
+    const on = fakeApp({ preferences: { locale: "fr", time_zone: paris } });
+    const sent = on.fake.script("PATCH /preferences", { fail: 500 });
+    const read = on.fake.script("GET /preferences");
+    const app = await opened("/lists", { on });
+    await sent.arrived();
+
+    await on.data.queryClient.invalidateQueries({ queryKey: preferencesQuery(on.data).queryKey });
+    await read.served(2);
+    await app.navigate("/bookmarks");
+    await app.navigate("/lists");
+
+    expect(sent.seen).toHaveLength(1);
+    // The reader saw nothing of it: the app reads in the browser's language all along.
+    expect([page().lang, heading()]).toEqual(["en", lists.en]);
+  });
 });
 
 describe("a reader without an account", () => {
-  test("follows the browser, in its language and on the device's clock, and nothing is asked of their preferences", async () => {
+  test("follows the browser, in its language and on the device's clock, and nothing is asked or sent of their preferences", async () => {
     ownDevice();
     // An account that chose Japanese and New York read on this device before.
     await opened("/lists", { preferences: { ...japanese, ...inNewYork } });
@@ -352,6 +443,7 @@ describe("a reader without an account", () => {
 
     const on = fakeApp({ visitor: true, seed: thread });
     const asked = on.fake.script("GET /preferences");
+    const sent = on.fake.script("PATCH /preferences");
     await opened("/local", { on });
 
     const feed = await feedOf("Local timeline");
@@ -365,6 +457,8 @@ describe("a reader without an account", () => {
       if (on.data.queryClient.isFetching() > 0) throw new Error("test: the server's answers are still on their way");
     });
     expect(asked.seen).toHaveLength(0);
+    // The device is in Tokyo and the browser reads English, as no account does: the app tells the server of neither.
+    expect(sent.seen).toHaveLength(0);
     expect(page().lang).toBe("en");
   });
 
