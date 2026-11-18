@@ -2,7 +2,7 @@
 
 // The switch (React Aria Components' SwitchField and SwitchButton): a setting that is on or off and takes effect as it
 // is pressed, with no form to send. Its label and a line that describes it stand at the row's start, the track at its
-// end beside both; the label and the track press it. On differs from off by shape and fill, with no hue (the accent
+// end beside both, in the page's direction, as every word of the interface; the label and the track press it. On differs from off by shape and fill, with no hue (the accent
 // is the primary action's and the links'): off, a muted thumb at the track's start on the raised surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
@@ -125,7 +125,7 @@ export function Switch({
       isDisabled={isDisabled}
     >
       <SwitchButton className={s.button()}>
-        <TogglePlace at="label" className={s.label()} dir="auto">
+        <TogglePlace at="label" className={s.label()}>
           {label}
         </TogglePlace>
         <TogglePlace at="track" className={s.track()} aria-hidden="true">
@@ -133,11 +133,7 @@ export function Switch({
         </TogglePlace>
       </SwitchButton>
       {below !== undefined && (
-        <ToggleNote
-          slot="description"
-          className={saving ? `${s.description()} ${s.covered()}` : s.description()}
-          dir="auto"
-        >
+        <ToggleNote slot="description" className={saving ? `${s.description()} ${s.covered()}` : s.description()}>
           {below}
         </ToggleNote>
       )}

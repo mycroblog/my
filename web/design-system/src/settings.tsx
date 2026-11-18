@@ -14,8 +14,9 @@
 // menu is not beside the screen; a screen under an entry (`sub`: changing the password, one filter) keeps its head at
 // every width, the way back leading to its entry. A section holds rows: a setting (its name over a line about it, the
 // control at the row's end), a list of what the reader keeps there with its one add action in the section's head, or
-// what stands in the list's place while it is empty, which leads to adding. The status summary heads a screen: a
-// state as a glyph and a badge, what it means, and the next thing to do.
+// what stands in the list's place while it is empty, which leads to adding. The status summary heads a screen while
+// something there is to do: the state as a glyph and a sentence, what it means, and the next thing to do. A state is
+// always words and a glyph, on no surface of its own: a tile is what can be pressed.
 //
 // A neutral control on a raised surface takes the page's surface (`raisedSurface`); the accent stays the one primary
 // action's of a screen, and nothing here takes another hue.
@@ -24,7 +25,6 @@ import { createContext, use, useId, type ReactElement, type ReactNode } from "re
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface } from "./button";
-import { Badge } from "./chip";
 import { Icon, type IconName } from "./icons";
 import { Box, Layers, Row, Stack } from "./layout";
 import { ScreenTitle } from "./list";
@@ -305,8 +305,11 @@ export function SettingsSection({
 
 const row = tv({
   slots: {
-    // A finger's target tall, which holds the name and one line under it, so that a save state moves nothing.
+    // A finger's target tall.
     root: "min-h-icon-button-touch",
+    // The name's block of a setting that saves at once keeps the room of the name and one line under it, so that the
+    // save state finds its room there and no control moves, beside the name or under it.
+    reserve: "min-h-icon-button-touch",
     label: "[word-break:auto-phrase]",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
     // The line about the setting while the save state stands in its place: it keeps its room.
@@ -316,9 +319,10 @@ const row = tv({
 
 /**
  * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
- * row's end, on a next line where they do not fit side by side. A control that saves at once gives its save state
- * (`save`, a `SaveState`), which stands in the place of the line about it while it has something to say. The control
- * is named by the row's name (`id`, its `labelledBy`).
+ * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
+ * the name, as a field under its label. A control that saves at once gives its save state (`save`, a `SaveState`,
+ * `null` while it has nothing to say), which stands in the place of the line about it; the name's block keeps that
+ * room from the start. The control is named by the row's name (`id`, its `labelledBy`).
  */
 export function SettingRow({
   id,
@@ -337,10 +341,8 @@ export function SettingRow({
   const s = row();
   const saving = save !== undefined && save !== null;
   return (
-    // The name takes the room left, so that the control stands at the row's end beside it, and at the row's start
-    // under it, as a field under its label, where they do not fit side by side.
     <Row wrap align="center" gap="screen-row-gap" className={s.root()}>
-      <Stack grow="setting">
+      <Stack grow="setting" pack="center" className={save === undefined ? undefined : s.reserve()}>
         <span id={id} className={s.label()}>
           {label}
         </span>
@@ -351,7 +353,7 @@ export function SettingRow({
           </Layers>
         )}
       </Stack>
-      {children}
+      <Box grow="control">{children}</Box>
     </Row>
   );
 }
@@ -364,21 +366,21 @@ const summary = tv({
 });
 
 /**
- * The status summary that heads a screen (the security's): a state as its glyph and a badge beside its name, what it
- * means in a sentence, and the next thing to do (a `Button`, the screen's primary action while something is to do).
+ * The status summary that heads a screen while something there is to do (the security's, while two-factor
+ * authentication is off): the state as its glyph and a sentence, what it means, and the next thing to do in a word or
+ * two (a `Button`, the screen's primary action). It is the one place the screen says it and the one door to it: no
+ * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed.
  */
 export function StatusSummary({
   icon,
   title,
-  badge,
   about,
   action,
 }: {
   /** The state's glyph: `caution` while something is to do, `accepted` once all is well. */
   icon: IconName;
+  /** The state, as a sentence ("Two-factor authentication is off"). */
   title: string;
-  /** The state in a word or two ("Off"). */
-  badge?: string | undefined;
   about: string;
   action?: ReactNode;
 }) {
@@ -391,12 +393,9 @@ export function StatusSummary({
           <Icon name={icon} place="action" />
         </Row>
         <Stack grow gap="hair">
-          <Row wrap align="center" gap="screen-tabs-gap">
-            <h3 id={id} className={s.title()}>
-              {title}
-            </h3>
-            {badge !== undefined && <Badge>{badge}</Badge>}
-          </Row>
+          <h3 id={id} className={s.title()}>
+            {title}
+          </h3>
           <p className={s.about()}>{about}</p>
         </Stack>
       </Row>
@@ -418,6 +417,8 @@ const list = tv({
     glyph: "text-muted-text",
     title: "[word-break:auto-phrase]",
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
+    // A state at the row's end: words alone, muted, with no surface, which is a button's.
+    state: "text-caption text-muted-text",
     chevron: "text-muted-text",
     empty: "text-muted-text [word-break:auto-phrase]",
   },
@@ -433,22 +434,22 @@ export function SettingsList({ label, children }: { label: string; children: Rea
 }
 
 /**
- * A row of a section's list: its glyph, a title over a caption, a state in a word (`badge`), and at its end what the
- * reader may do with it (`end`: one or two buttons). With `href`, the whole row opens the screen under the entry
+ * A row of a section's list: its glyph, a title over a caption, a state in a word or two at its end, in muted words
+ * with no surface (`state`), and what the reader may do with it (`end`: one or two buttons). With `href`, the whole row opens the screen under the entry
  * that holds it (changing the password, one filter), a chevron at its end in place of buttons.
  */
 export function SettingsListRow({
   icon,
   title,
   caption,
-  badge,
+  state,
   href,
   end,
 }: {
   icon?: IconName | undefined;
   title: string;
   caption?: string | undefined;
-  badge?: string | undefined;
+  state?: string | undefined;
   href?: string | undefined;
   end?: ReactNode;
 }) {
@@ -464,10 +465,10 @@ export function SettingsListRow({
         <bdi className={s.title()}>{title}</bdi>
         {caption !== undefined && <span className={s.caption()}>{caption}</span>}
       </Stack>
-      {badge !== undefined && (
-        <Row as="span" inline rigid>
-          <Badge>{badge}</Badge>
-        </Row>
+      {state !== undefined && (
+        <Box as="span" words className={s.state()}>
+          {state}
+        </Box>
       )}
     </>
   );

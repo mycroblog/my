@@ -7,8 +7,8 @@
 //   screen; the same with the three entries later domains add.
 // - An entry opens its screen in the main column. Under `wide` its head is the entry's name under the way back to the
 //   menu; from `wide` the menu stands in the column beside the main one, the entry marked, and the screen starts at
-//   its first section. Display and posting: every control saves at once. Security: the status summary over lists,
-//   whose rows open the screens under the entry.
+//   its first section. Display and posting: every control saves at once. Security: the status summary, the one
+//   place and the one door of what is to do, over lists, whose rows open the screens under the entry.
 // - A screen under an entry (one keyword filter, a form saved as a whole) keeps its head at every width, the way
 //   back leading to its entry, which the menu still marks.
 
@@ -111,14 +111,12 @@ const en = {
     arriveAbout: "Off, a button over the timeline counts them until you ask",
   },
   security: {
-    twoFactor: "Two-factor authentication",
-    off: "Off",
+    twoFactorOff: "Two-factor authentication is off",
     twoFactorAbout: "Anyone who learns your password can sign in. A code from your phone stops them.",
-    turnOn: "Turn on two-factor authentication",
+    turnOn: "Turn on",
     signIn: "Sign-in",
     password: "Password",
     passwordAbout: "Changed 3 months ago",
-    twoFactorRow: "A code from an app on your phone, after the password",
     passkeys: "Passkeys",
     passkeysAbout: "Sign in with your device's lock in place of the password.",
     add: "Add a passkey",
@@ -133,10 +131,9 @@ const en = {
     link: "Link",
     unlink: "Unlink",
     browsers: "Signed-in browsers",
-    here: "This browser",
     signOut: "Sign out",
     sessions: [
-      ["Firefox on macOS", "Tokyo · now"],
+      ["Firefox on macOS", "Tokyo · now · this browser"],
       ["Safari on iPhone", "Tokyo · 2d ago"],
       ["Chrome on Windows", "Osaka · 3w ago"],
     ],
@@ -229,14 +226,12 @@ const ja: typeof en = {
     arriveAbout: "オフのときは、タイムラインの上のボタンが件数を知らせます",
   },
   security: {
-    twoFactor: "二要素認証",
-    off: "オフ",
+    twoFactorOff: "二要素認証はオフです",
     twoFactorAbout: "パスワードを知った人はだれでもログインできます。スマートフォンのコードがそれを防ぎます。",
-    turnOn: "二要素認証を有効にする",
+    turnOn: "有効にする",
     signIn: "ログイン",
     password: "パスワード",
     passwordAbout: "3か月前に変更",
-    twoFactorRow: "パスワードのあとに、スマートフォンのアプリのコードを入力します",
     passkeys: "パスキー",
     passkeysAbout: "パスワードの代わりに、端末のロックでログインします。",
     add: "パスキーを追加",
@@ -251,10 +246,9 @@ const ja: typeof en = {
     link: "連携",
     unlink: "解除",
     browsers: "ログイン中のブラウザ",
-    here: "このブラウザ",
     signOut: "ログアウト",
     sessions: [
-      ["macOS の Firefox", "東京 · 現在"],
+      ["macOS の Firefox", "東京 · 現在 · このブラウザ"],
       ["iPhone の Safari", "東京 · 2日前"],
       ["Windows の Chrome", "大阪 · 3週間前"],
     ],
@@ -449,10 +443,10 @@ function Security({ back }: { back: ReactNode }) {
   const s = w.security;
   return (
     <SettingsScreen icon="security" title={w.entries.security[0] ?? ""} back={back}>
+      {/* While it is off, the summary is the one place that says so and the one door to it: no row repeats it. */}
       <StatusSummary
         icon="caution"
-        title={s.twoFactor}
-        badge={s.off}
+        title={s.twoFactorOff}
         about={s.twoFactorAbout}
         action={<Button kind="primary">{s.turnOn}</Button>}
       />
@@ -463,13 +457,6 @@ function Security({ back }: { back: ReactNode }) {
             title={s.password}
             caption={s.passwordAbout}
             href="/settings/security/password"
-          />
-          <SettingsListRow
-            icon="time"
-            title={s.twoFactor}
-            caption={s.twoFactorRow}
-            badge={s.off}
-            href="/settings/security/two-factor"
           />
         </SettingsList>
       </SettingsSection>
@@ -515,7 +502,6 @@ function Security({ back }: { back: ReactNode }) {
               icon="public"
               title={title}
               caption={caption}
-              badge={i === 0 ? s.here : undefined}
               end={i === 0 ? undefined : <Button size="timeline">{s.signOut}</Button>}
             />
           ))}

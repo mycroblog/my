@@ -41,11 +41,15 @@ const en = {
   arriveAbout: "Off, a button over the timeline counts them until you ask",
   alt: "Ask for a description of media",
   twoFactor: "Two-factor authentication",
-  off: "Off",
   on: "On",
+  twoFactorOff: "Two-factor authentication is off",
+  twoFactorOn: "Two-factor authentication is on",
   offAbout: "Anyone who learns your password can sign in. A code from your phone stops them.",
   onAbout: "Signing in asks for a code from your phone after the password.",
-  turnOn: "Turn on two-factor authentication",
+  turnOn: "Turn on",
+  signIn: "Sign-in",
+  passwordAbout: "Changed 3 months ago",
+  twoFactorRow: "A code from your phone · 8 recovery codes left",
   passkeys: "Passkeys",
   passkeysAbout: "Sign in with your device's lock in place of the password.",
   add: "Add a passkey",
@@ -76,6 +80,7 @@ const en = {
   codeAbout: "To see your recovery codes, enter the 6-digit code from your authenticator app.",
   passkeyAbout: "To delete your account, confirm with your passkey.",
   providerAbout: "To delete your account, sign in to GitHub again. You come back here afterwards.",
+  close: "Close",
   cancel: "Cancel",
   confirm: "Confirm",
   usePasskey: "Use a passkey",
@@ -99,11 +104,15 @@ const ja: typeof en = {
   arriveAbout: "オフのときは、タイムラインの上のボタンが件数を知らせます",
   alt: "メディアの説明を確認する",
   twoFactor: "二要素認証",
-  off: "オフ",
   on: "オン",
+  twoFactorOff: "二要素認証はオフです",
+  twoFactorOn: "二要素認証はオンです",
   offAbout: "パスワードを知った人はだれでもログインできます。スマートフォンのコードがそれを防ぎます。",
   onAbout: "ログインのとき、パスワードのあとにスマートフォンのコードを入力します。",
-  turnOn: "二要素認証を有効にする",
+  turnOn: "有効にする",
+  signIn: "ログイン",
+  passwordAbout: "3か月前に変更",
+  twoFactorRow: "スマートフォンのコード · リカバリーコード残り8個",
   passkeys: "パスキー",
   passkeysAbout: "パスワードの代わりに、端末のロックでログインします。",
   add: "パスキーを追加",
@@ -134,6 +143,7 @@ const ja: typeof en = {
   codeAbout: "リカバリーコードを表示するには、認証アプリの6桁のコードを入力してください。",
   passkeyAbout: "アカウントを削除するには、パスキーで確認してください。",
   providerAbout: "アカウントを削除するには、GitHubにもう一度ログインしてください。そのあとここに戻ります。",
+  close: "閉じる",
   cancel: "キャンセル",
   confirm: "確認",
   usePasskey: "パスキーを使う",
@@ -203,14 +213,33 @@ function Summaries() {
   const w = useWords();
   return (
     <Column>
+      {/* Something to do: the summary says it once and is the one door to it. */}
       <StatusSummary
         icon="caution"
-        title={w.twoFactor}
-        badge={w.off}
+        title={w.twoFactorOff}
         about={w.offAbout}
         action={<Button kind="primary">{w.turnOn}</Button>}
       />
-      <StatusSummary icon="accepted" title={w.twoFactor} badge={w.on} about={w.onAbout} />
+      {/* All well, where a screen says so. */}
+      <StatusSummary icon="accepted" title={w.twoFactorOn} about={w.onAbout} />
+      {/* Once it is on, its row is its door, its state in words at the row's end; the summary is gone. */}
+      <SettingsSection heading={w.signIn}>
+        <SettingsList label={w.signIn}>
+          <SettingsListRow
+            icon="security"
+            title={w.password}
+            caption={w.passwordAbout}
+            href="/settings/security/password"
+          />
+          <SettingsListRow
+            icon="time"
+            title={w.twoFactor}
+            caption={w.twoFactorRow}
+            state={w.on}
+            href="/settings/security/two-factor"
+          />
+        </SettingsList>
+      </SettingsSection>
     </Column>
   );
 }
@@ -355,7 +384,13 @@ function Fields() {
 
 function Reauth() {
   const w = useWords();
-  const pair = { cancel: w.cancel, onCancel: () => undefined, onConfirm: () => undefined, layer: false };
+  const pair = {
+    closeLabel: w.close,
+    cancel: w.cancel,
+    onCancel: () => undefined,
+    onConfirm: () => undefined,
+    layer: false,
+  };
   return (
     <div className="grid justify-items-start gap-shell-section p-shell-edge">
       <ReauthDialog {...pair} title={w.confirmTitle} about={w.confirmAbout} confirm={w.confirm}>
@@ -399,7 +434,7 @@ type Story = StoryObj<typeof meta>;
 
 /** A setting's row and a switch at rest, saving, saved and failed: the state in the place of the line under the name. */
 export const SaveStatesOfAControl: Story = { render: () => <SaveStates /> };
-/** The status summary: something to do, with the screen's primary action; all well, with none. */
+/** The status summary: something to do, with the screen's primary action; all well; and the row that takes over. */
 export const StatusSummaries: Story = { render: () => <Summaries /> };
 /** A list with its add action, the list empty, and the one list of a screen, whose rows open. */
 export const ListAndAdd: Story = { render: () => <Lists /> };

@@ -42,7 +42,7 @@ export const markedSurface = (on: boolean): Record<typeof marked, "" | undefined
 
 /**
  * The attribute a raised surface that holds controls sets (a section of a settings screen), so that a neutral control
- * on it (a secondary button, a field, a badge) takes the page's surface and still shows, as a field of the composer's
+ * on it (a secondary button, a field) takes the page's surface and still shows, as a field of the composer's
  * card does; spread it on the surface.
  */
 export const raisedSurface = { "data-surface-raised": "" } as const;

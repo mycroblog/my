@@ -1,26 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Two fields a setting needs beside the text field and the switch. A choice from a long list (a language, a time
-// zone) is the platform's own picker, a select drawn closed as a field with a chevron at its end: on a phone the
-// system's list, which a finger scrolls and searches as everywhere else on the device; on a desktop a list the
-// keyboard jumps in by typing a name; nothing of ours to load, to translate or to keep accessible, and a list of
-// hundreds costs no more than one of three. A number (days, a threshold) is a short field whose figures line up at its
-// end, with its unit after it. Both are a control's height, on the neutral surface of a control, and on a raised
+// zone) is the platform's own picker: on a phone the system's list, which a finger scrolls and searches as everywhere
+// else on the device; on a desktop a list the keyboard jumps in by typing a name; nothing of ours to load, to
+// translate or to keep accessible, and a list of hundreds costs no more than one of three. Closed, it is drawn as a
+// field as wide as the value it holds, a chevron at its end, with the select itself lying over it unseen, so that a
+// press anywhere on it opens the picker: a select of its own is as wide as its longest option, which breaks a row its
+// value would fit and leaves the fields of a screen ragged. It fills the room it is given (a line of its own under its
+// label), its value cut where it does not fit. A number (days, a threshold) is a short field whose figures line up at
+// its end, with its unit after it. Both are a control's height, on the neutral surface of a control, and on a raised
 // surface (a section of a settings screen) take the page's, as every field does.
 
-import type { ReactElement, ReactNode } from "react";
+import { useState, type ReactElement, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { Icon } from "./icons";
 import { Box, Row } from "./layout";
 
 const field = tv({
   slots: {
-    select: [
-      "box-border h-control-form cursor-pointer appearance-none rounded-control border-0",
-      "bg-surface-raised ps-control-timeline-inline font-sans text-body text-text outline-hidden",
-      "hover:bg-surface-raised-hover focus-visible:shadow-focus disabled:cursor-not-allowed disabled:opacity-disabled",
+    // The field the reader sees: the value and the chevron; it wears the select's hover, focus and disabled state.
+    box: [
+      "box-border h-control-form rounded-control bg-surface-raised px-control-timeline-inline",
+      "font-sans text-body text-text hover:bg-surface-raised-hover has-[:focus-visible]:shadow-focus",
+      "has-[:disabled]:opacity-disabled",
       "[[data-surface-raised]_&]:bg-surface [[data-surface-raised]_&]:hover:bg-surface-hover",
     ],
+    // The select itself, over the field, unseen.
+    select: "cursor-pointer opacity-0 disabled:cursor-not-allowed",
     chevron: "text-muted-text",
     number: [
       "box-border h-control-form rounded-control border-0 bg-surface-raised px-control-timeline-inline",
@@ -32,15 +38,27 @@ const field = tv({
 });
 
 /**
- * The select, as `as`, and its chevron over its end, which lets a press through to the select: the select is no wider
- * than what holds it, its value cut where it does not fit, clear of the chevron.
+ * The field of a select, as `as`: the value, which takes the room and is cut where it does not fit, the chevron at
+ * its end, and the select itself (`select`) over all of it. It is as wide as what holds it, and no wider than its
+ * value needs where that is sized by what it holds.
  */
-function SelectFrame({ as, chevron }: { as: ReactElement<{ className?: unknown }>; chevron: ReactNode }) {
+function SelectFrame({
+  as,
+  value,
+  chevron,
+  select,
+}: {
+  as: ReactElement<{ className?: unknown }>;
+  value: ReactNode;
+  chevron: ReactNode;
+  select: ReactElement<{ className?: unknown }>;
+}) {
   return (
-    <span className="relative inline-flex max-w-full">
-      <Box as={as} className="max-w-full truncate pe-[2.25rem]" />
-      <span className="pointer-events-none absolute inset-y-0 end-[0.75rem] flex items-center">{chevron}</span>
-    </span>
+    <Box as={as} className="relative flex w-full min-w-0 items-center gap-entry-caption">
+      <span className="min-w-0 flex-1 truncate">{value}</span>
+      <span className="flex flex-none items-center">{chevron}</span>
+      <Box as={select} className="absolute inset-0 size-full" />
+    </Box>
   );
 }
 
@@ -75,7 +93,13 @@ const option = (o: SelectOption) => (
   </option>
 );
 
-/** A choice from a list, long or short: the platform's own picker, closed as a field with a chevron at its end. */
+const flat = (options: readonly (SelectOption | SelectGroup)[]): readonly SelectOption[] =>
+  options.flatMap((o) => ("options" in o ? o.options : [o]));
+
+/**
+ * A choice from a list, long or short: the platform's own picker, closed as a field as wide as its value, a chevron
+ * at its end.
+ */
 export function Select({
   id,
   name,
@@ -89,14 +113,20 @@ export function Select({
   isDisabled,
 }: SelectProps) {
   const s = field();
+  const all = flat(options);
+  // The value it shows is the chosen option's words, so it keeps the choice itself where its owner does not.
+  const [own, setOwn] = useState(defaultValue ?? all[0]?.value ?? "");
+  const chosen = value ?? own;
   return (
     <SelectFrame
+      as={<span className={s.box()} />}
+      value={all.find((o) => o.value === chosen)?.label ?? ""}
       chevron={
         <span className={s.chevron()}>
           <Icon name="expand" place="caption" />
         </span>
       }
-      as={
+      select={
         <select
           id={id}
           name={name}
@@ -104,16 +134,12 @@ export function Select({
           aria-label={label}
           aria-labelledby={labelledBy}
           aria-describedby={describedBy}
-          value={value}
-          defaultValue={defaultValue}
+          value={chosen}
           disabled={isDisabled}
-          {...(onChange === undefined
-            ? {}
-            : {
-                onChange: (e: { currentTarget: { value: string } }) => {
-                  onChange(e.currentTarget.value);
-                },
-              })}
+          onChange={(e) => {
+            setOwn(e.currentTarget.value);
+            onChange?.(e.currentTarget.value);
+          }}
         >
           {options.map((o) =>
             "options" in o ? (

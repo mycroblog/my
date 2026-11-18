@@ -9,7 +9,7 @@
 // asks the reader to authenticate again (before changing the password, deleting the account) is the confirmation's
 // dialog with the proof in it: what it lets them do, the field of the proof (the password, a two-factor code) or none
 // where the confirmation itself proves it (a passkey, going to an external provider), another way to prove it, what
-// the server refused right before the pair, and the pair.
+// the server refused right before the pair, and the pair; its head ends with close, as every modal's.
 
 import { useId, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
@@ -131,6 +131,8 @@ export type ReauthDialogProps = {
   other?: ReactNode;
   /** What the server refused, right before the pair (a `FormAlert`). */
   error?: ReactNode;
+  /** The close button's name; it cancels, as Cancel does. */
+  closeLabel: string;
   cancel: string;
   /** The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub). */
   confirm: string;
@@ -152,6 +154,7 @@ export function ReauthDialog({
   children,
   other,
   error,
+  closeLabel,
   cancel,
   confirm: confirmLabel,
   onCancel,
@@ -165,15 +168,21 @@ export function ReauthDialog({
   const textId = useId();
   const body = (
     <>
-      {layer ? (
-        <Heading slot="title" className={s.title()}>
-          {title}
-        </Heading>
-      ) : (
-        <h2 id={titleId} className={s.title()}>
-          {title}
-        </h2>
-      )}
+      {/* The title, and close at the end of the head, as in every modal. */}
+      <Row align="start" justify="between" gap="entry-caption">
+        {layer ? (
+          <Heading slot="title" className={s.title()}>
+            {title}
+          </Heading>
+        ) : (
+          <h2 id={titleId} className={s.title()}>
+            {title}
+          </h2>
+        )}
+        <Row as="span" inline rigid bleedEnd="icon-button-inline">
+          <IconButton icon="close" label={closeLabel} onPress={onCancel} isDisabled={busy} />
+        </Row>
+      </Row>
       <p id={textId} className={s.text()}>
         {about}
       </p>
