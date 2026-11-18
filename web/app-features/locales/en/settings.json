@@ -143,6 +143,18 @@
     "defaultMessage": "Try again",
     "description": "The button after settings.failed that reads the settings from the server again."
   },
+  "settings.unsaved": {
+    "defaultMessage": "“{setting}” could not be saved. Open the settings and change it again.",
+    "description": "A toast at the bottom of the screen, when a change of a setting was not saved (the network, the server, or a value the server refused) and the reader had already left the settings page, so that the row of the setting cannot say it: the setting went back to what it was. setting is the setting's name as its row shows it (Show new posts as they arrive). Its button opens the page of that setting (settings.unsaved.open)."
+  },
+  "settings.unsaved.open": {
+    "defaultMessage": "Open settings",
+    "description": "The button of the toast settings.unsaved: it opens the settings page that holds the setting which was not saved."
+  },
+  "settings.unsaved.close": {
+    "defaultMessage": "Close",
+    "description": "The name of the close button of the toast settings.unsaved, for assistive technology: it puts the toast away."
+  },
   "settings.display.section.region": {
     "defaultMessage": "Language and region",
     "description": "The heading of the first section of the Display and posting page of the settings, over the display language and the time zone."

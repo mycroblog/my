@@ -5,7 +5,8 @@
 // which it places the app; the app shows the reader's own language and time zone, and puts the locale and its
 // direction on the <html>, in place of the shell's, which are those of what a page previews (reader.tsx). It opens the
 // browser's session with the server (ADR-0090 §16), with a session its stream (ADR-0028 §18), and starts the router.
-// A server that cannot say whether there is a session leaves the app signed out, as when there is none. Every request
+// A server that cannot say whether there is a session leaves the app signed out, as when there is none, but for what
+// the device keeps of the reader, which stays (reader.tsx). Signing out in another tab makes this one leave. Every request
 // goes through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028
 // §12). The build registers its Service Worker (ADR-0028 §3).
 
@@ -13,7 +14,7 @@ import "@my/design-system/styles.css";
 import "@my/design-system/emoji.css";
 import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
-import { openSession, startStream, visitorData, watchServer } from "@my/app-data";
+import { onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { I18nProvider } from "@my/design-system";
 import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
 
@@ -25,6 +26,7 @@ import { AppRoot } from "./app";
 import { parseConfig } from "./config";
 import { readerLocale } from "./locale";
 import { createAppRouter } from "./router";
+import { followSignOut } from "./sign-out";
 
 const config = parseConfig(document.getElementById("config")?.textContent ?? null, location);
 // The browser's locale: what the requests name (Accept-Language), and what the app shows a reader whose account
@@ -35,7 +37,10 @@ const server = {
   acceptLanguage: () => locale,
   watch: watchServer({ server: config.apiOrigin }),
 };
-const data = await openSession(server).catch(() => null);
+// The session's data; null when the server said the browser has none, undefined when it could not say (it did not
+// answer, or failed): the app then shows as signed out, and keeps what the device holds of the reader.
+const opened = await openSession(server).catch(() => undefined);
+const data = opened ?? null;
 if (data !== null) startStream(data);
 // The Service Worker of the build (sw/sw.ts); the dev server has none.
 if (import.meta.env.PROD) registerServiceWorker("/sw.js");
@@ -51,13 +56,18 @@ addEventListener("vite:preloadError", (event) => {
 });
 const visitor = visitorData(server);
 const router = createAppRouter({ data, config });
+// Signing out in one tab signs every tab of the browser out.
+if (data !== null)
+  onSignedOutElsewhere(data, () => {
+    followSignOut(router.options.context);
+  });
 
 const root = document.getElementById("root");
 if (!root) throw new Error("the shell has no #root");
 createRoot(root).render(
   <StrictMode>
     <I18nProvider locale={locale}>
-      <AppRoot router={router} visitor={visitor} />
+      <AppRoot router={router} visitor={visitor} unasked={opened === undefined} />
     </I18nProvider>
   </StrictMode>,
 );

@@ -4,8 +4,10 @@
 // whether new timeline posts go in by themselves; the languages of the timelines; and what a new post starts from. A
 // change of any of them shows at once to every screen that reads them (usePreferences), laid over what the server last
 // said while its request is on its way, and is gone again when the server refuses it or does not answer; changes made
-// together each keep their own (the settings save every control by itself, ADR-0110 §5). The cache holds what the
-// server said alone. The server filters the timelines by their languages, so a change of those reads them again.
+// together each keep their own (the settings save every control by itself, ADR-0110 §5). They are sent one at a time,
+// in the order they were made: every answer is the whole of the preferences, so two on their way at once could come
+// back crossed, the older one putting back what the newer changed. The cache holds what the server said alone. The
+// server filters the timelines by their languages, so a change of those reads them again.
 import type { components } from "@mycroblog/mykit";
 import { useQuery, type QueryClient } from "@tanstack/react-query";
 import { useMemo, useSyncExternalStore } from "react";
@@ -48,8 +50,11 @@ function changed(now: Preferences, change: PreferencesChange): Preferences {
   };
 }
 
-/** The changes on their way to the server, oldest first, and who shows them. */
-type Flying = { changes: readonly PreferencesChange[]; readonly listeners: Set<() => void> };
+/**
+ * The changes on their way to the server, oldest first, who shows them, and the end of the last one sent, which the
+ * next waits for.
+ */
+type Flying = { changes: readonly PreferencesChange[]; readonly listeners: Set<() => void>; last: Promise<void> };
 
 const none: readonly PreferencesChange[] = [];
 const flights = new WeakMap<QueryClient, Flying>();
@@ -57,7 +62,7 @@ const flights = new WeakMap<QueryClient, Flying>();
 function flyingOf({ queryClient }: AppData): Flying {
   let flying = flights.get(queryClient);
   if (flying === undefined) {
-    flying = { changes: none, listeners: new Set() };
+    flying = { changes: none, listeners: new Set(), last: Promise.resolve() };
     flights.set(queryClient, flying);
   }
   return flying;
@@ -71,31 +76,43 @@ function setFlying(flying: Flying, changes: readonly PreferencesChange[]): void 
 /**
  * Changes the preferences that `change` names and resolves with them all as the server holds them then. The change
  * shows at once (usePreferences) and, when the server refuses it or does not answer, shows no more: it rejects with
- * mykit's ProblemError (a 422's `detail` names the preference that is invalid) or NetworkError. A change of the
- * timelines' languages marks the timelines, which are read again when they next show.
+ * mykit's ProblemError (a 422's `detail` names the preference that is invalid) or NetworkError. It is sent once the
+ * changes made before it have been answered, whatever came of them. A change of the timelines' languages marks the
+ * timelines, which are read again when they next show.
  */
-export async function updatePreferences(data: AppData, change: PreferencesChange): Promise<Preferences> {
-  const { queryClient } = data;
-  const key = preferencesQuery(data).queryKey;
+export function updatePreferences(data: AppData, change: PreferencesChange): Promise<Preferences> {
   const flying = flyingOf(data);
   setFlying(flying, [...flying.changes, change]);
-  try {
-    const { data: answer } = await data.api.PATCH("/preferences", { body: change });
-    if (answer === undefined) throw new Error("app-data: the change of the preferences answered without them");
-    // A read that left before the change would put back what the server held then.
-    await queryClient.cancelQueries({ queryKey: key });
-    queryClient.setQueryData(key, answer);
-    if (change.timeline_languages !== undefined)
-      void queryClient.invalidateQueries({
-        predicate: ({ queryKey }) => typeof queryKey[1] === "string" && queryKey[1].startsWith("/timelines/"),
-      });
-    return answer;
-  } finally {
-    setFlying(
-      flying,
-      flying.changes.filter((c) => c !== change),
-    );
-  }
+  const answered = flying.last
+    .then(() => send(data, change))
+    .finally(() => {
+      setFlying(
+        flying,
+        flying.changes.filter((c) => c !== change),
+      );
+    });
+  // The next change waits for this one's end, whatever came of it.
+  flying.last = answered.then(
+    () => undefined,
+    () => undefined,
+  );
+  return answered;
+}
+
+/** Sends `change` and puts the server's answer, the preferences as it holds them then, in the cache. */
+async function send(data: AppData, change: PreferencesChange): Promise<Preferences> {
+  const { queryClient } = data;
+  const key = preferencesQuery(data).queryKey;
+  const { data: answer } = await data.api.PATCH("/preferences", { body: change });
+  if (answer === undefined) throw new Error("app-data: the change of the preferences answered without them");
+  // A read that left before the change would put back what the server held then.
+  await queryClient.cancelQueries({ queryKey: key });
+  queryClient.setQueryData(key, answer);
+  if (change.timeline_languages !== undefined)
+    void queryClient.invalidateQueries({
+      predicate: ({ queryKey }) => typeof queryKey[1] === "string" && queryKey[1].startsWith("/timelines/"),
+    });
+  return answer;
 }
 
 /**
@@ -119,6 +136,15 @@ export function usePreferences(signedIn = true): Preferences | undefined {
     () => none,
   );
   return useMemo(() => (said === undefined ? undefined : changes.reduce(changed, said)), [said, changes]);
+}
+
+/**
+ * The reader's preferences as the server last said them, without the changes on their way: for what follows the
+ * account as it is, not as the reader is changing it. Undefined until they are read, and without a session.
+ */
+export function useSavedPreferences(signedIn = true): Preferences | undefined {
+  const read = useQuery({ ...preferencesQuery(useAppData()), enabled: signedIn }).data;
+  return signedIn ? read : undefined;
 }
 
 /**
