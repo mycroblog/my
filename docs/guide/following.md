@@ -89,7 +89,7 @@ While you follow no one, your home timeline shows people the server suggests; "S
 
 On another person's profile, "Add a note only you can see" keeps a note on that account, up to 2,000 characters: how
 you met, what they like. The account is not told, and the note does not leave this server. Press the note to edit it;
-saving it empty removes it. The archive of "Archive and deletion" in the settings holds your notes, and a note goes
+saving it empty removes it. The archive of "Export", under "Account and data" in the settings, holds your notes, and a note goes
 when you or the other account is deleted.
 
 ## Following in a feed reader

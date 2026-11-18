@@ -16,7 +16,7 @@ From the top of the diagram down:
 
 1. **Add an alias.** On the new account, add the old account under "Aliases".
 2. **Move account.** On the old account, choose "Move account" and name the new account.
-3. **What moves.** Your followers follow the new account. The old account shows "Your account has moved": you can still sign in, read, and export your data there.
+3. **What moves.** Your followers follow the new account. The old account says "This account moved to …": you can still sign in, read, and export your data there.
 4. **What stays here.** Your posts, the accounts and hashtags you follow, and your blocks, mutes, and bookmarks stay on the old account. Your posts do not move. Carry the rest as CSV files, with "Export" on the old account and "Import" on the new one ([taking your follows with you](#taking-your-follows-with-you)).
 
 ## Moving from this account
@@ -53,7 +53,7 @@ import them on the new account. Mastodon has no file of followed hashtags, so on
 this one imports that file. "Merge" keeps what you have and adds what the file lists; "Replace" makes the list exactly what the file
 lists. "Preview" shows what a file would do before you choose "Import"; the import then runs in the background.
 
-"Request an archive", under "Export", prepares a ZIP archive of your posts, your profile, your keyword filters, and your
+"Request an archive", under "Export", prepares a ZIP archive of your posts, your profile, your keyword filters, your private notes, and your
 follows, followed hashtags, blocks, mutes, muted servers, and bookmarks, to download there once it is ready.
 
 ## When an account you follow moves

@@ -1232,7 +1232,7 @@
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
   },
   "settings.account.action.posts.failed": {
-    "defaultMessage": "{count, plural, other {# 件の投稿を読み込めませんでした。}}",
+    "defaultMessage": "{count, plural, other {# 件の投稿を読み込めませんでした。ページを再読み込みして、もう一度試してください。}}",
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on could not be read from the server now (it did not answer, or failed), which is not to say they are deleted (settings.account.action.posts.gone counts those). count is 1 or more."
   },
   "settings.account.action.not_found": {
@@ -1352,7 +1352,7 @@
     "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
   },
   "settings.account.export.archive.about": {
-    "defaultMessage": "プロフィール、投稿、キーワードフィルタ、フォロー・ブロック・ミュート・ブックマークをまとめた ZIP ファイルです。サーバーがバックグラウンドで準備するため、時間がかかることがあります。",
+    "defaultMessage": "プロフィール、投稿、キーワードフィルタ、非公開のメモ、このアカウントへのモデレーションの処分、フォロー・ブロック・ミュート・ブックマークをまとめた ZIP ファイルです。サーバーがバックグラウンドで準備するため、時間がかかることがあります。",
     "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
   },
   "settings.account.export.archive.loading": {
@@ -1364,23 +1364,23 @@
     "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
   },
   "settings.account.export.archive.none": {
-    "defaultMessage": "アーカイブはありません。リクエストすると、準備ができしだいここからダウンロードできます。",
+    "defaultMessage": "アーカイブはありません。依頼すると、準備ができしだいここからダウンロードできます。",
     "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
   },
   "settings.account.export.archive.request": {
-    "defaultMessage": "アーカイブをリクエスト",
+    "defaultMessage": "アーカイブを依頼",
     "description": "The button of the section Archive on the settings page Export that asks the server to prepare an archive of the reader's account."
   },
   "settings.account.export.archive.requested": {
-    "defaultMessage": "アーカイブをリクエストしました。",
+    "defaultMessage": "アーカイブを依頼しました。",
     "description": "The status of the section Archive on the settings page Export right after the reader pressed Request an archive and the server took the request; the list under it says where the archive stands."
   },
   "settings.account.export.archive.building": {
-    "defaultMessage": "アーカイブはすでに準備中です。完了すると、次をリクエストできます。",
+    "defaultMessage": "アーカイブはすでに準備中です。完了すると、次を依頼できます。",
     "description": "The status of the section Archive on the settings page Export when the server refused a request because it is still preparing an earlier archive."
   },
   "settings.account.export.archive.request_failed": {
-    "defaultMessage": "アーカイブをリクエストできませんでした。もう一度試してください。",
+    "defaultMessage": "アーカイブを依頼できませんでした。もう一度試してください。",
     "description": "The status of the section Archive on the settings page Export when the request for an archive got no answer from the server (the network)."
   },
   "settings.account.export.archive.download_failed": {
@@ -1392,7 +1392,7 @@
     "description": "The name of a row of the list Archive on the settings page Export: one archive, named by when the reader requested it. date is a date and a time as the reader's locale writes them. It does not say that it was requested: the status over the list says so right after a request (settings.account.export.archive.requested). No full stop."
   },
   "settings.account.export.archive.state": {
-    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。その間、このページを離れてもかまいません。準備ができると、次をリクエストできます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しくリクエストしてください。} other {このアーカイブは準備できませんでした。新しくリクエストしてください。}}",
+    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。その間、このページを離れてもかまいません。準備ができると、次を依頼できます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しく依頼してください。} other {このアーカイブは準備できませんでした。新しく依頼してください。}}",
     "description": "Under the name of an archive in the list Archive on the settings page Export: where it stands, the row's one line about it. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
   },
   "settings.account.export.download": {
@@ -1424,7 +1424,7 @@
     "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader imports a CSV file. A heading: no full stop."
   },
   "settings.account.import.row.about": {
-    "defaultMessage": "CSV ファイルからフォロー・ブロック・ミュート・ブックマークを取り込む",
+    "defaultMessage": "CSV ファイルからフォロー・ブロック・ミュート・ブックマークをインポート",
     "description": "The line under the row Import on the settings page Account and data while no import is in progress: what the page holds. A phrase without a full stop."
   },
   "settings.account.import.row.standing": {
@@ -1436,7 +1436,7 @@
     "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
   },
   "settings.account.import.about": {
-    "defaultMessage": "このサーバーか Mastodon でエクスポートした CSV ファイルを取り込みます。「インポート」を押すまでは何も変わりません。",
+    "defaultMessage": "このサーバーか Mastodon でエクスポートした CSV ファイルを選んでください。「インポート」を押すまでは何も変わりません。",
     "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
   },
   "settings.account.import.kind": {
@@ -1468,7 +1468,7 @@
     "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
   },
   "settings.account.import.file.empty": {
-    "defaultMessage": "このファイルには、選んだ内容としてインポートできるものがありません。「ファイルの内容」を確認するか、別のファイルを選んでください。",
+    "defaultMessage": "このファイルには、「ファイルの内容」で選んだものがありません。選んだ内容を確認するか、別のファイルを選んでください。",
     "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
   },
   "settings.account.import.mode": {
@@ -1528,7 +1528,7 @@
     "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
   },
   "settings.account.import.submit.removes": {
-    "defaultMessage": "{kind, select, following {インポートすると {count, number} 件のアカウントのフォローを解除します。} followed_tags {インポートすると {count, number} 件のハッシュタグのフォローを解除します。} blocks {インポートすると {count, number} 件のアカウントのブロックを解除します。} mutes {インポートすると {count, number} 件のアカウントのミュートを解除します。} domain_mutes {インポートすると {count, number} 件のサーバーのミュートを解除します。} other {インポートすると {count, number} 件のブックマークを削除します。}}",
+    "defaultMessage": "{kind, select, following {インポートで {count, number} 件のフォローを解除します。} followed_tags {インポートで {count, number} 件のハッシュタグのフォローを解除します。} blocks {インポートで {count, number} 件のブロックを解除します。} mutes {インポートで {count, number} 件のミュートを解除します。} domain_mutes {インポートで {count, number} 件のサーバーのミュートを解除します。} other {インポートで {count, number} 件のブックマークを削除します。}}",
     "description": "In the bar at the bottom of the settings page Import, right before Import, while Replace is chosen and the import would remove something: how many things the reader has now that the file does not list, which the import removes and cannot put back. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. One short sentence."
   },
   "settings.account.import.refused": {
@@ -1616,7 +1616,7 @@
     "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
   },
   "settings.account.auto_delete.bound.about": {
-    "defaultMessage": "{state, select, now {{items}を残せなくなりました{counted, select, yes {。{count, number} 件の投稿が削除されます} more {。{count, number} 件を超える投稿が削除されます} other {}}。このページで保存すると、設定は上限の範囲内になります。} from {この日から、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、すぐにそうなります。} other {上限が適用されると、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、すぐにそうなります。}}",
+    "defaultMessage": "{state, select, now {{items}を残せなくなりました{counted, select, yes {。{count, number} 件の投稿が削除されます} more {。{count, number} 件を超える投稿が削除されます} other {}}。このページで保存すると、設定は上限の範囲内になります。} from {この日から、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、上限がすぐに適用されます。} other {上限が適用されると、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、上限がすぐに適用されます。}}",
     "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
   },
   "settings.account.auto_delete.section.when": {
@@ -1624,11 +1624,11 @@
     "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
   },
   "settings.account.auto_delete.when.about": {
-    "defaultMessage": "下の日数を過ぎた投稿は、自分で削除したときと同じように、このサーバーと送信先のサーバーから削除されます。元に戻せません。ほかの人の投稿のブーストは削除されません。",
+    "defaultMessage": "下の日数を過ぎた投稿は、自分で削除したときと同じように、このサーバーと送信先のサーバーから削除されます。取り消せません。ほかの人の投稿のブーストは削除されません。",
     "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
   },
   "settings.account.auto_delete.when.about_limit": {
-    "defaultMessage": "このサーバーが投稿を残すのは最長 {days, number} 日です。下の日数を過ぎた投稿は、このサーバーと送信先のサーバーから削除されます。元に戻せません。ほかの人の投稿のブーストは削除されません。",
+    "defaultMessage": "このサーバーが投稿を残すのは最長 {days, number} 日です。下の日数を過ぎた投稿は、このサーバーと送信先のサーバーから削除されます。取り消せません。ほかの人の投稿のブーストは削除されません。",
     "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader and that their saved settings are within: the maximum, and what a deletion is. days is the maximum. A reader the maximum binds reads it in the summary instead (settings.account.auto_delete.bound.about) and settings.account.auto_delete.when.about here."
   },
   "settings.account.auto_delete.enabled": {
@@ -1672,7 +1672,7 @@
     "description": "In the section Posts that are kept of the settings page Delete old posts automatically, in place of its checkboxes, on a server whose maximum allows none of the kinds (pinned, bookmarked, favourited, with media, with a poll, articles)."
   },
   "settings.account.auto_delete.kept.rule": {
-    "defaultMessage": "このサーバーでは、チェックした種類の一部を残せません。ページを読み込み直すと、チェックできる種類を確認できます。",
+    "defaultMessage": "このサーバーでは、チェックした種類の一部を残せません。ページを再読み込みすると、チェックできる種類を確認できます。",
     "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds; in the bar at the bottom where the section shows no checkbox."
   },
   "settings.account.auto_delete.keep": {
@@ -1776,7 +1776,7 @@
     "description": "The question of the confirmation that opens when the reader presses Save on the settings page Delete old posts automatically and the save turns the deletion on or deletes posts the settings in effect keep (a younger age, fewer kinds kept)."
   },
   "settings.account.auto_delete.ask.text": {
-    "defaultMessage": "{counted, select, yes {保存すると {count, number} 件の投稿が削除されます。元に戻せません。} more {保存すると {count, number} 件を超える投稿が削除されます。元に戻せません。} none {今は削除される投稿はありません。投稿は {days, number} 日を過ぎると削除され、元に戻せません。} other {保存すると、{days, number} 日を過ぎた投稿のうち、残す対象でないものが削除されます。元に戻せません。}}",
+    "defaultMessage": "{counted, select, yes {保存すると {count, number} 件の投稿が削除されます。取り消せません。} more {保存すると {count, number} 件を超える投稿が削除されます。取り消せません。} none {今は削除される投稿はありません。投稿は {days, number} 日を過ぎると削除されます。取り消せません。} other {保存すると、{days, number} 日を過ぎた投稿のうち、残す対象でないものが削除されます。取り消せません。}}",
     "description": "The text of the confirmation that asks whether to save the settings page Delete old posts automatically: what the save deletes, and that deleted posts cannot be restored. counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known (still counting, or it failed). days is the age past which a post is deleted, 1 or more."
   },
   "settings.account.auto_delete.ask.confirm": {
@@ -1988,7 +1988,7 @@
     "description": "The heading of the second section of the settings page Move account: what the reader does on the other account before the move. A heading: no full stop."
   },
   "settings.account.move.alias.about": {
-    "defaultMessage": "移転先のアカウントで、このアカウントを別名に追加してください。設定の「アカウントとデータ」から「別名」を開き、「別名を追加」にこのハンドルを入力します。ほかのソフトウェアにも、似た名前の同じ設定があります。",
+    "defaultMessage": "このアカウントを別名に追加してください。設定の「アカウントとデータ」から「別名」を開き、「別名を追加」にこのハンドルを入力します。ほかのソフトウェアにも、似た名前の同じ設定があります。",
     "description": "The line under the heading First, on the account you are moving to of the settings page Move account, over this account's handle. Account and data, Aliases and Add an alias are settings.entry.account, settings.account.aliases and settings.account.aliases.add: the same words."
   },
   "settings.account.move.alias.handle": {
@@ -2024,8 +2024,8 @@
     "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
   },
   "settings.account.move.confirm": {
-    "defaultMessage": "フォロワーが {handle} へ移り、このアカウントは {days, number} 日間、再び移転できません。",
-    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
+    "defaultMessage": "フォロワーが {handle} へ移り、それ以外はこのアカウントに残ります。あとで移転を取り消してもフォロワーは戻らず、{days, number} 日間は再び移転できません。",
+    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, what stays, and what cancelling the move later does not undo, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
   },
   "settings.account.move.confirm.title": {
     "defaultMessage": "このアカウントを {handle} に移転しますか？",
@@ -2092,7 +2092,7 @@
     "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.hidden.about. No full stop."
   },
   "settings.account.deactivate.effect.hidden.about": {
-    "defaultMessage": "このサーバーでもほかのサーバーでも、誰からも見えなくなります。ほかのサーバーでは、アカウントが凍結されたように表示されることがあります。無効化を表す表示がないためです。",
+    "defaultMessage": "このサーバーでもほかのサーバーでも、誰からも見えなくなります。サーバーによっては、無効化を表す方法がないため、アカウントが凍結されたように表示されます。",
     "description": "The muted line under the fact Your profile and posts are hidden on the settings page Deactivate account. Suspended is what a moderator does to an account (凍結)."
   },
   "settings.account.deactivate.effect.dropped": {
@@ -2100,7 +2100,7 @@
     "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.dropped.about. No full stop."
   },
   "settings.account.deactivate.effect.dropped.about": {
-    "defaultMessage": "無効化のあいだに届いたメンション・DM・通知・新しいフォローは保存されず、もとに戻しても表示されません。",
+    "defaultMessage": "無効化のあいだに届いたメンション・DM・通知・新しいフォロワーは保存されず、もとに戻しても表示されません。",
     "description": "The muted line under the fact Nothing reaches the account meanwhile on the settings page Deactivate account."
   },
   "settings.account.deactivate.effect.kept": {
@@ -2128,7 +2128,7 @@
     "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
   },
   "settings.account.deactivate.after.deleted.about": {
-    "defaultMessage": "「アカウントの削除」と同じく、完全に削除されます。このサーバーがメールを送る場合は、削除の日付を知らせるメールがいま 1 通届きます。削除の前にもう一度知らせることはありません。",
+    "defaultMessage": "「アカウントの削除」と同じく、完全に削除されます。このサーバーがメールを送る場合は、無効化したときに削除の日付を知らせるメールが 1 通届きます。削除の前にもう一度知らせることはありません。",
     "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
   },
   "settings.account.deactivate.first": {
@@ -2232,7 +2232,7 @@
     "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
   },
   "settings.account.delete.confirm": {
-    "defaultMessage": "アカウントと投稿はすぐに削除され、ログアウトします。もとに戻せません。",
+    "defaultMessage": "アカウントと投稿はすぐに削除され、ログアウトします。取り消せません。",
     "description": "In the dialog Delete this account?, opened by the button Delete account on the settings page Delete account: what its button does, over how the reader confirms it's them."
   },
   "settings.account.delete.confirm.title": {
@@ -2748,11 +2748,11 @@
     "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.returned.act": {
-    "defaultMessage": "{provider} で本人確認が完了しました。下からもう一度行ってください。続けるかどうかだけを確認します。",
+    "defaultMessage": "{provider} で本人確認が完了しました。下からもう一度操作してください。今回は、続けるかどうかだけを確認します。",
     "description": "On the settings pages Move account, Deactivate account and Delete account when the browser comes back from another service where the reader confirmed it's them: the reader does it again, and the dialog then asks only whether to go ahead, with no password. provider is the name of the service as the administrators wrote it; it is not translated. Without a name, the page shows settings.confirm.returned.act.unknown."
   },
   "settings.confirm.returned.act.unknown": {
-    "defaultMessage": "ほかのサービスで本人確認が完了しました。下からもう一度行ってください。続けるかどうかだけを確認します。",
+    "defaultMessage": "ほかのサービスで本人確認が完了しました。下からもう一度操作してください。今回は、続けるかどうかだけを確認します。",
     "description": "As settings.confirm.returned.act, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.failed": {

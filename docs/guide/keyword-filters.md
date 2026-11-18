@@ -77,5 +77,5 @@ words come together, write them as one phrase.
 
 You can have up to 100 filters, with up to 100 words each and 1,000 words in all. A word is up to 100 characters.
 
-The archive of "Archive and deletion" in the settings holds your filters, expired ones included, as
+The archive of "Export", under "Account and data" in the settings, holds your filters, expired ones included, as
 `keyword_filters.json`.

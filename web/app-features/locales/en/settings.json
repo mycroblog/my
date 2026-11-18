@@ -592,7 +592,7 @@
     "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
   },
   "settings.notifications.email_stopped.verified": {
-    "defaultMessage": "Your address is already verified. Email to it is on again.",
+    "defaultMessage": "Your address is already verified. Email is sent to it again.",
     "description": "On the notification settings page, in the place of the notice settings.notifications.email_stopped once the reader pressed Send the verification email (settings.notifications.email_stopped.verify) and the server answered that the address is verified already: no email was sent, the notice is gone, and the server sends email to the address again. A status that takes the focus the button left."
   },
   "settings.notifications.email_stopped.wait": {
@@ -1232,7 +1232,7 @@
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
   },
   "settings.account.action.posts.failed": {
-    "defaultMessage": "{count, plural, one {# post could not be loaded.} other {# posts could not be loaded.}}",
+    "defaultMessage": "{count, plural, one {# post could not be loaded. Reload the page to try again.} other {# posts could not be loaded. Reload the page to try again.}}",
     "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on could not be read from the server now (it did not answer, or failed), which is not to say they are deleted (settings.account.action.posts.gone counts those). count is 1 or more."
   },
   "settings.account.action.not_found": {
@@ -1352,7 +1352,7 @@
     "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
   },
   "settings.account.export.archive.about": {
-    "defaultMessage": "A ZIP file of your profile, your posts, your keyword filters, and what you follow, block, mute and bookmark. The server prepares it in the background, which can take a while.",
+    "defaultMessage": "A ZIP file of your profile, your posts, your keyword filters, your private notes, the moderation actions on your account, and what you follow, block, mute and bookmark. The server prepares it in the background, which can take a while.",
     "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
   },
   "settings.account.export.archive.loading": {
@@ -1436,7 +1436,7 @@
     "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
   },
   "settings.account.import.about": {
-    "defaultMessage": "A CSV file exported from this server or from Mastodon. Nothing changes until you choose “Import”.",
+    "defaultMessage": "Choose a CSV file exported from this server or from Mastodon. Nothing changes until you choose “Import”.",
     "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
   },
   "settings.account.import.kind": {
@@ -1468,7 +1468,7 @@
     "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
   },
   "settings.account.import.file.empty": {
-    "defaultMessage": "This file has nothing to import as what you chose. Check “What the file lists”, or choose another file.",
+    "defaultMessage": "Nothing in this file matches “What the file lists”. Check that choice, or choose another file.",
     "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
   },
   "settings.account.import.mode": {
@@ -1488,7 +1488,7 @@
     "description": "A heading on the settings page Import, over what importing the chosen file would do, before anything changes. A heading: no full stop."
   },
   "settings.account.import.preview.about": {
-    "defaultMessage": "What the server reads in the file. It looks up accounts and posts on other servers when the import runs.",
+    "defaultMessage": "This is what the server read in the file. It looks up accounts and posts on other servers when the import runs.",
     "description": "Under the heading Preview on the settings page Import: where the numbers come from, and that an account or a post on another server may still not be found later."
   },
   "settings.account.import.preview.waiting": {
@@ -1616,7 +1616,7 @@
     "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
   },
   "settings.account.auto_delete.bound.about": {
-    "defaultMessage": "{state, select, now {You can no longer keep {items}{counted, select, yes {: {count, number} of your posts are being deleted} more {: more than {count, number} of your posts are being deleted} other {}}. Saving this page brings your settings within the limit.} other {You can then no longer keep {items}{counted, select, yes {: {count, number} of your posts will be deleted then} more {: more than {count, number} of your posts will be deleted then} none {: none of your posts will be deleted then} other {}}. Saving this page does it now.}}",
+    "defaultMessage": "{state, select, now {You can no longer keep {items}{counted, select, yes {: {count, number} of your posts are being deleted} more {: more than {count, number} of your posts are being deleted} other {}}. Saving this page brings your settings within the limit.} other {You can then no longer keep {items}{counted, select, yes {: {count, number} of your posts will be deleted then} more {: more than {count, number} of your posts will be deleted then} none {: none of your posts will be deleted then} other {}}. Saving this page applies the limit now.}}",
     "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
   },
   "settings.account.auto_delete.section.when": {
@@ -1624,11 +1624,11 @@
     "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
   },
   "settings.account.auto_delete.when.about": {
-    "defaultMessage": "A post past the age below is deleted as if you had deleted it yourself: here and on the servers it was sent to. It cannot be restored. Your boosts of other people's posts are not deleted.",
+    "defaultMessage": "A post past the age below is deleted as if you had deleted it yourself: here and on the servers it was sent to. This cannot be undone. Your boosts of other people's posts are not deleted.",
     "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
   },
   "settings.account.auto_delete.when.about_limit": {
-    "defaultMessage": "This server keeps posts for {days, plural, one {# day} other {# days}} at most. A post past the age below is deleted here and on the servers it was sent to. It cannot be restored. Your boosts of other people's posts are not deleted.",
+    "defaultMessage": "This server keeps posts for {days, plural, one {# day} other {# days}} at most. A post past the age below is deleted here and on the servers it was sent to. This cannot be undone. Your boosts of other people's posts are not deleted.",
     "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader and that their saved settings are within: the maximum, and what a deletion is. days is the maximum. A reader the maximum binds reads it in the summary instead (settings.account.auto_delete.bound.about) and settings.account.auto_delete.when.about here."
   },
   "settings.account.auto_delete.enabled": {
@@ -1672,7 +1672,7 @@
     "description": "In the section Posts that are kept of the settings page Delete old posts automatically, in place of its checkboxes, on a server whose maximum allows none of the kinds (pinned, bookmarked, favourited, with media, with a poll, articles)."
   },
   "settings.account.auto_delete.kept.rule": {
-    "defaultMessage": "This server does not let you keep one of the kinds you checked. Load this page again to see which you can check.",
+    "defaultMessage": "This server does not let you keep one of the kinds you checked. Reload the page to see which you can check.",
     "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds; in the bar at the bottom where the section shows no checkbox."
   },
   "settings.account.auto_delete.keep": {
@@ -1776,7 +1776,7 @@
     "description": "The question of the confirmation that opens when the reader presses Save on the settings page Delete old posts automatically and the save turns the deletion on or deletes posts the settings in effect keep (a younger age, fewer kinds kept)."
   },
   "settings.account.auto_delete.ask.text": {
-    "defaultMessage": "{counted, select, yes {Saving deletes {count, number} of your posts. They cannot be restored.} more {Saving deletes more than {count, number} of your posts. They cannot be restored.} none {None of your posts is old enough to be deleted yet. A post is deleted once it is older than {days, plural, one {# day} other {# days}}, and cannot be restored.} other {Saving deletes your posts older than {days, plural, one {# day} other {# days}} that you do not keep. They cannot be restored.}}",
+    "defaultMessage": "{counted, select, yes {Saving deletes {count, number} of your posts. This cannot be undone.} more {Saving deletes more than {count, number} of your posts. This cannot be undone.} none {None of your posts is old enough to be deleted yet. A post is deleted once it is older than {days, plural, one {# day} other {# days}}. This cannot be undone.} other {Saving deletes your posts older than {days, plural, one {# day} other {# days}} that you do not keep. This cannot be undone.}}",
     "description": "The text of the confirmation that asks whether to save the settings page Delete old posts automatically: what the save deletes, and that deleted posts cannot be restored. counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known (still counting, or it failed). days is the age past which a post is deleted, 1 or more."
   },
   "settings.account.auto_delete.ask.confirm": {
@@ -2024,8 +2024,8 @@
     "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
   },
   "settings.account.move.confirm": {
-    "defaultMessage": "Your followers move to {handle}, and this account cannot move again for {days, plural, one {# day} other {# days}}.",
-    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
+    "defaultMessage": "Your followers move to {handle}, and everything else stays here. Cancelling the move later does not bring them back, and this account cannot move again for {days, plural, one {# day} other {# days}}.",
+    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, what stays, and what cancelling the move later does not undo, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
   },
   "settings.account.move.confirm.title": {
     "defaultMessage": "Move this account to {handle}?",
@@ -2128,7 +2128,7 @@
     "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
   },
   "settings.account.deactivate.after.deleted.about": {
-    "defaultMessage": "It is deleted for good, as “Delete account” deletes it. Where this server sends email, you get one email with the date now, and no reminder before the deletion.",
+    "defaultMessage": "It is deleted for good, as “Delete account” deletes it. Where this server sends email, you get one email with the date when you deactivate, and no reminder before the deletion.",
     "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
   },
   "settings.account.deactivate.first": {
@@ -2748,11 +2748,11 @@
     "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.returned.act": {
-    "defaultMessage": "You confirmed it's you with {provider}. Do it again below: you are only asked whether to go ahead.",
+    "defaultMessage": "You confirmed it's you with {provider}. Do it again below: this time you are only asked whether to go ahead.",
     "description": "On the settings pages Move account, Deactivate account and Delete account when the browser comes back from another service where the reader confirmed it's them: the reader does it again, and the dialog then asks only whether to go ahead, with no password. provider is the name of the service as the administrators wrote it; it is not translated. Without a name, the page shows settings.confirm.returned.act.unknown."
   },
   "settings.confirm.returned.act.unknown": {
-    "defaultMessage": "You confirmed it's you with the other service. Do it again below: you are only asked whether to go ahead.",
+    "defaultMessage": "You confirmed it's you with the other service. Do it again below: this time you are only asked whether to go ahead.",
     "description": "As settings.confirm.returned.act, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.failed": {
