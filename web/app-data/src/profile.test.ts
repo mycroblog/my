@@ -6,6 +6,7 @@ import { notificationsQuery } from "./notifications";
 import {
   badgeChoicesQuery,
   chooseBadge,
+  failedPicture,
   followedHashtagsQuery,
   ownFeaturedHashtagsQuery,
   profileLimits,
@@ -100,6 +101,46 @@ describe("updateProfile", () => {
     const refused = await refusedWith(updateProfile(data, { display_name: "Yuki 雪", avatar: picture("me.png") }));
     expect(refused.status).toBe(422);
     expect(writes(requests)).toEqual(["POST /media"]);
+  });
+});
+
+// What a form needs to say what is wrong under the image it is about, and not beside Save (#3200).
+describe("failedPicture", () => {
+  /** What `write` was rejected with, whatever it is. */
+  const rejection = (write: Promise<unknown>) =>
+    write.then(
+      () => undefined,
+      (error: unknown) => error,
+    );
+
+  for (const which of ["avatar", "header"] as const) {
+    test(`names the ${which} when its upload is what the server refused`, async () => {
+      const { fake, data } = fakeData();
+      fake.script("POST /media", { fail: 422 });
+      const refused = await refusedWith(updateProfile(data, { display_name: "Yuki 雪", [which]: picture("me.png") }));
+      expect(failedPicture(refused)).toBe(which);
+    });
+
+    test(`names the ${which} when its upload got no answer`, async () => {
+      const { fake, data } = fakeData();
+      fake.script("POST /media", { fail: "network" });
+      const failed = await rejection(updateProfile(data, { [which]: picture("me.png") }));
+      expect(failed).toBeDefined();
+      expect(failedPicture(failed)).toBe(which);
+    });
+  }
+
+  test("names no picture when the pictures were uploaded and the change itself is refused", async () => {
+    const { fake, data, requests } = fakeData();
+    fake.script("PATCH /accounts/update_credentials", { fail: 422 });
+    const refused = await refusedWith(updateProfile(data, { avatar: picture("me.png"), header: picture("sky.png") }));
+    expect(writes(requests)).toEqual(["POST /media", "POST /media", "PATCH /accounts/update_credentials"]);
+    expect(failedPicture(refused)).toBeUndefined();
+  });
+
+  test("names no picture for an error of something else", () => {
+    expect(failedPicture(new Error("something else"))).toBeUndefined();
+    expect(failedPicture(undefined)).toBeUndefined();
   });
 });
 

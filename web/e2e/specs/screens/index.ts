@@ -22,6 +22,7 @@ export { ListIndex } from "./lists";
 export { streamOpened } from "./stream";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { Profile } from "./profile";
+export { ProfileForm, ProfileSettings } from "./profile-settings";
 export { Reactors } from "./reactors";
 export { DisplaySettings, Landing, Settings } from "./settings";
 export { signInAs, SignIn, type Passkey } from "./sign-in";

@@ -36,6 +36,19 @@ export class Profile {
     return this.page.getByRole("region", { name: this.person.displayName, exact: true });
   }
 
+  /**
+   * The pictures of the card, each a decoration beside the name that says whose it is: the header and the avatar of a
+   * person who has them, none for one who has neither.
+   */
+  get pictures(): Locator {
+    return this.card.getByRole("presentation", { includeHidden: true });
+  }
+
+  /** The link on the reader's own profile that leads to the form that edits it. */
+  get editProfile(): Locator {
+    return this.card.getByRole("link", { name: "Edit profile", exact: true });
+  }
+
   /** The button that follows the person; "Follow back" when they follow the reader. */
   get followButton(): Locator {
     return this.card.getByRole("button", { name: /^Follow( back)?$/ });
