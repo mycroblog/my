@@ -288,11 +288,11 @@
     "description": "Under settings.security.two_factor.off in the status summary: what it means that two-factor authentication is off, and what turning it on does. The authenticator app is an app on the reader's phone that shows six-digit codes."
   },
   "settings.security.two_factor.off.about.passwordless": {
-    "defaultMessage": "有効にすると、ログインのたびに認証アプリのコードも必要になります。パスキーや連携したアカウントをほかの人に使われても、ログインされません。",
+    "defaultMessage": "オンにすると、ログインのたびに認証アプリのコードも必要になります。パスキーや連携したアカウントをほかの人に使われても、ログインされません。",
     "description": "Under settings.security.two_factor.off in the status summary, in place of settings.security.two_factor.off.about, for an account that no password signs in (it has none, or the server limits sign-in to other services): what turning two-factor authentication on does for it. It must not speak of a password."
   },
   "settings.security.two_factor.turn_on": {
-    "defaultMessage": "有効にする",
+    "defaultMessage": "オンにする",
     "description": "The button of the status summary that leads to the page where the reader turns two-factor authentication on, and the button at the end of that page that turns it on once the code is entered."
   },
   "settings.security.two_factor.on": {
@@ -300,7 +300,7 @@
     "description": "The line under Two-factor authentication in its row when the server did not say since when it is on: it is turned on. With the date, the line is settings.security.two_factor.since."
   },
   "settings.security.two_factor.since": {
-    "defaultMessage": "{date} から有効",
+    "defaultMessage": "{date} からオン",
     "description": "The line under Two-factor authentication in its row. date is the day it was turned on, written out in the reader's language (Mar 3, 2026)."
   },
   "settings.security.two_factor.codes_left": {
@@ -324,7 +324,7 @@
     "description": "The name of the secret text shown under the QR code, which the reader may type into their authenticator app in place of scanning the code; for assistive technology."
   },
   "settings.security.two_factor.setup.expired": {
-    "defaultMessage": "設定の有効期限が切れました。新しい QR コードを読み取り、新しく追加した項目のコードを入力してください。",
+    "defaultMessage": "認証アプリの設定の有効期限が切れました。新しい QR コードを読み取り、新しく追加した項目のコードを入力してください。",
     "description": "An alert beside the button Turn on when the reader took longer than the server keeps a setup (15 minutes): the page now shows a new QR code, and the entry the reader added to their app from the old one no longer works."
   },
   "settings.security.two_factor.copy": {
@@ -360,7 +360,7 @@
     "description": "The title of the dialog that asks for a two-factor code before two-factor authentication is turned off or the recovery codes are made again."
   },
   "settings.security.two_factor.enabled": {
-    "defaultMessage": "二要素認証を有効にしました。",
+    "defaultMessage": "二要素認証をオンにしました。",
     "description": "At the top of the page that shows the recovery codes right after two-factor authentication was turned on."
   },
   "settings.security.two_factor.recovery": {
@@ -372,11 +372,11 @@
     "description": "The line under the heading Recovery codes on the page that shows them once. It must say plainly that the codes will not be shown again."
   },
   "settings.security.two_factor.recovery.done": {
-    "defaultMessage": "保存しました",
+    "defaultMessage": "完了する",
     "description": "The button at the end of the page that shows the recovery codes once. It goes back to the Security page."
   },
   "settings.security.two_factor.recovery.regenerated": {
-    "defaultMessage": "新しいリカバリーコードを作成しました。以前のコードは使えません。",
+    "defaultMessage": "新しいリカバリーコードを作りました。以前のコードは使えません。",
     "description": "At the top of the page that shows the recovery codes right after the reader made new ones."
   },
   "settings.security.two_factor.recovery.left": {
@@ -396,31 +396,31 @@
     "description": "The sentence of the dialog Enter a code (settings.security.two_factor.code.title) before new recovery codes are made."
   },
   "settings.security.two_factor.on.heading": {
-    "defaultMessage": "二要素認証は有効です",
+    "defaultMessage": "二要素認証はオンです",
     "description": "The heading of the first section of the page of two-factor authentication while it is on; also the name of the list of its one row, Recovery codes, for assistive technology."
   },
   "settings.security.two_factor.on.about": {
-    "defaultMessage": "ログインするとき、パスワードまたはパスキーのあとに、認証アプリのコードを入力します。",
-    "description": "A sentence under the heading Two-factor authentication is on: what it does."
+    "defaultMessage": "どの方法でログインしても、そのあとに認証アプリのコードを入力します。",
+    "description": "A sentence under the heading Two-factor authentication is on: what it does. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
   },
   "settings.security.two_factor.on.about.since": {
-    "defaultMessage": "ログインするとき、パスワードまたはパスキーのあとに、認証アプリのコードを入力します。{date} から有効です。",
+    "defaultMessage": "どの方法でログインしても、そのあとに認証アプリのコードを入力します。{date} からオンです。",
     "description": "As settings.security.two_factor.on.about, with the day it was turned on. date is written out in the reader's language (Mar 3, 2026)."
   },
   "settings.security.two_factor.turn_off.title": {
-    "defaultMessage": "二要素認証を無効にする",
+    "defaultMessage": "二要素認証をオフにする",
     "description": "The heading of the last section of the page of two-factor authentication, which stands apart and holds the button Turn off."
   },
   "settings.security.two_factor.turn_off.about": {
-    "defaultMessage": "無効にすると、パスワードまたはパスキーだけでログインできるようになります。",
-    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means."
+    "defaultMessage": "オフにすると、認証アプリのコードなしでログインできるようになります。",
+    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
   },
   "settings.security.two_factor.turn_off.confirm": {
-    "defaultMessage": "二要素認証を無効にするには、認証アプリのコードか、まだ使っていないリカバリーコードを入力してください。",
+    "defaultMessage": "二要素認証をオフにするには、認証アプリのコードか、まだ使っていないリカバリーコードを入力してください。",
     "description": "The sentence of the dialog Enter a code (settings.security.two_factor.code.title) before two-factor authentication is turned off."
   },
   "settings.security.two_factor.turn_off": {
-    "defaultMessage": "無効にする",
+    "defaultMessage": "オフにする",
     "description": "The button of the section settings.security.two_factor.turn_off.title, which asks for a two-factor code first; and the button of that dialog."
   },
   "settings.security.providers_only": {
@@ -517,7 +517,7 @@
   },
   "settings.security.passkeys.about": {
     "defaultMessage": "パスワードの代わりに、端末の画面ロックでログインします。",
-    "description": "The line under the heading Passkeys: what a passkey is for. The screen lock is the device's fingerprint, face or PIN check."
+    "description": "The line under the heading Passkeys: what a passkey is for. The screen lock is the device's fingerprint, face or PIN check. An account without a password reads it too, so it says a password, not your password."
   },
   "settings.security.passkeys.unused": {
     "defaultMessage": "いまはこのサーバーのログインにパスキーを使えず、追加もできません。登録済みのパスキーは削除できます。",
@@ -528,8 +528,8 @@
     "description": "The button at the end of the heading Passkeys (or under settings.security.passkeys.none) that leads to the page where the reader names a new passkey; the title of that page; and the button at its end that adds the passkey."
   },
   "settings.security.passkeys.none": {
-    "defaultMessage": "パスキーはまだありません。追加すると、パスワードなしでログインできます。",
-    "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey."
+    "defaultMessage": "パスキーはまだありません。追加したパスキーがここに表示されます。",
+    "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey. The line above it (settings.security.passkeys.about) says what a passkey is for, so this one does not."
   },
   "settings.security.passkeys.added": {
     "defaultMessage": "{date} に追加",
@@ -544,15 +544,15 @@
     "description": "The question of the confirmation before a passkey is removed. name is the name the reader gave the passkey."
   },
   "settings.security.passkeys.remove.text": {
-    "defaultMessage": "このパスキーではログインできなくなります。端末に残ったパスキーは、端末の設定で削除してください。",
-    "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
+    "defaultMessage": "このパスキーではログインできなくなります。取り消せません。パスキーは、端末の設定で削除するまで端末に残ります。",
+    "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does, and that it cannot be undone. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
   },
   "settings.security.passkeys.new": {
     "defaultMessage": "新しいパスキー",
     "description": "The heading of the section with the field Name on the page Add a passkey."
   },
   "settings.security.passkeys.add.about": {
-    "defaultMessage": "パスキーを使うと、パスワードの代わりに、この端末の画面ロック (指紋、顔、PIN) でログインできます。二要素認証が有効なときは、コードの入力も必要です。",
+    "defaultMessage": "パスキーを使うと、パスワードの代わりに、この端末の画面ロック (指紋、顔、PIN) でログインできます。二要素認証がオンのときは、コードの入力も必要です。",
     "description": "The line under the heading New passkey on the page Add a passkey: what a passkey does."
   },
   "settings.security.passkeys.name": {
@@ -600,7 +600,7 @@
     "description": "The button at the end of the row of another service the reader has linked no account at. It asks the reader to confirm it's them, then goes to that service to sign in."
   },
   "settings.security.linked.unlink": {
-    "defaultMessage": "解除",
+    "defaultMessage": "連携を解除",
     "description": "The button at the end of the row of a linked account, which asks before unlinking it; and the button of that confirmation (settings.security.linked.unlink.title)."
   },
   "settings.security.linked.unlink.title": {
@@ -624,7 +624,7 @@
     "description": "Stands in for the name of another service (an external login provider) in settings.security.linked.done and settings.security.confirm.returned when the page does not know which service the browser came back from. Lower case in en: it is used inside a sentence."
   },
   "settings.security.external.error": {
-    "defaultMessage": "{reason, select, denied {そのアカウントは、このサーバーでは使えません。別のアカウントで試すか、管理者に問い合わせてください。} linked_elsewhere {そのアカウントは、このサーバーの別のアカウントと連携しています。先にそちらで連携を解除するか、別のアカウントを使ってください。} already_linked {そのサービスのアカウントはすでに連携しています。別のアカウントを連携するには、先に解除してください。} mismatch {連携していないアカウントでログインしました。連携したアカウントでもう一度試してください。} unavailable {そのサービスはいま使えません。あとでもう一度試すか、別の方法を使ってください。} rate_limited {試行回数が多すぎます。しばらく待ってから、もう一度試してください。} expired {時間がかかりすぎました。もう一度試してください。} other {ほかのサービスでの手続きが完了しませんでした。もう一度試してください。}}",
+    "defaultMessage": "{reason, select, denied {このサーバーでは、ほかのサービスのそのアカウントは使えません。別のアカウントで試すか、管理者に問い合わせてください。} linked_elsewhere {ほかのサービスのそのアカウントは、このサーバーの別のアカウントと連携しています。先にそちらで連携を解除するか、ほかのサービスの別のアカウントを連携してください。} already_linked {そのサービスのアカウントはすでに連携しています。別のアカウントを連携するには、先に連携を解除してください。} mismatch {ほかのサービスでログインしたアカウントは、このアカウントと連携していません。連携したアカウントでもう一度試してください。} unavailable {そのサービスはいま使えません。あとでもう一度試すか、別の方法を使ってください。} rate_limited {試行回数が多すぎます。しばらく待ってから、もう一度試してください。} expired {時間がかかりすぎました。もう一度試してください。} other {ほかのサービスでのログインが完了しませんでした。もう一度試してください。}}",
     "description": "An alert on a page of the settings when the browser comes back from another service (an external login provider) without the link or the confirmation the reader went there for. reason says why: denied (the server's conditions refuse that account), linked_elsewhere (another user of this server links it), already_linked, mismatch (the reader signed in at the service with an account other than the linked one), unavailable (the service is turned off), rate_limited, expired, other (anything else)."
   },
   "settings.security.browsers": {
@@ -640,12 +640,12 @@
     "description": "The name of a browser in the list of signed-in browsers when the server kept no record of which browser signed in."
   },
   "settings.security.browsers.signed_in": {
-    "defaultMessage": "{date} にログイン",
-    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from."
+    "defaultMessage": "ログイン日: {date}",
+    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from. In ja the three facts of a browser are labels (ログイン日:, ログイン元:, 最終利用:)."
   },
   "settings.security.browsers.signed_in.from": {
     "defaultMessage": "ログイン元: {ip}",
-    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now: in en it continues the line above (Signed in Mar 3 / from 203.0.113.24), so it starts in lower case. ip is an IP address."
+    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now, and it must say so on its own: each fact is a line of its own. ip is an IP address."
   },
   "settings.security.browsers.signed_in.from.unknown": {
     "defaultMessage": "ログイン元: 不明",
@@ -728,8 +728,8 @@
     "description": "The button of the dialog Confirm it's you when the reader confirms by signing in again at another service they linked. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
   "settings.security.confirm.provider.about": {
-    "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻って、操作を完了します。",
-    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings. provider is the name of the service; it is not translated."
+    "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻り、始めた操作をもう一度行います。",
+    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.security.confirm.returned). provider is the name of the service; it is not translated."
   },
   "settings.security.confirm.other.password": {
     "defaultMessage": "代わりにパスワードを使う",

@@ -288,7 +288,7 @@
     "description": "Under settings.security.two_factor.off in the status summary: what it means that two-factor authentication is off, and what turning it on does. The authenticator app is an app on the reader's phone that shows six-digit codes."
   },
   "settings.security.two_factor.off.about.passwordless": {
-    "defaultMessage": "With it on, signing in also asks for a code from your authenticator app, so someone who gets into a passkey or a linked account of yours still cannot sign in.",
+    "defaultMessage": "With it on, signing in also asks for a code from your authenticator app, so someone who can use a passkey or a linked account of yours still cannot sign in.",
     "description": "Under settings.security.two_factor.off in the status summary, in place of settings.security.two_factor.off.about, for an account that no password signs in (it has none, or the server limits sign-in to other services): what turning two-factor authentication on does for it. It must not speak of a password."
   },
   "settings.security.two_factor.turn_on": {
@@ -324,7 +324,7 @@
     "description": "The name of the secret text shown under the QR code, which the reader may type into their authenticator app in place of scanning the code; for assistive technology."
   },
   "settings.security.two_factor.setup.expired": {
-    "defaultMessage": "That setup expired. Scan the new QR code, then enter the code of the new entry.",
+    "defaultMessage": "The setup of the authenticator app expired. Scan the new QR code, then enter the code of the new entry.",
     "description": "An alert beside the button Turn on when the reader took longer than the server keeps a setup (15 minutes): the page now shows a new QR code, and the entry the reader added to their app from the old one no longer works."
   },
   "settings.security.two_factor.copy": {
@@ -372,7 +372,7 @@
     "description": "The line under the heading Recovery codes on the page that shows them once. It must say plainly that the codes will not be shown again."
   },
   "settings.security.two_factor.recovery.done": {
-    "defaultMessage": "I saved them",
+    "defaultMessage": "Finish",
     "description": "The button at the end of the page that shows the recovery codes once. It goes back to the Security page."
   },
   "settings.security.two_factor.recovery.regenerated": {
@@ -400,11 +400,11 @@
     "description": "The heading of the first section of the page of two-factor authentication while it is on; also the name of the list of its one row, Recovery codes, for assistive technology."
   },
   "settings.security.two_factor.on.about": {
-    "defaultMessage": "After your password or a passkey, signing in asks for a code from your authenticator app.",
-    "description": "A sentence under the heading Two-factor authentication is on: what it does."
+    "defaultMessage": "Whichever way you sign in, you then enter a code from your authenticator app.",
+    "description": "A sentence under the heading Two-factor authentication is on: what it does. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
   },
   "settings.security.two_factor.on.about.since": {
-    "defaultMessage": "After your password or a passkey, signing in asks for a code from your authenticator app. On since {date}.",
+    "defaultMessage": "Whichever way you sign in, you then enter a code from your authenticator app. On since {date}.",
     "description": "As settings.security.two_factor.on.about, with the day it was turned on. date is written out in the reader's language (Mar 3, 2026)."
   },
   "settings.security.two_factor.turn_off.title": {
@@ -412,8 +412,8 @@
     "description": "The heading of the last section of the page of two-factor authentication, which stands apart and holds the button Turn off."
   },
   "settings.security.two_factor.turn_off.about": {
-    "defaultMessage": "Your password or a passkey alone then signs you in.",
-    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means."
+    "defaultMessage": "With it off, you sign in without a code from your authenticator app.",
+    "description": "The line under the heading settings.security.two_factor.turn_off.title: what turning it off means. It holds for every way to sign in (a password, a passkey, a linked account), so it names none."
   },
   "settings.security.two_factor.turn_off.confirm": {
     "defaultMessage": "To turn two-factor authentication off, enter a code from your authenticator app, or a recovery code you have not used.",
@@ -488,7 +488,7 @@
     "description": "The line under Remove password in its row, for an account that has a passkey or a linked account: what removing the password does, said before."
   },
   "settings.security.password.remove.unused": {
-    "defaultMessage": "Your password does not sign in on this server now. Removing it signs you out of your other browsers and apps.",
+    "defaultMessage": "Your password does not sign you in on this server now. Removing it signs you out of your other browsers and apps.",
     "description": "The line under Remove password in its row, in place of settings.security.password.remove.about, on a server that limits sign-in to other services (external login providers): the password signs nobody in now, and what removing it does."
   },
   "settings.security.password.remove.last": {
@@ -516,11 +516,11 @@
     "description": "A section heading on the Security page of the settings, over the list of the account's passkeys; also the name of that list for assistive technology."
   },
   "settings.security.passkeys.about": {
-    "defaultMessage": "Sign in with your device's screen lock in place of your password.",
-    "description": "The line under the heading Passkeys: what a passkey is for. The screen lock is the device's fingerprint, face or PIN check."
+    "defaultMessage": "Sign in with your device's screen lock in place of a password.",
+    "description": "The line under the heading Passkeys: what a passkey is for. The screen lock is the device's fingerprint, face or PIN check. An account without a password reads it too, so it says a password, not your password."
   },
   "settings.security.passkeys.unused": {
-    "defaultMessage": "Passkeys do not sign in on this server now, and none can be added. You can still remove yours.",
+    "defaultMessage": "Passkeys do not sign you in on this server now, and you cannot add one. You can still remove yours.",
     "description": "The line under the heading Passkeys, in place of settings.security.passkeys.about, on a server that limits sign-in to external login providers, for an account that still holds passkeys."
   },
   "settings.security.passkeys.add": {
@@ -528,8 +528,8 @@
     "description": "The button at the end of the heading Passkeys (or under settings.security.passkeys.none) that leads to the page where the reader names a new passkey; the title of that page; and the button at its end that adds the passkey."
   },
   "settings.security.passkeys.none": {
-    "defaultMessage": "No passkeys yet. Add one to sign in without your password.",
-    "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey."
+    "defaultMessage": "No passkeys yet. Passkeys you add appear here.",
+    "description": "In the place of the list of passkeys while the account has none, over the button Add a passkey. The line above it (settings.security.passkeys.about) says what a passkey is for, so this one does not."
   },
   "settings.security.passkeys.added": {
     "defaultMessage": "Added {date}",
@@ -544,15 +544,15 @@
     "description": "The question of the confirmation before a passkey is removed. name is the name the reader gave the passkey."
   },
   "settings.security.passkeys.remove.text": {
-    "defaultMessage": "You can no longer sign in with it. It stays on your device until you delete it there.",
-    "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
+    "defaultMessage": "You can no longer sign in with it, and this cannot be undone. The passkey stays on your device until you delete it there.",
+    "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does, and that it cannot be undone. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
   },
   "settings.security.passkeys.new": {
     "defaultMessage": "New passkey",
     "description": "The heading of the section with the field Name on the page Add a passkey."
   },
   "settings.security.passkeys.add.about": {
-    "defaultMessage": "A passkey signs you in with this device's screen lock (a fingerprint, your face or a PIN) in place of your password. If two-factor authentication is on, you still enter a code.",
+    "defaultMessage": "A passkey signs you in with this device's screen lock (a fingerprint, your face or a PIN) in place of a password. If two-factor authentication is on, you still enter a code.",
     "description": "The line under the heading New passkey on the page Add a passkey: what a passkey does."
   },
   "settings.security.passkeys.name": {
@@ -560,7 +560,7 @@
     "description": "The label of the field for the name of a new passkey."
   },
   "settings.security.passkeys.name.hint": {
-    "defaultMessage": "To tell it from your other passkeys: the device it is on, for example",
+    "defaultMessage": "A name to tell it from your other passkeys, such as the device it is on",
     "description": "The hint under the label Name on the page Add a passkey."
   },
   "settings.security.passkeys.name.invalid": {
@@ -616,7 +616,7 @@
     "description": "The sentence of the dialog Confirm it's you (settings.security.confirm.title) that opens when the reader presses Link: why it asks, and what happens after."
   },
   "settings.security.linked.done": {
-    "defaultMessage": "Your {provider} account is linked. You can sign in with it now.",
+    "defaultMessage": "Your account at {provider} is linked. You can sign in with it now.",
     "description": "At the top of the section Linked accounts, when the browser comes back from another service after linking an account there. provider is the name of the service as the administrators wrote it, or settings.security.external.service when the page does not know it."
   },
   "settings.security.external.service": {
@@ -624,7 +624,7 @@
     "description": "Stands in for the name of another service (an external login provider) in settings.security.linked.done and settings.security.confirm.returned when the page does not know which service the browser came back from. Lower case in en: it is used inside a sentence."
   },
   "settings.security.external.error": {
-    "defaultMessage": "{reason, select, denied {That account is not allowed on this server. Try another account, or ask the administrators.} linked_elsewhere {That account is linked to another account on this server. Unlink it there first, or use another account.} already_linked {You have already linked an account of that service. Unlink it first to link another.} mismatch {You signed in with an account that is not linked to yours. Try again with the linked account.} unavailable {That service cannot be used now. Try again later, or use another way.} rate_limited {Too many attempts. Wait a while, then try again.} expired {That took too long. Try again.} other {The other service did not finish. Try again.}}",
+    "defaultMessage": "{reason, select, denied {This server does not accept that account of the other service. Try another account there, or ask the administrators.} linked_elsewhere {That account of the other service is linked to another account on this server. Unlink it there first, or link a different one.} already_linked {You have already linked an account of that service. Unlink it first to link another.} mismatch {The account you signed in with at the other service is not linked to yours. Try again with the linked account.} unavailable {That service cannot be used now. Try again later, or use another way.} rate_limited {Too many attempts. Wait a while, then try again.} expired {That took too long. Try again.} other {The sign-in with the other service did not complete. Try again.}}",
     "description": "An alert on a page of the settings when the browser comes back from another service (an external login provider) without the link or the confirmation the reader went there for. reason says why: denied (the server's conditions refuse that account), linked_elsewhere (another user of this server links it), already_linked, mismatch (the reader signed in at the service with an account other than the linked one), unavailable (the service is turned off), rate_limited, expired, other (anything else)."
   },
   "settings.security.browsers": {
@@ -641,14 +641,14 @@
   },
   "settings.security.browsers.signed_in": {
     "defaultMessage": "Signed in {date}",
-    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from."
+    "description": "A line under a browser's name in the list of signed-in browsers: the day it signed in. date is written out in the reader's language (Mar 3). The next line, settings.security.browsers.signed_in.from, says where from. In ja the three facts of a browser are labels (ログイン日:, ログイン元:, 最終利用:)."
   },
   "settings.security.browsers.signed_in.from": {
-    "defaultMessage": "from {ip}",
-    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now: in en it continues the line above (Signed in Mar 3 / from 203.0.113.24), so it starts in lower case. ip is an IP address."
+    "defaultMessage": "Signed in from {ip}",
+    "description": "The line right under settings.security.browsers.signed_in in the list of signed-in browsers: the IP address the browser signed in from. It must read as where the browser was when it signed in, not where it is now, and it must say so on its own: each fact is a line of its own. ip is an IP address."
   },
   "settings.security.browsers.signed_in.from.unknown": {
-    "defaultMessage": "from an unknown address",
+    "defaultMessage": "Signed in from an unknown address",
     "description": "As settings.security.browsers.signed_in.from, when the server kept no record of the address the browser signed in from."
   },
   "settings.security.browsers.last_used": {
@@ -688,7 +688,7 @@
     "description": "Under settings.security.browsers.sign_out_others.title in the confirmation: what it does and what it leaves."
   },
   "settings.security.browsers.advice": {
-    "defaultMessage": "Don't recognize a sign-in? Sign that browser out, change your password, and check which apps can use your account.",
+    "defaultMessage": "If you do not recognize a sign-in, sign that browser out, change your password, and check which apps can use your account.",
     "description": "A sentence under the list of signed-in browsers: what to do about a browser the reader does not recognize. Two links follow it: settings.security.browsers.advice.password and settings.security.browsers.advice.apps."
   },
   "settings.security.browsers.advice.password": {
@@ -728,8 +728,8 @@
     "description": "The button of the dialog Confirm it's you when the reader confirms by signing in again at another service they linked. provider is the name of the service as the administrators wrote it (GitHub); it is not translated."
   },
   "settings.security.confirm.provider.about": {
-    "defaultMessage": "To confirm it's you, sign in to {provider} again. You come back here afterwards and finish what you started.",
-    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings. provider is the name of the service; it is not translated."
+    "defaultMessage": "To confirm it's you, sign in to {provider} again. You then come back here and repeat what you started.",
+    "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.security.confirm.returned). provider is the name of the service; it is not translated."
   },
   "settings.security.confirm.other.password": {
     "defaultMessage": "Use your password instead",
@@ -752,11 +752,11 @@
     "description": "An alert in the dialog Confirm it's you for an account that can confirm with nothing in this browser (it has no password and no linked account, and the browser cannot use its passkeys)."
   },
   "settings.security.confirm.returned": {
-    "defaultMessage": "You confirmed it's you with {provider}. Now do again what you started: this time it does not ask.",
+    "defaultMessage": "You confirmed it's you with {provider}. Repeat what you started: this time you are not asked to confirm.",
     "description": "On a page of the settings when the browser comes back from another service where the reader confirmed it's them: what they had entered before leaving is gone, so the page asks them to do it again. provider is the name of the service, or settings.security.external.service when the page does not know it."
   },
   "settings.security.failed": {
-    "defaultMessage": "That did not work: the server could not be reached. Check your connection, then try again.",
+    "defaultMessage": "This did not finish: the server could not be reached. Check your connection, then try again.",
     "description": "An alert on the Security pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
   }
 }
