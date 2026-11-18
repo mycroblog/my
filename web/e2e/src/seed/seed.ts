@@ -16,6 +16,7 @@ import type { Drawing } from "../drawing";
 import {
   admin,
   announcements,
+  approvalDomain,
   apps,
   conversationReads,
   drafts,
@@ -236,6 +237,36 @@ class Seeder {
       `${loginProvider.clientSecret}\n`,
     );
     this.log(`registered the login provider ${loginProvider.name}`);
+  }
+
+  /**
+   * The administrator's sign-up block that makes the sign-ups of `approvalDomain` wait for a moderator, unless one is
+   * in effect.
+   */
+  async holdSignups() {
+    const api = await this.api(admin);
+    for await (const block of all(async (cursor) =>
+      body(
+        (
+          await api.GET("/admin/signup_blocks", {
+            params: { query: { kind: "email_domain", active: true, ...(cursor === undefined ? {} : { cursor }) } },
+          })
+        ).data,
+        "the sign-up blocks",
+      ),
+    ))
+      if (block.value === approvalDomain && block.severity === "require_approval") return;
+    const { error } = await api.POST("/admin/signup_blocks", {
+      headers: key(`signup-block-${approvalDomain}`),
+      body: {
+        kind: "email_domain",
+        value: approvalDomain,
+        severity: "require_approval",
+        comment: "The scenario's sign-ups that wait for a moderator.",
+      },
+    });
+    if (error !== undefined) throw new Error(`seed: the sign-up block of ${approvalDomain} was refused`);
+    this.log(`held the sign-ups of ${approvalDomain} for approval`);
   }
 
   /** The custom emoji, each from a PNG file drawn into a temporary directory. */
@@ -727,6 +758,7 @@ export async function seed(o: SeedOptions): Promise<SeedState> {
   s.createPeople();
   s.configureInstance();
   s.registerLoginProvider();
+  await s.holdSignups();
   await s.addEmojis();
   await s.setUpProfiles();
   await s.follow();

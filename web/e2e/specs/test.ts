@@ -29,12 +29,15 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
-//   - `fresh.newcomer()` a username, an email address and a password nobody has signed up with, for a person who signs
-//     up on the registration screen; `fresh.approve(newcomer)` the moderator's approval of their registration, and
-//     `fresh.emailConfirmed(newcomer)` whether the server holds their email address as confirmed.
+//   - `fresh.newcomer({ approval? })` a username, an email address and a password nobody has signed up with, for a
+//     person who signs up on the registration screen: the server is open to everyone, and with `approval` the address
+//     is of the domain whose sign-ups wait for a moderator (the scenario's `approvalDomain`);
+//     `fresh.approve(newcomer)` the moderator's approval of their registration, and `fresh.emailConfirmed(newcomer)`
+//     whether the server holds their email address as confirmed.
 //   - `fresh.invite()` an invite of the administrator for one person: `{ code, url }`, the registration screen's
 //     address with the code.
-//   - `fresh.passwordResetLink(p)` a link that sets a new password for `p`, issued by the administrator.
+//   - `fresh.providerIdentity()` a subject, an email address, a name and a username nobody has signed in with, for a
+//     person who signs in through the login provider (screens/login-provider.ts).
 //
 // And what a spec needs of the scenario: `person(username)` the person to sign in as, `secrets()` what the seed made
 // that the server decided (a TOTP secret and the step its enrollment used, a passkey's key, an app's client ID),

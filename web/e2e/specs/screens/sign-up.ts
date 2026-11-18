@@ -33,13 +33,11 @@ export class SignUp {
     return this.page.getByRole("textbox", { name: "Invite code", exact: true });
   }
 
-  /** Fills in the form as `who`, with why they want to join where the server asks, and sends it. */
-  async as(who: Newcomer, o: { reason?: string } = {}): Promise<void> {
+  /** Fills in the form as `who` and sends it. */
+  async as(who: Newcomer): Promise<void> {
     await this.page.getByRole("textbox", { name: "Username", exact: true }).fill(who.username);
     await this.page.getByRole("textbox", { name: "Email address", exact: true }).fill(who.email);
     await this.page.getByLabel("Password", { exact: true }).fill(who.password);
-    if (o.reason !== undefined)
-      await this.page.getByRole("textbox", { name: "Why do you want to join? (optional)", exact: true }).fill(o.reason);
     await this.page.getByRole("main").getByRole("button", { name: "Create an account", exact: true }).click();
   }
 
@@ -48,6 +46,13 @@ export class SignUp {
     return this.page
       .getByRole("main")
       .getByRole("heading", { level: 1, name: "Your account is not ready yet", exact: true });
+  }
+
+  /** The words of that screen for a person who has not confirmed their email address `email`. */
+  asksToConfirm(email: string): Locator {
+    return this.page
+      .getByRole("main")
+      .getByText(`Confirm your email address: open the link we sent to ${email}.`, { exact: true });
   }
 
   /** The words of that screen for a registration that waits for a moderator. */

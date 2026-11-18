@@ -10,7 +10,16 @@ import { randomBytes, randomUUID } from "node:crypto";
 import { all, type Api, type components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
 import { silentMP3, tinyWebM } from "./av";
-import { admin, people, personOf, type Image, type Person, type Poll, type Visibility } from "./scenario";
+import {
+  admin,
+  approvalDomain,
+  people,
+  personOf,
+  type Image,
+  type Person,
+  type Poll,
+  type Visibility,
+} from "./scenario";
 import { enrollTOTP, uploadDrawing, uploadFile } from "./seed/seed";
 import { signIn } from "./seed/sign-in";
 
@@ -79,6 +88,12 @@ export type FreshDraft = { id: string; text: string };
 
 /** Someone the server does not know yet: what they sign up with on the registration screen. */
 export type Newcomer = { username: string; email: string; password: string };
+
+/**
+ * Someone the login provider knows and the server does not yet: the subject the provider names them by, and the email
+ * address, name and username it tells of them.
+ */
+export type ProviderIdentity = { subject: string; email: string; name: string; username: string };
 
 /** An invite of the staff: its code, and the address of the registration screen with the code filled in. */
 export type FreshInvite = { code: string; url: string };
@@ -323,10 +338,25 @@ export class Fresh {
       throw new Error(`fresh: ${from.username} could not move to ${to.username}: ${JSON.stringify(moved.error)}`);
   }
 
-  /** A name, an address and a password that nobody has signed up with. */
-  newcomer(): Newcomer {
+  /**
+   * A name, an address and a password that nobody has signed up with; with `approval`, an address of the domain whose
+   * sign-ups wait for a moderator (the scenario's `approvalDomain`).
+   */
+  newcomer(o: { approval?: boolean } = {}): Newcomer {
     const id = unique();
-    return { username: `fresh_${id}`, email: `fresh_${id}@fresh.test`, password: `fresh-password-${id}` };
+    const domain = o.approval === true ? approvalDomain : "fresh.test";
+    return { username: `fresh_${id}`, email: `fresh_${id}@${domain}`, password: `fresh-password-${id}` };
+  }
+
+  /** A person of the login provider whom nobody has signed in as, to name on the fake provider's page. */
+  providerIdentity(): ProviderIdentity {
+    const id = unique();
+    return {
+      subject: `fresh-subject-${id}`,
+      email: `fresh_${id}@fresh.test`,
+      name: `Fresh ${id.slice(0, 8)}`,
+      username: `fresh_${id}`,
+    };
   }
 
   /** The scenario's administrator, and its moderator. */
@@ -376,18 +406,6 @@ export class Fresh {
   /** Whether the server holds the email address of `who` as confirmed. */
   async emailConfirmed(who: Newcomer): Promise<boolean> {
     return (await this.#adminAccount(who.username)).email_verified === true;
-  }
-
-  /**
-   * A link that sets a new password for `p`, as the administrator issues one for a person to whom the server sends no
-   * email; it works once.
-   */
-  async passwordResetLink(p: Person): Promise<string> {
-    const { id } = await this.#adminAccount(p.username);
-    const { data } = await (
-      await this.#staff("admin")
-    ).POST("/admin/accounts/{id}/password_reset_link", { params: { path: { id } } });
-    return body(data, `the password reset link of ${p.username}`).url;
   }
 
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */

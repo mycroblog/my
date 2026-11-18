@@ -1,9 +1,39 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The screens of the server that a password reset link leads to: the one that takes the new password, and the one
-// that says the password is changed and leads to the sign-in screen.
+// The screens of the server for a person who lost their password: the one that mails them a reset link, which the
+// sign-in screen leads to, and the ones the link leads to: the one that takes the new password, and the one that says
+// the password is changed and leads to the sign-in screen.
 
 import type { Locator, Page } from "@playwright/test";
+
+export class ForgotPassword {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  /** Opens the screen from the sign-in screen, which the client sends a signed-out person to. */
+  async open(): Promise<void> {
+    await this.page.goto("/login");
+    await this.page.getByRole("main").getByRole("link", { name: "Forgot your password?", exact: true }).click();
+  }
+
+  get heading(): Locator {
+    return this.page.getByRole("main").getByRole("heading", { level: 1, name: "Forgot your password", exact: true });
+  }
+
+  /** Asks for a link to set a new password for the account of `email`. */
+  async ask(email: string): Promise<void> {
+    await this.page.getByRole("textbox", { name: "Email address", exact: true }).fill(email);
+    await this.page.getByRole("main").getByRole("button", { name: "Send the link", exact: true }).click();
+  }
+
+  /** What the screen says once it took the address. */
+  get outcome(): Locator {
+    return this.page.getByRole("main").getByRole("status");
+  }
+}
 
 export class PasswordReset {
   readonly page: Page;
