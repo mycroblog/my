@@ -3,7 +3,7 @@
 //: the accounts the viewer says are also theirs; moving this account to one; and canceling the move. The
 // confirmation of a move is the viewer's password, a passkey or the confirmation of an external login. A write puts what
 // the server answered into the cache and reads the viewer's account again, which says whether it moved.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import { viewerQuery } from "./accounts";
 import type { AppData } from "./app-data";
@@ -22,6 +22,23 @@ export type Reauthentication = {
   readonly external_confirmation?: string;
 };
 
+/** The most aliases an account has. */
+export const aliasLimit = 5;
+
+/**
+ * Why the server refuses an alias: its address leads to no account that can be one (`invalid`: none there, not an
+ * account, the viewer's own), or the viewer has the most aliases (`full`).
+ */
+export type AliasRefusal = "invalid" | "full";
+
+/** The kind of the server's refusal of an alias that `error` is; undefined for any other failure. */
+export function aliasRefusalOf(error: unknown): AliasRefusal | undefined {
+  if (!(error instanceof ProblemError)) return undefined;
+  if (error.type === "/api/v1/problems/invalid-alias") return "invalid";
+  if (error.type === "/api/v1/problems/too-many-aliases") return "full";
+  return undefined;
+}
+
 /** The viewer's aliases, oldest first. */
 export function accountAliasesQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/accounts/aliases");
@@ -30,6 +47,22 @@ export function accountAliasesQuery({ queries }: AppData) {
 /** The viewer's aliases; empty until the server answered. */
 export function useAccountAliases(): readonly AccountAlias[] {
   return useQuery(accountAliasesQuery(useAppData())).data?.items ?? [];
+}
+
+/** The viewer's aliases, empty until the server answered, and `retry`, which reads them again after a failure. */
+export function useAccountAliasList(): {
+  aliases: readonly AccountAlias[];
+  status: "pending" | "error" | "success";
+  retry: () => void;
+} {
+  const query = useQuery(accountAliasesQuery(useAppData()));
+  return {
+    aliases: query.data?.items ?? [],
+    status: query.status,
+    retry: () => {
+      void query.refetch();
+    },
+  };
 }
 
 /**

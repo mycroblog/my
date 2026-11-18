@@ -266,8 +266,12 @@ export type FakeOptions = {
   around?: "all" | "none";
   /** The voice chat rooms are off: the instance says so and `/voice/...` answers 404. */
   voiceOff?: boolean;
-  /** The reader's latest export of their data: none by default, one being built, or one ready to download. */
-  dataExport?: "none" | "building" | "ready";
+  /**
+   * The reader's exports of their data: none by default; one being built (`building`), one ready to download
+   * (`ready`), one being built over an earlier one that is ready (`rebuilding`), one that could not be built
+   * (`failed`), or one whose archive is past the day the server keeps it until and not yet removed (`expired`).
+   */
+  dataExport?: "none" | "building" | "ready" | "rebuilding" | "failed" | "expired";
   /**
    * How posts are translated: not at all by default. `provider` enables one provider of the server, for the posts of
    * every visibility but followers-only and direct: one that answers (`answers`, each text behind the language it
@@ -2116,19 +2120,36 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   // The reader's exports of their data, newest first; a request adds one being built, which stays so.
   const dataExports: Schema<"DataExport">[] = [];
-  if (o.dataExport === "building")
+  if (o.dataExport === "building" || o.dataExport === "rebuilding")
     dataExports.push({
       id: idAt(started - 10 * minute, 50_100),
       state: "pending",
       requested_at: new Date(started - 10 * minute).toISOString(),
     });
-  if (o.dataExport === "ready")
+  if (o.dataExport === "failed")
+    dataExports.push({
+      id: idAt(started - 2 * 60 * minute, 50_101),
+      state: "failed",
+      requested_at: new Date(started - 2 * 60 * minute).toISOString(),
+      completed_at: new Date(started - 2 * 60 * minute + 5 * minute).toISOString(),
+      expires_at: new Date(started + 7 * day).toISOString(),
+    });
+  if (o.dataExport === "ready" || o.dataExport === "rebuilding")
     dataExports.push({
       id: idAt(started - day, 50_100),
       state: "ready",
       requested_at: new Date(started - day).toISOString(),
       completed_at: new Date(started - day + 20 * minute).toISOString(),
       expires_at: new Date(started + 6 * day).toISOString(),
+      file_size: 4_812_345,
+    });
+  if (o.dataExport === "expired")
+    dataExports.push({
+      id: idAt(started - 8 * day, 50_100),
+      state: "ready",
+      requested_at: new Date(started - 8 * day).toISOString(),
+      completed_at: new Date(started - 8 * day + 20 * minute).toISOString(),
+      expires_at: new Date(started - 60 * minute).toISOString(),
       file_size: 4_812_345,
     });
 

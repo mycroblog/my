@@ -22,19 +22,10 @@ import {
 } from "@my/design-system";
 import { useEffect, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
+import { saveFile as save } from "../save-file";
 
 /** What last failed of what the reader pressed: the request of the archive, its download, or the CSV's. */
 type Failed = "request" | "download" | "csv" | null;
-
-/** Saves `blob` as a file named `name`, as a download of the page. */
-function save(blob: Blob, name: string) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = name;
-  link.click();
-  URL.revokeObjectURL(url);
-}
 
 export type ClosedScreenProps = {
   server: FormPageServer;

@@ -56,6 +56,8 @@ export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-histor
 export { languageName } from "./locale";
 export {
   accountPath,
+  autoDeletePath,
+  dataExportPath,
   followRequestsPath,
   hashtagPath,
   heldOfPath,

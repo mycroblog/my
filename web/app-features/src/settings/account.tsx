@@ -12,8 +12,25 @@
 // none is, the section Account status holds one row that says so and leads to the same page, where the past actions
 // and the appeals stay listed. The menu's count of the entry is how many actions in effect the reader can still
 // appeal (`useAppealableActions`).
+//
+// Then the reader's data and posts, a section of doors, each a row that leads to its screen under the entry and says
+// in one line what is behind it, or, in the text's color, where it stands while it has something to say: Export
+// (account-export.tsx: an archive being prepared, or ready until a day), Import (account-import.tsx: an import in
+// progress) and Delete old posts automatically (account-auto-delete.tsx: off, the age posts are deleted past, or the
+// day the server's maximum starts to apply). And moving to this account: Aliases (account-aliases.tsx), with how
+// many there are. A door is there whether or not its read answered; its screen says what could not be read.
 
-import { ownModerationActionsQuery, useOwnModerationActions, type AppData } from "@my/app-data";
+import { autoDeletePath, dataExportPath } from "@my/app-components";
+import {
+  ownModerationActionsQuery,
+  useAccountAliasList,
+  useAutoDeleteRead,
+  useDataExports,
+  useDataImports,
+  useOwnModerationActions,
+  type AppData,
+  type DataExport,
+} from "@my/app-data";
 import {
   Button,
   dateFormat,
@@ -38,6 +55,22 @@ export const accountStatusPath = `${accountPath}/status`;
 
 /** The address of the screen of the moderators' action of `id`, under Account status. */
 export const moderationActionPath = (id: string): string => `${accountStatusPath}/${id}`;
+
+/** The address of Import, the screen under the entry that imports a CSV file. */
+const accountImportPath = `${accountPath}/import`;
+
+/** The address of Aliases, the screen under the entry that lists the accounts this one is also known as. */
+const accountAliasesPath = `${accountPath}/aliases`;
+
+/** Where an archive stands: being prepared, ready to download, past the day the server keeps it until, or failed. */
+type ArchiveState = "preparing" | "ready" | "expired" | "failed";
+
+/** Where the archive of `e` stands now. */
+export function archiveStateOf(e: DataExport): ArchiveState {
+  if (e.state === "pending") return "preparing";
+  if (e.state === "failed") return "failed";
+  return e.expires_at !== undefined && Date.parse(e.expires_at) <= Date.now() ? "expired" : "ready";
+}
 
 /** What the route's loader waits for: the actions in effect on the account, from the cache when it has them. */
 export async function loadAccountSettings(data: AppData): Promise<void> {
@@ -130,12 +163,129 @@ function AccountStatus() {
   );
 }
 
-/** The entry's screen: its parts, the account's status first. */
+/** The door to Export: what it holds, or the archive that is being prepared or ready to download. */
+function ExportDoor() {
+  const { t } = stringsIn(useLocale().locale);
+  const date = useActionDate(false);
+  const { exports } = useDataExports();
+  const [latest] = exports ?? [];
+  const ready = exports?.find((e) => archiveStateOf(e) === "ready");
+  const standing =
+    latest?.state === "pending"
+      ? t("settings.account.export.row.standing", { state: "preparing", date: "" })
+      : ready !== undefined
+        ? t("settings.account.export.row.standing", {
+            state: ready.expires_at === undefined ? "ready" : "ready_until",
+            date: ready.expires_at === undefined ? "" : date(ready.expires_at),
+          })
+        : undefined;
+  return (
+    <SettingsListRow
+      title={t("settings.account.export")}
+      caption={standing === undefined ? t("settings.account.export.row.about") : undefined}
+      standing={standing}
+      href={dataExportPath}
+    />
+  );
+}
+
+/** The door to Import: what it holds, or how far the import in progress is. */
+function ImportDoor() {
+  const { t } = stringsIn(useLocale().locale);
+  const { imports } = useDataImports();
+  const running = imports?.find((i) => i.state === "in_progress");
+  return (
+    <SettingsListRow
+      title={t("settings.account.import")}
+      caption={running === undefined ? t("settings.account.import.row.about") : undefined}
+      standing={
+        running === undefined
+          ? undefined
+          : t("settings.account.import.row.standing", { processed: running.processed, total: running.total })
+      }
+      href={accountImportPath}
+    />
+  );
+}
+
+/**
+ * The door to Delete old posts automatically: whether it is on and the age posts are deleted past, or, for a reader
+ * the server's maximum binds, that the maximum applies and from which day.
+ */
+function AutoDeleteDoor() {
+  const { t } = stringsIn(useLocale().locale);
+  const date = useActionDate(false);
+  const { settings } = useAutoDeleteRead();
+  const limit = settings?.server_limit;
+  const standing =
+    settings === undefined
+      ? undefined
+      : limit?.bound === true
+        ? t("settings.account.auto_delete.bound", {
+            state:
+              limit.enforce_from === undefined ? "soon" : Date.parse(limit.enforce_from) <= Date.now() ? "now" : "from",
+            date: limit.enforce_from === undefined ? "" : date(limit.enforce_from),
+          })
+        : t("settings.account.auto_delete.row.standing", {
+            enabled: (limit?.effective ?? settings).enabled ? "on" : "off",
+            days: (limit?.effective ?? settings).min_age_days,
+          });
+  return (
+    <SettingsListRow
+      title={t("settings.account.auto_delete")}
+      caption={standing === undefined ? t("settings.account.auto_delete.row.about") : undefined}
+      standing={standing}
+      href={autoDeletePath}
+    />
+  );
+}
+
+/** The reader's data and posts, the entry's second part: the doors to Export, Import and the automatic deletion. */
+function AccountData() {
+  const { t } = stringsIn(useLocale().locale);
+  const heading = t("settings.account.data");
+  return (
+    <SettingsSection heading={heading}>
+      <SettingsList label={heading}>
+        <ExportDoor />
+        <ImportDoor />
+        <AutoDeleteDoor />
+      </SettingsList>
+    </SettingsSection>
+  );
+}
+
+/** Moving to this account, the entry's third part: the door to Aliases, with how many there are. */
+function AccountArrival() {
+  const { t } = stringsIn(useLocale().locale);
+  const { aliases, status } = useAccountAliasList();
+  const heading = t("settings.account.arrival");
+  const some = status === "success" && aliases.length > 0;
+  return (
+    <SettingsSection heading={heading}>
+      <SettingsList label={heading}>
+        <SettingsListRow
+          title={t("settings.account.aliases")}
+          caption={some ? undefined : t("settings.account.aliases.row.about")}
+          standing={some ? t("settings.account.aliases.row.standing", { count: aliases.length }) : undefined}
+          href={accountAliasesPath}
+        />
+      </SettingsList>
+    </SettingsSection>
+  );
+}
+
+/**
+ * The entry's screen: its parts, the account's status first, then the reader's data and posts, then moving to this
+ * account; a part that cannot be undone stands after them, last and apart.
+ */
 export function AccountSettings({ back }: SettingsEntryProps) {
   const { t } = stringsIn(useLocale().locale);
   return (
     <SettingsScreen icon="accountData" title={t("settings.entry.account")} back={back}>
       <AccountStatus />
+      <AccountData />
+      <AccountArrival />
     </SettingsScreen>
   );
 }

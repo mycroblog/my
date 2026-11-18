@@ -600,7 +600,8 @@ export function createSettings(env: SettingsEnv): SettingsState {
       ...i,
       id: idAt(started, 120_000 + importCount),
       created_at: at(i.created_at),
-      startedAt: Date.parse(at(i.created_at)),
+      // An import of the seed reads as the seed wrote it: one in progress stays so.
+      startedAt: Number.POSITIVE_INFINITY,
     };
   });
   /** An import as it reads now: one started here finishes after a moment. */
@@ -827,7 +828,7 @@ export function createSettings(env: SettingsEnv): SettingsState {
     "POST /imports/preview": ({ body }) => ({ status: 200, body: previewOf(body) }),
     "POST /imports": ({ body }) => {
       if (imports.some((i) => importNow(i).state === "in_progress"))
-        return refused("An import is already being carried out", "import-running", 409);
+        return refused("An import is already being carried out", "import-in-progress", 409);
       const preview = previewOf(body);
       importCount += 1;
       const now = Date.now();
@@ -852,7 +853,7 @@ export function createSettings(env: SettingsEnv): SettingsState {
       const url = /^https:\/\/([^/]+)\/(?:users\/|@)([^/]+)$/.exec(handle);
       const acct = url === null ? handle : `${url[2]}@${url[1]}`;
       if (!/^[\w.-]+@[\w-]+(\.[\w-]+)+$/.test(acct))
-        return refused("The account cannot be found", "account-not-found", 422);
+        return refused("That handle or URL cannot be an alias", "invalid-alias", 422);
       if (aliases.some((a) => a.acct === acct)) return { status: 200, body: { items: aliases } };
       if (aliases.length >= aliasLimit) return refused("You have as many aliases as you may", "too-many-aliases", 422);
       aliases.push(aliasOf(acct, Date.now()));

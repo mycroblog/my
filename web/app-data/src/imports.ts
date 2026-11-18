@@ -3,8 +3,8 @@
 // blocks, mutes, muted domains and bookmarks. A preview says what a file would do; starting it carries it out in the
 // background, and the list of imports says how far each is. While one is in progress, the list is read again every
 // 10 seconds. The CSV to take away is exports.ts's.
-import type { components } from "@mycroblog/mykit";
-import { useQuery } from "@tanstack/react-query";
+import { ProblemError, type components } from "@mycroblog/mykit";
+import { skipToken, useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import type { AppData } from "./app-data";
 import type { CsvKind } from "./exports";
@@ -24,6 +24,14 @@ export type ImportPreview = components["schemas"]["DataImportPreview"];
 
 /** The kinds of file that can be imported: the same as the CSV that can be exported. */
 export type ImportKind = CsvKind;
+
+/** What the server takes of a file: its text, up to this many characters. */
+export const importLimits = { text: 1_000_000 } as const;
+
+/** Whether `error` is the server's refusal to start an import while another one is in progress. */
+export function importRunning(error: unknown): boolean {
+  return error instanceof ProblemError && error.type === "/api/v1/problems/import-in-progress";
+}
 
 /** How often the list is read again while an import is in progress. */
 const runningRefetchMs = 10_000;
@@ -71,9 +79,43 @@ export async function markImported(data: AppData): Promise<void> {
   });
 }
 
+/** The preview of a file as a screen follows it. */
+export type ImportPreviewState = {
+  /** What importing the request given would do, undefined until the server answered for it. */
+  readonly preview: ImportPreview | undefined;
+  /** Where the preview is: `idle` with no request to ask about. */
+  readonly status: "idle" | "pending" | "error" | "success";
+  /** The server's problem, when it refused the file. */
+  readonly error: unknown;
+};
+
+/**
+ * What `request` would do to what the viewer has, asked again whenever it changes; nothing is asked without one, and
+ * nothing changes on the server. The answer is not kept once no screen shows it: a file's text is its key.
+ */
+export function useImportPreview(request: ImportRequest | undefined): ImportPreviewState {
+  const data = useAppData();
+  const query = useQuery({
+    queryKey: ["post", "/imports/preview", request] as const,
+    queryFn: request === undefined ? skipToken : ({ signal }) => previewDataImport(data, request, signal),
+    staleTime: Number.POSITIVE_INFINITY,
+    gcTime: 0,
+    retry: false,
+  });
+  return {
+    preview: request === undefined ? undefined : query.data,
+    status: request === undefined ? "idle" : query.status,
+    error: request === undefined ? null : query.error,
+  };
+}
+
 export type DataImports = {
   /** The viewer's latest imports, newest first; undefined until the server answered. */
   readonly imports: readonly DataImport[] | undefined;
+  /** Where the read of the list is. */
+  readonly status: "pending" | "error" | "success";
+  /** Reads the list again after a failure. */
+  readonly retry: () => void;
   readonly preview: (request: ImportRequest, signal?: AbortSignal) => Promise<ImportPreview>;
   readonly start: (request: ImportRequest) => Promise<DataImport | undefined>;
 };
@@ -81,11 +123,12 @@ export type DataImports = {
 /** The viewer's imports, and previewing and starting one, from a screen. */
 export function useDataImports(): DataImports {
   const data = useAppData();
-  const imports = useQuery({
+  const query = useQuery({
     ...dataImportsQuery(data),
-    refetchInterval: (query) =>
-      query.state.data?.items.some((i) => i.state === "in_progress") === true ? runningRefetchMs : false,
-  }).data?.items;
+    refetchInterval: (q) =>
+      q.state.data?.items.some((i) => i.state === "in_progress") === true ? runningRefetchMs : false,
+  });
+  const imports = query.data?.items;
   // What an import changed is read again once the list says that none is in progress any more.
   const running = imports?.some((i) => i.state === "in_progress") === true;
   const was = useRef(running);
@@ -95,6 +138,10 @@ export function useDataImports(): DataImports {
   }, [data, running]);
   return {
     imports,
+    status: query.status,
+    retry: () => {
+      void query.refetch();
+    },
     preview: (request, signal) => previewDataImport(data, request, signal),
     start: (request) => startDataImport(data, request),
   };

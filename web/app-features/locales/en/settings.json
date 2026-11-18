@@ -1314,5 +1314,529 @@
   "settings.account.appeal.leave.cancel": {
     "defaultMessage": "Keep writing",
     "description": "The button of the confirmation that stays on the page of a moderators' action, with the appeal as the reader wrote it."
+  },
+  "settings.account.data": {
+    "defaultMessage": "Data and posts",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Export, Import and Delete old posts automatically. A heading: no full stop."
+  },
+  "settings.account.arrival": {
+    "defaultMessage": "Moving to this account",
+    "description": "A heading on the settings page Account and data, over the row that leads to Aliases: what prepares a move from another account to this one. A heading: no full stop."
+  },
+  "settings.account.export": {
+    "defaultMessage": "Export",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader requests and downloads an archive of their account and downloads CSV files. A heading: no full stop."
+  },
+  "settings.account.export.row.about": {
+    "defaultMessage": "An archive of your account, and your follows, blocks, mutes and bookmarks as CSV files",
+    "description": "The line under the row Export on the settings page Account and data while no archive is being prepared or ready: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.export.row.standing": {
+    "defaultMessage": "{state, select, preparing {An archive is being prepared} ready_until {An archive is ready to download until {date}} other {An archive is ready to download}}",
+    "description": "The line under the row Export on the settings page Account and data, in place of settings.account.export.row.about, while the reader's archive is being prepared (state preparing) or can be downloaded (ready_until with date, the day the server removes it, as the reader's locale writes a date; anything else when no day is known). Without a full stop."
+  },
+  "settings.account.export.archive": {
+    "defaultMessage": "Archive",
+    "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
+  },
+  "settings.account.export.archive.about": {
+    "defaultMessage": "A ZIP file of your profile, your posts, your keyword filters, and what you follow, block, mute and bookmark. The server prepares it in the background, which can take a while.",
+    "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
+  },
+  "settings.account.export.archive.loading": {
+    "defaultMessage": "Loading your archives…",
+    "description": "In the section Archive of the settings page Export while the reader's requests for an archive are read from the server."
+  },
+  "settings.account.export.archive.failed_read": {
+    "defaultMessage": "Your archives could not be loaded.",
+    "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.export.archive.none": {
+    "defaultMessage": "You have no archive. Request one, and download it here once it is ready.",
+    "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
+  },
+  "settings.account.export.archive.request": {
+    "defaultMessage": "Request an archive",
+    "description": "The button of the section Archive on the settings page Export that asks the server to prepare an archive of the reader's account."
+  },
+  "settings.account.export.archive.requested": {
+    "defaultMessage": "The archive was requested.",
+    "description": "The status of the section Archive on the settings page Export right after the reader pressed Request an archive and the server took the request; the list under it says where the archive stands."
+  },
+  "settings.account.export.archive.building": {
+    "defaultMessage": "An archive is already being prepared. You can request another once it is done.",
+    "description": "The status of the section Archive on the settings page Export when the server refused a request because it is still preparing an earlier archive."
+  },
+  "settings.account.export.archive.request_failed": {
+    "defaultMessage": "The archive could not be requested. Try again.",
+    "description": "The status of the section Archive on the settings page Export when the request for an archive got no answer from the server (the network)."
+  },
+  "settings.account.export.archive.download_failed": {
+    "defaultMessage": "The archive could not be downloaded. Try again.",
+    "description": "The status of the section Archive on the settings page Export when the download of an archive failed."
+  },
+  "settings.account.export.archive.row": {
+    "defaultMessage": "Requested on {date}",
+    "description": "The name of a row of the list Archive on the settings page Export: one request for an archive, named by when the reader made it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.export.archive.state": {
+    "defaultMessage": "{state, select, preparing {This archive is being prepared. It will be here when it is ready, and you can leave this page meanwhile. You can request another once it is done.} ready {You can download this archive until {date}.} expired {This archive expired on {date}. Request a new one.} other {This archive could not be prepared. Request a new one.}}",
+    "description": "Under the name of a request for an archive in the list Archive on the settings page Export: where it stands. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "Download",
+    "description": "The button of a row on the settings page Export that saves that row's file to the reader's device: an archive that is ready, or one of the CSV files. The row names the file."
+  },
+  "settings.account.export.saved": {
+    "defaultMessage": "The download of {name} started.",
+    "description": "The status under a list of the settings page Export once the reader pressed Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
+  },
+  "settings.account.export.csv": {
+    "defaultMessage": "CSV files",
+    "description": "A heading on the settings page Export, over the list of what the reader can download as a CSV file each. A heading: no full stop."
+  },
+  "settings.account.export.csv.about": {
+    "defaultMessage": "What you follow, block, mute and bookmark, a file each, in the format Mastodon uses, to import on another account. Mastodon has no file of followed hashtags: only servers that run this software can import that one.",
+    "description": "Under the heading CSV files on the settings page Export: what the files are and what they are for, and that the file of the row Followed hashtags (settings.account.csv.kind) is read only by this software."
+  },
+  "settings.account.export.csv.failed": {
+    "defaultMessage": "The file could not be downloaded. Try again.",
+    "description": "The status under the list CSV files on the settings page Export when the download of the file whose Download the reader just pressed failed."
+  },
+  "settings.account.csv.kind": {
+    "defaultMessage": "{kind, select, following {Follows} followed_tags {Followed hashtags} blocks {Blocked accounts} mutes {Muted accounts} domain_mutes {Muted servers} other {Bookmarks}}",
+    "description": "What a CSV file lists, in the settings: the name of a row of the list CSV files on the page Export, an option of What the file lists on the page Import, and the name of an import in the list Recent imports. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. The same names as the lists of the settings page Relationships (settings.relationships.list). No full stop."
+  },
+  "settings.account.import": {
+    "defaultMessage": "Import",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader imports a CSV file. A heading: no full stop."
+  },
+  "settings.account.import.row.about": {
+    "defaultMessage": "Follows, blocks, mutes and bookmarks from CSV files",
+    "description": "The line under the row Import on the settings page Account and data while no import is in progress: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.import.row.standing": {
+    "defaultMessage": "An import is in progress: {processed, number} of {total, number} done",
+    "description": "The line under the row Import on the settings page Account and data, in place of settings.account.import.row.about, while the server carries out an import of the reader: how many of its entries are done. Without a full stop."
+  },
+  "settings.account.import.file.section": {
+    "defaultMessage": "File",
+    "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
+  },
+  "settings.account.import.about": {
+    "defaultMessage": "A CSV file exported from this server or from Mastodon. Nothing changes until you choose “Import”.",
+    "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
+  },
+  "settings.account.import.kind": {
+    "defaultMessage": "What the file lists",
+    "description": "The label of the choice on the settings page Import of what the CSV file lists; its options are settings.account.csv.kind."
+  },
+  "settings.account.import.file": {
+    "defaultMessage": "CSV file",
+    "description": "The label of the field on the settings page Import that holds the file the reader chose from their device."
+  },
+  "settings.account.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {Choose another file} other {Choose a file}}",
+    "description": "The button of the field CSV file on the settings page Import that opens the device's file picker. chosen is yes once the field holds a file, whose name stands after the button."
+  },
+  "settings.account.import.file.none": {
+    "defaultMessage": "No file chosen",
+    "description": "Beside the button Choose a file on the settings page Import while the field holds no file, where the file's name stands once one is chosen. No full stop."
+  },
+  "settings.account.import.file.missing": {
+    "defaultMessage": "Choose the CSV file to import.",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import without having chosen a file."
+  },
+  "settings.account.import.file.unread": {
+    "defaultMessage": "This file could not be read as a CSV file. Choose another one.",
+    "description": "Under the field CSV file on the settings page Import when the browser could not read the file, or the server could not read it and gave no reason of its own."
+  },
+  "settings.account.import.file.too_large": {
+    "defaultMessage": "“{name}” is too large: a file holds up to {max, number} characters. Choose a smaller one.",
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
+  },
+  "settings.account.import.file.empty": {
+    "defaultMessage": "This file has nothing to import as what you chose. Check “What the file lists”, or choose another file.",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
+  },
+  "settings.account.import.mode": {
+    "defaultMessage": "How to import",
+    "description": "The label of the choice on the settings page Import between merging the file into what the reader has and replacing it; its options are settings.account.import.mode.choice."
+  },
+  "settings.account.import.mode.choice": {
+    "defaultMessage": "{mode, select, overwrite {Replace} other {Merge}}",
+    "description": "An option of How to import on the settings page Import, and a fact of an import in the list Recent imports: mode is overwrite (what the reader has becomes exactly what the file lists) or merge (the file's entries are added). No full stop."
+  },
+  "settings.account.import.mode.about": {
+    "defaultMessage": "{mode, select, overwrite {Makes the list exactly what the file lists: what you have now that the file does not list is removed.} other {Adds what the file lists to what you have now, and removes nothing.}}",
+    "description": "The line under How to import on the settings page Import: what the chosen way does. mode is as in settings.account.import.mode.choice."
+  },
+  "settings.account.import.preview": {
+    "defaultMessage": "Preview",
+    "description": "A heading on the settings page Import, over what importing the chosen file would do, before anything changes. A heading: no full stop."
+  },
+  "settings.account.import.preview.about": {
+    "defaultMessage": "What the server reads in the file. It looks up accounts and posts on other servers when the import runs.",
+    "description": "Under the heading Preview on the settings page Import: where the numbers come from, and that an account or a post on another server may still not be found later."
+  },
+  "settings.account.import.preview.waiting": {
+    "defaultMessage": "{state, select, idle {Choose a file to see what importing it would do.} pending {Reading the file…} other {There is nothing to preview, because the file could not be read.}}",
+    "description": "In the section Preview of the settings page Import while it has no preview to show: state is idle (no file chosen yet), pending (the server is reading the file), or anything else when the file was refused, which the field CSV file explains."
+  },
+  "settings.account.import.preview.add": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {No new account to follow} one {# new account to follow} other {# new accounts to follow}}} followed_tags {{count, plural, =0 {No new hashtag to follow} one {# new hashtag to follow} other {# new hashtags to follow}}} blocks {{count, plural, =0 {No new account to block} one {# new account to block} other {# new accounts to block}}} mutes {{count, plural, =0 {No new account to mute} one {# new account to mute} other {# new accounts to mute}}} domain_mutes {{count, plural, =0 {No new server to mute} one {# new server to mute} other {# new servers to mute}}} other {{count, plural, =0 {No new post to bookmark} one {# new post to bookmark} other {# new posts to bookmark}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the import would add to what the reader has. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.present": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {# account you already follow} other {# accounts you already follow}}} followed_tags {{count, plural, one {# hashtag you already follow} other {# hashtags you already follow}}} blocks {{count, plural, one {# account you already block} other {# accounts you already block}}} mutes {{count, plural, one {# account you already mute} other {# accounts you already mute}}} domain_mutes {{count, plural, one {# server you already mute} other {# servers you already mute}}} other {{count, plural, one {# post you already bookmarked} other {# posts you already bookmarked}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the reader has already, which the import leaves as they are. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.remove": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {No account to unfollow} one {# account to unfollow, which the file does not list} other {# accounts to unfollow, which the file does not list}}} followed_tags {{count, plural, =0 {No hashtag to unfollow} one {# hashtag to unfollow, which the file does not list} other {# hashtags to unfollow, which the file does not list}}} blocks {{count, plural, =0 {No account to unblock} one {# account to unblock, which the file does not list} other {# accounts to unblock, which the file does not list}}} mutes {{count, plural, =0 {No account to unmute} one {# account to unmute, which the file does not list} other {# accounts to unmute, which the file does not list}}} domain_mutes {{count, plural, =0 {No server to unmute} one {# server to unmute, which the file does not list} other {# servers to unmute, which the file does not list}}} other {{count, plural, =0 {No bookmark to remove} one {# bookmark to remove, which the file does not list} other {# bookmarks to remove, which the file does not list}}}}",
+    "description": "A fact of the Preview on the settings page Import when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.skipped": {
+    "defaultMessage": "{count, plural, one {# line is skipped} other {# lines are skipped}}",
+    "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
+  },
+  "settings.account.import.preview.skipped.line": {
+    "defaultMessage": "{reason, select, duplicate {Line {line, number} repeats an earlier line: {value}} other {Line {line, number} cannot be read: {value}}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as written, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+  },
+  "settings.account.import.preview.skipped.more": {
+    "defaultMessage": "{count, plural, one {And # more line} other {And # more lines}}",
+    "description": "The last line under settings.account.import.preview.skipped on the settings page Import when the file has more lines that cannot be read than the page writes out: how many more. No full stop."
+  },
+  "settings.account.import.submit": {
+    "defaultMessage": "Import",
+    "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.refused": {
+    "defaultMessage": "Nothing was imported. Fix what is marked.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when something is wrong with the file, which the field CSV file says."
+  },
+  "settings.account.import.failed": {
+    "defaultMessage": "The import could not be started. Try again.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server did not take the import and gave no reason of its own (the network)."
+  },
+  "settings.account.import.running": {
+    "defaultMessage": "Another import is still in progress. Start this one once it is done.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server refused the import because it is still carrying out an earlier one of the reader."
+  },
+  "settings.account.import.started": {
+    "defaultMessage": "The import started. It goes on in the background, and you can leave this page.",
+    "description": "The status of the section Recent imports on the settings page Import right after the server took the reader's import; the list under it says how far it is."
+  },
+  "settings.account.import.replace.title": {
+    "defaultMessage": "{kind, select, following {Replace your follows?} followed_tags {Replace your followed hashtags?} blocks {Replace your blocked accounts?} mutes {Replace your muted accounts?} domain_mutes {Replace your muted servers?} other {Replace your bookmarks?}}",
+    "description": "The question of the confirmation that opens when the reader presses Import on the settings page Import with Replace chosen and the import would remove something. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.text": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {You will unfollow # account that the file does not list.} other {You will unfollow # accounts that the file does not list.}} This cannot be undone.} followed_tags {{count, plural, one {You will unfollow # hashtag that the file does not list.} other {You will unfollow # hashtags that the file does not list.}} This cannot be undone.} blocks {{count, plural, one {You will unblock # account that the file does not list.} other {You will unblock # accounts that the file does not list.}} This cannot be undone.} mutes {{count, plural, one {You will unmute # account that the file does not list.} other {You will unmute # accounts that the file does not list.}} This cannot be undone.} domain_mutes {{count, plural, one {You will unmute # server that the file does not list.} other {You will unmute # servers that the file does not list.}} This cannot be undone.} other {{count, plural, one {# bookmark that the file does not list will be removed.} other {# bookmarks that the file does not list will be removed.}} This cannot be undone.}}",
+    "description": "The text of the confirmation that asks whether to replace what the reader has with what the file lists, on the settings page Import: what the import removes, and that it cannot be undone. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.confirm": {
+    "defaultMessage": "Replace",
+    "description": "The button of the confirmation on the settings page Import that starts the import that replaces what the reader has."
+  },
+  "settings.account.import.replace.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of the confirmation on the settings page Import that closes it without importing anything."
+  },
+  "settings.account.import.recent": {
+    "defaultMessage": "Recent imports",
+    "description": "A heading on the settings page Import, over the list of the imports the reader started in the last 7 days. A heading: no full stop."
+  },
+  "settings.account.import.recent.about": {
+    "defaultMessage": "The server carries an import out in the background. An account or a post it cannot find or act on is counted as failed. An import stays listed for 7 days.",
+    "description": "Under the heading Recent imports on the settings page Import: how an import runs, what failed means in a row's state (settings.account.import.row.state), and how long a row stays."
+  },
+  "settings.account.import.recent.loading": {
+    "defaultMessage": "Loading your imports…",
+    "description": "In the section Recent imports of the settings page Import while the reader's imports are read from the server."
+  },
+  "settings.account.import.recent.failed": {
+    "defaultMessage": "Your imports could not be loaded.",
+    "description": "In the section Recent imports of the settings page Import when the reader's imports could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.import.recent.none": {
+    "defaultMessage": "No import in the last 7 days.",
+    "description": "In place of the list Recent imports on the settings page Import while the server lists no import of the reader."
+  },
+  "settings.account.import.row.started": {
+    "defaultMessage": "Started on {date}",
+    "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.import.row.state": {
+    "defaultMessage": "{state, select, running {In progress: {processed, number} of {total, number} done} nothing {Finished: there was nothing to do} done {Finished: all {total, number} done} partly {Finished: {done, number} of {total, number} done, {failed, number} failed} other {Finished: all {total, number} failed}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. No full stop."
+  },
+  "settings.account.auto_delete": {
+    "defaultMessage": "Delete old posts automatically",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader chooses whether their posts are deleted once they pass an age, and which are kept. A heading: no full stop."
+  },
+  "settings.account.auto_delete.row.about": {
+    "defaultMessage": "Delete your posts once they pass an age you choose",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data until the reader's settings are read: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.auto_delete.row.standing": {
+    "defaultMessage": "{enabled, select, on {On: posts older than {days, plural, one {# day} other {# days}} are deleted} other {Off}}",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data: whether the automatic deletion is on, and past which age it deletes. days is 1 or more. Without a full stop."
+  },
+  "settings.account.auto_delete.loading": {
+    "defaultMessage": "Loading your settings for old posts…",
+    "description": "On the settings page Delete old posts automatically while the reader's settings are read from the server."
+  },
+  "settings.account.auto_delete.failed": {
+    "defaultMessage": "Your settings for old posts could not be loaded.",
+    "description": "On the settings page Delete old posts automatically when the reader's settings could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.bound": {
+    "defaultMessage": "{state, select, from {From {date}, this server's limit applies to your posts} now {This server's limit applies to your posts} other {This server's limit will apply to your posts}}",
+    "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
+  },
+  "settings.account.auto_delete.bound.about": {
+    "defaultMessage": "{state, select, now {This server keeps posts for {days, plural, one {# day} other {# days}} at most, and your saved settings keep some posts longer. “Posts that would be deleted” below counts what the limit deletes. Saving this page puts your settings within the limit.} other {This server keeps posts for {days, plural, one {# day} other {# days}} at most, and your saved settings keep some posts longer. Until the limit applies, your saved settings stay in effect. “Posts that would be deleted” below counts what the limit then deletes. Saving this page puts your settings within the limit at once.}}",
+    "description": "Under settings.account.auto_delete.bound: what the server's maximum is, that the reader's own settings stay in effect until it applies, where the page counts what it will delete (the section settings.account.auto_delete.section.count), and what saving does. state is as in settings.account.auto_delete.bound; days is the maximum."
+  },
+  "settings.account.auto_delete.section.when": {
+    "defaultMessage": "When posts are deleted",
+    "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.when.about": {
+    "defaultMessage": "A post past the age below is deleted as if you had deleted it yourself: here and on the servers it was sent to. It cannot be restored. Your boosts of other people's posts are not deleted.",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
+  },
+  "settings.account.auto_delete.when.about_limit": {
+    "defaultMessage": "This server keeps posts for {days, plural, one {# day} other {# days}} at most. A post past the age below is deleted here and on the servers it was sent to. It cannot be restored. Your boosts of other people's posts are not deleted.",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: the maximum, and what a deletion is. days is the maximum."
+  },
+  "settings.account.auto_delete.enabled": {
+    "defaultMessage": "Automatic deletion",
+    "description": "The label of the choice on the settings page Delete old posts automatically between deleting old posts and not; its options are settings.account.auto_delete.enabled.choice."
+  },
+  "settings.account.auto_delete.enabled.choice": {
+    "defaultMessage": "{enabled, select, on {On} other {Off}}",
+    "description": "An option of Automatic deletion on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.enabled.fixed": {
+    "defaultMessage": "This server always deletes old posts, so this cannot be turned off.",
+    "description": "Under Automatic deletion on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: why the choice shows On and cannot be changed; also said there when the server refused a save that turned it off."
+  },
+  "settings.account.auto_delete.days": {
+    "defaultMessage": "Delete posts older than",
+    "description": "The label of the number field on the settings page Delete old posts automatically that holds the age, in days, past which a post is deleted; the unit days follows the field (settings.account.auto_delete.days.unit)."
+  },
+  "settings.account.auto_delete.days.unit": {
+    "defaultMessage": "days",
+    "description": "The unit after the number field Delete posts older than on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.days.about": {
+    "defaultMessage": "{limited, select, yes {From 1 to {max, number} days, the most this server keeps posts} other {From 1 to {max, number} days}}",
+    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. limited is yes on a server whose maximum applies to the reader, max being that maximum; otherwise max is 3650. No full stop."
+  },
+  "settings.account.auto_delete.days.rule": {
+    "defaultMessage": "Enter a whole number of days from 1 to {max, number}.",
+    "description": "Under the number field Delete posts older than on the settings page Delete old posts automatically when it is empty as the reader presses Save, or the server refused its value. max is the most days the field takes."
+  },
+  "settings.account.auto_delete.section.kept": {
+    "defaultMessage": "Posts that are kept",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the kinds of posts that are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.kept.about": {
+    "defaultMessage": "{limited, select, yes {A post that matches any of these is not deleted, however old. You cannot check what this server does not let you keep.} other {A post that matches any of these is not deleted, however old.}}",
+    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically. limited is yes on a server whose maximum applies to the reader, where some checkboxes are disabled."
+  },
+  "settings.account.auto_delete.kept.rule": {
+    "defaultMessage": "This server does not let you keep one of the kinds you checked. Load this page again to see which you can check.",
+    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds."
+  },
+  "settings.account.auto_delete.keep": {
+    "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {Pinned posts} one {Your most recently pinned post} other {Your # most recently pinned posts}}} bookmarked {Posts you bookmarked} favourited {Posts you favourited} media {Posts with media} polls {Posts with a poll} other {Articles}}",
+    "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
+  },
+  "settings.account.auto_delete.section.audiences": {
+    "defaultMessage": "Posts kept by audience",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the visibilities (Public, Followers only…) whose posts are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.audiences.about": {
+    "defaultMessage": "{allowed, select, yes {Check an audience to keep every post you made for it.} other {This server does not let you keep posts by their audience.}}",
+    "description": "Under the heading Posts kept by audience on the settings page Delete old posts automatically. allowed is no on a server whose maximum does not allow it, where the checkboxes are disabled."
+  },
+  "settings.account.auto_delete.section.thresholds": {
+    "defaultMessage": "Posts kept by their boosts and favourites",
+    "description": "A heading on the settings page Delete old posts automatically, over the two numbers of boosts and of favourites from which a post is never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.thresholds.fixed": {
+    "defaultMessage": "This server does not let you keep posts by their boosts or favourites.",
+    "description": "Under the heading Posts kept by their boosts and favourites on the settings page Delete old posts automatically, on a server whose maximum does not allow it, where the two fields are disabled."
+  },
+  "settings.account.auto_delete.threshold": {
+    "defaultMessage": "{of, select, boosts {Keep posts boosted at least} other {Keep posts favourited at least}}",
+    "description": "The label of a number field on the settings page Delete old posts automatically: how many times a post must have been boosted (of boosts) or favourited (of favourites) to be kept; the unit times follows the field (settings.account.auto_delete.threshold.unit)."
+  },
+  "settings.account.auto_delete.threshold.unit": {
+    "defaultMessage": "times",
+    "description": "The unit after the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.threshold.about": {
+    "defaultMessage": "0 keeps no post for this.",
+    "description": "The line under the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically: what 0 means."
+  },
+  "settings.account.auto_delete.threshold.rule": {
+    "defaultMessage": "Enter a whole number from 0 to {max, number}.",
+    "description": "Under a number field of Posts kept by their boosts and favourites on the settings page Delete old posts automatically when the server refused its value. max is 1000000."
+  },
+  "settings.account.auto_delete.section.count": {
+    "defaultMessage": "Posts that would be deleted",
+    "description": "A heading on the settings page Delete old posts automatically, over the count of the reader's posts that the settings on the page would delete now, before they are saved. The summary of a reader the server's maximum binds quotes this name (settings.account.auto_delete.bound.about). A heading: no full stop."
+  },
+  "settings.account.auto_delete.count.about": {
+    "defaultMessage": "Counted now, for the settings above as they stand, before you save them. The server deletes at most 100 posts an hour, so many old posts take a while to go.",
+    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically: what the count is of, and how fast the server deletes."
+  },
+  "settings.account.auto_delete.count.off": {
+    "defaultMessage": "Nothing is deleted while automatic deletion is off.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while Automatic deletion is Off on the page."
+  },
+  "settings.account.auto_delete.count.no_age": {
+    "defaultMessage": "Enter an age in days to count the posts.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the field Delete posts older than is empty."
+  },
+  "settings.account.auto_delete.count.loading": {
+    "defaultMessage": "Counting your posts…",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the server counts."
+  },
+  "settings.account.auto_delete.count": {
+    "defaultMessage": "{more, select, yes {More than {count, number} of your posts would be deleted.} other {{count, plural, =0 {None of your posts would be deleted.} one {# of your posts would be deleted.} other {# of your posts would be deleted.}}}}",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically: how many of the reader's posts the settings on the page would delete now. more is yes when the server stopped counting at count (1000)."
+  },
+  "settings.account.auto_delete.count.failed": {
+    "defaultMessage": "Your posts could not be counted.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically when the server did not answer the count; Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.count.oldest": {
+    "defaultMessage": "The oldest of them",
+    "description": "The label over the list of up to 3 posts under the count on the settings page Delete old posts automatically: the oldest of the posts that would be deleted. No full stop."
+  },
+  "settings.account.auto_delete.count.post": {
+    "defaultMessage": "Post of {date}",
+    "description": "A row of the list The oldest of them on the settings page Delete old posts automatically: one of the reader's posts that would be deleted, named by when it was posted, which the row opens; the start of its text follows. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.auto_delete.save": {
+    "defaultMessage": "Save",
+    "description": "The button in the bar at the bottom of the settings page Delete old posts automatically that saves the whole page."
+  },
+  "settings.account.auto_delete.save.failed": {
+    "defaultMessage": "Your settings could not be saved. Try again.",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the server did not take the page and gave no reason of its own (the network)."
+  },
+  "settings.account.auto_delete.save.refused": {
+    "defaultMessage": "To save, fix what is marked.",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the page or the server found something wrong with a setting, which says what under that setting."
+  },
+  "settings.account.auto_delete.leave.title": {
+    "defaultMessage": "Leave without saving?",
+    "description": "The question of the confirmation that opens when the reader leaves the settings page Delete old posts automatically with changes they did not save."
+  },
+  "settings.account.auto_delete.leave.text": {
+    "defaultMessage": "The changes you have not saved will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave the settings page Delete old posts automatically without saving."
+  },
+  "settings.account.auto_delete.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves the settings page Delete old posts automatically, the changes lost."
+  },
+  "settings.account.auto_delete.leave.cancel": {
+    "defaultMessage": "Keep editing",
+    "description": "The button of the confirmation that stays on the settings page Delete old posts automatically, with the changes as the reader made them."
+  },
+  "settings.account.aliases": {
+    "defaultMessage": "Aliases",
+    "description": "A row of the section Moving to this account on the settings page Account and data, and the title of the page it opens, where the reader names the accounts they move from. A heading: no full stop."
+  },
+  "settings.account.aliases.row.about": {
+    "defaultMessage": "Name the account you are moving from, so that its followers can move here",
+    "description": "The line under the row Aliases on the settings page Account and data while the reader has no alias: what the page is for. A phrase without a full stop."
+  },
+  "settings.account.aliases.row.standing": {
+    "defaultMessage": "{count, plural, one {# account can move its followers here} other {# accounts can move their followers here}}",
+    "description": "The line under the row Aliases on the settings page Account and data, in place of settings.account.aliases.row.about, while the reader has aliases: how many. count is 1 to 5. Without a full stop."
+  },
+  "settings.account.aliases.loading": {
+    "defaultMessage": "Loading your aliases…",
+    "description": "On the settings page Aliases while the reader's aliases are read from the server."
+  },
+  "settings.account.aliases.failed": {
+    "defaultMessage": "Your aliases could not be loaded.",
+    "description": "On the settings page Aliases when the reader's aliases could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.aliases.count": {
+    "defaultMessage": "{count, plural, =0 {No aliases} one {# of {max, number} aliases} other {# of {max, number} aliases}}",
+    "description": "The heading of the list on the settings page Aliases, whose title already names it: how many aliases the reader has, of the most an account can have (max is 5). A heading: no full stop."
+  },
+  "settings.account.aliases.about": {
+    "defaultMessage": "An alias is an account you are moving from. Naming it here lets that account move its followers to this one, and changes nothing else: you start the move from that account.",
+    "description": "Under the heading of the list on the settings page Aliases: what an alias is for, and that it does nothing by itself."
+  },
+  "settings.account.aliases.empty": {
+    "defaultMessage": "Add the account you are moving from below.",
+    "description": "In place of the list on the settings page Aliases while the reader has no alias; the section Add an alias follows."
+  },
+  "settings.account.aliases.added": {
+    "defaultMessage": "Added on {date}",
+    "description": "A fact under an alias in the list on the settings page Aliases: when the reader added it. date is a day as the reader's locale writes it. No full stop."
+  },
+  "settings.account.aliases.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button of a row of the list on the settings page Aliases that removes that alias at once; the row names the account."
+  },
+  "settings.account.aliases.removed": {
+    "defaultMessage": "Removed",
+    "description": "What a row of the list on the settings page Aliases says once the reader removed that alias, in place of its button and its facts, the row staying where it was until they leave the page. Without a full stop."
+  },
+  "settings.account.aliases.removed.spoken": {
+    "defaultMessage": "You removed the alias {name}.",
+    "description": "What assistive technology reads in place of settings.account.aliases.removed, where the focus goes once an alias is removed. name is the account's handle (@user@domain), or its address where the server knows no handle."
+  },
+  "settings.account.aliases.remove.failed": {
+    "defaultMessage": "Removing the alias {name} did not finish. Try again.",
+    "description": "Under the list on the settings page Aliases when removing an alias got no answer from the server (the network); the row and its button stay, to press again. name is as in settings.account.aliases.removed.spoken."
+  },
+  "settings.account.aliases.add": {
+    "defaultMessage": "Add an alias",
+    "description": "A heading on the settings page Aliases, over the field that adds an alias by the account's address. A heading: no full stop."
+  },
+  "settings.account.aliases.add.label": {
+    "defaultMessage": "Account you are moving from",
+    "description": "The label of the field on the settings page Aliases where the reader enters the account to add as an alias."
+  },
+  "settings.account.aliases.add.hint": {
+    "defaultMessage": "Its handle, such as @name@example.com, or the address of its profile.",
+    "description": "The hint of the field Account you are moving from on the settings page Aliases: what the server takes."
+  },
+  "settings.account.aliases.add.submit": {
+    "defaultMessage": "Add",
+    "description": "The button under the field Account you are moving from on the settings page Aliases that adds that account as an alias."
+  },
+  "settings.account.aliases.add.missing": {
+    "defaultMessage": "Enter the handle or the address of the account.",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the reader pressed Add with the field empty."
+  },
+  "settings.account.aliases.add.invalid": {
+    "defaultMessage": "No account that can be an alias was found there. Check the handle, such as @name@example.com, or the address of the profile. Your own account cannot be an alias.",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the server found no account at what the reader entered, or one that cannot be an alias (the reader's own, something that is no account)."
+  },
+  "settings.account.aliases.add.failed": {
+    "defaultMessage": "The alias could not be added. Try again.",
+    "description": "The status of the section Add an alias on the settings page Aliases when adding got no answer from the server (the network)."
+  },
+  "settings.account.aliases.add.done": {
+    "defaultMessage": "The alias was added.",
+    "description": "The status of the section Add an alias on the settings page Aliases once the server added the alias, which the list above then shows."
+  },
+  "settings.account.aliases.full": {
+    "defaultMessage": "You have {max, number} aliases, the most an account can have. Remove one to add another.",
+    "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
   }
 }

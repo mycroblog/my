@@ -2,7 +2,7 @@
 // Taking the viewer's data away (FR-008, ADR-0088 §2), which is all a closed server still does: the archive of
 // everything, requested, built in the background, listed with its state and downloaded once ready; and the CSV of what
 // they follow, which another server imports. While an archive is being built, the list is read again every 10 seconds.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -15,6 +15,21 @@ export type SavedFile = { readonly blob: Blob; readonly name: string };
 
 /** What the viewer may export as CSV. */
 export type CsvKind = components["schemas"]["DataImportKind"];
+
+/** What the viewer may export and import as CSV, in the order the server names them. */
+export const csvKinds: readonly CsvKind[] = [
+  "following",
+  "followed_tags",
+  "blocks",
+  "mutes",
+  "domain_mutes",
+  "bookmarks",
+];
+
+/** Whether `error` is the server's refusal of a request for an archive while another one is being built. */
+export function exportBuilding(error: unknown): boolean {
+  return error instanceof ProblemError && error.type === "/api/v1/problems/export-in-progress";
+}
 
 /** How often the list is read again while an archive is being built. */
 const buildingRefetchMs = 10_000;
@@ -61,6 +76,10 @@ export async function exportCsv({ api }: AppData, kind: CsvKind): Promise<SavedF
 export type DataExports = {
   /** The viewer's latest exports, newest first; undefined until the server answered. */
   readonly exports: readonly DataExport[] | undefined;
+  /** Where the read of the list is. */
+  readonly status: "pending" | "error" | "success";
+  /** Reads the list again after a failure. */
+  readonly retry: () => void;
   readonly request: () => Promise<DataExport | undefined>;
   readonly download: (id: string) => Promise<SavedFile>;
   readonly csv: (kind: CsvKind) => Promise<SavedFile>;
@@ -69,13 +88,17 @@ export type DataExports = {
 /** The viewer's exports, and requesting and downloading them and the CSV files, from a screen. */
 export function useDataExports(): DataExports {
   const data = useAppData();
-  const exports = useQuery({
+  const query = useQuery({
     ...dataExportsQuery(data),
-    refetchInterval: (query) =>
-      query.state.data?.items.some((e) => e.state === "pending") === true ? buildingRefetchMs : false,
-  }).data?.items;
+    refetchInterval: (q) =>
+      q.state.data?.items.some((e) => e.state === "pending") === true ? buildingRefetchMs : false,
+  });
   return {
-    exports,
+    exports: query.data?.items,
+    status: query.status,
+    retry: () => {
+      void query.refetch();
+    },
     request: () => requestDataExport(data),
     download: (id) => downloadDataExport(data, id),
     csv: (kind) => exportCsv(data, kind),

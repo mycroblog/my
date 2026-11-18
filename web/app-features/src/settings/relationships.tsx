@@ -117,7 +117,7 @@ type RowState = {
  * result takes the focus, where its button was; its sentence is that place's name, read once. A removal that failed
  * says so in `status`, a polite live region there from the start, the row and the focus left as they were.
  */
-function useRemovals<I>(id: string) {
+export function useRemovals<I>(id: string) {
   const [said, setSaid] = useState<{ readonly text: string; readonly n: number } | undefined>(undefined);
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
   const [kept, setKept] = useState<ReadonlyMap<string, { item: I; at: number; result: SettingsRowResult }>>(new Map());

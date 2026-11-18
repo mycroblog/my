@@ -1314,5 +1314,529 @@
   "settings.account.appeal.leave.cancel": {
     "defaultMessage": "書き続ける",
     "description": "The button of the confirmation that stays on the page of a moderators' action, with the appeal as the reader wrote it."
+  },
+  "settings.account.data": {
+    "defaultMessage": "データと投稿",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Export, Import and Delete old posts automatically. A heading: no full stop."
+  },
+  "settings.account.arrival": {
+    "defaultMessage": "このアカウントへの移転",
+    "description": "A heading on the settings page Account and data, over the row that leads to Aliases: what prepares a move from another account to this one. A heading: no full stop."
+  },
+  "settings.account.export": {
+    "defaultMessage": "エクスポート",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader requests and downloads an archive of their account and downloads CSV files. A heading: no full stop."
+  },
+  "settings.account.export.row.about": {
+    "defaultMessage": "アカウントのアーカイブと、フォロー・ブロック・ミュート・ブックマークの CSV ファイル",
+    "description": "The line under the row Export on the settings page Account and data while no archive is being prepared or ready: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.export.row.standing": {
+    "defaultMessage": "{state, select, preparing {アーカイブを準備しています} ready_until {アーカイブをダウンロードできます ({date} まで)} other {アーカイブをダウンロードできます}}",
+    "description": "The line under the row Export on the settings page Account and data, in place of settings.account.export.row.about, while the reader's archive is being prepared (state preparing) or can be downloaded (ready_until with date, the day the server removes it, as the reader's locale writes a date; anything else when no day is known). Without a full stop."
+  },
+  "settings.account.export.archive": {
+    "defaultMessage": "アーカイブ",
+    "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
+  },
+  "settings.account.export.archive.about": {
+    "defaultMessage": "プロフィール、投稿、キーワードフィルタ、フォロー・ブロック・ミュート・ブックマークをまとめた ZIP ファイルです。サーバーがバックグラウンドで準備するため、時間がかかることがあります。",
+    "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
+  },
+  "settings.account.export.archive.loading": {
+    "defaultMessage": "アーカイブを読み込んでいます…",
+    "description": "In the section Archive of the settings page Export while the reader's requests for an archive are read from the server."
+  },
+  "settings.account.export.archive.failed_read": {
+    "defaultMessage": "アーカイブを読み込めませんでした。",
+    "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.export.archive.none": {
+    "defaultMessage": "アーカイブはありません。リクエストすると、準備ができしだいここからダウンロードできます。",
+    "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
+  },
+  "settings.account.export.archive.request": {
+    "defaultMessage": "アーカイブをリクエスト",
+    "description": "The button of the section Archive on the settings page Export that asks the server to prepare an archive of the reader's account."
+  },
+  "settings.account.export.archive.requested": {
+    "defaultMessage": "アーカイブをリクエストしました。",
+    "description": "The status of the section Archive on the settings page Export right after the reader pressed Request an archive and the server took the request; the list under it says where the archive stands."
+  },
+  "settings.account.export.archive.building": {
+    "defaultMessage": "アーカイブはすでに準備中です。完了すると、次をリクエストできます。",
+    "description": "The status of the section Archive on the settings page Export when the server refused a request because it is still preparing an earlier archive."
+  },
+  "settings.account.export.archive.request_failed": {
+    "defaultMessage": "アーカイブをリクエストできませんでした。もう一度試してください。",
+    "description": "The status of the section Archive on the settings page Export when the request for an archive got no answer from the server (the network)."
+  },
+  "settings.account.export.archive.download_failed": {
+    "defaultMessage": "アーカイブをダウンロードできませんでした。もう一度試してください。",
+    "description": "The status of the section Archive on the settings page Export when the download of an archive failed."
+  },
+  "settings.account.export.archive.row": {
+    "defaultMessage": "{date} にリクエスト",
+    "description": "The name of a row of the list Archive on the settings page Export: one request for an archive, named by when the reader made it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.export.archive.state": {
+    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。準備ができるとここに表示されます。その間、このページを離れてもかまいません。完了すると、次をリクエストできます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しくリクエストしてください。} other {このアーカイブは準備できませんでした。新しくリクエストしてください。}}",
+    "description": "Under the name of a request for an archive in the list Archive on the settings page Export: where it stands. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "ダウンロード",
+    "description": "The button of a row on the settings page Export that saves that row's file to the reader's device: an archive that is ready, or one of the CSV files. The row names the file."
+  },
+  "settings.account.export.saved": {
+    "defaultMessage": "{name} のダウンロードを開始しました。",
+    "description": "The status under a list of the settings page Export once the reader pressed Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
+  },
+  "settings.account.export.csv": {
+    "defaultMessage": "CSV ファイル",
+    "description": "A heading on the settings page Export, over the list of what the reader can download as a CSV file each. A heading: no full stop."
+  },
+  "settings.account.export.csv.about": {
+    "defaultMessage": "フォロー・ブロック・ミュート・ブックマークを、それぞれ Mastodon と同じ形式のファイルにします。別のアカウントでインポートできます。フォロー中のハッシュタグのファイルは Mastodon にはないため、インポートできるのはこのソフトウェアで動くサーバーだけです。",
+    "description": "Under the heading CSV files on the settings page Export: what the files are and what they are for, and that the file of the row Followed hashtags (settings.account.csv.kind) is read only by this software."
+  },
+  "settings.account.export.csv.failed": {
+    "defaultMessage": "ファイルをダウンロードできませんでした。もう一度試してください。",
+    "description": "The status under the list CSV files on the settings page Export when the download of the file whose Download the reader just pressed failed."
+  },
+  "settings.account.csv.kind": {
+    "defaultMessage": "{kind, select, following {フォロー} followed_tags {フォロー中のハッシュタグ} blocks {ブロックしたアカウント} mutes {ミュートしたアカウント} domain_mutes {ミュートしたサーバー} other {ブックマーク}}",
+    "description": "What a CSV file lists, in the settings: the name of a row of the list CSV files on the page Export, an option of What the file lists on the page Import, and the name of an import in the list Recent imports. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. The same names as the lists of the settings page Relationships (settings.relationships.list). No full stop."
+  },
+  "settings.account.import": {
+    "defaultMessage": "インポート",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader imports a CSV file. A heading: no full stop."
+  },
+  "settings.account.import.row.about": {
+    "defaultMessage": "CSV ファイルからフォロー・ブロック・ミュート・ブックマークを取り込む",
+    "description": "The line under the row Import on the settings page Account and data while no import is in progress: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.import.row.standing": {
+    "defaultMessage": "インポートを実行中です ({total, number} 件中 {processed, number} 件完了)",
+    "description": "The line under the row Import on the settings page Account and data, in place of settings.account.import.row.about, while the server carries out an import of the reader: how many of its entries are done. Without a full stop."
+  },
+  "settings.account.import.file.section": {
+    "defaultMessage": "ファイル",
+    "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
+  },
+  "settings.account.import.about": {
+    "defaultMessage": "このサーバーか Mastodon でエクスポートした CSV ファイルを取り込みます。「インポート」を押すまでは何も変わりません。",
+    "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
+  },
+  "settings.account.import.kind": {
+    "defaultMessage": "ファイルの内容",
+    "description": "The label of the choice on the settings page Import of what the CSV file lists; its options are settings.account.csv.kind."
+  },
+  "settings.account.import.file": {
+    "defaultMessage": "CSV ファイル",
+    "description": "The label of the field on the settings page Import that holds the file the reader chose from their device."
+  },
+  "settings.account.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {別のファイルを選ぶ} other {ファイルを選ぶ}}",
+    "description": "The button of the field CSV file on the settings page Import that opens the device's file picker. chosen is yes once the field holds a file, whose name stands after the button."
+  },
+  "settings.account.import.file.none": {
+    "defaultMessage": "ファイルが選ばれていません",
+    "description": "Beside the button Choose a file on the settings page Import while the field holds no file, where the file's name stands once one is chosen. No full stop."
+  },
+  "settings.account.import.file.missing": {
+    "defaultMessage": "インポートする CSV ファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import without having chosen a file."
+  },
+  "settings.account.import.file.unread": {
+    "defaultMessage": "このファイルを CSV ファイルとして読み込めませんでした。別のファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the browser could not read the file, or the server could not read it and gave no reason of its own."
+  },
+  "settings.account.import.file.too_large": {
+    "defaultMessage": "「{name}」は大きすぎます。ファイルは {max, number} 文字までです。小さいファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes; the field then holds no file. name is the file's name; max is 1000000."
+  },
+  "settings.account.import.file.empty": {
+    "defaultMessage": "このファイルには、選んだ内容としてインポートできるものがありません。「ファイルの内容」を確認するか、別のファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
+  },
+  "settings.account.import.mode": {
+    "defaultMessage": "インポートの方法",
+    "description": "The label of the choice on the settings page Import between merging the file into what the reader has and replacing it; its options are settings.account.import.mode.choice."
+  },
+  "settings.account.import.mode.choice": {
+    "defaultMessage": "{mode, select, overwrite {置き換え} other {統合}}",
+    "description": "An option of How to import on the settings page Import, and a fact of an import in the list Recent imports: mode is overwrite (what the reader has becomes exactly what the file lists) or merge (the file's entries are added). No full stop."
+  },
+  "settings.account.import.mode.about": {
+    "defaultMessage": "{mode, select, overwrite {リストをファイルの内容どおりにします。今あるもののうち、ファイルにないものは削除されます。} other {ファイルの内容を今あるものに追加します。何も削除しません。}}",
+    "description": "The line under How to import on the settings page Import: what the chosen way does. mode is as in settings.account.import.mode.choice."
+  },
+  "settings.account.import.preview": {
+    "defaultMessage": "プレビュー",
+    "description": "A heading on the settings page Import, over what importing the chosen file would do, before anything changes. A heading: no full stop."
+  },
+  "settings.account.import.preview.about": {
+    "defaultMessage": "サーバーがファイルを読み取った結果です。ほかのサーバーのアカウントや投稿は、インポートの実行時に検索します。",
+    "description": "Under the heading Preview on the settings page Import: where the numbers come from, and that an account or a post on another server may still not be found later."
+  },
+  "settings.account.import.preview.waiting": {
+    "defaultMessage": "{state, select, idle {ファイルを選ぶと、インポートの内容をここで確認できます。} pending {ファイルを読み取っています…} other {ファイルを読み込めなかったため、プレビューできません。}}",
+    "description": "In the section Preview of the settings page Import while it has no preview to show: state is idle (no file chosen yet), pending (the server is reading the file), or anything else when the file was refused, which the field CSV file explains."
+  },
+  "settings.account.import.preview.add": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {新しくフォローするアカウントはありません} other {# 件のアカウントを新しくフォローします}}} followed_tags {{count, plural, =0 {新しくフォローするハッシュタグはありません} other {# 件のハッシュタグを新しくフォローします}}} blocks {{count, plural, =0 {新しくブロックするアカウントはありません} other {# 件のアカウントを新しくブロックします}}} mutes {{count, plural, =0 {新しくミュートするアカウントはありません} other {# 件のアカウントを新しくミュートします}}} domain_mutes {{count, plural, =0 {新しくミュートするサーバーはありません} other {# 件のサーバーを新しくミュートします}}} other {{count, plural, =0 {新しくブックマークする投稿はありません} other {# 件の投稿を新しくブックマークします}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the import would add to what the reader has. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.present": {
+    "defaultMessage": "{kind, select, following {{count, plural, other {# 件のアカウントはすでにフォローしています}}} followed_tags {{count, plural, other {# 件のハッシュタグはすでにフォローしています}}} blocks {{count, plural, other {# 件のアカウントはすでにブロックしています}}} mutes {{count, plural, other {# 件のアカウントはすでにミュートしています}}} domain_mutes {{count, plural, other {# 件のサーバーはすでにミュートしています}}} other {{count, plural, other {# 件の投稿はすでにブックマークしています}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the reader has already, which the import leaves as they are. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.remove": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {フォローを解除するアカウントはありません} other {ファイルにない # 件のアカウントのフォローを解除します}}} followed_tags {{count, plural, =0 {フォローを解除するハッシュタグはありません} other {ファイルにない # 件のハッシュタグのフォローを解除します}}} blocks {{count, plural, =0 {ブロックを解除するアカウントはありません} other {ファイルにない # 件のアカウントのブロックを解除します}}} mutes {{count, plural, =0 {ミュートを解除するアカウントはありません} other {ファイルにない # 件のアカウントのミュートを解除します}}} domain_mutes {{count, plural, =0 {ミュートを解除するサーバーはありません} other {ファイルにない # 件のサーバーのミュートを解除します}}} other {{count, plural, =0 {削除するブックマークはありません} other {ファイルにない # 件のブックマークを削除します}}}}",
+    "description": "A fact of the Preview on the settings page Import when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.skipped": {
+    "defaultMessage": "{count, plural, other {# 行をスキップします}}",
+    "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
+  },
+  "settings.account.import.preview.skipped.line": {
+    "defaultMessage": "{reason, select, duplicate {{line, number} 行目は前の行と重複しています: {value}} other {{line, number} 行目は読み取れません: {value}}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as written, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+  },
+  "settings.account.import.preview.skipped.more": {
+    "defaultMessage": "{count, plural, other {ほか # 行}}",
+    "description": "The last line under settings.account.import.preview.skipped on the settings page Import when the file has more lines that cannot be read than the page writes out: how many more. No full stop."
+  },
+  "settings.account.import.submit": {
+    "defaultMessage": "インポート",
+    "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.refused": {
+    "defaultMessage": "インポートしていません。示した箇所を直してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when something is wrong with the file, which the field CSV file says."
+  },
+  "settings.account.import.failed": {
+    "defaultMessage": "インポートを開始できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server did not take the import and gave no reason of its own (the network)."
+  },
+  "settings.account.import.running": {
+    "defaultMessage": "別のインポートを実行中です。完了してから開始してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server refused the import because it is still carrying out an earlier one of the reader."
+  },
+  "settings.account.import.started": {
+    "defaultMessage": "インポートを開始しました。バックグラウンドで進むため、このページを離れてもかまいません。",
+    "description": "The status of the section Recent imports on the settings page Import right after the server took the reader's import; the list under it says how far it is."
+  },
+  "settings.account.import.replace.title": {
+    "defaultMessage": "{kind, select, following {フォローを置き換えますか？} followed_tags {フォロー中のハッシュタグを置き換えますか？} blocks {ブロックしたアカウントを置き換えますか？} mutes {ミュートしたアカウントを置き換えますか？} domain_mutes {ミュートしたサーバーを置き換えますか？} other {ブックマークを置き換えますか？}}",
+    "description": "The question of the confirmation that opens when the reader presses Import on the settings page Import with Replace chosen and the import would remove something. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.text": {
+    "defaultMessage": "{kind, select, following {ファイルにない {count, number} 件のアカウントのフォローを解除します。取り消せません。} followed_tags {ファイルにない {count, number} 件のハッシュタグのフォローを解除します。取り消せません。} blocks {ファイルにない {count, number} 件のアカウントのブロックを解除します。取り消せません。} mutes {ファイルにない {count, number} 件のアカウントのミュートを解除します。取り消せません。} domain_mutes {ファイルにない {count, number} 件のサーバーのミュートを解除します。取り消せません。} other {ファイルにない {count, number} 件のブックマークを削除します。取り消せません。}}",
+    "description": "The text of the confirmation that asks whether to replace what the reader has with what the file lists, on the settings page Import: what the import removes, and that it cannot be undone. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.confirm": {
+    "defaultMessage": "置き換える",
+    "description": "The button of the confirmation on the settings page Import that starts the import that replaces what the reader has."
+  },
+  "settings.account.import.replace.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation on the settings page Import that closes it without importing anything."
+  },
+  "settings.account.import.recent": {
+    "defaultMessage": "最近のインポート",
+    "description": "A heading on the settings page Import, over the list of the imports the reader started in the last 7 days. A heading: no full stop."
+  },
+  "settings.account.import.recent.about": {
+    "defaultMessage": "インポートはサーバーがバックグラウンドで実行します。見つからない、または操作できないアカウントや投稿は、失敗として数えます。インポートは 7 日間ここに表示されます。",
+    "description": "Under the heading Recent imports on the settings page Import: how an import runs, what failed means in a row's state (settings.account.import.row.state), and how long a row stays."
+  },
+  "settings.account.import.recent.loading": {
+    "defaultMessage": "インポートを読み込んでいます…",
+    "description": "In the section Recent imports of the settings page Import while the reader's imports are read from the server."
+  },
+  "settings.account.import.recent.failed": {
+    "defaultMessage": "インポートを読み込めませんでした。",
+    "description": "In the section Recent imports of the settings page Import when the reader's imports could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.import.recent.none": {
+    "defaultMessage": "この 7 日間にインポートはありません。",
+    "description": "In place of the list Recent imports on the settings page Import while the server lists no import of the reader."
+  },
+  "settings.account.import.row.started": {
+    "defaultMessage": "{date} に開始",
+    "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.import.row.state": {
+    "defaultMessage": "{state, select, running {実行中: {total, number} 件中 {processed, number} 件完了} nothing {完了: 実行するものはありませんでした} done {完了: {total, number} 件すべて成功} partly {完了: {total, number} 件中 {done, number} 件成功、{failed, number} 件失敗} other {完了: {total, number} 件すべて失敗}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. No full stop."
+  },
+  "settings.account.auto_delete": {
+    "defaultMessage": "古い投稿の自動削除",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader chooses whether their posts are deleted once they pass an age, and which are kept. A heading: no full stop."
+  },
+  "settings.account.auto_delete.row.about": {
+    "defaultMessage": "指定した日数を過ぎた自分の投稿を削除する",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data until the reader's settings are read: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.auto_delete.row.standing": {
+    "defaultMessage": "{enabled, select, on {オン: {days, number} 日を過ぎた投稿を削除します} other {オフ}}",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data: whether the automatic deletion is on, and past which age it deletes. days is 1 or more. Without a full stop."
+  },
+  "settings.account.auto_delete.loading": {
+    "defaultMessage": "古い投稿の設定を読み込んでいます…",
+    "description": "On the settings page Delete old posts automatically while the reader's settings are read from the server."
+  },
+  "settings.account.auto_delete.failed": {
+    "defaultMessage": "古い投稿の設定を読み込めませんでした。",
+    "description": "On the settings page Delete old posts automatically when the reader's settings could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.bound": {
+    "defaultMessage": "{state, select, from {{date} から、このサーバーの上限が投稿に適用されます} now {このサーバーの上限が投稿に適用されています} other {このサーバーの上限が投稿に適用されます}}",
+    "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
+  },
+  "settings.account.auto_delete.bound.about": {
+    "defaultMessage": "{state, select, now {このサーバーが投稿を残すのは最長 {days, number} 日ですが、保存済みの設定では一部の投稿がそれより長く残ります。下の「削除される投稿」で、上限によって削除される投稿の数を確認できます。このページで保存すると、設定は上限の範囲内になります。} other {このサーバーが投稿を残すのは最長 {days, number} 日ですが、保存済みの設定では一部の投稿がそれより長く残ります。上限が適用されるまでは、保存済みの設定が有効です。下の「削除される投稿」で、適用後に削除される投稿の数を確認できます。このページで保存すると、設定はすぐに上限の範囲内になります。}}",
+    "description": "Under settings.account.auto_delete.bound: what the server's maximum is, that the reader's own settings stay in effect until it applies, where the page counts what it will delete (the section settings.account.auto_delete.section.count), and what saving does. state is as in settings.account.auto_delete.bound; days is the maximum."
+  },
+  "settings.account.auto_delete.section.when": {
+    "defaultMessage": "削除する時期",
+    "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.when.about": {
+    "defaultMessage": "下の日数を過ぎた投稿は、自分で削除したときと同じように、このサーバーと送信先のサーバーから削除されます。元に戻せません。ほかの人の投稿のブーストは削除されません。",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
+  },
+  "settings.account.auto_delete.when.about_limit": {
+    "defaultMessage": "このサーバーが投稿を残すのは最長 {days, number} 日です。下の日数を過ぎた投稿は、このサーバーと送信先のサーバーから削除されます。元に戻せません。ほかの人の投稿のブーストは削除されません。",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: the maximum, and what a deletion is. days is the maximum."
+  },
+  "settings.account.auto_delete.enabled": {
+    "defaultMessage": "自動削除",
+    "description": "The label of the choice on the settings page Delete old posts automatically between deleting old posts and not; its options are settings.account.auto_delete.enabled.choice."
+  },
+  "settings.account.auto_delete.enabled.choice": {
+    "defaultMessage": "{enabled, select, on {オン} other {オフ}}",
+    "description": "An option of Automatic deletion on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.enabled.fixed": {
+    "defaultMessage": "このサーバーでは古い投稿が必ず削除されるため、オフにできません。",
+    "description": "Under Automatic deletion on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: why the choice shows On and cannot be changed; also said there when the server refused a save that turned it off."
+  },
+  "settings.account.auto_delete.days": {
+    "defaultMessage": "この日数を過ぎた投稿を削除",
+    "description": "The label of the number field on the settings page Delete old posts automatically that holds the age, in days, past which a post is deleted; the unit days follows the field (settings.account.auto_delete.days.unit)."
+  },
+  "settings.account.auto_delete.days.unit": {
+    "defaultMessage": "日",
+    "description": "The unit after the number field Delete posts older than on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.days.about": {
+    "defaultMessage": "{limited, select, yes {1〜{max, number} 日 (このサーバーが投稿を残す最長の日数まで)} other {1〜{max, number} 日}}",
+    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. limited is yes on a server whose maximum applies to the reader, max being that maximum; otherwise max is 3650. No full stop."
+  },
+  "settings.account.auto_delete.days.rule": {
+    "defaultMessage": "1〜{max, number} の整数で日数を入力してください。",
+    "description": "Under the number field Delete posts older than on the settings page Delete old posts automatically when it is empty as the reader presses Save, or the server refused its value. max is the most days the field takes."
+  },
+  "settings.account.auto_delete.section.kept": {
+    "defaultMessage": "残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the kinds of posts that are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.kept.about": {
+    "defaultMessage": "{limited, select, yes {どれかに当てはまる投稿は、どれだけ古くても削除されません。このサーバーで残せないものはチェックできません。} other {どれかに当てはまる投稿は、どれだけ古くても削除されません。}}",
+    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically. limited is yes on a server whose maximum applies to the reader, where some checkboxes are disabled."
+  },
+  "settings.account.auto_delete.kept.rule": {
+    "defaultMessage": "このサーバーでは、チェックした種類の一部を残せません。ページを読み込み直すと、チェックできる種類を確認できます。",
+    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds."
+  },
+  "settings.account.auto_delete.keep": {
+    "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {ピン留めした投稿} other {最近ピン留めした # 件の投稿}}} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} other {記事}}",
+    "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
+  },
+  "settings.account.auto_delete.section.audiences": {
+    "defaultMessage": "公開範囲ごとに残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the visibilities (Public, Followers only…) whose posts are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.audiences.about": {
+    "defaultMessage": "{allowed, select, yes {チェックした公開範囲の投稿は、すべて残します。} other {このサーバーでは、公開範囲で投稿を残すことはできません。}}",
+    "description": "Under the heading Posts kept by audience on the settings page Delete old posts automatically. allowed is no on a server whose maximum does not allow it, where the checkboxes are disabled."
+  },
+  "settings.account.auto_delete.section.thresholds": {
+    "defaultMessage": "ブーストやお気に入りの数で残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the two numbers of boosts and of favourites from which a post is never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.thresholds.fixed": {
+    "defaultMessage": "このサーバーでは、ブーストやお気に入りの数で投稿を残すことはできません。",
+    "description": "Under the heading Posts kept by their boosts and favourites on the settings page Delete old posts automatically, on a server whose maximum does not allow it, where the two fields are disabled."
+  },
+  "settings.account.auto_delete.threshold": {
+    "defaultMessage": "{of, select, boosts {この回数以上ブーストされた投稿を残す} other {この回数以上お気に入りにされた投稿を残す}}",
+    "description": "The label of a number field on the settings page Delete old posts automatically: how many times a post must have been boosted (of boosts) or favourited (of favourites) to be kept; the unit times follows the field (settings.account.auto_delete.threshold.unit)."
+  },
+  "settings.account.auto_delete.threshold.unit": {
+    "defaultMessage": "回",
+    "description": "The unit after the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.threshold.about": {
+    "defaultMessage": "0 にすると、この条件では残しません。",
+    "description": "The line under the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically: what 0 means."
+  },
+  "settings.account.auto_delete.threshold.rule": {
+    "defaultMessage": "0〜{max, number} の整数を入力してください。",
+    "description": "Under a number field of Posts kept by their boosts and favourites on the settings page Delete old posts automatically when the server refused its value. max is 1000000."
+  },
+  "settings.account.auto_delete.section.count": {
+    "defaultMessage": "削除される投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the count of the reader's posts that the settings on the page would delete now, before they are saved. The summary of a reader the server's maximum binds quotes this name (settings.account.auto_delete.bound.about). A heading: no full stop."
+  },
+  "settings.account.auto_delete.count.about": {
+    "defaultMessage": "保存する前の、上の設定で今数えた結果です。サーバーが削除するのは毎時 100 件までのため、古い投稿が多いと時間がかかります。",
+    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically: what the count is of, and how fast the server deletes."
+  },
+  "settings.account.auto_delete.count.off": {
+    "defaultMessage": "自動削除がオフの間は、何も削除されません。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while Automatic deletion is Off on the page."
+  },
+  "settings.account.auto_delete.count.no_age": {
+    "defaultMessage": "日数を入力すると、投稿を数えます。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the field Delete posts older than is empty."
+  },
+  "settings.account.auto_delete.count.loading": {
+    "defaultMessage": "投稿を数えています…",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the server counts."
+  },
+  "settings.account.auto_delete.count": {
+    "defaultMessage": "{more, select, yes {{count, number} 件を超える投稿が削除されます。} other {{count, plural, =0 {削除される投稿はありません。} other {# 件の投稿が削除されます。}}}}",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically: how many of the reader's posts the settings on the page would delete now. more is yes when the server stopped counting at count (1000)."
+  },
+  "settings.account.auto_delete.count.failed": {
+    "defaultMessage": "投稿を数えられませんでした。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically when the server did not answer the count; Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.count.oldest": {
+    "defaultMessage": "そのうち最も古い投稿",
+    "description": "The label over the list of up to 3 posts under the count on the settings page Delete old posts automatically: the oldest of the posts that would be deleted. No full stop."
+  },
+  "settings.account.auto_delete.count.post": {
+    "defaultMessage": "{date} の投稿",
+    "description": "A row of the list The oldest of them on the settings page Delete old posts automatically: one of the reader's posts that would be deleted, named by when it was posted, which the row opens; the start of its text follows. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.auto_delete.save": {
+    "defaultMessage": "保存",
+    "description": "The button in the bar at the bottom of the settings page Delete old posts automatically that saves the whole page."
+  },
+  "settings.account.auto_delete.save.failed": {
+    "defaultMessage": "設定を保存できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the server did not take the page and gave no reason of its own (the network)."
+  },
+  "settings.account.auto_delete.save.refused": {
+    "defaultMessage": "示した箇所を直してください。",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the page or the server found something wrong with a setting, which says what under that setting."
+  },
+  "settings.account.auto_delete.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves the settings page Delete old posts automatically with changes they did not save."
+  },
+  "settings.account.auto_delete.leave.text": {
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
+    "description": "The text of the confirmation that asks whether to leave the settings page Delete old posts automatically without saving."
+  },
+  "settings.account.auto_delete.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves the settings page Delete old posts automatically, the changes lost."
+  },
+  "settings.account.auto_delete.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on the settings page Delete old posts automatically, with the changes as the reader made them."
+  },
+  "settings.account.aliases": {
+    "defaultMessage": "別名",
+    "description": "A row of the section Moving to this account on the settings page Account and data, and the title of the page it opens, where the reader names the accounts they move from. A heading: no full stop."
+  },
+  "settings.account.aliases.row.about": {
+    "defaultMessage": "移転元のアカウントを登録して、フォロワーをこのアカウントに移せるようにする",
+    "description": "The line under the row Aliases on the settings page Account and data while the reader has no alias: what the page is for. A phrase without a full stop."
+  },
+  "settings.account.aliases.row.standing": {
+    "defaultMessage": "{count, plural, other {# 件のアカウントがフォロワーをここに移せます}}",
+    "description": "The line under the row Aliases on the settings page Account and data, in place of settings.account.aliases.row.about, while the reader has aliases: how many. count is 1 to 5. Without a full stop."
+  },
+  "settings.account.aliases.loading": {
+    "defaultMessage": "別名を読み込んでいます…",
+    "description": "On the settings page Aliases while the reader's aliases are read from the server."
+  },
+  "settings.account.aliases.failed": {
+    "defaultMessage": "別名を読み込めませんでした。",
+    "description": "On the settings page Aliases when the reader's aliases could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.aliases.count": {
+    "defaultMessage": "{count, plural, =0 {別名はありません} other {別名 # 件 (最大 {max, number} 件)}}",
+    "description": "The heading of the list on the settings page Aliases, whose title already names it: how many aliases the reader has, of the most an account can have (max is 5). A heading: no full stop."
+  },
+  "settings.account.aliases.about": {
+    "defaultMessage": "別名は、移転元のアカウントです。ここに登録すると、そのアカウントからこのアカウントへフォロワーを移せるようになります。登録しただけでは何も変わりません。移転は移転元のアカウントで始めます。",
+    "description": "Under the heading of the list on the settings page Aliases: what an alias is for, and that it does nothing by itself."
+  },
+  "settings.account.aliases.empty": {
+    "defaultMessage": "下で移転元のアカウントを追加してください。",
+    "description": "In place of the list on the settings page Aliases while the reader has no alias; the section Add an alias follows."
+  },
+  "settings.account.aliases.added": {
+    "defaultMessage": "{date} に追加",
+    "description": "A fact under an alias in the list on the settings page Aliases: when the reader added it. date is a day as the reader's locale writes it. No full stop."
+  },
+  "settings.account.aliases.remove": {
+    "defaultMessage": "削除",
+    "description": "The button of a row of the list on the settings page Aliases that removes that alias at once; the row names the account."
+  },
+  "settings.account.aliases.removed": {
+    "defaultMessage": "削除しました",
+    "description": "What a row of the list on the settings page Aliases says once the reader removed that alias, in place of its button and its facts, the row staying where it was until they leave the page. Without a full stop."
+  },
+  "settings.account.aliases.removed.spoken": {
+    "defaultMessage": "別名 {name} を削除しました。",
+    "description": "What assistive technology reads in place of settings.account.aliases.removed, where the focus goes once an alias is removed. name is the account's handle (@user@domain), or its address where the server knows no handle."
+  },
+  "settings.account.aliases.remove.failed": {
+    "defaultMessage": "別名 {name} の削除を完了できませんでした。もう一度試してください。",
+    "description": "Under the list on the settings page Aliases when removing an alias got no answer from the server (the network); the row and its button stay, to press again. name is as in settings.account.aliases.removed.spoken."
+  },
+  "settings.account.aliases.add": {
+    "defaultMessage": "別名を追加",
+    "description": "A heading on the settings page Aliases, over the field that adds an alias by the account's address. A heading: no full stop."
+  },
+  "settings.account.aliases.add.label": {
+    "defaultMessage": "移転元のアカウント",
+    "description": "The label of the field on the settings page Aliases where the reader enters the account to add as an alias."
+  },
+  "settings.account.aliases.add.hint": {
+    "defaultMessage": "@name@example.com のようなハンドルか、プロフィールのアドレス。",
+    "description": "The hint of the field Account you are moving from on the settings page Aliases: what the server takes."
+  },
+  "settings.account.aliases.add.submit": {
+    "defaultMessage": "追加",
+    "description": "The button under the field Account you are moving from on the settings page Aliases that adds that account as an alias."
+  },
+  "settings.account.aliases.add.missing": {
+    "defaultMessage": "アカウントのハンドルかアドレスを入力してください。",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the reader pressed Add with the field empty."
+  },
+  "settings.account.aliases.add.invalid": {
+    "defaultMessage": "別名にできるアカウントが見つかりませんでした。@name@example.com のようなハンドルか、プロフィールのアドレスを確認してください。自分のアカウントは別名にできません。",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the server found no account at what the reader entered, or one that cannot be an alias (the reader's own, something that is no account)."
+  },
+  "settings.account.aliases.add.failed": {
+    "defaultMessage": "別名を追加できませんでした。もう一度試してください。",
+    "description": "The status of the section Add an alias on the settings page Aliases when adding got no answer from the server (the network)."
+  },
+  "settings.account.aliases.add.done": {
+    "defaultMessage": "別名を追加しました。",
+    "description": "The status of the section Add an alias on the settings page Aliases once the server added the alias, which the list above then shows."
+  },
+  "settings.account.aliases.full": {
+    "defaultMessage": "別名は上限の {max, number} 件に達しています。追加するには、どれかを削除してください。",
+    "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
   }
 }
