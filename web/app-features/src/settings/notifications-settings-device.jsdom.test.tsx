@@ -72,7 +72,7 @@ test("the site is blocked in the browser's settings while the switch has the foc
 // The entry's other hand-off of the focus: the summary of an email that stopped gives way under the reader's press.
 test("an address the server says is verified already (a 409): the status that takes the summary's place takes the focus from the button", async () => {
   runtimeSignals();
-  const verified = "Your address is already verified. Email to it is on again.";
+  const verified = "Your address is already verified. Email is sent to it again.";
   const { fake, user } = await readSettings({
     ...sends,
     email: true,

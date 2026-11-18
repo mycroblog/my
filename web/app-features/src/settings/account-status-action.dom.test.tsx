@@ -151,8 +151,8 @@ describe("one action", () => {
   // A post counts as gone only when the server says so (404, 410); one whose read failed otherwise is not called gone.
   for (const [fail, says] of [
     [410, "2 posts are no longer on this server, so they cannot be opened."],
-    [500, "2 posts could not be loaded."],
-    ["network", "2 posts could not be loaded."],
+    [500, "2 posts could not be loaded. Reload the page to try again."],
+    ["network", "2 posts could not be loaded. Reload the page to try again."],
   ] as const)
     test(`posts whose reads failed (${String(fail)}) read "${says}"`, async () => {
       const server = serverOf(acted({ ...postsOverturned, ownPosts: 2 }));
@@ -174,7 +174,7 @@ describe("one action", () => {
     await waitFor(() => {
       expect(lines(posts)).toEqual([
         "1 post is no longer on this server, so it cannot be opened.",
-        "1 post could not be loaded.",
+        "1 post could not be loaded. Reload the page to try again.",
       ]);
     });
   });

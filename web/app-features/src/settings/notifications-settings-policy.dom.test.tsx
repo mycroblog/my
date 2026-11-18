@@ -233,7 +233,7 @@ describe("email to the reader's address is stopped", () => {
   });
 
   test("an address the server says is verified already (a 409): a status in place of the summary says that email is on again, and stays once the preferences are read again", async () => {
-    const verified = "Your address is already verified. Email to it is on again.";
+    const verified = "Your address is already verified. Email is sent to it again.";
     const { fake, user, data } = await readSettings(stoppedFor("hard_bounce"));
     fake.script(route, {
       fail: { type: "/api/v1/problems/email-already-verified", title: "The address is verified already", status: 409 },
