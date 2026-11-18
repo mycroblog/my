@@ -20,6 +20,7 @@ export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
 export { ListIndex } from "./lists";
 export { streamOpened } from "./stream";
+export { NotificationSettings } from "./notification-settings";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { Profile } from "./profile";
 export { ProfileForm, ProfileSettings } from "./profile-settings";

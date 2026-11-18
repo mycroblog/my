@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
+import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
+import { createClient } from "@mycroblog/mykit";
+import { createAppData } from "./app-data";
 import {
   changeNotificationPolicy,
   changeNotificationSettings,
   notificationPolicyQuery,
+  resendVerificationEmail,
   useNotificationPolicy,
   type NotificationPolicy,
   type NotificationSettings,
@@ -64,6 +68,83 @@ describe("changeNotificationSettings", () => {
     );
     expect(refused.status).toBe(422);
     expect(cellOf(data, "mention")).toEqual({ in_app: true, email: false });
+  });
+});
+
+describe("resendVerificationEmail", () => {
+  const route = "POST /accounts/email/verification";
+
+  /**
+   * The app's data on a server that sent as many verification emails as it sends for now, whose refusal asks the
+   * reader to wait as `retryAfter` says in place of the fake's seconds.
+   */
+  function limitedUntil(retryAfter: string) {
+    const fake = createFakeApi({ email: true, verificationEmail: "limited" });
+    const api = createClient({
+      server: fakeOrigin,
+      retry: { disabled: true },
+      fetch: async (request) => {
+        const answer = await fake.serve(request);
+        if (answer.status !== 429) return answer;
+        const headers = new Headers(answer.headers);
+        headers.set("Retry-After", retryAfter);
+        return new Response(answer.body, { status: answer.status, headers });
+      },
+    });
+    return createAppData(api);
+  }
+
+  test("asks the server for the email once, and is sent when the server queued it", async () => {
+    const { fake, data, requests } = fakeData({ email: true });
+    const sent = fake.script(route);
+
+    expect(await resendVerificationEmail(data)).toBe("sent");
+
+    expect(requests).toEqual(["POST /accounts/email/verification"]);
+    expect(sent.seen).toHaveLength(1);
+  });
+
+  test("is sent as well when the server says the address is verified already (a 409): the reader has nothing more to do", async () => {
+    const { fake, data } = fakeData({ email: true });
+    fake.script(route, { fail: 409 });
+
+    expect(await resendVerificationEmail(data)).toBe("sent");
+  });
+
+  test("a 429 resolves with the wait the server asks for, from the seconds of its Retry-After", async () => {
+    // The fake's limit asks for 25 minutes.
+    const { data } = fakeData({ email: true, verificationEmail: "limited" });
+
+    expect(await resendVerificationEmail(data)).toEqual({ waitMs: 25 * 60 * 1000 });
+  });
+
+  test("a 429 whose Retry-After is a date resolves with the time left until it", async () => {
+    // An HTTP date has no fraction of a second: ten minutes from now, to the second below.
+    const until = new Date(Math.floor(Date.now() / 1000) * 1000 + 10 * 60 * 1000);
+
+    const wait = await resendVerificationEmail(limitedUntil(until.toUTCString()));
+
+    if (wait === "sent" || wait.waitMs === undefined) throw new Error("test: the answer names no wait");
+    expect(wait.waitMs).toBeGreaterThan(9 * 60 * 1000);
+    expect(wait.waitMs).toBeLessThanOrEqual(10 * 60 * 1000);
+  });
+
+  test("a 429 that names no wait, or one that cannot be read, resolves with no wait", async () => {
+    const { fake, data } = fakeData({ email: true });
+    // A problem of the fake's script carries no Retry-After.
+    fake.script(route, { fail: 429 });
+
+    expect(await resendVerificationEmail(data)).toEqual({ waitMs: undefined });
+    expect(await resendVerificationEmail(limitedUntil("soon"))).toEqual({ waitMs: undefined });
+  });
+
+  test("any other failure rejects with the server's problem", async () => {
+    const { fake, data } = fakeData({ email: true });
+    fake.script(route, { fail: 500 });
+
+    expect((await refusedWith(resendVerificationEmail(data))).status).toBe(500);
+    // A server that sends no email has no such email to send.
+    expect((await refusedWith(resendVerificationEmail(fakeData().data))).status).toBe(404);
   });
 });
 

@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { afterEach, beforeEach, describe, expect, test } from "bun:test";
+import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
+import type { AppData } from "./app-data";
 import {
   notificationSettingsQuery,
   notificationSoundOn,
   pushSubscriptionQuery,
   rememberPushPromptClosed,
   setNotificationSound,
+  setNotificationSoundKinds,
   turnPushOff,
   turnPushOn,
   useNotificationKinds,
   usePushSubscription,
   useRegisterPush,
+  watchNotificationSound,
   type PushSubscription,
 } from "./push";
-import { fakeData } from "./test/data";
+import { startStream } from "./stream";
+import { dataOn, fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { refusedWith } from "./test/refused";
+import { fakeStreams } from "./test/tabs";
 
 describe("usePushSubscription", () => {
   test("is undefined until it is read, the server's once read, and null when the server has none (a 404)", async () => {
@@ -238,6 +244,105 @@ describe("the notification sound", () => {
     expect(() => {
       setNotificationSound(true);
     }).not.toThrow();
+  });
+});
+
+// Which kinds sound is the device's too (ADR-0086 §12): a notification that arrives on the stream plays the sound when
+// the sound is on and its kind's is. What the settings' Sound column shows of the kinds is the feature's test, on a DOM
+// (web/app-features/src/settings/notifications-settings.dom.test.tsx): a render without one reads no device.
+describe("watchNotificationSound", () => {
+  let stops: (() => void)[];
+  beforeEach(() => {
+    globalThis.localStorage = deviceStorage();
+    stops = [];
+  });
+  afterEach(() => {
+    for (const stop of stops) stop();
+    Reflect.deleteProperty(globalThis, "localStorage");
+  });
+
+  /**
+   * A reader whose stream is open, and who is told of each sound: `arrive()` is a new notification on the stream (a
+   * favourite of their post), `played()` how many sounds they heard, and `stop()` ends the telling.
+   */
+  async function listening() {
+    const fake = createFakeApi();
+    const data: AppData = { ...dataOn(fake).data, connection: { server: fakeOrigin } };
+    const { run, streams } = fakeStreams();
+    stops.push(startStream(data, { tabs: null, run }));
+    await Bun.sleep(0);
+    const [stream] = streams;
+    if (stream === undefined) throw new Error("test: no stream was opened");
+    stream.open(false);
+    let played = 0;
+    const stop = watchNotificationSound(data, () => (played += 1));
+    stops.push(stop);
+    return {
+      arrive: () => {
+        stream.send({ type: "notification", notification: fake.newNotification() });
+      },
+      played: () => played,
+      stop,
+    };
+  }
+
+  test("plays nothing while the sound is off, whichever kinds have theirs on", async () => {
+    setNotificationSoundKinds(["favourite"], true);
+    const { arrive, played } = await listening();
+
+    arrive();
+
+    expect(played()).toBe(0);
+  });
+
+  test("plays nothing for a kind whose sound is off, and no kind's is on until the device is told", async () => {
+    setNotificationSound(true);
+    const { arrive, played } = await listening();
+
+    arrive();
+    expect(played()).toBe(0);
+
+    setNotificationSoundKinds(["mention", "follow"], true);
+    arrive();
+    expect(played()).toBe(0);
+  });
+
+  test("plays once for a notification of a kind whose sound is on, and once for several that arrive together", async () => {
+    setNotificationSound(true);
+    setNotificationSoundKinds(["mention", "favourite"], true);
+    const { arrive, played } = await listening();
+
+    arrive();
+    expect(played()).toBe(1);
+
+    arrive();
+    arrive();
+    expect(played()).toBe(1);
+  });
+
+  test("a kind whose sound was turned off again plays nothing, and the other kinds keep theirs", async () => {
+    setNotificationSound(true);
+    setNotificationSoundKinds(["mention", "favourite"], true);
+    setNotificationSoundKinds(["favourite"], false);
+    const silent = await listening();
+
+    silent.arrive();
+    expect(silent.played()).toBe(0);
+
+    setNotificationSoundKinds(["favourite"], true);
+    silent.arrive();
+    expect(silent.played()).toBe(1);
+  });
+
+  test("the function it returns ends it: a notification that arrives after plays nothing", async () => {
+    setNotificationSound(true);
+    setNotificationSoundKinds(["favourite"], true);
+    const { arrive, played, stop } = await listening();
+
+    stop();
+    arrive();
+
+    expect(played()).toBe(0);
   });
 });
 
