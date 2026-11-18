@@ -1552,9 +1552,9 @@ func (l *Localizer) ServerErrorsInvitesNotAllowed() string {
 	return l.format("server:errors.invites.not_allowed", nil)
 }
 
-// ServerErrorsInvitesNotAllowedDetail formats "server:errors.invites.not_allowed_detail". Detail of the HTTP 403 API error when the user may not create invites of their own. {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account waits for approval), or restricted (a moderation action on the account).
+// ServerErrorsInvitesNotAllowedDetail formats "server:errors.invites.not_allowed_detail". Detail of the HTTP 403 API error when the user may not create invites of their own, shown under the title "You cannot create invites." {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value is a refusal that names no cause.
 //
-//	en: {reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved yet. Wait for a moderator's approval.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}
+//	en: {reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}
 func (l *Localizer) ServerErrorsInvitesNotAllowedDetail(reason string) string {
 	return l.format("server:errors.invites.not_allowed_detail", map[string]any{"reason": reason})
 }

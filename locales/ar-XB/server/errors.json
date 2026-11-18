@@ -320,7 +320,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invites.not_allowed_detail": {
-    "defaultMessage": "‮{reason,select,not_approved{⅄onɹ ɹǝƃısʇɹɐʇıou ıs uoʇ ɐddɹoʌǝp ʎǝʇ. Mɐıʇ ɟoɹ ɐ ɯopǝɹɐʇoɹ's ɐddɹoʌɐʅ.} not_permitted{Ouʅʎ soɯǝ ɐɔɔonuʇs ɔɐu ɔɹǝɐʇǝ ıuʌıʇǝs ou ʇɥıs sǝɹʌǝɹ. ∀sʞ ıʇs ɐpɯıuısʇɹɐʇoɹs ʇo ʅǝʇ ʎon ɔɹǝɐʇǝ ʇɥǝɯ.} other{⅄on ɔɐuuoʇ ɔɹǝɐʇǝ ıuʌıʇǝs uoʍ.} registration_closed{⊥ɥıs sǝɹʌǝɹ ʇɐʞǝs uo uǝʍ ɐɔɔonuʇs uoʍ, so uo ıuʌıʇǝ ɔɐu qǝ ɔɹǝɐʇǝp.} restricted{∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ ɔɹǝɐʇıuƃ ıuʌıʇǝs ɟoɹ uoʍ.}}‬",
+    "defaultMessage": "‮{reason,select,not_approved{⅄onɹ ɹǝƃısʇɹɐʇıou ıs uoʇ ɐddɹoʌǝp. ∀ ɯopǝɹɐʇoɹ uǝǝps ʇo ɐddɹoʌǝ ıʇ qǝɟoɹǝ ʎon ɔɐu ɔɹǝɐʇǝ ıuʌıʇǝs.} not_permitted{Ouʅʎ soɯǝ ɐɔɔonuʇs ɔɐu ɔɹǝɐʇǝ ıuʌıʇǝs ou ʇɥıs sǝɹʌǝɹ. ∀sʞ ıʇs ɐpɯıuısʇɹɐʇoɹs ʇo ʅǝʇ ʎon ɔɹǝɐʇǝ ʇɥǝɯ.} other{⅄on ɔɐuuoʇ ɔɹǝɐʇǝ ıuʌıʇǝs uoʍ.} registration_closed{⊥ɥıs sǝɹʌǝɹ ʇɐʞǝs uo uǝʍ ɐɔɔonuʇs uoʍ, so uo ıuʌıʇǝ ɔɐu qǝ ɔɹǝɐʇǝp.} restricted{∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ ɔɹǝɐʇıuƃ ıuʌıʇǝs ɟoɹ uoʍ.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.invites.registration_closed": {
