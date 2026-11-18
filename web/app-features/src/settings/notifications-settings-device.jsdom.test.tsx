@@ -2,12 +2,12 @@
 
 // On jsdom: happy-dom gives the focus to any element that is asked to take it, so where the focus is once the Web Push
 // switch of the notification settings (#3201) turned disabled under the reader, and once it is theirs again, is decided
-// here (ADR-0171 §4). What the switch says and does is notifications-settings-device.dom.test.tsx; how a switch hands
+// here (ADR-0171 §4), and where it goes once the summary of a stopped email gives way. What the switch says and does is notifications-settings-device.dom.test.tsx; how a switch hands
 // its focus over and takes it back is the design system's (switch.jsdom.test.tsx).
 
 import { expect, test } from "bun:test";
 import { memberNotificationRows, type FakeOptions } from "@my/e2e/fake";
-import { waitFor } from "@testing-library/react";
+import { screen, waitFor } from "@testing-library/react";
 import { changeSitePermission, type PushBrowser } from "../test/browser";
 import { readSettings, toggle } from "../test/notification-settings";
 import { runtimeSignals } from "../test/profile-form";
@@ -67,6 +67,30 @@ test("the site is blocked in the browser's settings while the switch has the foc
 
   await focusOn(`line: ${blocked}`);
   expect(toggle(push).disabled).toBe(true);
+});
+
+// The entry's other hand-off of the focus: the summary of an email that stopped gives way under the reader's press.
+test("an address the server says is verified already (a 409): the status that takes the summary's place takes the focus from the button", async () => {
+  runtimeSignals();
+  const verified = "Your address is already verified. Email to it is on again.";
+  const { fake, user } = await readSettings({
+    ...sends,
+    email: true,
+    preferences: { email_suppression: { kind: "hard_bounce", state_changed_at: "2026-11-02T09:30:00Z" } },
+  });
+  fake.script("POST /accounts/email/verification", {
+    fail: { type: "/api/v1/problems/email-already-verified", title: "The address is verified already", status: 409 },
+  });
+  const send = screen.getByRole("button", { name: "Send the verification email" });
+
+  await user.click(send);
+
+  await waitFor(() => {
+    const has = document.activeElement;
+    const on =
+      has === null ? "nothing" : `${has.getAttribute("role") ?? has.tagName.toLowerCase()}: ${has.textContent}`;
+    if (on !== `status: ${verified}`) throw new Error(`test: the focus is on "${on}"`);
+  });
 });
 
 test("the site is unblocked in the browser's settings while the status of the refusal has the focus: the focus returns to the switch", async () => {

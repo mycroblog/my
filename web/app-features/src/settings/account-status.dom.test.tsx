@@ -346,6 +346,33 @@ describe("Account status", () => {
     expect(within(section(past)).queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
   });
 
+  test("a Show more that fails keeps the rows, says so, and its button, named Try again, brings the rest", async () => {
+    const on = await drawnStatus(acted(...warnings(24)));
+    await answered(on);
+    const failing = on.fake.script("GET /moderation/actions", { fail: 500 });
+    const before = on.requests.length;
+
+    await on.user.click(within(section(past)).getByRole("button", { name: "Show more" }));
+
+    await answered(on, before);
+    expect(failing.seen.length).toBeGreaterThan(0);
+    expect(rows(past)).toHaveLength(20);
+    expect(linesOf(section(past))).toContain("More past actions could not be loaded.");
+    const again = within(section(past)).getByRole("button", { name: "Try again" });
+    expect(within(section(past)).queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
+    // The whole screen did not give way to the failure.
+    expect(alerts().some((words) => words.startsWith(failed))).toBe(false);
+    failing.end();
+    const retried = on.requests.length;
+
+    await on.user.click(again);
+
+    await answered(on, retried);
+    expect(rows(past)).toHaveLength(24);
+    expect(within(section(past)).queryAllByRole("button", { name: /^(Show more|Try again)$/ })).toHaveLength(0);
+    expect(linesOf(section(past))).not.toContain("More past actions could not be loaded.");
+  });
+
   test("while the actions are on their way the screen says so in a status, and then lists what came", async () => {
     const server = serverOf(acted(noPosting));
     const held = server.fake.script("GET /moderation/actions", { hold: "request" });

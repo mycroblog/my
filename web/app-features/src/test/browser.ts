@@ -19,6 +19,11 @@ export type PushBrowser = {
   subscribe?: "ok" | "fails-once";
   /** The browser has no Push API. */
   noPushApi?: boolean;
+  /**
+   * The page's Service Worker: registered (`registered`, by default), or never registered (`none`), where the browser's
+   * `ready` waits for ever and it has no registration to give.
+   */
+  worker?: "registered" | "none";
   /** The page's audio: it plays (`plays`, by default), or the browser keeps it from starting (`blocked`). */
   audio?: "plays" | "blocked";
 };
@@ -91,6 +96,7 @@ export function pushBrowser({
   answer = "granted",
   subscribe = "ok",
   noPushApi = false,
+  worker = "registered",
   audio: plays = "plays",
 }: PushBrowser = {}): SeenByBrowser {
   const seen: SeenByBrowser = { asked: 0, subscribed: 0, played: 0 };
@@ -152,13 +158,14 @@ export function pushBrowser({
   Object.assign(globalThis, globals);
   // The browser's navigator, reached as a stub reaches it: only @my/platform reads the platform's globals in the app.
   const browser = Reflect.get(globalThis, "navigator") as object;
+  const registered = worker === "registered";
   Object.defineProperty(browser, "serviceWorker", {
     configurable: true,
     value: {
-      ready: Promise.resolve(registration),
-      controller: {},
-      getRegistration: () => Promise.resolve(registration),
-      register: () => Promise.resolve(registration),
+      ready: registered ? Promise.resolve(registration) : new Promise(() => undefined),
+      controller: registered ? {} : null,
+      getRegistration: () => Promise.resolve(registered ? registration : undefined),
+      register: () => (registered ? Promise.resolve(registration) : new Promise(() => undefined)),
       addEventListener: () => undefined,
       removeEventListener: () => undefined,
     },

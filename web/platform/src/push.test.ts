@@ -295,6 +295,33 @@ describe("subscribePush", () => {
     });
     expect(refused).toBeDefined();
   });
+
+  test("rejects at once when the page has no Service Worker registration, and asks the push manager nothing", async () => {
+    const { pushManager } = installBrowser(null, () =>
+      Promise.resolve(heldSubscription(key, "https://push.example/s/1")),
+    );
+    // A browser's `ready` waits until a worker is registered, which never happens here.
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        ready: new Promise(() => undefined),
+        controller: null,
+        getRegistration: () => Promise.resolve(undefined),
+        register: () => new Promise(() => undefined),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
+    const outcome = await Promise.race([
+      subscribePush(key).then(
+        () => "subscribed",
+        () => "rejected",
+      ),
+      Bun.sleep(50).then(() => "still waiting"),
+    ]);
+    expect(outcome).toBe("rejected");
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
+  });
 });
 
 describe("showAppBadge", () => {

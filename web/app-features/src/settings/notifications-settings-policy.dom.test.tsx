@@ -232,13 +232,30 @@ describe("email to the reader's address is stopped", () => {
     expect(requests.filter((request) => !request.startsWith("GET "))).toEqual(["POST /accounts/email/verification"]);
   });
 
+  test("an address the server says is verified already (a 409): a status in place of the summary says that email is on again, and stays once the preferences are read again", async () => {
+    const verified = "Your address is already verified. Email to it is on again.";
+    const { fake, user, data } = await readSettings(stoppedFor("hard_bounce"));
+    fake.script(route, {
+      fail: { type: "/api/v1/problems/email-already-verified", title: "The address is verified already", status: 409 },
+    });
+    // The server holds the address verified: the preferences read again say nothing of a stop.
+    const reread = fake.script("GET /preferences", {
+      change: ({ email_suppression: _stop, ...preferences }) => preferences,
+    });
+
+    await user.click(section(stopped).getByRole("button", { name: send }));
+
+    await reread.served();
+    await waitFor(() => {
+      expect(said(screen.queryAllByRole("status"))).toContain(verified);
+      expect(data.queryClient.isFetching()).toBe(0);
+    });
+    expect(screen.queryAllByRole("region", { name: stopped })).toHaveLength(0);
+    expect(screen.queryAllByRole("button", { name: send })).toHaveLength(0);
+    expect(said(screen.queryAllByRole("status")).filter((words) => words === verified)).toHaveLength(1);
+  });
+
   const refusals: [string, FakeOptions, number | undefined, string][] = [
-    [
-      "an address the server says is verified already (a 409) reads as sent",
-      {},
-      409,
-      "Sent. Open the link in the email to receive email again.",
-    ],
     [
       "a server that sent too many says how long to wait, from its Retry-After",
       { verificationEmail: "limited" },

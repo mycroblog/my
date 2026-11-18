@@ -190,6 +190,27 @@ describe("a post the server's automated review refused", () => {
     expect(asked(form)).toEqual([`GET /hook_decisions/${decision}/appeal`]);
   });
 
+  test("where the appeal stands could not be read: the alert still offers Appeal", async () => {
+    const on = fakeData();
+    const failing = on.fake.script("GET /hook_decisions/{id}/appeal", { fail: 500 });
+    const form = await refusedPost({}, on);
+
+    expect(failing.seen.length).toBeGreaterThan(0);
+    expect(alertSays(form)).toEqual([refused]);
+    expect(appeals(form)).toHaveLength(1);
+  });
+
+  test("a refusal whose time to appeal has passed: the alert says so, and offers no Appeal", async () => {
+    const form = composer({}, { ...reviewed, appeal: { decision, deadline: "2024-03-09T12:00:00.000Z" } });
+    await waitFor(() => {
+      if (form.on.data.queryClient.isFetching() > 0) throw new Error("test: the composer is still reading");
+    });
+    await form.findAllByRole("textbox", { name: "Text" });
+
+    expect(alertSays(form)).toEqual(["The time to appeal this refusal has passed. Change the post and try again."]);
+    expect(appeals(form)).toHaveLength(0);
+  });
+
   test("a refusal that names no decision to appeal offers no Appeal, and asks the server nothing of one", async () => {
     const form = composer({}, { kind: "failed", reason: "The post was refused." });
     await form.findAllByRole("textbox", { name: "Text" });

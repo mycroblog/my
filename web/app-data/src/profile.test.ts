@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, onTestFinished, test } from "bun:test";
+import { QueryObserver } from "@tanstack/react-query";
 import { accountByIdQuery, accountStatusesQuery, useFeaturedHashtags, viewerQuery, type Account } from "./accounts";
 import { notificationsQuery } from "./notifications";
 import {
@@ -9,6 +10,7 @@ import {
   failedPicture,
   followedHashtagsQuery,
   ownFeaturedHashtagsQuery,
+  pictureRefusal,
   profileLimits,
   setFeaturedHashtags,
   updateProfile,
@@ -20,6 +22,7 @@ import { followTag } from "./tags";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { refusedWith } from "./test/refused";
+import { settled } from "./test/settings";
 import { homeTimelineQuery } from "./timeline";
 
 const picture = (name: string) => new File([new Uint8Array([137, 80, 78, 71])], name, { type: "image/png" });
@@ -144,6 +147,44 @@ describe("failedPicture", () => {
   });
 });
 
+// What a form says under the picture the server refused: the server's own words.
+describe("pictureRefusal", () => {
+  const refusedUpload = async (problem: { type: string; title: string; detail?: string }) => {
+    const { fake, data } = fakeData();
+    fake.script("POST /media", { fail: { ...problem, status: 422 } });
+    return refusedWith(updateProfile(data, { avatar: picture("me.png") }));
+  };
+
+  test("is the detail of the server's refusal of an upload, where it gives one", async () => {
+    const refused = await refusedUpload({
+      type: "/api/v1/problems/media-too-large",
+      title: "The file is too large.",
+      detail: "Choose a file of at most 8 MB.",
+    });
+    expect(pictureRefusal(refused)).toBe("Choose a file of at most 8 MB.");
+  });
+
+  for (const kind of [
+    "media-too-large",
+    "unsupported-media-format",
+    "media-dimensions",
+    "media-corrupt",
+    "media-too-long",
+  ]) {
+    test(`is the title of a refusal of the kind ${kind} that gives no detail`, async () => {
+      const refused = await refusedUpload({ type: `/api/v1/problems/${kind}`, title: "The server's words." });
+      expect(pictureRefusal(refused)).toBe("The server's words.");
+    });
+  }
+
+  test("is none for another refusal without a detail, and for what is no refusal of the server", async () => {
+    const refused = await refusedUpload({ type: "about:blank", title: "The request failed" });
+    expect(pictureRefusal(refused)).toBeUndefined();
+    expect(pictureRefusal(new TypeError("Failed to fetch"))).toBeUndefined();
+    expect(pictureRefusal(undefined)).toBeUndefined();
+  });
+});
+
 describe("badges", () => {
   test("a choice is kept in the cached list, and marks the viewer stale", async () => {
     const { data, requests } = fakeData();
@@ -170,6 +211,74 @@ describe("badges", () => {
     const refused = await refusedWith(chooseBadge(data, "no-such-role", true));
     expect(refused.status).toBe(404);
     expect(probe(data, useBadgeChoices).map((b) => b.displayed)).toEqual([true, false]);
+  });
+});
+
+// Both write the reader's account: a change of the profile and a badge's choice go out one after the other.
+describe("a profile change and a badge's choice", () => {
+  const badgeRoute = "PUT /preferences/badges/{role_id}";
+  const patchRoute = "PATCH /accounts/update_credentials";
+  /** Some turns of the event loop: time for a request that is not queued to leave. */
+  const turns = async (n = 5) => {
+    for (let i = 0; i < n; i++) await new Promise((turn) => setTimeout(turn, 0));
+  };
+
+  async function withBadges() {
+    const on = fakeData();
+    await on.data.queryClient.query(viewerQuery(on.data));
+    await on.data.queryClient.query(badgeChoicesQuery(on.data));
+    const [, supporter] = probe(on.data, useBadgeChoices);
+    return { ...on, roleId: supporter?.role_id ?? "" };
+  }
+
+  test("a change of the profile is sent only once the badge's choice before it was answered", async () => {
+    const { fake, data, roleId } = await withBadges();
+    const badge = fake.script(badgeRoute, { hold: "response" });
+    const patch = fake.script(patchRoute);
+
+    const chosen = chooseBadge(data, roleId, true);
+    const changed = updateProfile(data, { display_name: "Yuki the baker" });
+    await badge.served();
+    await turns();
+    expect(patch.seen).toHaveLength(0);
+
+    badge.release();
+    await Promise.all([chosen, changed]);
+    expect(patch.seen).toHaveLength(1);
+  });
+
+  test("a badge's choice is sent only once the change of the profile before it was answered", async () => {
+    const { fake, data, roleId } = await withBadges();
+    const patch = fake.script(patchRoute, { hold: "response" });
+    const badge = fake.script(badgeRoute);
+
+    const changed = updateProfile(data, { display_name: "Yuki the baker" });
+    const chosen = chooseBadge(data, roleId, true);
+    await patch.served();
+    await turns();
+    expect(badge.seen).toHaveLength(0);
+
+    patch.release();
+    await Promise.all([changed, chosen]);
+    expect(badge.seen).toHaveLength(1);
+  });
+
+  test("the account a badge's choice reads again never lands over the answer of a change sent after it", async () => {
+    const { fake, data, roleId } = await withBadges();
+    // A screen shows the reader's account, so what marks it is read again at once.
+    onTestFinished(new QueryObserver(data.queryClient, viewerQuery(data)).subscribe(() => undefined));
+    // The account read after the badge's choice answers late, with the name from before the change.
+    const reread = fake.script("GET /accounts/verify_credentials", { hold: "response", times: 1 });
+
+    const chosen = chooseBadge(data, roleId, true);
+    const changed = updateProfile(data, { display_name: "Yuki the baker" });
+    // Whichever waits for the other, the late read is let go once the change was answered or after some turns.
+    await Promise.race([changed, turns(20)]);
+    reread.release();
+    await Promise.all([chosen, changed]);
+    await settled(data);
+
+    expect(data.queryClient.getQueryData<Account>(viewerQuery(data).queryKey)?.display_name).toBe("Yuki the baker");
   });
 });
 

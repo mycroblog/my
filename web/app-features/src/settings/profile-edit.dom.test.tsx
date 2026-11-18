@@ -36,6 +36,9 @@ import {
 
 const header = "Header image";
 const avatar = "Avatar";
+/** What the form says under Display name of a name the server refused, whatever the server's words. */
+const nameRule =
+  "The display name must be at most 30 characters on one line, without tabs or other control characters.";
 
 /** What the status regions of the form say. */
 const said = () =>
@@ -289,7 +292,7 @@ describe("the limits of the name and the bio", () => {
       expect(describedBy(field())).toEqual(["2 characters over", sentence]);
     });
 
-  test("the count's words come before the server's too, of a name near its limit that the server refuses", async () => {
+  test("the count's words come before the rule of a name too, of a name near its limit that the server refuses", async () => {
     const form = await profileForm();
     await rewrite(form.user, nameField(), "a".repeat(28));
     form.fake.script("PATCH /accounts/update_credentials", {
@@ -302,7 +305,7 @@ describe("the limits of the name and the bio", () => {
     await waitFor(() => {
       expect(invalid()).toEqual(["Display name"]);
     });
-    expect(describedBy(nameField())).toEqual(["2 characters left", "The server does not take this here."]);
+    expect(describedBy(nameField())).toEqual(["2 characters left", nameRule]);
   });
 });
 
@@ -628,6 +631,27 @@ describe("the form tells its owner whether it holds unsaved changes", () => {
     });
   });
 
+  test("none while a Save is on its way, so that leaving then asks nothing", async () => {
+    const form = await profileForm();
+    const sent = form.fake.script("PATCH /accounts/update_credentials", { hold: "request" });
+    await form.user.type(nameField(), "!");
+    await waitFor(() => {
+      expect(form.told.at(-1)).toBe("unsaved:true");
+    });
+
+    await form.user.click(saveButton());
+    await sent.arrived();
+
+    await waitFor(() => {
+      expect(form.told.at(-1)).toBe("unsaved:false");
+    });
+    sent.release();
+    await waitFor(() => {
+      expect(said()).toEqual(["Saved"]);
+    });
+    expect(form.told.at(-1)).toBe("unsaved:false");
+  });
+
   test("a save the server refuses leaves them unsaved", async () => {
     const form = await profileForm({ profile: { save: "refused" } });
     await form.user.type(nameField(), "!");
@@ -643,21 +667,23 @@ describe("the form tells its owner whether it holds unsaved changes", () => {
 });
 
 describe("what the server refuses shows where it belongs", () => {
-  // The member the problem names, and the one input that is marked and described by the server's words.
+  const theirs = "The server does not take this here.";
+  // The member the problem names, the one input that is marked, and what describes it: the server's words, or for the
+  // display name the form's own rule of a name (the field the profile's settings share).
   const named = [
-    ["display_name", "Display name", nameField],
-    ["note", "Bio", bioField],
-    ["fields[0].name", "Field 1: Label", () => pairField(1, "Label")],
-    ["fields[1].name", "Field 2: Label", () => pairField(2, "Label")],
-    ["fields[1].value", "Field 2: Content", () => pairField(2, "Content")],
+    ["display_name", "Display name", nameField, nameRule],
+    ["note", "Bio", bioField, theirs],
+    ["fields[0].name", "Field 1: Label", () => pairField(1, "Label"), theirs],
+    ["fields[1].name", "Field 2: Label", () => pairField(2, "Label"), theirs],
+    ["fields[1].value", "Field 2: Content", () => pairField(2, "Content"), theirs],
   ] as const;
 
-  for (const [member, name, field] of named)
-    test(`${member}: the server's words under ${name}, which alone is marked, and the problem's title beside Save`, async () => {
-      await refusedSave(refusal(member, "The server does not take this here."));
+  for (const [member, name, field, words] of named)
+    test(`${member}: ${words === nameRule ? "the rule of a name" : "the server's words"} under ${name}, which alone is marked, and the problem's title beside Save`, async () => {
+      await refusedSave(refusal(member, theirs));
 
       expect(invalid()).toEqual([name]);
-      expect(describedBy(field())).toEqual(["The server does not take this here."]);
+      expect(describedBy(field())).toEqual([words]);
       expect(alerts()).toEqual(["This could not be done."]);
       // Nothing was saved, and what the reader wrote stays.
       expect(said().includes("Saved")).toBe(false);
@@ -676,7 +702,7 @@ describe("what the server refuses shows where it belongs", () => {
     expect(alerts()).toEqual(["This could not be done."]);
   });
 
-  test("the display name the server refuses (the story's server): its words under Display name", async () => {
+  test("the display name the server refuses (the story's server): the rule of a name under Display name", async () => {
     const form = await profileForm({ profile: { save: "name" } });
     await form.user.type(nameField(), "!");
 
@@ -685,7 +711,7 @@ describe("what the server refuses shows where it belongs", () => {
     await waitFor(() => {
       expect(invalid()).toEqual(["Display name"]);
     });
-    expect(describedBy(nameField())).toEqual(["This value is not valid. Check what you entered."]);
+    expect(describedBy(nameField())).toEqual([nameRule]);
     expect(alerts()).toEqual(["This could not be done."]);
   });
 
@@ -743,6 +769,8 @@ describe("what the server refuses shows where it belongs", () => {
     [avatar, header],
   ] as const) {
     test(`an upload the server refuses: its words inside the group of the ${name.toLowerCase()}, the bar says an image could not be used, and the profile is not changed`, async () => {
+      // The fake refuses it as the server does a file it cannot read: a 422 media-corrupt, its words in the title.
+      const refused = "The file could not be read as an image. Choose another file.";
       const form = await profileForm({ uploads: "refused" });
       const before = form.requests.length;
       await rewrite(form.user, nameField(), "Yuki Snow");
@@ -755,12 +783,8 @@ describe("what the server refuses shows where it belongs", () => {
           "Your profile was not saved, because an image could not be used. See the note under the image.",
         ]);
       });
-      expect(describedBy(screen.getByRole("group", { name }))).toContain(
-        "This file is not an image this server can use.",
-      );
-      expect(describedBy(screen.getByRole("group", { name: other }))).not.toContain(
-        "This file is not an image this server can use.",
-      );
+      expect(describedBy(screen.getByRole("group", { name }))).toContain(refused);
+      expect(describedBy(screen.getByRole("group", { name: other }))).not.toContain(refused);
       expect(invalid()).toEqual([]);
       expect(writes(form, before)).toEqual(["POST /media"]);
       // The picture picked is still shown, for the reader to replace.
@@ -807,6 +831,26 @@ describe("what the server refuses shows where it belongs", () => {
     expect(describedBy(screen.getByRole("group", { name: avatar }))).toEqual([]);
     expect(sent.seen).toHaveLength(1);
     expect(sent.seen[0]?.body.avatar_media_id).toBeTruthy();
+  });
+
+  test("a Save again after a refused change sends no second upload of the picture already uploaded", async () => {
+    const form = await profileForm();
+    const uploads = form.fake.script("POST /media");
+    const sent = form.fake.script("PATCH /accounts/update_credentials");
+    const failing = form.fake.script("PATCH /accounts/update_credentials", { times: 1, fail: 500 });
+    await chooseFile(form.user, image(avatar).getByRole("button", { name: "Replace" }), imageFile("dusk.png"));
+    await form.user.click(saveButton());
+    await waitFor(() => {
+      expect(alerts()).toHaveLength(1);
+    });
+    failing.end();
+
+    await saved(form);
+
+    expect(uploads.seen).toHaveLength(1);
+    const [first, second] = sent.seen.map((request) => request.body.avatar_media_id);
+    expect(sent.seen).toHaveLength(2);
+    expect(second).toBe(first);
   });
 
   test("the review's refusal: the server's words beside Save, and no input is marked", async () => {

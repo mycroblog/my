@@ -9,7 +9,7 @@
 // editor show, send and say is the feature's (app-features, settings/filters.dom.test.tsx and
 // filters-edit.dom.test.tsx); what a folded post is, the post's (app-components, post-filter.dom.test.tsx).
 
-import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { afterAll, beforeAll, describe, expect, onTestFinished, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
 import type { FakeOptions } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
@@ -220,6 +220,20 @@ describe("after the editor's write, the app is at the list, which shows it", () 
     expect(app.left()).toEqual([]);
   });
 
+  test("a filter saved with nothing changed: nothing is sent, and the app is at the list", async () => {
+    const on = fakeApp();
+    const app = await renderApp(on.fake.filterPath(0), { on });
+    await editorRead();
+    const sent = on.fake.script("PATCH /filters/{id}");
+
+    await app.user.click(main().getByRole("button", { name: "Save" }));
+
+    await settledAt(app, list);
+    await listRead();
+    expect(sent.seen).toHaveLength(0);
+    expect(listed()).toEqual(["Spoilers", "Election season", "Marathon week"]);
+  });
+
   test("a filter changed: its row says the change", async () => {
     const on = fakeApp();
     const app = await renderApp(on.fake.filterPath(0), { on });
@@ -263,6 +277,58 @@ describe("after the editor's write, the app is at the list, which shows it", () 
         throw new Error(`test: at ${app.path()} the screen says "${words(screen.getByRole("main")).slice(0, 300)}"`);
     });
     expect(main().getByRole("alert").textContent).toContain("This filter does not exist.");
+  });
+
+  test("a filter deleted: the confirmation stays busy until the app is at the list, nothing reads the filter again, and nothing says it does not exist", async () => {
+    const on = fakeApp();
+    const gone = on.fake.filterPath(0);
+    const app = await renderApp(gone, { on });
+    await editorRead();
+    await app.user.click(main().getByRole("button", { name: "Delete…" }));
+    const asking = await waitFor(() => {
+      const [dialog] = screen.queryAllByRole("alertdialog");
+      if (dialog === undefined) throw new Error(`test: no confirmation at ${app.path()}`);
+      return dialog;
+    });
+    const reads = on.fake.script("GET /filters/{id}");
+    // Each state the page passes through: where the app is, what the confirmation is, and whether a line says that
+    // the filter does not exist.
+    const states: string[] = [];
+    const look = () => {
+      const [dialog] = screen.queryAllByRole("alertdialog");
+      const confirmation =
+        dialog === undefined
+          ? "closed"
+          : within(dialog).queryAllByRole("button", { name: "Delete" })[0]?.getAttribute("aria-busy") === "true"
+            ? "busy"
+            : "open";
+      const missing = document.body.textContent.includes("This filter does not exist") ? " missing" : "";
+      const state = `${app.path()} ${confirmation}${missing}`;
+      if (states.at(-1) !== state) states.push(state);
+    };
+    const watching = new MutationObserver(look);
+    watching.observe(document.body, { subtree: true, childList: true, attributes: true, characterData: true });
+    onTestFinished(() => {
+      watching.disconnect();
+    });
+
+    await app.user.click(within(asking).getByRole("button", { name: "Delete" }));
+    await settledAt(app, list);
+    await main().findByRole("region", { name: /^Filters\s*2$/ });
+    await waitFor(() => {
+      if (app.data.queryClient.isFetching() > 0) throw new Error("test: the app is still reading");
+    });
+    watching.disconnect();
+
+    expect(reads.seen).toHaveLength(0);
+    expect(states.filter((state) => state.endsWith(" missing"))).toEqual([]);
+    // From the press on, the confirmation is busy until it closes, and it closes at the list.
+    const pressed = states.findIndex((state) => state.endsWith(" busy"));
+    expect(pressed).toBeGreaterThanOrEqual(0);
+    expect(states.slice(pressed).filter((state) => state.endsWith(" open"))).toEqual([]);
+    expect(states.filter((state) => state.endsWith(" closed")).every((state) => state.startsWith(`${list} `))).toBe(
+      true,
+    );
   });
 
   test("the home timeline folds what a filter just added matches, under its name", async () => {
@@ -411,6 +477,25 @@ describe("leaving the editor with unsaved changes", () => {
     expect(app.path()).toBe(fresh);
   });
 
+  test("Sign out over the editor leaves for the start without asking whether to leave it", async () => {
+    const app = await unsaved();
+    const [menu] = beside();
+    if (menu === undefined) throw new Error("test: no settings menu beside the screen");
+    await app.user.click(within(menu).getByRole("link", { name: "Sign out…" }));
+
+    await app.user.click(
+      within(await screen.findByRole("alertdialog", { name: "Sign out of this browser?" })).getByRole("button", {
+        name: "Sign out",
+      }),
+    );
+
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    expect(app.left()).toEqual(["/"]);
+    expect(confirmations().includes("Leave without saving?")).toBe(false);
+  });
+
   test("an editor with nothing changed is left without a question", async () => {
     const on = fakeApp();
     const app = await renderApp(on.fake.filterPath(0), { on });
@@ -421,6 +506,90 @@ describe("leaving the editor with unsaved changes", () => {
     await listRead();
     expect(app.path()).toBe(list);
     expect(confirmations()).toEqual([]);
+  });
+});
+
+describe("a write of the editor answered after the reader left it", () => {
+  /** The toasts that say a setting was not saved. */
+  const toasts = () =>
+    screen
+      .queryAllByRole("status")
+      .filter((toast) => toast.textContent.includes("could not be saved. Open the settings and change it again."));
+
+  /** The editor of Spoilers renamed, its Save pressed and held as `hold` says, and the reader gone to Lists. */
+  async function leftWhileSaving(script: { hold: "request" | "response"; fail?: 500 }) {
+    const on = fakeApp();
+    const at = on.fake.filterPath(0);
+    const app = await renderApp(at, { on });
+    await editorRead();
+    await rewrite(app, nameField(), "Spoilers and more");
+    const sent = on.fake.script("PATCH /filters/{id}", script);
+    await app.user.click(main().getByRole("button", { name: "Save" }));
+    await sent.arrived();
+    await app.navigate("/lists");
+    await settledAt(app, "/lists");
+    return { app, at, sent };
+  }
+
+  /** Waits until nothing is read and a turn passed: whatever the answer leads to has happened. */
+  const atRest = async (app: TestApp) => {
+    await waitFor(() => {
+      if (app.data.queryClient.isFetching() > 0) throw new Error("test: the app is still reading");
+    });
+    await new Promise((turn) => setTimeout(turn, 0));
+  };
+
+  test("a Save the server took takes the reader nowhere", async () => {
+    const { app, sent } = await leftWhileSaving({ hold: "response" });
+
+    sent.release();
+    await atRest(app);
+
+    expect(app.path()).toBe("/lists");
+    expect(toasts()).toHaveLength(0);
+  });
+
+  test("a Save that failed: a toast names the filter and leads back to its editor", async () => {
+    const { app, at, sent } = await leftWhileSaving({ hold: "request", fail: 500 });
+    expect(toasts()).toHaveLength(0);
+
+    sent.release();
+
+    const [toast, ...others] = await waitFor(() => {
+      if (toasts().length === 0) throw new Error("test: no toast says that the filter was not saved");
+      return toasts();
+    });
+    if (toast === undefined) throw new Error("test: no toast");
+    expect(others).toHaveLength(0);
+    expect(toast.textContent.replace(isolates, "")).toMatch(/^“Spoilers( and more)?” could not be saved\./);
+    expect(app.path()).toBe("/lists");
+
+    await app.user.click(within(toast).getByRole("button", { name: "Open settings" }));
+
+    await editorRead();
+    expect(app.path()).toBe(at);
+  });
+
+  test("a delete the server took after the reader left takes them nowhere", async () => {
+    const on = fakeApp();
+    const app = await renderApp(on.fake.filterPath(0), { on });
+    await editorRead();
+    await app.user.click(main().getByRole("button", { name: "Delete…" }));
+    const asking = await waitFor(() => {
+      const [dialog] = screen.queryAllByRole("alertdialog");
+      if (dialog === undefined) throw new Error(`test: no confirmation at ${app.path()}`);
+      return dialog;
+    });
+    const sent = on.fake.script("DELETE /filters/{id}", { hold: "response" });
+    await app.user.click(within(asking).getByRole("button", { name: "Delete" }));
+    await sent.served();
+    await app.navigate("/lists");
+    await settledAt(app, "/lists");
+
+    sent.release();
+    await atRest(app);
+
+    expect(app.path()).toBe("/lists");
   });
 });
 
@@ -475,6 +644,8 @@ describe("the screens of Keyword filters, as the app draws them, keep the rules 
     const on = fakeApp({ settings: { filterSave: "title" } });
     const app = await renderApp(on.fake.filterPath(0), { on });
     await editorRead();
+    // A filter saved unchanged sends nothing to refuse.
+    await rewrite(app, nameField(), "Spoilers and more");
 
     await app.user.click(main().getByRole("button", { name: "Save" }));
 
@@ -487,6 +658,8 @@ describe("the screens of Keyword filters, as the app draws them, keep the rules 
     const on = fakeApp({ settings: { filterSave: "waits" } });
     const app = await renderApp(on.fake.filterPath(0), { on });
     await editorRead();
+    // A filter saved unchanged sends nothing to wait for.
+    await rewrite(app, nameField(), "Spoilers and more");
 
     await app.user.click(main().getByRole("button", { name: "Save" }));
 

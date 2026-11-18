@@ -225,6 +225,12 @@ describe("a Save the server refuses moves the focus to the field its problem nam
   /** A problem of the server about the member `field` of a filter. */
   const refusal = (field: string) =>
     ({ type: "about:blank", title: "This could not be done.", status: 422, field, detail: "Not this." }) as const;
+  /** The editor of Spoilers with another name written: a filter saved unchanged sends nothing to refuse. */
+  async function renamed(): Promise<DrawnFilter> {
+    const form = await filterForm({}, { filter: 0 });
+    await rewrite(form.user, nameField(), "Spoilers and more");
+    return form;
+  }
 
   // The member the problem names, and the field that takes the focus, in the editor of Spoilers. The words as a
   // whole are no one word's: their list takes the focus, which is no control and no stop of Tab.
@@ -237,7 +243,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
     ["expires_at", "Ends", endsChoice],
   ] as const)
     test(`${member}: ${name}`, async () => {
-      const form = await filterForm({}, { filter: 0 });
+      const form = await renamed();
       form.fake.script("PATCH /filters/{id}", { times: 1, fail: refusal(member) });
 
       await form.user.click(submitButton());
@@ -247,7 +253,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
     });
 
   test("more words than a filter or all the filters can have: the list Words", async () => {
-    const form = await filterForm({}, { filter: 0 });
+    const form = await renamed();
     form.fake.script("PATCH /filters/{id}", {
       times: 1,
       fail: {
@@ -268,7 +274,7 @@ describe("a Save the server refuses moves the focus to the field its problem nam
   });
 
   test("a refusal that names no field leaves the focus on the button", async () => {
-    const form = await filterForm({}, { filter: 0 });
+    const form = await renamed();
     form.fake.script("PATCH /filters/{id}", { times: 1, fail: 500 });
 
     await form.user.click(submitButton());

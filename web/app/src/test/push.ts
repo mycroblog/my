@@ -63,14 +63,17 @@ export function quietDevice(): void {
 }
 
 /**
- * Gives the test a browser with notifications (allowed once the site asks), a Service Worker, the Push API and audio,
- * on a quiet device, until the test ends; `sounds` is how many sounds it played.
+ * Gives the test a browser with notifications (allowed once the site asks, or from the start with `permission:
+ * "granted"`, as on a device that subscribed before), a Service Worker, the Push API and audio, on a quiet device,
+ * until the test ends; `sounds` is how many sounds it played.
  */
-export function browserWithPush(): { sounds: number } {
+export function browserWithPush({ permission: before = "default" }: { permission?: NotificationPermission } = {}): {
+  sounds: number;
+} {
   quietDevice();
   const seen = { sounds: 0 };
   heard = seen;
-  let permission: NotificationPermission = "default";
+  let permission: NotificationPermission = before;
   const endpoint = "https://push.example/s/test";
   const made = {
     endpoint,

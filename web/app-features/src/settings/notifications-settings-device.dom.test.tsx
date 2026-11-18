@@ -256,6 +256,20 @@ describe("the switch says how turning Web Push on and off goes", () => {
     expect(seen.subscribed).toBe(2);
   });
 
+  test("a page whose Service Worker was never registered: turned on, it says that it could not be turned on, stays off, and nothing subscribes", async () => {
+    const drawn = await withPush(sends, { permission: "granted", worker: "none" });
+    const { user, seen } = drawn;
+
+    await user.click(toggle(push));
+
+    await waitFor(() => {
+      expect(saidOnDevice()).toEqual([notTurnedOn]);
+    });
+    expect(toggle(push).checked).toBe(false);
+    expect(seen.subscribed).toBe(0);
+    expect(writes(drawn)).toEqual([]);
+  });
+
   test("a subscription the server fails to take: it says so, and the switch is back off", async () => {
     const { fake, user } = await withPush(sends);
     fake.script("PUT /push/subscription", { fail: 500 });

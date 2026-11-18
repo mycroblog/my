@@ -115,6 +115,29 @@ const write = (text: string) => async (user: UserEvent) => {
   await user.keyboard(text);
 };
 
+describe("a read again in the background that fails", () => {
+  test("leaves the screen drawn with what it read", async () => {
+    const { fake, data } = await read();
+    const failed = [
+      fake.script("GET /accounts/verify_credentials", { fail: 500 }),
+      fake.script("GET /preferences/badges", { fail: 500 }),
+      fake.script("GET /featured_tags", { fail: 500 }),
+    ];
+
+    await data.queryClient.refetchQueries({ type: "active" });
+    await waitFor(() => {
+      expect(data.queryClient.isFetching()).toBe(0);
+    });
+
+    // The reads failed, and the screen did not give way to their failure.
+    expect(failed.map((script) => script.seen.length > 0)).toEqual([true, true, true]);
+    expect(profile().textContent).toContain("Yuki 雪");
+    expect(tagField().disabled).toBe(false);
+    expect(toggle(bot).disabled).toBe(false);
+    expect(featured()).toEqual(["baking", "photography"]);
+  });
+});
+
 describe("the reader's profile, as others see it", () => {
   test("is a group named by the account's name: its pictures, its name, its handle, the badges it shows and its bio, with the way to Edit profile", async () => {
     await read();

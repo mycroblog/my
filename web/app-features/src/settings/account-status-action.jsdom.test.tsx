@@ -3,18 +3,22 @@
 // On jsdom: happy-dom gives the focus to any element that is asked to take it, so where the appeal of a moderation
 // action (#3204) puts the focus after Send appeal is decided here (ADR-0171 §4): on the field when nothing was sent
 // for what it holds, and on the status that says what became of the appeal once the form is gone, which no control
-// stands in. What the form sends and says is account-status-action.dom.test.tsx.
+// stands in; and where a failed Show more of Account status leaves it. What the form sends and says is
+// account-status-action.dom.test.tsx.
 
 import { expect, test } from "bun:test";
-import { waitFor } from "@testing-library/react";
+import { act, waitFor, within } from "@testing-library/react";
 import {
   acted,
   answered,
   appealField,
   drawnAction,
+  drawnStatus,
   main,
   noPosting,
+  section,
   sendButton,
+  warnings,
   wordsOf,
   write,
   type Drawn,
@@ -69,6 +73,24 @@ test("once the appeal is sent, the status that says so has the focus: the button
 
   await focused(status("Your appeal was sent."), "the status that says the appeal was sent");
   expect(writes(on)).toHaveLength(1);
+});
+
+// Account status, the list the action's screen comes from: its Show more is the one control a failure renames.
+test("a Show more of the past actions that fails keeps the focus on its button, renamed Try again", async () => {
+  const on = await drawnStatus(acted(...warnings(24)));
+  await answered(on);
+  on.fake.script("GET /moderation/actions", { fail: 500 });
+  const more = within(section("Past actions")).getByRole("button", { name: "Show more" });
+  act(() => {
+    more.focus();
+  });
+
+  await on.user.keyboard("{Enter}");
+
+  await focused(
+    () => within(section("Past actions")).queryAllByRole("button", { name: "Try again" })[0],
+    "Try again of the past actions",
+  );
 });
 
 test("once the server refused the appeal for good, the status that says why has the focus", async () => {

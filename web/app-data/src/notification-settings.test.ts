@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { describe, expect, test } from "bun:test";
+import { describe, expect, onTestFinished, test } from "bun:test";
 import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
+import { QueryObserver } from "@tanstack/react-query";
 import { createAppData } from "./app-data";
 import {
   changeNotificationPolicy,
@@ -15,10 +16,12 @@ import {
 } from "./notification-settings";
 import { notificationRequestsQuery } from "./notification-requests";
 import { notificationRequestSummaryQuery, notificationsQuery } from "./notifications";
+import { preferencesQuery } from "./preferences";
 import { notificationSettingsQuery } from "./push";
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { refusedWith } from "./test/refused";
+import { settled } from "./test/settings";
 
 const cellOf = (data: ReturnType<typeof fakeData>["data"], group: string) => {
   const settings = data.queryClient.getQueryData<NotificationSettings>(notificationSettingsQuery(data).queryKey);
@@ -104,11 +107,17 @@ describe("resendVerificationEmail", () => {
     expect(sent.seen).toHaveLength(1);
   });
 
-  test("is sent as well when the server says the address is verified already (a 409): the reader has nothing more to do", async () => {
-    const { fake, data } = fakeData({ email: true });
+  test("resolves as verified when the server says the address is verified already (a 409), and reads the preferences again at once", async () => {
+    const { fake, data, requests } = fakeData({ email: true });
+    await data.queryClient.query(preferencesQuery(data));
+    // A screen shows the preferences, which say whether email to the address is stopped.
+    onTestFinished(new QueryObserver(data.queryClient, preferencesQuery(data)).subscribe(() => undefined));
     fake.script(route, { fail: 409 });
 
-    expect(await resendVerificationEmail(data)).toBe("sent");
+    expect(await resendVerificationEmail(data)).toBe("verified");
+    await settled(data);
+
+    expect(requests).toEqual(["GET /preferences", "POST /accounts/email/verification", "GET /preferences"]);
   });
 
   test("a 429 resolves with the wait the server asks for, from the seconds of its Retry-After", async () => {
@@ -124,7 +133,7 @@ describe("resendVerificationEmail", () => {
 
     const wait = await resendVerificationEmail(limitedUntil(until.toUTCString()));
 
-    if (wait === "sent" || wait.waitMs === undefined) throw new Error("test: the answer names no wait");
+    if (typeof wait === "string" || wait.waitMs === undefined) throw new Error("test: the answer names no wait");
     expect(wait.waitMs).toBeGreaterThan(9 * 60 * 1000);
     expect(wait.waitMs).toBeLessThanOrEqual(10 * 60 * 1000);
   });

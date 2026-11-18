@@ -276,7 +276,8 @@ describe("deleteKeywordFilter", () => {
 });
 
 // ADR-0157 §10: what a filter hides is decided by the server, so after a change the posts and notifications that may
-// have been filtered are read again: the screens that are open at once, the others when next shown.
+// have been filtered are read again: the screens that are open at once, the others when next shown. The bookmarks are
+// never filtered (the server's `noFilter`), so they are not read again.
 describe("after a save or a delete", () => {
   /** Reads what a filter may hide into the cache, and returns the keys it covers. */
   async function cached(data: AppData, list: string, owner: string, post: string) {
@@ -308,15 +309,15 @@ describe("after a save or a delete", () => {
         listedTimeline.queryKey,
         notifications.queryKey,
         own.queryKey,
-        bookmarks.queryKey,
         context.queryKey,
       ],
-      unmarked: [viewerQuery(data).queryKey],
+      // The server applies no filter to the bookmarks, so a change of the filters leaves them as they were.
+      unmarked: [viewerQuery(data).queryKey, bookmarks.queryKey],
     };
   }
 
   for (const how of ["save", "delete"] as const)
-    test(`a ${how} marks the timelines, the notifications, the posts of an account, the contexts and the bookmarks`, async () => {
+    test(`a ${how} marks the timelines, the notifications, the posts of an account and the contexts, and not the bookmarks`, async () => {
       const { fake, data } = fakeData();
       const filters = await listed(data);
       const home = await data.queryClient.infiniteQuery(homeTimelineQuery(data));

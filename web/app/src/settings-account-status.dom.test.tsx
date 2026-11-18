@@ -428,6 +428,25 @@ describe("leaving an appeal written and not sent", () => {
     expect(app.path()).toBe(status);
     expect(confirmations()).toEqual([]);
   });
+
+  test("Sign out over an appeal written and not sent leaves for the start without asking whether to leave it", async () => {
+    const app = await written();
+    const [settings] = beside();
+    if (settings === undefined) throw new Error("test: no settings menu beside the screen");
+    await app.user.click(within(settings).getByRole("link", { name: "Sign out…" }));
+
+    await app.user.click(
+      within(await screen.findByRole("alertdialog", { name: "Sign out of this browser?" })).getByRole("button", {
+        name: "Sign out",
+      }),
+    );
+
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    expect(app.left()).toEqual(["/"]);
+    expect(confirmations().includes("Leave without sending your appeal?")).toBe(false);
+  });
 });
 
 // What the rules are and how a tree breaks each is the check's own test (design-system, test/settings.dom.test.tsx).

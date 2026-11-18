@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { describe, expect, test } from "bun:test";
-import { scenario } from "@my/e2e/fake";
+import { describe, expect, onTestFinished, test } from "bun:test";
+import { fakeOrigin, scenario } from "@my/e2e/fake";
+import { QueryObserver } from "@tanstack/react-query";
 import { viewerQuery } from "./accounts";
 import {
   accountAliasesQuery,
@@ -14,6 +15,7 @@ import {
 import { fakeData } from "./test/data";
 import { probe } from "./test/probe";
 import { refusedWith } from "./test/refused";
+import { settled } from "./test/settings";
 
 /** The password of the reader (yuki), which confirms a move. */
 const password = scenario.people.find((p) => p.username === "yuki")?.password ?? "";
@@ -86,23 +88,24 @@ describe("moveOwnAccount", () => {
     }
   });
 
-  test("a wrong confirmation is refused with the problem a screen tells apart, and the viewer stays", async () => {
+  test("a wrong password is refused with the problem a screen tells apart, and the viewer stays", async () => {
     const { fake, data } = fakeData();
     await data.queryClient.query(viewerQuery(data));
     const refused = await refusedWith(moveOwnAccount(data, fake.accountId("marco"), { password: "wrong" }));
-    expect([refused.status, refused.type]).toEqual([403, "/api/v1/problems/reauthentication-failed"]);
+    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/wrong-password"]);
     expect(data.queryClient.getQueryState(viewerQuery(data).queryKey)?.isInvalidated).toBe(false);
   });
 
   test("a target without the account as its alias is refused with the problem that says so", async () => {
-    const { fake, data } = fakeData({ settings: { aliases: [] } });
+    const { fake, data } = fakeData({ settings: { moveRefusal: "alias_missing" } });
     const refused = await refusedWith(moveOwnAccount(data, fake.accountId("marco"), { password }));
-    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/move-target-without-alias"]);
+    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/move-alias-missing"]);
   });
 
-  test("an account that does not exist is refused as not found", async () => {
+  test("an account that does not exist is refused as a target that cannot be moved to", async () => {
     const { data } = fakeData();
-    expect((await refusedWith(moveOwnAccount(data, "gone", { password }))).status).toBe(404);
+    const refused = await refusedWith(moveOwnAccount(data, "gone", { password }));
+    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/move-target-unavailable"]);
   });
 });
 
@@ -116,8 +119,23 @@ describe("cancelOwnAccountMove", () => {
     expect(data.queryClient.getQueryState(viewerQuery(data).queryKey)?.isInvalidated).toBe(true);
   });
 
-  test("a move that was not made is refused as not found", async () => {
-    const { data } = fakeData();
-    expect((await refusedWith(cancelOwnAccountMove(data))).status).toBe(404);
+  test("a move that was not made (a 409: the account has not moved) resolves, and the viewer is read again", async () => {
+    const { fake, data, requests } = fakeData();
+    // The server's answer, asked as a client does: the account has not moved.
+    const asked = await fake.serve(new Request(`${fakeOrigin}/api/v1/accounts/move`, { method: "DELETE" }));
+    const problem: unknown = await asked.json();
+    expect([asked.status, problem]).toMatchObject([409, { type: "/api/v1/problems/account-not-moved" }]);
+    await data.queryClient.query(viewerQuery(data));
+    // A screen shows the viewer, which says whether the account moved.
+    onTestFinished(new QueryObserver(data.queryClient, viewerQuery(data)).subscribe(() => undefined));
+
+    await cancelOwnAccountMove(data);
+    await settled(data);
+
+    expect(requests).toEqual([
+      "GET /accounts/verify_credentials",
+      "DELETE /accounts/move",
+      "GET /accounts/verify_credentials",
+    ]);
   });
 });

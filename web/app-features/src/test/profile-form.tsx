@@ -88,12 +88,26 @@ export function runtimeSignals(): void {
 /**
  * A file of an image to pick: a PNG by its name, whose bytes no test reads. On jsdom it is the runtime's file and not
  * the simulation's: jsdom puts its own `File` in the runtime's place, which the runtime refuses to give an address
- * (`URL.createObjectURL`) and to send.
+ * (`URL.createObjectURL`) and to send. Until the test ends, the simulation's `File` then counts the runtime's files as
+ * its own, as a browser's one `File` does: a form that asks whether a value is a file picked would otherwise drop it.
  */
 export function imageFile(name: string): File {
   const bytes = [new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])];
   const simulated = new Request(fakeOrigin).signal.constructor !== globalThis.AbortSignal;
-  return simulated ? new RuntimeFile(bytes, name, { type: "image/png" }) : new File(bytes, name, { type: "image/png" });
+  if (!simulated) return new File(bytes, name, { type: "image/png" });
+  const Simulated = globalThis.File;
+  const own = Object.getOwnPropertyDescriptor(Simulated, Symbol.hasInstance);
+  if (own === undefined) {
+    const inherited = Function.prototype[Symbol.hasInstance];
+    Object.defineProperty(Simulated, Symbol.hasInstance, {
+      configurable: true,
+      value: (value: unknown) => value instanceof RuntimeFile || inherited.call(Simulated, value),
+    });
+    onTestFinished(() => {
+      Reflect.deleteProperty(Simulated, Symbol.hasInstance);
+    });
+  }
+  return new RuntimeFile(bytes, name, { type: "image/png" });
 }
 
 /** A problem of the server about the member `field` of the change, in its own words. */

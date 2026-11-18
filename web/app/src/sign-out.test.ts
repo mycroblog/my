@@ -7,8 +7,8 @@
 
 import { expect, test } from "bun:test";
 import { preferencesQuery } from "@my/app-data";
-import { followSignOut } from "./sign-out";
-import { fakeApp } from "./test/server";
+import { followSignOut, leaveEndedSession, sessionEnding } from "./sign-out";
+import { fakeApp, withoutToken } from "./test/server";
 
 test("following a sign-out made in another tab empties what this tab read of the account and leaves for the start", async () => {
   const { data } = fakeApp();
@@ -25,4 +25,45 @@ test("following a sign-out made in another tab empties what this tab read of the
 
   expect(left).toEqual(["/"]);
   expect(data.queryClient.getQueryCache().getAll()).toHaveLength(0);
+});
+
+// A form with unsaved changes holds a navigation and the page's unload until the session is known to end: the app
+// leaves an ended session without asking (web/app/src/settings-profile.dom.test.tsx holds the forms to it).
+test("the session is marked as ending before the app leaves, when it follows a sign-out made in another tab", () => {
+  const { data } = fakeApp();
+  expect(sessionEnding(data)).toBe(false);
+  const marked: boolean[] = [];
+
+  followSignOut({
+    data,
+    leave: () => {
+      marked.push(sessionEnding(data));
+    },
+  });
+
+  expect(marked).toEqual([true]);
+});
+
+test("the session is marked as ending before the app leaves a session the server ended", async () => {
+  const { data } = withoutToken(fakeApp());
+  expect(sessionEnding(data)).toBe(false);
+  const marked: boolean[] = [];
+
+  await leaveEndedSession({
+    data,
+    leave: () => {
+      marked.push(sessionEnding(data));
+    },
+  });
+
+  expect(marked).toEqual([true]);
+});
+
+test("no session is ending where there is none, nor in another tab's data", () => {
+  const { data } = fakeApp();
+  const other = fakeApp().data;
+  followSignOut({ data, leave: () => undefined });
+
+  expect(sessionEnding(null)).toBe(false);
+  expect(sessionEnding(other)).toBe(false);
 });

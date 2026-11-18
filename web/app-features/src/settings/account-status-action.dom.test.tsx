@@ -148,6 +148,37 @@ describe("one action", () => {
     expect(lines(posts)).toEqual(["1 post is no longer on this server, so it cannot be opened."]);
   });
 
+  // A post counts as gone only when the server says so (404, 410); one whose read failed otherwise is not called gone.
+  for (const [fail, says] of [
+    [410, "2 posts are no longer on this server, so they cannot be opened."],
+    [500, "2 posts could not be loaded."],
+    ["network", "2 posts could not be loaded."],
+  ] as const)
+    test(`posts whose reads failed (${String(fail)}) read "${says}"`, async () => {
+      const server = serverOf(acted({ ...postsOverturned, ownPosts: 2 }));
+      server.fake.script("GET /statuses/{id}", { fail });
+      await action(server);
+
+      await waitFor(() => {
+        expect(lines(posts)).toEqual([says]);
+      });
+      expect(within(section(posts)).queryAllByRole("link")).toHaveLength(0);
+    });
+
+  test("a post that could not be loaded is not counted with the ones that are gone", async () => {
+    const server = serverOf(acted({ ...postsOverturned, ownPosts: 1, status_ids: ["01HZZZZZZZZZZZZZZZZZZZZZZZ"] }));
+    // The reader's own post fails to load; the other ID names no post of the server.
+    server.fake.script("GET /statuses/{id}", { times: 1, fail: 500 });
+    await action(server);
+
+    await waitFor(() => {
+      expect(lines(posts)).toEqual([
+        "1 post is no longer on this server, so it cannot be opened.",
+        "1 post could not be loaded.",
+      ]);
+    });
+  });
+
   test("an action whose posts are all gone says how many, and links none", async () => {
     await action(
       acted({ ...postsOverturned, status_ids: ["01HZZZZZZZZZZZZZZZZZZZZZZY", "01HZZZZZZZZZZZZZZZZZZZZZZZ"] }),
@@ -292,6 +323,15 @@ describe("the appeal form", () => {
     expect(sendButton().disabled).toBe(false);
     expect(said()).toEqual([]);
     expect(alerts()).toEqual([]);
+  });
+
+  test("an action the server still calls appealable whose last day passed offers no form", async () => {
+    const on = await action(acted({ ...noPosting, appealable: true, appeal_deadline: "2024-06-01T12:00:00Z" }));
+
+    expect(appealFields()).toHaveLength(0);
+    expect(sendButtons()).toHaveLength(0);
+    expect(lines(appeal)).not.toContain(until);
+    expect(writes(on)).toEqual([]);
   });
 
   test("an action that can be appealed with no last day names none", async () => {
@@ -541,6 +581,38 @@ describe("an appeal the server refuses for good", () => {
       expect(lines(appeal)).toContain(waiting);
     });
     expect(appealFields()).toHaveLength(0);
+    // What the reader wrote stays, under the appeal that stands.
+    const shown = lines(appeal);
+    expect(shown.slice(-3)).toEqual([
+      "What you wrote, not sent",
+      "Please look again.",
+      "Copy it if you want to send it to the moderators another way. It is not kept after you leave this page.",
+    ]);
+    expect(shown.indexOf(waiting)).toBeLessThan(shown.indexOf("What you wrote, not sent"));
+  });
+
+  test("an action that left the reader's account meanwhile (a 404): the action stays shown with the refusal and what the reader wrote", async () => {
+    const on = await action(acted(noPosting));
+    on.fake.script(route, { fail: 404 });
+    // The actions read again no longer hold it.
+    on.fake.script("GET /moderation/actions", { change: (page) => ({ ...page, items: [] }) });
+    await write(on.user, "Please look again.");
+
+    await on.user.click(sendButton());
+
+    await waitFor(() => {
+      expect(said()).toEqual([
+        "This action is no longer listed on your account, so your appeal was not sent. Go back to “Account status” to see the actions on your account.",
+      ]);
+    });
+    await answered(on);
+    expect(lines(what)[0]).toBe("No posting, replying, boosting, or editing");
+    expect(alerts()).toEqual([]);
+    expect(lines(appeal).slice(-3)).toEqual([
+      "What you wrote, not sent",
+      "Please look again.",
+      "Copy it if you want to send it to the moderators another way. It is not kept after you leave this page.",
+    ]);
   });
 });
 

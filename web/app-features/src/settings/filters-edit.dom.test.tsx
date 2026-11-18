@@ -428,19 +428,21 @@ describe("Save, for one of the reader's filters", () => {
   };
   const without = ({ expires_at: _end, ...rest }: KeywordFilterRequest): KeywordFilterRequest => rest;
 
+  /** Writes another name: a change that leaves everything else of the filter as it is. */
+  const renamed = (form: DrawnFilter) => rewrite(form.user, nameField(), "Renamed");
+
   const changes: readonly Change[] = [
-    { what: "nothing changed: the filter as it is", filter: 0, change: () => Promise.resolve(), sends: (as) => as },
     {
-      what: "nothing changed of a filter that ends: its end as the server holds it",
+      what: "another name of a filter that ends: its end as the server holds it",
       filter: 1,
-      change: () => Promise.resolve(),
-      sends: (as) => as,
+      change: renamed,
+      sends: (as) => ({ ...as, title: "Renamed" }),
     },
     {
-      what: "nothing changed of a filter that ended: its past end, so that it stays expired",
+      what: "another name of a filter that ended: its past end, so that it stays expired",
       filter: 2,
-      change: () => Promise.resolve(),
-      sends: (as) => as,
+      change: renamed,
+      sends: (as) => ({ ...as, title: "Renamed" }),
     },
     {
       what: "Never, for a filter that ends: no end",
@@ -537,6 +539,18 @@ describe("Save, for one of the reader's filters", () => {
       expect(sent.seen.map((request) => request.body)).toEqual([sends(as)]);
       expect(Object.keys(sent.seen[0]?.body ?? {}).includes("expires_at")).toBe("expires_at" in sends(as));
       expect(form.told.slice(-2)).toEqual(["unsaved:false", "back"]);
+    });
+
+  for (const filter of [0, 1, 2])
+    test(`nothing changed of filter ${String(filter)}: Save sends nothing and goes back`, async () => {
+      const form = await filterForm({}, { filter });
+      const sent = form.fake.script("PATCH /filters/{id}");
+
+      await saved(form);
+
+      expect(writes(form)).toEqual([]);
+      expect(sent.seen).toHaveLength(0);
+      expect(form.told.includes("unsaved:true")).toBe(false);
     });
 
   // What Ends offers, and how long from now the filter then ends.
@@ -888,6 +902,8 @@ describe("what the server refuses shows where it belongs", () => {
   test("the words as a whole: the server's words under the words describe their list, and no word is marked", async () => {
     const form = await filterForm({}, { filter: 0 });
     expect(describedBy(wordsList())).toEqual([]);
+    // A filter saved unchanged sends nothing: a change of its name makes the request.
+    await rewrite(form.user, nameField(), "Spoilers and more");
     form.fake.script("PATCH /filters/{id}", {
       times: 1,
       fail: refusal("keywords", "The server does not take these words."),

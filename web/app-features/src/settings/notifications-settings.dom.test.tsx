@@ -20,6 +20,7 @@ import {
   type FakeOptions,
 } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
+import { changeSitePermission } from "../test/browser";
 import {
   cell,
   columnsOf,
@@ -141,40 +142,96 @@ describe("the tables", () => {
   });
 });
 
-// ADR-0086 §8: Push only while this device has a subscription, Email only on a server that sends it, Sound only while
-// the sound is on.
+describe("a read again in the background that fails", () => {
+  test("leaves the tables and the policy drawn with what they read", async () => {
+    const { fake, data } = await readSettings(member);
+    const failed = [
+      fake.script("GET /preferences/notifications", { fail: 500 }),
+      fake.script("GET /preferences/notification_policy", { fail: 500 }),
+    ];
+
+    await data.queryClient.refetchQueries({ type: "active" });
+    await waitFor(() => {
+      expect(data.queryClient.isFetching()).toBe(0);
+    });
+
+    expect(failed.map((script) => script.seen.length > 0)).toEqual([true, true]);
+    expect(sections()).toEqual(["This device", people, server, "Notifications from people you may not know"]);
+    expect(stateOf(cell(people, "Mentions", "In the app"))).toBe("on");
+    expect(screen.getAllByRole("table")).toHaveLength(2);
+  });
+});
+
+// ADR-0086 §8: Push only while this device has a subscription and the browser lets the site notify, Email only on a
+// server that sends it, Sound only while the sound is on.
 describe("the columns", () => {
   const rows = { settings: { notificationRows: memberNotificationRows } } as const;
   const subscribed = { push: true, pushState: "subscribed" } as const;
-  const cases: [string, FakeOptions, boolean, string[]][] = [
-    ["on a server without push or email, with the sound off: the app alone", rows, false, ["In the app"]],
-    ["on a server that sends email: Email", { ...rows, email: true }, false, ["In the app", "Email"]],
-    ["while this device has a subscription: Push", { ...rows, ...subscribed }, false, ["In the app", "Push"]],
+  const cases: [string, FakeOptions, boolean, NotificationPermission, string[]][] = [
+    ["on a server without push or email, with the sound off: the app alone", rows, false, "default", ["In the app"]],
+    ["on a server that sends email: Email", { ...rows, email: true }, false, "default", ["In the app", "Email"]],
+    [
+      "while this device has a subscription: Push",
+      { ...rows, ...subscribed },
+      false,
+      "granted",
+      ["In the app", "Push"],
+    ],
     [
       "on a server that sends push to a device without a subscription: no Push",
       { ...rows, push: true },
       false,
+      "granted",
       ["In the app"],
     ],
-    ["while the sound is on: Sound", rows, true, ["In the app", "Sound"]],
+    [
+      "on a device with a subscription whose browser no longer lets the site notify: no Push",
+      { ...rows, ...subscribed },
+      false,
+      "denied",
+      ["In the app"],
+    ],
+    [
+      "on a device with a subscription whose browser has not been asked: no Push",
+      { ...rows, ...subscribed },
+      false,
+      "default",
+      ["In the app"],
+    ],
+    ["while the sound is on: Sound", rows, true, "default", ["In the app", "Sound"]],
     [
       "with all of them: the app, Push, Email, Sound",
       { ...rows, ...subscribed, email: true },
       true,
+      "granted",
       ["In the app", "Push", "Email", "Sound"],
     ],
   ];
 
-  for (const [when, options, sound, columns] of cases)
+  for (const [when, options, sound, permission, columns] of cases)
     test(when, async () => {
-      await readSettings(options, sound ? { sounding: [] } : {});
+      const { data } = await readSettings(options, { browser: { permission }, ...(sound ? { sounding: [] } : {}) });
 
       // Once the subscription is read too: the Push column comes with it.
       await waitFor(() => {
         expect(columnsOf(people)).toEqual(columns);
+        expect(data.queryClient.isFetching()).toBe(0);
       });
       expect(columnsOf(server)).toEqual(columns);
     });
+
+  test("the Push column goes once the browser's settings stop the site's notifications, with the screen open", async () => {
+    await readSettings({ ...rows, ...subscribed }, { browser: { permission: "granted" } });
+    await waitFor(() => {
+      expect(columnsOf(people)).toEqual(["In the app", "Push"]);
+    });
+
+    changeSitePermission("denied");
+
+    await waitFor(() => {
+      expect(columnsOf(people)).toEqual(["In the app"]);
+    });
+  });
 });
 
 describe("a cell saves at once, with a PATCH of that cell alone", () => {
@@ -396,11 +453,15 @@ describe("a kind that is off in the app", () => {
   } as const satisfies FakeOptions;
 
   test("has its other cells off and disabled, and its row says why", async () => {
-    await drawnSettings(everyChannel, { sounding: ["favourite", "mention"] }, ({ fake }) => {
-      fake.script("GET /push/subscription", {
-        change: (held) => ({ ...held, alerts: ["mention" as const, "favourite" as const] }),
-      });
-    });
+    await drawnSettings(
+      everyChannel,
+      { sounding: ["favourite", "mention"], browser: { permission: "granted" } },
+      ({ fake }) => {
+        fake.script("GET /push/subscription", {
+          change: (held) => ({ ...held, alerts: ["mention" as const, "favourite" as const] }),
+        });
+      },
+    );
     await waitFor(() => {
       expect(columnsOf(people)).toEqual(["In the app", "Push", "Email", "Sound"]);
     });

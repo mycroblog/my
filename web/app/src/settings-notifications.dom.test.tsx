@@ -90,7 +90,8 @@ describe("the entry", () => {
 
 // What the rules are and how a tree breaks each is the check's own test (design-system, test/settings.dom.test.tsx).
 test("the entry with every section and column it can have keeps the rules of a settings screen (ADR-0110 §6)", async () => {
-  browserWithPush();
+  // A device that subscribed: the browser lets the site notify.
+  browserWithPush({ permission: "granted" });
   setNotificationSound(true);
   setNotificationSoundKinds(["mention", "follow"], true);
   await renderApp(at, {

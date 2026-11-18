@@ -13,6 +13,7 @@ import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
 import type { FakeOptions } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
+import { followSignOut, leaveEndedSession, sessionEnding } from "./sign-out";
 import { main, renderApp, type TestApp } from "./test/app";
 import { chooseFiles, imageFile } from "./test/files";
 import { fakeApp } from "./test/server";
@@ -369,6 +370,50 @@ describe("leaving the form with unsaved changes", () => {
     expect(nameField().value).toBe("Yuki Snow");
     expect(app.fake.revocations).toEqual([]);
   });
+
+  // Whether the page holds its unload is the browser's to show: the app's history on a simulation is in memory, and no
+  // event of the test's own reaches what the app holds it with (web/e2e/specs/profile.spec.ts).
+  test("Sign out over the form leaves for the start without asking whether to leave it", async () => {
+    const app = await unsaved();
+    const [menu] = beside();
+    if (menu === undefined) throw new Error("test: no settings menu beside the screen");
+    await app.user.click(within(menu).getByRole("link", { name: "Sign out…" }));
+
+    await app.user.click(
+      within(await screen.findByRole("alertdialog", { name: "Sign out of this browser?" })).getByRole("button", {
+        name: "Sign out",
+      }),
+    );
+
+    await waitFor(() => {
+      if (app.left().length === 0) throw new Error("test: the app did not leave yet");
+    });
+    expect(app.left()).toEqual(["/"]);
+    expect(sessionEnding(app.data)).toBe(true);
+    expect(confirmations().includes("Leave without saving?")).toBe(false);
+  });
+
+  // The other two ways an ended session leaves: a sign-out in another tab, and a session the server ended. While the
+  // session goes on, the same link is held ("a link of the navigation asks first", above).
+  for (const [way, end] of [
+    [
+      "a sign-out in another tab",
+      (app: TestApp) => {
+        followSignOut({ data: app.data, leave: () => undefined });
+        return Promise.resolve();
+      },
+    ],
+    ["a session the server ended", (app: TestApp) => leaveEndedSession({ data: app.data, leave: () => undefined })],
+  ] as const)
+    test(`after ${way}, the form holds no navigation`, async () => {
+      const app = await unsaved();
+
+      await end(app);
+      await app.user.click(within(rail()).getByRole("link", { name: "Bookmarks" }));
+
+      await settledAt(app, "/bookmarks");
+      expect(confirmations()).toEqual([]);
+    });
 });
 
 // The row that would say so is gone with its screen: the app says it over whatever screen the reader is on.
@@ -436,6 +481,58 @@ describe("a choice of the entry whose save fails after the reader left the scree
       expect(main().getByRole<HTMLInputElement>("switch", { name: "Show “Supporter”" }).checked).toBe(false);
       expect(main().queryAllByRole("button", { name: "Remove #sourdough" })).toHaveLength(0);
     });
+
+  test("the form's Save, left while it was on its way: leaving asks nothing, and a toast named Profile leads back to the form", async () => {
+    const on = fakeApp();
+    const app = await renderApp(form, { on });
+    await formRead();
+    await rename(app, "Yuki Snow");
+    const sent = on.fake.script("PATCH /accounts/update_credentials", { hold: "request", fail: 500 });
+    await app.user.click(main().getByRole("button", { name: "Save" }));
+    await sent.arrived();
+
+    // While the change is on its way, the form holds nothing unsaved.
+    await app.navigate("/lists");
+    expect(confirmations()).toEqual([]);
+    expect(app.path()).toBe("/lists");
+    expect(toasts()).toHaveLength(0);
+
+    sent.release();
+
+    const [toast, ...others] = await waitFor(() => {
+      if (toasts().length === 0) throw new Error("test: no toast says that the profile was not saved");
+      return toasts();
+    });
+    if (toast === undefined) throw new Error("test: no toast");
+    expect(others).toHaveLength(0);
+    expect(toast.textContent.startsWith("“Profile” could not be saved.")).toBe(true);
+    expect(app.path()).toBe("/lists");
+
+    await app.user.click(within(toast).getByRole("button", { name: "Open settings" }));
+
+    await formRead();
+    expect(app.path()).toBe(form);
+  });
+
+  test("the form's Save answered after the reader left takes them nowhere", async () => {
+    const on = fakeApp();
+    const app = await renderApp(form, { on });
+    await formRead();
+    await rename(app, "Yuki Snow");
+    const sent = on.fake.script("PATCH /accounts/update_credentials", { hold: "response" });
+    await app.user.click(main().getByRole("button", { name: "Save" }));
+    await sent.served();
+    await app.navigate("/lists");
+
+    sent.release();
+    await waitFor(() => {
+      if (app.data.queryClient.isFetching() > 0) throw new Error("test: the app is still reading");
+    });
+    await new Promise((turn) => setTimeout(turn, 0));
+
+    expect(app.path()).toBe("/lists");
+    expect(toasts()).toHaveLength(0);
+  });
 
   test("while the reader is still on the screen, the row says so and no toast does", async () => {
     const on = fakeApp();
