@@ -2,8 +2,8 @@
 
 // Two-factor authentication, under Security (#3205): for an account without it, the screen asks the server for a
 // setup as it opens, shows its key as a QR code and as text to copy, and takes the code of the authenticator app; a
-// code the server refuses is said, a setup that expired is asked again, and the right code turns it on and shows the
-// recovery codes, once. For an account with it, the screen makes new recovery codes and turns it off, each after a
+// code the screen or the server refuses is said under its field, which takes the focus, a setup that expired is asked
+// again, and the right code turns it on and shows the recovery codes, once. For an account with it, the screen makes new recovery codes and turns it off, each after a
 // code. That the entry shows it on and off afterwards is the app's test (web/app, settings-security.dom.test.tsx),
 // and a code of a real authenticator on a real server the E2E test's (web/e2e, specs/security.spec.ts).
 
@@ -133,7 +133,7 @@ describe("an account without it", () => {
     expect(said()).toEqual(["Could not copy. Select the text and copy it yourself."]);
   });
 
-  test("without a code, the field says to enter the app's, and nothing is sent", async () => {
+  test("without a code, the field says to enter the app's and takes the focus back from the button, and nothing is sent", async () => {
     const { user, fake } = await read();
     const sent = fake.script("POST /two_factor/totp");
 
@@ -143,36 +143,28 @@ describe("an account without it", () => {
       if (code().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
     });
     expect(describedBy(code())).toEqual([hint, "Enter the code your authenticator app shows."]);
+    expect(document.activeElement === code()).toBe(true);
+    expect(alerts()).toEqual([]);
     expect(sent.seen).toHaveLength(0);
   });
 
-  test("a code the server refuses is said in the server's words, and the setup stays as it is", async () => {
+  test("a code the server refuses is said under the field in the server's words, the focus goes back to it, nothing goes beside the button, and the setup stays as it is", async () => {
     const { user, fake, setups, address } = await read();
     const sent = fake.script("POST /two_factor/totp");
 
     await turnOn(user, "000000");
 
     await waitFor(() => {
-      if (alerts().length === 0) throw new Error("test: the screen says nothing yet");
+      if (code().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
     });
-    expect(alerts()).toEqual(["Wrong code"]);
+    expect(describedBy(code())).toEqual([hint, "Wrong code"]);
+    expect(document.activeElement === code()).toBe(true);
+    expect(alerts()).toEqual([]);
+    expect(said()).toEqual([]);
     expect(sent.seen).toHaveLength(1);
     expect(sections()).toEqual(["Add to your authenticator app", "Enter the code"]);
     expect(setups()).toBe(1);
     expect(address.backs).toBe(0);
-  });
-
-  // The developer's interface: "a wrong code → the server's words under the field". The server names the member the
-  // refusal is about (`field: "code"`), and the screen says its words beside the button, as an alert of the status
-  // region, with the field neither marked nor described by them.
-  test.failing("a code the server refuses is said under the field of the code", async () => {
-    const { user } = await read();
-    await turnOn(user, "000000");
-    await waitFor(() => {
-      if (alerts().length === 0) throw new Error("test: the screen says nothing yet");
-    });
-
-    expect(describedBy(code()).join("|")).toBe(`${hint}|Wrong code`);
   });
 
   test("the right code turns it on: the screen shows ten recovery codes, says they are not shown again and that it is on, and Finish goes back", async () => {
@@ -188,7 +180,8 @@ describe("an account without it", () => {
     expect(new Set(codes).size).toBe(10);
     expect(codes.every((one) => one !== "")).toBe(true);
     expect(words(section("Recovery codes"))).toContain(notShownAgain);
-    expect(words(section("Recovery codes"))).toContain("Two-factor authentication is on.");
+    // What happened is said as a status; that the codes' heading takes the focus is jsdom's (focus.jsdom.test.tsx).
+    expect(said()).toEqual(["Two-factor authentication is on."]);
     expect(sent.seen.map((s) => s.body.code)).toEqual([fakeTotpCode]);
     expect((await heldBy<{ enabled: boolean }>(fake, "/two_factor")).enabled).toBe(true);
     // The codes are the screen now: its way out is Finish.
@@ -218,7 +211,7 @@ describe("an account without it", () => {
     expect(words(screen.getByRole("main"))).toContain("二要素認証をオンにしました。");
   });
 
-  test("a setup that expired is asked again, and the screen says to scan the new QR code; the next code goes with the new setup", async () => {
+  test("a setup that expired is asked again, and the screen says to scan the new QR code beside the button, with the code's field empty and focused; the next code goes with the new setup", async () => {
     const { user, fake, setups } = await read();
     const sent = fake.script("POST /two_factor/totp");
     const expired = fake.script("POST /two_factor/totp", {
@@ -238,6 +231,10 @@ describe("an account without it", () => {
       if (setups() !== 2) throw new Error(`test: the server was asked for ${String(setups())} setups`);
     });
     expect(sections()).toEqual(["Add to your authenticator app", "Enter the code"]);
+    // The old code is of the old setup: the field is emptied for the new one, and has the focus, unmarked.
+    expect(code().value).toBe("");
+    expect(document.activeElement === code()).toBe(true);
+    expect(describedBy(code())).toEqual([hint]);
     expired.end();
 
     await turnOn(user, fakeTotpCode);
@@ -302,9 +299,7 @@ describe("an account with it", () => {
     await screen.findByRole("region", { name: "Recovery codes" });
     expect(new Set(kept("Recovery codes")).size).toBe(10);
     expect(words(section("Recovery codes"))).toContain(notShownAgain);
-    expect(words(section("Recovery codes"))).toContain(
-      "Your new recovery codes are ready. The old ones no longer work.",
-    );
+    expect(said()).toEqual(["Your new recovery codes are ready. The old ones no longer work."]);
     expect(sent.seen.map((s) => s.body.code)).toEqual(["000000", fakeTotpCode]);
 
     await user.click(screen.getByRole("button", { name: "Finish" }));

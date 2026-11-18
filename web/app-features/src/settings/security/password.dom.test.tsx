@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The password's screen, under Security (#3205): the new password is checked for its length before anything is asked;
+// The password's screen, under Security (#3205): the new password is checked for its length before anything is asked,
+// and one the screen or the server refuses is said under its field, which takes the focus;
 // Change asks to confirm it's the reader, a wrong password stays in that dialog, and the right one changes the
 // password, which the screen then says. An account without a password sets one, and no password confirms that; a
 // server that limits sign-in to login providers takes none (ADR-0106 §21); and back from a provider that confirmed
@@ -87,6 +88,8 @@ describe("an account with a password", () => {
           if (field().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
         });
         expect(describedBy(field())).toEqual([hint, wrongLength]);
+        // The press left the focus on the button: the screen gives it back to the field.
+        expect(document.activeElement === field()).toBe(true);
         expect(dialogs()).toHaveLength(0);
       }
       expect(sent.seen).toHaveLength(0);
@@ -125,6 +128,36 @@ describe("an account with a password", () => {
       { new_password: "a-new-password", current_password: "not-the-password" },
       { new_password: "a-new-password", current_password: yuki },
     ]);
+  });
+
+  test("a new password the server refuses is said under its field in the server's words, once the dialog left, with the focus in it and nothing beside the button", async () => {
+    const { user, fake } = await read();
+    fake.script("POST /accounts/password", {
+      fail: {
+        type: "about:blank",
+        title: "The request is not valid",
+        status: 422,
+        field: "new_password",
+        detail: "Use a password that is not this common.",
+      },
+    });
+    await user.click(field());
+    await user.paste("password123");
+    await user.click(screen.getByRole("button", { name: "Change password" }));
+    const dialog = await proving();
+    await user.type(within(dialog).getByLabelText("Current password"), yuki);
+
+    await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
+
+    await closed();
+    await waitFor(() => {
+      if (field().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
+    });
+    expect(describedBy(field())).toEqual([hint, "Use a password that is not this common."]);
+    expect(document.activeElement === field()).toBe(true);
+    expect(screen.queryAllByRole("alert").map(words)).toEqual([]);
+    expect(said()).toEqual([]);
+    expect(field().value).toBe("password123");
   });
 });
 

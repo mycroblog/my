@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Adding a passkey, under Security (#3205; ADR-0106 §26): the name is checked before anything is asked; a browser
+// Adding a passkey, under Security (#3205; ADR-0106 §26): the name is checked before anything is asked, and a name the
+// screen or the server refuses is said under its field, which takes the focus; a browser
 // without passkeys is told so at once; and in one with them, once the reader confirmed it's them, the server starts
 // the registration, the browser creates the passkey, the server keeps it, and the screen goes back to the entry. What
 // the browser refuses (a dialog closed, a passkey that exists) and what the server does (as many passkeys as an
@@ -60,9 +61,38 @@ for (const [what, value] of [
       if (name().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
     });
     expect(describedBy(name())).toEqual([hint, "Enter a name of up to 64 characters."]);
+    // The press left the focus on the button: the screen gives it back to the field.
+    expect(document.activeElement === name()).toBe(true);
+    expect(alerts()).toEqual([]);
     expect(dialogs()).toHaveLength(0);
     expect(requests.slice(before)).toEqual([]);
   });
+
+test("a name the server refuses is said under its field in the server's words, once the dialog left, with the focus in it and nothing beside the button", async () => {
+  const browser = passkeyBrowser();
+  const { user, fake, address } = await read();
+  fake.script("POST /passkeys/registration", {
+    fail: {
+      type: "about:blank",
+      title: "The request is not valid",
+      status: 422,
+      field: "name",
+      detail: "Use a name without control characters.",
+    },
+  });
+
+  await addNamed(user, "My laptop");
+
+  await waitFor(() => {
+    if (name().getAttribute("aria-invalid") !== "true") throw new Error("test: the field is not marked yet");
+  });
+  expect(describedBy(name())).toEqual([hint, "Use a name without control characters."]);
+  expect(document.activeElement === name()).toBe(true);
+  expect(alerts()).toEqual([]);
+  expect(browser.created).toBe(0);
+  expect(address.backs).toBe(0);
+  expect(name().value).toBe("My laptop");
+});
 
 test("a browser without passkeys is told so at once, beside the button: no dialog, and nothing sent", async () => {
   const { user, requests, address } = await read();

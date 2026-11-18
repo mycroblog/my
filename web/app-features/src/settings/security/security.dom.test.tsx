@@ -2,8 +2,9 @@
 
 // Security, the settings' entry of how an account signs in (#3205): what its sections show of the account as the
 // server holds it (two-factor authentication off or on, the password, the passkeys, the linked accounts, the browsers
-// signed in, ADR-0090 §11), what each row's button does once the reader confirmed it, what the screen says when the
-// server refuses to remove the last way to sign in (ADR-0106 §3.6), what it says as the browser comes back from a
+// signed in, ADR-0090 §11), what each row's button does once the reader confirmed it, and where the focus goes when
+// the reader cancels it, what the screen says when the server refuses to remove the last way to sign in (ADR-0106
+// §3.6), what it says as the browser comes back from a
 // login provider (the fragment of the address), and the advice under the browsers (ADR-0090 §13). The dialog that
 // asks to confirm it's the reader is pinned once (../confirmation.dom.test.tsx); the screens under the entry have
 // their own tests beside this one, and what needs the routes is the app's (web/app, settings-security.dom.test.tsx).
@@ -70,6 +71,16 @@ const links = (part: HTMLElement) =>
   within(part)
     .queryAllByRole("link")
     .map((link) => [words(link), link.getAttribute("href")]);
+
+/**
+ * What the section titled `title` says of a change made on it, as its statuses say it: an empty status is a place
+ * kept for what it will say. That the status takes the focus is jsdom's (focus.jsdom.test.tsx).
+ */
+const saidIn = (title: string) =>
+  within(section(title))
+    .queryAllByRole("status")
+    .map(words)
+    .filter((text) => text !== "");
 
 /** The confirmation that asks `name` before something ends, once it is open. */
 const asking = (name: string) => screen.findByRole("alertdialog", { name });
@@ -397,7 +408,68 @@ describe("the last way to sign in", () => {
       expect(words(refused)).toBe("This is your last way to sign in");
       expect((await asking(title)).contains(refused)).toBe(true);
       expect(rows(list)).toEqual(before);
+      // Nothing was removed, so the section says nothing of it.
+      expect(saidIn(list)).toEqual([]);
     });
+});
+
+describe("a confirmation of the entry left alone", () => {
+  for (const [what, title, opens, dialog] of [
+    ["Remove of a passkey", "Passkeys", () => offered("Passkeys", "YubiKey 5C", "Remove"), "alertdialog"],
+    ["Unlink", "Linked accounts", () => offered("Linked accounts", "GitHub", "Unlink"), "alertdialog"],
+    [
+      "Sign out of a browser",
+      "Signed-in browsers",
+      () => offered("Signed-in browsers", "Safari on iPhone", "Sign out"),
+      "alertdialog",
+    ],
+    [
+      "Sign out all others",
+      "Signed-in browsers",
+      () => within(section("Signed-in browsers")).getByRole("button", { name: "Sign out all others" }),
+      "alertdialog",
+    ],
+    ["Remove of the password", "Sign-in", () => offered("Sign-in", "Remove password", "Remove"), "dialog"],
+  ] as const)
+    test(`Cancel of ${what} gives the focus back to the button that opened it, and nothing is said`, async () => {
+      const { user, requests } = await read();
+      const button = opens();
+
+      await user.click(button);
+      const [open] = await screen.findAllByRole(dialog);
+      if (open === undefined) throw new Error("test: no dialog opened");
+      const before = requests.length;
+      await user.click(within(open).getByRole("button", { name: "Cancel" }));
+
+      await closed();
+      await waitFor(() => {
+        if (document.activeElement !== button) throw new Error("test: the focus is not back on the button yet");
+      });
+      expect(saidIn(title)).toEqual([]);
+      expect(
+        screen
+          .queryAllByRole("status")
+          .map(words)
+          .filter((text) => text !== ""),
+      ).toEqual([]);
+      expect(requests.slice(before)).toEqual([]);
+    });
+
+  test("pressing a row's button again clears what the section said of the last change", async () => {
+    const { user } = await read();
+    await user.click(offered("Passkeys", "YubiKey 5C", "Remove"));
+    await user.click(within(await asking("Remove the passkey “YubiKey 5C”?")).getByRole("button", { name: "Remove" }));
+    await closed();
+    await waitFor(() => {
+      if (saidIn("Passkeys").length === 0) throw new Error("test: the section says nothing yet");
+    });
+    expect(saidIn("Passkeys")).toEqual(["The passkey “YubiKey 5C” is removed."]);
+
+    await user.click(offered("Passkeys", "MacBook Touch ID", "Remove"));
+
+    await asking("Remove the passkey “MacBook Touch ID”?");
+    expect(saidIn("Passkeys")).toEqual([]);
+  });
 });
 
 describe("Linked accounts", () => {

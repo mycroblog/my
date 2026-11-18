@@ -4,12 +4,16 @@
 // §3.7), pinned once, on the operation that offers every way: linking an account, from Security. The ways are the
 // password, a passkey, then each linked account, as the account and the browser have them; one shows at a time, with
 // the others as buttons under it; a proof the server refuses stays in the dialog, in the server's words; a linked
-// account's confirmation leaves for the provider; and Cancel and Close run nothing. Which operation a screen asks it
-// for, and what the operation does once confirmed, is each screen's test (security/*.dom.test.tsx).
+// account's confirmation leaves for the provider; Cancel and Close run nothing; and what `useConfirmation`'s `ask`
+// calls after the write (`done`, `failed`, then `left` once the dialog has left), on a screen of the test's own. Which
+// operation a screen asks it for, and what the operation does once confirmed, is each screen's test
+// (security/*.dom.test.tsx).
 
 import { describe, expect, test } from "bun:test";
-import { fakeOrigin } from "@my/e2e/fake";
+import { fakeExternalConfirmation, fakeOrigin } from "@my/e2e/fake";
 import { screen, waitFor, within } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
+import type { FakeData } from "../test/feature";
 import {
   atRest,
   buttonsOf,
@@ -22,6 +26,7 @@ import {
   words,
 } from "../test/security";
 import { settingsOn, type Access, type Given } from "../test/settings";
+import { useConfirmation } from "./confirmation";
 import { SettingsEntryScreen } from "./screen";
 
 /**
@@ -155,25 +160,24 @@ describe("the ways to confirm", () => {
     expect(address.left).toEqual([]);
   });
 
-  test("an account this browser can confirm in no way is told so, and the dialog only closes", async () => {
-    // Passkeys alone, in a browser without them.
-    const { user, dialog, sent } = await linking({ password: false, linked: "none" });
+  for (const button of ["Close", "Cancel"])
+    test(`an account this browser can confirm in no way is told so, with no button that confirms, and ${button} closes the dialog`, async () => {
+      // Passkeys alone, in a browser without them.
+      const { user, dialog, sent, requests, address } = await linking({ password: false, linked: "none" });
+      const before = requests.length;
 
-    expect(words(within(dialog).getByRole("alert"))).toBe(
-      "This browser has no way to confirm it's you. Try a browser or device that can use one of your passkeys.",
-    );
-    expect(buttonsOf(dialog)).toEqual(["Close", "Cancel", "Close"]);
+      expect(words(within(dialog).getByRole("alert"))).toBe(
+        "This browser has no way to confirm it's you. Try a browser or device that can use one of your passkeys.",
+      );
+      expect(buttonsOf(dialog)).toEqual(["Close", "Cancel"]);
 
-    // The button that says Close, in the place of the one that would confirm; the head's Close is a glyph.
-    const [close] = within(dialog)
-      .getAllByRole("button", { name: "Close" })
-      .filter((button) => button.textContent === "Close");
-    if (close === undefined) throw new Error("test: no button says Close");
-    await user.click(close);
+      await user.click(within(dialog).getByRole("button", { name: button }));
 
-    await closed();
-    expect(sent.seen).toHaveLength(0);
-  });
+      await closed();
+      expect(sent.seen).toHaveLength(0);
+      expect(requests.slice(before)).toEqual([]);
+      expect(address.left).toEqual([]);
+    });
 });
 
 describe("a proof", () => {
@@ -264,6 +268,142 @@ describe("a proof", () => {
     expect(address.left[0]?.startsWith(`${fakeOrigin}/auth/external/${github}/link?`)).toBe(true);
     // The operation itself waits for the reader to come back.
     expect(sent.seen).toHaveLength(0);
+  });
+});
+
+describe("what follows a confirmation (`ask`'s `done`, `failed` and `left`)", () => {
+  type Returned = Parameters<typeof useConfirmation>[0]["returned"];
+
+  /**
+   * A screen that asks the confirmation before `run`, the write the test gives it, with the button Change: each of
+   * `ask`'s callbacks says its name in `heard`, `left` with whether a dialog was still in the document.
+   */
+  function Asking({
+    heard,
+    run,
+    returned,
+    leave,
+  }: {
+    heard: string[];
+    run: () => Promise<unknown>;
+    returned: Returned;
+    leave: (href: string) => void;
+  }) {
+    const { ask, dialog, notice } = useConfirmation({
+      operation: "password_change",
+      about: "To change your password, confirm it's you.",
+      returnTo: "/settings/security/password",
+      returned,
+      leave,
+    });
+    const then = {
+      done: () => heard.push("done"),
+      failed: () => heard.push("failed"),
+      left: () => heard.push(dialogs().length === 0 ? "left" : "left with a dialog open"),
+    };
+    return (
+      <>
+        {notice}
+        <button
+          type="button"
+          onClick={() => {
+            ask(run, then);
+          }}
+        >
+          Change
+        </button>
+        {dialog}
+      </>
+    );
+  }
+
+  /** The screen above, drawn on the fake with yuki's account, with what its callbacks heard. */
+  async function asking(run: () => Promise<unknown>, given: Given & { returned?: (on: FakeData) => Returned } = {}) {
+    const heard: string[] = [];
+    let returned: Returned = null;
+    const on = await settingsOn(
+      {},
+      (address) => <Asking heard={heard} run={run} returned={returned} leave={address.leave} />,
+      {
+        ...given,
+        before: (server) => {
+          returned = given.returned?.(server) ?? null;
+        },
+      },
+    );
+    await atRest(on);
+    return { ...on, heard };
+  }
+
+  /** Confirms the open dialog with yuki's password. */
+  async function withPassword(user: UserEvent) {
+    const dialog = await proving();
+    await user.type(password(dialog), yuki);
+    await user.click(within(dialog).getByRole("button", { name: "Confirm" }));
+  }
+
+  /** Waits until the callbacks heard `count` calls. */
+  const heardOf = (heard: string[], count: number) =>
+    waitFor(() => {
+      if (heard.length < count) throw new Error(`test: heard ${heard.join(", ") || "nothing"}`);
+    });
+
+  // The developer's interface: "`left` runs after `done` or `failed` once the dialog is no longer in the document".
+  // It runs while the dialog is still in the document, not exiting, and the dialog is gone a turn later: what `left`
+  // does (a status that takes the focus) then comes before the dialog leaves and gives the focus back to its button.
+  test.failing("a write that is done: `done`, then `left` once the dialog is no longer in the document", async () => {
+    const { user, heard } = await asking(() => Promise.resolve());
+
+    await user.click(screen.getByRole("button", { name: "Change" }));
+    await withPassword(user);
+
+    await heardOf(heard, 2);
+    expect(heard).toEqual(["done", "left"]);
+  });
+
+  // The same defect as the test above, after a write that failed.
+  test.failing("a write that failed: `failed`, then `left` once the dialog is no longer in the document", async () => {
+    const { user, heard } = await asking(() => Promise.reject(new Error("test: the write failed")));
+
+    await user.click(screen.getByRole("button", { name: "Change" }));
+    await withPassword(user);
+
+    await heardOf(heard, 2);
+    expect(heard).toEqual(["failed", "left"]);
+  });
+
+  test("Cancel: nothing runs, and `left` is not called", async () => {
+    let runs = 0;
+    const { user, heard } = await asking(() => {
+      runs += 1;
+      return Promise.resolve();
+    });
+
+    await user.click(screen.getByRole("button", { name: "Change" }));
+    await user.click(within(await proving()).getByRole("button", { name: "Cancel" }));
+
+    await closed();
+    // A turn of the event loop for a callback that would come late.
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(runs).toBe(0);
+    expect(heard).toEqual([]);
+  });
+
+  test("on a provider's confirmation, the write runs with no dialog, and `left` follows `done` at once", async () => {
+    const { user, heard } = await asking(() => Promise.resolve(), {
+      returned: ({ fake }) => ({
+        kind: "confirmation",
+        token: fakeExternalConfirmation,
+        provider: fake.loginProviderId("github"),
+        operation: "password_change",
+      }),
+    });
+
+    await user.click(screen.getByRole("button", { name: "Change" }));
+
+    await heardOf(heard, 2);
+    expect(heard).toEqual(["done", "left"]);
+    expect(dialogs()).toHaveLength(0);
   });
 });
 
