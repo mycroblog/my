@@ -3,8 +3,9 @@
 // Display and posting, the entry of the settings at /settings/display (FR-007, FR-110, FR-114, FR-208): the language
 // and the time zone the app shows, each the account's choice or the browser's; how large a link's preview is; what a
 // new post starts with (who can see it, who can quote it, its language, whether media needs a description); and what
-// the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Every control saves at
-// once and says so in the line under its name (saving.ts): the change shows at once, as the account's preferences show
+// the timelines show (the languages, none chosen meaning all, and new posts as they arrive). Where the server itself
+// requires a description of media, the switch of it stands on and cannot be changed. Every control saves at
+// once and says so in the line under its name (saving.tsx): the change shows at once, as the account's preferences show
 // it everywhere (app-data), and goes back to what the server has when the server does not take it. The language
 // changes the whole app without a reload (the app's reader).
 
@@ -35,7 +36,6 @@ import {
   Switch,
   TextButton,
   useLocale,
-  useSaveState,
   type SelectGroup,
   type SelectOption,
 } from "@my/design-system";
@@ -80,12 +80,10 @@ function Choice({
   onChoose: (value: string) => Promise<unknown>;
 }) {
   const id = useId();
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   return (
     <SettingRow id={id} label={label} about={about} save={state}>
       <Select
-        labelledBy={id}
         options={options}
         value={value}
         onChange={(chosen) => {
@@ -96,26 +94,30 @@ function Choice({
   );
 }
 
-/** A setting on or off that saves at once. */
+/** A setting on or off that saves at once; `fixed`, it cannot be changed, and the line under it says why. */
 function Toggle({
   label,
   about,
   on,
+  fixed,
   onChange,
 }: {
   label: string;
   about?: string | undefined;
   on: boolean;
+  /** Why the reader cannot change it (the server decides it). */
+  fixed?: string | undefined;
   /** Saves the state chosen. */
   onChange: (on: boolean) => Promise<unknown>;
 }) {
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   return (
     <Switch
       label={label}
       description={about}
       isSelected={on}
+      isDisabled={fixed !== undefined}
+      reason={fixed}
       onChange={(next) => {
         save(() => onChange(next));
       }}
@@ -173,7 +175,10 @@ function quoteChoice(preferences: Preferences, t: T): { options: readonly Select
   return { options: [...options, { value: kept, label }], value: kept };
 }
 
-/** The languages the timelines show: the choice that adds one, and under it the ones chosen, each with Remove. */
+/**
+ * The languages the timelines show: the choice that adds one, and close under it, as the setting's own, the ones
+ * chosen, each with Remove.
+ */
 function TimelineLanguages({
   chosen,
   onChange,
@@ -187,47 +192,50 @@ function TimelineLanguages({
   t: T;
 }) {
   const id = useId();
-  const { saving, save } = useSaving();
-  const state = useSaveState(saving);
+  const { state, save } = useSaving();
   const name = t("settings.display.timeline_languages");
   // The choice holds no language: what it says is that all show, or that one more can be added.
   const first = t(
     chosen.length === 0 ? "settings.display.timeline_languages.all" : "settings.display.timeline_languages.add",
   );
   return (
-    <>
-      <SettingRow id={id} label={name} about={t("settings.display.timeline_languages.about")} save={state}>
-        <Select
-          labelledBy={id}
-          options={[{ value: "", label: first }, ...languageOptions(lang).filter((o) => !chosen.includes(o.value))]}
-          value=""
-          onChange={(tag) => {
-            if (tag !== "") save(() => onChange([...chosen, tag]));
-          }}
-        />
-      </SettingRow>
-      {chosen.length > 0 && (
-        <SettingsList label={name}>
-          {chosen.map((tag) => (
-            <SettingsListRow
-              key={tag}
-              title={ownName(tag)}
-              end={
-                <Button
-                  size="timeline"
-                  aria-label={t("settings.display.timeline_languages.remove.name", { language: ownName(tag) })}
-                  onPress={() => {
-                    save(() => onChange(chosen.filter((other) => other !== tag)));
-                  }}
-                >
-                  {t("settings.display.timeline_languages.remove")}
-                </Button>
-              }
-            />
-          ))}
-        </SettingsList>
-      )}
-    </>
+    <SettingRow
+      id={id}
+      label={name}
+      about={t("settings.display.timeline_languages.about")}
+      save={state}
+      values={
+        chosen.length > 0 && (
+          <SettingsList label={name}>
+            {chosen.map((tag) => (
+              <SettingsListRow
+                key={tag}
+                title={ownName(tag)}
+                end={
+                  <Button
+                    size="timeline"
+                    aria-label={t("settings.display.timeline_languages.remove.name", { language: ownName(tag) })}
+                    onPress={() => {
+                      save(() => onChange(chosen.filter((other) => other !== tag)));
+                    }}
+                  >
+                    {t("settings.display.timeline_languages.remove")}
+                  </Button>
+                }
+              />
+            ))}
+          </SettingsList>
+        )
+      }
+    >
+      <Select
+        options={[{ value: "", label: first }, ...languageOptions(lang).filter((o) => !chosen.includes(o.value))]}
+        value=""
+        onChange={(tag) => {
+          if (tag !== "") save(() => onChange([...chosen, tag]));
+        }}
+      />
+    </SettingRow>
   );
 }
 
@@ -242,6 +250,8 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
   const quote = quoteChoice(preferences, t);
   const visibility = preferences.default_visibility;
   const postLanguage = preferences.default_post_language;
+  // Where the server itself requires a description of media, the account's own switch decides nothing.
+  const serverRequires = instance?.limits.require_media_description === true;
   return (
     <>
       <SettingsSection heading={t("settings.display.section.region")}>
@@ -312,7 +322,9 @@ function Sections({ preferences, languages }: { preferences: Preferences; langua
         />
         <Toggle
           label={t("settings.display.media_description")}
-          on={preferences.require_media_description}
+          about={t("settings.display.media_description.about")}
+          on={serverRequires || preferences.require_media_description}
+          fixed={serverRequires ? t("settings.display.media_description.server") : undefined}
           onChange={(on) => change({ require_media_description: on })}
         />
       </SettingsSection>
@@ -340,16 +352,21 @@ export function DisplaySettings({ back, languages }: SettingsEntryProps) {
   const preferences = usePreferences();
   const { status, retry } = usePreferencesRead();
   return (
-    <SettingsScreen icon="display" title={t("settings.entry.display")} back={back}>
-      {preferences !== undefined ? (
-        <Sections preferences={preferences} languages={languages} />
-      ) : status === "failed" ? (
-        <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-          {t("settings.failed")}
-        </FeedNotice>
-      ) : (
-        <FeedNotice>{t("settings.loading")}</FeedNotice>
-      )}
+    <SettingsScreen
+      icon="display"
+      title={t("settings.entry.display")}
+      back={back}
+      notice={
+        preferences !== undefined ? undefined : status === "failed" ? (
+          <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
+            {t("settings.failed")}
+          </FeedNotice>
+        ) : (
+          <FeedNotice>{t("settings.loading")}</FeedNotice>
+        )
+      }
+    >
+      {preferences !== undefined && <Sections preferences={preferences} languages={languages} />}
     </SettingsScreen>
   );
 }

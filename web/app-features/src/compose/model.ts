@@ -424,3 +424,12 @@ export function toDraft(d: Draft, settings: ComposeSettings): DraftRequest {
       : { poll: { ...status.poll, options: [...d.poll.options], expires_in: d.poll.duration } }),
   };
 }
+
+/**
+ * The sentence under an image's empty description once Post was pressed: that the server requires one, or, where
+ * only the reader's own setting does, that their settings do.
+ */
+export const descriptionRequired = (
+  settings: ComposeSettings,
+): "compose.description.required" | "compose.description.required.own" =>
+  settings.descriptionsRequiredBy === "own" ? "compose.description.required.own" : "compose.description.required";

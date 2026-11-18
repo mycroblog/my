@@ -2,7 +2,7 @@
 
 // The screen at an entry's address, /settings/<path> (ADR-0110 §5): the screen the entry declares (entries.tsx),
 // headed by the way back to the menu where the menu does not stand beside it; an address that names no entry the
-// reader is shown says so, with the link to the menu.
+// reader is shown says so once, in a notice whose link leads to all the settings.
 
 import { BackButton, FeedNotice, TextLink, useLocale } from "@my/design-system";
 import { stringsIn } from "../locale";
@@ -27,7 +27,7 @@ export function SettingsEntryScreen({ entry, onBack, languages }: SettingsEntryS
   const found = useShownEntries().find((e) => e.path === entry);
   if (found === undefined)
     return (
-      <FeedNotice alert action={<TextLink href="/settings">{t("settings.back")}</TextLink>}>
+      <FeedNotice alert action={<TextLink href="/settings">{t("settings.not_found.all")}</TextLink>}>
         {t("settings.not_found")}
       </FeedNotice>
     );

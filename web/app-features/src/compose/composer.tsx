@@ -65,6 +65,7 @@ import { ComposerEmoji } from "./emoji";
 import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
 import {
+  descriptionRequired,
   maxAttachments,
   nearChars,
   newPoll,
@@ -616,7 +617,7 @@ export function ComposerView({
               missing={
                 a.description.trim() === ""
                   ? settings.requireDescriptions && c.checked
-                    ? { text: t("compose.description.required"), required: true }
+                    ? { text: t(descriptionRequired(settings)), required: true }
                     : { text: t("compose.description.missing"), required: false }
                   : undefined
               }

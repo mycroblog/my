@@ -75,6 +75,11 @@ export type ComposeSettings = {
   readonly maxChars: number;
   /** Whether every image needs a description before it is posted. */
   readonly requireDescriptions: boolean;
+  /**
+   * Who requires the descriptions: the server (its limit, which the reader cannot lift), else the reader's own
+   * setting; undefined while neither does.
+   */
+  readonly descriptionsRequiredBy?: "server" | "own" | undefined;
   readonly visibility: Visibility;
   /** Whom each interaction admits, at once or by approval, by default. */
   readonly policy: Readonly<Record<Interaction, InteractionChoice>>;
@@ -117,10 +122,16 @@ export function useComposeSettings(): ComposeSettings {
   const instance = useQuery(queries.queryOptions("get", "/instance")).data;
   const viewer = useQuery(queries.queryOptions("get", "/accounts/verify_credentials")).data;
   const policy = preferences?.default_interaction_policy;
+  const descriptionsRequiredBy =
+    instance?.limits.require_media_description === true
+      ? "server"
+      : preferences?.require_media_description === true
+        ? "own"
+        : undefined;
   return {
     maxChars: instance?.limits.max_post_characters ?? defaultComposeSettings.maxChars,
-    requireDescriptions:
-      (instance?.limits.require_media_description ?? false) || (preferences?.require_media_description ?? false),
+    requireDescriptions: descriptionsRequiredBy !== undefined,
+    descriptionsRequiredBy,
     visibility: preferences?.default_visibility ?? defaultComposeSettings.visibility,
     policy: policy
       ? { reply: choiceOf(policy.reply), announce: choiceOf(policy.announce), quote: choiceOf(policy.quote) }

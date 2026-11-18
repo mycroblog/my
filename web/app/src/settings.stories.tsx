@@ -3,8 +3,8 @@
 // The settings (ADR-0110 §5), which the navigation's Settings leads to: the menu at /settings, the screen of its entry
 // Display and posting, with the menu beside it from the frame's `wide` and its head with the way back under it, the
 // confirmation of signing out, and an address that names no entry. What a control of Display and posting says of a
-// change (saving, saved, not saved) is the design system's own story (Saving); here the account's choices show as the
-// server holds them.
+// change (saving, saved, not saved) is the design system's own story (Settings parts, the save states of a control);
+// here the account's choices show as the server holds them.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -54,6 +54,10 @@ export const DisplayChosen: Story = {
       },
     },
   }),
+};
+/** Display and posting on a server that requires media descriptions itself: the switch stands on and says why. */
+export const DisplayServerRequires: Story = {
+  parameters: screen({ at: display, server: { requiresDescriptions: true } }),
 };
 /** Display and posting on a server that does not save: a control changed says so, with Try again, and goes back. */
 export const DisplaySaveFails: Story = { parameters: screen({ at: display, server: { preferencesFail: "save" } }) };
