@@ -173,19 +173,19 @@
   },
   "compose.audience.everyone": {
     "defaultMessage": "Anyone",
-    "description": "A choice of the permissions submenu: anyone who may see the post."
+    "description": "A choice of the permissions submenu: anyone who may see the post. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.followers": {
     "defaultMessage": "Followers",
-    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions."
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.mentioned": {
     "defaultMessage": "People you mention",
-    "description": "A choice of the permissions submenu: the accounts the post mentions."
+    "description": "A choice of the permissions submenu: the accounts the post mentions. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.audience.nobody": {
     "defaultMessage": "Only you",
-    "description": "A choice of the permissions submenu: the author alone."
+    "description": "A choice of the permissions submenu: the author alone. Also in the options of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote)."
   },
   "compose.approval": {
     "defaultMessage": "Allow others with your approval",
@@ -193,47 +193,47 @@
   },
   "compose.permission.now": {
     "defaultMessage": "{audience}{approval, select, yes {, others with your approval} other {}}",
-    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval)."
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval). Also each option of Who can reply, Who can boost and Who can quote on the Display and posting page of the settings (settings.display.reply, settings.display.boost, settings.display.quote): every audience alone, and every audience but Anyone with approval yes."
   },
   "compose.visibility.public": {
     "defaultMessage": "Public",
-    "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.local": {
     "defaultMessage": "Local",
-    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere."
+    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.unlisted": {
     "defaultMessage": "Quiet public",
-    "description": "A visibility in the audience menu: public, kept out of the public timelines."
+    "description": "A visibility in the audience menu: public, kept out of the public timelines. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.private": {
     "defaultMessage": "Followers only",
-    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions."
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.direct": {
     "defaultMessage": "Direct",
-    "description": "A visibility in the audience menu: the accounts the post mentions alone."
+    "description": "A visibility in the audience menu: the accounts the post mentions alone. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), only while it is the visibility the account's new posts start with."
   },
   "compose.visibility.public.about": {
     "defaultMessage": "Anyone, on any server",
-    "description": "The line under Public in the audience menu: who sees the post."
+    "description": "The line under Public in the audience menu: who sees the post. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.local.about": {
     "defaultMessage": "Everyone on {server}, and your followers elsewhere",
-    "description": "The line under Local in the audience menu. server is this server's domain."
+    "description": "The line under Local in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.unlisted.about": {
     "defaultMessage": "Anyone, kept out of the local and federated timelines",
-    "description": "The line under Quiet public in the audience menu."
+    "description": "The line under Quiet public in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.private.about": {
     "defaultMessage": "Your followers and the people you mention",
-    "description": "The line under Followers only in the audience menu."
+    "description": "The line under Followers only in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.direct.about": {
     "defaultMessage": "Only the people you mention",
-    "description": "The line under Direct in the audience menu."
+    "description": "The line under Direct in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.interactions": {
     "defaultMessage": "Who can reply, boost and quote",
@@ -306,6 +306,10 @@
   "compose.description.required": {
     "defaultMessage": "This server requires a description (alt text) for every image. Add one to each image before posting.",
     "description": "The error under an image's empty description when the server asks for one, after Post was pressed; the server's own words (errors.status.missing_media_description)."
+  },
+  "compose.description.required.own": {
+    "defaultMessage": "Your settings require a description (alt text) for every image. Add one to each image before posting.",
+    "description": "The error under an image's empty description, after Post was pressed, when the server does not ask for descriptions and the reader's own setting does (Require media descriptions on the Display and posting page of the settings, settings.display.media_description); compose.description.required with the reader's settings in the server's place."
   },
   "compose.uploading": {
     "defaultMessage": "Uploading…",

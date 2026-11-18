@@ -11,7 +11,9 @@
 //   /theme/ and its icon and logos under /brand/ (ADR-0059), named by their revision, are cache first, at most 5 and
 //   30; the build's font splits, too large to precache, are cache first as a page first uses them, at most 300;
 // - the client API, the server's own pages and every other request are not answered by the worker at all;
-// - signing out (/auth/sign_out) deletes every cache;
+// - signing out deletes every cache, and the worker with them, since it precaches only as it installs: here on the
+//   server's own pages (/auth/sign_out), and from the page when the app signs out (src/sign-out.tsx). The next load
+//   of the app registers the worker anew, which installs and precaches again;
 // - a Web Push message (FR-206) is shown as a notification (push.ts), and a click on one opens its page.
 //
 // A new build: its worker precaches the new files beside the old ones and waits, while the old worker keeps the
@@ -116,10 +118,14 @@ cacheFirst("font", "font", 300);
 // The precached build files, answered from the cache.
 addRoute();
 
-/** Deletes every cache of the worker's origin, the precache included. */
+/**
+ * Deletes every cache of the worker's origin, the precache included, and unregisters the worker: one left in place
+ * would have no shell to answer an offline navigation with, and it fills its precache only as it installs.
+ */
 async function clearCaches(): Promise<void> {
   const names = await caches.keys();
   await Promise.all(names.map((name) => caches.delete(name)));
+  await self.registration.unregister();
 }
 
 // Signing out deletes every cache, as the request goes on to the network untouched (the worker does not answer it).

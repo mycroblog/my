@@ -10,9 +10,11 @@ import {
   type Status,
 } from "@my/app-data";
 import { inputOf } from "../field-errors";
+import { stringsIn } from "../locale";
 import {
   answering,
   composerMembers,
+  descriptionRequired,
   emptyDraft,
   fromServer,
   onServer,
@@ -87,6 +89,24 @@ test("what keeps a post from being sent: the limit with the warning, uploads, a 
   expect(problemsOf(draft({ text: "hi", attachments: [described] }), settings).missingDescriptions).toBe(false);
   const required = { ...settings, requireDescriptions: true };
   expect(problemsOf(draft({ text: "hi", attachments: [described] }), required).missingDescriptions).toBe(true);
+});
+
+test("a missing description is asked for in the name of who requires it: the server, or the reader's own settings", () => {
+  const words = (by: ComposeSettings["descriptionsRequiredBy"]) =>
+    stringsIn("en").t(
+      descriptionRequired({
+        ...settings,
+        requireDescriptions: true,
+        ...(by === undefined ? {} : { descriptionsRequiredBy: by }),
+      }),
+    );
+  const server = "This server requires a description (alt text) for every image. Add one to each image before posting.";
+  const own = "Your settings require a description (alt text) for every image. Add one to each image before posting.";
+
+  expect(words("server")).toBe(server);
+  expect(words("own")).toBe(own);
+  // Settings that do not say who: the reader is not told that the rule is theirs to change.
+  expect(words(undefined)).toBe(server);
 });
 
 test("the post sends what was chosen, the permissions only where they differ from the reader's defaults", () => {

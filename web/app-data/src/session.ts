@@ -8,6 +8,13 @@
 // @my/platform (ADR-0028 §18): one tab at a time holds its lock to renew the token, first asks the other tabs for one,
 // trades the cookie only when none has a usable one, and passes the new token to every tab. The token goes over the
 // channel from memory to memory, never to storage. A browser without the group renews the token in each tab.
+//
+// Signing out ends it (ADR-0090 §13): the web client revokes its access token at the revocation endpoint (RFC 7009),
+// and the server ends the token's family and the session of the sign-in pages that authorized it, and deletes the
+// cookie. Without a token there is nothing to revoke with: the family has ended (the server refused the cookie), but
+// the session of the sign-in pages may still live, and only those pages can end it, so the caller is told which of
+// the two happened. Either way this tab's cache of server data is emptied, and every other tab of the browser is told
+// that the reader signed out, so that it leaves too (`onSignedOutElsewhere`).
 import { createClient, type TokenSource } from "@mycroblog/mykit";
 import { joinTabGroup, type TabGroup } from "@my/platform";
 import { createAppData, type AppData } from "./app-data";
@@ -16,6 +23,9 @@ import type { ServerWatch } from "./server";
 /** The endpoint that trades the cookie for an access token, and the header it requires. */
 const refreshPath = "/oauth/token/refresh";
 const refreshHeader = "X-My-Token-Refresh";
+
+/** The endpoint that revokes a token, and with it the session it belongs to. */
+const revokePath = "/oauth/revoke";
 
 /** How long before its expiry the access token counts as expired, so that it does not expire on the way. */
 const expirySkewMs = 30_000;
@@ -26,10 +36,14 @@ const askTimeoutMs = 100;
 type Token = { readonly accessToken: string; readonly expiresAt: number };
 
 /**
- * What the tabs of a session say to each other: a token to use, a question for one, or the end of the session (the
- * server refused the cookie).
+ * What the tabs of a session say to each other: a token to use, a question for one, the end of the session (the
+ * server refused the cookie), or that the reader signed out in a tab.
  */
-type SessionMessage = ({ readonly kind: "token" } & Token) | { readonly kind: "ask" } | { readonly kind: "ended" };
+type SessionMessage =
+  | ({ readonly kind: "token" } & Token)
+  | { readonly kind: "ask" }
+  | { readonly kind: "ended" }
+  | { readonly kind: "signed_out" };
 
 export type SessionTokenSourceOptions = {
   /** The clock, in milliseconds since the Unix epoch; Date.now by default. */
@@ -52,6 +66,8 @@ export class SessionTokenSource implements TokenSource {
   #renewal: Promise<string | null> | null = null;
   /** Called with each token another tab passes while this tab waits for an answer to its question. */
   #answered: (() => void) | null = null;
+  /** Who hears that the reader signed out in another tab. */
+  readonly #signedOut = new Set<() => void>();
 
   constructor(
     server: string,
@@ -135,6 +151,28 @@ export class SessionTokenSource implements TokenSource {
     });
   }
 
+  /** Forgets the token of a session the reader signed out of in this tab. */
+  forget(): void {
+    this.#token = null;
+  }
+
+  /**
+   * Tells the other tabs that the reader signed out here: each forgets its token and tells who listens there
+   * (`onSignedOut`). A tab of an older build, which does not know the message, forgets its token by `ended`.
+   */
+  tellSignedOut(): void {
+    this.#tabs?.post({ kind: "ended" } satisfies SessionMessage);
+    this.#tabs?.post({ kind: "signed_out" } satisfies SessionMessage);
+  }
+
+  /** Calls `listener` when the reader signs out in another tab, until the function it returns is called. */
+  onSignedOut(listener: () => void): () => void {
+    this.#signedOut.add(listener);
+    return () => {
+      this.#signedOut.delete(listener);
+    };
+  }
+
   #receive(message: SessionMessage): void {
     switch (message.kind) {
       case "token":
@@ -149,6 +187,10 @@ export class SessionTokenSource implements TokenSource {
         break;
       case "ended":
         this.#token = null;
+        break;
+      case "signed_out":
+        this.#token = null;
+        for (const listener of this.#signedOut) listener();
         break;
     }
   }
@@ -190,7 +232,7 @@ const isError = (body: unknown): body is { error: string } =>
 /** Whether a message from another tab, which may run another version of the client (ADR-0028 §14), is one it reads. */
 function isSessionMessage(message: unknown): message is SessionMessage {
   if (typeof message !== "object" || message === null || !("kind" in message)) return false;
-  if (message.kind === "ask" || message.kind === "ended") return true;
+  if (message.kind === "ask" || message.kind === "ended" || message.kind === "signed_out") return true;
   return (
     message.kind === "token" &&
     "accessToken" in message &&
@@ -229,6 +271,59 @@ export async function openSession({
   if ((await tokenSource.getAccessToken()) === null) return null;
   const connection = { server, tokenSource, fetch, ...(acceptLanguage === undefined ? {} : { acceptLanguage }) };
   return { ...createAppData(createClient(connection), undefined, watch), connection };
+}
+
+/**
+ * How a session ended: `revoked`, the server took the revocation and ended the session; `unrevoked`, there was no
+ * token to revoke with (the server had ended the token's family and refused the cookie), so nothing was sent, and the
+ * session of the server's own sign-in pages, which only they can end, may still be alive.
+ */
+export type SessionEnd = "revoked" | "unrevoked";
+
+/**
+ * Ends the browser's session of `data`, signing out (ADR-0090 §13): revokes its access token as the web client
+ * `clientId`, which ends the session on the server and deletes its cookie; without a token it sends nothing. Then it
+ * forgets this tab's token and empties its cache of server data, runs `clean` (what the caller removes of the
+ * browser), and only then tells the other tabs that the reader signed out, so that a tab that loads anew finds the
+ * browser cleaned. It resolves with which of the two happened, and rejects, with nothing changed, when the server did
+ * not take the revocation (no answer, or an error).
+ */
+export async function endSession(
+  data: AppData,
+  clientId: string,
+  clean: () => Promise<void> = () => Promise.resolve(),
+): Promise<SessionEnd> {
+  const { connection, watch, queryClient } = data;
+  const tokenSource = connection?.tokenSource;
+  // Data that connects with no token (a simulated server's) names none.
+  const token = tokenSource === undefined ? "" : await tokenSource.getAccessToken();
+  if (token !== null) {
+    const fetch = connection?.fetch ?? watch?.fetch ?? ((request: Request) => globalThis.fetch(request));
+    const response = await fetch(
+      new Request((connection?.server ?? watch?.server ?? "") + revokePath, {
+        method: "POST",
+        credentials: "same-origin",
+        body: new URLSearchParams({ client_id: clientId, token, token_type_hint: "access_token" }),
+      }),
+    );
+    if (!response.ok) throw new Error(`app-data: ${revokePath} answered ${String(response.status)}`);
+  }
+  const session = tokenSource instanceof SessionTokenSource ? tokenSource : undefined;
+  session?.forget();
+  queryClient.clear();
+  await clean();
+  session?.tellSignedOut();
+  return token === null ? "unrevoked" : "revoked";
+}
+
+/**
+ * Calls `listener` when the reader signs out of the session of `data` in another tab of the browser, until the
+ * function it returns is called: this tab's token is forgotten by then, and what it shows is no session's any more.
+ * Nothing for data that is no browser session's.
+ */
+export function onSignedOutElsewhere(data: AppData, listener: () => void): () => void {
+  const tokenSource = data.connection?.tokenSource;
+  return tokenSource instanceof SessionTokenSource ? tokenSource.onSignedOut(listener) : () => undefined;
 }
 
 /**

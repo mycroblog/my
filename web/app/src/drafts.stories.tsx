@@ -6,7 +6,7 @@
 
 import type { ServerDraft } from "@my/app-data";
 import { DraftsView, type DraftsState } from "@my/app-features";
-import { useLocale } from "@my/design-system";
+import { instantAt, useLocale, wallTime } from "@my/design-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useNarrowViewport } from "./shell/viewport";
 
@@ -14,10 +14,9 @@ import { useNarrowViewport } from "./shell/viewport";
 const hoursFrom = (hours: number) => new Date(Date.now() + hours * 3_600_000).toISOString();
 /** A moment `days` days from now at `hour` o'clock, local time. */
 const dayAt = (days: number, hour: number, minute = 0) => {
-  const d = new Date();
-  d.setDate(d.getDate() + days);
-  d.setHours(hour, minute, 0, 0);
-  return d.toISOString();
+  // The day is read off the calendar that many days on: a day counted past its month's end names no moment.
+  const then = wallTime(new Date(Date.now() + days * 86_400_000), undefined);
+  return instantAt({ ...then, hour, minute }, undefined).toISOString();
 };
 
 const words = {

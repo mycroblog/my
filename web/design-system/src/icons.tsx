@@ -9,9 +9,11 @@
 
 import {
   IconActivityHeartbeat,
+  IconAdjustmentsHorizontal,
   IconAlarm,
   IconAlertCircle,
   IconAlertTriangle,
+  IconApps,
   IconArchive,
   IconArrowLeft,
   IconArrowMoveRight,
@@ -51,6 +53,7 @@ import {
   IconCoin,
   IconCoinFilled,
   IconCreditCardOff,
+  IconDatabase,
   IconDeviceFloppy,
   IconDoorExit,
   IconDots,
@@ -58,6 +61,7 @@ import {
   IconEyeOff,
   IconFile,
   IconFilePencil,
+  IconFilter,
   IconFlag,
   IconGavel,
   IconHandStop,
@@ -78,6 +82,7 @@ import {
   IconListDetails,
   IconLock,
   IconLogin2,
+  IconLogout2,
   IconMail,
   IconMailFilled,
   IconMaximize,
@@ -120,6 +125,7 @@ import {
   IconSquareCheckFilled,
   IconStar,
   IconStarFilled,
+  IconTicket,
   IconTool,
   IconToolsKitchen2,
   IconTrash,
@@ -326,6 +332,17 @@ export const icons = {
   eventReminder: { off: IconAlarm },
   eventStarted: { off: IconCalendarBolt },
   roomUnavailable: { off: IconMicrophoneOff },
+  // The screens of the settings with no glyph of their own elsewhere (ADR-0110 §5): how the app shows and posts
+  // (sliders), the keyword filters (a funnel), signing in and who is signed in (a lock, as what only the reader
+  // opens), the apps the account lets in (a grid of them), the invitations (a ticket), the account's data (a store of
+  // it), and signing out: an arrow out of a door, as signing in is one into it.
+  display: { off: IconAdjustmentsHorizontal },
+  filter: { off: IconFilter },
+  security: { off: IconLock },
+  apps: { off: IconApps },
+  invite: { off: IconTicket },
+  accountData: { off: IconDatabase },
+  signOut: { off: IconLogout2, directional: true },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;

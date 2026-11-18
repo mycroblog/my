@@ -8,14 +8,25 @@
 
 import type { Page } from "@playwright/test";
 
-/** A write of the client API: one of `methods` on a path that matches `path`. */
-type Write = { methods: readonly ("POST" | "PUT" | "PATCH" | "DELETE")[]; path: RegExp };
+/**
+ * A write of the client API: one of `methods` on a path that matches `path`, and, where the app sends the same
+ * operation by itself (the preferences it settles when it opens), one the server answers with a JSON body that
+ * `answer` accepts. The answer, not the request: the browser does not show the body of a request the app streams.
+ */
+type Write = {
+  methods: readonly ("POST" | "PUT" | "PATCH" | "DELETE")[];
+  path: RegExp;
+  answer?: (body: unknown) => boolean;
+};
 
 /** Does `act`, and returns once the server has answered the write it sends. */
 export async function answered(page: Page, write: Write, act: () => Promise<void>): Promise<void> {
-  const response = page.waitForResponse(
-    (r) => write.methods.some((m) => m === r.request().method()) && write.path.test(new URL(r.url()).pathname),
-  );
+  const response = page.waitForResponse(async (r) => {
+    if (!write.methods.some((m) => m === r.request().method()) || !write.path.test(new URL(r.url()).pathname))
+      return false;
+    if (write.answer === undefined) return true;
+    return r.ok() && write.answer(await r.json());
+  });
   // An action that fails leaves the wait unawaited: its timeout then rejects nothing that is unhandled.
   response.catch(() => undefined);
   await act();

@@ -43,6 +43,7 @@ import {
   Toast,
 } from "./shell";
 import type { IconName } from "./icons";
+import { dateFormat } from "./zone";
 
 // A stand-in for the brand's wordmark, a short word about twice as wide as it is tall, in the text's color of a scheme.
 const wordmark = (fill: string) =>
@@ -674,7 +675,7 @@ export const Maintenance: Story = {
         <FormText>
           <strong>
             Expected to end by{" "}
-            {new Intl.DateTimeFormat("en", {
+            {dateFormat("en", undefined, {
               weekday: "long",
               hour: "numeric",
               minute: "2-digit",

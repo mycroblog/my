@@ -40,6 +40,19 @@ export const markedSurface = (on: boolean): Record<typeof marked, "" | undefined
   [marked]: on ? "" : undefined,
 });
 
+/**
+ * The attribute a raised surface that holds controls sets (a section of a settings screen), so that a neutral control
+ * on it (a secondary button, a field) takes the page's surface and still shows, as a field of the composer's
+ * card does; spread it on the surface.
+ */
+export const raisedSurface = { "data-surface-raised": "" } as const;
+
+// What a neutral control wears on a raised surface: the page's surface, and its hover and press.
+const onRaised = [
+  "[[data-surface-raised]_&]:bg-surface [[data-surface-raised]_&]:data-hovered:bg-surface-hover",
+  "[[data-surface-raised]_&]:data-pressed:bg-surface-pressed",
+].join(" ");
+
 const button = tv({
   slots: {
     base: [
@@ -60,7 +73,10 @@ const button = tv({
         base: "text-body font-label bg-accent text-on-accent data-hovered:bg-accent-hover data-pressed:bg-accent-pressed",
       },
       secondary: {
-        base: "text-body font-label bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+        base: [
+          "text-body font-label bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+          onRaised,
+        ],
       },
       quiet: {
         base: "text-body font-label bg-transparent text-text data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",

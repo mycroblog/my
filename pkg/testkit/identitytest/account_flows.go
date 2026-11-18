@@ -174,6 +174,7 @@ func AccountFlows(t *testing.T, newHarness AccountFactory) {
 		{"KeepsPurgedDynamicClients", oauthKeepsPurgedDynamicClients},
 		{"UsesClientMetadataDocuments", oauthUsesClientMetadataDocuments},
 		{"EndsTheBrowserSessionOnWebSignOut", oauthWebSignOutEndsTheBrowserSession},
+		{"BrowserSignOutEndsTheWebClientsTokens", sessionSignOutEndsTheWebClientsTokens},
 		{"IncrementalProjectionEqualsRebuild", accountProjectionEqualsRebuild},
 		{"ReadsAnAccountInATransaction", accountReadsInTransaction},
 		{"ReadsARegistrationInATransaction", registrationReadsInTransaction},

@@ -4,8 +4,8 @@
 // sets the time it goes out within the server's limits (ADR-0156 §7), in the reader's zone, and the language it is
 // written in, by the language's name in its own words.
 
-import { languageName, localInput, readerZone, ScheduleForm } from "@my/app-components";
-import { FormPopup, MenuGroup, MenuItem, MenuSurface, ToolText } from "@my/design-system";
+import { languageName, localInput, localInstant, readerZone, ScheduleForm } from "@my/app-components";
+import { FormPopup, MenuGroup, MenuItem, MenuSurface, ToolText, useTimeZone, wallTime } from "@my/design-system";
 import { useState, type ReactElement } from "react";
 import type { stringsIn } from "../locale";
 
@@ -14,17 +14,25 @@ type T = ReturnType<typeof stringsIn>["t"];
 /** How near and how far ahead a post may be scheduled. */
 type ScheduleLimits = { readonly minLeadMinutes: number; readonly maxLeadDays: number };
 
-/** A time `minutes` from now, at the next whole hour after it: where the schedule's field starts. */
-function nextHour(minutes = 60): Date {
-  const d = new Date(Date.now() + minutes * 60_000);
-  d.setMinutes(0, 0, 0);
-  d.setHours(d.getHours() + 1);
-  return d;
+/**
+ * A time `minutes` from now, at the next whole hour of the reader's zone after it: where the schedule's field starts.
+ */
+function nextHour(timeZone: string | undefined, minutes = 60): Date {
+  const after = Math.floor((Date.now() + minutes * 60_000) / 60_000) * 60_000;
+  return new Date(after + (60 - wallTime(new Date(after), timeZone).minute) * 60_000);
 }
 
-/** What is wrong with a time to post at, by the server's limits; undefined when it is within them. */
-function scheduleProblem(value: string, limits: ScheduleLimits, t: T): string | undefined {
-  const at = new Date(value);
+/**
+ * What is wrong with a time to post at (the field's value, a time of the reader's zone), by the server's limits;
+ * undefined when it is within them.
+ */
+function scheduleProblem(
+  value: string,
+  limits: ScheduleLimits,
+  t: T,
+  timeZone: string | undefined,
+): string | undefined {
+  const at = localInstant(value, timeZone);
   if (value === "" || Number.isNaN(at.getTime())) return t("compose.schedule.invalid");
   if (at.getTime() < Date.now() + limits.minLeadMinutes * 60_000)
     return t("compose.schedule.too_soon", { minutes: limits.minLeadMinutes });
@@ -47,8 +55,9 @@ type ScheduleProps = {
  * limits, in the reader's zone: Set gives `onSet` the time, and Clear, while one is set, none; either is `onDone`.
  */
 export function ScheduleTimeForm({ at, limits, onSet, t, locale, onDone }: ScheduleProps & { onDone: () => void }) {
-  const [value, setValue] = useState(() => localInput(at === undefined ? nextHour() : new Date(at)));
-  const error = scheduleProblem(value, limits, t);
+  const timeZone = useTimeZone();
+  const [value, setValue] = useState(() => localInput(at === undefined ? nextHour(timeZone) : new Date(at), timeZone));
+  const error = scheduleProblem(value, limits, t, timeZone);
   return (
     <ScheduleForm
       title={t("compose.schedule")}
@@ -57,14 +66,14 @@ export function ScheduleTimeForm({ at, limits, onSet, t, locale, onDone }: Sched
       onChange={setValue}
       min={new Date(Date.now() + limits.minLeadMinutes * 60_000)}
       max={new Date(Date.now() + limits.maxLeadDays * 86_400_000)}
-      zone={readerZone(locale)}
+      zone={readerZone(locale, new Date(), timeZone)}
       hint={t("compose.schedule.limits", { minutes: limits.minLeadMinutes, days: limits.maxLeadDays })}
       error={error}
       confirm={{
         label: t("compose.schedule.set"),
         onPress: () => {
           if (error !== undefined) return;
-          onSet(new Date(value).toISOString());
+          onSet(localInstant(value, timeZone).toISOString());
           onDone();
         },
       }}

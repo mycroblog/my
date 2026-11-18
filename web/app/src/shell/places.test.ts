@@ -3,7 +3,7 @@
 import { expect, test } from "bun:test";
 import { rightsOf, type Rights } from "@my/app-data";
 import { instanceOf } from "../test/server";
-import { aroundPlacesFor, composesAt, navigationPaths, placesFor, type Place } from "./places";
+import { aroundPlacesFor, composesAt, isPlaceAt, navigationPaths, placesFor, type Place } from "./places";
 
 const hrefs = (places: readonly Place[]) => places.map((p) => p.href);
 const none: Rights = rightsOf([]);
@@ -113,6 +113,24 @@ test("moving between any two places of the navigation is a navigation between it
   const places = placesFor(true, await instanceOf(), staff);
   for (const href of hrefs([...places.tabs, ...places.own, ...places.rights])) expect(navigationPaths).toContain(href);
   expect(navigationPaths).not.toContain("/@yuki");
+});
+
+test("Settings is where the reader is at /settings and at every address under it, and Home at the root alone", async () => {
+  const { side } = placesFor(true, await instanceOf(), none);
+  const place = (href: string) => {
+    const found = side.find((p) => p.href === href);
+    if (found === undefined) throw new Error(`test: the navigation has no place at ${href}`);
+    return found;
+  };
+
+  for (const at of ["/settings", "/settings/display", "/settings/nothing"])
+    expect([at, isPlaceAt(place("/settings"), at)]).toEqual([at, true]);
+  for (const at of ["/", "/settingsx", "/lists", "/bookmarks"])
+    expect([at, isPlaceAt(place("/settings"), at)]).toEqual([at, false]);
+  // Every address is under the root: Home is not marked on them.
+  expect(isPlaceAt(place("/"), "/")).toBe(true);
+  for (const at of ["/settings", "/settings/display", "/notifications"])
+    expect([at, isPlaceAt(place("/"), at)]).toEqual([at, false]);
 });
 
 test("the new post floats on the timelines and profiles alone", () => {

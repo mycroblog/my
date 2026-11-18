@@ -35,7 +35,7 @@ const useLang = (): Lang => {
   return language === "ja" ? "ja" : language === "ar" ? "ar" : "en";
 };
 
-const n = (lang: Lang, v: number) => v.toLocaleString(lang);
+const n = (lang: Lang, v: number) => new Intl.NumberFormat(lang).format(v);
 
 const words = {
   en: {
@@ -98,7 +98,7 @@ const words = {
       quote: "The timeline is slow, and that is the point.",
     },
     bytes: (used: number, max: number) =>
-      `Length: ${(used / max).toLocaleString("en", { style: "percent" })} of the limit`,
+      `Length: ${new Intl.NumberFormat("en", { style: "percent" }).format(used / max)} of the limit`,
     imageCount: (used: number, max: number) => `${n("en", used)} of ${n("en", max)} images`,
     attach: "Add an image to the body",
     visibility: "Visibility: Public",
@@ -176,7 +176,8 @@ const words = {
       items: ["親切に。", "なぜかを書いておく。", "ルールは短く。"],
       quote: "タイムラインはゆっくり流れるけれど、それでいい。",
     },
-    bytes: (used: number, max: number) => `長さ: 上限の ${(used / max).toLocaleString("ja", { style: "percent" })}`,
+    bytes: (used: number, max: number) =>
+      `長さ: 上限の ${new Intl.NumberFormat("ja", { style: "percent" }).format(used / max)}`,
     imageCount: (used: number, max: number) => `画像 ${n("ja", used)} / ${n("ja", max)}`,
     attach: "本文に画像を追加",
     visibility: "公開範囲: 公開",

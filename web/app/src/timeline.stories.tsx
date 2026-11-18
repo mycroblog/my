@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The home timeline, the app's first screen, a story per state every screen is shown in (app.samples.tsx), fed new
-// posts and reconnections from the Stream panel; and a first page that fails once and loads on its retry.
+// posts and reconnections from the Stream panel; a first page that fails once and loads on its retry; and the timeline
+// of a reader who chose small link cards.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -21,3 +22,7 @@ export const Loading: Story = { parameters: screen({ at: "/", state: "loading" }
 export const Failed: Story = { parameters: screen({ at: "/", state: "error" }, "home") };
 export const LongText: Story = { parameters: screen({ at: "/", state: "long" }, "home") };
 export const FailsFirst: Story = { parameters: screen({ at: "/", failFirst: true }, "home") };
+/** The timeline of a reader who chose small link cards: a post's card has its picture as a square beside its text. */
+export const SmallCards: Story = {
+  parameters: screen({ at: "/", server: { preferences: { link_card_size: "small" } } }, "home"),
+};

@@ -4,8 +4,9 @@
 // - typescript/*: the type-aware rules run in tsgolint (options.typeAware), with each file's project found from the
 //   nearest tsconfig.json.
 // - jsPlugins: eslint-comments, so that a disable comment says why; restrict/* (web/devtools/src/restrictions.js), the
-//   layer rules of ADR-0025 §3 and §4 that a type cannot hold and the rules of the styles of ADR-0171 §2 and §3, which
-//   restrictions.test.js proves.
+//   layer rules of ADR-0025 §3 and §4 that a type cannot hold, the rules of the styles of ADR-0171 §2 and §3, the
+//   checks of the settings of ADR-0110 §6 and the one source of dates of ADR-0009 §3, which restrictions.test.js
+//   proves.
 // options.denyWarnings makes a warning fail like an error.
 {
   "$schema": "./node_modules/oxlint/configuration_schema.json",
@@ -452,6 +453,58 @@
       "rules": {
         "restrict/e2e-queries": "error",
         "restrict/e2e-flaky": "error"
+      }
+    },
+    // The checks of ADR-0110 §6 that a type cannot hold, where screens are composed, outside @my/design-system (its
+    // own stories stand its parts alone, as specimens): no switch in a form that has a submit button, a settings
+    // screen of sections alone and no control beside a section, no size on a heading of the second level, and seven
+    // entries at most in a group of the settings' menu and in a section.
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/switch-in-form": "error",
+        "restrict/settings-sections": "error",
+        "restrict/heading-size": "error",
+        "restrict/settings-count": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-system/**"
+      ],
+      "rules": {
+        "restrict/switch-in-form": "off",
+        "restrict/settings-sections": "off",
+        "restrict/heading-size": "off",
+        "restrict/settings-count": "off"
+      }
+    },
+    // Every date and time shows in the reader's time zone (ADR-0009 §3): only zone.tsx of @my/design-system builds a
+    // formatter of dates and reads the device's clock. The documentation site's worker runs on a server, which has no
+    // reader; @my/devtools stamps the developer's notes with the clock of the developer's machine; the tests and
+    // their material (@my/e2e: the fake server and the scenario) set and read the clock they test with.
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/zone-dates": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-system/src/zone.tsx",
+        "web/docs/worker/**",
+        "web/devtools/**",
+        "web/e2e/**",
+        "**/*.test.ts",
+        "**/*.test.tsx",
+        "**/test/**"
+      ],
+      "rules": {
+        "restrict/zone-dates": "off"
       }
     }
   ]

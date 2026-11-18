@@ -1,0 +1,290 @@
+{
+  "settings.menu": {
+    "defaultMessage": "Settings",
+    "description": "The name of the settings menu, the navigation of the settings pages in groups (the screen at /settings, and the column beside a settings page on wide screens), for assistive technology."
+  },
+  "settings.back": {
+    "defaultMessage": "Settings",
+    "description": "The button at the top of a settings page that goes back to the settings menu, where the menu does not stand beside the page. A page under an entry (one keyword filter) goes back to its entry instead, by the entry's name (settings.entry.*)."
+  },
+  "settings.group.general": {
+    "defaultMessage": "General",
+    "description": "A group heading of the settings menu, over the entries Profile, Display and posting, and Notifications."
+  },
+  "settings.group.people": {
+    "defaultMessage": "People and filters",
+    "description": "A group heading of the settings menu, over the entries Relationships (blocked and muted accounts, muted servers, followed hashtags) and Keyword filters."
+  },
+  "settings.group.access": {
+    "defaultMessage": "Sign-in and access",
+    "description": "A group heading of the settings menu, over the entries Security, Apps, and Invites: how the reader signs in, and what and who else gets in."
+  },
+  "settings.group.account": {
+    "defaultMessage": "Account",
+    "description": "A group heading of the settings menu, over the entry Account and data."
+  },
+  "settings.entry.profile": {
+    "defaultMessage": "Profile",
+    "description": "An entry of the settings menu, and the title of its page, where the reader edits their profile."
+  },
+  "settings.entry.profile.hint": {
+    "defaultMessage": "Name, bio, pictures, badges, approving followers, appearing in search",
+    "description": "The line under Profile in the settings menu at /settings: what its page holds, so that the reader finds a setting without opening every entry. A list of nouns, without a full stop."
+  },
+  "settings.entry.display": {
+    "defaultMessage": "Display and posting",
+    "description": "An entry of the settings menu, and the title of its page: the language, the time zone, how the app shows things, and what a new post starts with."
+  },
+  "settings.entry.display.hint": {
+    "defaultMessage": "Language, time zone, link previews, defaults for new posts, timeline languages",
+    "description": "The line under Display and posting in the settings menu at /settings: what its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.notifications": {
+    "defaultMessage": "Notifications",
+    "description": "An entry of the settings menu, and the title of its page, where the reader chooses what notifies them and how."
+  },
+  "settings.entry.notifications.hint": {
+    "defaultMessage": "What you are notified of, push, email, sound, notifications from people you do not know",
+    "description": "The line under Notifications in the settings menu at /settings: what its page holds (the kinds of notification and the ways each arrives, and what happens to notifications from people the reader does not know). A list of nouns, without a full stop."
+  },
+  "settings.entry.relationships": {
+    "defaultMessage": "Relationships",
+    "description": "An entry of the settings menu, and the title of its page, which lists the accounts the reader blocked or muted, the servers they muted, and the hashtags they follow."
+  },
+  "settings.entry.relationships.hint": {
+    "defaultMessage": "Blocked accounts, muted accounts, muted servers, followed hashtags",
+    "description": "The line under Relationships in the settings menu at /settings: the lists its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.filters": {
+    "defaultMessage": "Keyword filters",
+    "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
+  },
+  "settings.entry.filters.hint": {
+    "defaultMessage": "Words and phrases that hide posts",
+    "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
+  },
+  "settings.entry.security": {
+    "defaultMessage": "Security",
+    "description": "An entry of the settings menu, and the title of its page: how the reader signs in and where they are signed in; also the button at the top of a page under it (the password, two-factor authentication) that goes back to it."
+  },
+  "settings.entry.security.hint": {
+    "defaultMessage": "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers",
+    "description": "The line under Security in the settings menu at /settings: what its page holds. Linked accounts are the reader's accounts on other services that they sign in with. A list of nouns, without a full stop."
+  },
+  "settings.entry.apps": {
+    "defaultMessage": "Apps",
+    "description": "An entry of the settings menu, and the title of its page: the apps of other makers that the reader let use their account, and the apps the reader registered as their developer."
+  },
+  "settings.entry.apps.hint": {
+    "defaultMessage": "Apps you allowed to use your account, apps you registered",
+    "description": "The line under Apps in the settings menu at /settings: the two lists its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.invites": {
+    "defaultMessage": "Invites",
+    "description": "An entry of the settings menu, and the title of its page, where the reader makes invites (a code, and a link with the code) that let people create an account on this server."
+  },
+  "settings.entry.invites.hint": {
+    "defaultMessage": "Invite codes and links to bring people to this server",
+    "description": "The line under Invites in the settings menu at /settings: what its page holds. Without a full stop."
+  },
+  "settings.entry.account": {
+    "defaultMessage": "Account and data",
+    "description": "An entry of the settings menu, and the title of its page: the reader's data, and what becomes of the account; also the button at the top of a page under it that goes back to it."
+  },
+  "settings.entry.account.hint": {
+    "defaultMessage": "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion",
+    "description": "The line under Account and data in the settings menu at /settings: what its page holds (export and import of the reader's data, deleting their old posts automatically, moving the account to another server, the moderators' actions on the account and the reader's appeals, deactivating or deleting the account). A list of nouns, without a full stop."
+  },
+  "settings.entry.count": {
+    "defaultMessage": "{count, plural, one {# item to check} other {# items to check}}",
+    "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
+  },
+  "settings.sign_out": {
+    "defaultMessage": "Sign out…",
+    "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
+  },
+  "settings.sign_out.title": {
+    "defaultMessage": "Sign out of this browser?",
+    "description": "The question of the confirmation before the app signs the reader out of the browser they are using."
+  },
+  "settings.sign_out.text": {
+    "defaultMessage": "Your other browsers and apps stay signed in. A post you are still writing, and the home timeline kept for offline reading, are removed from this browser. Drafts you saved stay.",
+    "description": "What signing out does, under the confirmation's question: only this browser is signed out; what the app kept in this browser alone is removed (a post being written and not saved as a draft, the newest posts of the home timeline kept for reading offline); the drafts saved on the server (compose.drafts.save) stay."
+  },
+  "settings.sign_out.confirm": {
+    "defaultMessage": "Sign out",
+    "description": "The button of the confirmation that signs this browser out."
+  },
+  "settings.sign_out.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The refusal of the confirmation of signing out: the reader stays signed in."
+  },
+  "settings.sign_out.failed": {
+    "defaultMessage": "Signing out did not finish, so this browser may still be signed in. Try again.",
+    "description": "In the confirmation of signing out, which stays open, when the sign-out got no answer from the server (the network, the server): the reader presses the confirmation's button again."
+  },
+  "settings.not_found": {
+    "defaultMessage": "This settings page does not exist. Check the address.",
+    "description": "In place of a settings page at an address under /settings that names none (/settings/nothing), the only thing the screen says of it: the screen's heading and the document's title stay Settings (app.settings). The link to the settings menu follows it on the same line (settings.not_found.all), so the sentence does not name the menu."
+  },
+  "settings.not_found.all": {
+    "defaultMessage": "See all settings",
+    "description": "The link right after settings.not_found, on the same line, that opens the settings menu at /settings; the words of the link after a missing announcement (announcements.all)."
+  },
+  "settings.loading": {
+    "defaultMessage": "Loading your settings…",
+    "description": "In place of the sections of a settings page while what it shows is being read from the server."
+  },
+  "settings.failed": {
+    "defaultMessage": "Your settings could not be loaded.",
+    "description": "In place of the sections of a settings page when what it shows could not be read from the server (the network, the server); Try again follows it on the same line (settings.retry)."
+  },
+  "settings.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after settings.failed that reads the settings from the server again."
+  },
+  "settings.unsaved": {
+    "defaultMessage": "“{setting}” could not be saved. Open the settings and change it again.",
+    "description": "A toast at the bottom of the screen, when a change of a setting was not saved (the network, the server, or a value the server refused) and the reader had already left the settings page, so that the row of the setting cannot say it: the setting went back to what it was. setting is the setting's name as its row shows it (Show new posts as they arrive). Its button opens the page of that setting (settings.unsaved.open)."
+  },
+  "settings.unsaved.open": {
+    "defaultMessage": "Open settings",
+    "description": "The button of the toast settings.unsaved: it opens the settings page that holds the setting which was not saved."
+  },
+  "settings.unsaved.close": {
+    "defaultMessage": "Close",
+    "description": "The name of the close button of the toast settings.unsaved, for assistive technology: it puts the toast away."
+  },
+  "settings.display.section.region": {
+    "defaultMessage": "Language and region",
+    "description": "The heading of the first section of the Display and posting page of the settings, over the display language and the time zone."
+  },
+  "settings.display.section.display": {
+    "defaultMessage": "Display",
+    "description": "The heading of the section of the Display and posting page of the settings about how the app shows things (the size of link previews)."
+  },
+  "settings.display.section.posts": {
+    "defaultMessage": "New posts",
+    "description": "The heading of the section of the Display and posting page of the settings about what the composer starts a new post with."
+  },
+  "settings.display.section.posts.about": {
+    "defaultMessage": "A new post starts with the audience and language chosen here. You can change them in each post.",
+    "description": "The line under the heading New posts: the first two choices of the section (Who can see it, Post language) are only where a post starts; the composer changes them for one post. It leaves out the third, requiring a description of media. Who can reply, boost and quote has a section of its own (settings.display.section.interactions)."
+  },
+  "settings.display.section.interactions": {
+    "defaultMessage": "Who can reply, boost and quote",
+    "description": "The heading of the section of the Display and posting page of the settings about who may reply to, boost and quote the account's new posts by default; the composer's words for it (compose.permissions). Its three choices are Who can reply, Who can boost and Who can quote (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "settings.display.section.interactions.about": {
+    "defaultMessage": "A new post starts with the settings chosen here. You can change them in each post.",
+    "description": "The line under the heading Who can reply, boost and quote on the Display and posting page of the settings: the three choices of the section are only where a post starts; the composer changes them for one post (compose.permissions)."
+  },
+  "settings.display.section.timelines": {
+    "defaultMessage": "Timelines",
+    "description": "The heading of the section of the Display and posting page of the settings about what the timelines show."
+  },
+  "settings.display.language": {
+    "defaultMessage": "Display language",
+    "description": "The label of the choice of the language the app is shown in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the languages the app has, each by its own name."
+  },
+  "settings.display.language.about": {
+    "defaultMessage": "Also used for the emails and push notifications sent to you.",
+    "description": "The line under Display language: the server writes the emails and push notifications it sends the reader in this language too."
+  },
+  "settings.display.browser": {
+    "defaultMessage": "Same as the browser",
+    "description": "The first option of the display language and of the time zone on the Display and posting page of the settings: the app follows the language, or the time zone, that the browser is set to, on each device."
+  },
+  "settings.display.time_zone": {
+    "defaultMessage": "Time zone",
+    "description": "The label of the choice of the time zone the app shows dates and times in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the time zones."
+  },
+  "settings.display.time_zone.region": {
+    "defaultMessage": "{region, select, Africa {Africa} America {Americas} Antarctica {Antarctica} Arctic {Arctic} Asia {Asia} Atlantic {Atlantic Ocean} Australia {Australia} Europe {Europe} Indian {Indian Ocean} Pacific {Pacific Ocean} other {Other}}",
+    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); the three oceans are named as oceans (Atlantic Ocean, Indian Ocean, Pacific Ocean). The choice offers no zone of another part, so other shows nowhere today; the format needs the branch."
+  },
+  "settings.display.time_zone.option": {
+    "defaultMessage": "{place} ({offset})",
+    "description": "A time zone in the choice of the time zone, under the name of its part of the world (settings.display.time_zone.region). place is the zone's place as the time zone database names it, in English (Tokyo, Buenos Aires); offset is how far its clocks are from UTC now, as the reader's language writes it (GMT+9)."
+  },
+  "settings.display.link_cards": {
+    "defaultMessage": "Link previews in posts",
+    "description": "The label of the choice of how large the card of a link in a post is (the page's picture, title and description), on the Display and posting page of the settings: Large or Small."
+  },
+  "settings.display.link_cards.large": {
+    "defaultMessage": "Large",
+    "description": "An option of Link previews in posts: the card has the page's picture above its text."
+  },
+  "settings.display.link_cards.small": {
+    "defaultMessage": "Small",
+    "description": "An option of Link previews in posts: the card has a small square picture beside its text."
+  },
+  "settings.display.audience": {
+    "defaultMessage": "Who can see it",
+    "description": "The label of the choice of the visibility a new post starts with, in the New posts section of the Display and posting page of the settings; the composer's words for it (compose.audience). Its options are the composer's visibilities (compose.visibility.*)."
+  },
+  "settings.display.reply": {
+    "defaultMessage": "Who can reply",
+    "description": "The label of the choice of who may reply to a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.reply). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.boost": {
+    "defaultMessage": "Who can boost",
+    "description": "The label of the choice of who may boost a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.announce). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.quote": {
+    "defaultMessage": "Who can quote",
+    "description": "The label of the choice of who may quote a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.quote). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.post_language": {
+    "defaultMessage": "Post language",
+    "description": "The label of the choice of the language a new post is marked as written in unless the reader changes it in the post, in the New posts section of the Display and posting page of the settings: first Same as the display language (settings.display.post_language.display), then languages, each by its own name."
+  },
+  "settings.display.post_language.display": {
+    "defaultMessage": "Same as the display language",
+    "description": "The first option of Post language: a new post starts in the language the app is shown in (settings.display.language)."
+  },
+  "settings.display.media_description": {
+    "defaultMessage": "Require media descriptions",
+    "description": "The label of a switch in the New posts section of the Display and posting page of the settings: on, the composer does not post an image, a video or audio that has no description (alt text) until the reader adds one. Short, to stay on one line on a phone; the line under it says the rest (settings.display.media_description.about)."
+  },
+  "settings.display.media_description.about": {
+    "defaultMessage": "When on, media needs a description (alt text) before you can post it.",
+    "description": "The line under Require media descriptions: what the switch does when on. Media is an image, a video or audio attached to a post; the description is the composer's (compose.description). While the server itself requires descriptions, settings.display.media_description.server stands in its place."
+  },
+  "settings.display.media_description.server": {
+    "defaultMessage": "This server requires a description for all media, so this is always on.",
+    "description": "The line under Require media descriptions, in place of settings.display.media_description.about, while the server requires a description of every media file (the instance's limit require_media_description): the switch shows on and cannot be changed, and this says why."
+  },
+  "settings.display.timeline_languages": {
+    "defaultMessage": "Languages to show",
+    "description": "The label of the choice of the languages whose posts the timelines show (several may be chosen), in the Timelines section of the Display and posting page of the settings."
+  },
+  "settings.display.timeline_languages.about": {
+    "defaultMessage": "Once you choose languages, posts in other languages are left out of every timeline. Posts with no language set still show.",
+    "description": "The line under Languages to show, the same while no language is chosen (the choice says All languages, and nothing is left out) and once some are: with languages chosen, the home, list, local, federated and hashtag timelines leave out the posts marked as written in another language, and keep the posts marked with none."
+  },
+  "settings.display.timeline_languages.all": {
+    "defaultMessage": "All languages",
+    "description": "What the choice of Languages to show says while no language is chosen: the timelines show posts in every language."
+  },
+  "settings.display.timeline_languages.add": {
+    "defaultMessage": "Add a language",
+    "description": "What the choice of Languages to show says once a language is chosen, in place of All languages (settings.display.timeline_languages.all): choosing a language there adds it to the list under it."
+  },
+  "settings.display.timeline_languages.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button at the end of a language in the list under Languages to show: it takes the language out of the list, and the timelines stop showing posts in that language alone; once the list is empty they show every language again. The word of the other buttons that take one thing out of a set (compose.remove, timeline.list_remove)."
+  },
+  "settings.display.timeline_languages.remove.name": {
+    "defaultMessage": "Remove {language}",
+    "description": "The name of the Remove button of a language in the list under Languages to show, for assistive technology; it holds the button's visible word (settings.display.timeline_languages.remove). language is the language's own name (日本語)."
+  },
+  "settings.display.auto_insert": {
+    "defaultMessage": "Show new posts as they arrive",
+    "description": "The label of a switch in the Timelines section of the Display and posting page of the settings: on, a new post goes into the home timeline and the list timelines by itself; off, new posts wait until the reader presses the button over the timeline that counts them (timeline.new_posts)."
+  },
+  "settings.display.auto_insert.about": {
+    "defaultMessage": "When off, they wait until you press the “new posts” button over the timeline.",
+    "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  }
+}

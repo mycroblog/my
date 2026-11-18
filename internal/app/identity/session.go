@@ -433,8 +433,9 @@ func (s *Service) Authenticate(ctx context.Context, token string) (identity.Sess
 	return session, nil
 }
 
-// SignOut revokes the session of a token. Signing out with an unknown or already revoked token
-// does nothing.
+// SignOut revokes the session of a token and the first-party client's token families that
+// started from it (ADR-0090 §13), so that the web client signed in through the session is signed
+// out with it. Signing out with an unknown or already revoked token does nothing.
 func (s *Service) SignOut(ctx context.Context, token string) error {
 	if token == "" {
 		return nil
@@ -446,8 +447,7 @@ func (s *Service) SignOut(ctx context.Context, token string) error {
 	if err != nil {
 		return err
 	}
-	rev := identity.SessionRevocation{SessionID: session.ID, Reason: identity.RevokedLogout, RevokedAt: s.d.Clock.Now()}
-	return s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error { return s.d.Repository.InsertSessionRevocation(ctx, tx, rev) })
+	return s.endBrowsers(ctx, session.UserID, []string{session.ID})
 }
 
 // truncate cuts s to at most n bytes without splitting a UTF-8 sequence.

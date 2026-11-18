@@ -23,6 +23,8 @@
 // confirmation, and mute a remote author's server. Once done, the post shows in its place what was done, with Undo
 // (Unblock for a block, since the follows it ended do not come back); the lists stay as they are until they open
 // again, so that the line stays where the reader pressed.
+//
+// The posts' link cards show in the size the reader chose (FR-007, usePostCardSize).
 
 import {
   DeleteConfirm,
@@ -43,9 +45,11 @@ import {
   useMuteDomain,
   useOwnPosts,
   usePollVote,
+  usePreferences,
   useStatusHistory,
   useStatusMarks,
   useViewer,
+  type LinkCardSize,
   type PollVote,
   type PostSource,
   type Status,
@@ -120,6 +124,8 @@ const Context = createContext<{
   picker: PostPicker;
   failed: Failed;
   author: PostAuthor;
+  /** How the posts' link cards show: the reader's preference. */
+  cardSize: LinkCardSize;
 } | null>(null);
 
 /** Tells that `what` failed, in the server's words when it refused (`error`), with Try again doing `again` if given. */
@@ -240,6 +246,14 @@ export function usePostAuthor(): PostAuthor | undefined {
   return use(Context)?.author;
 }
 
+/**
+ * How the posts' link cards show: the size the reader chose (`link_card_size` of their preferences); large, the
+ * server's default, until that is read, for a reader without an account, and outside PostActions.
+ */
+export function usePostCardSize(): LinkCardSize {
+  return use(Context)?.cardSize ?? "large";
+}
+
 /** The address of a post to hand on: its own page where it was posted, else its page here. */
 const linkOf = (status: Status) => status.url ?? new URL(statusPath(status), location.href).href;
 
@@ -283,6 +297,7 @@ export function PostActions({
   const own = useOwnPosts();
   // Only a reader with an account (whom the composer opens for) has posts of their own.
   const viewer = useViewer(onCompose !== undefined)?.id;
+  const cardSize = usePreferences(onCompose !== undefined)?.link_card_size ?? "large";
   const domain = useInstance()?.domain;
   const [voting, setVoting] = useState<Voting>(new Map());
   const [notice, setNotice] = useState<Notice | undefined>(undefined);
@@ -491,7 +506,7 @@ export function PostActions({
     }
   };
   return (
-    <Context value={{ onCompose, send, voting, menu, viewer, picker, failed, author }}>
+    <Context value={{ onCompose, send, voting, menu, viewer, picker, failed, author, cardSize }}>
       <ServerDomain value={domain}>{children}</ServerDomain>
       <ModalPresence>
         {blocking && (

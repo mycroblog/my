@@ -1,0 +1,290 @@
+{
+  "settings.menu": {
+    "defaultMessage": "設定",
+    "description": "The name of the settings menu, the navigation of the settings pages in groups (the screen at /settings, and the column beside a settings page on wide screens), for assistive technology."
+  },
+  "settings.back": {
+    "defaultMessage": "設定",
+    "description": "The button at the top of a settings page that goes back to the settings menu, where the menu does not stand beside the page. A page under an entry (one keyword filter) goes back to its entry instead, by the entry's name (settings.entry.*)."
+  },
+  "settings.group.general": {
+    "defaultMessage": "全般",
+    "description": "A group heading of the settings menu, over the entries Profile, Display and posting, and Notifications."
+  },
+  "settings.group.people": {
+    "defaultMessage": "人とフィルタ",
+    "description": "A group heading of the settings menu, over the entries Relationships (blocked and muted accounts, muted servers, followed hashtags) and Keyword filters."
+  },
+  "settings.group.access": {
+    "defaultMessage": "ログインとアクセス",
+    "description": "A group heading of the settings menu, over the entries Security, Apps, and Invites: how the reader signs in, and what and who else gets in."
+  },
+  "settings.group.account": {
+    "defaultMessage": "アカウント",
+    "description": "A group heading of the settings menu, over the entry Account and data."
+  },
+  "settings.entry.profile": {
+    "defaultMessage": "プロフィール",
+    "description": "An entry of the settings menu, and the title of its page, where the reader edits their profile."
+  },
+  "settings.entry.profile.hint": {
+    "defaultMessage": "名前、自己紹介、画像、バッジ、フォロワーの承認、検索への表示",
+    "description": "The line under Profile in the settings menu at /settings: what its page holds, so that the reader finds a setting without opening every entry. A list of nouns, without a full stop."
+  },
+  "settings.entry.display": {
+    "defaultMessage": "表示と投稿",
+    "description": "An entry of the settings menu, and the title of its page: the language, the time zone, how the app shows things, and what a new post starts with."
+  },
+  "settings.entry.display.hint": {
+    "defaultMessage": "言語、タイムゾーン、リンクのプレビュー、新しい投稿の初期値、タイムラインの言語",
+    "description": "The line under Display and posting in the settings menu at /settings: what its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.notifications": {
+    "defaultMessage": "通知",
+    "description": "An entry of the settings menu, and the title of its page, where the reader chooses what notifies them and how."
+  },
+  "settings.entry.notifications.hint": {
+    "defaultMessage": "通知する内容、プッシュ通知、メール、通知音、知らない人からの通知",
+    "description": "The line under Notifications in the settings menu at /settings: what its page holds (the kinds of notification and the ways each arrives, and what happens to notifications from people the reader does not know). A list of nouns, without a full stop."
+  },
+  "settings.entry.relationships": {
+    "defaultMessage": "つながり",
+    "description": "An entry of the settings menu, and the title of its page, which lists the accounts the reader blocked or muted, the servers they muted, and the hashtags they follow."
+  },
+  "settings.entry.relationships.hint": {
+    "defaultMessage": "ブロックしたアカウント、ミュートしたアカウント、ミュートしたサーバー、フォロー中のハッシュタグ",
+    "description": "The line under Relationships in the settings menu at /settings: the lists its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.filters": {
+    "defaultMessage": "キーワードフィルタ",
+    "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
+  },
+  "settings.entry.filters.hint": {
+    "defaultMessage": "投稿を隠す言葉やフレーズ",
+    "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
+  },
+  "settings.entry.security": {
+    "defaultMessage": "セキュリティ",
+    "description": "An entry of the settings menu, and the title of its page: how the reader signs in and where they are signed in; also the button at the top of a page under it (the password, two-factor authentication) that goes back to it."
+  },
+  "settings.entry.security.hint": {
+    "defaultMessage": "パスワード、パスキー、二要素認証、連携したアカウント、ログイン中のブラウザ",
+    "description": "The line under Security in the settings menu at /settings: what its page holds. Linked accounts are the reader's accounts on other services that they sign in with. A list of nouns, without a full stop."
+  },
+  "settings.entry.apps": {
+    "defaultMessage": "アプリ",
+    "description": "An entry of the settings menu, and the title of its page: the apps of other makers that the reader let use their account, and the apps the reader registered as their developer."
+  },
+  "settings.entry.apps.hint": {
+    "defaultMessage": "アカウントの利用を許可したアプリ、自分で登録したアプリ",
+    "description": "The line under Apps in the settings menu at /settings: the two lists its page holds. A list of nouns, without a full stop."
+  },
+  "settings.entry.invites": {
+    "defaultMessage": "招待",
+    "description": "An entry of the settings menu, and the title of its page, where the reader makes invites (a code, and a link with the code) that let people create an account on this server."
+  },
+  "settings.entry.invites.hint": {
+    "defaultMessage": "このサーバーに人を招待するコードとリンク",
+    "description": "The line under Invites in the settings menu at /settings: what its page holds. Without a full stop."
+  },
+  "settings.entry.account": {
+    "defaultMessage": "アカウントとデータ",
+    "description": "An entry of the settings menu, and the title of its page: the reader's data, and what becomes of the account; also the button at the top of a page under it that goes back to it."
+  },
+  "settings.entry.account.hint": {
+    "defaultMessage": "エクスポートとインポート、古い投稿の自動削除、アカウントの移転、モデレーションの処分と異議申し立て、無効化と削除",
+    "description": "The line under Account and data in the settings menu at /settings: what its page holds (export and import of the reader's data, deleting their old posts automatically, moving the account to another server, the moderators' actions on the account and the reader's appeals, deactivating or deleting the account). A list of nouns, without a full stop."
+  },
+  "settings.entry.count": {
+    "defaultMessage": "{count, plural, other {確認が必要な項目 # 件}}",
+    "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
+  },
+  "settings.sign_out": {
+    "defaultMessage": "ログアウト…",
+    "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
+  },
+  "settings.sign_out.title": {
+    "defaultMessage": "このブラウザからログアウトしますか？",
+    "description": "The question of the confirmation before the app signs the reader out of the browser they are using."
+  },
+  "settings.sign_out.text": {
+    "defaultMessage": "ほかのブラウザやアプリはログインしたままです。書きかけの投稿と、オフラインで読むために保存したホームタイムラインは、このブラウザから削除されます。保存した下書きは残ります。",
+    "description": "What signing out does, under the confirmation's question: only this browser is signed out; what the app kept in this browser alone is removed (a post being written and not saved as a draft, the newest posts of the home timeline kept for reading offline); the drafts saved on the server (compose.drafts.save) stay."
+  },
+  "settings.sign_out.confirm": {
+    "defaultMessage": "ログアウトする",
+    "description": "The button of the confirmation that signs this browser out."
+  },
+  "settings.sign_out.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The refusal of the confirmation of signing out: the reader stays signed in."
+  },
+  "settings.sign_out.failed": {
+    "defaultMessage": "ログアウトを完了できませんでした。このブラウザはログインしたままの可能性があります。もう一度試してください。",
+    "description": "In the confirmation of signing out, which stays open, when the sign-out got no answer from the server (the network, the server): the reader presses the confirmation's button again."
+  },
+  "settings.not_found": {
+    "defaultMessage": "この設定のページはありません。アドレスを確かめてください。",
+    "description": "In place of a settings page at an address under /settings that names none (/settings/nothing), the only thing the screen says of it: the screen's heading and the document's title stay Settings (app.settings). The link to the settings menu follows it on the same line (settings.not_found.all), so the sentence does not name the menu."
+  },
+  "settings.not_found.all": {
+    "defaultMessage": "すべての設定を見る",
+    "description": "The link right after settings.not_found, on the same line, that opens the settings menu at /settings; the words of the link after a missing announcement (announcements.all)."
+  },
+  "settings.loading": {
+    "defaultMessage": "設定を読み込んでいます…",
+    "description": "In place of the sections of a settings page while what it shows is being read from the server."
+  },
+  "settings.failed": {
+    "defaultMessage": "設定を読み込めませんでした。",
+    "description": "In place of the sections of a settings page when what it shows could not be read from the server (the network, the server); Try again follows it on the same line (settings.retry)."
+  },
+  "settings.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after settings.failed that reads the settings from the server again."
+  },
+  "settings.unsaved": {
+    "defaultMessage": "「{setting}」を保存できませんでした。設定を開いて、もう一度変更してください。",
+    "description": "A toast at the bottom of the screen, when a change of a setting was not saved (the network, the server, or a value the server refused) and the reader had already left the settings page, so that the row of the setting cannot say it: the setting went back to what it was. setting is the setting's name as its row shows it (Show new posts as they arrive). Its button opens the page of that setting (settings.unsaved.open)."
+  },
+  "settings.unsaved.open": {
+    "defaultMessage": "設定を開く",
+    "description": "The button of the toast settings.unsaved: it opens the settings page that holds the setting which was not saved."
+  },
+  "settings.unsaved.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the close button of the toast settings.unsaved, for assistive technology: it puts the toast away."
+  },
+  "settings.display.section.region": {
+    "defaultMessage": "言語と地域",
+    "description": "The heading of the first section of the Display and posting page of the settings, over the display language and the time zone."
+  },
+  "settings.display.section.display": {
+    "defaultMessage": "表示",
+    "description": "The heading of the section of the Display and posting page of the settings about how the app shows things (the size of link previews)."
+  },
+  "settings.display.section.posts": {
+    "defaultMessage": "新しい投稿",
+    "description": "The heading of the section of the Display and posting page of the settings about what the composer starts a new post with."
+  },
+  "settings.display.section.posts.about": {
+    "defaultMessage": "新しい投稿は、ここで選んだ見られる人・言語で書きはじめます。投稿ごとに変えられます。",
+    "description": "The line under the heading New posts: the first two choices of the section (Who can see it, Post language) are only where a post starts; the composer changes them for one post. It leaves out the third, requiring a description of media. Who can reply, boost and quote has a section of its own (settings.display.section.interactions)."
+  },
+  "settings.display.section.interactions": {
+    "defaultMessage": "返信・ブースト・引用できる人",
+    "description": "The heading of the section of the Display and posting page of the settings about who may reply to, boost and quote the account's new posts by default; the composer's words for it (compose.permissions). Its three choices are Who can reply, Who can boost and Who can quote (settings.display.reply, settings.display.boost, settings.display.quote)."
+  },
+  "settings.display.section.interactions.about": {
+    "defaultMessage": "新しい投稿は、ここで選んだ設定で書きはじめます。投稿ごとに変えられます。",
+    "description": "The line under the heading Who can reply, boost and quote on the Display and posting page of the settings: the three choices of the section are only where a post starts; the composer changes them for one post (compose.permissions)."
+  },
+  "settings.display.section.timelines": {
+    "defaultMessage": "タイムライン",
+    "description": "The heading of the section of the Display and posting page of the settings about what the timelines show."
+  },
+  "settings.display.language": {
+    "defaultMessage": "表示言語",
+    "description": "The label of the choice of the language the app is shown in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the languages the app has, each by its own name."
+  },
+  "settings.display.language.about": {
+    "defaultMessage": "届くメールやプッシュ通知にも使います。",
+    "description": "The line under Display language: the server writes the emails and push notifications it sends the reader in this language too."
+  },
+  "settings.display.browser": {
+    "defaultMessage": "ブラウザと同じ",
+    "description": "The first option of the display language and of the time zone on the Display and posting page of the settings: the app follows the language, or the time zone, that the browser is set to, on each device."
+  },
+  "settings.display.time_zone": {
+    "defaultMessage": "タイムゾーン",
+    "description": "The label of the choice of the time zone the app shows dates and times in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the time zones."
+  },
+  "settings.display.time_zone.region": {
+    "defaultMessage": "{region, select, Africa {アフリカ} America {南北アメリカ} Antarctica {南極} Arctic {北極} Asia {アジア} Atlantic {大西洋} Australia {オーストラリア} Europe {ヨーロッパ} Indian {インド洋} Pacific {太平洋} other {その他}}",
+    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); the three oceans are named as oceans (Atlantic Ocean, Indian Ocean, Pacific Ocean). The choice offers no zone of another part, so other shows nowhere today; the format needs the branch."
+  },
+  "settings.display.time_zone.option": {
+    "defaultMessage": "{place} ({offset})",
+    "description": "A time zone in the choice of the time zone, under the name of its part of the world (settings.display.time_zone.region). place is the zone's place as the time zone database names it, in English (Tokyo, Buenos Aires); offset is how far its clocks are from UTC now, as the reader's language writes it (GMT+9)."
+  },
+  "settings.display.link_cards": {
+    "defaultMessage": "投稿のリンクのプレビュー",
+    "description": "The label of the choice of how large the card of a link in a post is (the page's picture, title and description), on the Display and posting page of the settings: Large or Small."
+  },
+  "settings.display.link_cards.large": {
+    "defaultMessage": "大きい",
+    "description": "An option of Link previews in posts: the card has the page's picture above its text."
+  },
+  "settings.display.link_cards.small": {
+    "defaultMessage": "小さい",
+    "description": "An option of Link previews in posts: the card has a small square picture beside its text."
+  },
+  "settings.display.audience": {
+    "defaultMessage": "見られる人",
+    "description": "The label of the choice of the visibility a new post starts with, in the New posts section of the Display and posting page of the settings; the composer's words for it (compose.audience). Its options are the composer's visibilities (compose.visibility.*)."
+  },
+  "settings.display.reply": {
+    "defaultMessage": "返信できる人",
+    "description": "The label of the choice of who may reply to a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.reply). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.boost": {
+    "defaultMessage": "ブーストできる人",
+    "description": "The label of the choice of who may boost a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.announce). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.quote": {
+    "defaultMessage": "引用できる人",
+    "description": "The label of the choice of who may quote a new post unless the reader changes it in the post, in the section Who can reply, boost and quote of the Display and posting page of the settings; the composer's words for it (compose.interaction.quote). Its options are the composer's audiences, each alone or with others by the author's approval, as the composer writes a choice (compose.permission.now)."
+  },
+  "settings.display.post_language": {
+    "defaultMessage": "投稿の言語",
+    "description": "The label of the choice of the language a new post is marked as written in unless the reader changes it in the post, in the New posts section of the Display and posting page of the settings: first Same as the display language (settings.display.post_language.display), then languages, each by its own name."
+  },
+  "settings.display.post_language.display": {
+    "defaultMessage": "表示言語と同じ",
+    "description": "The first option of Post language: a new post starts in the language the app is shown in (settings.display.language)."
+  },
+  "settings.display.media_description": {
+    "defaultMessage": "メディアの説明を必須にする",
+    "description": "The label of a switch in the New posts section of the Display and posting page of the settings: on, the composer does not post an image, a video or audio that has no description (alt text) until the reader adds one. Short, to stay on one line on a phone; the line under it says the rest (settings.display.media_description.about)."
+  },
+  "settings.display.media_description.about": {
+    "defaultMessage": "オンにすると、説明 (代替テキスト) のないメディアは投稿できません。",
+    "description": "The line under Require media descriptions: what the switch does when on. Media is an image, a video or audio attached to a post; the description is the composer's (compose.description). While the server itself requires descriptions, settings.display.media_description.server stands in its place."
+  },
+  "settings.display.media_description.server": {
+    "defaultMessage": "このサーバーでは、すべてのメディアに説明が必要なため、常にオンです。",
+    "description": "The line under Require media descriptions, in place of settings.display.media_description.about, while the server requires a description of every media file (the instance's limit require_media_description): the switch shows on and cannot be changed, and this says why."
+  },
+  "settings.display.timeline_languages": {
+    "defaultMessage": "表示する言語",
+    "description": "The label of the choice of the languages whose posts the timelines show (several may be chosen), in the Timelines section of the Display and posting page of the settings."
+  },
+  "settings.display.timeline_languages.about": {
+    "defaultMessage": "言語を選ぶと、ほかの言語の投稿は、どのタイムラインにも表示しません。言語が設定されていない投稿は表示します。",
+    "description": "The line under Languages to show, the same while no language is chosen (the choice says All languages, and nothing is left out) and once some are: with languages chosen, the home, list, local, federated and hashtag timelines leave out the posts marked as written in another language, and keep the posts marked with none."
+  },
+  "settings.display.timeline_languages.all": {
+    "defaultMessage": "すべての言語",
+    "description": "What the choice of Languages to show says while no language is chosen: the timelines show posts in every language."
+  },
+  "settings.display.timeline_languages.add": {
+    "defaultMessage": "言語を追加",
+    "description": "What the choice of Languages to show says once a language is chosen, in place of All languages (settings.display.timeline_languages.all): choosing a language there adds it to the list under it."
+  },
+  "settings.display.timeline_languages.remove": {
+    "defaultMessage": "外す",
+    "description": "The button at the end of a language in the list under Languages to show: it takes the language out of the list, and the timelines stop showing posts in that language alone; once the list is empty they show every language again. The word of the other buttons that take one thing out of a set (compose.remove, timeline.list_remove)."
+  },
+  "settings.display.timeline_languages.remove.name": {
+    "defaultMessage": "{language} を外す",
+    "description": "The name of the Remove button of a language in the list under Languages to show, for assistive technology; it holds the button's visible word (settings.display.timeline_languages.remove). language is the language's own name (日本語)."
+  },
+  "settings.display.auto_insert": {
+    "defaultMessage": "新しい投稿が届いたらすぐに表示する",
+    "description": "The label of a switch in the Timelines section of the Display and posting page of the settings: on, a new post goes into the home timeline and the list timelines by itself; off, new posts wait until the reader presses the button over the timeline that counts them (timeline.new_posts)."
+  },
+  "settings.display.auto_insert.about": {
+    "defaultMessage": "オフにすると、タイムラインの上の「新しい投稿」のボタンを押すまで表示しません。",
+    "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  }
+}

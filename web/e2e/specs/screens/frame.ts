@@ -7,7 +7,7 @@ import type { Locator, Page } from "@playwright/test";
 import { Composer } from "./composer";
 
 /** A place the main navigation links to. */
-export type Place = "Home" | "Notifications" | "Direct messages" | "Profile" | "Bookmarks";
+export type Place = "Home" | "Notifications" | "Direct messages" | "Profile" | "Bookmarks" | "Settings";
 
 /** A place the menu holds. */
 export type MenuPlace = "Profile" | "Bookmarks" | "Lists" | "Settings" | "Announcements" | "Events";
