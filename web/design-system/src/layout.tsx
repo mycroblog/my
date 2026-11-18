@@ -169,6 +169,8 @@ const GROW = {
   share: "flex-1",
   // A name over a handle beside what the reader may do: under this width, what follows goes on a next line.
   names: "flex-[1_1_12rem]",
+  // A setting's name beside its control: under this width, the control goes on a next line.
+  setting: "flex-[1_1_8rem]",
 } as const;
 
 const FULL = { inline: "w-full", block: "h-full", both: "size-full" } as const;

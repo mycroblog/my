@@ -88,7 +88,11 @@ export function ChipLink({ href, count, children }: { href: string; count?: stri
 }
 
 const badge = tv({
-  base: "rounded-control bg-surface-raised px-screen-name-gap text-caption leading-[1.5] font-label text-text",
+  // On a raised surface (a section of a settings screen), it takes the page's surface.
+  base: [
+    "rounded-control bg-surface-raised px-screen-name-gap text-caption leading-[1.5] font-label text-text",
+    "[[data-surface-raised]_&]:bg-surface",
+  ],
 });
 
 /** A small label on the raised surface (follows you, a role, a bot), as the author wrote it, isolated. */

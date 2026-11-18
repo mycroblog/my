@@ -10,6 +10,7 @@ export {
   Button,
   LinkButton,
   markedSurface,
+  raisedSurface,
   TextButton,
   TextLink,
   type ButtonKind,
@@ -49,7 +50,14 @@ export {
   type CustomEmojiProps,
   type UrlPartProps,
 } from "./content";
-export { ConfirmDialog, PanelDialog, type ConfirmDialogProps, type PanelDialogProps } from "./dialog";
+export {
+  ConfirmDialog,
+  PanelDialog,
+  ReauthDialog,
+  type ConfirmDialogProps,
+  type PanelDialogProps,
+  type ReauthDialogProps,
+} from "./dialog";
 export { Disclosure, type DisclosureProps } from "./disclosure";
 export {
   DiffMedia,
@@ -218,10 +226,13 @@ export {
   FrameBanners,
   FrameDock,
   FrameFold,
+  FrameFoot,
   FrameFooter,
+  FrameHead,
   FrameHeading,
   FrameMain,
   FrameMark,
+  FramePanel,
   FrameSection,
   FrameSide,
   focusFrameHeading,
@@ -235,7 +246,28 @@ export {
   Toast,
 } from "./shell";
 export { SearchField, type SearchFieldProps } from "./search-field";
-export { SettingsGroup, SettingsItem, SettingsMenu, SettingsScreen, SettingsSection } from "./settings";
+export { SaveState, type SaveStateProps } from "./save-state";
+export {
+  NumberField,
+  Select,
+  type NumberFieldProps,
+  type SelectGroup,
+  type SelectOption,
+  type SelectProps,
+} from "./field";
+export {
+  SettingRow,
+  SettingsEmpty,
+  SettingsGroup,
+  SettingsItem,
+  SettingsList,
+  SettingsListRow,
+  SettingsMenu,
+  SettingsScreen,
+  SettingsSection,
+  StatusSummary,
+  SubmitBar,
+} from "./settings";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";

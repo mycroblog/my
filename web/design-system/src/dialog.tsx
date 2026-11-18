@@ -1,11 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// Two modals over the page (modal.tsx), every word the caller's. The confirmation asks before what cannot be undone
+// The modals over the page (modal.tsx), every word the caller's. The confirmation asks before what cannot be undone
 // (deleting a post): a small dialog in the middle of the viewport at every width, its title the question, one or two
 // sentences on what follows, and the pair of Cancel and the confirmation side by side at its end, the confirmation at
 // the end side; Escape and a press outside cancel. The panel shows something to read (a post's edit history) as the
 // composer does: a dialog of the main column's width over the dimmed page from `tablet`, a screen of its own on a
-// phone; its head holds the title and close at its end, and its body scrolls under the head.
+// phone; its head holds the title and close at its end, and its body scrolls under the head. The confirmation that
+// asks the reader to authenticate again (before changing the password, deleting the account) is the confirmation's
+// dialog with the proof in it: what it lets them do, the field of the proof (the password, a two-factor code) or none
+// where the confirmation itself proves it (a passkey, going to an external provider), another way to prove it, what
+// the server refused right before the pair, and the pair.
 
 import { useId, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
@@ -107,6 +111,105 @@ export function ConfirmDialog({
         gap="dialog-gap"
         as={<Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction} />}
       >
+        {body}
+      </Stack>
+    </ModalLayer>
+  );
+}
+
+export type ReauthDialogProps = {
+  /** What it asks (Confirm it's you). */
+  title: string;
+  /** What the proof lets the reader do, in a sentence. */
+  about: ReactNode;
+  /**
+   * The field of the proof (a `TextField`: the password, a two-factor code); none where the confirmation itself
+   * proves it (using a passkey, going to an external provider).
+   */
+  children?: ReactNode;
+  /** Another way to prove it, under the field (a `TextButton`: use the password instead). */
+  other?: ReactNode;
+  /** What the server refused, right before the pair (a `FormAlert`). */
+  error?: ReactNode;
+  cancel: string;
+  /** The confirmation's label, which says the way (Confirm, Use a passkey, Continue with GitHub). */
+  confirm: string;
+  onCancel: () => void;
+  onConfirm: () => void;
+  /** The proof in flight: the confirmation spins and the dialog stays. */
+  busy?: boolean | undefined;
+  /** Over the page, or in the flow of a page (a story's specimen). */
+  layer?: boolean | undefined;
+};
+
+/**
+ * Asks the reader to authenticate again before something only they may do: what it lets them do, the proof, then
+ * Cancel and the confirmation.
+ */
+export function ReauthDialog({
+  title,
+  about,
+  children,
+  other,
+  error,
+  cancel,
+  confirm: confirmLabel,
+  onCancel,
+  onConfirm,
+  busy = false,
+  layer = true,
+}: ReauthDialogProps) {
+  const s = confirm();
+  const { direction } = useReader(undefined);
+  const titleId = useId();
+  const textId = useId();
+  const body = (
+    <>
+      {layer ? (
+        <Heading slot="title" className={s.title()}>
+          {title}
+        </Heading>
+      ) : (
+        <h2 id={titleId} className={s.title()}>
+          {title}
+        </h2>
+      )}
+      <p id={textId} className={s.text()}>
+        {about}
+      </p>
+      {children}
+      {other !== undefined && <Row justify="start">{other}</Row>}
+      {error}
+      <Row wrap align="center" justify="end" gap="dialog-row">
+        <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
+          {cancel}
+        </Button>
+        <Button kind="primary" size="form" busy={busy} onPress={onConfirm}>
+          {confirmLabel}
+        </Button>
+      </Row>
+    </>
+  );
+  if (!layer)
+    return (
+      <Box
+        anchor
+        full
+        max="dialog"
+        role="dialog"
+        aria-labelledby={titleId}
+        aria-describedby={textId}
+        className={`box-border ${s.modal()}`}
+        dir={direction}
+      >
+        <Stack gap="dialog-gap" className={s.dialog()}>
+          {body}
+        </Stack>
+      </Box>
+    );
+  return (
+    <ModalLayer onDismiss={busy ? () => undefined : onCancel} place="center" panelClassName={s.modal()}>
+      <Stack gap="dialog-gap" as={<Dialog aria-describedby={textId} className={s.dialog()} dir={direction} />}>
         {body}
       </Stack>
     </ModalLayer>

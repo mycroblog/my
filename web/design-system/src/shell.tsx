@@ -33,7 +33,7 @@ import { Button as AriaButton, Link, ToggleButton, Tooltip, TooltipTrigger } fro
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
 import { Icon, type IconName } from "./icons";
-import { Box, Column, Row, Stack } from "./layout";
+import { Box, Column, Row, Stack, type Gap } from "./layout";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
@@ -391,6 +391,58 @@ export function FrameDock({
 /** The main column: the screen's own content, at the full width on a phone and at the column's width beside the rail. */
 export function FrameMain({ children }: { children: ReactNode }) {
   return <main className={frame().main()}>{children}</main>;
+}
+
+/**
+ * A raised surface of the main column, as `as` (a section of a settings screen, a group of the settings' menu), its
+ * parts one under another a `gap` apart: on a phone at the viewport's width, so that what it holds keeps the column's
+ * width and its edges; from `tablet` inside the column, its corners rounded. Give `as` the mark of a raised surface
+ * (`raisedSurface`), so that a control on it takes the page's surface.
+ */
+export function FramePanel({
+  as,
+  gap,
+  children,
+}: {
+  as: ReactElement<{ className?: unknown }>;
+  gap: Gap;
+  children: ReactNode;
+}) {
+  return (
+    <Stack
+      as={as}
+      gap={gap}
+      className="-mx-shell-edge bg-surface-raised p-shell-edge tablet:mx-0 tablet:rounded-overlay"
+    >
+      {children}
+    </Stack>
+  );
+}
+
+/**
+ * The head of a screen that the column beside the main one names from `wide` (a settings screen beside the menu that
+ * marks its entry): its title and the way back, under `wide` alone.
+ */
+export function FrameHead({ children }: { children: ReactNode }) {
+  return <div className="wide:hidden">{children}</div>;
+}
+
+/**
+ * What ends a long screen and stays in reach (the submit bar of a form saved as a whole): at the screen's end, and
+ * held at the bottom of the viewport, above the dock on a phone, while the end is further down; on the page's surface
+ * at the column's width, the viewport's on a phone, over what scrolls under it.
+ */
+export function FrameFoot({ children }: { children: ReactNode }) {
+  return (
+    <div
+      className={[
+        "sticky bottom-0 z-1 -mx-shell-edge bg-surface px-shell-edge py-shell-inset",
+        "max-tablet:bottom-[var(--shell-dock,calc(var(--shell-bar)+var(--shell-call)))] tablet:mx-0 tablet:px-0",
+      ].join(" ")}
+    >
+      {children}
+    </div>
+  );
 }
 
 /**

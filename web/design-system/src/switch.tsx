@@ -6,7 +6,9 @@
 // is the primary action's and the links'): off, a muted thumb at the track's start on the raised surface; on, the
 // thumb of the page's color at its end, on a track knocked out of the text's color. The thumb's side follows the
 // reading direction. Disabled, the label turns muted, the thumb dims on the track, and the line under the label says
-// why; assistive technology reads the line as the switch's description.
+// why; assistive technology reads the line as the switch's description. A switch that saves as it is pressed (a
+// setting) takes its save state (`save`): it stands in the description's place while it has something to say, the
+// description keeping its room, and the row is a finger's target tall, so that nothing under it moves.
 
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
@@ -21,6 +23,10 @@ const toggle = tv({
     // turns muted, as every disabled label does.
     label: "[word-break:auto-phrase] group-data-disabled:text-muted-text",
     description: "text-caption text-muted-text [word-break:auto-phrase]",
+    // The row of a switch that saves: a finger's target tall, which holds the label and one line under it.
+    saves: "min-h-icon-button-touch",
+    // The description while the save state stands in its place: it keeps its room.
+    covered: "invisible",
     track: [
       "box-border h-toggle-height w-toggle-width",
       "rounded-[calc(var(--toggle-height)/2)] bg-surface-raised-hover group-data-hovered:bg-surface-raised-pressed",
@@ -51,6 +57,8 @@ const PLACE = {
   // The track spans both rows, level with the label and its description.
   track: "relative col-start-2 row-span-2 row-start-1 inline-flex",
   // The thumb stands at the track's start, off, and at its end, on; the side follows the reading direction.
+  // The save state, in the description's place.
+  state: "col-start-1 row-start-2 self-start",
   thumb: [
     "absolute inset-y-0 my-auto start-[calc((var(--toggle-height)-var(--toggle-thumb))/2)]",
     "group-data-selected:start-[calc(var(--toggle-width)-(var(--toggle-height)+var(--toggle-thumb))/2)]",
@@ -85,6 +93,11 @@ export type SwitchProps = {
   reason?: string | undefined;
   /** The name it posts under in a form, when it is in one. */
   name?: string | undefined;
+  /**
+   * It saves as it is pressed: its save state (a `SaveState`), in the description's place while there is one; `null`
+   * while it has nothing to say.
+   */
+  save?: ReactNode | null | undefined;
 };
 
 /** A setting on or off: its label and description at the row's start, the track at its end. */
@@ -97,12 +110,14 @@ export function Switch({
   isDisabled = false,
   reason,
   name,
+  save,
 }: SwitchProps) {
   const s = toggle();
   const below = isDisabled && reason !== undefined ? reason : description;
+  const saving = save !== undefined && save !== null;
   return (
     <ToggleFrame
-      className={s.root()}
+      className={save === undefined ? s.root() : `${s.root()} ${s.saves()}`}
       {...(isSelected === undefined ? {} : { isSelected })}
       {...(defaultSelected === undefined ? {} : { defaultSelected })}
       {...(onChange === undefined ? {} : { onChange })}
@@ -118,9 +133,18 @@ export function Switch({
         </TogglePlace>
       </SwitchButton>
       {below !== undefined && (
-        <ToggleNote slot="description" className={s.description()} dir="auto">
+        <ToggleNote
+          slot="description"
+          className={saving ? `${s.description()} ${s.covered()}` : s.description()}
+          dir="auto"
+        >
           {below}
         </ToggleNote>
+      )}
+      {saving && (
+        <TogglePlace at="state" className="">
+          {save}
+        </TogglePlace>
       )}
     </ToggleFrame>
   );

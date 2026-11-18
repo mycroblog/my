@@ -1,31 +1,39 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The frame of the settings (#3198, ADR-0110 §5), in the app's shell, in grays: the menu at /settings, and two of its
-// screens, Display and posting (every control saves at once) and Security (a status summary over lists), each whole
-// and edge to edge so that it reads at the phone, tablet and PC widths of the toolbar's viewport. The options
-// `settings-frame` differ in how the menu and a screen stand to each other at each width:
+// The settings in the app's shell (#3198, ADR-0110 §5), each whole and edge to edge so that it reads at the phone,
+// tablet and PC widths of the toolbar's viewport, in the reader's language (the toolbar's locale; ja, else en):
 //
-// - `drill`: one column at every width. /settings is the menu; an entry opens its screen under the way back; the
-//   column beside the main one stays what is around the reader, as on every screen.
-// - `aside`: from `wide`, the menu takes the column beside the main one, at the end, the screen the reader is at
-//   marked, and /settings opens the first screen; under `wide`, as `drill`.
-// - `split`: from `tablet`, the menu is a column of its own between the navigation and the screen, and /settings
-//   opens the first screen; on a phone, as `drill`.
-//
-// What the design system lacks yet (a choice from a long list, the save state, the status summary, a list's row) is
-// drawn here as a stand-in, and the words are samples in English.
+// - /settings is the menu, in the main column at every width, with what is around the reader beside it as on every
+//   screen; the same with the three entries later domains add.
+// - An entry opens its screen in the main column. Under `wide` its head is the entry's name under the way back to the
+//   menu; from `wide` the menu stands in the column beside the main one, the entry marked, and the screen starts at
+//   its first section. Display and posting: every control saves at once. Security: the status summary over lists,
+//   whose rows open the screens under the entry.
+// - A screen under an entry (one keyword filter, a form saved as a whole) keeps its head at every width, the way
+//   back leading to its entry, which the menu still marks.
 
 import { color } from "@my/design-tokens";
-import { Options } from "@my/devtools/options";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useLayoutEffect, type ReactNode } from "react";
-import { Avatar } from "./avatar";
+import type { ReactNode } from "react";
+import { useLocale } from "react-aria-components";
 import { Button } from "./button";
-import { Badge } from "./chip";
+import { NumberField, Select } from "./field";
 import { CheckField, TextField } from "./form-page";
-import { Icon, type IconName } from "./icons";
+import type { IconName } from "./icons";
 import { BackButton } from "./list";
-import { SettingsGroup, SettingsItem, SettingsMenu, SettingsScreen, SettingsSection } from "./settings";
+import { SaveState } from "./save-state";
+import {
+  SettingRow,
+  SettingsGroup,
+  SettingsItem,
+  SettingsList,
+  SettingsListRow,
+  SettingsMenu,
+  SettingsScreen,
+  SettingsSection,
+  StatusSummary,
+  SubmitBar,
+} from "./settings";
 import {
   Frame,
   FrameAction,
@@ -46,321 +54,530 @@ import {
 } from "./shell";
 import { Switch } from "./switch";
 
-type Variant = "drill" | "aside" | "split";
-type At = "menu" | "profile" | "display" | "security";
+type At = "menu" | "display" | "security" | "filter";
 
-/** The page in grays while the frame is settled: what is on it, its order and its grouping, before any color. */
-function useGrays() {
-  useLayoutEffect(() => {
-    const root = document.documentElement;
-    root.style.filter = "grayscale(1)";
-    return () => {
-      root.style.filter = "";
-    };
-  }, []);
-}
+// ---- The words ------------------------------------------------------------------------------------------------------
 
-// ---- The menu's content ---------------------------------------------------------------------------------------------
+const en = {
+  settings: "Settings",
+  signOut: "Sign out",
+  unread: "unread",
+  groups: {
+    general: "General",
+    people: "People and filters",
+    access: "Sign-in and access",
+    account: "Account",
+  },
+  entries: {
+    profile: ["Profile", "Name, bio, pictures, badges, how people find you"],
+    display: ["Display and posting", "Language, time zone, new posts, timelines"],
+    notifications: ["Notifications", "What reaches you, and where"],
+    emoji: ["Custom emoji", "Emoji you added to this server"],
+    reminders: ["Event reminders", "When to hear about the events you join"],
+    relationships: ["Relationships", "Blocked and muted accounts, muted servers, followed hashtags"],
+    filters: ["Keyword filters", "Words hidden from your timelines"],
+    security: ["Security", "Password, passkeys, two-factor authentication, signed-in browsers"],
+    apps: ["Apps", "Apps you let into your account, apps you made"],
+    invites: ["Invites", "Invite people to this server"],
+    account: ["Account and data", "Export and import, auto-delete, move, moderation history, delete"],
+    supporter: ["Supporter membership", "Your plan and your payments"],
+  },
+  saved: "Saved",
+  display: {
+    display: "Display",
+    language: "Language",
+    timeZone: "Time zone",
+    cards: "Link previews",
+    cardsAbout: "How large a link's card is in a post",
+    large: "Large",
+    small: "Small",
+    posts: "New posts",
+    postsAbout: "What a new post starts with. You can change each as you write.",
+    audience: "Audience",
+    public: "Public",
+    followers: "Followers",
+    quote: "Who may quote",
+    anyone: "Anyone",
+    nobody: "Nobody",
+    postLanguage: "Language",
+    same: "Same as display",
+    alt: "Ask for a description of media",
+    altAbout: "Before a post goes out with a picture or a video that has none",
+    timelines: "Timelines",
+    languages: "Languages",
+    languagesAbout: "Posts in other languages stay out of the timelines",
+    all: "All languages",
+    arrive: "Show new posts as they arrive",
+    arriveAbout: "Off, a button over the timeline counts them until you ask",
+  },
+  security: {
+    twoFactor: "Two-factor authentication",
+    off: "Off",
+    twoFactorAbout: "Anyone who learns your password can sign in. A code from your phone stops them.",
+    turnOn: "Turn on two-factor authentication",
+    signIn: "Sign-in",
+    password: "Password",
+    passwordAbout: "Changed 3 months ago",
+    twoFactorRow: "A code from an app on your phone, after the password",
+    passkeys: "Passkeys",
+    passkeysAbout: "Sign in with your device's lock in place of the password.",
+    add: "Add a passkey",
+    remove: "Remove",
+    keys: [
+      ["MacBook Touch ID", "Added Mar 3 · used today"],
+      ["Pixel 9", "Added Jun 12 · used 5d ago"],
+    ],
+    linked: "Linked accounts",
+    linkedAbout: "Sign in through an account you have elsewhere.",
+    notLinked: "Not linked",
+    link: "Link",
+    unlink: "Unlink",
+    browsers: "Signed-in browsers",
+    here: "This browser",
+    signOut: "Sign out",
+    sessions: [
+      ["Firefox on macOS", "Tokyo · now"],
+      ["Safari on iPhone", "Tokyo · 2d ago"],
+      ["Chrome on Windows", "Osaka · 3w ago"],
+    ],
+  },
+  filter: {
+    title: "Edit filter",
+    section: "Filter",
+    name: "Name",
+    nameValue: "Spoilers",
+    words: "Words",
+    addWord: "Add a word",
+    remove: "Remove",
+    list: ["spoiler", "season finale", "#TheLongNight"],
+    whole: "Whole word",
+    where: "Where it applies",
+    places: ["Home and lists", "Notifications", "Public timelines", "Conversations", "Profiles"],
+    what: "What it does",
+    matching: "Posts that match",
+    warn: "Hidden behind a warning",
+    hide: "Hidden completely",
+    ends: "Ends after",
+    endsAbout: "Empty, it stays until you delete it",
+    days: "days",
+    save: "Save",
+  },
+  around: {
+    announcements: "Announcements",
+    all: "All",
+    allAnnouncements: "All announcements",
+    events: "Upcoming events",
+    lines: [
+      ["Scheduled maintenance on Sunday, 03:00–04:00 UTC", "2h ago"],
+      ["Custom emoji requests are open", "1d ago"],
+      ["Fediverse meetup in Tokyo", "Sat, Nov 21, 19:00"],
+      ["Moderators' office hours", "Tue, Nov 24, 12:00"],
+    ],
+  },
+};
 
-type Entry = { id: string; icon: IconName; label: string; hint: string; count?: number };
+const ja: typeof en = {
+  settings: "設定",
+  signOut: "ログアウト",
+  unread: "件の未読",
+  groups: {
+    general: "全般",
+    people: "人とフィルター",
+    access: "ログインとアクセス",
+    account: "アカウント",
+  },
+  entries: {
+    profile: ["プロフィール", "名前、自己紹介、画像、バッジ、見つけてもらう方法"],
+    display: ["表示と投稿", "言語、タイムゾーン、投稿の初期設定、タイムライン"],
+    notifications: ["通知", "何を、どこで受け取るか"],
+    emoji: ["カスタム絵文字", "このサーバーに追加した絵文字"],
+    reminders: ["イベントのリマインダー", "参加するイベントをいつ知らせるか"],
+    relationships: ["つながり", "ブロック、ミュート、ミュートしたサーバー、フォロー中のハッシュタグ"],
+    filters: ["キーワードフィルター", "タイムラインに表示しない言葉"],
+    security: ["セキュリティ", "パスワード、パスキー、二要素認証、ログイン中のブラウザ"],
+    apps: ["アプリ", "連携を許可したアプリ、自分で登録したアプリ"],
+    invites: ["招待", "このサーバーに人を招待する"],
+    account: ["アカウントとデータ", "エクスポートとインポート、自動削除、引っ越し、モデレーションの履歴、削除"],
+    supporter: ["サポーター", "プランと支払い"],
+  },
+  saved: "保存しました",
+  display: {
+    display: "表示",
+    language: "言語",
+    timeZone: "タイムゾーン",
+    cards: "リンクのプレビュー",
+    cardsAbout: "投稿の中のリンクのカードの大きさ",
+    large: "大きく",
+    small: "小さく",
+    posts: "新しい投稿",
+    postsAbout: "新しい投稿の初期設定です。書くときに投稿ごとに変えられます。",
+    audience: "公開範囲",
+    public: "公開",
+    followers: "フォロワー",
+    quote: "引用できる人",
+    anyone: "だれでも",
+    nobody: "だれもできない",
+    postLanguage: "言語",
+    same: "表示と同じ",
+    alt: "メディアの説明を確認する",
+    altAbout: "説明のない画像や動画を付けた投稿を送る前に確認します",
+    timelines: "タイムライン",
+    languages: "言語",
+    languagesAbout: "ほかの言語の投稿はタイムラインに表示しません",
+    all: "すべての言語",
+    arrive: "新しい投稿をすぐに表示する",
+    arriveAbout: "オフのときは、タイムラインの上のボタンが件数を知らせます",
+  },
+  security: {
+    twoFactor: "二要素認証",
+    off: "オフ",
+    twoFactorAbout: "パスワードを知った人はだれでもログインできます。スマートフォンのコードがそれを防ぎます。",
+    turnOn: "二要素認証を有効にする",
+    signIn: "ログイン",
+    password: "パスワード",
+    passwordAbout: "3か月前に変更",
+    twoFactorRow: "パスワードのあとに、スマートフォンのアプリのコードを入力します",
+    passkeys: "パスキー",
+    passkeysAbout: "パスワードの代わりに、端末のロックでログインします。",
+    add: "パスキーを追加",
+    remove: "削除",
+    keys: [
+      ["MacBook Touch ID", "3月3日に追加 · 今日使用"],
+      ["Pixel 9", "6月12日に追加 · 5日前に使用"],
+    ],
+    linked: "連携アカウント",
+    linkedAbout: "ほかのサービスのアカウントでログインします。",
+    notLinked: "未連携",
+    link: "連携",
+    unlink: "解除",
+    browsers: "ログイン中のブラウザ",
+    here: "このブラウザ",
+    signOut: "ログアウト",
+    sessions: [
+      ["macOS の Firefox", "東京 · 現在"],
+      ["iPhone の Safari", "東京 · 2日前"],
+      ["Windows の Chrome", "大阪 · 3週間前"],
+    ],
+  },
+  filter: {
+    title: "フィルターを編集",
+    section: "フィルター",
+    name: "名前",
+    nameValue: "ネタバレ",
+    words: "言葉",
+    addWord: "言葉を追加",
+    remove: "削除",
+    list: ["ネタバレ", "最終回", "#TheLongNight"],
+    whole: "単語全体",
+    where: "適用する場所",
+    places: ["ホームとリスト", "通知", "公開タイムライン", "会話", "プロフィール"],
+    what: "動作",
+    matching: "一致した投稿",
+    warn: "警告の後ろに隠す",
+    hide: "完全に隠す",
+    ends: "終了までの日数",
+    endsAbout: "空のままなら、削除するまで続きます",
+    days: "日",
+    save: "保存",
+  },
+  around: {
+    announcements: "お知らせ",
+    all: "すべて",
+    allAnnouncements: "すべてのお知らせ",
+    events: "今後のイベント",
+    lines: [
+      ["日曜日 03:00〜04:00 (UTC) に定期メンテナンスを行います", "2時間前"],
+      ["カスタム絵文字のリクエストを受け付けています", "1日前"],
+      ["東京でFediverseの集まり", "11月21日(土) 19:00"],
+      ["モデレーターのオフィスアワー", "11月24日(火) 12:00"],
+    ],
+  },
+};
 
-const groups: { heading: string; entries: Entry[] }[] = [
+type Words = typeof en;
+const useWords = (): Words => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
+
+// ---- The menu -------------------------------------------------------------------------------------------------------
+
+type EntryId = keyof Words["entries"];
+type Entry = { id: EntryId; icon: IconName; count?: number; later?: true };
+
+const groups: { id: keyof Words["groups"]; entries: Entry[] }[] = [
   {
-    heading: "General",
+    id: "general",
     entries: [
-      { id: "profile", icon: "profile", label: "Profile", hint: "Name, bio, pictures, badges, how people find you" },
-      {
-        id: "display",
-        icon: "display",
-        label: "Display and posting",
-        hint: "Language, time zone, new posts, timelines",
-      },
-      { id: "notifications", icon: "notifications", label: "Notifications", hint: "What reaches you, and where" },
+      { id: "profile", icon: "profile" },
+      { id: "display", icon: "display" },
+      { id: "notifications", icon: "notifications" },
+      { id: "emoji", icon: "emojiCustom", later: true },
+      { id: "reminders", icon: "eventReminder", later: true },
     ],
   },
   {
-    heading: "People and filters",
+    id: "people",
     entries: [
-      {
-        id: "relationships",
-        icon: "members",
-        label: "Relationships",
-        hint: "Blocked and muted accounts, muted servers, followed hashtags",
-      },
-      { id: "filters", icon: "filter", label: "Keyword filters", hint: "Words hidden from your timelines" },
+      { id: "relationships", icon: "members" },
+      { id: "filters", icon: "filter" },
     ],
   },
   {
-    heading: "Sign-in and access",
+    id: "access",
     entries: [
-      {
-        id: "security",
-        icon: "security",
-        label: "Security",
-        hint: "Password, passkeys, two-factor authentication, signed-in browsers",
-      },
-      { id: "apps", icon: "apps", label: "Apps", hint: "Apps you let into your account, apps you made" },
-      { id: "invites", icon: "invite", label: "Invites", hint: "Invite people to this server" },
+      { id: "security", icon: "security" },
+      { id: "apps", icon: "apps" },
+      { id: "invites", icon: "invite" },
     ],
   },
   {
-    heading: "Account",
+    id: "account",
     entries: [
-      {
-        id: "account",
-        icon: "accountData",
-        label: "Account and data",
-        hint: "Export and import, auto-delete, move, moderation history, delete",
-        count: 1,
-      },
+      { id: "account", icon: "accountData", count: 1 },
+      { id: "supporter", icon: "funding", later: true },
     ],
   },
 ];
 
-const entryOf = (id: string) => groups.flatMap((g) => g.entries).find((e) => e.id === id);
-
-function Menu({ compact = false, current }: { compact?: boolean; current?: string }) {
+/** The menu: its groups, then signing out, apart. `grown`, with the entries later domains add. */
+function Menu({ compact = false, current, grown = false }: { compact?: boolean; current?: EntryId; grown?: boolean }) {
+  const w = useWords();
   return (
-    <SettingsMenu label="Settings" compact={compact}>
-      {groups.map((g, i) => (
-        <SettingsGroup key={g.heading} heading={g.heading}>
-          {g.entries.map((e) => (
-            <SettingsItem
-              key={e.id}
-              icon={e.icon}
-              label={e.label}
-              hint={e.hint}
-              count={e.count}
-              countLabel={e.count === undefined ? undefined : `${String(e.count)} unread`}
-              href={`/settings/${e.id}`}
-              current={e.id === current}
-            />
-          ))}
-          {i === groups.length - 1 && <SettingsItem icon="signOut" label="Sign out" count={undefined} />}
+    <SettingsMenu
+      label={w.settings}
+      compact={compact}
+      end={<SettingsItem icon="signOut" label={w.signOut} count={undefined} href="/auth/sign_out" away />}
+    >
+      {groups.map((g) => (
+        <SettingsGroup key={g.id} heading={w.groups[g.id]}>
+          {g.entries
+            .filter((e) => grown || !e.later)
+            .map((e) => (
+              <SettingsItem
+                key={e.id}
+                icon={e.icon}
+                label={w.entries[e.id][0] ?? ""}
+                hint={w.entries[e.id][1]}
+                count={e.count}
+                countLabel={e.count === undefined ? undefined : `${String(e.count)} ${w.unread}`}
+                href={`/settings/${e.id}`}
+                current={e.id === current}
+              />
+            ))}
         </SettingsGroup>
       ))}
     </SettingsMenu>
   );
 }
 
-// ---- Stand-ins for the parts of a section the design system lacks yet -------------------------------------------------
+// ---- The screens ----------------------------------------------------------------------------------------------------
 
-/** The save state of a control that saves at once, beside it. */
-function Saved({ state }: { state: "saving" | "saved" }) {
+const languages = [
+  "English",
+  "Español",
+  "Français",
+  "Deutsch",
+  "Português (Brasil)",
+  "日本語",
+  "简体中文",
+  "繁體中文",
+  "한국어",
+  "العربية",
+].map((label) => ({ value: label, label }));
+
+const zones = [
+  {
+    label: "Asia",
+    options: ["Tokyo (UTC+9)", "Seoul (UTC+9)", "Shanghai (UTC+8)", "Kolkata (UTC+5:30)"].map((label) => ({
+      value: label,
+      label,
+    })),
+  },
+  {
+    label: "Europe",
+    options: ["Lisbon (UTC+0)", "Berlin (UTC+1)", "Helsinki (UTC+2)"].map((label) => ({ value: label, label })),
+  },
+  {
+    label: "America",
+    options: ["São Paulo (UTC−3)", "New York (UTC−5)", "Los Angeles (UTC−8)"].map((label) => ({
+      value: label,
+      label,
+    })),
+  },
+];
+
+const pick = (...labels: string[]) => labels.map((label) => ({ value: label, label }));
+
+function Display({ back }: { back: ReactNode }) {
+  const w = useWords();
+  const d = w.display;
   return (
-    <span className="inline-flex items-center gap-entry-caption text-caption text-muted-text">
-      {state === "saved" && <Icon name="chosen" place="caption" />}
-      {state === "saved" ? "Saved" : "Saving…"}
-    </span>
-  );
-}
-
-/** A setting chosen from a list: its name and a line about it at the start, the control that holds its value at the end. */
-function Choice({ label, about, value, state }: { label: string; about?: string; value: string; state?: "saved" }) {
-  return (
-    <div className="flex flex-wrap items-center justify-end gap-x-screen-row-gap gap-y-screen-air">
-      <div className="grid min-w-0 flex-[1_1_7rem]">
-        <span>{label}</span>
-        {about !== undefined && <span className="text-caption text-muted-text">{about}</span>}
-      </div>
-      {state !== undefined && <Saved state={state} />}
-      <button
-        type="button"
-        className="inline-flex h-control-form cursor-pointer items-center gap-entry-caption rounded-control border-0 bg-surface-raised px-control-timeline-inline font-sans text-body text-text"
-      >
-        {value}
-        <span className="inline-flex text-muted-text">
-          <Icon name="expand" place="caption" />
-        </span>
-      </button>
-    </div>
-  );
-}
-
-/** A row of a list in a section: its glyph, a title over a caption, and what the reader may do with it at the end. */
-function Line({ icon, title, caption, end }: { icon: IconName; title: string; caption: string; end?: ReactNode }) {
-  return (
-    <div className="flex items-center gap-screen-row-gap">
-      <span className="inline-flex flex-none text-muted-text">
-        <Icon name={icon} place="action" />
-      </span>
-      <div className="grid min-w-0 flex-1">
-        <span>{title}</span>
-        <span className="text-caption text-muted-text">{caption}</span>
-      </div>
-      {end !== undefined && <span className="flex-none">{end}</span>}
-    </div>
-  );
-}
-
-/** The status summary: a state, what it means, and the next thing to do, on the raised surface. */
-function Summary({ title, about, action }: { title: string; about: string; action: string }) {
-  return (
-    <div className="grid justify-items-start gap-screen-row-gap rounded-overlay bg-surface-raised p-embed">
-      <div className="flex items-start gap-screen-row-gap">
-        <span className="mt-[0.125rem] inline-flex flex-none">
-          <Icon name="caution" place="action" />
-        </span>
-        <div className="grid min-w-0">
-          <span className="font-strong">{title}</span>
-          <span className="text-caption text-muted-text">{about}</span>
-        </div>
-      </div>
-      <Button kind="primary">{action}</Button>
-    </div>
-  );
-}
-
-const rows = (children: ReactNode) => <div className="grid gap-screen-row-gap">{children}</div>;
-
-// ---- The screens' content -------------------------------------------------------------------------------------------
-
-type ScreenProps = { back: ReactNode };
-
-function Display({ back }: ScreenProps) {
-  return (
-    <SettingsScreen icon="display" title="Display and posting" back={back}>
-      <SettingsSection heading="Display">
-        {rows(
-          <>
-            <Choice label="Language" value="English" />
-            <Choice label="Time zone" value="Tokyo (UTC+9)" state="saved" />
-            <Choice label="Link previews" about="How large a link's card is in a post" value="Large" />
-          </>,
-        )}
+    <SettingsScreen icon="display" title={w.entries.display[0] ?? ""} back={back}>
+      <SettingsSection heading={d.display}>
+        <SettingRow id="display-language" label={d.language} save={null}>
+          <Select labelledBy="display-language" options={languages} defaultValue="English" />
+        </SettingRow>
+        <SettingRow id="display-zone" label={d.timeZone} save={<SaveState state="saved">{w.saved}</SaveState>}>
+          <Select labelledBy="display-zone" options={zones} defaultValue="Tokyo (UTC+9)" />
+        </SettingRow>
+        <SettingRow id="display-cards" label={d.cards} about={d.cardsAbout} save={null}>
+          <Select labelledBy="display-cards" options={pick(d.large, d.small)} />
+        </SettingRow>
       </SettingsSection>
-      <SettingsSection heading="New posts" about="What a new post starts with. You can change each as you write.">
-        {rows(
-          <>
-            <Choice label="Audience" value="Public" />
-            <Choice label="Who may quote" value="Anyone" />
-            <Choice label="Language" value="Same as display" />
-            <Switch
-              label="Ask for a description of media"
-              description="Before a post goes out with a picture or a video that has none"
-              defaultSelected
-            />
-          </>,
-        )}
+      <SettingsSection heading={d.posts} about={d.postsAbout}>
+        <SettingRow id="post-audience" label={d.audience} save={null}>
+          <Select labelledBy="post-audience" options={pick(d.public, d.followers)} />
+        </SettingRow>
+        <SettingRow id="post-quote" label={d.quote} save={null}>
+          <Select labelledBy="post-quote" options={pick(d.anyone, d.followers, d.nobody)} />
+        </SettingRow>
+        <SettingRow id="post-language" label={d.postLanguage} save={null}>
+          <Select labelledBy="post-language" options={[...pick(d.same), ...languages]} />
+        </SettingRow>
+        <Switch label={d.alt} description={d.altAbout} defaultSelected save={null} />
       </SettingsSection>
-      <SettingsSection heading="Timelines">
-        {rows(
-          <>
-            <Choice label="Languages" about="Posts in other languages stay out of the timelines" value="All" />
-            <Switch
-              label="Show new posts as they arrive"
-              description="Off, a button over the timeline counts them until you ask"
-            />
-          </>,
-        )}
+      <SettingsSection heading={d.timelines}>
+        <SettingRow id="timeline-languages" label={d.languages} about={d.languagesAbout} save={null}>
+          <Select labelledBy="timeline-languages" options={[...pick(d.all), ...languages]} />
+        </SettingRow>
+        <Switch label={d.arrive} description={d.arriveAbout} save={null} />
       </SettingsSection>
     </SettingsScreen>
   );
 }
 
-function Security({ back }: ScreenProps) {
+function Security({ back }: { back: ReactNode }) {
+  const w = useWords();
+  const s = w.security;
   return (
-    <SettingsScreen icon="security" title="Security" back={back}>
-      <Summary
-        title="Two-factor authentication is off"
-        about="Anyone who learns your password can sign in. A code from your phone stops them."
-        action="Turn on two-factor authentication"
+    <SettingsScreen icon="security" title={w.entries.security[0] ?? ""} back={back}>
+      <StatusSummary
+        icon="caution"
+        title={s.twoFactor}
+        badge={s.off}
+        about={s.twoFactorAbout}
+        action={<Button kind="primary">{s.turnOn}</Button>}
       />
-      <SettingsSection heading="Sign-in">
-        {rows(
-          <>
-            <Line
-              icon="security"
-              title="Password"
-              caption="Changed 3 months ago"
-              end={<Button size="timeline">Change</Button>}
-            />
-            <Line
-              icon="time"
-              title="Two-factor authentication"
-              caption="A code from an app on your phone, after the password"
-              end={<Badge>Off</Badge>}
-            />
-          </>,
-        )}
+      <SettingsSection heading={s.signIn}>
+        <SettingsList label={s.signIn}>
+          <SettingsListRow
+            icon="security"
+            title={s.password}
+            caption={s.passwordAbout}
+            href="/settings/security/password"
+          />
+          <SettingsListRow
+            icon="time"
+            title={s.twoFactor}
+            caption={s.twoFactorRow}
+            badge={s.off}
+            href="/settings/security/two-factor"
+          />
+        </SettingsList>
       </SettingsSection>
-      <SettingsSection heading="Passkeys" count="2" about="Sign in with your device's lock in place of the password.">
-        {rows(
-          <>
-            <Line
+      <SettingsSection
+        heading={s.passkeys}
+        count={String(s.keys.length)}
+        about={s.passkeysAbout}
+        action={<Button size="timeline">{s.add}</Button>}
+      >
+        <SettingsList label={s.passkeys}>
+          {s.keys.map(([title = "", caption]) => (
+            <SettingsListRow
+              key={title}
               icon="passkey"
-              title="MacBook Touch ID"
-              caption="Added Mar 3 · used today"
-              end={<Button size="timeline">Remove</Button>}
+              title={title}
+              caption={caption}
+              end={<Button size="timeline">{s.remove}</Button>}
             />
-            <Line
-              icon="passkey"
-              title="Pixel 9"
-              caption="Added Jun 12 · used 5d ago"
-              end={<Button size="timeline">Remove</Button>}
-            />
-            <div>
-              <Button>Add a passkey</Button>
-            </div>
-          </>,
-        )}
+          ))}
+        </SettingsList>
       </SettingsSection>
-      <SettingsSection heading="Linked accounts" about="Sign in through an account you have elsewhere.">
-        {rows(
-          <>
-            <Line icon="github" title="GitHub" caption="yuki-snow" end={<Button size="timeline">Unlink</Button>} />
-            <Line icon="discord" title="Discord" caption="Not linked" end={<Button size="timeline">Link</Button>} />
-          </>,
-        )}
+      <SettingsSection heading={s.linked} about={s.linkedAbout}>
+        <SettingsList label={s.linked}>
+          <SettingsListRow
+            icon="github"
+            title="GitHub"
+            caption="yuki-snow"
+            end={<Button size="timeline">{s.unlink}</Button>}
+          />
+          <SettingsListRow
+            icon="discord"
+            title="Discord"
+            caption={s.notLinked}
+            end={<Button size="timeline">{s.link}</Button>}
+          />
+        </SettingsList>
       </SettingsSection>
-      <SettingsSection heading="Signed-in browsers" count="3">
-        {rows(
-          <>
-            <Line icon="public" title="Firefox on macOS" caption="This browser · Tokyo" />
-            <Line
+      <SettingsSection heading={s.browsers} count={String(s.sessions.length)}>
+        <SettingsList label={s.browsers}>
+          {s.sessions.map(([title = "", caption], i) => (
+            <SettingsListRow
+              key={title}
               icon="public"
-              title="Safari on iPhone"
-              caption="Tokyo · 2d ago"
-              end={<Button size="timeline">Sign out</Button>}
+              title={title}
+              caption={caption}
+              badge={i === 0 ? s.here : undefined}
+              end={i === 0 ? undefined : <Button size="timeline">{s.signOut}</Button>}
             />
-            <Line
-              icon="public"
-              title="Chrome on Windows"
-              caption="Osaka · 3w ago"
-              end={<Button size="timeline">Sign out</Button>}
-            />
-          </>,
-        )}
+          ))}
+        </SettingsList>
       </SettingsSection>
     </SettingsScreen>
   );
 }
 
-/** The first screen, a form saved as a whole: what /settings opens where the menu stands beside a screen. */
-function Profile({ back }: ScreenProps) {
+/** A screen under an entry: one keyword filter, a form saved as a whole, its submit bar in reach. */
+function Filter({ back }: { back: ReactNode }) {
+  const w = useWords();
+  const f = w.filter;
   return (
-    <SettingsScreen icon="profile" title="Profile" back={back}>
-      <SettingsSection heading="About you">
-        <div className="grid gap-form-page-form-gap">
-          <div className="flex items-center gap-screen-row-gap">
-            <Avatar name="Yuki" size="post" decorative />
-            <Button size="timeline">Change picture</Button>
-            <Button size="timeline">Change header</Button>
-          </div>
-          <TextField id="profile-name" name="name" label="Name" defaultValue="Yuki 雪" />
-          <TextField
-            id="profile-bio"
-            name="bio"
-            label="Bio"
-            multiline
-            defaultValue="Slow mornings, film cameras, and the sea."
+    <SettingsScreen
+      sub
+      title={f.title}
+      back={back}
+      foot={
+        <SubmitBar>
+          <Button kind="primary">{f.save}</Button>
+        </SubmitBar>
+      }
+    >
+      <SettingsSection heading={f.section}>
+        <TextField id="filter-name" name="name" label={f.name} defaultValue={f.nameValue} />
+      </SettingsSection>
+      <SettingsSection
+        heading={f.words}
+        count={String(f.list.length)}
+        action={<Button size="timeline">{f.addWord}</Button>}
+      >
+        <SettingsList label={f.words}>
+          {f.list.map((word, i) => (
+            <SettingsListRow
+              key={word}
+              title={word}
+              caption={i === 0 ? f.whole : undefined}
+              end={<Button size="timeline">{f.remove}</Button>}
+            />
+          ))}
+        </SettingsList>
+      </SettingsSection>
+      <SettingsSection heading={f.where}>
+        {f.places.map((place, i) => (
+          <CheckField
+            key={place}
+            id={`filter-place-${String(i)}`}
+            name="context"
+            value={String(i)}
+            label={place}
+            defaultChecked={i < 3}
           />
-          <CheckField id="profile-locked" name="locked" value="1" label="Approve each follower yourself" />
-          <CheckField id="profile-bot" name="bot" value="1" label="This account is automated" />
-          <div>
-            <Button kind="primary">Save</Button>
-          </div>
-        </div>
+        ))}
+      </SettingsSection>
+      <SettingsSection heading={f.what}>
+        <SettingRow id="filter-action" label={f.matching}>
+          <Select labelledBy="filter-action" name="action" options={pick(f.warn, f.hide)} />
+        </SettingRow>
+        <SettingRow id="filter-ends" label={f.ends} about={f.endsAbout}>
+          <NumberField labelledBy="filter-ends" name="days" defaultValue="30" unit={f.days} />
+        </SettingRow>
       </SettingsSection>
     </SettingsScreen>
   );
@@ -421,68 +638,35 @@ const footer = (
   />
 );
 
-/** What is around the reader, as on every screen: the column beside the main one of `drill`. */
+/** What is around the reader, as on every screen: beside the menu at /settings. */
 function Around() {
+  const a = useWords().around;
+  const line = (i: number, unread = false) => (
+    <SectionLine
+      href={`/line/${String(i)}`}
+      title={a.lines[i]?.[0] ?? ""}
+      caption={a.lines[i]?.[1]}
+      unread={unread ? "Unread" : undefined}
+    />
+  );
   return (
     <FrameAside label="Server activity">
       <FrameSection
         id="around-announcements"
         icon="announcements"
         href="/announcements"
-        heading="Announcements"
-        all={{ text: "All", name: "All announcements" }}
+        heading={a.announcements}
+        all={{ text: a.all, name: a.allAnnouncements }}
       >
         <SectionList>
-          <SectionLine
-            href="/announcements/1"
-            title="Scheduled maintenance on Sunday, 03:00–04:00 UTC"
-            caption="2h ago"
-            unread="Unread"
-          />
-          <SectionLine
-            href="/announcements/2"
-            title="Custom emoji requests are open"
-            caption="1d ago"
-            unread="Unread"
-          />
+          {line(0, true)}
+          {line(1, true)}
         </SectionList>
       </FrameSection>
-      <FrameSection id="around-events" icon="events" href="/events" heading="Upcoming events">
+      <FrameSection id="around-events" icon="events" href="/events" heading={a.events}>
         <SectionList>
-          <SectionLine href="/events/1" title="Fediverse meetup in Tokyo" caption="Sat, Nov 21, 19:00" />
-          <SectionLine href="/events/2" title="Moderators' office hours" caption="Tue, Nov 24, 12:00" />
-        </SectionList>
-      </FrameSection>
-      <FrameSection
-        id="around-notifications"
-        icon="notifications"
-        href="/notifications"
-        heading="Notifications"
-        all={{ text: "All", name: "All notifications" }}
-      >
-        <SectionList>
-          <SectionLine
-            href="/@mika/status/1"
-            icon="favourite"
-            title={
-              <>
-                <strong>Mika</strong> favorited your post
-              </>
-            }
-            caption="5m ago"
-            unread="Unread"
-          />
-          <SectionLine
-            href="/@ren"
-            icon="follow"
-            title={
-              <>
-                <strong>Ren</strong> followed you
-              </>
-            }
-            caption="1h ago"
-            unread="Unread"
-          />
+          {line(2)}
+          {line(3)}
         </SectionList>
       </FrameSection>
       {footer}
@@ -490,27 +674,21 @@ function Around() {
   );
 }
 
-const screens = { profile: Profile, display: Display, security: Security } as const;
+/** The entry a screen belongs to, which the menu beside it marks, and the screen itself. */
+const screens = {
+  display: { entry: "display", Screen: Display },
+  security: { entry: "security", Screen: Security },
+  filter: { entry: "filters", Screen: Filter },
+} as const;
 
-/** The first screen of the menu, which /settings opens where the menu stands beside a screen. */
-const first = "profile";
-
-/**
- * The settings in the shell, as a variant places them. From the width at which the variant's menu stands beside the
- * screen, the way back is gone, and /settings shows the first screen in place of the menu.
- */
-function Settings({ variant, at }: { variant: Variant; at: At }) {
-  useGrays();
-  // What the main column shows under the width the menu stands beside from, and from it.
-  const under = { drill: "", aside: "wide:hidden", split: "tablet:hidden" }[variant];
-  const from = { drill: "hidden", aside: "hidden wide:block", split: "hidden tablet:block" }[variant];
+/** The settings in the shell: the menu at /settings, or a screen with the menu beside it from `wide`. */
+function Settings({ at, grown = false }: { at: At; grown?: boolean }) {
+  const w = useWords();
+  const open = at === "menu" ? undefined : screens[at];
+  // The way back: to the menu from an entry's screen, to its entry from a screen under one.
   const back = (
-    <div className={under}>
-      <BackButton onPress={() => undefined}>Settings</BackButton>
-    </div>
+    <BackButton onPress={() => undefined}>{at === "filter" ? (w.entries.filters[0] ?? "") : w.settings}</BackButton>
   );
-  const Screen = screens[at === "menu" ? first : at];
-  const current = at === "menu" ? first : at;
   return (
     <Frame>
       <FrameSide label="Main">
@@ -526,33 +704,17 @@ function Settings({ variant, at }: { variant: Variant; at: At }) {
           </NavMenu>
         </NavList>
       </FrameSide>
-      {variant === "split" && (
-        // The menu as a column of its own, before the screen, from `tablet`.
-        <div className="hidden flex-none self-start pt-shell-gap tablet:sticky tablet:top-0 tablet:block tablet:w-[13rem] desktop:w-shell-sidebar">
-          <Menu compact current={current} />
-        </div>
-      )}
       <FrameMain>
-        <FrameHeading>{at === "menu" ? "Settings" : (entryOf(at)?.label ?? "Settings")}</FrameHeading>
-        {at === "menu" ? (
-          <>
-            <div className={under}>
-              <Menu />
-            </div>
-            {variant !== "drill" && (
-              <div className={from}>
-                <Screen back={undefined} />
-              </div>
-            )}
-          </>
-        ) : (
-          <Screen back={back} />
-        )}
+        <FrameHeading>
+          {at === "menu" ? w.settings : at === "filter" ? w.filter.title : (w.entries[screens[at].entry][0] ?? "")}
+        </FrameHeading>
+        {open === undefined ? <Menu grown={grown} /> : <open.Screen back={back} />}
       </FrameMain>
-      {variant === "drill" && <Around />}
-      {variant === "aside" && (
-        <FrameAside label="Settings">
-          <Menu compact current={current} />
+      {open === undefined ? (
+        <Around />
+      ) : (
+        <FrameAside label={w.settings}>
+          <Menu compact current={open.entry} />
           {footer}
         </FrameAside>
       )}
@@ -581,28 +743,23 @@ function Settings({ variant, at }: { variant: Variant; at: At }) {
   );
 }
 
-const options = (at: At) => (
-  <Options
-    id="settings-frame"
-    variants={{
-      drill: <Settings variant="drill" at={at} />,
-      aside: <Settings variant="aside" at={at} />,
-      split: <Settings variant="split" at={at} />,
-    }}
-  />
-);
-
+// Tagged `themes`: the check of every story shows it in dark too.
 const meta = {
   title: "Settings",
+  tags: ["themes"],
   parameters: { layout: "fullscreen" },
 } satisfies Meta;
 export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-/** /settings: the menu, or the first screen where the variant's menu stands beside it. */
-export const AtMenu: Story = { render: () => options("menu") };
+/** /settings: the menu, in the main column at every width. */
+export const AtMenu: Story = { render: () => <Settings at="menu" /> };
+/** The menu with the entries later domains add: custom emoji, event reminders, the supporter membership. */
+export const AtMenuGrown: Story = { render: () => <Settings at="menu" grown /> };
 /** /settings/display: every control saves at once. */
-export const AtDisplay: Story = { render: () => options("display") };
-/** /settings/security: a status summary over lists. */
-export const AtSecurity: Story = { render: () => options("security") };
+export const AtDisplay: Story = { render: () => <Settings at="display" /> };
+/** /settings/security: the status summary over lists, whose rows open the screens under the entry. */
+export const AtSecurity: Story = { render: () => <Settings at="security" /> };
+/** /settings/filters/3: a screen under an entry, a form saved as a whole. */
+export const AtFilter: Story = { render: () => <Settings at="filter" /> };
