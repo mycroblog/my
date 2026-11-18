@@ -75,6 +75,42 @@ export function useUpdateProfile(): (change: ProfileChange) => Promise<Credentia
   return (change) => updateProfile(data, change);
 }
 
+/** The viewer's own account, with the choices only its owner reads; undefined until the server answered. */
+export function useCredentials(): CredentialAccount | undefined {
+  return useQuery(viewerQuery(useAppData())).data;
+}
+
+/** Where a read is, for a screen that shows what it read whole: until it answered, when it did not, once it did. */
+type ReadStatus = "loading" | "failed" | "read";
+
+/**
+ * Where the reads of what a screen of the profile's settings shows are: the viewer's own account, and with `lists`
+ * the badges they may show and the hashtags they feature too (not read without it). `loading` until the server
+ * answered them all, `failed` when it did not answer one, with `retry`, which reads again those that failed. A list
+ * that is `read` is the server's, not the empty one of a read still on its way, so a change of it replaces what the
+ * server holds and nothing else.
+ */
+export function useProfileRead({ lists = false }: { lists?: boolean } = {}): {
+  status: ReadStatus;
+  retry: () => void;
+} {
+  const data = useAppData();
+  const account = useQuery(viewerQuery(data));
+  const badges = useQuery({ ...badgeChoicesQuery(data), enabled: lists });
+  const featured = useQuery({ ...ownFeaturedHashtagsQuery(data), enabled: lists });
+  const reads = lists ? [account, badges, featured] : [account];
+  return {
+    status: reads.some((r) => r.status === "error")
+      ? "failed"
+      : reads.every((r) => r.status === "success")
+        ? "read"
+        : "loading",
+    retry: () => {
+      for (const r of reads) if (r.status === "error") void r.refetch();
+    },
+  };
+}
+
 // ---- Badges --------------------------------------------------------------------------------------------------------
 
 /** A role badge the viewer may show on their profile, and whether they do. */

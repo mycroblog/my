@@ -274,5 +274,233 @@
   "settings.display.auto_insert.about": {
     "defaultMessage": "When off, they wait until you press the “new posts” button over the timeline.",
     "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  },
+  "settings.profile.section.you": {
+    "defaultMessage": "Your profile",
+    "description": "A section heading of the Profile page of the settings, over the reader's own avatar, name and handle as others see them with the button Edit profile, the hashtags they feature, and the switch that marks the account as a bot."
+  },
+  "settings.profile.section.badges": {
+    "defaultMessage": "Badges",
+    "description": "A section heading of the Profile page of the settings, over one switch for each badge the reader may show on their profile. The section is absent for a reader with no badge."
+  },
+  "settings.profile.section.badges.about": {
+    "defaultMessage": "Badges this server gave you. A badge shows beside your handle on your profile while it is on.",
+    "description": "The line under the Badges heading of the Profile page of the settings. A badge is a short name the server's administrators attach to some accounts (Moderator, Supporter); each is hidden until its owner shows it."
+  },
+  "settings.profile.section.follows": {
+    "defaultMessage": "Following and followers",
+    "description": "A section heading of the Profile page of the settings, over the switch that makes follows need the reader's approval and the choice of who sees the lists of whom they follow and who follows them."
+  },
+  "settings.profile.section.discovery": {
+    "defaultMessage": "How your account is found",
+    "description": "A section heading of the Profile page of the settings, over the switches that decide where the account and its public posts appear: suggestions and the search by name, search engines and this server's search of posts, AI, and the Atom feed."
+  },
+  "settings.profile.edit": {
+    "defaultMessage": "Edit profile",
+    "description": "The button that opens the form where the reader changes their profile (pictures, display name, bio, fields): beside the reader's name on the Profile page of the settings, and at the top of the reader's own profile. Also the title of that form's page."
+  },
+  "settings.profile.hashtags": {
+    "defaultMessage": "Featured hashtags",
+    "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
+  },
+  "settings.profile.hashtags.about": {
+    "defaultMessage": "Up to {max, number}. They show on your profile.",
+    "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
+  },
+  "settings.profile.hashtags.placeholder": {
+    "defaultMessage": "Add a hashtag",
+    "description": "The placeholder of the field of featured hashtags while it takes another one; the same words as the hashtags of an article (compose.article.tags.placeholder)."
+  },
+  "settings.profile.hashtags.full": {
+    "defaultMessage": "No more hashtags",
+    "description": "The placeholder of the field of featured hashtags once it holds the most an account may feature, so that it takes no more."
+  },
+  "settings.profile.hashtags.remove": {
+    "defaultMessage": "Remove #{tag}",
+    "description": "The name of the button on a featured hashtag that removes it from the reader's profile, for assistive technology. tag is the hashtag without its #."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "Mark this account as a bot",
+    "description": "The label of a switch on the Profile page of the settings: on, the account says it is automated, and the profile shows the mark Bot (profile.bot) beside its name."
+  },
+  "settings.profile.bot.about": {
+    "defaultMessage": "For an account that a program posts from. “Bot” shows beside your name.",
+    "description": "The line under Mark this account as a bot. The quoted word is the mark on the profile (profile.bot)."
+  },
+  "settings.profile.badge": {
+    "defaultMessage": "Show “{label}”",
+    "description": "The label of the switch that shows one badge on the reader's profile, or hides it. label is the name on the badge, written by the server's administrators (Moderator)."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "Require approval to follow you",
+    "description": "The label of a switch on the Profile page of the settings: on, someone who wants to follow the reader sends a request, which the reader approves or declines; the profile then says Follow requests need approval (profile.locked)."
+  },
+  "settings.profile.locked.about": {
+    "defaultMessage": "People ask to follow you, and you approve or decline each request. Turning this off does not approve requests that are already waiting.",
+    "description": "The line under Require approval to follow you: what the switch does, and that the requests waiting when it is turned off stay until the reader answers them."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "Who can see your following and followers lists",
+    "description": "The label of the choice of who may open the lists of the accounts the reader follows and of their followers, on the Profile page of the settings. Its options are settings.profile.follows_visibility.option."
+  },
+  "settings.profile.follows_visibility.about": {
+    "defaultMessage": "The numbers stay visible to anyone.",
+    "description": "The line under Who can see your following and followers lists: how many accounts the reader follows and how many follow them shows on the profile whatever is chosen."
+  },
+  "settings.profile.follows_visibility.option": {
+    "defaultMessage": "{who, select, public {Anyone} followers {Followers} other {Only you}}",
+    "description": "An option of Who can see your following and followers lists; the composer's words for the same audiences (compose.audience.everyone, compose.audience.followers, compose.audience.nobody). who is public, followers or private."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "Appear in suggestions and in search by name",
+    "description": "The label of a switch on the Profile page of the settings: on, the account is suggested to other people and the search of accounts finds it by a part of its name."
+  },
+  "settings.profile.discoverable.about": {
+    "defaultMessage": "When off, the search finds your account only by its whole username.",
+    "description": "The line under Appear in suggestions and in search by name: what happens when the switch is off."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "Include your profile and public posts in search",
+    "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
+  },
+  "settings.profile.indexable.about": {
+    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} other {This server keeps search engines out for every account. Your choice still decides whether this server's search of posts shows your posts.}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that keeps search engines out and has a search of posts, where the choice applies to that search alone."
+  },
+  "settings.profile.indexable.overridden": {
+    "defaultMessage": "This server keeps search engines out for every account, so your choice has no effect.",
+    "description": "The line under Include your profile and public posts in search while the switch is disabled: the server's administrators keep search engines out, and the server has no search of posts, so the reader's own choice changes nothing."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "Refuse AI training and use",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's pages on this server state that AI may neither train on them nor use them (in AI search, assistants and agents)."
+  },
+  "settings.profile.ai_opt_out.about": {
+    "defaultMessage": "{server, select, deny_training {This server already refuses AI training for every account. When on, your pages on this server also refuse use by AI search and assistants. Other servers and your media files do not carry this.} other {When on, your pages on this server tell AI crawlers not to train on them or use them. Other servers and your media files do not carry this.}}",
+    "description": "The line under Refuse AI training and use: what the switch does and where it stops (the copies of the reader's posts on other servers, and the media files, do not carry the statement). server is what the server itself states for every account: deny_training when it already refuses training and lets AI use the pages, anything else when it allows both."
+  },
+  "settings.profile.ai_opt_out.overridden": {
+    "defaultMessage": "This server already refuses AI training and use for every account, so your choice has no effect.",
+    "description": "The line under Refuse AI training and use while the switch is disabled: the server's administrators refuse both for every account, so the reader's own choice changes nothing."
+  },
+  "settings.profile.feed": {
+    "defaultMessage": "Offer an Atom feed of your public posts",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
+  },
+  "settings.profile.feed.about": {
+    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} other {People can read your public posts in a feed reader, without an account.}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
+  },
+  "settings.profile.edit.section.pictures": {
+    "defaultMessage": "Pictures",
+    "description": "A section heading of the Edit profile page of the settings, over the header image and the avatar."
+  },
+  "settings.profile.edit.section.text": {
+    "defaultMessage": "Name and bio",
+    "description": "A section heading of the Edit profile page of the settings, over the display name and the bio."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "Header image",
+    "description": "The label of the picture across the top of the reader's profile, on the Edit profile page of the settings."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "Avatar",
+    "description": "The label of the reader's avatar, the round picture beside their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.picture.choose": {
+    "defaultMessage": "Choose a picture",
+    "description": "The button of the header image and of the avatar that opens the device's file picker, while there is no picture."
+  },
+  "settings.profile.picture.replace": {
+    "defaultMessage": "Replace",
+    "description": "The button of the header image and of the avatar that opens the device's file picker to choose another picture in place of the one shown."
+  },
+  "settings.profile.picture.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
+  },
+  "settings.profile.name": {
+    "defaultMessage": "Display name",
+    "description": "The label of the field of the name the reader's account shows, on the Edit profile page of the settings."
+  },
+  "settings.profile.name.over": {
+    "defaultMessage": "The display name must be at most {max, number} characters.",
+    "description": "Under the display name when it is longer than the limit."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "Bio",
+    "description": "The label of the field of the text about the reader that their profile shows under their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.note.over": {
+    "defaultMessage": "The bio must be at most {max, number} characters.",
+    "description": "Under the bio when it is longer than the limit."
+  },
+  "settings.profile.count.left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What the count beside the display name or the bio says to a screen reader near the field's limit: how many characters are left."
+  },
+  "settings.profile.count.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What the count beside the display name or the bio says to a screen reader past the field's limit: by how many characters it is over."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "Fields",
+    "description": "A section heading of the Edit profile page of the settings, and the name of the list under it: the short pairs of a label and its content that a profile shows under the bio (Website: https://example.org)."
+  },
+  "settings.profile.fields.about": {
+    "defaultMessage": "Up to {max, number} pairs of a label and its content, such as a website or your pronouns. They show on your profile, and a web address becomes a link.",
+    "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
+  },
+  "settings.profile.fields.empty": {
+    "defaultMessage": "No fields yet. Add one to show something like a website or your pronouns on your profile.",
+    "description": "In the place of the list of fields on the Edit profile page while the profile has none, over the button Add a field."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "Add a field",
+    "description": "The button that adds an empty field (a label and its content) to the list on the Edit profile page."
+  },
+  "settings.profile.fields.name": {
+    "defaultMessage": "Label",
+    "description": "The name and placeholder of the first box of a field on the Edit profile page: the short name of the field (Website)."
+  },
+  "settings.profile.fields.value": {
+    "defaultMessage": "Content",
+    "description": "The name and placeholder of the second box of a field on the Edit profile page: what the profile shows under the label (https://example.org)."
+  },
+  "settings.profile.fields.legend": {
+    "defaultMessage": "Field {n, number}",
+    "description": "The name of one field of the list on the Edit profile page, for assistive technology, so that its two boxes are told from those of the next field. n is its place in the list, from 1."
+  },
+  "settings.profile.fields.remove": {
+    "defaultMessage": "Remove field {n, number}",
+    "description": "The name of the button that removes one field from the list on the Edit profile page, for assistive technology. n is the field's place in the list, from 1."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "Save",
+    "description": "The button at the bottom of the Edit profile page that saves every change of the form at once."
+  },
+  "settings.profile.save.failed": {
+    "defaultMessage": "Your profile could not be saved. Try again.",
+    "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
+  },
+  "settings.profile.save.picture_failed": {
+    "defaultMessage": "The server could not process a picture, so nothing was saved. Choose another picture and save again.",
+    "description": "Beside the Save button of the Edit profile page when the server took a picked avatar or header image and then could not turn it into a picture it can show."
+  },
+  "settings.profile.leave.title": {
+    "defaultMessage": "Leave without saving?",
+    "description": "The question of the confirmation that opens when the reader leaves the Edit profile page with changes they have not saved."
+  },
+  "settings.profile.leave.text": {
+    "defaultMessage": "The changes you have not saved will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave the Edit profile page without saving."
+  },
+  "settings.profile.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves the Edit profile page and drops the changes not saved."
+  },
+  "settings.profile.leave.cancel": {
+    "defaultMessage": "Keep editing",
+    "description": "The button of the confirmation that stays on the Edit profile page, with the changes as the reader left them."
   }
 }

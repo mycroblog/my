@@ -274,5 +274,233 @@
   "settings.display.auto_insert.about": {
     "defaultMessage": "オフにすると、タイムラインの上の「新しい投稿」のボタンを押すまで表示しません。",
     "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  },
+  "settings.profile.section.you": {
+    "defaultMessage": "あなたのプロフィール",
+    "description": "A section heading of the Profile page of the settings, over the reader's own avatar, name and handle as others see them with the button Edit profile, the hashtags they feature, and the switch that marks the account as a bot."
+  },
+  "settings.profile.section.badges": {
+    "defaultMessage": "バッジ",
+    "description": "A section heading of the Profile page of the settings, over one switch for each badge the reader may show on their profile. The section is absent for a reader with no badge."
+  },
+  "settings.profile.section.badges.about": {
+    "defaultMessage": "このサーバーから付与されたバッジです。オンにしたバッジは、プロフィールのハンドルの横に表示されます。",
+    "description": "The line under the Badges heading of the Profile page of the settings. A badge is a short name the server's administrators attach to some accounts (Moderator, Supporter); each is hidden until its owner shows it."
+  },
+  "settings.profile.section.follows": {
+    "defaultMessage": "フォローとフォロワー",
+    "description": "A section heading of the Profile page of the settings, over the switch that makes follows need the reader's approval and the choice of who sees the lists of whom they follow and who follows them."
+  },
+  "settings.profile.section.discovery": {
+    "defaultMessage": "アカウントの見つかり方",
+    "description": "A section heading of the Profile page of the settings, over the switches that decide where the account and its public posts appear: suggestions and the search by name, search engines and this server's search of posts, AI, and the Atom feed."
+  },
+  "settings.profile.edit": {
+    "defaultMessage": "プロフィールを編集",
+    "description": "The button that opens the form where the reader changes their profile (pictures, display name, bio, fields): beside the reader's name on the Profile page of the settings, and at the top of the reader's own profile. Also the title of that form's page."
+  },
+  "settings.profile.hashtags": {
+    "defaultMessage": "注目のハッシュタグ",
+    "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
+  },
+  "settings.profile.hashtags.about": {
+    "defaultMessage": "{max, number} 個まで選べます。プロフィールに表示されます。",
+    "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
+  },
+  "settings.profile.hashtags.placeholder": {
+    "defaultMessage": "ハッシュタグを追加",
+    "description": "The placeholder of the field of featured hashtags while it takes another one; the same words as the hashtags of an article (compose.article.tags.placeholder)."
+  },
+  "settings.profile.hashtags.full": {
+    "defaultMessage": "これ以上は追加できません",
+    "description": "The placeholder of the field of featured hashtags once it holds the most an account may feature, so that it takes no more."
+  },
+  "settings.profile.hashtags.remove": {
+    "defaultMessage": "#{tag} を外す",
+    "description": "The name of the button on a featured hashtag that removes it from the reader's profile, for assistive technology. tag is the hashtag without its #."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "ボットのアカウントとして表示する",
+    "description": "The label of a switch on the Profile page of the settings: on, the account says it is automated, and the profile shows the mark Bot (profile.bot) beside its name."
+  },
+  "settings.profile.bot.about": {
+    "defaultMessage": "プログラムが投稿するアカウント向けです。名前の横に「ボット」と表示されます。",
+    "description": "The line under Mark this account as a bot. The quoted word is the mark on the profile (profile.bot)."
+  },
+  "settings.profile.badge": {
+    "defaultMessage": "「{label}」を表示する",
+    "description": "The label of the switch that shows one badge on the reader's profile, or hides it. label is the name on the badge, written by the server's administrators (Moderator)."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "フォローを承認制にする",
+    "description": "The label of a switch on the Profile page of the settings: on, someone who wants to follow the reader sends a request, which the reader approves or declines; the profile then says Follow requests need approval (profile.locked)."
+  },
+  "settings.profile.locked.about": {
+    "defaultMessage": "フォローはリクエストとして届き、それぞれ承認するか断ります。オフにしても、すでに届いているリクエストは承認されません。",
+    "description": "The line under Require approval to follow you: what the switch does, and that the requests waiting when it is turned off stay until the reader answers them."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "フォローとフォロワーの一覧を見られる人",
+    "description": "The label of the choice of who may open the lists of the accounts the reader follows and of their followers, on the Profile page of the settings. Its options are settings.profile.follows_visibility.option."
+  },
+  "settings.profile.follows_visibility.about": {
+    "defaultMessage": "人数は誰でも見られます。",
+    "description": "The line under Who can see your following and followers lists: how many accounts the reader follows and how many follow them shows on the profile whatever is chosen."
+  },
+  "settings.profile.follows_visibility.option": {
+    "defaultMessage": "{who, select, public {誰でも} followers {フォロワー} other {自分だけ}}",
+    "description": "An option of Who can see your following and followers lists; the composer's words for the same audiences (compose.audience.everyone, compose.audience.followers, compose.audience.nobody). who is public, followers or private."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "おすすめと名前の検索に表示する",
+    "description": "The label of a switch on the Profile page of the settings: on, the account is suggested to other people and the search of accounts finds it by a part of its name."
+  },
+  "settings.profile.discoverable.about": {
+    "defaultMessage": "オフにすると、ユーザー名が完全に一致したときだけ検索で見つかります。",
+    "description": "The line under Appear in suggestions and in search by name: what happens when the switch is off."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "プロフィールと公開投稿を検索に載せる",
+    "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
+  },
+  "settings.profile.indexable.about": {
+    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されます。} engines {検索エンジンに表示されます。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。この選択は、このサーバーの投稿の検索にだけ反映されます。}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that keeps search engines out and has a search of posts, where the choice applies to that search alone."
+  },
+  "settings.profile.indexable.overridden": {
+    "defaultMessage": "このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っているため、この選択は反映されません。",
+    "description": "The line under Include your profile and public posts in search while the switch is disabled: the server's administrators keep search engines out, and the server has no search of posts, so the reader's own choice changes nothing."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "AI の学習と利用を拒否する",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's pages on this server state that AI may neither train on them nor use them (in AI search, assistants and agents)."
+  },
+  "settings.profile.ai_opt_out.about": {
+    "defaultMessage": "{server, select, deny_training {このサーバーは、すべてのアカウントで AI の学習を拒否しています。オンにすると、このサーバーのあなたのページは、AI の検索やアシスタントでの利用も拒否します。ほかのサーバーとメディアのファイルには反映されません。} other {オンにすると、このサーバーのあなたのページが、AI のクローラーに学習と利用の拒否を伝えます。ほかのサーバーとメディアのファイルには反映されません。}}",
+    "description": "The line under Refuse AI training and use: what the switch does and where it stops (the copies of the reader's posts on other servers, and the media files, do not carry the statement). server is what the server itself states for every account: deny_training when it already refuses training and lets AI use the pages, anything else when it allows both."
+  },
+  "settings.profile.ai_opt_out.overridden": {
+    "defaultMessage": "このサーバーは、すべてのアカウントで AI の学習と利用を拒否しているため、この選択は反映されません。",
+    "description": "The line under Refuse AI training and use while the switch is disabled: the server's administrators refuse both for every account, so the reader's own choice changes nothing."
+  },
+  "settings.profile.feed": {
+    "defaultMessage": "公開投稿の Atom フィードを出す",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
+  },
+  "settings.profile.feed.about": {
+    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
+  },
+  "settings.profile.edit.section.pictures": {
+    "defaultMessage": "画像",
+    "description": "A section heading of the Edit profile page of the settings, over the header image and the avatar."
+  },
+  "settings.profile.edit.section.text": {
+    "defaultMessage": "名前と自己紹介",
+    "description": "A section heading of the Edit profile page of the settings, over the display name and the bio."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "ヘッダー画像",
+    "description": "The label of the picture across the top of the reader's profile, on the Edit profile page of the settings."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "アバター",
+    "description": "The label of the reader's avatar, the round picture beside their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.picture.choose": {
+    "defaultMessage": "画像を選ぶ",
+    "description": "The button of the header image and of the avatar that opens the device's file picker, while there is no picture."
+  },
+  "settings.profile.picture.replace": {
+    "defaultMessage": "画像を変更",
+    "description": "The button of the header image and of the avatar that opens the device's file picker to choose another picture in place of the one shown."
+  },
+  "settings.profile.picture.remove": {
+    "defaultMessage": "削除",
+    "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
+  },
+  "settings.profile.name": {
+    "defaultMessage": "表示名",
+    "description": "The label of the field of the name the reader's account shows, on the Edit profile page of the settings."
+  },
+  "settings.profile.name.over": {
+    "defaultMessage": "表示名は {max, number} 文字以内にしてください。",
+    "description": "Under the display name when it is longer than the limit."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "自己紹介",
+    "description": "The label of the field of the text about the reader that their profile shows under their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.note.over": {
+    "defaultMessage": "自己紹介は {max, number} 文字以内にしてください。",
+    "description": "Under the bio when it is longer than the limit."
+  },
+  "settings.profile.count.left": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "What the count beside the display name or the bio says to a screen reader near the field's limit: how many characters are left."
+  },
+  "settings.profile.count.over": {
+    "defaultMessage": "{count, plural, other {# 文字超過}}",
+    "description": "What the count beside the display name or the bio says to a screen reader past the field's limit: by how many characters it is over."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "補足情報",
+    "description": "A section heading of the Edit profile page of the settings, and the name of the list under it: the short pairs of a label and its content that a profile shows under the bio (Website: https://example.org)."
+  },
+  "settings.profile.fields.about": {
+    "defaultMessage": "ラベルと内容の組を {max, number} 個まで追加できます (Web サイト、呼び方など)。プロフィールに表示され、URL はリンクになります。",
+    "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
+  },
+  "settings.profile.fields.empty": {
+    "defaultMessage": "補足情報はまだありません。追加すると、Web サイトや呼び方などをプロフィールに表示できます。",
+    "description": "In the place of the list of fields on the Edit profile page while the profile has none, over the button Add a field."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "補足情報を追加",
+    "description": "The button that adds an empty field (a label and its content) to the list on the Edit profile page."
+  },
+  "settings.profile.fields.name": {
+    "defaultMessage": "ラベル",
+    "description": "The name and placeholder of the first box of a field on the Edit profile page: the short name of the field (Website)."
+  },
+  "settings.profile.fields.value": {
+    "defaultMessage": "内容",
+    "description": "The name and placeholder of the second box of a field on the Edit profile page: what the profile shows under the label (https://example.org)."
+  },
+  "settings.profile.fields.legend": {
+    "defaultMessage": "補足情報 {n, number}",
+    "description": "The name of one field of the list on the Edit profile page, for assistive technology, so that its two boxes are told from those of the next field. n is its place in the list, from 1."
+  },
+  "settings.profile.fields.remove": {
+    "defaultMessage": "補足情報 {n, number} を削除",
+    "description": "The name of the button that removes one field from the list on the Edit profile page, for assistive technology. n is the field's place in the list, from 1."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "保存",
+    "description": "The button at the bottom of the Edit profile page that saves every change of the form at once."
+  },
+  "settings.profile.save.failed": {
+    "defaultMessage": "プロフィールを保存できませんでした。もう一度試してください。",
+    "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
+  },
+  "settings.profile.save.picture_failed": {
+    "defaultMessage": "サーバーが画像を処理できなかったため、何も保存されませんでした。別の画像を選んで、もう一度保存してください。",
+    "description": "Beside the Save button of the Edit profile page when the server took a picked avatar or header image and then could not turn it into a picture it can show."
+  },
+  "settings.profile.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves the Edit profile page with changes they have not saved."
+  },
+  "settings.profile.leave.text": {
+    "defaultMessage": "保存していない変更は失われ、元に戻せません。",
+    "description": "The text of the confirmation that asks whether to leave the Edit profile page without saving."
+  },
+  "settings.profile.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves the Edit profile page and drops the changes not saved."
+  },
+  "settings.profile.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on the Edit profile page, with the changes as the reader left them."
   }
 }

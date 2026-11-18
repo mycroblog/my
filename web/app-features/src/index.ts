@@ -51,6 +51,15 @@ export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTrans
 export { Follows, loadFollows } from "./profile/follows";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export {
+  ProfileAvatarField,
+  profileEditPath,
+  ProfileNameField,
+  usePickedPicture,
+  useProfileIdentity,
+  type PickedPicture,
+  type ProfileIdentity,
+} from "./profile-identity";
+export {
   loadSettingsEntry,
   settingsEntries,
   type SettingsEntry,
@@ -59,6 +68,7 @@ export {
   type SettingsGroupId,
 } from "./settings/entries";
 export { SettingsBeside, settingsEntryPath, SettingsIndex } from "./settings/menu";
+export { loadProfileEdit, ProfileEdit, useProfileEditTitle, type ProfileEditProps } from "./settings/profile-edit";
 export { SettingsEntryScreen, useSettingsTitle, type SettingsEntryScreenProps } from "./settings/screen";
 export { SignOutDialog, type SignOutDialogProps } from "./settings/sign-out";
 export { loadReactors, ReactorList } from "./thread/reactors";

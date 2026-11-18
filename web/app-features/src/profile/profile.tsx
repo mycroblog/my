@@ -2,7 +2,8 @@
 
 // A profile (FR-006, the rough of #3047): the account of a handle, from useAccount() of @my/app-data, in its state
 // for the reader: their own, another local account, a remote one, a locked one, one they block or mute, one whose
-// server they mute. Its head: the banner, the avatar with the reader's actions at the other end of its row (the bell
+// server they mute. Its head: the banner, the avatar with the reader's actions at the other end of its row (on their
+// own, Edit profile, which leads to the form of the settings; on another's, the bell
 // of its new posts while the reader follows it, follow in its state, more: mute, block and remove a follower, each of
 // the last two after a confirmation, and mute its server), the name with a locked account's lock and a bot's badge, the
 // handle with "Follows you" and the role badges, the bio, the fields, when it joined and its counts (each opening its
@@ -79,6 +80,7 @@ import {
 import { useId, useState } from "react";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
+import { profileEditPath } from "../profile-identity";
 import { TranslatablePost as Post } from "../post-translation";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -488,21 +490,26 @@ function Head({
       banner={account.header?.medium.url}
       avatar={<Avatar name={nameOf(account)} src={avatar} size="preview" decorative />}
       actions={
-        !own &&
-        relationship !== undefined && (
-          <>
-            {moved === undefined && relationship.following === true && !blocked && (
-              <Bell account={account} relationship={relationship} t={t} />
-            )}
-            {moved === undefined ? (
-              <Follow account={account} relationship={relationship} t={t} />
-            ) : (
-              <LinkButton href={accountPath(moved)} kind="primary" size="timeline">
-                {t("profile.go_to_new")}
-              </LinkButton>
-            )}
-            <More account={account} relationship={relationship} mutedDomain={mutedDomain} t={t} />
-          </>
+        own ? (
+          <LinkButton href={profileEditPath} size="timeline">
+            {t("settings.profile.edit")}
+          </LinkButton>
+        ) : (
+          relationship !== undefined && (
+            <>
+              {moved === undefined && relationship.following === true && !blocked && (
+                <Bell account={account} relationship={relationship} t={t} />
+              )}
+              {moved === undefined ? (
+                <Follow account={account} relationship={relationship} t={t} />
+              ) : (
+                <LinkButton href={accountPath(moved)} kind="primary" size="timeline">
+                  {t("profile.go_to_new")}
+                </LinkButton>
+              )}
+              <More account={account} relationship={relationship} mutedDomain={mutedDomain} t={t} />
+            </>
+          )
         )
       }
       name={<AccountName account={account} />}

@@ -361,12 +361,15 @@ function SettingFrame({
   name,
   under,
   control,
+  wide,
 }: {
   className: string;
   reserve: boolean;
   name: ReactNode;
   under: ReactNode;
   control: ReactNode;
+  /** The control fills a line of its own at every width. */
+  wide: boolean;
 }) {
   const room =
     "pt-[clamp(0px,(100%_-_100cqw_+_1px)_*_9999,calc(var(--text-caption)_*_var(--text-caption--line-height)))]";
@@ -376,7 +379,9 @@ function SettingFrame({
         <Box className={reserve ? room : undefined}>{name}</Box>
         {under}
       </Stack>
-      <Box grow="control">{control}</Box>
+      <Box grow="control" full={wide}>
+        {control}
+      </Box>
     </Row>
   );
 }
@@ -407,6 +412,8 @@ export type SettingRowProps = {
    * chosen): close under the row, as the setting's own.
    */
   values?: ReactNode;
+  /** Its control fills a line of its own under the name at every width: one that grows with what it holds (tags). */
+  wide?: boolean | undefined;
   children: ReactNode;
 } & (
   | {
@@ -426,11 +433,12 @@ export type SettingRowProps = {
 
 /**
  * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
- * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
- * the name, as a field under its label. Its control either saves at once, and the row takes its save state (`save`,
- * ADR-0110 §6), which stands in the place of the line about it, or, with no such line, under the name, in the room
- * the row's height holds beside the control (the name, at the middle of the control until then, gives way to it, and
- * the control stays where it is); or it is a field of a form saved as a whole (`form`), with no state of its own.
+ * row's end, as wide as what it holds; where the two cannot share a line, or the control is `wide`, it fills a line
+ * of its own under the name, as a field under its label. Its control either saves at once, and the row takes its save
+ * state (`save`, ADR-0110 §6), which stands in the place of the line about it, or, with no such line, under the name,
+ * in the room the row's height holds beside the control (the name, at the middle of the control until then, gives way
+ * to it, and the control stays where it is); or it is a field of a form saved as a whole (`form`), with no state of
+ * its own.
  * What the setting holds beyond its control's value (`values`) stands close under the row. The row names its control
  * (`id`, the control's `labelledBy`, which a `Select` and a `NumberField` take from the row by themselves), describes
  * it by the line about it and by the save state, and a press on the name puts the focus on it.
@@ -442,6 +450,7 @@ export function SettingRow({
   isDisabled = false,
   reason,
   values,
+  wide = false,
   save,
   form,
   children,
@@ -458,6 +467,7 @@ export function SettingRow({
     <SettingFrame
       className={s.root()}
       reserve={saves && below === undefined && !saying}
+      wide={wide}
       name={
         <label id={id} htmlFor={controlId} className={isDisabled ? `${s.label()} ${s.off()}` : s.label()}>
           {label}

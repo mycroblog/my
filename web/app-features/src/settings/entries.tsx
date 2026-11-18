@@ -10,6 +10,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { loadProfileSettings, ProfileSettings } from "./profile";
 
 /** The groups of the menu, in its order, each under its heading. */
 export const settingsGroups = [
@@ -59,6 +60,15 @@ export type SettingsEntry = {
 
 /** Every entry, in the menu's order within its group. */
 export const settingsEntries: readonly SettingsEntry[] = [
+  {
+    path: "profile",
+    group: "general",
+    icon: "profile",
+    name: "settings.entry.profile",
+    hint: "settings.entry.profile.hint",
+    Screen: ProfileSettings,
+    load: loadProfileSettings,
+  },
   {
     path: "display",
     group: "general",

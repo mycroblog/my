@@ -41,6 +41,7 @@ const groups = (menu: HTMLElement) =>
 const beside = (name = "Settings") =>
   screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
 
+const profileHint = "Name, bio, pictures, badges, approving followers, appearing in search";
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
 
 describe("the menu", () => {
@@ -55,10 +56,12 @@ describe("the menu", () => {
     expect(app.path()).toBe("/settings");
     expect(app.title()).toContain("Settings");
     const menu = main().getByRole("navigation", { name: "Settings" });
-    // One group has an entry; a group without one is not drawn.
+    // One group has entries; a group without one is not drawn.
     expect(groups(menu)).toEqual(["General"]);
-    const [display, ...others] = rows(menu);
-    // The entry's row says its name, then what it holds.
+    const [profile, display, ...others] = rows(menu);
+    // An entry's row says its name, then what it holds.
+    expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
+    expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
     expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
@@ -106,6 +109,7 @@ describe("an entry", () => {
     expect(others).toHaveLength(0);
     expect(groups(menu)).toEqual(["General"]);
     expect(rows(menu)).toEqual([
+      ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
@@ -124,6 +128,7 @@ describe("an entry", () => {
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
     expect(beside().flatMap(rows)).toEqual([
+      ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
@@ -181,6 +186,7 @@ describe("the display language", () => {
     expect(document.documentElement.lang).toBe("ja");
     expect(app.title()).toContain("表示と投稿");
     expect(beside("設定").flatMap(rows)).toEqual([
+      ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);

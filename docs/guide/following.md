@@ -38,10 +38,10 @@ When you approve your followers, people who want to follow you send a request. T
 notifications opens them, and you "Approve" or "Decline" each one. Your followers and the accounts you follow are on the
 profile page, which shows how many there are.
 
-"Who can see your follows and followers" under "Follows and followers" in the profile settings decides who can open
-those two lists: "Everyone" (the default), "Your followers" (people on this server whose follow you accepted), or
-"Only you". You always see both lists, and everyone still sees how many there are. Other servers get only the numbers
-unless you choose "Everyone". A list you cannot open says so in place of the accounts.
+"Who can see your following and followers lists" under "Profile" in the settings decides who can open those two
+lists: "Anyone" (the default), "Followers" (people on this server whose follow you accepted), or "Only you". You
+always see both lists, and everyone still sees how many there are. Other servers get only the numbers unless you
+choose "Anyone". A list you cannot open says so in place of the accounts.
 
 ## Timelines
 
@@ -73,9 +73,9 @@ one ("Follow a hashtag", with or without the `#`), and unfollows them.
 ## Featured hashtags
 
 A profile can feature up to ten hashtags, in the order its owner chose, each with how many of the owner's "Public" and
-"Quiet public" posts carry it and when the last one did. Choose yours under "Featured hashtags" in the profile settings:
-"Add a hashtag" adds a row, the arrows move a row up or down, and "Save profile" saves them with the rest of your
-profile. A hashtag you have not used yet can be featured too. Other servers that show your profile get the same list.
+"Quiet public" posts carry it and when the last one did. Choose yours in "Featured hashtags" under "Profile" in the
+settings: type a hashtag and press Enter to add it after the others, and press the × on one to remove it; each change is
+saved at once. A hashtag you have not used yet can be featured too. Other servers that show your profile get the same list.
 On a profile of another server, the counts are of the posts this server has received, so they may be lower than on
 that server.
 
@@ -102,9 +102,9 @@ tag. A post with a content warning shows only the warning, and its text and medi
 shows its title and summary, with a link to the article. To follow only the articles of a profile, add `/articles.atom`
 to the profile's address instead (`https://example.com/@alice/articles.atom`); it follows the same rules.
 
-Whether your own posts are in feeds is "Publish a feed of my public posts" under "Feeds" in the profile settings. Until
-you change it, it follows "Search engines and AI": your posts are in feeds while you let search engines index your
-profile. Once you change it, changing the search setting leaves it as it is. When it is off, your profile has no feed
+Whether your own posts are in feeds is "Offer an Atom feed of your public posts" under "Profile" in the settings. Until
+you change it, it follows "Include your profile and public posts in search": your posts are in feeds while that is
+on. Once you change it, changing the search setting leaves it as it is. When it is off, your profile has no feed
 and your posts are in no hashtag's feed. A feed reader may take a minute or two to see a change. Accounts that a
 moderator has limited or suspended, and accounts that moved, have no feed.
 

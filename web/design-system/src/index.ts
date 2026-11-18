@@ -129,6 +129,8 @@ export {
   type TextFieldProps,
 } from "./form-page";
 export { IconButton, type IconButtonProps } from "./icon-button";
+export { PairField, PairList, type PairFieldProps } from "./pair-field";
+export { PictureField, type PictureFieldProps } from "./picture-field";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { whenIdle } from "./idle";
 export { catalogReader, type Strings } from "./locale";

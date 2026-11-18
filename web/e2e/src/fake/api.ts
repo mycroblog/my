@@ -381,6 +381,17 @@ export type FakeOptions = {
    * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
    */
   revocation?: "fails";
+  /**
+   * What the instance states of search engines and of AI (ADR-0057 §1), each `allow` by default: an account cannot
+   * allow what the instance denies.
+   */
+  crawlers?: { search?: Schema<"SearchIndexing">; ai?: Schema<"AIUsage"> };
+  /**
+   * The reader's own profile: it starts with no name, text, fields or pictures (`start: "empty"`), and a change of it
+   * (PATCH /accounts/update_credentials) is refused for the value of its display name, which the problem names
+   * (`save: "name"`), refused by the server's review (`save: "refused"`), or never answered (`save: "waits"`).
+   */
+  profile?: { start?: "empty"; save?: "name" | "refused" | "waits" };
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -687,7 +698,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     displayName?: string;
     note?: string;
     fields?: [string, string][];
-    avatar?: string;
+    avatar?: string | null;
     header?: string | null;
     locked?: boolean;
     bot?: boolean;
@@ -696,7 +707,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     aiOptOut?: boolean;
     feedEnabled?: boolean;
     followsVisibility?: Schema<"FollowsVisibility">;
-  } = {};
+  } = o.profile?.start === "empty" ? { displayName: "", note: "", fields: [], avatar: null, header: null } : {};
 
   const fullAccount = (p: FakePerson): Account => {
     const remote = domainOf(p.username);
@@ -710,7 +721,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       domain: remote ?? fakeHost,
       display_name: own ? (edit.displayName ?? p.displayName) : p.displayName,
       emojis: [],
-      avatar: variants(own && edit.avatar !== undefined ? edit.avatar : drawingURL(p.avatar)),
+      ...(own && edit.avatar !== undefined
+        ? edit.avatar === null
+          ? {}
+          : { avatar: variants(edit.avatar) }
+        : { avatar: variants(drawingURL(p.avatar)) }),
       uri: `${originOf(p.username)}/users/${username}`,
       url: `${originOf(p.username)}/@${username}`,
       note: serverHtml(own ? (edit.note ?? p.note) : p.note, remote ?? fakeHost),
@@ -1819,8 +1834,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       discoverable: edit.discoverable ?? true,
       indexable: edit.indexable ?? true,
       ai_opt_out: edit.aiOptOut ?? false,
-      feed_enabled: edit.feedEnabled ?? false,
-      feed_follows_indexable: false,
+      // The feed follows `indexable` until the reader chooses about it (FR-213).
+      feed_enabled: edit.feedEnabled ?? edit.indexable ?? true,
+      feed_follows_indexable: edit.feedEnabled === undefined,
       follows_visibility: edit.followsVisibility ?? followsVisibility[username] ?? "public",
       source: {
         note: edit.note ?? p.note,
@@ -1961,8 +1977,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     sends_email: false,
     ...(o.push === true ? { push_server_key: pushServerKey } : {}),
     rules: [],
-    search_indexing: "allow",
-    ai_usage: "allow",
+    search_indexing: o.crawlers?.search ?? "allow",
+    ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
     link_cards_ignore_robots_txt: false,
     finance_visibility: "private",
@@ -2766,6 +2782,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "PATCH /accounts/update_credentials": ({ body }) => {
       if (visitor) return problem(401, "Unauthorized");
+      if (o.profile?.save === "waits") return new Promise<never>(() => undefined);
+      if (o.profile?.save === "refused")
+        return problem(422, "The profile was rejected", {
+          type: "/api/v1/problems/profile-rejected",
+          detail: "This server's automated review did not accept this change. Your profile stays as it was.",
+        });
+      if (o.profile?.save === "name" && body.display_name !== undefined)
+        return problem(422, "This could not be done.", {
+          detail: "This value is not valid. Check what you entered.",
+          field: "display_name",
+        });
       const length = (text: string) => Array.from(text).length;
       if (body.display_name !== undefined && length(body.display_name) > 30)
         return problem(422, "The display name is at most 30 characters");
@@ -2789,10 +2816,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (body.display_name !== undefined) edit.displayName = body.display_name;
       if (body.note !== undefined) edit.note = body.note;
       if (body.fields !== undefined) edit.fields = body.fields.map((f) => [f.name, f.value]);
-      if (avatar !== undefined) {
-        if (avatar === null) delete edit.avatar;
-        else edit.avatar = avatar;
-      }
+      if (avatar !== undefined) edit.avatar = avatar;
       if (header !== undefined) edit.header = header;
       if (body.locked !== undefined) edit.locked = body.locked;
       if (body.bot !== undefined) edit.bot = body.bot;
