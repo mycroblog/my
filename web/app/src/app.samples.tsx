@@ -33,7 +33,7 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 export type Fake = {
   /**
    * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
-   * `members:<index>` of its members,
+   * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
    * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
    * it opens.
@@ -144,7 +144,8 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 /**
  * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
- * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
+ * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the editor of the reader's keyword
+ * filter of `filter:<index>`, the held-back notifications of the
  * person of `held:<username>`, the page of the reader's newest notification of `notification:<type>`, else the page of
  * the scenario post of that key.
  */
@@ -154,6 +155,7 @@ function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
+  if (at.startsWith("filter:")) return fake.filterPath(Number(at.slice("filter:".length)));
   if (at.startsWith("members:")) return `${fake.listPath(Number(at.slice("members:".length)))}/members`;
   if (at.startsWith("conversation:")) return fake.conversationPath(Number(at.slice("conversation:".length)));
   if (at.startsWith("held:")) return fake.heldPath(at.slice("held:".length));

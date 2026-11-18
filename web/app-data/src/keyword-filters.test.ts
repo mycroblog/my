@@ -169,7 +169,7 @@ describe("saveKeywordFilter", () => {
     }));
     const { data } = fakeData({ settings: { filters: full } });
     const refused = await refusedWith(saveKeywordFilter(data, request));
-    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/too-many-filter-words"]);
+    expect([refused.status, refused.type]).toEqual([422, "/api/v1/problems/too-many-filter-keywords"]);
   });
 });
 

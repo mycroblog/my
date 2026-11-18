@@ -802,5 +802,297 @@
   "settings.notifications.policy.limited_account.about": {
     "defaultMessage": "このサーバーのモデレーターが、個別に、またはサーバーごと制限したアカウントです。フォローしている人にも当てはまります。",
     "description": "The line under the choice Accounts limited by the moderators of the section settings.notifications.policy. The other choices never apply to people the reader follows; this one does."
+  },
+  "settings.relationships.list": {
+    "defaultMessage": "{list, select, blocked {ブロックしたアカウント} muted {ミュートしたアカウント} servers {ミュートしたサーバー} other {フォロー中のハッシュタグ}}",
+    "description": "The heading of a section of the settings' page Relationships, and the title of the page under it that holds the whole list. list is blocked (the accounts the reader blocks), muted (the accounts they mute), servers (the servers they mute) or hashtags (the hashtags they follow)."
+  },
+  "settings.relationships.empty": {
+    "defaultMessage": "{list, select, blocked {ブロックしているアカウントはありません。アカウントをブロックするには、そのプロフィールか投稿のメニューで「ブロック…」を選びます。} muted {ミュートしているアカウントはありません。アカウントをミュートするには、そのプロフィールか投稿のメニューで「ミュート」を選びます。} servers {ミュートしているサーバーはありません。サーバーをミュートするには、そのサーバーのアカウントのプロフィールか投稿のメニューで「サーバーをミュート」を選びます。} other {フォローしているハッシュタグはありません。ハッシュタグを開いて「フォロー」を選ぶと、その投稿がホームタイムラインに届きます。}}",
+    "description": "In place of a list of the settings' page Relationships while it is empty: what it would hold, and how something comes to be in it, in the words of the menus of a profile and of a post (profile.block, profile.mute, profile.mute_server) and of a hashtag's page (timeline.tag_follow). list is as in settings.relationships.list."
+  },
+  "settings.relationships.loading": {
+    "defaultMessage": "この一覧を読み込んでいます…",
+    "description": "In place of a list of the settings' page Relationships while it is read from the server."
+  },
+  "settings.relationships.failed_list": {
+    "defaultMessage": "この一覧を読み込めませんでした。",
+    "description": "In place of a list of the settings' page Relationships when it could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.relationships.failed_more": {
+    "defaultMessage": "この一覧の続きを読み込めませんでした。",
+    "description": "Under a list of the settings' page Relationships, on the page that holds the whole list, when its next accounts could not be read; Try again follows it (settings.retry)."
+  },
+  "settings.relationships.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under a list on the page that holds the whole of one list of Relationships (blocked accounts, muted accounts…), which loads the next ones."
+  },
+  "settings.relationships.all": {
+    "defaultMessage": "{list, select, blocked {ブロックしたアカウントをすべて表示} muted {ミュートしたアカウントをすべて表示} servers {ミュートしたサーバーをすべて表示} other {フォロー中のハッシュタグをすべて表示}}",
+    "description": "The button under the first few rows of a list on the settings' page Relationships, where the list has more, which opens the page that holds the whole list. list is as in settings.relationships.list."
+  },
+  "settings.relationships.unblock": {
+    "defaultMessage": "ブロックを解除",
+    "description": "The button at the end of an account's row in Blocked accounts (settings, Relationships) that stops blocking it at once, as Unblock of a profile's menu does."
+  },
+  "settings.relationships.unmute": {
+    "defaultMessage": "ミュートを解除",
+    "description": "The button at the end of a row in Muted accounts or Muted servers (settings, Relationships) that stops muting the account or the server at once, as Unmute of a profile's menu does."
+  },
+  "settings.relationships.unfollow": {
+    "defaultMessage": "フォローを解除",
+    "description": "The button at the end of a hashtag's row in Followed hashtags (settings, Relationships) that stops following it at once: its posts no longer join the home timeline."
+  },
+  "settings.relationships.done": {
+    "defaultMessage": "{action, select, unblock {{name} のブロックを解除しました。} unmute {{name} のミュートを解除しました。} unmute_server {{name} のミュートを解除しました。} other {{name} のフォローを解除しました。}}",
+    "description": "Under a list of the settings' page Relationships once the reader took a row out of it, where the focus goes, the row being gone. action is unblock, unmute (an account), unmute_server or unfollow (a hashtag); name is the account's handle (@user or @user@domain), the server's domain, or the hashtag with #."
+  },
+  "settings.relationships.failed": {
+    "defaultMessage": "{action, select, unblock {{name} のブロックの解除} unmute {{name} のミュートの解除} unmute_server {{name} のミュートの解除} other {{name} のフォローの解除}}を完了できませんでした。",
+    "description": "Under a list of the settings' page Relationships when taking a row out of it got no answer from the server (the network); the row and its button stay, to press again. action and name are as in settings.relationships.done."
+  },
+  "settings.relationships.muted.notifications": {
+    "defaultMessage": "通知も非表示",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): the mute hides the account's notifications as well as its posts. Without a full stop."
+  },
+  "settings.relationships.muted.until": {
+    "defaultMessage": "{date}まで",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
+  },
+  "settings.filters.list": {
+    "defaultMessage": "フィルタ",
+    "description": "The heading of the one section of the settings' page Keyword filters, the list of the reader's filters; the count follows it."
+  },
+  "settings.filters.about": {
+    "defaultMessage": "それぞれ、適用する場所で、その言葉を含む投稿を畳むか隠します。",
+    "description": "The line under the heading of the list of keyword filters (settings, Keyword filters), what a filter does."
+  },
+  "settings.filters.full": {
+    "defaultMessage": "フィルタは{max}個まで作れます。新しく追加するには、どれかを削除してください。",
+    "description": "The line under the heading of the list of keyword filters when the reader has as many as the server keeps, in place of settings.filters.about, and Add a filter is not offered; also the submit bar's sentence when the server refused a new filter for that reason. max is 100."
+  },
+  "settings.filters.add": {
+    "defaultMessage": "フィルタを追加",
+    "description": "The primary button of the settings' page Keyword filters, at the end of the list's heading or under the sentence of an empty list, which opens the form of a new filter."
+  },
+  "settings.filters.empty": {
+    "defaultMessage": "キーワードフィルタはありません。フィルタは、その言葉を含む投稿を、選んだ場所で畳むか隠します。",
+    "description": "In place of the list of keyword filters while the reader has none; Add a filter follows it."
+  },
+  "settings.filters.does": {
+    "defaultMessage": "{action, select, warn {一致した投稿を警告の後ろに畳む} other {一致した投稿を隠す}}",
+    "description": "A line under a filter's name in the list of keyword filters: what it does to a post that holds one of its words. action is warn (the post shows only the filter's name and Show) or hide (the post is left out). A phrase, without a full stop."
+  },
+  "settings.filters.where": {
+    "defaultMessage": "{places}に適用",
+    "description": "A line under a filter's name in the list of keyword filters: where it applies. places is a list of settings.filters.place joined in the reader's language (home and lists, notifications and threads). A phrase, without a full stop."
+  },
+  "settings.filters.place": {
+    "defaultMessage": "{context, select, home {ホームとリスト} notifications {通知} public {公開タイムライン} thread {スレッド} other {プロフィール}}",
+    "description": "A place a keyword filter applies, inside settings.filters.where, so in lower case in en: home (the home timeline and the lists' timelines), notifications, public (the local, federated and hashtag timelines), thread (the posts before and after a post), account (a profile's posts)."
+  },
+  "settings.filters.words_count": {
+    "defaultMessage": "{count, plural, other {#語}}",
+    "description": "A line under a filter's name in the list of keyword filters: how many words or phrases it has. Without a full stop."
+  },
+  "settings.filters.ends_at": {
+    "defaultMessage": "{state, select, never {期限なし} ended {{date}に終了} other {{date}まで}}",
+    "description": "The last line under a filter's name in the list of keyword filters: when it stops applying. state is never, ends (it ends at date) or ended (it ended at date and applies nowhere until its end moves later); date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
+  },
+  "settings.filters.expired": {
+    "defaultMessage": "期限切れ",
+    "description": "The state at the end of a filter's row in the list of keyword filters once its end has passed: it applies nowhere, and stays listed until deleted."
+  },
+  "settings.filters.edit.title": {
+    "defaultMessage": "{kind, select, new {新しいフィルタ} other {フィルタを編集}}",
+    "description": "The title of the page of a keyword filter's form, under the settings' entry Keyword filters. kind is new (a filter being added) or edit (one that is there)."
+  },
+  "settings.filters.save": {
+    "defaultMessage": "{kind, select, new {追加} other {保存}}",
+    "description": "The button at the bottom of a keyword filter's form that saves the whole form: adds a new filter (new), or saves the changes of one that is there (edit); the page then goes back to the list."
+  },
+  "settings.filters.save.failed": {
+    "defaultMessage": "フィルタを保存できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
+  },
+  "settings.filters.section.filter": {
+    "defaultMessage": "フィルタ",
+    "description": "The heading of the first section of a keyword filter's form, which holds its name."
+  },
+  "settings.filters.section.does": {
+    "defaultMessage": "動作",
+    "description": "The heading of the section of a keyword filter's form that holds what it does to a matching post and when it ends."
+  },
+  "settings.filters.name": {
+    "defaultMessage": "名前",
+    "description": "The label of the field of a keyword filter's name."
+  },
+  "settings.filters.name.hint": {
+    "defaultMessage": "畳んだ投稿にこの名前が表示されます。",
+    "description": "The line under the label of a keyword filter's name: where the name shows (\"Matches filter Spoilers\" in place of a folded post)."
+  },
+  "settings.filters.name.missing": {
+    "defaultMessage": "フィルタの名前を入力してください。",
+    "description": "Under the field of a keyword filter's name when the reader pressed Add or Save with it empty."
+  },
+  "settings.filters.name.over": {
+    "defaultMessage": "名前は{max}文字までです。",
+    "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
+  },
+  "settings.filters.words": {
+    "defaultMessage": "言葉",
+    "description": "The heading of the section of a keyword filter's form that lists its words and phrases; the count follows it."
+  },
+  "settings.filters.words.about": {
+    "defaultMessage": "どれか 1 つを含む投稿が一致します。「単語全体」にすると、長い語の一部には一致しません。",
+    "description": "The line under the heading of a keyword filter's words: how they match, in one short sentence about Whole word (settings.filters.word.whole); the documentation explains the scripts that write words without spaces, where Whole word changes nothing."
+  },
+  "settings.filters.words.add": {
+    "defaultMessage": "言葉を追加",
+    "description": "The button at the end of the heading of a keyword filter's words, or under the sentence of an empty list, that adds a field for one more word or phrase."
+  },
+  "settings.filters.words.empty": {
+    "defaultMessage": "まだ言葉がありません。一致させる言葉やフレーズを追加してください。",
+    "description": "In place of a keyword filter's words when the reader removed every one; Add a word follows it."
+  },
+  "settings.filters.words.missing": {
+    "defaultMessage": "言葉かフレーズを 1 つ以上追加してください。",
+    "description": "Under a keyword filter's words when the reader pressed Add or Save with none written."
+  },
+  "settings.filters.words.left": {
+    "defaultMessage": "{count, plural, other {あと#語追加できます。}}",
+    "description": "Under a keyword filter's words when the filter or all the reader's filters come near the most words the server keeps: how many more can be added."
+  },
+  "settings.filters.words.filter_full": {
+    "defaultMessage": "このフィルタの言葉は上限の{max}語に達しています。",
+    "description": "Under a keyword filter's words when the filter has as many as it can, and Add a word is disabled. max is 100."
+  },
+  "settings.filters.words.all_full": {
+    "defaultMessage": "すべてのフィルタの言葉は合わせて{max}語までです。追加するには、このフィルタかほかのフィルタから削除してください。",
+    "description": "Under a keyword filter's words when all the reader's filters have as many words as they can, and Add a word is disabled. max is 1,000."
+  },
+  "settings.filters.words.too_many": {
+    "defaultMessage": "フィルタごとの言葉は{filter}語まで、すべてのフィルタで合わせて{max}語までです。先にいくつか削除してください。",
+    "description": "Under a keyword filter's words when the server refused the form because the words would pass one of its limits. filter is 100, max is 1,000."
+  },
+  "settings.filters.word": {
+    "defaultMessage": "言葉・フレーズ {n}",
+    "description": "The label of the field of one word of a keyword filter. n is its place in the list, from 1."
+  },
+  "settings.filters.word.whole": {
+    "defaultMessage": "単語全体",
+    "description": "The checkbox beside a word of a keyword filter: the word matches only where no letter or digit touches it, not inside a longer word."
+  },
+  "settings.filters.word.remove": {
+    "defaultMessage": "削除",
+    "description": "The button beside a word of a keyword filter that takes it out of the form."
+  },
+  "settings.filters.word.remove_named": {
+    "defaultMessage": "言葉 {n} を削除",
+    "description": "The name assistive technology reads of the button beside a word of a keyword filter (settings.filters.word.remove), which says which word it removes. n is the word's place, from 1."
+  },
+  "settings.filters.word.over": {
+    "defaultMessage": "言葉は{max}文字までです。",
+    "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
+  },
+  "settings.filters.contexts": {
+    "defaultMessage": "適用する場所",
+    "description": "The heading of the section of a keyword filter's form that holds the places it applies in, a checkbox each (settings.filters.context)."
+  },
+  "settings.filters.context": {
+    "defaultMessage": "{context, select, home {ホームとリスト} notifications {通知} public {公開タイムライン} thread {スレッド} other {プロフィール}}",
+    "description": "The checkbox of a place a keyword filter applies in. context is as in settings.filters.place."
+  },
+  "settings.filters.contexts.missing": {
+    "defaultMessage": "場所を 1 つ以上選んでください。",
+    "description": "Under the places of a keyword filter when the reader pressed Add or Save with none checked."
+  },
+  "settings.filters.action": {
+    "defaultMessage": "一致した投稿",
+    "description": "The label of the choice of what a keyword filter does to a post that holds one of its words (settings.filters.action.choice)."
+  },
+  "settings.filters.action.choice": {
+    "defaultMessage": "{action, select, warn {警告の後ろに畳む} other {完全に隠す}}",
+    "description": "An option of what a keyword filter does to a matching post: warn shows only the filter's name with Show in its place, hide leaves it out of the list."
+  },
+  "settings.filters.ends": {
+    "defaultMessage": "期限",
+    "description": "The label of the choice of when a keyword filter stops applying (settings.filters.ends.choice)."
+  },
+  "settings.filters.ends.choice": {
+    "defaultMessage": "{choice, select, never {なし} m30 {30分後} h1 {1時間後} h6 {6時間後} h12 {12時間後} d1 {1日後} w1 {1週間後} other {日時を指定}}",
+    "description": "An option of when a keyword filter stops applying: never, after a duration counted from saving, or at a date and time the reader picks in a field that then shows (date)."
+  },
+  "settings.filters.ends.date": {
+    "defaultMessage": "終了日時",
+    "description": "The label of the field of the date and time a keyword filter ends at, in the reader's time zone, shown when At a date and time is chosen."
+  },
+  "settings.filters.ends.date_missing": {
+    "defaultMessage": "日時を選んでください。",
+    "description": "Under the end of a keyword filter when At a date and time is chosen and the field holds no date and time."
+  },
+  "settings.filters.ends.date_past": {
+    "defaultMessage": "今より後の日時を選んでください。",
+    "description": "Under the end of a keyword filter when the date and time chosen has passed."
+  },
+  "settings.filters.ends.keep": {
+    "defaultMessage": "{state, select, ended {そのまま ({date}に終了)} other {そのまま ({date}まで)}}",
+    "description": "The first option of when a keyword filter ends, for a filter that has an end: saving leaves the end as it is. state is ends or ended (the end has passed); date is the end, a date and time."
+  },
+  "settings.filters.delete": {
+    "defaultMessage": "フィルタを削除",
+    "description": "The heading of the last section of a keyword filter's form, for a filter that is there."
+  },
+  "settings.filters.delete.about": {
+    "defaultMessage": "言葉も一緒に削除され、このフィルタで畳んだり隠したりしていた投稿が再び表示されます。",
+    "description": "The line under the heading Delete filter: what deleting a keyword filter does."
+  },
+  "settings.filters.delete.open": {
+    "defaultMessage": "削除…",
+    "description": "The button of the section Delete filter, which asks before deleting the keyword filter."
+  },
+  "settings.filters.delete.title": {
+    "defaultMessage": "フィルタ「{name}」を削除しますか？",
+    "description": "The question of the confirmation before a keyword filter is deleted. name is the filter's name."
+  },
+  "settings.filters.delete.text": {
+    "defaultMessage": "言葉も一緒に削除され、元に戻せません。",
+    "description": "The text of the confirmation before a keyword filter is deleted."
+  },
+  "settings.filters.delete.confirm": {
+    "defaultMessage": "削除",
+    "description": "The button of the confirmation that deletes the keyword filter; the page then goes back to the list."
+  },
+  "settings.filters.delete.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation that keeps the keyword filter."
+  },
+  "settings.filters.delete.failed": {
+    "defaultMessage": "フィルタを削除できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of a keyword filter's form when deleting it got no answer from the server."
+  },
+  "settings.filters.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves a keyword filter's form with changes they have not saved."
+  },
+  "settings.filters.leave.text": {
+    "defaultMessage": "保存していない変更は失われ、元に戻せません。",
+    "description": "The text of the confirmation that asks whether to leave a keyword filter's form without saving."
+  },
+  "settings.filters.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves a keyword filter's form and drops the changes not saved."
+  },
+  "settings.filters.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on a keyword filter's form, with the changes as the reader left them."
+  },
+  "settings.filters.not_found": {
+    "defaultMessage": "このフィルタはありません。削除された可能性があります。",
+    "description": "In place of a keyword filter's form at an address that names no filter of the reader's; the link to the list follows it (settings.filters.all)."
+  },
+  "settings.filters.all": {
+    "defaultMessage": "すべてのフィルタを見る",
+    "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
   }
 }

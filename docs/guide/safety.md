@@ -24,13 +24,13 @@ To hold the notifications of people you don't know until you accept them, use th
 ## Muting a server
 
 "Mute server" in the same menu, for an account of another server, mutes its whole server and subdomains; "Muted
-domains", under "Relationships" in the settings, lists and adds them. It hides the posts of its accounts from your
+servers", under "Relationships" in the settings, lists them and lets you "Unmute" them. It hides the posts of its accounts from your
 timelines other than home, their boosts from your home timeline, and their notifications. The accounts of that server
 you follow stay on your home timeline. Only you are affected, and the server is not told.
 
 ## Filtering posts by keyword
 
-"Keyword filters", under "Display and notifications" in the settings, folds or hides the posts that contain words you
+"Keyword filters", under "People and filters" in the settings, folds or hides the posts that contain words you
 choose, whoever wrote them. [Keyword filters](keyword-filters.md) explains how to set them up and how their words match.
 
 ## When a moderator acts on your account

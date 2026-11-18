@@ -2,7 +2,7 @@
 // The viewer's keyword filters (ADR-0157): the words that fold or hide a post where the filter applies. The
 // server filters; the client lists, makes, changes and deletes them. After a filter is saved or deleted, the timelines
 // and the other places the posts show are read again (ADR-0157 §10), since a post may now be folded or shown.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -25,6 +25,26 @@ export type FilterContext = components["schemas"]["KeywordFilterContext"];
 /** Every place a filter may apply, in the order the server names them. */
 export const filterContexts: readonly FilterContext[] = ["home", "notifications", "public", "thread", "account"];
 
+/**
+ * The limits of ADR-0157 §8, §9, which the server keeps: the filters of a viewer, the words of a filter and of all
+ * their filters, the characters (grapheme clusters) of a filter's name and of a word once normalized.
+ */
+export const filterLimits = { filters: 100, filterWords: 100, words: 1000, title: 50, word: 100 } as const;
+
+/** A limit of `filterLimits` the server refused a write at. */
+export type FilterLimit = "filters" | "words";
+
+/**
+ * The limit `error` is the server's refusal at: the viewer has the most filters (`filters`), or the words would pass
+ * the most of a filter or of all their filters (`words`); undefined for any other failure.
+ */
+export function filterLimitOf(error: unknown): FilterLimit | undefined {
+  if (!(error instanceof ProblemError) || error.status !== 422) return undefined;
+  if (error.type === "/api/v1/problems/too-many-keyword-filters") return "filters";
+  if (error.type === "/api/v1/problems/too-many-filter-keywords") return "words";
+  return undefined;
+}
+
 /** The viewer's filters, the expired ones too. */
 export function keywordFiltersQuery({ queries }: AppData) {
   return queries.queryOptions("get", "/filters");
@@ -35,16 +55,38 @@ export function keywordFilterQuery({ queries }: AppData, id: string) {
   return queries.queryOptions("get", "/filters/{id}", { params: { path: { id } } });
 }
 
-/** The viewer's filters, empty until the server answered. */
-export function useKeywordFilters(): { filters: readonly KeywordFilter[]; status: "pending" | "error" | "success" } {
+/** The viewer's filters, empty until the server answered, and `retry`, which reads them again after a failure. */
+export function useKeywordFilters(): {
+  filters: readonly KeywordFilter[];
+  status: "pending" | "error" | "success";
+  retry: () => void;
+} {
   const query = useQuery(keywordFiltersQuery(useAppData()));
-  return { filters: query.data?.items ?? [], status: query.status };
+  return {
+    filters: query.data?.items ?? [],
+    status: query.status,
+    retry: () => {
+      void query.refetch();
+    },
+  };
 }
 
-/** The filter of `id`, undefined until the server answered, and its failure. */
-export function useKeywordFilter(id: string): { filter: KeywordFilter | undefined; error: Error | null } {
-  const query = useQuery(keywordFilterQuery(useAppData(), id));
-  return { filter: query.data, error: query.error as Error | null };
+/**
+ * The filter of `id`, undefined until the server answered, its failure, and `retry`, which reads it again; nothing is
+ * read while `enabled` is false (a filter not made yet).
+ */
+export function useKeywordFilter(
+  id: string,
+  enabled = true,
+): { filter: KeywordFilter | undefined; error: Error | null; retry: () => void } {
+  const query = useQuery({ ...keywordFilterQuery(useAppData(), id), enabled });
+  return {
+    filter: query.data,
+    error: query.error as Error | null,
+    retry: () => {
+      void query.refetch();
+    },
+  };
 }
 
 /** Reads the shown timelines and notifications, posts and threads again, now that the filters changed. */

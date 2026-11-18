@@ -10,8 +10,10 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { FilterSettings, loadFilterSettings } from "./filters";
 import { loadNotificationSettings, NotificationSettings } from "./notifications";
 import { loadProfileSettings, ProfileSettings } from "./profile";
+import { loadRelationshipSettings, RelationshipSettings } from "./relationships";
 
 /** The groups of the menu, in its order, each under its heading. */
 export const settingsGroups = [
@@ -87,6 +89,24 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.notifications.hint",
     Screen: NotificationSettings,
     load: loadNotificationSettings,
+  },
+  {
+    path: "relationships",
+    group: "people",
+    icon: "members",
+    name: "settings.entry.relationships",
+    hint: "settings.entry.relationships.hint",
+    Screen: RelationshipSettings,
+    load: loadRelationshipSettings,
+  },
+  {
+    path: "filters",
+    group: "people",
+    icon: "filter",
+    name: "settings.entry.filters",
+    hint: "settings.entry.filters.hint",
+    Screen: FilterSettings,
+    load: loadFilterSettings,
   },
 ];
 

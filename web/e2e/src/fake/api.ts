@@ -332,6 +332,8 @@ export type FakeOptions = {
   settings?: Partial<FakeSettings>;
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
+  /** The hashtags the reader follows at the start, by name, the first followed first. */
+  followedTags?: readonly string[];
   /**
    * The reader's preferences at the start, where they are not the server's defaults for a new account (the language
    * and the time zone follow the browser, new posts go into the timelines by themselves, large link cards): the ones
@@ -521,6 +523,8 @@ export type FakeApi = {
   announcementPath: (key: string) => string;
   /** The app's address of the reader's list at `index`, oldest first. */
   listPath: (index: number) => string;
+  /** The app's address of the editor of the reader's keyword filter at `index`, oldest first. */
+  filterPath: (index: number) => string;
   /** The ID of the seed's post of `key`, or of the reader's draft of that key. */
   idOf: (key: string) => string;
   /** The ID of the account of the seed's person of `username`. */
@@ -951,7 +955,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     created_at: l.created_at,
   });
   /** The hashtags the reader follows, by their names in lowercase. */
-  const followedTags = new Set<string>();
+  const followedTags = new Set<string>(o.followedTags?.map((name) => name.toLowerCase()));
   /** The hashtags of a text, in lowercase, as the server reads them. */
   const hashtagsOf = (text: string) => hashtagsIn(text).map((name) => name.toLowerCase());
   /** A hashtag as first written in a post, else as asked, and whether the reader follows it. */
@@ -2761,11 +2765,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /followed_tags": () => ({
       status: 200,
       body: {
-        items: [...followedTags].map((name, i) => ({
-          name,
-          url: `${fakeOrigin}/tags/${name}`,
-          followed_at: new Date(started - (followedTags.size - i) * day).toISOString(),
-        })),
+        // The latest followed first, as the server lists them.
+        items: [...followedTags]
+          .map((name, i) => ({
+            name,
+            url: `${fakeOrigin}/tags/${name}`,
+            followed_at: new Date(started - (followedTags.size - i) * day).toISOString(),
+          }))
+          .reverse(),
       },
     }),
     "GET /blocks": async ({ query }) => {
@@ -3622,6 +3629,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     `/announcements/${key === "ended" ? endedAnnouncement.id : announcementId(key)}`;
 
   const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
+  const filterPath = (index: number) => `/settings/filters/${personal.filterId(index) ?? "none"}`;
 
   const keyedId = (key: string) => {
     const post = statusId.get(key);
@@ -3649,6 +3657,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     postPath,
     announcementPath,
     listPath,
+    filterPath,
     idOf: keyedId,
     accountId: (username) => idOf(personOf(username).username),
     conversationPath,

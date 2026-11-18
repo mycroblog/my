@@ -60,4 +60,6 @@ browsers and apps stay signed in.
 
 ## Settings
 
-"Settings" in the navigation opens the settings. They hold "Display and posting" and "Notifications".
+"Settings" in the navigation opens the settings. They hold "Display and posting" and "Notifications";
+"Relationships", which lists the accounts you block and mute, the servers you mute and the hashtags you follow, each
+with the button that undoes it; and "Keyword filters", which lists your filters and adds, changes and deletes them.

@@ -264,6 +264,7 @@ export {
   SettingsGroup,
   SettingsItem,
   SettingsList,
+  SettingsListItem,
   SettingsListRow,
   SettingsMenu,
   SettingsScreen,

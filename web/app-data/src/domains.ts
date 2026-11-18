@@ -6,6 +6,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { Marking } from "./accounts";
 import type { AppData } from "./app-data";
+import { wholeList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 
 /** The domains the viewer mutes, in IDNA A-labels, every page of them read. */
@@ -27,6 +28,11 @@ export function domainMutesQuery(data: AppData) {
       return domains;
     },
   };
+}
+
+/** The domains the viewer mutes, in the order the server lists them, for a screen that lists them. */
+export function useMutedDomains(): PagedList<string> {
+  return wholeList(useQuery(domainMutesQuery(useAppData())));
 }
 
 /** Whether `domain` is `muted` or one of its subdomains. */

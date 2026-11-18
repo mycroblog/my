@@ -69,6 +69,8 @@ export {
 } from "./settings/entries";
 export { SettingsBeside, settingsEntryPath, SettingsIndex } from "./settings/menu";
 export { loadProfileEdit, ProfileEdit, useProfileEditTitle, type ProfileEditProps } from "./settings/profile-edit";
+export { FilterEdit, loadFilterEdit, useFilterEditTitle, type FilterEditProps } from "./settings/filter-edit";
+export { loadRelationshipSettings, RelationshipListScreen, useRelationshipListTitle } from "./settings/relationships";
 export { SettingsEntryScreen, useSettingsTitle, type SettingsEntryScreenProps } from "./settings/screen";
 export { SignOutDialog, type SignOutDialogProps } from "./settings/sign-out";
 export { UnsavedSettings } from "./settings/unsaved";

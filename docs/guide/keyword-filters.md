@@ -6,26 +6,26 @@ result. Only you see your filters, and nobody is told about them.
 
 ## Adding a filter
 
-Open "Keyword filters" under "Display and notifications" in the settings, and choose "Add a filter":
+Open "Keyword filters" under "People and filters" in the settings, and choose "Add a filter":
 
 1. **Name:** what a folded post shows in its place ("Matches filter “Season finale”"), up to 50 characters.
 2. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
    makes it match only as a whole word (see [How words match](#how-words-match)).
 3. **Where it applies:** your home timeline and lists, your notifications, the local, federated, and hashtag
    timelines, threads, and profiles. A new filter applies everywhere; clear the places you do not want.
-4. **What it does:** "Fold" puts the post behind the filter's name, with "Show" to read it. "Hide" leaves the post
-   out, and its notification too.
-5. **Ends:** "Never", or after one of the durations offered, from 30 minutes to a week.
+4. **What it does:** "Fold behind a warning" puts the post behind the filter's name, with "Show" to read it. "Hide
+   completely" leaves the post out, and its notification too.
+5. **Ends:** "Never", after one of the durations offered, from 30 minutes to a week, or "At a date and time".
 
-Choose "Add". "Edit" on a filter changes any of these, and "Delete" removes it with its words after asking. A filter
-applies at once to every post, old ones too; the timelines open on screen load again to show the change.
+Choose "Add". A filter of the list opens it to change any of these, and "Delete…" there removes it with its words after
+asking. A filter applies at once to every post, old ones too; the timelines open on screen load again to show the change.
 
 Searching, your bookmarks and favourites, and your direct messages are never filtered. Neither are your own posts and
 boosts, nor the posts they quote.
 
 ## What a filtered post looks like
 
-A post that a "Fold" filter matches shows only "Matches filter" with the names of the filters it matched, and "Show".
+A post that a folding filter matches shows only "Matches filter" with the names of the filters it matched, and "Show".
 Its author, text, and pictures stay out of sight, and a screen reader reads only that line, until you choose "Show";
 "Hide" folds it again, as does coming back to the page.
 
@@ -38,7 +38,7 @@ something.
 ## When a filter ends
 
 A filter with an end stops applying at that moment. It stays in your list, marked "Expired", until you delete it. To use
-it again, choose "Edit" and a new end, or "Never". While you edit a filter that has an end, "Keep" leaves the end as it
+it again, open it and choose a new end, or "Never". While you edit a filter that has an end, "Keep" leaves the end as it
 is.
 
 ## How words match

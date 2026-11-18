@@ -52,6 +52,30 @@ export type PagedList<T> = {
   readonly refetch: () => void;
 };
 
+/**
+ * A list the server answers whole, or that is read whole (every page of it at once), in the shape of a paged one whose
+ * last page is read: what a screen that shows lists of both kinds reads of it.
+ */
+export function wholeList<T>(query: {
+  readonly data: readonly T[] | undefined;
+  readonly status: "pending" | "error" | "success";
+  /** The client rejects with a ProblemError or a NetworkError of mykit, whatever the query's type says. */
+  readonly error: unknown;
+  readonly refetch: () => Promise<unknown>;
+}): PagedList<T> {
+  return {
+    items: query.data ?? [],
+    status: query.status,
+    error: query.error as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    fetchNextPage: () => undefined,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
+
 /** The list of `options` (a `pagedQuery`), for a screen; nothing is fetched while `enabled` is false. */
 export function usePagedList<T>(options: ReturnType<typeof pagedQuery<T>>, enabled = true): PagedList<T> {
   const query = useInfiniteQuery({ ...options, enabled });

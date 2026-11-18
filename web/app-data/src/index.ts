@@ -147,7 +147,7 @@ export {
   type Relationship,
   type RelationshipChange,
 } from "./accounts";
-export { domainMutesQuery, muteDomain, useMutedDomain, useMuteDomain } from "./domains";
+export { domainMutesQuery, muteDomain, useMutedDomain, useMutedDomains, useMuteDomain } from "./domains";
 export {
   cachePostedStatus,
   choiceOf,
@@ -407,6 +407,7 @@ export {
   useBadgeChoices,
   useChooseBadge,
   useCredentials,
+  useFollowedHashtagList,
   useFollowedHashtags,
   useOwnFeaturedHashtags,
   useProfileRead,
@@ -425,6 +426,8 @@ export { blocksQuery, mutesQuery, useBlocks, useMutes, type MutedAccount } from 
 export {
   deleteKeywordFilter,
   filterContexts,
+  filterLimitOf,
+  filterLimits,
   keywordFilterQuery,
   keywordFiltersQuery,
   saveKeywordFilter,
@@ -434,6 +437,7 @@ export {
   type FilterAction,
   type FilterContext,
   type FilterKeyword,
+  type FilterLimit,
   type KeywordFilter,
   type KeywordFilterRequest,
 } from "./keyword-filters";

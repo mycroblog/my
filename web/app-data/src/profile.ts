@@ -14,6 +14,7 @@ import {
 } from "./accounts";
 import type { AppData } from "./app-data";
 import { refusedField, uploadAttachment } from "./compose";
+import { wholeList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 
 /** The viewer's own account: the profile with the choices only its owner reads. */
@@ -224,4 +225,10 @@ export function followedHashtagsQuery({ queries }: AppData) {
 /** The hashtags the viewer follows; empty until the server answered. */
 export function useFollowedHashtags(): readonly FollowedHashtag[] {
   return useQuery(followedHashtagsQuery(useAppData())).data?.items ?? [];
+}
+
+/** The hashtags the viewer follows, the latest followed first, for a screen that lists them with how its read went. */
+export function useFollowedHashtagList(): PagedList<FollowedHashtag> {
+  const query = useQuery(followedHashtagsQuery(useAppData()));
+  return wholeList({ ...query, data: query.data?.items });
 }

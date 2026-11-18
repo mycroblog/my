@@ -146,6 +146,11 @@ export const moderatorNotificationRows: readonly FakeNotificationRow[] = (
 export type FakeSettings = {
   /** The reader's keyword filters, oldest first; an expiry in the past makes one expired. */
   filters: readonly FakeFilter[];
+  /**
+   * How a filter's save is answered, where not as the server would: `title` refuses the name of every filter made or
+   * changed, naming the field; `waits` never answers.
+   */
+  filterSave?: "title" | "waits" | undefined;
   /** The badges of the roles the reader holds. */
   badges: readonly Omit<BadgeChoice, "role_id">[];
   /** The hashtags the reader features, by name. */
@@ -346,6 +351,8 @@ export type SettingsState = {
   featured: () => FeaturedHashtag[];
   /** The badges the reader shows on their profile now. */
   shownBadges: () => { role_id: string; label: string; color: Schema<"BadgeColor"> }[];
+  /** The ID of the reader's filter at `index`, oldest first; none past the last. */
+  filterId: (index: number) => string | undefined;
 };
 
 /** Creates the state of the personal settings from `env.settings`, and the handlers that answer for it. */
@@ -376,14 +383,17 @@ export function createSettings(env: SettingsEnv): SettingsState {
   const filterLimits = { filters: 100, keywords: 1000, perFilter: 100 };
   const checkFilter = (f: Schema<"KeywordFilterRequest">, others: readonly KeywordFilter[]) => {
     const title = f.title.trim();
+    const invalid = (field: string, detail: string) => problem(422, "This could not be done.", { detail, field });
     if (Array.from(title).length < 1 || Array.from(title).length > 50 || /[\p{Cc}]/u.test(title))
-      return problem(422, "The name is 1 to 50 characters on one line");
-    if (f.contexts.length === 0) return problem(422, "A filter applies somewhere");
-    if (f.keywords.length < 1 || f.keywords.length > filterLimits.perFilter)
-      return problem(422, "A filter has 1 to 100 words");
+      return invalid("title", "The name is 1 to 50 characters on one line.");
+    if (settings.filterSave === "title") return invalid("title", "This name cannot be used.");
+    if (f.contexts.length === 0) return invalid("contexts", "A filter applies somewhere.");
+    if (f.keywords.length < 1) return invalid("keywords", "A filter has at least one word.");
+    const long = f.keywords.findIndex((k) => Array.from(k.keyword.trim()).length > 100);
+    if (long >= 0) return invalid(`keywords[${String(long)}].keyword`, "A word is up to 100 characters.");
     const words = others.reduce((n, o) => n + o.keywords.length, 0) + f.keywords.length;
-    if (words > filterLimits.keywords)
-      return refused("You have as many words in your filters as you may", "too-many-filter-words", 422);
+    if (f.keywords.length > filterLimits.perFilter || words > filterLimits.keywords)
+      return refused("You have as many words in your filters as you may", "too-many-filter-keywords", 422);
     return undefined;
   };
   const trimmed = (f: Schema<"KeywordFilterRequest">): Schema<"KeywordFilterRequest"> => ({
@@ -622,11 +632,12 @@ export function createSettings(env: SettingsEnv): SettingsState {
   const handlers: Handlers = {
     "GET /filters": () => ({ status: 200, body: { items: filters.map(nowFilter) } }),
     "POST /filters": ({ body }) => {
+      if (settings.filterSave === "waits") return new Promise<never>(() => undefined);
       const request = trimmed(body);
       const refusal_ = checkFilter(request, filters);
       if (refusal_ !== undefined) return refusal_;
       if (filters.length >= filterLimits.filters)
-        return refused("You have as many filters as you may", "too-many-filters", 422);
+        return refused("You have as many filters as you may", "too-many-keyword-filters", 422);
       const made = makeFilter(request, new Date().toISOString());
       filters.push(made);
       return { status: 201, body: nowFilter(made) };
@@ -636,6 +647,7 @@ export function createSettings(env: SettingsEnv): SettingsState {
       return found === undefined ? notFound() : { status: 200, body: nowFilter(found) };
     },
     "PATCH /filters/{id}": ({ params, body }) => {
+      if (settings.filterSave === "waits") return new Promise<never>(() => undefined);
       const at_ = filters.findIndex((f) => f.id === params.id);
       const old = filters[at_];
       if (old === undefined) return notFound();
@@ -842,5 +854,6 @@ export function createSettings(env: SettingsEnv): SettingsState {
 
   const shownBadges = () =>
     badges.filter((b) => b.displayed).map(({ role_id, label, color }) => ({ role_id, label, color }));
-  return { handlers, judged, featured: featuredBody, shownBadges };
+  const filterId = (index: number) => filters[index]?.id;
+  return { handlers, judged, featured: featuredBody, shownBadges, filterId };
 }
