@@ -2,7 +2,7 @@ name: CI
 
 # The checks of a pull request and of the merge queue (ADR-0079), and the one required status check, `gate`.
 #
-# Two stages, and a check belongs to one of them (ADR-0079 §18):
+# Two stages, and a check belongs to one of them (ADR-0079 §18), but for the tests of the Go modules:
 #
 # - A pull request runs what its own files decide, so that stacking pull requests in the merge queue cannot change the
 #   result (ADR-0079 §2): formatting, the lints, the licenses of the dependencies, the image when the Docker files
@@ -39,7 +39,8 @@ name: CI
 #     docker-static, docker-smoke              the image (ADR-0079 §4)
 #     monitoring-test                          the alerting rules
 #   on a pull request and in the merge queue
-#     server-test, agentkit-test, mykit-test   a Go module's lint (on a pull request), static checks, and tests
+#     server-test, agentkit-test, mykit-test   a Go module's lint (on a pull request) and tests, with the static
+#                                              checks of the two small modules
 #   in the merge queue
 #     server-static, server-contract                the server module as a whole; its adapters on their real services
 #     schema-static, api-test                       the schema; the client API and the plugin protocol
@@ -82,8 +83,11 @@ name: CI
 # so that it does not make its neighbours wait. When no job fits, add a job: its rule in scripts/ci-jobs.sh (which
 # paths run it), its name in `needs` of `gate`, and a line in the list above; scripts/ci-jobs-test.sh (the shell-test
 # job) fails while one of them is missing. A check of `scripts/task.sh check` that no step runs fails docs:ci-coverage
-# (the ci-static job). When the check builds Go code with other flags or tags than the jobs here do, main.yml must
-# build the same, or the check compiles everything each time.
+# (the ci-static job): a check that needs no Docker, no browser, and no network joins `check`, so that it runs
+# locally too and that guard covers it; the others have their step alone. A job that slow-suite.yml has under the same
+# name (deps-license, docker-smoke, web-test, web-e2e) gets the step there too. When the check builds Go code with
+# other flags or tags than the jobs here do, or runs a Go tool of its own, main.yml must build the same, or the check
+# compiles everything each time.
 #
 # The workflow has no path filter, so it always runs and `gate` always reports (ADR-0079 §6). Pushes to main run
 # main.yml instead.

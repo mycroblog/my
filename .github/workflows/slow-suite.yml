@@ -31,7 +31,7 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #
 # Two subjects name the image: `docker` is the Dockerfile and the Compose files, built and started as a deployment
 # starts them; `image` is the built image as what a release ships, upgraded to and restored from. The kinds are those
-# of ci.yml, and three of this suite: `live`, against other servers; `scan`, which walks everything for one class of
+# of ci.yml, and these of this suite: `live`, against other servers; `scan`, which walks everything for one class of
 # defect; `upgrade` and `restore`, a release's data carried over.
 #
 # `scope` picks the jobs: `all`; `release`, only the jobs that check the commit's images against a release
@@ -41,9 +41,9 @@ run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite
 #
 # To add a check: a step in the job with its subject and kind, or, when none fits, a job with
 # `if: inputs.scope == 'all'`, its name in `needs` of `result`, and a line in the list above;
-# scripts/ci-jobs-test.sh fails when `result` does not need a job. A job has `!= 'none'` instead only when its result
-# depends on the release being made and not on the commit alone (the version to upgrade from; the image a release
-# builds from the commit), so that a release runs it even when the suite already passed on the commit (ADR-0079 §8).
+# scripts/ci-jobs-test.sh (the shell-test job of ci.yml) fails when `result` does not need a job. Only image-upgrade
+# and image-restore have `!= 'none'` instead: ADR-0079 §8 names the two checks that every release runs on its own
+# image, even when the suite already passed on the commit. A new job is `== 'all'` unless that section gains it.
 # Its steps are named after the tasks they run, one after another: what uses every core does not share a runner
 # (ADR-0079 §11). A job here gates the releases and the nightly image, and a failure of it opens the Nightly's issue:
 # a check that only informs does not belong here.

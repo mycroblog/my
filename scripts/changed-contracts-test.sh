@@ -71,6 +71,11 @@ for contract in $all; do
     echo "FAIL: tasks/go.yml has no task test-$contract, which contract.yml runs for the contract $contract" >&2
     failed=1
   fi
+  # A contract with no case of its own would run in the slow suite alone.
+  if ! grep -qF "selected[$contract]=1" "$script"; then
+    echo "FAIL: scripts/changed-contracts.sh has no case that selects $contract: add one with the paths of its adapter, its contract suite, and its test server" >&2
+    failed=1
+  fi
 done
 
 if [ "$failed" -ne 0 ]; then

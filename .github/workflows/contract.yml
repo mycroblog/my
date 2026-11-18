@@ -21,9 +21,12 @@ run-name: Contract (${{ inputs.contract }})
 #
 # To add a contract: a task `go:test-<name>` in tasks/go.yml, which makes a missing Docker fail the tests; its name
 # here (the list above and the options below), in the matrix of slow-suite.yml's server-contract, and in the list
-# `ALL` of scripts/changed-contracts.sh, with a `case` there of the paths that select it (its adapter, its contract
-# suite, its test server). scripts/changed-contracts-test.sh fails while the four lists differ. ci.yml needs no
-# change: its server-contract runs whatever contracts that script prints for a merge group.
+# `ALL` of scripts/changed-contracts.sh, with a `case` there of the paths that select it: the directory of the adapter,
+# and the files of pkg/testkit that hold its contract suite and start its service, as the other contracts' cases
+# name them. scripts/changed-contracts-test.sh (the shell-test job of ci.yml) fails while the options, the matrix,
+# `ALL`, and the tasks differ, or while a contract of `ALL` has no `case`. ci.yml and scripts/ci-jobs.sh need no
+# change: the rule of server-contract is that the script prints a contract for the merge group, and its matrix is
+# what the script prints.
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context.
 
