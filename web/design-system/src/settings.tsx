@@ -623,6 +623,10 @@ const list = tv({
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
     // A fact is a few words around a date or an address: it breaks at its spaces alone, so that neither is cut.
     fact: "text-caption text-muted-text [word-break:keep-all]",
+    // A row of several lines (a title over its facts): its title strong, as the menu's entries, and the rows further
+    // apart than its own lines are, so that each reads as one.
+    named: "font-label",
+    spaced: "py-screen-row-gap",
     // A state at the row's end: words alone, muted, with no surface, which is a button's.
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
@@ -689,7 +693,7 @@ export function SettingsListRow({
         </Row>
       )}
       <Stack as="span" grow>
-        <bdi id={titleId} className={s.title()}>
+        <bdi id={titleId} className={facts === undefined ? s.title() : `${s.title()} ${s.named()}`}>
           {title}
         </bdi>
         {caption !== undefined && (
@@ -718,7 +722,7 @@ export function SettingsListRow({
   if (href !== undefined)
     return (
       <Stack as="li">
-        <LinkRow as={<Link href={href} className={s.link()} />}>
+        <LinkRow as={<Link href={href} className={facts === undefined ? s.link() : `${s.link()} ${s.spaced()}`} />}>
           {parts}
           <Row as="span" inline rigid className={s.chevron()}>
             <Icon name="onward" place="action" />
@@ -727,7 +731,12 @@ export function SettingsListRow({
       </Stack>
     );
   return (
-    <Row as="li" align="center" gap="screen-row-gap" className={value ? s.value() : s.row()}>
+    <Row
+      as="li"
+      align="center"
+      gap="screen-row-gap"
+      className={value ? s.value() : facts === undefined ? s.row() : `${s.row()} ${s.spaced()}`}
+    >
       {parts}
       {end !== undefined && end !== null && end !== false && (
         <Row as="span" inline rigid align="center" gap="screen-tabs-gap" role="group" aria-labelledby={titleId}>

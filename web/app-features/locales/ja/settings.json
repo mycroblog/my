@@ -867,6 +867,10 @@
     "defaultMessage": "{date}まで",
     "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
   },
+  "settings.relationships.whole": {
+    "defaultMessage": "{list, select, blocked {アカウント} muted {アカウント} servers {サーバー} other {ハッシュタグ}}",
+    "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): what the list holds, the count follows it. list is as in settings.relationships.list."
+  },
   "settings.filters.list": {
     "defaultMessage": "フィルタ",
     "description": "The heading of the one section of the settings' page Keyword filters, the list of the reader's filters; the count follows it."
@@ -887,25 +891,9 @@
     "defaultMessage": "キーワードフィルタはありません。フィルタは、その言葉を含む投稿を、選んだ場所で畳むか隠します。",
     "description": "In place of the list of keyword filters while the reader has none; Add a filter follows it."
   },
-  "settings.filters.does": {
-    "defaultMessage": "{action, select, warn {一致した投稿を警告の後ろに畳む} other {一致した投稿を隠す}}",
-    "description": "A line under a filter's name in the list of keyword filters: what it does to a post that holds one of its words. action is warn (the post shows only the filter's name and Show) or hide (the post is left out). A phrase, without a full stop."
-  },
-  "settings.filters.where": {
-    "defaultMessage": "{places}に適用",
-    "description": "A line under a filter's name in the list of keyword filters: where it applies. places is a list of settings.filters.place joined in the reader's language (home and lists, notifications and threads). A phrase, without a full stop."
-  },
   "settings.filters.place": {
     "defaultMessage": "{context, select, home {ホームとリスト} notifications {通知} public {公開タイムライン} thread {スレッド} other {プロフィール}}",
     "description": "A place a keyword filter applies, inside settings.filters.where, so in lower case in en: home (the home timeline and the lists' timelines), notifications, public (the local, federated and hashtag timelines), thread (the posts before and after a post), account (a profile's posts)."
-  },
-  "settings.filters.words_count": {
-    "defaultMessage": "{count, plural, other {#語}}",
-    "description": "A line under a filter's name in the list of keyword filters: how many words or phrases it has. Without a full stop."
-  },
-  "settings.filters.ends_at": {
-    "defaultMessage": "{state, select, never {期限なし} ended {{date}に終了} other {{date}まで}}",
-    "description": "The last line under a filter's name in the list of keyword filters: when it stops applying. state is never, ends (it ends at date) or ended (it ended at date and applies nowhere until its end moves later); date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
   },
   "settings.filters.expired": {
     "defaultMessage": "期限切れ",
@@ -923,13 +911,13 @@
     "defaultMessage": "フィルタを保存できませんでした。もう一度試してください。",
     "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
   },
-  "settings.filters.section.filter": {
-    "defaultMessage": "フィルタ",
-    "description": "The heading of the first section of a keyword filter's form, which holds its name."
+  "settings.filters.save.refused": {
+    "defaultMessage": "フィルタを保存できませんでした。示した箇所を直して、もう一度保存してください。",
+    "description": "In the bar at the bottom of a keyword filter's form when the form or the server found something wrong with a field, which says what under that field."
   },
-  "settings.filters.section.does": {
-    "defaultMessage": "動作",
-    "description": "The heading of the section of a keyword filter's form that holds what it does to a matching post and when it ends."
+  "settings.filters.section.filter": {
+    "defaultMessage": "名前と動作",
+    "description": "The heading of the first section of a keyword filter's form, which holds its name, what it does to a matching post, and when it ends."
   },
   "settings.filters.name": {
     "defaultMessage": "名前",
@@ -946,6 +934,10 @@
   "settings.filters.name.over": {
     "defaultMessage": "名前は{max}文字までです。",
     "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
+  },
+  "settings.filters.name.rule": {
+    "defaultMessage": "名前は1行で1〜{max}文字です。タブなどの制御文字は使えません。",
+    "description": "Under the field of a keyword filter's name when the server refused it: the rule a name follows. max is 50."
   },
   "settings.filters.words": {
     "defaultMessage": "言葉",
@@ -1003,6 +995,10 @@
     "defaultMessage": "言葉は{max}文字までです。",
     "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
   },
+  "settings.filters.word.rule": {
+    "defaultMessage": "言葉は1〜{max}文字です。タブなどの制御文字は使えません。",
+    "description": "Under the field of a word of a keyword filter when the server refused it: the rule a word follows. max is 100."
+  },
   "settings.filters.contexts": {
     "defaultMessage": "適用する場所",
     "description": "The heading of the section of a keyword filter's form that holds the places it applies in, a checkbox each (settings.filters.context)."
@@ -1046,6 +1042,10 @@
   "settings.filters.ends.keep": {
     "defaultMessage": "{state, select, ended {そのまま ({date}に終了)} other {そのまま ({date}まで)}}",
     "description": "The first option of when a keyword filter ends, for a filter that has an end: saving leaves the end as it is. state is ends or ended (the end has passed); date is the end, a date and time."
+  },
+  "settings.filters.ends.ended": {
+    "defaultMessage": "このフィルタは{date}に終了し、どこにも適用されていません。新しい期限を選ぶと、再び有効になります。",
+    "description": "The line under Ends in the form of a keyword filter whose end has passed. date is the end, a date and time."
   },
   "settings.filters.delete": {
     "defaultMessage": "フィルタを削除",
@@ -1102,5 +1102,13 @@
   "settings.filters.all": {
     "defaultMessage": "すべてのフィルタを見る",
     "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
+  },
+  "settings.filters.facts.does": {
+    "defaultMessage": "{action, select, warn {一致した投稿を警告の後ろに畳む} other {一致した投稿を隠す}} · {count, plural, other {#語}}",
+    "description": "The first line under a filter's name in the list of keyword filters: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out), and how many words or phrases it has. Without a full stop."
+  },
+  "settings.filters.facts.where": {
+    "defaultMessage": "{places}に適用 · {state, select, never {期限なし} ended {{date}に終了} other {{date}まで}}",
+    "description": "The second line under a filter's name in the list of keyword filters: where it applies, and when it stops applying. places is a list of settings.filters.place joined in the reader's language; state is never, ends (it ends on date) or ended (it ended on date and applies nowhere); date is a day (Dec 18, 2026). Without a full stop."
   }
 }

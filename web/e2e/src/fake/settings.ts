@@ -386,7 +386,8 @@ export function createSettings(env: SettingsEnv): SettingsState {
     const invalid = (field: string, detail: string) => problem(422, "This could not be done.", { detail, field });
     if (Array.from(title).length < 1 || Array.from(title).length > 50 || /[\p{Cc}]/u.test(title))
       return invalid("title", "The name is 1 to 50 characters on one line.");
-    if (settings.filterSave === "title") return invalid("title", "This name cannot be used.");
+    // As the server answers a name it refuses (clientapi's keywordFilterProblem): the field, and that it is not valid.
+    if (settings.filterSave === "title") return invalid("title", "This value is not valid. Check what you entered.");
     if (f.contexts.length === 0) return invalid("contexts", "A filter applies somewhere.");
     if (f.keywords.length < 1) return invalid("keywords", "A filter has at least one word.");
     const long = f.keywords.findIndex((k) => Array.from(k.keyword.trim()).length > 100);

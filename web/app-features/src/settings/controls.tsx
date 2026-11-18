@@ -9,11 +9,11 @@
 // the server answered what it shows.
 
 import {
+  Button,
   FeedNotice,
   Select,
   SettingRow,
   Switch,
-  TextButton,
   useLocale,
   type SelectGroup,
   type SelectOption,
@@ -106,16 +106,25 @@ export function Choice({
 }
 
 /**
- * What a settings screen says in its sections' place (`notice` of a `SettingsScreen`) until what it shows is read:
- * that it loads, or that it could not be read, with the way to try again.
+ * What a settings screen says in its sections' place (`notice` of a `SettingsScreen`) until what it shows is read, as
+ * the screen's text reads, at its start: that it loads, or that it could not be read, with Try again after it, a
+ * button whose target is a finger's on a touch screen.
  */
 export function ReadingNotice({ failed, onRetry }: { failed: boolean; onRetry: () => void }) {
   const { t } = stringsIn(useLocale().locale);
   return failed ? (
-    <FeedNotice alert action={<TextButton onPress={onRetry}>{t("settings.retry")}</TextButton>}>
+    <FeedNotice
+      alert
+      lead
+      action={
+        <Button size="timeline" touch onPress={onRetry}>
+          {t("settings.retry")}
+        </Button>
+      }
+    >
       {t("settings.failed")}
     </FeedNotice>
   ) : (
-    <FeedNotice>{t("settings.loading")}</FeedNotice>
+    <FeedNotice lead>{t("settings.loading")}</FeedNotice>
   );
 }

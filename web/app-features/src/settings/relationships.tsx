@@ -3,9 +3,10 @@
 // Relationships, the entry of the settings at /settings/relationships (FR-303, FR-304): the four lists of what the
 // reader keeps between them and others, a section each, in this order: the accounts they block, the accounts they
 // mute, the servers they mute, and the hashtags they follow. A reader comes here to undo one thing and leave, so the
-// entry shows every list at once, the first few of each, its count once the whole of it is read, and the door to the
-// whole list on a screen under the entry (/settings/relationships/<list>), which pages through it, only where it has
-// more. An account leads to its profile, and a muted one says what the mute covers (its notifications too, until
+// entry shows every list at once with its count once the whole of it is read: a list of seven rows or fewer whole, a
+// longer one by its first five and the door to the whole list (a row that leads on, with its chevron), on a screen
+// under the entry (/settings/relationships/<list>) that pages through it, its section named by what it lists, since
+// the screen's title names the list. An account leads to its profile, and a muted one says what the mute covers (its notifications too, until
 // when) where the server says it.
 //
 // Each row is taken out of its list as the profile's and a post's menus undo the same: at once, with no confirmation
@@ -39,7 +40,6 @@ import {
   Button,
   dateFormat,
   FeedNotice,
-  LinkButton,
   Row,
   SettingsEmpty,
   SettingsList,
@@ -48,7 +48,6 @@ import {
   SettingsScreen,
   SettingsSection,
   Stack,
-  TextButton,
   TextLink,
   useLocale,
   useTimeZone,
@@ -73,7 +72,11 @@ const relationshipListPath = (list: RelationshipList): string => `${entryPath}/$
 /** Whether `path`, the last part of an address under the entry, names one of its lists. */
 const isRelationshipList = (path: string): path is RelationshipList => relationshipLists.some((list) => list === path);
 
-/** How many of each list the entry shows before the door to the whole of it. */
+/**
+ * How the entry shows a list: whole while it has `most` rows at most, else its first `few` and the door to the whole
+ * of it, which then hides three rows or more: a door is worth its press only past a row or two.
+ */
+const most = 7;
 const few = 5;
 
 /** What the route's loader waits for: the first page of each list, from the cache when it has them. */
@@ -155,17 +158,22 @@ type ListOf<I> = {
 function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { capped: boolean; t: T }) {
   const { lang } = stringsIn(useLocale().locale);
   const { busy, remove, status } = useRemovals();
-  const heading = t("settings.relationships.list", { list });
+  // On the screen of the whole list, whose title names the list, the section is named by what it lists.
+  const heading = t(capped ? "settings.relationships.list" : "settings.relationships.whole", { list });
   const whole = items.status === "success" && !items.hasNextPage;
-  const shown = capped ? items.items.slice(0, few) : items.items;
+  const door = capped && (items.items.length > most || items.hasNextPage);
+  const shown = door ? items.items.slice(0, few) : items.items;
   const failedMore = items.status === "success" && items.error !== null && items.hasNextPage;
+  const retry = (onPress: () => void) => (
+    <Button size="timeline" touch onPress={onPress}>
+      {t("settings.retry")}
+    </Button>
+  );
   const rows =
     items.status === "pending" ? (
       <SettingsEmpty>{t("settings.relationships.loading")}</SettingsEmpty>
     ) : items.status === "error" ? (
-      <SettingsEmpty action={<TextButton onPress={items.refetch}>{t("settings.retry")}</TextButton>}>
-        {t("settings.relationships.failed_list")}
-      </SettingsEmpty>
+      <SettingsEmpty action={retry(items.refetch)}>{t("settings.relationships.failed_list")}</SettingsEmpty>
     ) : items.items.length === 0 ? (
       <SettingsEmpty>{t("settings.relationships.empty", { list })}</SettingsEmpty>
     ) : (
@@ -182,22 +190,19 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
         })}
       </SettingsList>
     );
+  const all = t("settings.relationships.all", { list });
   const more = capped ? (
-    (items.items.length > few || items.hasNextPage) && (
-      <Row justify="start">
-        <LinkButton href={relationshipListPath(list)} size="timeline">
-          {t("settings.relationships.all", { list })}
-        </LinkButton>
-      </Row>
+    door && (
+      <SettingsList label={all}>
+        <SettingsListRow title={all} href={relationshipListPath(list)} />
+      </SettingsList>
     )
   ) : failedMore && !items.isFetchingNextPage ? (
-    <SettingsEmpty action={<TextButton onPress={items.fetchNextPage}>{t("settings.retry")}</TextButton>}>
-      {t("settings.relationships.failed_more")}
-    </SettingsEmpty>
+    <SettingsEmpty action={retry(items.fetchNextPage)}>{t("settings.relationships.failed_more")}</SettingsEmpty>
   ) : (
     items.hasNextPage && (
       <Row justify="start">
-        <Button size="timeline" busy={items.isFetchingNextPage} onPress={items.fetchNextPage}>
+        <Button size="timeline" touch busy={items.isFetchingNextPage} onPress={items.fetchNextPage}>
           {t("settings.relationships.more")}
         </Button>
       </Row>
@@ -244,6 +249,7 @@ function Blocked({ capped, t }: { capped: boolean; t: T }) {
               end={
                 <Button
                   size="timeline"
+                  touch
                   busy={busy}
                   onPress={() => {
                     remove({
@@ -308,6 +314,7 @@ function Muted({ capped, t }: { capped: boolean; t: T }) {
               end={
                 <Button
                   size="timeline"
+                  touch
                   busy={busy}
                   onPress={() => {
                     remove({
@@ -344,6 +351,7 @@ function Servers({ capped, t }: { capped: boolean; t: T }) {
           end={
             <Button
               size="timeline"
+              touch
               busy={busy}
               onPress={() => {
                 remove({
@@ -381,6 +389,7 @@ function Hashtags({ capped, t }: { capped: boolean; t: T }) {
             end={
               <Button
                 size="timeline"
+                touch
                 busy={busy}
                 onPress={() => {
                   remove({

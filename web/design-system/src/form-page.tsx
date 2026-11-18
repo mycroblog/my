@@ -493,7 +493,11 @@ export function FieldError({ id, children }: { id?: string | undefined; children
   );
 }
 
-/** A checkbox with its label at its end, its error under it; it posts `value` under `name` when checked. */
+/**
+ * A checkbox with its label at its end, its error under it; it posts `value` under `name` when checked. `touch`: the
+ * label, its press target, is a finger's target tall, the box at its middle (one of a settings section's checkboxes,
+ * one under another).
+ */
 export function CheckField({
   id,
   name,
@@ -505,6 +509,7 @@ export function CheckField({
   required,
   error,
   describedBy,
+  touch = false,
 }: {
   id: string;
   name: string;
@@ -517,12 +522,18 @@ export function CheckField({
   required?: boolean | undefined;
   error?: string | undefined;
   describedBy?: string | undefined;
+  touch?: boolean | undefined;
 }) {
   const s = form();
   const described = [describedBy, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
   return (
     <Stack gap="form-page-field-gap">
-      <Row as="label" align="start" gap="form-page-alert-gap">
+      <Row
+        as="label"
+        align={touch ? "center" : "start"}
+        gap="form-page-alert-gap"
+        className={touch ? "min-h-icon-button-touch" : undefined}
+      >
         <Box
           rigid
           as={

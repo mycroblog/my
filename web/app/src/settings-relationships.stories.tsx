@@ -3,9 +3,9 @@
 // Relationships, the entry of the settings (FR-303, FR-304, ADR-0110 §5), on the fake server as yuki reads it: the
 // accounts they block (the scenario's quickdeals, and the account sora left behind), the account they mute (kai, its
 // notifications too), two servers they mute and two hashtags they follow; with every list empty, each saying what it
-// would hold and how something gets there; with more servers and hashtags than the entry shows, each with its door to
-// the whole list; the whole list of the muted servers, the screen under the entry; and while it loads, and when it
-// could not be read.
+// would hold and how something gets there; with nine muted servers, of which the entry shows five and the door to the
+// whole list, and seven hashtags, shown whole; the whole list of the muted servers, the screen under the entry; and
+// while it loads, and when it could not be read.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -15,7 +15,9 @@ const at = "/settings/relationships";
 /** The servers and hashtags of the entry's first story, beside the scenario's blocks and mute. */
 const server = { domainMutes: ["spam.example", "ads.example"], followedTags: ["baking", "photography"] } as const;
 
-/** More servers and hashtags than the entry shows of each. */
+/**
+ * Nine muted servers, more than the entry shows whole (seven), and seven followed hashtags, which it shows whole.
+ */
 const many = {
   domainMutes: [
     "spam.example",
@@ -25,8 +27,10 @@ const many = {
     "noise.example",
     "loud.example",
     "bots.example",
+    "promo.example",
+    "flood.example",
   ],
-  followedTags: ["baking", "photography", "hiking", "sourdough", "film", "mountains"],
+  followedTags: ["baking", "photography", "hiking", "sourdough", "film", "mountains", "rivers"],
 } as const;
 
 const meta = {
@@ -45,7 +49,7 @@ type Story = StoryObj<typeof meta>;
 export const Entry: Story = {};
 /** Every list empty: each says what it would hold and how something comes to be in it. */
 export const Empty: Story = { parameters: screen({ at, state: "empty" }) };
-/** Seven muted servers and six followed hashtags: the first five of each, and the door to the whole list. */
+/** Nine muted servers, the first five and the door to the whole list; seven followed hashtags, all of them. */
 export const Many: Story = { parameters: screen({ at, server: many }) };
 /** /settings/relationships/servers: the whole list of the muted servers, the screen under the entry. */
 export const AllServers: Story = { parameters: screen({ at: `${at}/servers`, server: many }) };

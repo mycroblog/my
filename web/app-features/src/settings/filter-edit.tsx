@@ -4,20 +4,21 @@
 // /settings/filters/<id> (FR-209, ADR-0157 §5, §6, §9): a form saved as a whole by its submit bar, Add for a new
 // filter and Save for one that is there.
 //
-// - Its name, which a folded post shows, its count near the limit of 50.
-// - Its words, each a word or a phrase with whether it matches whole words only, in the order given: added from the
-//   section's head (the new one takes the focus), removed by the row's own button (the focus goes to the word that
-//   takes its place, or to what adds one). How many more the filter and all the reader's filters may take is said as
-//   the room runs short, and adding stops at the limit, which says why.
-// - Where it applies, the five places of the server, every one for a new filter.
-// - What it does (folds a matching post behind a warning, or hides it) and when it ends: never, after one of the
-//   durations offered, or at a date and time in the reader's zone; a filter that has an end keeps it unless another is
-//   chosen, which brings an expired one back.
+// - Its name, which a folded post shows, its count near the limit of 50; what it does (folds a matching post behind a
+//   warning, or hides it); and when it ends: never, after one of the durations offered, or at a date and time in the
+//   reader's zone; a filter that has an end keeps it (No change) unless another is chosen, and one that ended says so
+//   in words, and that a new end turns it on again.
+// - Its words, each a word or a phrase on a line of its own, Whole word under it and Remove at the row's end, in the
+//   order given: added from the section's head (the new one takes the focus), removed by the row's own button (the
+//   focus goes to the word that takes its place, or to what adds one). How many more the filter and all the reader's
+//   filters may take is said under the heading as the room runs short, and adding stops at the limit, which says why.
+// - Where it applies, the five places of the server, every one for a new filter, a checkbox each a finger's height.
 // - Delete, after a confirmation, for a filter that is there.
 //
 // What is wrong stands under the input it is about, and the focus goes there: what the form finds before sending (no
-// name, no word, no place, a text too long, a time gone by), and what the server refuses of a member it names, or of
-// the words when they pass the limit of a filter or of all of them; the submit bar says only that nothing was saved.
+// name, no word, no place, a text too long, a time gone by), and what the server refuses of a member it names, in the
+// words of the rule the value breaks where the form knows it (the server says only that it is not valid), or of the
+// words when they pass the limit of a filter or of all of them; the submit bar says only that nothing was saved.
 // Once saved or deleted the screen goes back to the list, and app-data reads the open timelines again, where a
 // matching post is then folded. Leaving with changes not saved is the app's to notice (`onUnsaved`): it holds the
 // reader back and gives `leaving`, and the screen asks whether to leave.
@@ -187,7 +188,12 @@ type Sent =
   | { readonly kind: "idle" | "sending" }
   | { readonly kind: "refused"; readonly refused: Refused<Input>; readonly keys: readonly number[] };
 
-/** A failed save placed on the form: the limits of the words under them, of the filters in the submit bar. */
+/**
+ * A failed save placed on the form: the limits of the words under them, of the filters in the submit bar; a member
+ * the server names, under its input, in the words of the rule it breaks where the form knows it (a name, a word: the
+ * server says only that the value is not valid), else in the server's; the submit bar then says only that nothing was
+ * saved.
+ */
 function placed(error: unknown, t: T): Refused<Input> {
   const limit = filterLimitOf(error);
   if (limit === "words")
@@ -199,7 +205,16 @@ function placed(error: unknown, t: T): Refused<Input> {
       },
     };
   if (limit === "filters") return { reason: t("settings.filters.full", { max: filterLimits.filters }) };
-  return placeRefusal(error, members);
+  const refused = placeRefusal(error, members);
+  const input = refused.field?.input;
+  if (input === undefined) return refused;
+  const text =
+    input === "title"
+      ? t("settings.filters.name.rule", { max: filterLimits.title })
+      : input.startsWith("word:")
+        ? t("settings.filters.word.rule", { max: filterLimits.word })
+        : (refused.field?.text ?? "");
+  return { reason: undefined, field: { input, text } };
 }
 
 /** What the form finds wrong before sending, the first thing, placed where it is; undefined when it can be sent. */
@@ -422,7 +437,14 @@ function EditForm({
           <SubmitBar
             result={
               sent.kind === "refused" ? (
-                <FormAlert>{sent.refused.reason ?? t("settings.filters.save.failed")}</FormAlert>
+                <FormAlert>
+                  {sent.refused.reason ??
+                    t(
+                      sent.refused.field === undefined
+                        ? "settings.filters.save.failed"
+                        : "settings.filters.save.refused",
+                    )}
+                </FormAlert>
               ) : undefined
             }
           >
@@ -446,96 +468,6 @@ function EditForm({
             end={<LimitCount left={filterLimits.title - graphemes(form.title.trim())} near={10} />}
             error={fieldError(refused, "title")}
           />
-        </SettingsSection>
-        <SettingsSection
-          heading={wordsHeading}
-          count={form.words.length === 0 ? undefined : new Intl.NumberFormat(lang).format(form.words.length)}
-          about={t("settings.filters.words.about")}
-          action={form.words.length > 0 ? add : undefined}
-        >
-          {/* Under the heading, beside what adds a word, however long the list is. */}
-          {roomLine !== undefined && (
-            <Box as="p" id={limitId} text="caption" tone="muted">
-              {roomLine}
-            </Box>
-          )}
-          {form.words.length === 0 ? (
-            <SettingsEmpty action={add}>{t("settings.filters.words.empty")}</SettingsEmpty>
-          ) : (
-            <SettingsList label={wordsHeading}>
-              {form.words.map((word, i) => (
-                <SettingsListItem key={word.key}>
-                  <Row wrap align="end" gap="screen-row-gap">
-                    <Box grow="names">
-                      <TextField
-                        id={wordId(word.key)}
-                        name="keyword"
-                        label={t("settings.filters.word", { n: i + 1 })}
-                        defaultValue={word.keyword}
-                        onChange={(keyword) => {
-                          change({ words: form.words.map((w) => (w.key === word.key ? { ...w, keyword } : w)) });
-                        }}
-                        readOnly={busy}
-                        // A word the reader just added is theirs to write: the button that added it may be gone.
-                        autoFocus={word.key >= opened}
-                        error={wordError(word.key)}
-                      />
-                    </Box>
-                    <Row align="center" gap="screen-row-gap">
-                      <CheckField
-                        id={`${wordId(word.key)}-whole`}
-                        name="whole_word"
-                        value="1"
-                        label={t("settings.filters.word.whole")}
-                        checked={word.whole}
-                        onChange={(whole) => {
-                          change({ words: form.words.map((w) => (w.key === word.key ? { ...w, whole } : w)) });
-                        }}
-                      />
-                      <Button
-                        size="timeline"
-                        isDisabled={busy}
-                        aria-label={t("settings.filters.word.remove_named", { n: i + 1 })}
-                        onPress={() => {
-                          // The button leaves with its word: the focus goes to the word that takes its place, the one
-                          // before it, or what adds a first one.
-                          const after = form.words[i + 1] ?? form.words[i - 1];
-                          focusNext.current = after === undefined ? addId : wordId(after.key);
-                          change({ words: form.words.filter((w) => w.key !== word.key) });
-                        }}
-                      >
-                        {t("settings.filters.word.remove")}
-                      </Button>
-                    </Row>
-                  </Row>
-                </SettingsListItem>
-              ))}
-            </SettingsList>
-          )}
-          {wordsError !== undefined && <FieldError>{wordsError}</FieldError>}
-        </SettingsSection>
-        <SettingsSection heading={t("settings.filters.contexts")}>
-          <Stack gap="screen-row-gap">
-            {filterContexts.map((context) => (
-              <CheckField
-                key={context}
-                id={contextId(context)}
-                name="contexts"
-                value={context}
-                label={t("settings.filters.context", { context })}
-                checked={form.contexts.includes(context)}
-                onChange={(on) => {
-                  change({
-                    contexts: on ? [...form.contexts, context] : form.contexts.filter((c) => c !== context),
-                  });
-                }}
-                describedBy={contextsError === undefined ? undefined : contextsErrorId}
-              />
-            ))}
-          </Stack>
-          {contextsError !== undefined && <FieldError id={contextsErrorId}>{contextsError}</FieldError>}
-        </SettingsSection>
-        <SettingsSection heading={t("settings.filters.section.does")}>
           <SettingRow id={actionId} label={t("settings.filters.action")} form>
             <Select
               name="action"
@@ -550,7 +482,17 @@ function EditForm({
               isDisabled={busy}
             />
           </SettingRow>
-          <SettingRow id={endsId} label={t("settings.filters.ends")} form>
+          <SettingRow
+            id={endsId}
+            label={t("settings.filters.ends")}
+            // An expired filter says in words that it acts nowhere, and how it comes back.
+            about={
+              filter?.expired === true && filter.expires_at !== undefined
+                ? t("settings.filters.ends.ended", { date: date(filter.expires_at) })
+                : undefined
+            }
+            form
+          >
             <Select
               name="ends"
               options={endsChoices.map((choice) => ({ value: choice, label: endsLabel(choice) }))}
@@ -583,6 +525,99 @@ function EditForm({
             </SettingRow>
           )}
           {endsError !== undefined && <FieldError id={endsErrorId}>{endsError}</FieldError>}
+        </SettingsSection>
+        <SettingsSection
+          heading={wordsHeading}
+          count={form.words.length === 0 ? undefined : new Intl.NumberFormat(lang).format(form.words.length)}
+          about={t("settings.filters.words.about")}
+          action={form.words.length > 0 ? add : undefined}
+        >
+          {/* Under the heading, beside what adds a word, however long the list is. */}
+          {roomLine !== undefined && (
+            <Box as="p" id={limitId} text="caption" tone="muted">
+              {roomLine}
+            </Box>
+          )}
+          {form.words.length === 0 ? (
+            <SettingsEmpty action={add}>{t("settings.filters.words.empty")}</SettingsEmpty>
+          ) : (
+            <SettingsList label={wordsHeading}>
+              {form.words.map((word, i) => (
+                <SettingsListItem key={word.key}>
+                  <Row wrap align="center" gapX="form-page-gap">
+                    {/* The word on a line of its own; under it, Whole word at the start and Remove at the end. */}
+                    <Box full>
+                      <TextField
+                        id={wordId(word.key)}
+                        name="keyword"
+                        label={t("settings.filters.word", { n: i + 1 })}
+                        defaultValue={word.keyword}
+                        onChange={(keyword) => {
+                          change({ words: form.words.map((w) => (w.key === word.key ? { ...w, keyword } : w)) });
+                        }}
+                        readOnly={busy}
+                        // A word the reader just added is theirs to write: the button that added it may be gone.
+                        autoFocus={word.key >= opened}
+                        error={wordError(word.key)}
+                      />
+                    </Box>
+                    <CheckField
+                      id={`${wordId(word.key)}-whole`}
+                      name="whole_word"
+                      value="1"
+                      label={t("settings.filters.word.whole")}
+                      checked={word.whole}
+                      onChange={(whole) => {
+                        change({ words: form.words.map((w) => (w.key === word.key ? { ...w, whole } : w)) });
+                      }}
+                      touch
+                    />
+                    {/* At the row's end, on the field's line or under it. */}
+                    <Row push="end">
+                      <Button
+                        size="timeline"
+                        touch
+                        isDisabled={busy}
+                        aria-label={t("settings.filters.word.remove_named", { n: i + 1 })}
+                        onPress={() => {
+                          // The button leaves with its word: the focus goes to the word that takes its place, the one
+                          // before it, or what adds a first one.
+                          const after = form.words[i + 1] ?? form.words[i - 1];
+                          focusNext.current = after === undefined ? addId : wordId(after.key);
+                          change({ words: form.words.filter((w) => w.key !== word.key) });
+                        }}
+                      >
+                        {t("settings.filters.word.remove")}
+                      </Button>
+                    </Row>
+                  </Row>
+                </SettingsListItem>
+              ))}
+            </SettingsList>
+          )}
+          {wordsError !== undefined && <FieldError>{wordsError}</FieldError>}
+        </SettingsSection>
+        <SettingsSection heading={t("settings.filters.contexts")}>
+          <Stack>
+            {filterContexts.map((context) => (
+              <CheckField
+                key={context}
+                id={contextId(context)}
+                name="contexts"
+                value={context}
+                label={t("settings.filters.context", { context })}
+                checked={form.contexts.includes(context)}
+                onChange={(on) => {
+                  change({
+                    contexts: on ? [...form.contexts, context] : form.contexts.filter((c) => c !== context),
+                  });
+                }}
+                describedBy={contextsError === undefined ? undefined : contextsErrorId}
+                touch
+              />
+            ))}
+          </Stack>
+          {contextsError !== undefined && <FieldError id={contextsErrorId}>{contextsError}</FieldError>}
         </SettingsSection>
         {!isNew && (
           <SettingsSection heading={t("settings.filters.delete")} about={t("settings.filters.delete.about")}>

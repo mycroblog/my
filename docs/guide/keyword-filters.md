@@ -38,7 +38,7 @@ something.
 ## When a filter ends
 
 A filter with an end stops applying at that moment. It stays in your list, marked "Expired", until you delete it. To use
-it again, open it and choose a new end, or "Never". While you edit a filter that has an end, "Keep" leaves the end as it
+it again, open it and choose a new end, or "Never". While you edit a filter that has an end, "No change" leaves the end as it
 is.
 
 ## How words match

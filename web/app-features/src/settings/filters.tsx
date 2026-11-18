@@ -2,9 +2,9 @@
 
 // Keyword filters, the entry of the settings at /settings/filters (FR-209, ADR-0157 §6, §9, §10): the reader's filters,
 // oldest first, as the server lists them, each a row that opens its editor (filter-edit.tsx, a screen under the entry)
-// and says what is known of it, a fact a line: what it does to a post it matches (folds it behind a warning, or hides
-// it), where it applies, how many words it has, and when it ends. One that has ended is still listed, marked Expired,
-// and its last line says when it ended. Add a filter, the screen's primary action, leads to the editor of a new one,
+// and says, under its name, what it does to a post it matches (folds it behind a warning, or hides it) and how many
+// words it has, then where it applies and when it ends. One that has ended is still listed, marked Expired, and its
+// last line says when it ended. Add a filter, the screen's primary action, leads to the editor of a new one,
 // from the section's head, or from what stands in the list's place while there is none; the reader who has the most
 // filters the server keeps is told so in its place.
 
@@ -56,23 +56,26 @@ function placesOf(contexts: readonly FilterContext[], lang: string, t: T): strin
   return new Intl.ListFormat(lang, { type: "conjunction" }).format(named);
 }
 
-/** When a filter ends or ended, as the reader's locale and zone write it. */
-export function useFilterDate(): (at: string) => string {
+/** When a filter ends or ended, as the reader's locale and zone write it: its day, and with `time` its time too. */
+export function useFilterDate(time = true): (at: string) => string {
   const { locale } = useLocale();
   const zone = useTimeZone();
-  const format = dateFormat(locale, zone, { dateStyle: "medium", timeStyle: "short" });
+  const format = dateFormat(locale, zone, time ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
   return (at) => format.format(new Date(at));
 }
 
-/** What is known of `filter`, a fact a line: what it does, where, how many words, and when it ends or ended. */
+/**
+ * What is known of `filter`, in two lines: what it does and how many words it has; where it applies and when it ends
+ * or ended.
+ */
 function factsOf(filter: KeywordFilter, lang: string, date: (at: string) => string, t: T): string[] {
   return [
-    t("settings.filters.does", { action: filter.action }),
-    t("settings.filters.where", { places: placesOf(filter.contexts, lang, t) }),
-    t("settings.filters.words_count", { count: filter.keywords.length }),
-    filter.expires_at === undefined
-      ? t("settings.filters.ends_at", { state: "never", date: "" })
-      : t("settings.filters.ends_at", { state: filter.expired ? "ended" : "ends", date: date(filter.expires_at) }),
+    t("settings.filters.facts.does", { action: filter.action, count: filter.keywords.length }),
+    t("settings.filters.facts.where", {
+      places: placesOf(filter.contexts, lang, t),
+      state: filter.expires_at === undefined ? "never" : filter.expired ? "ended" : "ends",
+      date: filter.expires_at === undefined ? "" : date(filter.expires_at),
+    }),
   ];
 }
 
@@ -80,7 +83,7 @@ function factsOf(filter: KeywordFilter, lang: string, date: (at: string) => stri
 export function FilterSettings({ back }: SettingsEntryProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const { filters, status, retry } = useKeywordFilters();
-  const date = useFilterDate();
+  const date = useFilterDate(false);
   const title = t("settings.entry.filters");
   if (status !== "success")
     return (
@@ -103,7 +106,14 @@ export function FilterSettings({ back }: SettingsEntryProps) {
       <SettingsSection
         heading={heading}
         count={filters.length === 0 ? undefined : new Intl.NumberFormat(lang).format(filters.length)}
-        about={full ? t("settings.filters.full", { max: filterLimits.filters }) : t("settings.filters.about")}
+        // An empty list says what a filter does in its place, once.
+        about={
+          full
+            ? t("settings.filters.full", { max: filterLimits.filters })
+            : filters.length === 0
+              ? undefined
+              : t("settings.filters.about")
+        }
         action={filters.length > 0 && !full ? add : undefined}
       >
         {filters.length === 0 ? (
