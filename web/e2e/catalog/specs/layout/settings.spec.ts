@@ -3,12 +3,14 @@
 // The settings in the app's frame (ADR-0110 §5), on the app's own stories: the menu at /settings from the minimum
 // width to a desktop's, in English and in Japanese and in both themes, its rows one under another inside the screen;
 // and an entry's screen, which under `wide` stands alone with the way back to the menu at its head (the menu first,
-// then the screen), and from `wide` has the menu beside it, in the frame's column at the end, marking the entry. What
-// the menu holds and where its rows lead is the app's component test (web/app/src/settings.dom.test.tsx); that the
-// column is at the left when the page reads from right to left is the frame's (shell.spec.ts).
+// then the screen), and from `wide` has the menu beside it, in the frame's column at the end, marking the entry. The
+// submit bar of a form saved as a whole is on the design system's story of a screen under an entry, which the app does
+// not have yet. What the menu holds and where its rows lead is the app's component test
+// (web/app/src/settings.dom.test.tsx); that the column is at the left when the page reads from right to left is the
+// frame's (shell.spec.ts).
 
 import { expectNoComputedViolations } from "../axe";
-import { boxesAtRest, expectInside, expectNoSidewaysScroll } from "../boxes";
+import { boxesAtRest, boxOf, expectInside, expectInViewport, expectNoSidewaysScroll, focusedUnder } from "../boxes";
 import { expect, from, minimum, pc, test } from "../test";
 
 const height = 640;
@@ -52,6 +54,63 @@ for (const { locale, settings, group, display, signOut } of menus)
       await expectInside(parts.signOut, main);
       await expectNoComputedViolations(page);
     }
+  });
+
+// A screen saved as a whole (one keyword filter, the design system's story of it), longer than the viewport: its
+// submit bar is in reach from the first field on, over the tab bar on a phone, and stays there while the form scrolls
+// under it; Tab from the first field to Save never leaves the focus on a control under the bar.
+for (const [where, width] of [
+  ["on a phone", minimum],
+  ["on a desktop", pc],
+] as const)
+  test(`the submit bar of a form saved as a whole stays at the viewport's bottom ${where}, and nothing is focused under it`, async ({
+    page,
+    open,
+  }) => {
+    const main = page.getByRole("main");
+    const dock = page.getByRole("navigation", { name: "Main", exact: true });
+    const name = main.getByRole("textbox", { name: "Name", exact: true });
+    const save = main.getByRole("button", { name: "Save", exact: true });
+    const remove = (word: string) =>
+      main.getByRole("group", { name: word, exact: true }).getByRole("button", { name: "Remove", exact: true });
+    // The form's controls, as Tab goes through them.
+    const controls = [
+      name,
+      main.getByRole("button", { name: "Add a word", exact: true }),
+      ...["spoiler", "season finale", "#TheLongNight"].map(remove),
+      ...["Home and lists", "Notifications", "Public timelines", "Conversations", "Profiles"].map((place) =>
+        main.getByRole("checkbox", { name: place, exact: true }),
+      ),
+      main.getByRole("combobox", { name: "Posts that match", exact: true }),
+      main.getByRole("textbox", { name: "Ends after", exact: true }),
+    ];
+    /** How far the page is scrolled down. */
+    const scrolled = () => page.evaluate(() => window.scrollY);
+
+    await open("design-system-settings--at-filter", { width, height });
+    await expectNoSidewaysScroll(page);
+
+    // The form is longer than the viewport, and its Save is in view before any scroll.
+    await expect
+      .poll(() => page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight))
+      .toBeGreaterThan(0);
+    await expect.poll(scrolled).toBe(0);
+    await expectInViewport(page, save);
+    if (width === minimum)
+      await expect.poll(async () => (await boxOf(dock)).top - (await boxOf(save)).bottom).toBeGreaterThanOrEqual(0);
+
+    await name.focus();
+    for (const control of controls) {
+      await expect(control).toBeFocused();
+      await expect.poll(() => focusedUnder(save)).toEqual([]);
+      await expectInViewport(page, save);
+      await page.keyboard.press("Tab");
+    }
+    await expect(save).toBeFocused();
+
+    // Tab took the page down to the form's last control, and the bar stayed.
+    await expect.poll(scrolled).toBeGreaterThan(0);
+    await expectInViewport(page, save);
   });
 
 test("an entry's screen has the way back to the menu under `wide`, and the menu beside it from `wide`", async ({

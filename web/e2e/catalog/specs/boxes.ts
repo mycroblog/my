@@ -284,6 +284,33 @@ export const covered = (parts: Locator): Promise<string[]> =>
     }
   });
 
+/**
+ * How the element that has the focus stands under the bar the page holds in place around `held` (a submit bar around
+ * its button, kept at the viewport's bottom while the page scrolls): the bar is the nearest element around `held` that
+ * the page computes as sticky or fixed. Empty when the focus is clear of the bar, or inside it; it says so when
+ * nothing has the focus or nothing holds `held` in place. A control focused under such a bar is one the reader cannot
+ * see (WCAG 2.2, 2.4.11).
+ */
+export const focusedUnder = (held: Locator): Promise<string[]> =>
+  held.evaluate((element) => {
+    let bar: Element | null = element;
+    while (bar !== null && !["sticky", "fixed"].includes(getComputedStyle(bar).position)) bar = bar.parentElement;
+    if (bar === null) return ["nothing holds the element in place"];
+    const focused = document.activeElement;
+    if (focused === null || focused === document.body) return ["nothing has the focus"];
+    if (bar.contains(focused)) return [];
+    const over = bar.getBoundingClientRect();
+    const box = focused.getBoundingClientRect();
+    const under = box.bottom > over.top + 0.75 && box.top < over.bottom - 0.75;
+    const label = focused instanceof HTMLInputElement ? focused.labels?.[0]?.textContent : undefined;
+    const name = (focused.ariaLabel ?? label ?? focused.textContent).trim().slice(0, 40);
+    return under
+      ? [
+          `<${focused.tagName.toLowerCase()}> "${name}" from ${String(Math.round(box.top))} to ${String(Math.round(box.bottom))} under the bar from ${String(Math.round(over.top))} to ${String(Math.round(over.bottom))}`,
+        ]
+      : [];
+  });
+
 /** The text of the element line by line, as the page breaks it. */
 export const textLines = (text: Locator): Promise<string[]> =>
   text.evaluate((element) => {

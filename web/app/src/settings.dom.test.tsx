@@ -11,6 +11,7 @@
 
 import { describe, expect, test } from "bun:test";
 import { preferencesQuery } from "@my/app-data";
+import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
 import { browserCaches, ownDevice } from "./test/device";
@@ -130,6 +131,29 @@ describe("an entry", () => {
     await main().findByRole("navigation", { name: "Settings" });
     expect(app.path()).toBe("/settings");
   });
+});
+
+// What the rules are and how a tree breaks each is the check's own test (design-system, test/settings.dom.test.tsx).
+test("the menu and an entry's screen, as the app draws them, keep the rules of a settings screen (ADR-0110 §6)", async () => {
+  const app = await renderApp("/settings");
+  // The menu has a group to count the entries of.
+  expect(within(main().getByRole("navigation", { name: "Settings" })).getAllByRole("region")).not.toHaveLength(0);
+  expect(settingsFindings(document.body)).toEqual([]);
+
+  await app.navigate("/settings/display");
+  await main().findByRole("combobox", { name: "Display language" });
+
+  // The screen has sections to count the controls of, and the menu stands beside it.
+  expect(main().getAllByRole("region")).not.toHaveLength(0);
+  expect(beside()).toHaveLength(1);
+  expect(settingsFindings(document.body)).toEqual([]);
+
+  // An address that names no entry: what it says in the screen's place, and the menu beside it.
+  await app.navigate("/settings/nothing");
+  await main().findByRole("alert");
+
+  expect(beside()).toHaveLength(1);
+  expect(settingsFindings(document.body)).toEqual([]);
 });
 
 describe("the display language", () => {
