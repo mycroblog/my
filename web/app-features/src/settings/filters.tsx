@@ -27,6 +27,7 @@ import {
   SettingsSection,
   useLocale,
   useTimeZone,
+  type SettingsFactLine,
 } from "@my/design-system";
 import { stringsIn } from "../locale";
 import { ReadingNotice } from "./controls";
@@ -68,14 +69,19 @@ export function useFilterDate(time = true): (at: string) => string {
  * What is known of `filter`, in two lines: what it does and how many words it has; where it applies and when it ends
  * or ended.
  */
-function factsOf(filter: KeywordFilter, lang: string, date: (at: string) => string, t: T): string[] {
+function factsOf(filter: KeywordFilter, lang: string, date: (at: string) => string, t: T): readonly SettingsFactLine[] {
   return [
-    t("settings.filters.facts.does", { action: filter.action, count: filter.keywords.length }),
-    t("settings.filters.facts.where", {
-      places: placesOf(filter.contexts, lang, t),
-      state: filter.expires_at === undefined ? "never" : filter.expired ? "ended" : "ends",
-      date: filter.expires_at === undefined ? "" : date(filter.expires_at),
-    }),
+    [
+      t("settings.filters.fact.does", { action: filter.action }),
+      t("settings.filters.fact.words", { count: filter.keywords.length }),
+    ],
+    [
+      t("settings.filters.fact.where", { places: placesOf(filter.contexts, lang, t) }),
+      t("settings.filters.fact.ends", {
+        state: filter.expires_at === undefined ? "never" : filter.expired ? "ended" : "ends",
+        date: filter.expires_at === undefined ? "" : date(filter.expires_at),
+      }),
+    ],
   ];
 }
 

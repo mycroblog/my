@@ -240,6 +240,8 @@ const form = tv({
       "font-label [word-break:auto-phrase]",
       "[[data-surface-raised]_&]:text-caption [[data-surface-raised]_&]:font-(--text-caption--font-weight)",
     ],
+    // A statement under a field, no error: the text's color, a caption on a raised surface, at its own weight.
+    fieldNote: "text-text [word-break:auto-phrase] [[data-surface-raised]_&]:text-caption",
     checkInput: [
       "size-form-page-check accent-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
@@ -390,6 +392,11 @@ export type TextFieldProps = {
   autoFocus?: boolean | undefined;
   /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
   onChange?: ((value: string) => void) | undefined;
+  /**
+   * Its label names it for assistive technology alone, where the place it stands in says what it is (the words of a
+   * list, one under another, each a field), and `end` is not drawn.
+   */
+  labelHidden?: boolean | undefined;
 };
 
 /**
@@ -418,6 +425,7 @@ export function TextField({
   describedBy,
   autoFocus,
   onChange,
+  labelHidden = false,
 }: TextFieldProps) {
   const s = form({ multiline: multiline && rows !== undefined ? "rows" : multiline });
   const holder = use(FieldContext);
@@ -448,12 +456,18 @@ export function TextField({
   };
   return (
     <Stack gap="form-page-field-gap">
-      <Row align="baseline" justify="between" gap="form-page-alert-gap">
-        <label className={s.label()} htmlFor={id}>
+      {labelHidden ? (
+        <label className="sr-only" htmlFor={id}>
           {label}
         </label>
-        {end}
-      </Row>
+      ) : (
+        <Row align="baseline" justify="between" gap="form-page-alert-gap">
+          <label className={s.label()} htmlFor={id}>
+            {label}
+          </label>
+          {end}
+        </Row>
+      )}
       {hint && (
         <p id={`${id}-hint`} className={s.hint()}>
           {hint}
@@ -494,6 +508,19 @@ export function FieldError({ id, children }: { id?: string | undefined; children
 }
 
 /**
+ * A statement about a field's value that is no error (a filter that has ended), right under the field, in the text's
+ * color with the glyph an error has; the field it is about names it in its `describedBy`, and is not invalid.
+ */
+export function FieldNote({ id, children }: { id?: string | undefined; children: string }) {
+  return (
+    <GlyphLine nudge="error" gap="entry-caption" as={<p id={id} className={form().fieldNote()} />}>
+      <Icon name="error" place="caption" />
+      <span dir="auto">{children}</span>
+    </GlyphLine>
+  );
+}
+
+/**
  * A checkbox with its label at its end, its error under it; it posts `value` under `name` when checked. `touch`: the
  * label, its press target, is a finger's target tall, the box at its middle (one of a settings section's checkboxes,
  * one under another).
@@ -510,6 +537,7 @@ export function CheckField({
   error,
   describedBy,
   touch = false,
+  disabled,
 }: {
   id: string;
   name: string;
@@ -523,17 +551,15 @@ export function CheckField({
   error?: string | undefined;
   describedBy?: string | undefined;
   touch?: boolean | undefined;
+  /** It cannot be changed now (the form it is in is being sent): dimmed, as every disabled control. */
+  disabled?: boolean | undefined;
 }) {
   const s = form();
   const described = [describedBy, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
+  const look = [touch ? "min-h-icon-button-touch" : "", disabled === true ? "opacity-disabled" : ""].join(" ").trim();
   return (
     <Stack gap="form-page-field-gap">
-      <Row
-        as="label"
-        align={touch ? "center" : "start"}
-        gap="form-page-alert-gap"
-        className={touch ? "min-h-icon-button-touch" : undefined}
-      >
+      <Row as="label" align={touch ? "center" : "start"} gap="form-page-alert-gap" className={look || undefined}>
         <Box
           rigid
           as={
@@ -552,6 +578,7 @@ export function CheckField({
                 })
               }
               required={required}
+              disabled={disabled}
               aria-invalid={error ? true : undefined}
               aria-describedby={described}
             />
@@ -799,6 +826,7 @@ export function DateTimeField({
   max,
   invalid = false,
   describedBy,
+  disabled,
 }: {
   label: string;
   value: string;
@@ -807,6 +835,8 @@ export function DateTimeField({
   max?: string | undefined;
   invalid?: boolean;
   describedBy?: string | undefined;
+  /** It cannot be changed now (the form it is in is being sent). */
+  disabled?: boolean | undefined;
 }) {
   return (
     <Box
@@ -819,6 +849,7 @@ export function DateTimeField({
           aria-label={label}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
+          disabled={disabled}
           value={value}
           min={min}
           max={max}

@@ -87,17 +87,15 @@ export function AccountFollow({
 }
 
 /**
- * An account on a row of its own, a line under its name (`note`: what a mute of it covers), what the reader may do
- * with it at the end; `heading` makes its name the heading of the screen it heads.
+ * An account on a row of its own, what the reader may do with it at the end; `heading` makes its name the heading of
+ * the screen it heads.
  */
 export function AccountLine({
   account,
-  note,
   end,
   heading = false,
 }: {
   account: PostAccount;
-  note?: ReactNode;
   end?: ReactNode;
   heading?: boolean;
 }) {
@@ -107,7 +105,6 @@ export function AccountLine({
       name={<AccountName account={account} />}
       handle={handleOf(account)}
       href={accountPath(account)}
-      note={note}
       end={end}
       heading={heading}
     />

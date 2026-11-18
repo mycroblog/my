@@ -11,9 +11,11 @@
 //
 // Each row is taken out of its list as the profile's and a post's menus undo the same: at once, with no confirmation
 // (Unblock, Unmute, the server's Unmute, the hashtag's Unfollow), through app-data's writes, which read the list again.
-// What came of it is the section's status, a polite live region there from the start: once the row is gone the focus
-// goes to it, where it says what was done; a write that failed says so there and leaves the row and the focus as they
-// were. An empty list says what it would hold and how something comes to be in it.
+// The row then keeps its place until the reader leaves the screen, its button gone and its result said in words in
+// its place (Unblocked), so that nothing moves under the finger and no second press undoes another row; the focus goes
+// to that result, named by the sentence of what was done. The heading's count follows the server. A write that failed
+// says so in the section's status, a polite live region there from the start, and leaves the row and the focus as
+// they were. An empty list says what it would hold and how something comes to be in it.
 
 import { AccountLine, sentenceHandleOf } from "@my/app-components";
 import {
@@ -43,7 +45,7 @@ import {
   Row,
   SettingsEmpty,
   SettingsList,
-  SettingsListItem,
+  SettingsAccountItem,
   SettingsListRow,
   SettingsScreen,
   SettingsSection,
@@ -51,6 +53,7 @@ import {
   TextLink,
   useLocale,
   useTimeZone,
+  type SettingsRowResult,
 } from "@my/design-system";
 import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
@@ -89,41 +92,56 @@ export async function loadRelationshipSettings(data: AppData): Promise<void> {
   ]).catch(() => undefined);
 }
 
-/** What takes a row out of its list: the write, and what the section's status says of it, done or not. */
-type Removal = { readonly write: () => Promise<void>; readonly done: string; readonly failed: string };
+/**
+ * What takes a row out of its list: the write; the row's words once it is done (`shown`: Unblocked) and the sentence
+ * read in their place (`done`: You unblocked @kai.); and what the section's status says when it is not (`failed`).
+ */
+type Removal = {
+  readonly write: () => Promise<void>;
+  readonly shown: string;
+  readonly done: string;
+  readonly failed: string;
+};
+
+/** What a row is given: whether its removal is on its way, what came of it once done, and what runs it. */
+type RowState = {
+  readonly busy: boolean;
+  readonly result: SettingsRowResult | undefined;
+  readonly remove: (removal: Removal) => void;
+};
 
 /**
- * The status of a section and its rows' removals: `remove` runs a removal once at a time for a row (`busy` tells
- * which are on their way), and `status`, the live region that says what came of the last one, takes the focus once
- * the row it took out is gone.
+ * The removals of a section's rows. `remove` runs one at a time for a row (`busy` tells which are on their way). A
+ * row taken out keeps its place among the rows until the reader leaves the screen (`kept`: the item and where it
+ * stood), its actions gone and its result said in their place, so that nothing moves under the finger, and its
+ * result takes the focus, where its button was; its sentence is that place's name, read once. A removal that failed
+ * says so in `status`, a polite live region there from the start, the row and the focus left as they were.
  */
-function useRemovals() {
-  const id = useId();
+function useRemovals<I>(id: string) {
   const [said, setSaid] = useState<{ readonly text: string; readonly n: number } | undefined>(undefined);
   const [busy, setBusy] = useState<ReadonlySet<string>>(new Set());
+  const [kept, setKept] = useState<ReadonlyMap<string, { item: I; at: number; result: SettingsRowResult }>>(new Map());
   const count = useRef(0);
-  const focus = useRef(false);
+  const focus = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (!focus.current) return;
-    focus.current = false;
-    document.getElementById(id)?.focus();
+    if (focus.current === undefined) return;
+    document.getElementById(focus.current)?.focus();
+    focus.current = undefined;
   });
-  const remove = (key: string, { write, done, failed }: Removal) => {
+  const resultId = (key: string) => `${id}-done-${key}`;
+  const remove = (key: string, item: I, at: number, { write, shown, done, failed }: Removal) => {
     if (busy.has(key)) return;
     setBusy((now) => new Set(now).add(key));
-    const say = (text: string) => {
-      count.current += 1;
-      setSaid({ text, n: count.current });
-    };
     write()
       .then(
         () => {
-          // The write resolves once the list is read again, without the row: the focus it held goes to what says so.
-          focus.current = true;
-          say(done);
+          const result = { id: resultId(key), shown, spoken: done };
+          setKept((now) => new Map(now).set(key, { item, at, result }));
+          focus.current = result.id;
         },
         () => {
-          say(failed);
+          count.current += 1;
+          setSaid({ text: failed, n: count.current });
         },
       )
       .finally(() => {
@@ -135,11 +153,11 @@ function useRemovals() {
       });
   };
   const status = (
-    <Box as="p" id={id} role="status" tabIndex={-1} text="caption" tone="muted">
+    <Box as="p" role="status" text="caption" tone="muted">
       {said !== undefined && <span key={said.n}>{said.text}</span>}
     </Box>
   );
-  return { busy, remove, status };
+  return { busy, kept, remove, status };
 }
 
 /** What a section of a list shows of it, and how. */
@@ -147,22 +165,33 @@ type ListOf<I> = {
   readonly list: RelationshipList;
   readonly items: PagedList<I>;
   readonly keyOf: (item: I) => string;
-  /** A row of the list, `busy` while its removal is on its way, `remove` running it. */
-  readonly row: (item: I, busy: boolean, remove: (removal: Removal) => void) => ReactNode;
+  /** A row of the list. */
+  readonly row: (item: I, state: RowState) => ReactNode;
 };
 
 /**
- * A list's section: its rows, or what stands in their place (that it loads, that it failed, that it is empty), the
- * status of its removals, and at the end the door to the whole list (`capped`, on the entry) or the next page.
+ * A list's section: its rows, those the reader took out where they stood, or what stands in their place (that it
+ * loads, that it failed, that it is empty), the status of its removals, and at the end the door to the whole list
+ * (`capped`, on the entry) or the next page. On the entry its heading is the list's name with how many it holds, as
+ * the server has it once the whole list is read; on the screen of the whole list, whose title is that name, the
+ * heading is the count's sentence alone (9 servers).
  */
 function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { capped: boolean; t: T }) {
   const { lang } = stringsIn(useLocale().locale);
-  const { busy, remove, status } = useRemovals();
-  // On the screen of the whole list, whose title names the list, the section is named by what it lists.
-  const heading = t(capped ? "settings.relationships.list" : "settings.relationships.whole", { list });
+  const id = useId();
+  const { busy, kept, remove, status } = useRemovals<I>(id);
   const whole = items.status === "success" && !items.hasNextPage;
-  const door = capped && (items.items.length > most || items.hasNextPage);
-  const shown = door ? items.items.slice(0, few) : items.items;
+  const count = items.items.length;
+  const heading = capped
+    ? t("settings.relationships.list", { list })
+    : items.status === "success"
+      ? t("settings.relationships.count", { list, count, more: whole ? "no" : "yes" })
+      : t("settings.relationships.list", { list });
+  const door = capped && (count > most || items.hasNextPage);
+  // The rows the server lists, then each the reader took out put back where it stood.
+  const shown: I[] = [...(door ? items.items.slice(0, few) : items.items)];
+  for (const [key, { item, at }] of [...kept].sort((a, b) => a[1].at - b[1].at))
+    if (!shown.some((i) => keyOf(i) === key)) shown.splice(Math.min(at, shown.length), 0, item);
   const failedMore = items.status === "success" && items.error !== null && items.hasNextPage;
   const retry = (onPress: () => void) => (
     <Button size="timeline" touch onPress={onPress}>
@@ -174,16 +203,20 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
       <SettingsEmpty>{t("settings.relationships.loading")}</SettingsEmpty>
     ) : items.status === "error" ? (
       <SettingsEmpty action={retry(items.refetch)}>{t("settings.relationships.failed_list")}</SettingsEmpty>
-    ) : items.items.length === 0 ? (
+    ) : shown.length === 0 ? (
       <SettingsEmpty>{t("settings.relationships.empty", { list })}</SettingsEmpty>
     ) : (
       <SettingsList label={heading}>
-        {shown.map((item) => {
+        {shown.map((item, at) => {
           const key = keyOf(item);
           return (
             <Fragment key={key}>
-              {row(item, busy.has(key), (removal) => {
-                remove(key, removal);
+              {row(item, {
+                busy: busy.has(key),
+                result: kept.get(key)?.result,
+                remove: (removal) => {
+                  remove(key, item, at, removal);
+                },
               })}
             </Fragment>
           );
@@ -211,7 +244,7 @@ function ListSection<I>({ list, items, keyOf, row, capped, t }: ListOf<I> & { ca
   return (
     <SettingsSection
       heading={heading}
-      count={whole && items.items.length > 0 ? new Intl.NumberFormat(lang).format(items.items.length) : undefined}
+      count={capped && whole && count > 0 ? new Intl.NumberFormat(lang).format(count) : undefined}
     >
       <Stack>
         {rows}
@@ -230,6 +263,37 @@ function useEnds(): (at: string) => string {
   return (at) => format.format(new Date(at));
 }
 
+/** The button that takes a row out of its list, its name `label`, with what it runs. */
+function RemoveButton({ label, state, removal }: { label: string; state: RowState; removal: Removal }) {
+  return (
+    <Button
+      size="timeline"
+      touch
+      busy={state.busy}
+      onPress={() => {
+        state.remove(removal);
+      }}
+    >
+      {label}
+    </Button>
+  );
+}
+
+/** What the rows of one kind of removal say: its button, its words once done, its sentences. */
+function removalOf(
+  action: "unblock" | "unmute" | "unmute_server" | "unfollow",
+  name: string,
+  write: () => Promise<void>,
+  t: T,
+): Removal {
+  return {
+    write,
+    shown: t("settings.relationships.result", { action }),
+    done: t("settings.relationships.done", { action, name }),
+    failed: t("settings.relationships.failed", { action, name }),
+  };
+}
+
 /** The blocked accounts: each its row, leading to its profile, with Unblock. */
 function Blocked({ capped, t }: { capped: boolean; t: T }) {
   const change = useChangeRelationship();
@@ -240,30 +304,21 @@ function Blocked({ capped, t }: { capped: boolean; t: T }) {
       keyOf={(account) => account.id}
       capped={capped}
       t={t}
-      row={(account, busy, remove) => {
+      row={(account, state) => {
         const name = sentenceHandleOf(account);
         return (
-          <SettingsListItem>
-            <AccountLine
-              account={account}
-              end={
-                <Button
-                  size="timeline"
-                  touch
-                  busy={busy}
-                  onPress={() => {
-                    remove({
-                      write: () => change(account.id, "unblock"),
-                      done: t("settings.relationships.done", { action: "unblock", name }),
-                      failed: t("settings.relationships.failed", { action: "unblock", name }),
-                    });
-                  }}
-                >
-                  {t("settings.relationships.unblock")}
-                </Button>
-              }
-            />
-          </SettingsListItem>
+          <SettingsAccountItem
+            account={<AccountLine account={account} />}
+            label={name}
+            result={state.result}
+            end={
+              <RemoveButton
+                label={t("settings.relationships.unblock")}
+                state={state}
+                removal={removalOf("unblock", name, () => change(account.id, "unblock"), t)}
+              />
+            }
+          />
         );
       }}
     />
@@ -304,31 +359,22 @@ function Muted({ capped, t }: { capped: boolean; t: T }) {
       keyOf={(mute) => mute.account.id}
       capped={capped}
       t={t}
-      row={(mute, busy, remove) => {
+      row={(mute, state) => {
         const name = sentenceHandleOf(mute.account);
         return (
-          <SettingsListItem>
-            <AccountLine
-              account={mute.account}
-              note={muteCovers(mute, ends, t)}
-              end={
-                <Button
-                  size="timeline"
-                  touch
-                  busy={busy}
-                  onPress={() => {
-                    remove({
-                      write: () => change(mute.account.id, "unmute"),
-                      done: t("settings.relationships.done", { action: "unmute", name }),
-                      failed: t("settings.relationships.failed", { action: "unmute", name }),
-                    });
-                  }}
-                >
-                  {t("settings.relationships.unmute")}
-                </Button>
-              }
-            />
-          </SettingsListItem>
+          <SettingsAccountItem
+            account={<AccountLine account={mute.account} />}
+            label={name}
+            note={muteCovers(mute, ends, t)}
+            result={state.result}
+            end={
+              <RemoveButton
+                label={t("settings.relationships.unmute")}
+                state={state}
+                removal={removalOf("unmute", name, () => change(mute.account.id, "unmute"), t)}
+              />
+            }
+          />
         );
       }}
     />
@@ -345,24 +391,16 @@ function Servers({ capped, t }: { capped: boolean; t: T }) {
       keyOf={(domain) => domain}
       capped={capped}
       t={t}
-      row={(domain, busy, remove) => (
+      row={(domain, state) => (
         <SettingsListRow
           title={domain}
+          result={state.result}
           end={
-            <Button
-              size="timeline"
-              touch
-              busy={busy}
-              onPress={() => {
-                remove({
-                  write: () => mute(domain, false),
-                  done: t("settings.relationships.done", { action: "unmute_server", name: domain }),
-                  failed: t("settings.relationships.failed", { action: "unmute_server", name: domain }),
-                });
-              }}
-            >
-              {t("settings.relationships.unmute")}
-            </Button>
+            <RemoveButton
+              label={t("settings.relationships.unmute")}
+              state={state}
+              removal={removalOf("unmute_server", domain, () => mute(domain, false), t)}
+            />
           }
         />
       )}
@@ -380,31 +418,20 @@ function Hashtags({ capped, t }: { capped: boolean; t: T }) {
       keyOf={(tag) => tag.name.toLowerCase()}
       capped={capped}
       t={t}
-      row={(tag, busy, remove) => {
-        const name = `#${tag.name}`;
-        return (
-          <SettingsListRow
-            icon="hashtag"
-            title={tag.name}
-            end={
-              <Button
-                size="timeline"
-                touch
-                busy={busy}
-                onPress={() => {
-                  remove({
-                    write: () => follow(tag.name, false),
-                    done: t("settings.relationships.done", { action: "unfollow", name }),
-                    failed: t("settings.relationships.failed", { action: "unfollow", name }),
-                  });
-                }}
-              >
-                {t("settings.relationships.unfollow")}
-              </Button>
-            }
-          />
-        );
-      }}
+      row={(tag, state) => (
+        <SettingsListRow
+          icon="hashtag"
+          title={tag.name}
+          result={state.result}
+          end={
+            <RemoveButton
+              label={t("settings.relationships.unfollow")}
+              state={state}
+              removal={removalOf("unfollow", `#${tag.name}`, () => follow(tag.name, false), t)}
+            />
+          }
+        />
+      )}
     />
   );
 }

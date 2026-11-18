@@ -104,6 +104,7 @@ export {
   CheckField,
   DateTimeField,
   FieldError,
+  FieldNote,
   focusOnLoadAttribute,
   Form,
   FormAccount,
@@ -265,7 +266,8 @@ export {
   SettingsGroup,
   SettingsItem,
   SettingsList,
-  SettingsListItem,
+  SettingsAccountItem,
+  SettingsFieldRow,
   SettingsListRow,
   SettingsMenu,
   SettingsScreen,
@@ -273,6 +275,8 @@ export {
   StatusSummary,
   SubmitBar,
   type SettingRowProps,
+  type SettingsFactLine,
+  type SettingsRowResult,
 } from "./settings";
 export {
   ChannelCell,

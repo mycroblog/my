@@ -867,9 +867,13 @@
     "defaultMessage": "Until {date}",
     "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
   },
-  "settings.relationships.whole": {
-    "defaultMessage": "{list, select, blocked {Accounts} muted {Accounts} servers {Servers} other {Hashtags}}",
-    "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): what the list holds, the count follows it. list is as in settings.relationships.list."
+  "settings.relationships.count": {
+    "defaultMessage": "{list, select, blocked {{more, select, yes {More than {count} accounts} other {{count, plural, one {# account} other {# accounts}}}}} muted {{more, select, yes {More than {count} accounts} other {{count, plural, one {# account} other {# accounts}}}}} servers {{more, select, yes {More than {count} servers} other {{count, plural, one {# server} other {# servers}}}}} other {{more, select, yes {More than {count} hashtags} other {{count, plural, one {# hashtag} other {# hashtags}}}}}}",
+    "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): how many it holds, as a phrase (9 servers). more is yes while the server has more than it sent so far (count is then those read). list is as in settings.relationships.list."
+  },
+  "settings.relationships.result": {
+    "defaultMessage": "{action, select, unblock {Unblocked} unmute {Unmuted} unmute_server {Unmuted} other {Unfollowed}}",
+    "description": "What a row of a list of Relationships says once the reader took it out (in place of its button and its facts), the row staying where it was until they leave the page: the account, server or hashtag stays named by the row. Without a full stop. action is as in settings.relationships.done."
   },
   "settings.filters.list": {
     "defaultMessage": "Filters",
@@ -912,7 +916,7 @@
     "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
   },
   "settings.filters.save.refused": {
-    "defaultMessage": "The filter was not saved. Fix what is marked above and save again.",
+    "defaultMessage": "Fix what is marked to save.",
     "description": "In the bar at the bottom of a keyword filter's form when the form or the server found something wrong with a field, which says what under that field."
   },
   "settings.filters.section.filter": {
@@ -1103,13 +1107,21 @@
     "defaultMessage": "See all filters",
     "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
   },
-  "settings.filters.facts.does": {
-    "defaultMessage": "{action, select, warn {Folds matching posts behind a warning} other {Hides matching posts}} · {count, plural, one {# word} other {# words}}",
-    "description": "The first line under a filter's name in the list of keyword filters: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out), and how many words or phrases it has. Without a full stop."
+  "settings.filters.fact.does": {
+    "defaultMessage": "{action, select, warn {Folds matching posts behind a warning} other {Hides matching posts}}",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its first line: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out). A phrase, without a full stop."
   },
-  "settings.filters.facts.where": {
-    "defaultMessage": "In {places} · {state, select, never {Never ends} ended {Ended {date}} other {Ends {date}}}",
-    "description": "The second line under a filter's name in the list of keyword filters: where it applies, and when it stops applying. places is a list of settings.filters.place joined in the reader's language; state is never, ends (it ends on date) or ended (it ended on date and applies nowhere); date is a day (Dec 18, 2026). Without a full stop."
+  "settings.filters.fact.words": {
+    "defaultMessage": "{count, plural, one {# word} other {# words}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after what it does on the same line: how many words or phrases it has. Without a full stop."
+  },
+  "settings.filters.fact.where": {
+    "defaultMessage": "In {places}",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its second line: where it applies. places is a list of settings.filters.place joined in the reader's language. A phrase, without a full stop."
+  },
+  "settings.filters.fact.ends": {
+    "defaultMessage": "{state, select, never {Never ends} ended {Ended {date}} other {Ends {date}}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after where it applies: when it stops applying. state is never, ends (it ends on date) or ended (it ended on date and applies nowhere); date is a day (Dec 18, 2026). Without a full stop."
   },
   "settings.account.status": {
     "defaultMessage": "Account status",
