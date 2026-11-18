@@ -1512,8 +1512,8 @@
     "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
   },
   "settings.account.import.preview.skipped.line": {
-    "defaultMessage": "{reason, select, duplicate {{line, number} 行目は前の行と重複しています: {value}} other {{line, number} 行目は読み取れません: {value}}}",
-    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as written, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+    "defaultMessage": "{reason, select, duplicate {{line, number} 行目「{value}」は前の行と重複しています} other {{line, number} 行目「{value}」は読み取れません}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as the file writes it, which stands in quotation marks so that it does not read as the app's own words, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
   },
   "settings.account.import.preview.skipped.more": {
     "defaultMessage": "{count, plural, other {ほか # 行}}",
@@ -1526,6 +1526,10 @@
   "settings.account.import.submit": {
     "defaultMessage": "インポート",
     "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.submit.removes": {
+    "defaultMessage": "{kind, select, following {インポートすると {count, number} 件のアカウントのフォローを解除します。} followed_tags {インポートすると {count, number} 件のハッシュタグのフォローを解除します。} blocks {インポートすると {count, number} 件のアカウントのブロックを解除します。} mutes {インポートすると {count, number} 件のアカウントのミュートを解除します。} domain_mutes {インポートすると {count, number} 件のサーバーのミュートを解除します。} other {インポートすると {count, number} 件のブックマークを削除します。}}",
+    "description": "In the bar at the bottom of the settings page Import, right before Import, while Replace is chosen and the import would remove something: how many things the reader has now that the file does not list, which the import removes and cannot put back. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. One short sentence."
   },
   "settings.account.import.refused": {
     "defaultMessage": "インポートしていません。示した箇所を直してください。",
@@ -1584,8 +1588,8 @@
     "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.import.row.state": {
-    "defaultMessage": "{state, select, running {実行中: {total, number} 件中 {processed, number} 件完了} nothing {完了: 実行するものはありませんでした} done {完了: {total, number} 件すべて成功} partly {完了: {total, number} 件中 {done, number} 件成功、{failed, number} 件失敗} other {完了: {total, number} 件すべて失敗}}",
-    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. No full stop."
+    "defaultMessage": "{state, select, running {実行中: {total, number} 件中 {processed, number} 件完了} nothing {完了: 実行するものはありませんでした} done {完了: {total, number} 件すべて成功} partly {完了: {total, number} 件中 {done, number} 件成功、{failed, number} 件失敗。同じファイルを「統合」でもう一度インポートすると、残りをやり直します。} other {完了: {total, number} 件すべて失敗。同じファイルを「統合」でもう一度インポートすると、やり直します。}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. After a failure it says what to do next: the server carries out every entry of a file again when it is imported again, finds the ones it has already done, and tries the others; Merge is the option settings.account.import.mode.choice. No full stop while nothing failed."
   },
   "settings.account.auto_delete": {
     "defaultMessage": "古い投稿の自動削除",
@@ -1612,8 +1616,8 @@
     "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
   },
   "settings.account.auto_delete.bound.about": {
-    "defaultMessage": "{state, select, now {このサーバーが投稿を残すのは最長 {days, number} 日で、保存済みの設定はこれを超えています。このページで保存すると、設定は上限の範囲内になります。} other {このサーバーが投稿を残すのは最長 {days, number} 日です。上限が適用されるまでは、保存済みの設定が有効です。このページで保存すると、すぐに適用されます。}}",
-    "description": "Under settings.account.auto_delete.bound, in a few short sentences: what the server's maximum is, that the reader's own settings stay in effect until it applies, and what saving does. It is the one place of the page that says the maximum. state is as in settings.account.auto_delete.bound; days is the maximum."
+    "defaultMessage": "{state, select, now {{items}を残せなくなりました{counted, select, yes {。{count, number} 件の投稿が削除されます} more {。{count, number} 件を超える投稿が削除されます} other {}}。このページで保存すると、設定は上限の範囲内になります。} from {この日から、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、すぐにそうなります。} other {上限が適用されると、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、すぐにそうなります。}}",
+    "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
   },
   "settings.account.auto_delete.section.when": {
     "defaultMessage": "削除する時期",
@@ -1675,9 +1679,13 @@
     "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {ピン留めした投稿} other {最近ピン留めした # 件の投稿}}} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} other {記事}}",
     "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
   },
+  "settings.account.auto_delete.keep.item": {
+    "defaultMessage": "{item, select, age {{days, number} 日を過ぎた投稿} pinned {ピン留めした投稿} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} articles {記事} audiences {公開範囲で残していた投稿} thresholds {ブーストやお気に入りの数で残していた投稿} more {そのほか下記のもの} other {保存済みの設定で残している一部の投稿}}",
+    "description": "One thing in a list inside a sentence of the settings page Delete old posts automatically, joined to the others as the reader's language joins a list (A, B, and C): what a server's maximum does not let the reader keep (settings.account.auto_delete.keep.fixed, settings.account.auto_delete.bound.about). In lower case, since it never starts the sentence. item is age (posts past days days), a kind of post (pinned, bookmarked, favourited, media, polls, articles), audiences (posts kept for the audience they were made for), thresholds (posts kept for how often they were boosted or favourited), more (the last of a list cut after two: the rest is on the page below), or anything else when the page cannot tell which. No full stop."
+  },
   "settings.account.auto_delete.keep.fixed": {
-    "defaultMessage": "このサーバーでは残せない投稿",
-    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the name over the list of the kinds of post the server's maximum does not allow to be kept, each by the name of its checkbox (settings.account.auto_delete.keep), which are not offered as checkboxes. No full stop."
+    "defaultMessage": "このサーバーでは、{items}を残すことはできません。",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the kinds of post the server's maximum does not allow to be kept, which are not offered as checkboxes. items is those kinds, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list. The same sentence form as settings.account.auto_delete.audiences.about (allowed no) and settings.account.auto_delete.thresholds.fixed."
   },
   "settings.account.auto_delete.section.audiences": {
     "defaultMessage": "公開範囲ごとに残す投稿",

@@ -71,12 +71,15 @@ const frame = tv({
     ],
     // The main column is the screen a change of screen moves (motion.tsx); the fixed bars stay over it. On a phone, its
     // end clears all the dock covers, the floating action too, so that what ends the screen (a post's More) can scroll
-    // out from under it.
+    // out from under it. A screen that ends in a `FrameFoot` keeps no room after it: the foot rests where it is held,
+    // on the dock or the viewport's bottom, with no band between the two once the end is reached.
     main: [
       "box-border min-w-0 px-shell-edge pt-shell-gap",
       "pb-[max(calc(var(--shell-bar)+var(--shell-call)+var(--shell-end)),var(--shell-dock,0px))]",
+      "has-[[data-frame-foot]]:pb-[max(calc(var(--shell-bar)+var(--shell-call)),var(--shell-dock,0px))]",
       "[view-transition-name:screen]",
       "tablet:shrink tablet:grow-0 tablet:basis-[var(--shell-column)] tablet:px-0 tablet:pb-shell-end",
+      "tablet:has-[[data-frame-foot]]:pb-0",
     ],
     heading: "sr-only",
     aside: [

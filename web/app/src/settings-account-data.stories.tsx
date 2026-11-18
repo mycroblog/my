@@ -15,7 +15,7 @@
 //   where another is refused; one that finished whole; one that failed whole; none; while the imports load, and when
 //   they could not be read. The preview follows a file the reader chooses (its shot is taken by a script that gives
 //   the field a file): what would be added, what the reader has already, the lines that cannot be read, and, last and
-//   apart, what a replacement removes.
+//   apart, what a replacement removes, which the submit bar says too, beside Import.
 // - Delete old posts automatically: off; on; under a maximum of the server that the saved policy is within; bound by
 //   the maximum, which starts to apply in two weeks; while it loads, and when it could not be read. Each counts what
 //   the form as it stands would delete, right under when it deletes, and says the count beside Save. Save asks
@@ -196,8 +196,8 @@ export const AutoDeleteOn: Story = {
 };
 /**
  * Under a maximum of half a year that the saved policy is within: the deletion cannot be turned off, the age goes up
- * to the maximum, and only the three most recently pinned posts can be kept. The other kinds are named in words
- * under that checkbox, and the audiences and the thresholds each say in one sentence that the server does not allow
+ * to the maximum, and only the three most recently pinned posts can be kept. One sentence under that checkbox names
+ * the other kinds, and the audiences and the thresholds each say in one sentence that the server does not allow
  * them: nothing the server forbids is drawn as a control.
  */
 export const AutoDeleteLimited: Story = {
@@ -218,8 +218,9 @@ export const AutoDeleteLimited: Story = {
   }),
 };
 /**
- * Bound by the fake's maximum of a year, which does not let posts with media be kept: the summary says the maximum
- * and from when it applies, the count is of what it then deletes, and saving, which applies it at once, asks first.
+ * Bound by the fake's maximum of a year, which does not let posts with media be kept: the summary says from when it
+ * applies, what changes for this account (posts with media can no longer be kept) and how many posts are deleted
+ * then, and saving, which applies it at once, asks first.
  */
 export const AutoDeleteBound: Story = { parameters: screen({ at: autoDeleteAt }) };
 /** Delete old posts automatically while the policy is on its way. */

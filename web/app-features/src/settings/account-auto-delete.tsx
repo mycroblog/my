@@ -18,12 +18,14 @@
 //
 // Under a maximum of the server that applies to the reader, the form holds what the server uses (its `effective`
 // policy): deletion is on and cannot be turned off, which its row says, and the age goes up to the maximum. Nothing
-// the server forbids is drawn as a control: the kinds it does not let be kept are named in words under the ones that
-// can be checked, and a section it allows nothing of (the audiences, the thresholds, every kind) says so in one
-// sentence. A reader the maximum binds (it deletes posts their saved settings keep) reads so in the summary that heads
-// the screen, the one place that says the maximum then, with the day it starts to apply: until then their saved
-// settings stay in effect, the count is of what the maximum deletes, and saving the form applies it at once, which
-// Save asks about as about any save that deletes more.
+// the server forbids is drawn as a control, and all of it is said in one form, a sentence: the kinds it does not let
+// be kept, joined as a list, under the ones that can be checked, and a section it allows nothing of (the audiences,
+// the thresholds, every kind). A reader the maximum binds (it deletes posts their saved settings keep) reads in the
+// summary that heads the screen what changes for them, with the day it starts to apply: what their saved policy
+// keeps and the server's `effective` one does not (posts past the maximum's age, kinds, the audiences, the
+// thresholds; two at most where more differ), and how many posts are deleted then, the server's count of the
+// `effective` policy whatever the form holds meanwhile. Until then their saved settings stay in effect, and saving
+// the form applies the maximum at once, which Save asks about as about any save that deletes more.
 //
 // What is wrong stands under the input it is about, which takes the focus: no age, and what the server refuses of a
 // member it names, in the words of the rule where the form knows it; the submit bar then says only that nothing was
@@ -62,7 +64,6 @@ import {
   Select,
   SettingRow,
   SettingsEmpty,
-  SettingsFacts,
   SettingsList,
   SettingsListRow,
   SettingsScreen,
@@ -167,6 +168,29 @@ function deletesMore(now: Form, next: Form): boolean {
   );
 }
 
+/** One thing a policy keeps and another does not: posts past an age, a kind, the audiences, the thresholds. */
+type Lost = { readonly item: string; readonly days?: number };
+
+/**
+ * What `saved`, the reader's policy, keeps and `effective`, what a server's maximum makes of it, does not, in the
+ * page's order: posts past the maximum's age (all a policy that deletes nothing keeps), then each kind, the
+ * audiences, and the thresholds.
+ */
+function lostUnder(saved: Form, effective: Form): readonly Lost[] {
+  if (!effective.enabled) return [];
+  const days = effective.min_age_days ?? 0;
+  if (!saved.enabled) return [{ item: "age", days }];
+  return [
+    ...((saved.min_age_days ?? 0) > days ? [{ item: "age", days }] : []),
+    ...kept.filter(([keep]) => saved[keep] && !effective[keep]).map(([, , word]) => ({ item: word })),
+    ...(saved.keep_visibilities.some((v) => !effective.keep_visibilities.includes(v)) ? [{ item: "audiences" }] : []),
+    ...(keepsFewer(saved.keep_min_boosts ?? 0, effective.keep_min_boosts ?? 0) ||
+    keepsFewer(saved.keep_min_favourites ?? 0, effective.keep_min_favourites ?? 0)
+      ? [{ item: "thresholds" }]
+      : []),
+  ];
+}
+
 /** The inputs of the form, which what is wrong is placed on. */
 type Input = "enabled" | "days" | "kept" | "audiences" | "boosts" | "favourites";
 
@@ -239,6 +263,17 @@ function PolicyForm({
   const counted = useAutoDeleteEstimate(
     form.enabled && form.min_age_days !== null ? policyOf(form, form.min_age_days) : undefined,
   );
+  // What the maximum takes from a reader it binds, and how many posts go when it applies, whatever the form holds
+  // meanwhile: the count of what the server makes of their saved policy.
+  const lost = limit !== undefined && bound !== undefined ? lostUnder(formOf(settings), formOf(limit.effective)) : [];
+  const then = useAutoDeleteEstimate(
+    limit !== undefined && bound !== undefined
+      ? policyOf(formOf(limit.effective), limit.effective.min_age_days)
+      : undefined,
+  );
+  // A list inside a sentence, joined as the reader's language joins one, and one thing of it.
+  const list = new Intl.ListFormat(strings.lang, { type: "conjunction" });
+  const item = (of: string, days = 0) => t("settings.account.auto_delete.keep.item", { item: of, days });
   const focusNext = useRef<string | undefined>(undefined);
   useEffect(() => {
     if (focusNext.current === undefined) return;
@@ -461,7 +496,27 @@ function PolicyForm({
               state: bound,
               date: limit.enforce_from === undefined ? "" : day(limit.enforce_from),
             })}
-            about={t("settings.account.auto_delete.bound.about", { state: bound, days: limit.max_age_days })}
+            about={t("settings.account.auto_delete.bound.about", {
+              state: bound,
+              // What changes for this account: two things at most where more differ, the rest being on the page.
+              items: list.format(
+                (lost.length > 2
+                  ? [...lost.slice(0, 2), { item: "more" }]
+                  : lost.length > 0
+                    ? lost
+                    : [{ item: "some" }]
+                ).map((l) => item(l.item, l.days)),
+              ),
+              counted:
+                then.preview === undefined
+                  ? "unknown"
+                  : then.preview.count === 0
+                    ? "none"
+                    : then.preview.more
+                      ? "more"
+                      : "yes",
+              count: then.preview?.count ?? 0,
+            })}
           />
         )}
         <SettingsSection
@@ -597,15 +652,13 @@ function PolicyForm({
                 ))}
             </Stack>
             {keptError !== undefined && <FieldError id={keptErrorId}>{keptError}</FieldError>}
-            {/* The kinds the server does not let be kept, in words under their own name: none is a control. */}
+            {/* The kinds the server does not let be kept, in one sentence, as the sections it allows nothing of say it. */}
             {kept.some(([, allow]) => !allows(allow)) && (
-              <SettingsFacts
-                label={t("settings.account.auto_delete.keep.fixed")}
-                shown
-                items={kept
-                  .filter(([, allow]) => !allows(allow))
-                  .map(([keep, , word]) => ({ text: keepName(keep, word) }))}
-              />
+              <Box as="p" breaks="phrase">
+                {t("settings.account.auto_delete.keep.fixed", {
+                  items: list.format(kept.filter(([, allow]) => !allows(allow)).map(([, , word]) => item(word))),
+                })}
+              </Box>
             )}
           </SettingsSection>
         )}

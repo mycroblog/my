@@ -399,14 +399,15 @@ function SettingFrame({
     across: "@min-[28rem]:col-[1/-1] @min-[28rem]:row-start-3 @min-[28rem]:mt-screen-air",
     under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2 @min-[28rem]:mt-0 @min-[28rem]:mb-0",
   };
-  // In a narrow frame the line under the name stands tight under the line of the name and the control, as it does
-  // beside the control in a wide one, and the room after it parts it from the next setting: it reads as its own.
-  const narrow = { name: "self-end @min-[28rem]:self-auto", under: "-mt-screen-air mb-screen-air" };
+  // In a narrow frame the name stands on its control's line, at the control's middle, as a name with no line under
+  // it does, and the line about it under the two, a little air from the control and nearer to them than to the next
+  // setting by the room after it: it reads as its own, and no control stands above its name's line.
+  const narrow = { under: "mb-screen-field-gap" };
   const named = `flex min-w-0 flex-[9999_1_6rem] flex-wrap items-center gap-x-screen-row-gap ${wide.name}`;
   return (
     <div className="@container">
       <div className={`${className} flex flex-wrap items-center gap-x-screen-row-gap gap-y-screen-air ${wide.root}`}>
-        <div className={lined && !across ? `${named} ${narrow.name}` : across ? named : `${named} ${wide.alone}`}>
+        <div className={lined || across ? named : `${named} ${wide.alone}`}>
           <div className="max-w-full min-w-0 wrap-break-word">{name}</div>
           {state !== undefined && state !== null && state !== false && (
             <div className="min-w-0 grow basis-[clamp(0px,(100cqw_-_1px_-_100%)_*_9999,100%)] wrap-break-word">

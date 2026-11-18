@@ -7,14 +7,18 @@
 // - What the file lists (follows, followed hashtags, blocked and muted accounts, muted servers, bookmarks), the file
 //   itself, and how it is imported: merged into what the reader has, or replacing it.
 // - What the import would do, as the server reads the file, asked again whenever one of the three changes: how many
-//   it adds, how many the reader has already, and the lines it cannot read, the first few written out with why; then,
-//   last and apart under its own name, what a replacement removes. Nothing changes until the form is sent.
+//   it adds, how many the reader has already, and the lines it cannot read, the first few written out with why, each
+//   line of the file in quotation marks as the file writes it; then, last and apart under its own name, what a
+//   replacement removes. Nothing changes until the form is sent.
 // - The imports of the last days, which the server carries out in the background: what each lists and how, when it
-//   started, and where it stands in the text's color (how far it is, or what came of it), read again while one runs.
+//   started, and where it stands in the text's color (how far it is, or what came of it, and after a failure that
+//   importing the file again with Merge tries the rest: the server carries out every entry again and finds the ones
+//   it has done), read again while one runs. The API counts the failures and does not say which lines they were.
 //
 // What is wrong with the file (none chosen, too large, nothing in it to import, what the server refuses of it) stands
-// under the file's field, which takes the focus, the submit bar saying only that nothing was imported. A replacement
-// that removes something asks before it acts, saying how many it removes and that it cannot be undone. Once the
+// under the file's field, which takes the focus, the submit bar saying only that nothing was imported. What a
+// replacement removes cannot be put back, so the submit bar says it beside Import while it removes something, and
+// Import then asks before it acts, saying how many it removes and that it cannot be undone. Once the
 // server took the import, the form is empty again and the imports' status, a polite live region there from the
 // start, says that it started and takes the focus; a server that already carries one out says so in the submit bar,
 // and the form stays as it was.
@@ -74,6 +78,13 @@ export function useAccountImportTitle(): string {
 
 /** How many of the lines a file cannot be read at are written out. */
 const skippedShown = 5;
+
+/**
+ * What holds the place of a line of the file in a sentence until the sentence is formatted: the file's text goes in
+ * after, untouched by what joins the sentence's own numbers to their words. A character of the private use area, which
+ * no catalog writes.
+ */
+const echoed = "\uE000";
 
 /** The file the reader chose: its name and its text. */
 type Picked = { readonly name: string; readonly text: string };
@@ -174,12 +185,13 @@ function Preview({
                 {
                   text: t("settings.account.import.preview.skipped", { count: preview.skipped.length }),
                   about: [
+                    // The file's own line stands in the sentence as the file writes it, in the catalog's quotes.
                     ...preview.skipped.slice(0, skippedShown).map((s) =>
                       t("settings.account.import.preview.skipped.line", {
                         line: s.line,
                         reason: s.reason,
-                        value: s.value,
-                      }),
+                        value: echoed,
+                      }).replace(echoed, () => s.value),
                     ),
                     ...(more > 0 ? [t("settings.account.import.preview.skipped.more", { count: more })] : []),
                   ],
@@ -333,6 +345,11 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
     else start();
   };
 
+  // What the submit bar says beside Import: what a replacement removes, which cannot be put back; nothing for a
+  // merge, nor for a replacement that removes nothing.
+  const removesId = `${id}-removes`;
+  const removals = mode === "overwrite" && file !== undefined ? (previewed.preview?.removals ?? 0) : 0;
+  const removes = removals > 0 ? t("settings.account.import.submit.removes", { kind, count: removals }) : undefined;
   const status = (
     <Box as="p" id={statusId} role="status" tabIndex={-1} breaks="phrase">
       {said !== undefined && <span key={said.n}>{said.text}</span>}
@@ -351,8 +368,15 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
                 <FormAlert>{sent.reason ?? t("settings.account.import.refused")}</FormAlert>
               ) : undefined
             }
+            about={removes === undefined ? undefined : { id: removesId, text: removes }}
           >
-            <Button kind="primary" busy={busy} isDisabled={previewed.status === "pending"} onPress={send}>
+            <Button
+              kind="primary"
+              busy={busy}
+              isDisabled={previewed.status === "pending"}
+              onPress={send}
+              {...(removes === undefined ? {} : { "aria-describedby": removesId })}
+            >
               {t("settings.account.import.submit")}
             </Button>
           </SubmitBar>
@@ -381,6 +405,7 @@ export function AccountImportScreen({ onBack }: { onBack: () => void }) {
             accept=".csv,text/csv,text/plain"
             onFile={pick}
             isDisabled={busy}
+            row
           />
           <SettingRow
             id={modeId}

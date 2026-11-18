@@ -18,11 +18,15 @@ import { Row, Stack } from "./layout";
 
 const fileField = tv({
   slots: {
-    label: "font-label",
+    label: "",
     hint: "text-caption text-muted-text [word-break:auto-phrase]",
     // The name of the file it holds, which someone else wrote: it breaks anywhere it must.
     name: "[overflow-wrap:anywhere]",
     none: "text-muted-text [word-break:auto-phrase]",
+  },
+  variants: {
+    // A field's label; among the rows of settings, a setting's name: the text's own weight, as the names beside it.
+    row: { true: { label: "[word-break:auto-phrase]" }, false: { label: "font-label" } },
   },
 });
 
@@ -45,6 +49,11 @@ export type FileFieldProps = {
   onFile: (file: File) => void;
   /** It cannot be changed now (the form is being sent). */
   isDisabled?: boolean | undefined;
+  /**
+   * It stands among the rows of settings of a section (a `SettingRow` before or after it): its label looks as their
+   * names do, not as the label of a field in a form of fields.
+   */
+  row?: boolean | undefined;
 };
 
 export function FileField({
@@ -58,8 +67,9 @@ export function FileField({
   accept,
   onFile,
   isDisabled = false,
+  row = false,
 }: FileFieldProps) {
-  const s = fileField();
+  const s = fileField({ row });
   const input = useRef<HTMLInputElement>(null);
   return (
     <Stack

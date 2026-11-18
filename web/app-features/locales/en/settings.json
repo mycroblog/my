@@ -1512,8 +1512,8 @@
     "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
   },
   "settings.account.import.preview.skipped.line": {
-    "defaultMessage": "{reason, select, duplicate {Line {line, number} repeats an earlier line: {value}} other {Line {line, number} cannot be read: {value}}}",
-    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as written, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+    "defaultMessage": "{reason, select, duplicate {Line {line, number} repeats an earlier line: “{value}”} other {Line {line, number} cannot be read: “{value}”}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as the file writes it, which stands in quotation marks so that it does not read as the app's own words, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
   },
   "settings.account.import.preview.skipped.more": {
     "defaultMessage": "{count, plural, one {And # more line} other {And # more lines}}",
@@ -1526,6 +1526,10 @@
   "settings.account.import.submit": {
     "defaultMessage": "Import",
     "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.submit.removes": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {Importing unfollows # account.} other {Importing unfollows # accounts.}}} followed_tags {{count, plural, one {Importing unfollows # hashtag.} other {Importing unfollows # hashtags.}}} blocks {{count, plural, one {Importing unblocks # account.} other {Importing unblocks # accounts.}}} mutes {{count, plural, one {Importing unmutes # account.} other {Importing unmutes # accounts.}}} domain_mutes {{count, plural, one {Importing unmutes # server.} other {Importing unmutes # servers.}}} other {{count, plural, one {Importing removes # bookmark.} other {Importing removes # bookmarks.}}}}",
+    "description": "In the bar at the bottom of the settings page Import, right before Import, while Replace is chosen and the import would remove something: how many things the reader has now that the file does not list, which the import removes and cannot put back. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. One short sentence."
   },
   "settings.account.import.refused": {
     "defaultMessage": "Nothing was imported. Fix what is marked.",
@@ -1584,8 +1588,8 @@
     "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.import.row.state": {
-    "defaultMessage": "{state, select, running {In progress: {processed, number} of {total, number} done} nothing {Finished: there was nothing to do} done {Finished: all {total, number} done} partly {Finished: {done, number} of {total, number} done, {failed, number} failed} other {Finished: all {total, number} failed}}",
-    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. No full stop."
+    "defaultMessage": "{state, select, running {In progress: {processed, number} of {total, number} done} nothing {Finished: there was nothing to do} done {Finished: all {total, number} done} partly {Finished: {done, number} of {total, number} done, {failed, number} failed. Import the file again with “Merge” to try the rest.} other {Finished: all {total, number} failed. Import the file again with “Merge” to try them again.}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. After a failure it says what to do next: the server carries out every entry of a file again when it is imported again, finds the ones it has already done, and tries the others; Merge is the option settings.account.import.mode.choice. No full stop while nothing failed."
   },
   "settings.account.auto_delete": {
     "defaultMessage": "Delete old posts automatically",
@@ -1612,8 +1616,8 @@
     "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
   },
   "settings.account.auto_delete.bound.about": {
-    "defaultMessage": "{state, select, now {This server keeps posts for {days, plural, one {# day} other {# days}} at most, which your saved settings exceed. Saving this page brings them within the limit.} other {This server keeps posts for {days, plural, one {# day} other {# days}} at most. Until the limit applies, your saved settings stay in effect. Saving this page applies it at once.}}",
-    "description": "Under settings.account.auto_delete.bound, in a few short sentences: what the server's maximum is, that the reader's own settings stay in effect until it applies, and what saving does. It is the one place of the page that says the maximum. state is as in settings.account.auto_delete.bound; days is the maximum."
+    "defaultMessage": "{state, select, now {You can no longer keep {items}{counted, select, yes {: {count, number} of your posts are being deleted} more {: more than {count, number} of your posts are being deleted} other {}}. Saving this page brings your settings within the limit.} other {You can then no longer keep {items}{counted, select, yes {: {count, number} of your posts will be deleted then} more {: more than {count, number} of your posts will be deleted then} none {: none of your posts will be deleted then} other {}}. Saving this page does it now.}}",
+    "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
   },
   "settings.account.auto_delete.section.when": {
     "defaultMessage": "When posts are deleted",
@@ -1675,9 +1679,13 @@
     "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {Pinned posts} one {Your most recently pinned post} other {Your # most recently pinned posts}}} bookmarked {Posts you bookmarked} favourited {Posts you favourited} media {Posts with media} polls {Posts with a poll} other {Articles}}",
     "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
   },
+  "settings.account.auto_delete.keep.item": {
+    "defaultMessage": "{item, select, age {posts older than {days, plural, one {# day} other {# days}}} pinned {pinned posts} bookmarked {posts you bookmarked} favourited {posts you favourited} media {posts with media} polls {posts with a poll} articles {articles} audiences {posts by their audience} thresholds {posts by their boosts or favourites} more {more below} other {some posts your saved settings keep}}",
+    "description": "One thing in a list inside a sentence of the settings page Delete old posts automatically, joined to the others as the reader's language joins a list (A, B, and C): what a server's maximum does not let the reader keep (settings.account.auto_delete.keep.fixed, settings.account.auto_delete.bound.about). In lower case, since it never starts the sentence. item is age (posts past days days), a kind of post (pinned, bookmarked, favourited, media, polls, articles), audiences (posts kept for the audience they were made for), thresholds (posts kept for how often they were boosted or favourited), more (the last of a list cut after two: the rest is on the page below), or anything else when the page cannot tell which. No full stop."
+  },
   "settings.account.auto_delete.keep.fixed": {
-    "defaultMessage": "Posts this server does not let you keep",
-    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the name over the list of the kinds of post the server's maximum does not allow to be kept, each by the name of its checkbox (settings.account.auto_delete.keep), which are not offered as checkboxes. No full stop."
+    "defaultMessage": "This server does not let you keep {items}.",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the kinds of post the server's maximum does not allow to be kept, which are not offered as checkboxes. items is those kinds, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list. The same sentence form as settings.account.auto_delete.audiences.about (allowed no) and settings.account.auto_delete.thresholds.fixed."
   },
   "settings.account.auto_delete.section.audiences": {
     "defaultMessage": "Posts kept by audience",
