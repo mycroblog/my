@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the screens of the settings' entries share (Security, Apps, Invites), each once: the notice in a screen's
-// sections' place until what it shows is read, when it could not be, or when its address names nothing of the
-// reader's; a number and the dates of a row, in the reader's language and time zone; a value to copy, with the button
-// that copies it and what came of copying; the confirmation before what a row's button ends, which asks no proof and
-// says in the server's words why it did not happen; the way of the focus to the field a form says is at fault; and
-// the focus of a view that takes another's place, on what it says first.
+// What the screens of the settings' entries share, each once: the notice in a screen's sections' place until what it
+// shows is read, when it could not be, or when its address names nothing of the reader's (every entry's); a moment
+// with its year, as every entry that says when something ends or happened writes it (`useMoment`); and, for
+// Security, Apps and Invites, a number and the dates of a row, in the reader's language and time zone; a value to
+// copy, with the button that copies it and what came of copying; the confirmation before what a row's button ends,
+// which asks no proof and says in the server's words why it did not happen; the way of the focus to the field a form
+// says is at fault; and the focus of a view that takes another's place, on what it says first, at once or once the
+// dialog over it has left.
 
 import {
   Box,
@@ -14,14 +16,14 @@ import {
   CopyBlock,
   dateFormat,
   FeedNotice,
-  TextButton,
+  focusRefusedField,
   TextLink,
   useLocale,
   useTimeZone,
   wallTime,
 } from "@my/design-system";
 import { copyText } from "@my/platform";
-import { useEffect, useState, type ReactNode, type RefObject } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { stringsIn } from "../locale";
 import { saidOf, useGone } from "./confirmation";
 
@@ -36,33 +38,45 @@ type Missing = {
 };
 
 /**
- * In the sections' place, as a screen's `notice`: that what the screen shows loads, that it could not be read, with
- * the way to try again, or that its address names nothing of the reader's (`missing`, which an entry words), with
- * the way to the list.
+ * In the sections' place, as a screen's `notice` (of a `SettingsScreen`), as the screen's text reads, at its start:
+ * that what the screen shows loads, that it could not be read, with Try again after it, a button whose target is a
+ * finger's on a touch screen, or that its address names nothing of the reader's (`missing`, which an entry words),
+ * with the way to the list. A screen that reads one thing says it by name (`words`: the account's status), as the
+ * part of its entry that reads the same does; without them, the settings.
  */
 export function ReadingNotice({
   status,
   retry,
   missing,
+  words,
 }: {
   status: "loading" | "failed" | "missing";
   retry: () => void;
   /** What `missing` says; an entry whose screens name nothing of a list gives none, and no such screen is missing. */
   missing?: Missing | undefined;
+  words?: { readonly loading: string; readonly failed: string } | undefined;
 }) {
   const { t } = stringsIn(useLocale().locale);
   if (status === "missing" && missing !== undefined)
     return (
-      <FeedNotice alert action={<TextLink href={missing.href}>{missing.all}</TextLink>}>
+      <FeedNotice alert lead action={<TextLink href={missing.href}>{missing.all}</TextLink>}>
         {missing.said}
       </FeedNotice>
     );
   return status === "failed" ? (
-    <FeedNotice alert action={<TextButton onPress={retry}>{t("settings.retry")}</TextButton>}>
-      {t("settings.failed")}
+    <FeedNotice
+      alert
+      lead
+      action={
+        <Button size="timeline" touch onPress={retry}>
+          {t("settings.retry")}
+        </Button>
+      }
+    >
+      {words?.failed ?? t("settings.failed")}
     </FeedNotice>
   ) : (
-    <FeedNotice>{t("settings.loading")}</FeedNotice>
+    <FeedNotice lead>{words?.loading ?? t("settings.loading")}</FeedNotice>
   );
 }
 
@@ -97,6 +111,22 @@ export function useDates(): { day: (iso: string) => string; hour: (iso: string) 
       .replaceAll(" ", noBreak);
   };
   return { day: (iso) => format(iso, {}), hour: (iso) => format(iso, { hour: "numeric" }) };
+}
+
+/**
+ * A moment (when a mute or a filter ends, when an action was taken or appealed) as the reader's language and time zone
+ * write it, with its year: its day and its time to the minute, or its day alone without `time`. It holds together as
+ * a date of `useDates` does: its spaces do not break.
+ */
+export function useMoment(time = true): (iso: string) => string {
+  const { locale } = useLocale();
+  const timeZone = useTimeZone();
+  const format = dateFormat(
+    locale,
+    timeZone,
+    time ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" },
+  );
+  return (iso) => format.format(new Date(iso)).replaceAll(" ", noBreak);
 }
 
 /** Copying `text`, and what came of the last copy, in words; undefined until one was asked. */
@@ -153,6 +183,7 @@ const nothing = () => undefined;
 export function Asking({
   title,
   confirm,
+  cancel,
   run,
   onClose,
   onLeft,
@@ -160,6 +191,8 @@ export function Asking({
 }: {
   title: string;
   confirm: string;
+  /** The name of the button that closes it with nothing done, where Cancel would read as the confirmation (Cancel the move). */
+  cancel?: string | undefined;
   run: () => Promise<unknown>;
   onClose: () => void;
   /**
@@ -177,7 +210,7 @@ export function Asking({
   return (
     <ConfirmDialog
       title={title}
-      cancel={t("settings.confirm.cancel")}
+      cancel={cancel ?? t("settings.confirm.cancel")}
       confirm={confirm}
       busy={busy}
       onCancel={onClose}
@@ -202,13 +235,14 @@ export function Asking({
 
 /**
  * Moves the focus to the field a form says is at fault, so that a screen reader reads the field with what is wrong
- * and the reader corrects it at once. `within` says where the field is: the form's ref, which the screen makes and
- * gives its form, for the first field of it that is marked invalid, in the form's order; or the ID of one field's
- * control, which takes the focus only while it is marked invalid. The function returned asks, each time the form said
- * its faults (its own check before sending, or what the server refused of a field), and the focus moves once those
- * words stand under their fields; it moves again, once asked, when `within` names another field or `again` changes
- * (new fields in the place of the ones at fault). With no field at fault it moves nothing: what the server refused of
- * the whole stands right before the button, which keeps the focus.
+ * and the reader corrects it at once, its error in view with it, clear of the submit bar (`focusRefusedField`).
+ * `within` says where the field is: the form's ref, which the screen makes and gives its form, for the first field of
+ * it that is marked invalid, in the form's order; or the ID of one field's control, which takes the focus only while
+ * it is marked invalid. The function returned asks, each time the form said its faults (its own check before sending,
+ * or what the server refused of a field), and the focus moves once those words stand under their fields; it moves
+ * again, once asked, when `within` names another field or `again` changes (new fields in the place of the ones at
+ * fault). With no field at fault it moves nothing: what the server refused of the whole stands right before the
+ * button, which keeps the focus.
  */
 export function useFaultFocus(within: RefObject<HTMLElement | null> | string, again?: string): () => void {
   /** Each ask, counted: the same faults said again ask again. */
@@ -220,7 +254,10 @@ export function useFaultFocus(within: RefObject<HTMLElement | null> | string, ag
         ? document.getElementById(within)
         : within.current?.querySelector<HTMLElement>('[aria-invalid="true"]');
     // Only a field that says something is wrong takes the focus: the words stand under it by now.
-    if (field?.getAttribute("aria-invalid") === "true") field.focus();
+    if (field?.getAttribute("aria-invalid") !== "true") return;
+    // The design system finds a field by its id; one without is focused as it is.
+    if (field.id === "") field.focus();
+    else focusRefusedField(field.id);
   }, [asked, within, again]);
   return () => {
     setAsked((n) => n + 1);
@@ -236,4 +273,33 @@ export function useFocusOnArrival(target: RefObject<HTMLElement | null>): void {
   useEffect(() => {
     target.current?.focus();
   }, [target]);
+}
+
+/**
+ * Gives the focus to `target` once the dialog over the screen has left, for what took a view's place under that
+ * dialog (the summary of an account that has just moved, in the form's place): `expect` says that `target` will hold
+ * what just happened, and `settle`, the same function at every render, is given to the dialog to call once it is out
+ * of the document (`left` of a confirmation, `onLeft` of `Asking`). Until then the dialog holds the focus; after, the
+ * control that opened it is gone with the view it stood in. A dialog that leaves with nothing expected moves nothing.
+ * `target` is a ref the screen makes and gives that element.
+ */
+export function useFocusAfterDialog(target: RefObject<HTMLElement | null>): { expect: () => void; settle: () => void } {
+  /** Each leaving of a dialog over the screen, counted. */
+  const [settled, setSettled] = useState(0);
+  /** Something was said and the focus has not been moved to it yet. */
+  const waits = useRef(false);
+  const [settle] = useState(() => () => {
+    setSettled((n) => n + 1);
+  });
+  useEffect(() => {
+    if (settled === 0 || !waits.current) return;
+    waits.current = false;
+    target.current?.focus();
+  }, [settled, target]);
+  return {
+    expect: () => {
+      waits.current = true;
+    },
+    settle,
+  };
 }

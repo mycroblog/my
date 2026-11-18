@@ -4,7 +4,8 @@
 // column; the avatar over its lower edge, half on it, ringed by the page's surface, with the reader's actions at the
 // other end of its row, as far from the banner's edge as from the avatar; the name with its marks over the handle and
 // its badges; then the rest, a profile's gap apart (the bio, the fields, when it joined and its counts, lines of the
-// account's state, the featured hashtags). Its parts: the fields, the line of counts, the reader's private note (a
+// account's state, the featured hashtags). As a `summary`, inside another screen, its banner is a strip and its name
+// no heading. Its parts: the fields, the line of counts, the reader's private note (a
 // line that opens its editor in place), and a list of hashtags. It is composed of the design system's parts alone,
 // laid out and painted by their props (ADR-0025 §4).
 
@@ -44,6 +45,11 @@ export type ProfileHeadProps = {
   badges?: ReactNode;
   /** The rest of the head, one part under another. */
   children?: ReactNode;
+  /**
+   * The head shown small inside another screen (the reader's own profile, in their settings): the banner is a strip
+   * within the head, and the name is a line of it, no heading of the page.
+   */
+  summary?: boolean | undefined;
 };
 
 export function ProfileHead({
@@ -56,12 +62,20 @@ export function ProfileHead({
   handle,
   badges,
   children,
+  summary = false,
 }: ProfileHeadProps) {
   const { direction } = useLocale();
   return (
-    <BannerHead banner={banner} lead={avatar} end={actions} labelledBy={nameId} dir={direction}>
+    <BannerHead banner={banner} lead={avatar} end={actions} labelledBy={nameId} dir={direction} strip={summary}>
       <Stack gap="hair">
-        <Row as="h2" wrap align="center" gap="screen-name-gap" text="title">
+        <Row
+          as={summary ? "p" : "h2"}
+          wrap
+          align="center"
+          gap="screen-name-gap"
+          text={summary ? "body" : "title"}
+          weight={summary ? "strong" : undefined}
+        >
           <bdi id={nameId}>{name}</bdi>
           {marks}
         </Row>

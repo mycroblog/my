@@ -29,6 +29,8 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
+//   - `fresh.moderate(staff, target, { kind, publicReason, expiresIn? })` a moderation action of `staff`, a fresh person
+//     made with `admin: true`, on the fresh `target`'s account, which is told of it.
 //   - `fresh.newcomer({ approval? })` a username, an email address and a password nobody has signed up with, for a
 //     person who signs up on the registration screen: the server is open to everyone, and with `approval` the address
 //     is of the domain whose sign-ups wait for a moderator (the scenario's `approvalDomain`);

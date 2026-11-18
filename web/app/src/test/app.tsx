@@ -49,7 +49,28 @@ export type TestApp = Pick<FakeApp, "fake" | "data"> & {
   navigate: (to: string) => Promise<void>;
   /** Goes back, as the browser's button does, and returns once the screen is in place. */
   back: () => Promise<void>;
+  /**
+   * Returns once the app is at `path` with its screen loaded and drawn, which a press of the reader led to: it waits
+   * for the router's end of the navigation, not for a span of the wall's clock that a busy machine outlasts.
+   */
+  arrived: (path: string) => Promise<void>;
 };
+
+/**
+ * The address of the page the app is served from, as the DOM of the process gave it before any test of the app ran.
+ * A press the app leaves to the browser (a download's link, the sign-in's page, a page of another server) makes
+ * happy-dom follow it and move the page's address for every later test of the process, in whichever file: at
+ * `about:blank` or a `blob:` address no link of the app is of the page's origin, and every link of a later test then
+ * does nothing.
+ */
+const page = document.URL;
+
+/** Puts the page back at the app's address without loading it, as happy-dom lets a test do. */
+function atThePage(): void {
+  const dom = Reflect.get(globalThis, "happyDOM") as { setURL?: (url: string) => void } | undefined;
+  if (dom?.setURL === undefined) throw new Error("test: renderApp runs on happy-dom, which can set the page's address");
+  if (document.URL !== page) dom.setURL(page);
+}
 
 /**
  * Renders the app at the path `at`, on a fake API of its own, and returns once the first screen is in place. The
@@ -59,6 +80,9 @@ export async function renderApp(
   at: string,
   { locale = "en", on, unasked = false, ...options }: AppOptions = {},
 ): Promise<TestApp> {
+  // Each test starts on the app's page, and leaves it there for the next, whatever its presses made the DOM follow.
+  atThePage();
+  onTestFinished(atThePage);
   const { fake, watch, data, visitor } = on ?? fakeApp(options);
   // What the app started ends with the test that rendered it, in whichever file it is.
   onTestFinished(() => {
@@ -96,6 +120,7 @@ export async function renderApp(
         throw new Error(`test: the app is still on its way to ${router.state.location.href}`);
     });
   await settled();
+  const isAt = (path: string) => router.state.status === "idle" && router.state.location.href === path;
   return {
     fake,
     data,
@@ -114,6 +139,19 @@ export async function renderApp(
       });
       await settled();
     },
+    arrived: (path) =>
+      new Promise<void>((resolve) => {
+        if (isAt(path)) {
+          resolve();
+          return;
+        }
+        // The router says a navigation resolved once the screen it loaded is drawn; the test's timeout bounds the wait.
+        const stop = router.subscribe("onResolved", () => {
+          if (!isAt(path)) return;
+          stop();
+          resolve();
+        });
+      }),
   };
 }
 

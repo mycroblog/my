@@ -28,12 +28,13 @@ export type AvatarProps = {
 
 const avatar = tv({
   slots: {
-    base: "rounded-full bg-surface-raised",
+    // On a raised surface (a section of a settings screen), it takes the page's surface, so that its circle shows.
+    base: "rounded-full bg-surface-raised [[data-surface-raised]_&]:bg-surface",
     // An image sits on the light avatar-backing in both schemes, so that a dark logo on transparency stays seen.
     image: "object-cover bg-avatar-backing",
     // The initial's own surface, over the backing: the place for a color of the account's own, which would tell two
     // accounts with the same initial apart.
-    fallback: "bg-surface-raised leading-none font-label text-text",
+    fallback: "bg-surface-raised leading-none font-label text-text [[data-surface-raised]_&]:bg-surface",
     // A decorative avatar's initial is drawn, not written: inside a link named by its own words (a row of faces), a
     // written initial would be visible text missing from that name.
     drawn: "before:content-[attr(data-initial)]",

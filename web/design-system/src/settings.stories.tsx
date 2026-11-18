@@ -69,7 +69,7 @@ const en = {
     account: "Account",
   },
   entries: {
-    profile: ["Profile", "Name, bio, pictures, badges, how people find you"],
+    profile: ["Profile", "Name, bio, images, badges, how people find you"],
     display: ["Display and posting", "Language, time zone, new posts, timelines"],
     notifications: ["Notifications", "What reaches you, and where"],
     emoji: ["Custom emoji", "Emoji you added to this server"],

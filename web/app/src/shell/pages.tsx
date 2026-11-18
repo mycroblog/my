@@ -25,7 +25,8 @@ import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
 import { useStrings } from "../locale";
 import { SignOutConfirm } from "../sign-out";
 
-const wordmark = { light: wordmarkLight, dark: wordmarkDark };
+/** The built-in wordmark, for light and dark, which a page of its own shows for a server without a logo. */
+export const wordmark = { light: wordmarkLight, dark: wordmarkDark };
 
 /** The server as a page of its own shows it: its name, its logo for light and dark, and its summary. */
 export function pageServer(instance: Instance | undefined, name: string): FormPageServer {
@@ -38,7 +39,7 @@ export function pageServer(instance: Instance | undefined, name: string): FormPa
 }
 
 /** The footer of a page of its own: the status page when there is one, and the server's about page. */
-function PageFooter({ statusPage }: { statusPage: string | undefined }) {
+export function PageFooter({ statusPage }: { statusPage: string | undefined }) {
   const t = useStrings();
   return (
     <FormPageFooter

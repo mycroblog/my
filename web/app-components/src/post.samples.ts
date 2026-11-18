@@ -81,6 +81,8 @@ export type TimelinePost = {
    */
   history?: { ago: number; text: string; cw?: string; media?: Media[] }[];
   edited?: number;
+  /** The names of the reader's keyword filters that it matched, which fold it (ADR-0157 §10). */
+  filtered?: string[];
 };
 
 /**
@@ -96,7 +98,10 @@ type SamplePoll = {
   hideTotals?: boolean;
 };
 
-export type QuotedPost = Pick<TimelinePost, "lang" | "author" | "ago" | "visibility" | "text" | "media" | "sensitive">;
+export type QuotedPost = Pick<
+  TimelinePost,
+  "lang" | "author" | "ago" | "visibility" | "text" | "media" | "sensitive" | "filtered"
+>;
 
 type Reaction = { emoji: string; count: number; mine?: boolean };
 
@@ -728,9 +733,18 @@ export function statusOf(post: TimelinePost | QuotedPost, id = "quoted"): PostSt
       full.quote === undefined ? undefined : { state: "accepted", quoted_status: statusOf(full.quote, `${id}-quote`) },
     poll: full.poll === undefined ? undefined : pollOf(full.poll, `${id}-poll`),
     ...(full.edited === undefined ? {} : { edited_at: new Date(Date.now() - full.edited).toISOString() }),
+    ...(full.filtered === undefined
+      ? {}
+      : { filtered: full.filtered.map((title, i) => ({ filter: { id: `${id}-filter-${i}`, title } })) }),
   };
   if (full.boostedBy === undefined) return shown;
-  return { ...shown, id: `${id}-boost`, account: accountOf(full.boostedBy), boost: shown };
+  // A boost carries the filters of the post it boosts, which carries none of its own, as the server answers it.
+  return {
+    ...shown,
+    id: `${id}-boost`,
+    account: accountOf(full.boostedBy),
+    boost: full.filtered === undefined ? shown : { ...shown, filtered: [] },
+  };
 }
 
 /** The translation the server would answer for a fixture in `lang`, by the provider; none when it has none. */

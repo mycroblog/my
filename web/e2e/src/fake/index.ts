@@ -21,5 +21,6 @@ export {
 export { fakeExternalConfirmation, fakeTotpCode, type AccessOptions, type FakeLoginProviderKind } from "./access";
 export { apps as scenarioApps, instance as scenarioInstance } from "../scenario";
 export { serverHtml } from "./html";
+export { memberNotificationRows, moderatorNotificationRows, type FakeNotificationRow } from "./settings";
 export type { Failure, Script, Scripted, Seen } from "./script";
 export { UnimplementedError, type Route } from "./spec";

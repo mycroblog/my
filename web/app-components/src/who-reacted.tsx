@@ -8,9 +8,9 @@
 import { Avatar, CustomEmoji, FacesRow, ListTitle, useLocale } from "@my/design-system";
 import type { ReactNode } from "react";
 import { nameOf } from "./account";
+import { format } from "./format";
 import { stringsIn } from "./locale";
 import { reactorsPath } from "./paths";
-import { format } from "./post";
 import type { PostAccount, PostReaction, PostStatus } from "./status";
 
 /** A reaction to a post with one emoji, and the first accounts that reacted with it. */

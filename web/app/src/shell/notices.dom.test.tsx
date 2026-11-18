@@ -10,6 +10,7 @@ import { fakeStatusPage } from "@my/e2e/fake";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ReactNode } from "react";
+import { main, renderApp } from "../test/app";
 import { fakeApp, instanceOf } from "../test/server";
 import { ServerBanners, UpdateToast } from "./notices";
 
@@ -91,10 +92,19 @@ test("the closure notice says when the server closes, leads to the export and th
 
   expect(region.textContent).toMatch(/^This server closes on .+\. Export your data by .+\./);
   expect(links).toEqual([
-    ["Export your data", "/settings/export"],
-    ["Move your account", "/settings/move"],
+    ["Export your data", "/settings/account/export"],
+    ["Move your account", "/settings/account/move"],
   ]);
   expect(within(region).queryAllByRole("button")).toHaveLength(0);
+});
+
+test("each link of the closure notice leads to a screen of the app, not to a page it does not have", async () => {
+  for (const at of ["/settings/account/export", "/settings/account/move"]) {
+    cleanup();
+    const app = await renderApp(at);
+    expect([at, app.path()]).toEqual([at, at]);
+    expect([at, main().queryAllByText("This settings page does not exist.")]).toEqual([at, []]);
+  }
 });
 
 test("a server that answers and does not close shows no notice", async () => {

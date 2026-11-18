@@ -5,57 +5,36 @@
 // does not block the site's notifications, the grant is known to have no subscription (never while that is read or
 // could not be), the kinds to push are read, and this account did not close it in this browser. Turn on asks the
 // browser's permission only as the reader presses it, then subscribes to every kind the reader gets and registers the
-// subscription; the prompt goes and a line says that the kinds are chosen in the settings. The question closed without
+// subscription, as the switch of the notification settings does (app-data's `usePushSwitch`); the prompt goes and a
+// line says so, with a link to the notification settings, where the kinds are
+// chosen and it is turned off. The question closed without
 // a choice, or a failed subscription, says so under the prompt, which stays to be pressed again; a refusal says so
 // and leaves only Not now. Not now keeps the record on this device and moves the focus to the tabs. Nothing subscribes
 // again by itself: a reader who signed in again sees the prompt.
 
+import { notificationSettingsPath } from "@my/app-components";
 import {
   rememberPushPromptClosed,
   useInstance,
   useNotificationKinds,
   usePushPromptClosed,
   usePushSubscription,
-  useRegisterPush,
+  usePushSwitch,
   useViewer,
-  type NotificationType,
+  type PushTurnOn,
 } from "@my/app-data";
-import { FeedNotice, InlinePrompt } from "@my/design-system";
-import {
-  askNotificationPermission,
-  notificationPermission,
-  subscribePush,
-  supportsPush,
-  type PushSubscriptionData,
-} from "@my/platform";
+import { FeedNotice, InlinePrompt, TextLink } from "@my/design-system";
+import { notificationPermission, supportsPush } from "@my/platform";
 import { useRef, useState } from "react";
 import type { stringsIn } from "../locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
-/** Where the prompt is: offered, after the question closed without a choice, refused, failed, done, or closed. */
-type Phase = "offered" | "closed" | "blocked" | "failed" | "on" | "gone";
-
 /**
- * Turns Web Push on for this device as the reader pressed Turn on: asks the browser's permission when it was never
- * given, then subscribes with the server's key and registers the subscription for `kinds`; where the prompt is then.
+ * Where the prompt is: offered; where turning Web Push on ended (the question closed without a choice, refused,
+ * failed, on); or closed by the reader.
  */
-async function turnOn(
-  key: string,
-  kinds: readonly NotificationType[],
-  register: (subscription: PushSubscriptionData, alerts: readonly NotificationType[]) => Promise<void>,
-): Promise<Phase> {
-  let permission = notificationPermission();
-  if (permission === "default") permission = await askNotificationPermission();
-  if (permission === "denied") return "blocked";
-  if (permission !== "granted") return "closed";
-  try {
-    await register(await subscribePush(key), kinds);
-    return "on";
-  } catch {
-    return "failed";
-  }
-}
+type Phase = "offered" | PushTurnOn | "gone";
 
 /** Moves the focus to the current tab over the notifications, so that it is not lost with the prompt. */
 function focusTabs(): void {
@@ -69,11 +48,19 @@ export function PushPrompt({ t }: { t: T }) {
   const subscription = usePushSubscription();
   const kinds = useNotificationKinds();
   const closed = usePushPromptClosed(viewer?.id);
-  const register = useRegisterPush();
+  const { turnOn } = usePushSwitch();
   const [phase, setPhase] = useState<Phase>("offered");
   const running = useRef(false);
   if (phase === "gone") return null;
-  if (phase === "on") return <FeedNotice start>{t("notifications.push_on")}</FeedNotice>;
+  if (phase === "on")
+    return (
+      <FeedNotice
+        start
+        action={<TextLink href={notificationSettingsPath}>{t("notifications.push_settings")}</TextLink>}
+      >
+        {t("notifications.push_on")}
+      </FeedNotice>
+    );
   const offered =
     viewer !== undefined &&
     key !== undefined &&
@@ -88,9 +75,9 @@ export function PushPrompt({ t }: { t: T }) {
   const press = () => {
     if (running.current) return;
     running.current = true;
-    void turnOn(key, kinds, register).then((next) => {
+    // Turned on, the record that the account closed the prompt here is taken away with it (`turnPushOn`).
+    void turnOn(kinds).then((next) => {
       running.current = false;
-      if (next === "on") rememberPushPromptClosed(viewer.id, false);
       setPhase(next);
     });
   };

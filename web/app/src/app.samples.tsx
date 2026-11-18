@@ -43,7 +43,8 @@ export type Fake = {
    * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized,
    * `{invite:0}` the ID of the reader's invite at that index of their list),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
-   * `members:<index>` of its members,
+   * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
+   * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
    * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
    * it opens.
@@ -158,7 +159,8 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
  * the ID of the reader's invite at an index of their list in place of each `{invite:<index>}`, the page of the
  * announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
- * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
+ * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the editor of the reader's keyword
+ * filter of `filter:<index>`, the held-back notifications of the
  * person of `held:<username>`, the page of the reader's newest notification of `notification:<type>`, else the page of
  * the scenario post of that key.
  */
@@ -174,6 +176,8 @@ function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
   if (at.startsWith("list:")) return fake.listPath(Number(at.slice("list:".length)));
+  if (at.startsWith("filter:")) return fake.filterPath(Number(at.slice("filter:".length)));
+  if (at.startsWith("action:")) return fake.actionPath(Number(at.slice("action:".length)));
   if (at.startsWith("members:")) return `${fake.listPath(Number(at.slice("members:".length)))}/members`;
   if (at.startsWith("conversation:")) return fake.conversationPath(Number(at.slice("conversation:".length)));
   if (at.startsWith("held:")) return fake.heldPath(at.slice("held:".length));
@@ -270,7 +274,13 @@ function StoryPage({
     const watch = watchServer({ server: fakeOrigin, fetch: staged(fake.serve, state), followDevice: false });
     if (updateReady) watch.offerUpdate();
     const data = createAppData(
-      createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: watch.fetch }),
+      createClient({
+        server: fakeOrigin,
+        retry: { disabled: true },
+        fetch: watch.fetch,
+        // The story's locale, as the app's session sends the reader's: the fake words what the server words in it.
+        acceptLanguage: () => document.documentElement.lang,
+      }),
       undefined,
       watch,
     );

@@ -5,6 +5,7 @@
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { pushBrowser } from "./push.samples";
 
 const at = "/notifications";
 
@@ -42,91 +43,13 @@ export const ToModerators: Story = {
   parameters: screen({ at, server: { everyKind: "moderators" } }, "notifications"),
 };
 // The prompt to turn Web Push on (ADR-0086 §18–§19), on a server that sends it, for a reader with no subscription who
-// has not closed it. The browser is stubbed, as a headless one blocks notifications: its notifications, a site never
-// asked yet, and its push manager behind a Service Worker; and the device's record of who closed the prompt, which
-// the story starts and ends without. What the prompt says after Turn on is the prompt's own (the design system's
-// Inline prompt).
-
-/** The device's key of the accounts that closed the prompt (ADR-0086 §21). */
-const closedKey = "my:push-prompt-closed";
-
-/** A subscription as the browser holds one, made with the application key `key`. */
-function subscriptionOf(key: BufferSource | string | null | undefined) {
-  const endpoint = "https://push.example/s/story";
-  const applicationServerKey =
-    key === null || key === undefined || typeof key === "string"
-      ? null
-      : key instanceof ArrayBuffer
-        ? key
-        : new Uint8Array(key.buffer, key.byteOffset, key.byteLength).slice().buffer;
-  return {
-    endpoint,
-    expirationTime: null,
-    options: { userVisibleOnly: true, applicationServerKey },
-    getKey: (name: string) =>
-      name === "p256dh" ? new Uint8Array([4, 1, 2]).buffer : name === "auth" ? new Uint8Array([9, 9]).buffer : null,
-    toJSON: () => ({ endpoint, expirationTime: null, keys: { p256dh: "BAEC", auth: "CQk" } }),
-    unsubscribe: () => Promise.resolve(true),
-  };
-}
-
-/** Stubs the browser of a story before it renders, and returns what puts the browser back. */
-const pushBrowser = () => {
-  localStorage.removeItem(closedKey);
-  const notifications = Reflect.get(window, "Notification") as object;
-  const notificationsWere = Object.getOwnPropertyDescriptors(notifications);
-  let now: NotificationPermission = "default";
-  Object.defineProperty(notifications, "permission", { configurable: true, get: () => now });
-  Object.defineProperty(notifications, "requestPermission", {
-    configurable: true,
-    value: () => {
-      now = "granted";
-      return Promise.resolve(now);
-    },
-  });
-  let current: ReturnType<typeof subscriptionOf> | null = null;
-  const pushManager = {
-    getSubscription: () => Promise.resolve(current),
-    permissionState: () => Promise.resolve(now === "granted" ? "granted" : now === "denied" ? "denied" : "prompt"),
-    subscribe: (options?: PushSubscriptionOptionsInit) => {
-      current = subscriptionOf(options?.applicationServerKey);
-      return Promise.resolve(current);
-    },
-  };
-  const registration = {
-    scope: `${location.origin}/`,
-    active: {},
-    pushManager,
-    showNotification: () => Promise.resolve(),
-    getNotifications: () => Promise.resolve([]),
-  };
-  // The page's Service Worker container, reached as the stub of Notification above is: only @my/platform reads the
-  // platform's globals in the app.
-  const container = Reflect.get(window, "navigator").serviceWorker;
-  Object.defineProperty(container, "ready", { configurable: true, get: () => Promise.resolve(registration) });
-  Object.defineProperty(container, "getRegistration", {
-    configurable: true,
-    value: () => Promise.resolve(registration),
-  });
-  Object.defineProperty(container, "getRegistrations", {
-    configurable: true,
-    value: () => Promise.resolve([registration]),
-  });
-  return () => {
-    localStorage.removeItem(closedKey);
-    for (const name of ["permission", "requestPermission"] as const) {
-      const was = notificationsWere[name];
-      if (was === undefined) Reflect.deleteProperty(notifications, name);
-      else Object.defineProperty(notifications, name, was);
-    }
-    for (const name of ["ready", "getRegistration", "getRegistrations"]) Reflect.deleteProperty(container, name);
-  };
-};
+// has not closed it, in a browser that was never asked (push.samples.ts stubs it, and the device's record of who
+// closed the prompt). What the prompt says after Turn on is the prompt's own (the design system's Inline prompt).
 
 /** Offered over the tabs, with Turn on and Not now. */
 export const PushOffered: Story = {
   parameters: screen({ at, server: { push: true } }, "notifications"),
-  beforeEach: pushBrowser,
+  beforeEach: pushBrowser(),
 };
 
 /**

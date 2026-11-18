@@ -50,9 +50,18 @@ const menu = () =>
 
 /** The menu's rows for a reader at `at`, with Invites or without it, marking the entry `here`. */
 const rowsAt = (at: string, { withInvites, here }: { withInvites: boolean; here?: string | undefined }) =>
-  [display, "/settings/security", "/settings/apps", ...(withInvites ? [invites] : []), `${at}?sign_out=true`].map(
-    (row) => (row === here ? `${row} (here)` : row),
-  );
+  [
+    "/settings/profile",
+    display,
+    "/settings/notifications",
+    "/settings/relationships",
+    "/settings/filters",
+    "/settings/security",
+    "/settings/apps",
+    ...(withInvites ? [invites] : []),
+    "/settings/account",
+    `${at}?sign_out=true`,
+  ].map((row) => (row === here ? `${row} (here)` : row));
 
 /** The menu's one row for a reader at `at` while it does not know its entries: Sign out…, which is always its last. */
 const signOutAlone = (at: string) => [`${at}?sign_out=true`];
@@ -392,7 +401,9 @@ describe("what the reader did on a screen under the entry shows in the list", ()
     on.fake.script("GET /invites", {
       change: (body) => ({ ...body, can_create: false, cannot_create_reason: "restricted" as const }),
     });
-    const why = "A moderation action keeps your account from creating invites for now.";
+    // Why, and where the action stands and can be appealed (#3115).
+    const why =
+      "A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.";
 
     await app.user.click(main().getByRole("button", { name: "Create invite" }));
 

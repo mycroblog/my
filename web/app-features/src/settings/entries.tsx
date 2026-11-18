@@ -23,9 +23,14 @@ import {
 import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
+import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
 import { AppsSettings, loadAppsSettings } from "./apps/apps";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { FilterSettings, loadFilterSettings } from "./filters";
 import { InvitesSettings, loadInvitesSettings } from "./invites/invites";
+import { loadNotificationSettings, NotificationSettings } from "./notifications";
+import { loadProfileSettings, ProfileSettings } from "./profile";
+import { loadRelationshipSettings, RelationshipSettings } from "./relationships";
 import { loadSecuritySettings, SecuritySettings } from "./security/security";
 
 /** The groups of the menu, in its order, each under its heading. */
@@ -84,6 +89,8 @@ export type SettingsSessionProps = {
 export type SettingsFacts = {
   /** The permissions of the reader's account; none until the server said them. */
   readonly permissions: readonly Permission[];
+  /** How many moderators' actions in effect on the reader's account they can still appeal; none until they are read. */
+  readonly appealable: number;
   /** Whether the server is one person's (ADR-0152), which has no invites; false until the server said so. */
   readonly singleUser: boolean;
   /**
@@ -121,6 +128,15 @@ export type SettingsEntry = {
 /** Every entry, in the menu's order within its group. */
 export const settingsEntries: readonly SettingsEntry[] = [
   {
+    path: "profile",
+    group: "general",
+    icon: "profile",
+    name: "settings.entry.profile",
+    hint: "settings.entry.profile.hint",
+    Screen: ProfileSettings,
+    load: loadProfileSettings,
+  },
+  {
     path: "display",
     group: "general",
     icon: "display",
@@ -128,6 +144,33 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.display.hint",
     Screen: DisplaySettings,
     load: loadDisplaySettings,
+  },
+  {
+    path: "notifications",
+    group: "general",
+    icon: "notifications",
+    name: "settings.entry.notifications",
+    hint: "settings.entry.notifications.hint",
+    Screen: NotificationSettings,
+    load: loadNotificationSettings,
+  },
+  {
+    path: "relationships",
+    group: "people",
+    icon: "members",
+    name: "settings.entry.relationships",
+    hint: "settings.entry.relationships.hint",
+    Screen: RelationshipSettings,
+    load: loadRelationshipSettings,
+  },
+  {
+    path: "filters",
+    group: "people",
+    icon: "filter",
+    name: "settings.entry.filters",
+    hint: "settings.entry.filters.hint",
+    Screen: FilterSettings,
+    load: loadFilterSettings,
   },
   {
     path: "security",
@@ -160,12 +203,23 @@ export const settingsEntries: readonly SettingsEntry[] = [
     Screen: InvitesSettings,
     load: loadInvitesSettings,
   },
+  {
+    path: "account",
+    group: "account",
+    icon: "accountData",
+    name: "settings.entry.account",
+    hint: "settings.entry.account.hint",
+    count: ({ appealable }) => appealable,
+    Screen: AccountSettings,
+    load: loadAccountSettings,
+  },
 ];
 
 /** What the conditions and the counts of the entries read of the reader. */
 function useSettingsFacts(): SettingsFacts {
   return {
     permissions: usePermissions(),
+    appealable: useAppealableActions(),
     singleUser: useInstance()?.single_user === true,
     mayInvite: useMayInvite(),
   };

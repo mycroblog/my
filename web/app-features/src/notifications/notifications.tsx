@@ -15,6 +15,7 @@
 import {
   AccountLine,
   excerptHtml,
+  FilterSentence,
   heldPath,
   ListColumn,
   nameOf,
@@ -194,7 +195,13 @@ function Line({
         excerpt={
           n.status !== undefined && (
             <Excerpt>
-              <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
+              {/* A post that the reader's keyword filters matched shows none of its words here, only the filters'
+                  names (ADR-0157 §7, as a push about it does); the line leads to the post, which shows them. */}
+              {n.status.filtered.length > 0 ? (
+                <FilterSentence filtered={n.status.filtered} />
+              ) : (
+                <PostContent html={excerptHtml(n.status)} emojis={n.status.emojis} lang={undefined} />
+              )}
             </Excerpt>
           )
         }

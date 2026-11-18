@@ -757,6 +757,9 @@ const SECTION_PARTS = new Set(["SettingsSection", "StatusSummary"]);
 const CONTROL_PARTS = new Set([
   "BareTextArea",
   "Button",
+  "ChannelCell",
+  "ChannelRow",
+  "ChannelTable",
   "CheckField",
   "Chip",
   "ChipLink",

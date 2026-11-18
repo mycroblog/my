@@ -15,15 +15,15 @@
 // muted as ADR-0013 §30 hides it, the answers of follow requests, the read marker, the announcements read, the
 // conversations of the direct messages read and hidden, the reader's bookmarks, the threads they mute and followed
 // hashtags, the reader's edits and deletions of their own posts, the reader's drafts and their schedules, a draft
-// published, the reader's articles posted and edited, the images they upload and their preferences) are kept in
-// memory; a post's edit history holds the scenario's versions of it, then the reader's edits. An article's body comes
-// only with the status read alone, as the server's does, and its preview renders as publishing would, unless the
-// options make it fail. A list pages as the server's do: `limit` items a page, 20 by default, with a cursor while more
-// follow, so that a list read to its end ends; a later page comes late only with `lateMs`. With `failFirst` the home
-// timeline's first page fails during the first second, and its retry succeeds late. What the shell reads (the
-// instance, the reader's rights and preferences, the announcements, the voice rooms, the events) answers in the state
-// the options give the server: its timelines, one person's, its closure, its maintenance, down, or newer than the app
-// (the preferences, as `preferences` starts them). The voice rooms are the
+// published, the reader's articles posted and edited, the images they upload, their preferences, their profile, and
+// their personal settings of settings.ts) are kept in memory; a post's edit history holds the scenario's versions of
+// it, then the reader's edits. An article's body comes only with the status read alone, as the server's does, and its
+// preview renders as publishing would, unless the options make it fail. A list pages as the server's do: `limit` items
+// a page, 20 by default, with a cursor while more follow, so that a list read to its end ends; a later page comes late
+// only with `lateMs`. With `failFirst` the home timeline's first page fails during the first second, and its retry
+// succeeds late. What the shell reads (the instance, the reader's rights and preferences, the announcements, the voice
+// rooms, the events) answers in the state the options give the server: its timelines, one person's, its closure, its
+// maintenance, down, or newer than the app (the preferences, as `preferences` starts them). The voice rooms are the
 // fake's own, since a room lives only while people are in it and the seed opens none. A post is translated by the
 // provider `translation` names, which answers or refuses as the options say. With `approvals`, posts of the fake's own
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
@@ -67,7 +67,9 @@ import {
   type ServerAnnouncement,
   type ServerEventPlan,
 } from "../scenario";
+import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } from "./common";
 import { articleHtml, serverHtml } from "./html";
+import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -179,7 +181,8 @@ export const scenario: FakeSeed = {
   follows: [...scenarioFollows, { follower: "sora@photos.example", followee: "yuki" }],
   posts: [...scenarioPosts, ...remotePosts],
   interactions: [...scenarioInteractions, { kind: "boost", by: "sam", post: "sora-film" }],
-  restrictions: scenarioRestrictions,
+  // The reader blocks quickdeals and mutes kai (the scenario's), and blocks the account sora left behind when moving.
+  restrictions: [...scenarioRestrictions, { kind: "block", by: "yuki", target: "sora@social.example" }],
   lists: scenarioLists,
   drafts: scenarioDrafts,
   announcements: scenarioAnnouncements,
@@ -273,8 +276,12 @@ export type FakeOptions = {
   around?: "all" | "none";
   /** The voice chat rooms are off: the instance says so and `/voice/...` answers 404. */
   voiceOff?: boolean;
-  /** The reader's latest export of their data: none by default, one being built, or one ready to download. */
-  dataExport?: "none" | "building" | "ready";
+  /**
+   * The reader's exports of their data: none by default; one being built (`building`), one ready to download
+   * (`ready`), one being built over an earlier one that is ready (`rebuilding`), one that could not be built
+   * (`failed`), or one whose archive is past the day the server keeps it until and not yet removed (`expired`).
+   */
+  dataExport?: "none" | "building" | "ready" | "rebuilding" | "failed" | "expired";
   /**
    * How posts are translated: not at all by default. `provider` enables one provider of the server, for the posts of
    * every visibility but followers-only and direct: one that answers (`answers`, each text behind the language it
@@ -325,8 +332,22 @@ export type FakeOptions = {
   notes?: Readonly<Record<string, string>>;
   /** The people whose new posts notify the reader at the start. */
   subscriptions?: readonly string[];
+  /**
+   * The reader's personal settings at the start, in place of `defaultSettings` for the members given (settings.ts):
+   * their keyword filters, badges, featured hashtags, notification policy, the rows of their notification settings
+   * (`memberNotificationRows` are a member's, `moderatorNotificationRows` what a moderator gets besides), auto-delete
+   * policy and its maximum, imports,
+   * aliases, why the account cannot be deactivated, and the moderators' actions with their appeals. The filters in
+   * effect apply to what the reader reads, as on the server (ADR-0157 §6): in the contexts a filter names (the home and
+   * list timelines and the stream's posts, the notifications, the public and hashtag timelines, a thread, a profile's
+   * posts), a post of another that holds one of its words is left out by `hide`, or carries the filter in its
+   * `filtered` by `warn`; the post read alone is folded by either.
+   */
+  settings?: Partial<FakeSettings>;
   /** The domains the reader mutes at the start. */
   domainMutes?: readonly string[];
+  /** The hashtags the reader follows at the start, by name, the first followed first. */
+  followedTags?: readonly string[];
   /**
    * The reader's preferences at the start, where they are not the server's defaults for a new account (the language
    * and the time zone follow the browser, new posts go into the timelines by themselves, large link cards): the ones
@@ -354,11 +375,18 @@ export type FakeOptions = {
    */
   held?: boolean;
   /**
-   * Web Push (FR-206): the server sends it (its application key), the reader has no subscription until they register
-   * one, and their notification settings list the rows of the ordinary kinds; none by default, as a server without
-   * a VAPID key.
+   * Web Push (FR-206): the server sends it (its application key), and the reader has no subscription until they
+   * register one; none by default, as a server without a VAPID key.
    */
   push?: boolean;
+  /** The server sends email (the instance's `sends_email`); it does not by default. */
+  email?: boolean;
+  /**
+   * The verification email (POST /accounts/email/verification), which the fake queues (a 202) unless the server sends
+   * no email (a 404): `limited`, the server sent as many as it sends for now and answers a 429 whose `Retry-After`
+   * asks for 25 minutes.
+   */
+  verificationEmail?: "limited";
   /**
    * With `push`: the reader holds a subscription already (`subscribed`), or the read of it (`subscription-fails`) or of
    * their notification settings (`settings-fail`) fails with a 500.
@@ -370,9 +398,10 @@ export type FakeOptions = {
   dismissFails?: boolean;
   /**
    * An upload is still processed when the server answers it, and ready when it is read again (GET /media/{id}), as on
-   * a server that processes it meanwhile; ready at once by default.
+   * a server that processes it meanwhile; ready at once by default. `refused`: every upload is refused as a
+   * file the server cannot read as an image (a 422 of the type `media-corrupt`, the server's words its title).
    */
-  uploads?: "processing";
+  uploads?: "processing" | "refused";
   /**
    * How the reader's account stands in the settings (access.ts): its password, passkeys, two-factor authentication,
    * linked accounts, signed-in browsers, authorized apps, own OAuth apps and invites; a typical account by default.
@@ -383,6 +412,17 @@ export type FakeOptions = {
    * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
    */
   revocation?: "fails";
+  /**
+   * What the instance states of search engines and of AI (ADR-0057 §1), each `allow` by default: an account cannot
+   * allow what the instance denies.
+   */
+  crawlers?: { search?: Schema<"SearchIndexing">; ai?: Schema<"AIUsage"> };
+  /**
+   * The reader's own profile: it starts with no name, text, fields or pictures (`start: "empty"`), and a change of it
+   * (PATCH /accounts/update_credentials) is refused for the value of its display name, which the problem names
+   * (`save: "name"`), refused by the server's review (`save: "refused"`), or never answered (`save: "waits"`).
+   */
+  profile?: { start?: "empty"; save?: "name" | "refused" | "waits" };
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -489,7 +529,10 @@ export type FakeApi = {
    * (`client_id`) and the token it names. One it took ended the reader's session.
    */
   readonly revocations: readonly { readonly clientId: string; readonly token: string }[];
-  /** Adds `count` posts to the home timeline, sends them on the stream, and returns them, newest first. */
+  /**
+   * Adds `count` posts to the home timeline, sends them on the stream as the reader's keyword filters leave them, and
+   * returns them, newest first.
+   */
   newPosts: (count: number) => Status[];
   /** Adds a notification (a favourite of the reader's post), sends it on the stream, and returns it. */
   newNotification: () => Notification;
@@ -505,6 +548,10 @@ export type FakeApi = {
   announcementPath: (key: string) => string;
   /** The app's address of the reader's list at `index`, oldest first. */
   listPath: (index: number) => string;
+  /** The app's address of the editor of the reader's keyword filter at `index`, oldest first. */
+  filterPath: (index: number) => string;
+  /** The app's address of the moderators' action on the reader's account at `index`, newest first. */
+  actionPath: (index: number) => string;
   /** The ID of the seed's post of `key`, or of the reader's draft of that key. */
   idOf: (key: string) => string;
   /** The ID of the account of the seed's person of `username`. */
@@ -531,56 +578,8 @@ export type FakeApi = {
   inviteId: (index: number) => string;
 };
 
-/** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
-const pageSize = 20;
-const maxPageSize = 40;
-const minute = 60_000;
-const day = 24 * 60 * minute;
-
-/** A problem as the server answers it: `about:blank` unless `more` names its type. */
-const problem = (status: number, title: string, more: Partial<Schema<"Problem">> = {}): Refusal => ({
-  problem: { type: "about:blank", title, status, ...more },
-});
-const notFound = () => problem(404, "Not Found");
-
 /** An answer that never comes. */
 const never = () => new Promise<never>(() => undefined);
-
-/** An ID as the server's, a UUIDv7: in its canonical form, a later one sorts after an earlier one. */
-function idAt(ms: number, n: number): string {
-  const time = Math.max(0, Math.round(ms)).toString(16).padStart(12, "0");
-  return `${time.slice(0, 8)}-${time.slice(8)}-7000-8000-${n.toString(16).padStart(12, "0")}`;
-}
-
-/** An image in the sizes the server gives it. */
-const variants = (url: string): Schema<"MediaVariants"> => ({ small: { url }, medium: { url }, large: { url } });
-
-/** A page of a list, as the server pages it. */
-type Paged<T> = { from: number; body: { items: T[]; next_cursor?: string } };
-type PageQuery = { get: (name: "cursor" | "limit") => string | null };
-
-/**
- * The page of `items` that the request's `cursor` and `limit` ask for, as the server pages a list; the cursor of a
- * page is the `key` of its last item, its ID unless the items have none.
- */
-function page<T extends { id: string }>(items: readonly T[], query: PageQuery): Paged<T>;
-function page<T>(items: readonly T[], query: PageQuery, key: (item: T) => string): Paged<T>;
-function page<T>(
-  items: readonly T[],
-  query: PageQuery,
-  key: (item: T) => string = (item) => (item as { id: string }).id,
-): Paged<T> {
-  const cursor = query.get("cursor");
-  const limit = Number(query.get("limit") ?? pageSize);
-  const size = Number.isInteger(limit) && limit > 0 ? Math.min(limit, maxPageSize) : pageSize;
-  const from = cursor === null ? 0 : items.findIndex((s) => key(s) === cursor) + 1;
-  const slice = items.slice(from, from + size);
-  const last = slice.at(-1);
-  return {
-    from,
-    body: { items: slice, ...(last !== undefined && from + size < items.length ? { next_cursor: key(last) } : {}) },
-  };
-}
 
 /** The IDs of the reader's uploads a body in Markdown shows as images (`![alt](media:ID)`), each once, in order. */
 const bodyImages = (text: string) =>
@@ -729,27 +728,73 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   // client shows a profile from at once.
   const accountOf = (username: string): Account => fullAccount(personOf(username));
 
+  /** The reader's personal settings (settings.ts), which start as `defaultSettings` with the options' members. */
+  const personal = createSettings({
+    started,
+    origin: fakeOrigin,
+    password: personOf(viewer).password,
+    viewerId: visitor ? undefined : idOf(viewer),
+    accountExists: (id) => usernameOf.has(id),
+    accountId: (username) => accountId.get(username),
+    ownStatuses: () => posts.filter((p) => p.author === viewer && visible(p)).map((p) => statusOf(p)),
+    settings: { ...defaultSettings, ...o.settings },
+  });
+  const shownBadges = personal.shownBadges;
+  /** The statuses of a read as the reader's keyword filters leave them in a context (settings.ts). */
+  const judged = personal.judged;
+
+  /** What the reader changed of their own profile (PATCH /accounts/update_credentials); the seed's person otherwise. */
+  const edit: {
+    displayName?: string;
+    note?: string;
+    fields?: [string, string][];
+    avatar?: string | null;
+    header?: string | null;
+    locked?: boolean;
+    bot?: boolean;
+    discoverable?: boolean;
+    indexable?: boolean;
+    aiOptOut?: boolean;
+    feedEnabled?: boolean;
+    followsVisibility?: Schema<"FollowsVisibility">;
+  } = o.profile?.start === "empty" ? { displayName: "", note: "", fields: [], avatar: null, header: null } : {};
+
   const fullAccount = (p: FakePerson): Account => {
     const remote = domainOf(p.username);
+    const own = p.username === viewer && !visitor;
     const username = remote === undefined ? p.username : p.username.slice(0, p.username.indexOf("@"));
-    const moved = movedOf(p.username);
+    // The reader's own account moves, and comes back, by the settings (settings.ts); another's by the seed.
+    const moved = own ? usernameOf.get(personal.movedTo() ?? "") : movedOf(p.username);
     return exact<Account>()({
       id: idOf(p.username),
       username,
       acct: p.username,
       domain: remote ?? fakeHost,
-      display_name: p.displayName,
+      display_name: own ? (edit.displayName ?? p.displayName) : p.displayName,
       emojis: [],
-      avatar: variants(drawingURL(p.avatar)),
+      ...(own && edit.avatar !== undefined
+        ? edit.avatar === null
+          ? {}
+          : { avatar: variants(edit.avatar) }
+        : { avatar: variants(drawingURL(p.avatar)) }),
       uri: `${originOf(p.username)}/users/${username}`,
       url: `${originOf(p.username)}/@${username}`,
-      note: serverHtml(p.note, remote ?? fakeHost),
-      locked: p.locked ?? false,
-      bot: false,
+      note: serverHtml(own ? (edit.note ?? p.note) : p.note, remote ?? fakeHost),
+      locked: own ? (edit.locked ?? p.locked ?? false) : (p.locked ?? false),
+      bot: own ? (edit.bot ?? false) : false,
       created_at: new Date(started - 30 * day).toISOString(),
-      fields: p.fields.map(([name, value]) => ({ name, value: serverHtml(value, fakeHost) })),
-      badges: [],
-      ...(p.header === undefined ? {} : { header: variants(drawingURL(p.header)) }),
+      fields: (own ? (edit.fields ?? p.fields) : p.fields).map(([name, value]) => ({
+        name,
+        value: serverHtml(value, fakeHost),
+      })),
+      badges: own ? shownBadges() : [],
+      ...(own && edit.header !== undefined
+        ? edit.header === null
+          ? {}
+          : { header: variants(edit.header) }
+        : p.header === undefined
+          ? {}
+          : { header: variants(drawingURL(p.header)) }),
       // The account it moved to, without a move of its own: moves are not followed in chains.
       ...(moved === undefined ? {} : { moved: fullAccount(personOf(moved)) }),
       followers_count:
@@ -953,7 +998,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     created_at: l.created_at,
   });
   /** The hashtags the reader follows, by their names in lowercase. */
-  const followedTags = new Set<string>();
+  const followedTags = new Set<string>(o.followedTags?.map((name) => name.toLowerCase()));
   /** The hashtags of a text, in lowercase, as the server reads them. */
   const hashtagsOf = (text: string) => hashtagsIn(text).map((name) => name.toLowerCase());
   /** A hashtag as first written in a post, else as asked, and whether the reader follows it. */
@@ -1837,13 +1882,17 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const p = personOf(username);
     return exact<Schema<"CredentialAccount">>()({
       ...fullAccount(p),
-      discoverable: true,
-      indexable: true,
-      ai_opt_out: false,
-      feed_enabled: false,
-      feed_follows_indexable: false,
-      follows_visibility: followsVisibility[username] ?? "public",
-      source: { note: p.note, fields: p.fields.map(([name, value]) => ({ name, value })) },
+      discoverable: edit.discoverable ?? true,
+      indexable: edit.indexable ?? true,
+      ai_opt_out: edit.aiOptOut ?? false,
+      // The feed follows `indexable` until the reader chooses about it (FR-213).
+      feed_enabled: edit.feedEnabled ?? edit.indexable ?? true,
+      feed_follows_indexable: edit.feedEnabled === undefined,
+      follows_visibility: edit.followsVisibility ?? followsVisibility[username] ?? "public",
+      source: {
+        note: edit.note ?? p.note,
+        fields: (edit.fields ?? p.fields).map(([name, value]) => ({ name, value })),
+      },
       posting: { visibility_ceiling: "public", visibilities: ["public", "local", "unlisted", "private", "direct"] },
       statuses_count: posts.filter((x) => x.author === username).length,
       follow_requests_count: [...requested].filter((edge) => edge.endsWith(`>${username}`)).length,
@@ -1976,11 +2025,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     article_authoring: o.articles?.authoring ?? "everyone",
     timelines,
     federation: { mode: "off" },
-    sends_email: false,
+    sends_email: o.email === true,
     ...(o.push === true ? { push_server_key: pushServerKey } : {}),
     rules: [],
-    search_indexing: "allow",
-    ai_usage: "allow",
+    search_indexing: o.crawlers?.search ?? "allow",
+    ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
     link_cards_ignore_robots_txt: false,
     finance_visibility: "private",
@@ -2102,19 +2151,36 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   // The reader's exports of their data, newest first; a request adds one being built, which stays so.
   const dataExports: Schema<"DataExport">[] = [];
-  if (o.dataExport === "building")
+  if (o.dataExport === "building" || o.dataExport === "rebuilding")
     dataExports.push({
       id: idAt(started - 10 * minute, 50_100),
       state: "pending",
       requested_at: new Date(started - 10 * minute).toISOString(),
     });
-  if (o.dataExport === "ready")
+  if (o.dataExport === "failed")
+    dataExports.push({
+      id: idAt(started - 2 * 60 * minute, 50_101),
+      state: "failed",
+      requested_at: new Date(started - 2 * 60 * minute).toISOString(),
+      completed_at: new Date(started - 2 * 60 * minute + 5 * minute).toISOString(),
+      expires_at: new Date(started + 7 * day).toISOString(),
+    });
+  if (o.dataExport === "ready" || o.dataExport === "rebuilding")
     dataExports.push({
       id: idAt(started - day, 50_100),
       state: "ready",
       requested_at: new Date(started - day).toISOString(),
       completed_at: new Date(started - day + 20 * minute).toISOString(),
       expires_at: new Date(started + 6 * day).toISOString(),
+      file_size: 4_812_345,
+    });
+  if (o.dataExport === "expired")
+    dataExports.push({
+      id: idAt(started - 8 * day, 50_100),
+      state: "ready",
+      requested_at: new Date(started - 8 * day).toISOString(),
+      completed_at: new Date(started - 8 * day + 20 * minute).toISOString(),
+      expires_at: new Date(started - 60 * minute).toISOString(),
       file_size: 4_812_345,
     });
 
@@ -2389,10 +2455,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return accountPage(listed, query);
   }
 
-  /** The reader's notification as its list shows it now: with its post as it is, none once that is deleted. */
+  /**
+   * The reader's notification as its list shows it now: with its post as it is, and as their keyword filters leave it
+   * among the notifications; none once the post is deleted, or while a filter hides it.
+   */
   const notificationNow = (n: Notification): Notification[] => {
     if (n.status === undefined) return [n];
-    const now = current(n.status)[0];
+    const [now] = judged(current(n.status), "notifications");
     return now === undefined ? [] : [{ ...n, status: now }];
   };
 
@@ -2425,7 +2494,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- Timelines, hashtags, lists, bookmarks ----------------------------------------------------------------------
 
     "GET /timelines/home": async ({ query }) => {
-      const { from, body } = page(homeNow(), query);
+      const { from, body } = page(judged(homeNow(), "home"), query);
       if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
         return problem(500, "Internal Server Error");
       // The retry after the first page failed comes late, so that the screen shows it loading again.
@@ -2447,7 +2516,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         .filter((p) => hashtagsOf(versionsOf(p).at(-1)?.text ?? p.text).includes(tag))
         .toReversed()
         .map((p) => statusOf(p));
-      return statusPage(shown, query);
+      return statusPage(judged(shown, "public"), query);
     },
     "GET /timelines/local": ({ query }) => publicTimeline("local", query),
     "GET /timelines/federated": ({ query }) => publicTimeline("federated", query),
@@ -2456,7 +2525,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const found = lists.find((l) => l.id === params.id);
       if (found === undefined) return notFound();
       return statusPage(
-        homeNow().filter((s) => found.members.includes(s.account.username)),
+        judged(
+          homeNow().filter((s) => found.members.includes(s.account.username)),
+          "home",
+        ),
         query,
       );
     },
@@ -2728,8 +2800,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "GET /accounts/{id}/statuses": ({ params, query }) => {
       const all = profilePosts(usernameOf.get(params.id) ?? "");
-      if (query.get("pinned") === "true")
-        return { status: 200, body: { items: all.filter((p) => p.pinned === true).map((p) => statusOf(p)) } };
+      if (query.get("pinned") === "true") {
+        const pinned = all.filter((p) => p.pinned === true).map((p) => statusOf(p));
+        return { status: 200, body: { items: judged(pinned, "account") } };
+      }
       const shown =
         query.get("articles") === "true"
           ? all.filter((p) => p.article !== undefined)
@@ -2737,11 +2811,117 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             ? all.filter((p) => p.replyTo === undefined)
             : all;
       return statusPage(
-        shown.map((p) => statusOf(p)),
+        judged(
+          shown.map((p) => statusOf(p)),
+          "account",
+        ),
         query,
       );
     },
-    "GET /accounts/{id}/featured_tags": () => ({ status: 200, body: { items: [] } }),
+    "GET /accounts/{id}/featured_tags": ({ params }) => ({
+      status: 200,
+      body: { items: params.id === idOf(viewer) ? personal.featured() : [] },
+    }),
+    "GET /followed_tags": () => ({
+      status: 200,
+      body: {
+        // The latest followed first, as the server lists them.
+        items: [...followedTags]
+          .map((name, i) => ({
+            name,
+            url: `${fakeOrigin}/tags/${name}`,
+            followed_at: new Date(started - (followedTags.size - i) * day).toISOString(),
+          }))
+          .reverse(),
+      },
+    }),
+    "GET /blocks": async ({ query }) => {
+      const blocked = [...blocking]
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([by]) => by === viewer)
+        .map(([, target]) => accountOf(target));
+      return accountPage(blocked, query);
+    },
+    "GET /mutes": async ({ query }) => {
+      const muted = [...muting]
+        .map((edge) => edge.split(">") as [string, string])
+        .filter(([by]) => by === viewer)
+        .map(([, target]): Schema<"MutedAccount"> => ({ account: accountOf(target), hide_notifications: true }));
+      const { from, body } = page(muted, query, (m) => m.account.id);
+      if (from > 0) await late();
+      return { status: 200, body };
+    },
+    "POST /accounts/email/verification": () => {
+      if (visitor) return problem(401, "Unauthorized");
+      if (o.email !== true) return notFound();
+      if (o.verificationEmail === "limited")
+        return { ...problem(429, "Too Many Requests"), headers: { "Retry-After": String(25 * 60) } };
+      return { status: 202 };
+    },
+    "PATCH /accounts/update_credentials": ({ body }) => {
+      if (visitor) return problem(401, "Unauthorized");
+      if (o.profile?.save === "waits") return new Promise<never>(() => undefined);
+      if (o.profile?.save === "refused")
+        return problem(422, "The profile was rejected", {
+          type: "/api/v1/problems/profile-rejected",
+          detail: "This server's automated review did not accept this change. Your profile stays as it was.",
+        });
+      if (o.profile?.save === "name" && body.display_name !== undefined)
+        return problem(422, "This could not be done.", {
+          detail: "This value is not valid. Check what you entered.",
+          field: "display_name",
+        });
+      // What the server refuses of a text, which the problem names in `field` (a part of a field without the field's
+      // index, as the server does): longer than its limit, or holding a control character it does not take there (a
+      // line break or a tab is one too, but in the profile text and a field's value).
+      const refusedText = (field: string, text: string | undefined, max: number, lines: boolean) => {
+        if (text === undefined) return undefined;
+        const controls = lines ? /[^\P{Cc}\n\r\t]/u : /\p{Cc}/u;
+        const detail =
+          Array.from(text).length > max
+            ? `Use at most ${String(max)} characters.`
+            : controls.test(text)
+              ? "This value is not valid. Check what you entered."
+              : undefined;
+        return detail === undefined ? undefined : problem(422, "This could not be done.", { detail, field });
+      };
+      const refusedOf =
+        refusedText("display_name", body.display_name, 30, false) ??
+        refusedText("note", body.note, 500, true) ??
+        (body.fields !== undefined && body.fields.length > 4
+          ? problem(422, "This could not be done.", { detail: "You can have at most 4.", field: "fields" })
+          : undefined) ??
+        (body.fields ?? [])
+          .flatMap((f) => [
+            refusedText("fields[].name", f.name, 255, false),
+            refusedText("fields[].value", f.value, 255, true),
+          ])
+          .find((refused) => refused !== undefined);
+      if (refusedOf !== undefined) return refusedOf;
+      // A picture is a processed upload of the reader's, or empty to remove it.
+      const picture = (id: string | undefined): string | null | undefined | Refusal => {
+        if (id === undefined) return undefined;
+        if (id === "") return null;
+        const url = uploads.get(id)?.url;
+        return url === undefined ? problem(422, "The image is not there or is not processed") : url;
+      };
+      const [avatar, header] = [picture(body.avatar_media_id), picture(body.header_media_id)];
+      if (typeof avatar === "object" && avatar !== null) return avatar;
+      if (typeof header === "object" && header !== null) return header;
+      if (body.display_name !== undefined) edit.displayName = body.display_name;
+      if (body.note !== undefined) edit.note = body.note;
+      if (body.fields !== undefined) edit.fields = body.fields.map((f) => [f.name, f.value]);
+      if (avatar !== undefined) edit.avatar = avatar;
+      if (header !== undefined) edit.header = header;
+      if (body.locked !== undefined) edit.locked = body.locked;
+      if (body.bot !== undefined) edit.bot = body.bot;
+      if (body.discoverable !== undefined) edit.discoverable = body.discoverable;
+      if (body.indexable !== undefined) edit.indexable = body.indexable;
+      if (body.ai_opt_out !== undefined) edit.aiOptOut = body.ai_opt_out;
+      if (body.feed_enabled !== undefined) edit.feedEnabled = body.feed_enabled;
+      if (body.follows_visibility !== undefined) edit.followsVisibility = body.follows_visibility;
+      return { status: 200, body: credentialOf(viewer) };
+    },
     "GET /accounts/{id}/followers": ({ params, query }) => followsOf(params.id, true, query),
     "GET /accounts/{id}/following": ({ params, query }) => followsOf(params.id, false, query),
     "POST /accounts/{id}/follow": ({ params }) => change(params.id, "follow", true),
@@ -2837,7 +3017,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const own = made.get(params.id);
       if (own !== undefined) return { status: 200, body: own };
       const p = shownPost(params.id);
-      return p === undefined ? notFound() : { status: 200, body: statusOf(p, 0, true) };
+      // The post the reader opened is never left out: a filter that hides it in a thread folds it (ADR-0157 §6).
+      const [opened] = p === undefined ? [] : judged([statusOf(p, 0, true)], "thread", true);
+      return opened === undefined ? notFound() : { status: 200, body: opened };
     },
     "PUT /statuses/{id}": ({ params, body }) => {
       const p = shownPost(params.id);
@@ -2918,7 +3100,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /statuses/{id}/context": ({ params }) => {
       if (made.has(params.id)) return { status: 200, body: { ancestors: [], descendants: [] } };
       const key = keyOf.get(params.id);
-      return key === undefined ? notFound() : { status: 200, body: contextOf(key) };
+      if (key === undefined) return notFound();
+      const { ancestors, descendants } = contextOf(key);
+      return {
+        status: 200,
+        body: { ancestors: judged(ancestors, "thread"), descendants: judged(descendants, "thread") },
+      };
     },
     "POST /statuses/{id}/mute": ({ params }) =>
       acted(params.id, (p) => {
@@ -3119,17 +3306,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       pushSubscription = undefined;
       return { status: 204 };
     },
-    "GET /preferences/notifications": () => {
+    ...personal.handlers,
+    "GET /preferences/notifications": (call) => {
       if (o.pushState === "settings-fail") return problem(500, "Internal Server Error");
-      const rows = (["mention", "follow", "follow_request", "favourite", "reaction", "boost", "quote"] as const).map(
-        (type): Schema<"NotificationSettingRow"> => ({
-          group: type,
-          section: "ordinary",
-          types: [type],
-          in_app: { enabled: true, fixed: false },
-        }),
-      );
-      return { status: 200, body: { rows } };
+      return personal.handlers["GET /preferences/notifications"]?.(call) ?? notFound();
     },
 
     // ---- Direct messages --------------------------------------------------------------------------------------------
@@ -3238,7 +3418,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "POST /media": async ({ request }) => {
       // An image the reader uploads, served from the reader's own copy of the file: ready at once, or still processed
-      // until it is read again (`uploads`).
+      // until it is read again (`uploads`); or refused, as the server refuses a file it cannot read as an image: the
+      // problem of that type, whose title says it, with no detail (internal/interface/clientapi/media.go).
+      if (o.uploads === "refused")
+        return problem(422, "The file could not be read as an image. Choose another file.", {
+          type: "/api/v1/problems/media-corrupt",
+        });
       const form = await request.formData();
       const file = form.get("file");
       const description = form.get("description");
@@ -3373,7 +3558,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       .filter((p) => o.visitor === true || (!hidden(p.author) && !mutedServer(p.author)))
       .toReversed()
       .map((p) => statusOf(p));
-    return statusPage(shown, query);
+    return statusPage(judged(shown, "public"), query);
   }
 
   const markerNow = (): Schema<"NotificationMarker"> =>
@@ -3477,7 +3662,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return { ...statusOf(p), id: idAt(at, 900_000 + added), created_at: new Date(at).toISOString() };
     }).toReversed();
     home.unshift(...fresh);
-    for (const status of fresh.toReversed()) send({ type: "update", status });
+    // The stream sends each as the home timeline shows it: folded by a filter, or not at all (ADR-0157 §7).
+    for (const status of judged(fresh.toReversed(), "home")) send({ type: "update", status });
     return fresh;
   }
 
@@ -3528,6 +3714,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     `/announcements/${key === "ended" ? endedAnnouncement.id : announcementId(key)}`;
 
   const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
+  const filterPath = (index: number) => `/settings/filters/${personal.filterId(index) ?? "none"}`;
+  const actionPath = (index: number) => `/settings/account/status/${personal.actionId(index) ?? "none"}`;
 
   const keyedId = (key: string) => {
     const post = statusId.get(key);
@@ -3555,6 +3743,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     postPath,
     announcementPath,
     listPath,
+    filterPath,
+    actionPath,
     idOf: keyedId,
     accountId: (username) => idOf(personOf(username).username),
     conversationPath,

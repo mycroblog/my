@@ -339,6 +339,31 @@ export class Fresh {
   }
 
   /**
+   * `staff`, a person who keeps the administrator's rights (`fresh.person({ admin: true })`), takes the moderation
+   * action `kind` on `target`'s account, which is told of it: for the reason shown to the account, and for
+   * `expiresIn` seconds, or until a moderator lifts it when none is given.
+   */
+  async moderate(
+    staff: Person,
+    target: Person,
+    o: { kind: components["schemas"]["AdminAccountActionKind"]; publicReason: string; expiresIn?: number },
+  ): Promise<void> {
+    const account = await this.#account(target);
+    const body: components["schemas"]["CreateAccountActionRequest"] = {
+      kind: o.kind,
+      reason_category: "other",
+      public_reason: o.publicReason,
+      notify_target: true,
+    };
+    if (o.expiresIn !== undefined) body.expires_in = o.expiresIn;
+    const { error } = await (
+      await this.#api(staff)
+    ).POST("/admin/accounts/{id}/actions", { params: { path: { id: account.id } }, body });
+    if (error !== undefined)
+      throw new Error(`fresh: ${staff.username} could not act on ${target.username}: ${JSON.stringify(error)}`);
+  }
+
+  /**
    * A name, an address and a password that nobody has signed up with; with `approval`, an address of the domain whose
    * sign-ups wait for a moderator (the scenario's `approvalDomain`).
    */

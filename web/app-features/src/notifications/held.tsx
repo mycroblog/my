@@ -3,11 +3,20 @@
 // The notifications the reader's notification policy holds back (ADR-0158 §7), on screens of their own under
 // Notifications, which the row over the notifications opens. The first lists the accounts that sent them, the newest
 // first, each with how many it holds, its name leading to them, and Dismiss beside Accept; the second, an account's
-// held-back notifications, the account and the same answer over them. Accepting moves the notifications into the
+// held-back notifications, the account and the same answer over them. The first leads to the notification settings,
+// where the policy that holds them back is chosen. Accepting moves the notifications into the
 // list and lets the account's later ones through; dismissing drops them. An answer shows in place of the buttons and
 // takes their focus, and the row over the notifications counts again at once.
 
-import { AccountLine, AccountName, handleOf, heldOfPath, ListColumn, nameOf } from "@my/app-components";
+import {
+  AccountLine,
+  AccountName,
+  handleOf,
+  heldOfPath,
+  ListColumn,
+  nameOf,
+  notificationSettingsPath,
+} from "@my/app-components";
 import {
   notificationRequestQuery,
   notificationRequestsQuery,
@@ -34,6 +43,7 @@ import {
   ScreenTitle,
   StateText,
   TextButton,
+  TextLink,
   useLocale,
 } from "@my/design-system";
 import { useEffect, useRef } from "react";
@@ -127,6 +137,8 @@ export function Held({ onBack }: { onBack: () => void }) {
   const requests = useNotificationRequests();
   const { items, status } = requests;
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("notifications.retry")}</TextButton>;
+  // The way to where the reader chooses what is held back: the policy, in the notification settings.
+  const settings = <TextLink href={notificationSettingsPath}>{t("notifications.held_settings")}</TextLink>;
   const failedMore = status === "success" && requests.error !== null && !requests.isFetchingNextPage;
   const end =
     status === "pending" || requests.isFetchingNextPage ? (
@@ -140,7 +152,9 @@ export function Held({ onBack }: { onBack: () => void }) {
         {t("notifications.held_failed")}
       </FeedNotice>
     ) : items.length === 0 ? (
-      <FeedNotice start>{t("notifications.held_empty")}</FeedNotice>
+      <FeedNotice start action={settings}>
+        {t("notifications.held_empty")}
+      </FeedNotice>
     ) : requests.hasNextPage ? (
       <Fold>
         <TextButton onPress={requests.fetchNextPage}>{t("profile.follows_more")}</TextButton>
@@ -151,7 +165,11 @@ export function Held({ onBack }: { onBack: () => void }) {
       <ScreenTitle glyph="followers" back={<BackButton onPress={onBack}>{t("notifications.label")}</BackButton>}>
         {t("notifications.held")}
       </ScreenTitle>
-      {items.length > 0 && <FormText muted>{t("notifications.held_about")}</FormText>}
+      {items.length > 0 && (
+        <FormText muted>
+          {t("notifications.held_about")} {settings}
+        </FormText>
+      )}
       {items.map((r) => (
         <Request key={r.id} request={r} t={t} />
       ))}

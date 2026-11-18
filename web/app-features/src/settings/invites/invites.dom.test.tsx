@@ -14,7 +14,7 @@ import type { OwnInvite } from "@my/app-data";
 import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { before } from "../../test/apps";
-import { heldInvites, invitesDrawn, invitesRead, loading, notLoaded } from "../../test/invites";
+import { heldInvites, invitesDrawn, invitesRead, keptByModeration, loading, notLoaded } from "../../test/invites";
 import { atRest, focused, hourOf, inOrder, row, rows, section, sections, words } from "../../test/security";
 
 const about = "A person signs up with an invite's link, or enters its code on the sign-up page.";
@@ -248,7 +248,8 @@ describe("for an account that may create invites", () => {
   });
 });
 
-// #3116: each cause the server names reads as its own sentence, and a refusal that names none as one that says so.
+// #3116: each cause the server names reads as its own sentence, and a refusal that names none as one that says so. A
+// moderation action's sentence also says where the action stands and can be appealed (#3115).
 const causes = [
   [
     "not_permitted",
@@ -260,11 +261,7 @@ const causes = [
     "Your registration is not approved. A moderator needs to approve it before you can create invites.",
     "登録が承認されていません。招待を作るには、モデレーターの承認が必要です。",
   ],
-  [
-    "restricted",
-    "A moderation action keeps your account from creating invites for now.",
-    "モデレーションの処分により、いまはこのアカウントで招待を作れません。",
-  ],
+  ["restricted", ...keptByModeration],
   ["unknown", "You cannot create invites now.", "いまは招待を作れません。"],
 ] as const;
 const closed = [

@@ -483,8 +483,8 @@ func TestStatusProblems(t *testing.T) {
 		{content.ErrInvalidVisibility, http.StatusUnprocessableEntity, "", ""},
 		{appcontent.ErrLocalVisibilityUnavailable, http.StatusUnprocessableEntity, "", "一人のためのサーバーでは、ローカル限定で投稿できません。見られる人を変えてください。"},
 		{fmt.Errorf("x: %w", content.ErrInvalidIdempotencyKey), http.StatusUnprocessableEntity, "", "正しくない値です。入力した内容を確かめてください。"},
-		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントで投稿できません。"},
-		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。"},
+		{appcontent.ErrPostingRestricted, http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントで投稿できません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
+		{fmt.Errorf("x: %w", appcontent.ErrInteractionRestricted), http.StatusForbidden, "", "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
 		{appcontent.ErrAlreadyDeleted, http.StatusConflict, "", "この Idempotency-Key で作成された投稿は削除されています。"},
 		{appcontent.ErrAccountUnavailable, http.StatusForbidden, clientapi.ProblemTypeAccountUnavailable, ""},
 		{errors.New("boom"), http.StatusInternalServerError, "", ""},
@@ -513,8 +513,8 @@ func TestStatusProblems(t *testing.T) {
 		{http.MethodPost, "/pin", content.ErrPinLimit, "ピン留めできる投稿は 5 件までです。先にどれかのピン留めを外してください。"},
 		{http.MethodPost, "/favourite", errNotFound, ""},
 		{http.MethodDelete, "/bookmark", errNotFound, ""},
-		{http.MethodPost, "/favourite", appcontent.ErrInteractionRestricted, "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。"},
-		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "モデレーションの処分により、今はこのアカウントで投稿できません。"},
+		{http.MethodPost, "/favourite", appcontent.ErrInteractionRestricted, "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
+		{http.MethodPost, "/boost", appcontent.ErrPostingRestricted, "モデレーションの処分により、今はこのアカウントで投稿できません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。"},
 	}
 	for _, tc := range interactions {
 		e := newStatusEnv(t, &fakeStatuses{view: func(v appcontent.Viewer, _ string) (appcontent.StatusView, error) { return sampleView(v), nil }, interact: func(string, string, string) error { return tc.err }})

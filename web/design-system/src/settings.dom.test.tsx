@@ -49,7 +49,7 @@ function menu({ compact = false }: { compact?: boolean } = {}) {
         <SettingsItem
           icon="profile"
           label="Profile"
-          hint="Name, bio, pictures"
+          hint="Name, bio, images"
           count={undefined}
           href="/settings/profile"
         />
@@ -111,7 +111,7 @@ test("the entry the reader is at is the menu's current page, and no other entry 
 test("an entry's link says its name, what it holds and its count, a space apart: the count by its label, or the number itself", () => {
   const nav = menu();
 
-  expect(nav.getByRole("link", { name: "Profile Name, bio, pictures" })).not.toBeNull();
+  expect(nav.getByRole("link", { name: "Profile Name, bio, images" })).not.toBeNull();
   expect(nav.getByRole("link", { name: "Account and data Export, delete 3 to read" })).not.toBeNull();
   expect(nav.getByRole("link", { name: "Invites 12" })).not.toBeNull();
 });

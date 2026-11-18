@@ -185,6 +185,20 @@ test("the count is read as its words, and its digits are kept from a screen read
   expect(isInaccessible(screen.getByText("-3"))).toBe(true);
 });
 
+test("the count's id is on its words, so that a field it counts can be described by them; without one they bear none", () => {
+  render(
+    <>
+      <input aria-label="Display name" aria-describedby="name-count" />
+      <CharCount id="name-count" left={2} near={10} label="2 characters left" />
+      <CharCount left={-3} near={20} label="3 characters over the limit" />
+    </>,
+  );
+
+  // The words alone, not the digits beside them.
+  expect(screen.getAllByRole("textbox", { name: "Display name", description: "2 characters left" })).toHaveLength(1);
+  expect(screen.getByText("3 characters over the limit").id).toBe("");
+});
+
 test("the text says what is wrong with it under its editor, which that describes; with nothing wrong it says nothing", () => {
   const { rerender } = render(
     <ComposerText error="The text is too long." errorId="text-error" end={<Button>Emoji</Button>}>

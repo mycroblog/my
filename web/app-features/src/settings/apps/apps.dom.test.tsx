@@ -5,8 +5,8 @@
 // and the day it was registered (§1); what each list says in its place when it is empty; the one place that adds an
 // app; and what the reader's own apps say on a server whose administrators turned registration off. The screens under
 // the entry have their own tests beside this one, and what needs the routes is the app's (web/app,
-// settings-apps.dom.test.tsx). That a row's facts stand one a line is the look of the design system's list row, which
-// a layout test decides.
+// settings-apps.dom.test.tsx). That a row's facts stand one a line, and its state on its title's, is the look of the
+// design system's list row, which a layout test decides.
 
 import { describe, expect, test } from "bun:test";
 import { settingsFindings } from "@my/design-system/test/settings";
@@ -201,7 +201,7 @@ describe("Authorized apps", () => {
 });
 
 describe("Your apps", () => {
-  test("each row says the app's name, its type and the day it was registered, a disabled one that it is disabled at its end, and leads to the app's screen", async () => {
+  test("each row says the app's name, its type and the day it was registered, a disabled one that it is disabled right after its name, and leads to the app's screen", async () => {
     const { fake } = await read();
     const apps = await ownApps(fake);
     const [confidential, open, disabled] = [appAt(apps, 0), appAt(apps, 1), appAt(apps, 2)] as const;
@@ -212,10 +212,18 @@ describe("Your apps", () => {
         leads: paths.own(confidential.id),
       }),
       row(`Home dashboard Public Registered ${dayOf(open.created_at)}`, { leads: paths.own(open.id) }),
-      row(`Old importer Confidential Registered ${dayOf(disabled.created_at)} Disabled`, {
+      // A row's state belongs to its title: it is read after the name and before the row's facts.
+      row(`Old importer Disabled Confidential Registered ${dayOf(disabled.created_at)}`, {
         leads: paths.own(disabled.id),
       }),
     ]);
+    // The row's link, which is what assistive technology gets of it, says the same in the same order (each run of
+    // spaces as one, as the rows above are read).
+    const says = `Old importer Disabled Confidential Registered ${dayOf(disabled.created_at)}`;
+    const link = within(screen.getByRole("list", { name: "Your apps" })).getByRole("link", {
+      name: (name) => name.replace(/\s+/g, " ") === says,
+    });
+    expect(link.getAttribute("href")).toBe(paths.own(disabled.id));
   });
 
   test("an app registered in another year says the year", async () => {

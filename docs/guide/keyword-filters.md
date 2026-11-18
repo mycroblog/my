@@ -6,31 +6,31 @@ result. Only you see your filters, and nobody is told about them.
 
 ## Adding a filter
 
-Open "Keyword filters" under "Display and notifications" in the settings, and choose "Add a filter":
+Open "Keyword filters" under "People and filters" in the settings, and choose "Add a filter":
 
-1. **Name:** what a folded post shows in its place ("Filtered: Season finale"), up to 50 characters.
-2. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
+1. **Name:** what a folded post shows in its place ("Matches filter “Season finale”"), up to 50 characters.
+2. **Posts that match:** "Fold behind the filter's name" shows only that name in the post's place, with "Show" to read
+   it. "Hide completely" leaves the post out, and its notification too.
+3. **Ends:** "Never", after one of the durations offered, from 30 minutes to a week, or "At a date and time".
+4. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
    makes it match only as a whole word (see [How words match](#how-words-match)).
-3. **Where it applies:** your home timeline and lists, your notifications, the local, federated, and hashtag
-   timelines, threads, and profiles. A new filter applies everywhere; clear the places you do not want.
-4. **What it does:** "Fold" puts the post behind the filter's name, with "Show" to read it. "Hide" leaves the post
-   out, and its notification too.
-5. **Ends:** "Never", or after one of the durations offered, from 30 minutes to a week.
+5. **Where it applies:** "Home and lists", "Notifications", "Public timelines" (the local, federated, and hashtag
+   timelines), "Threads", and "Profiles". A new filter applies everywhere; clear the places you do not want.
 
-Choose "Add". "Edit" on a filter changes any of these, and "Delete" removes it with its words after asking. A filter
-applies at once to every post, old ones too; the timelines open on screen load again to show the change.
+Choose "Add". A filter of the list opens it to change any of these, and "Delete…" there removes it with its words after
+asking. A filter applies at once to every post, old ones too; the timelines open on screen load again to show the change.
 
 Searching, your bookmarks and favourites, and your direct messages are never filtered. Neither are your own posts and
 boosts, nor the posts they quote.
 
 ## What a filtered post looks like
 
-A post that a "Fold" filter matches shows only "Filtered:" and the names of the filters it matched, and "Show". Its
-author, text, and pictures stay out of sight, and a screen reader reads only that line, until you choose "Show". A post
-folds again when you come back to the page.
+A post that a folding filter matches shows only "Matches filter" with the names of the filters it matched, and "Show".
+Its author, text, and pictures stay out of sight, and a screen reader reads only that line, until you choose "Show";
+"Hide" folds it again, as does coming back to the page.
 
 A notification about such a post shows the same line instead of the post's text. When only a quoted post matches, only
-the quote is folded, even for "Hide", with "Show the quoted post". A boost is filtered by the post it boosts.
+the quote is folded, even for "Hide", with a "Show" of its own. A boost is filtered by the post it boosts.
 
 A post you open yourself, from a link or a notification, is folded rather than hidden, so the link still shows
 something.
@@ -38,7 +38,7 @@ something.
 ## When a filter ends
 
 A filter with an end stops applying at that moment. It stays in your list, marked "Expired", until you delete it. To use
-it again, choose "Edit" and a new end, or "Never". While you edit a filter that has an end, "Keep" leaves the end as it
+it again, open it and choose a new end, or "Never". While you edit a filter that has an end, "No change" leaves the end as it
 is.
 
 ## How words match
@@ -77,5 +77,5 @@ words come together, write them as one phrase.
 
 You can have up to 100 filters, with up to 100 words each and 1,000 words in all. A word is up to 100 characters.
 
-The archive of "Archive and deletion" in the settings holds your filters, expired ones included, as
+The archive of "Export", under "Account and data" in the settings, holds your filters, expired ones included, as
 `keyword_filters.json`.

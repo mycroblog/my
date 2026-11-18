@@ -4,8 +4,10 @@
 // an optional muted glyph at its start, and a quiet button at its end that shows or hides what follows it. The
 // button carries aria-expanded and aria-controls, Enter and Space toggle it, and it is described by the summary, so
 // that "Show" is read with what it shows. What it folds stays out of the layout, of assistive technology and of the
-// page's search while folded: a reader who chose not to see it is not shown it by a find. The button's label is the
-// design system's own string, in the reader's locale; it lays out in the reader's direction (locale.ts).
+// page's search while folded: a reader who chose not to see it is not shown it by a find. It keeps whether it is
+// expanded, unless its holder does (`expanded`, `onExpandedChange`: a holder that draws what it folds only once shown).
+// The button's label is the design system's own string, in the reader's locale; it lays out in the reader's direction
+// (locale.ts).
 
 import type { ComponentProps, HTMLAttributes, ReactNode } from "react";
 import { useId } from "react";
@@ -24,6 +26,10 @@ export type DisclosureProps = {
   icon?: IconName | undefined;
   /** Shown at first; folded by default. */
   defaultExpanded?: boolean | undefined;
+  /** Whether it shows what it folds, when its holder keeps that (with `onExpandedChange`); its own to keep without. */
+  expanded?: boolean | undefined;
+  /** What its button asks for: to show what it folds, or to fold it. */
+  onExpandedChange?: ((expanded: boolean) => void) | undefined;
   /** The reader's locale, for the button's label; the I18nProvider's by default. */
   locale?: string | undefined;
   /** What the disclosure folds. */
@@ -56,14 +62,27 @@ function DisclosureSummary({ className, ...rest }: HTMLAttributes<HTMLDivElement
   return <div {...rest} className={`${className} flex items-start gap-disclosure-gap`} />;
 }
 
-export function Disclosure({ summary, icon, defaultExpanded = false, locale, children }: DisclosureProps) {
+export function Disclosure({
+  summary,
+  icon,
+  defaultExpanded = false,
+  expanded,
+  onExpandedChange,
+  locale,
+  children,
+}: DisclosureProps) {
   const reader = useReader(locale);
   const { t, lang } = stringsIn(reader.lang);
   const summaryId = useId();
   const previewExpanded = usePreviewExpanded();
   const s = disclosure();
   return (
-    <DisclosureFrame defaultExpanded={defaultExpanded || previewExpanded} dir={reader.direction}>
+    <DisclosureFrame
+      defaultExpanded={defaultExpanded || previewExpanded}
+      {...(expanded === undefined ? {} : { isExpanded: expanded })}
+      {...(onExpandedChange === undefined ? {} : { onExpandedChange })}
+      dir={reader.direction}
+    >
       {({ isExpanded }) => (
         <>
           <DisclosureSummary className={s.summary()}>

@@ -166,8 +166,8 @@ phones, "Direct messages" is in "Menu".
 
 ## Deleting old posts automatically
 
-"Delete old posts" in the settings deletes your posts once they are older than the age you choose, as if you had
-deleted them yourself: they go here and on the servers they were sent to, and cannot be restored. The posts you keep
+"Delete old posts automatically", under "Account and data" in the settings, deletes your posts once they are older than
+the age you choose, as if you had deleted them yourself: they go here and on the servers they were sent to, and cannot be restored. The posts you keep
 (pinned, bookmarked, or favourited by you, with media or a poll, articles, by who can see them, or with many boosts or
 favourites) stay. Your boosts of other people's posts are never deleted. The server checks every hour and deletes at
 most 100 of your posts each time, so many old posts take several hours to go.
@@ -181,5 +181,5 @@ kinds of posts that the server allows can be kept (by default only pinned posts,
 unless the server allows keeping them). Some servers let some people keep their posts longer, for example as a benefit of a supporter plan.
 
 When a maximum starts to apply to you (the server introduces or lowers it, or you lose the right to keep posts longer),
-you get a notification, and an email unless you turned that off, saying from when it applies. Until then your own
-settings stay in effect. The settings page shows the date and, with its preview, which of your posts will be deleted then.
+you get a notification, which leads to that page, and an email unless you turned that off, saying from when it applies.
+Until then your settings stay in effect. The page shows the date and, under "Posts that would be deleted", how many go then.

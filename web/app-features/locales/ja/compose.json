@@ -810,5 +810,37 @@
   "compose.audience_menu": {
     "defaultMessage": "見られる人と返信できる人",
     "description": "The name of the audience menu of the composer and of the article editor, over its two items: who can see the post or the article, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
+  },
+  "compose.refused.appeal": {
+    "defaultMessage": "異議を申し立てる",
+    "description": "The action after the error of a post that this server's automated review refused, in the composer (the server's sentence ends with: If you think this is a mistake, you can appeal). It opens the confirmation compose.refused.appeal.title."
+  },
+  "compose.refused.reviewed": {
+    "defaultMessage": "この投稿は公開されませんでした。このサーバーの自動審査で受け付けられませんでした。",
+    "description": "The error of a post that this server's automated review refused, in the composer, where the app offers the appeal: the action Appeal follows it on the same line (compose.refused.appeal), so the sentence does not say that the reader can appeal. It stands for the server's own sentence (server:errors.status.rejected.detail), which says so for an app with no such action."
+  },
+  "compose.refused.appeal.title": {
+    "defaultMessage": "この判定に異議を申し立てますか？",
+    "description": "The question of the confirmation before the reader appeals the refusal of their post by this server's automated review, in the composer."
+  },
+  "compose.refused.appeal.text": {
+    "defaultMessage": "投稿の本文がこのサーバーのモデレーターに送られ、モデレーターが審査します。異議申し立ては判定 1 件につき 1 回だけです。取り消せません。",
+    "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
+  },
+  "compose.refused.appeal.confirm": {
+    "defaultMessage": "申し立てる",
+    "description": "The button of the confirmation compose.refused.appeal.title that sends the appeal of the refused post. In ja it is short enough to stand beside Cancel in the dialog on a narrow phone."
+  },
+  "compose.refused.appeal.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation compose.refused.appeal.title that closes it without appealing."
+  },
+  "compose.refused.appeal.state": {
+    "defaultMessage": "{state, select, pending {この投稿は公開されませんでした。異議申し立てを送りました。結果は通知でお知らせします。判定が取り消されたら、もう一度投稿してください。それまで残すには、下書きに保存してください。} upheld {この投稿は公開されませんでした。モデレーターが異議申し立てを審査し、判定を維持しました。投稿の内容を変えて、もう一度試してください。} overturned {モデレーターが異議申し立てを審査し、判定を取り消しました。もう一度投稿してください。} other {この投稿は公開されませんでした。この判定に異議を申し立てました。}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Post is disabled until the post is changed; the server keeps no refused post, so the reader posts it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Post is disabled until the post is changed), or overturned (the moderators cancelled the refusal: Post, right after this sentence, posts it again)."
+  },
+  "compose.refused.appeal.failed": {
+    "defaultMessage": "{reason, select, appealed {この判定にはすでに異議を申し立てています。異議申し立ては判定 1 件につき 1 回だけです。結果の通知を待ってください。} closed {この判定に異議を申し立てられる期間は過ぎています。投稿の内容を変えて、もう一度試してください。} not_appealable {この判定にはもう異議を申し立てられません。投稿の内容を変えて、もう一度試してください。} text {この投稿にはモデレーターに送る本文がないため、異議を申し立てられません。投稿の内容を変えて、もう一度試してください。} other {異議申し立てを送れませんでした。接続を確認して、もう一度試してください。}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the post has no text, which an appeal must carry), or other (the server could not be reached)."
   }
 }

@@ -11,7 +11,13 @@
 // draft, which New post opens again. The drafts' menu in the head saves it as a draft, or opens the drafts and
 // scheduled posts, from which one opens in the composer.
 
-import { AppDataProvider, createAppData, defaultComposeSettings, type PostSource } from "@my/app-data";
+import {
+  appealHookDecision,
+  AppDataProvider,
+  createAppData,
+  defaultComposeSettings,
+  type PostSource,
+} from "@my/app-data";
 import {
   ComposeLayer,
   emptyComposeDraft,
@@ -58,7 +64,9 @@ function staged(fake: FakeApi): (request: Request) => Promise<Response> {
       if (text.includes("#fail"))
         return problem(422, "Unprocessable Content", {
           type: "/api/v1/problems/status-rejected",
-          detail: document.documentElement.lang.startsWith("ja") ? "投稿が断られました。" : "The post was refused.",
+          detail: words[document.documentElement.lang.startsWith("ja") ? "ja" : "en"].reviewRefused,
+          // The decision of the review, which the author may appeal (refused.tsx of @my/app-features).
+          hook_decision_id: reviewDecision,
         });
       return fake.serve(request);
     }
@@ -104,6 +112,9 @@ const words = {
     // The server's words of a 422 that names a member of the request: its title, and its detail.
     refusedTitle: "This could not be done.",
     refusedDetail: "This value is not valid. Check what you entered.",
+    // The server's words of a post its automated review refused (server:errors.status.rejected.detail).
+    reviewRefused:
+      "This server's automated review did not accept this post. If you think this is a mistake, you can appeal.",
   },
   ja: {
     typing: "今朝は川沿いを歩いた。初霜で道の葉っぱがぜんぶ銀色になっていて、",
@@ -123,8 +134,13 @@ const words = {
     later: "@sam サワードウがまたぺたんこに。週末は教わった一晩発酵でやってみます。",
     refusedTitle: "この操作はできませんでした。",
     refusedDetail: "正しくない値です。入力した内容を確かめてください。",
+    reviewRefused:
+      "このサーバーの自動審査で、この投稿は受け付けられませんでした。誤りだと思うときは、異議を申し立てられます。",
   },
 };
+
+/** The decision of the fake's automated review that the stories of a refused post name. */
+const reviewDecision = "01JREVIEWDECISION000000000";
 
 /** A text of `n` characters, cut from the long sample. */
 const cut = (text: string, n: number) => Array.from(text.repeat(2)).slice(0, n).join("");
@@ -152,6 +168,11 @@ type State = {
   specimen?: ComposeSpecimen;
   /** It opens refused by the server, in the server's words, beside this input (field-errors.ts of @my/app-features). */
   refusedAt?: string;
+  /**
+   * It opens refused by the server's automated review, in the server's words, with the appeal to make (`refused`) or
+   * made already, which waits for the moderators (`appealed`).
+   */
+  reviewed?: "refused" | "appealed";
 };
 
 /** A moment `days` days from now at `hour` o'clock, local time, as an ISO 8601 string. */
@@ -299,6 +320,9 @@ const states = {
     draft: (d, w) => ({ ...d, text: w.images, attachments: [image(0, "ready", w.alt), image(1, "ready", w.alt)] }),
     refusedAt: "media:sample-1",
   },
+  // Refused by the server's automated review: the error says so with Appeal; once appealed, where the appeal stands.
+  "refused-review": { name: "Refused by the review", target: nw, draft: typed, reviewed: "refused" },
+  "refused-appealed": { name: "Refusal appealed", target: nw, draft: typed, reviewed: "appealed" },
   // Being sent: Close, Post and the tools wait for the answer.
   posting: { name: "Posting", target: nw, draft: typed, specimen: { phase: { kind: "posting" } } },
   // The chunk of the composer's view, or of its editor, could not be fetched (the network).
@@ -325,8 +349,14 @@ type StateId = keyof typeof states;
 function Specimen({ id, text }: { id: StateId; text: string }) {
   const { locale } = useLocale();
   const narrow = useNarrowViewport();
-  const [{ fake, data }] = useState(() => createComposeApp(id === "reply-waits"));
   const state: State = states[id];
+  const [{ fake, data }] = useState(() => {
+    const app = createComposeApp(id === "reply-waits");
+    // The appeal made before the story opens: the cache holds it as the server answered.
+    if (state.reviewed === "appealed")
+      void appealHookDecision(app.data, reviewDecision, { status_text: words.en.typing });
+    return app;
+  });
   const lang = locale.startsWith("ja") ? "ja" : "en";
   const target = state.target(fake);
   const drafted = state.draft(
@@ -336,12 +366,20 @@ function Specimen({ id, text }: { id: StateId; text: string }) {
   const initial = text === "" ? drafted : { ...drafted, text };
   const w = words[lang];
   const specimen: ComposeSpecimen | undefined =
-    state.refusedAt === undefined
-      ? state.specimen
-      : {
-          ...state.specimen,
-          phase: { kind: "failed", reason: w.refusedTitle, field: { input: state.refusedAt, text: w.refusedDetail } },
-        };
+    state.reviewed !== undefined
+      ? {
+          phase: {
+            kind: "failed",
+            reason: w.reviewRefused,
+            appeal: { decision: reviewDecision, deadline: new Date(Date.now() + 180 * 86_400_000).toISOString() },
+          },
+        }
+      : state.refusedAt === undefined
+        ? state.specimen
+        : {
+            ...state.specimen,
+            phase: { kind: "failed", reason: w.refusedTitle, field: { input: state.refusedAt, text: w.refusedDetail } },
+          };
   return (
     <AppDataProvider data={data}>
       <MenuSheet sheet={narrow}>
@@ -450,6 +488,10 @@ export const Posting: Story = shows("posting");
 export const WarningRefused: Story = shows("refused-cw");
 export const PollOptionRefused: Story = shows("refused-option");
 export const DescriptionRefused: Story = shows("refused-description");
+/** A post the server's automated review refused: the error says so in the server's words, with Appeal after them. */
+export const ReviewRefused: Story = shows("refused-review");
+/** The refusal appealed: in the error's place, that the appeal was sent and waits for a moderator. */
+export const ReviewAppealed: Story = shows("refused-appealed");
 /** The composer's view could not be fetched: its frame as tall as one line, that it could not be loaded, and Try again. */
 export const PostFormNotLoaded: Story = shows("unloaded-composer");
 /**

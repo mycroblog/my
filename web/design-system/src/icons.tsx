@@ -101,6 +101,7 @@ import {
   IconPaw,
   IconPencil,
   IconPencilPlus,
+  IconPhoto,
   IconPin,
   IconPlane,
   IconPlayerPauseFilled,
@@ -283,10 +284,12 @@ export const icons = {
   github: { off: IconBrandGithub },
   discord: { off: IconBrandDiscord },
   // Media: playing a video or a sound, pausing it, a file of a kind the client cannot show, a sound, opening a
-  // picture whole, zooming in it, and moving to the previous one in a row of them (`onward` moves to the next).
+  // picture whole, zooming in it, and moving to the previous one in a row of them (`onward` moves to the next); and
+  // the place of a picture that is not there yet (a header image to choose).
   play: { off: IconPlayerPlayFilled },
   pause: { off: IconPlayerPauseFilled },
   file: { off: IconFile },
+  picture: { off: IconPhoto },
   audio: { off: IconMusic },
   whole: { off: IconMaximize },
   zoomIn: { off: IconZoomIn },

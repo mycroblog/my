@@ -1,7 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { askNotificationPermission, notificationPermission, showAppBadge, subscribePush, supportsPush } from "./push";
+import {
+  askNotificationPermission,
+  notificationPermission,
+  showAppBadge,
+  subscribePush,
+  supportsPush,
+  watchNotificationPermission,
+} from "./push";
 
 /** The server's application key as the instance names it (base64url), and its bytes. */
 const key = "BAECAwQFBgcICQ";
@@ -133,6 +140,120 @@ describe("notificationPermission and askNotificationPermission", () => {
   });
 });
 
+describe("watchNotificationPermission", () => {
+  /** What the browser says of the site's notifications, which its settings change without a question. */
+  class SitePermission extends EventTarget {
+    state: PermissionState = "prompt";
+    onchange: ((event: Event) => void) | null = null;
+    /** The reader changed the site's permission in the browser's settings. */
+    set(state: PermissionState) {
+      this.state = state;
+      const event = new Event("change");
+      this.dispatchEvent(event);
+      this.onchange?.(event);
+    }
+  }
+
+  /** A browser with notifications whose question answers `answer`; with the Permissions API unless `permissions` is false. */
+  function browser(answer: NotificationPermission, permissions = true) {
+    const site = new SitePermission();
+    const asked: unknown[] = [];
+    Object.assign(globalThis, {
+      Notification: { permission: "default", requestPermission: () => Promise.resolve(answer) },
+    });
+    if (permissions)
+      Object.defineProperty(navigator, "permissions", {
+        configurable: true,
+        value: {
+          query: (descriptor: unknown) => {
+            asked.push(descriptor);
+            return Promise.resolve(site);
+          },
+        },
+      });
+    return { site, asked };
+  }
+
+  /** A watcher, how many times it was told, and the function that stops it, once the browser answered the watch. */
+  async function watching() {
+    const told = { times: 0 };
+    const stop = watchNotificationPermission(() => {
+      told.times += 1;
+    });
+    await Bun.sleep(0);
+    return { told, stop };
+  }
+
+  afterEach(() => {
+    Reflect.deleteProperty(navigator, "permissions");
+  });
+
+  for (const answer of ["granted", "denied", "default"] as const)
+    test(`tells its watcher after each question the app asks, here answered ${answer}`, async () => {
+      browser(answer);
+      const { told, stop } = await watching();
+      expect(told.times).toBe(0);
+
+      expect(await askNotificationPermission()).toBe(answer);
+      expect(told.times).toBe(1);
+
+      await askNotificationPermission();
+      expect(told.times).toBe(2);
+      stop();
+    });
+
+  test("tells its watcher each time the browser's settings change what the site may do, with no question asked", async () => {
+    const { site, asked } = browser("granted");
+    const { told, stop } = await watching();
+    expect(asked).toEqual([{ name: "notifications" }]);
+    expect(told.times).toBe(0);
+
+    site.set("denied");
+    expect(told.times).toBe(1);
+
+    site.set("prompt");
+    expect(told.times).toBe(2);
+    stop();
+  });
+
+  test("a browser without the Permissions API is followed by the app's questions alone", async () => {
+    browser("denied", false);
+    const { told, stop } = await watching();
+
+    await askNotificationPermission();
+
+    expect(told.times).toBe(1);
+    stop();
+  });
+
+  test("the function it returns stops it: neither a question nor a change of the browser's settings tells the watcher", async () => {
+    const { site } = browser("granted");
+    const { told, stop } = await watching();
+
+    stop();
+    await askNotificationPermission();
+    site.set("denied");
+
+    expect(told.times).toBe(0);
+  });
+
+  test("each watcher is told, and stopping one leaves the other", async () => {
+    const { site } = browser("granted");
+    const first = await watching();
+    const second = await watching();
+
+    await askNotificationPermission();
+    expect([first.told.times, second.told.times]).toEqual([1, 1]);
+
+    first.stop();
+    site.set("denied");
+    await askNotificationPermission();
+
+    expect([first.told.times, second.told.times]).toEqual([1, 3]);
+    second.stop();
+  });
+});
+
 describe("subscribePush", () => {
   test("subscribes with the server's key, visible only, and returns the subscription as the server takes it", async () => {
     const made = heldSubscription(key, "https://push.example/s/1");
@@ -173,6 +294,33 @@ describe("subscribePush", () => {
       refused = e;
     });
     expect(refused).toBeDefined();
+  });
+
+  test("rejects at once when the page has no Service Worker registration, and asks the push manager nothing", async () => {
+    const { pushManager } = installBrowser(null, () =>
+      Promise.resolve(heldSubscription(key, "https://push.example/s/1")),
+    );
+    // A browser's `ready` waits until a worker is registered, which never happens here.
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: {
+        ready: new Promise(() => undefined),
+        controller: null,
+        getRegistration: () => Promise.resolve(undefined),
+        register: () => new Promise(() => undefined),
+        addEventListener: () => undefined,
+        removeEventListener: () => undefined,
+      },
+    });
+    const outcome = await Promise.race([
+      subscribePush(key).then(
+        () => "subscribed",
+        () => "rejected",
+      ),
+      Bun.sleep(50).then(() => "still waiting"),
+    ]);
+    expect(outcome).toBe("rejected");
+    expect(pushManager.subscribe).not.toHaveBeenCalled();
   });
 });
 

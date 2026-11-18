@@ -5,6 +5,7 @@
 // the status page kept from the last answer; and in the dock, the toast of a newer version of the app, or of one the
 // server needs, never while the reader is in a call.
 
+import { accountMovePath, dataExportPath } from "@my/app-components";
 import { useServerActions, useServerState, useStatusPageUrl, type Instance } from "@my/app-data";
 import { dateFormat, FrameBanner, FrameBanners, Toast, useLocale, useTimeZone } from "@my/design-system";
 import { takeUpdate } from "@my/platform";
@@ -29,8 +30,8 @@ export function ServerBanners({ instance }: { instance: Instance | undefined }) 
           icon="caution"
           strong
           links={[
-            { href: "/settings/export", label: t("app.closure_export") },
-            { href: "/settings/move", label: t("app.closure_move") },
+            { href: dataExportPath, label: t("app.closure_export") },
+            { href: accountMovePath, label: t("app.closure_move") },
           ]}
         >
           {t("app.closure_notice", { closes: date(closure.closes_at), until: date(closure.export_until) })}

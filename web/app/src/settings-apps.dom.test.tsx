@@ -41,20 +41,32 @@ const heading = () =>
 const beside = () =>
   screen.queryAllByRole("navigation", { name: "Settings" }).filter((menu) => !screen.getByRole("main").contains(menu));
 
-/** The rows of the menu beside the screen: each link's words, where it leads, and whether the reader is at it. */
+/**
+ * The rows of the menu beside the screen: each link's words, where it leads, and whether the reader is at it. A row's
+ * count is left out: it comes with a read of its own (settings.dom.test.tsx holds it).
+ */
 const menu = () =>
   beside().flatMap((part) =>
     within(part)
       .getAllByRole("link")
-      .map((link) => [link.textContent, link.getAttribute("href"), link.getAttribute("aria-current")]),
+      .map((link) => [
+        link.textContent.replace(/\s*\d+\s*\d+ items? to check$/, ""),
+        link.getAttribute("href"),
+        link.getAttribute("aria-current"),
+      ]),
   );
 
 /** The menu beside the entry or a screen under it, at `path`: it marks Apps. */
 const marksApps = (path: string) => [
+  ["Profile", "/settings/profile", null],
   ["Display and posting", "/settings/display", null],
+  ["Notifications", "/settings/notifications", null],
+  ["Relationships", "/settings/relationships", null],
+  ["Keyword filters", "/settings/filters", null],
   ["Security", "/settings/security", null],
   ["Apps", apps, "page"],
   ["Invites", "/settings/invites", null],
+  ["Account and data", "/settings/account", null],
   ["Sign out…", `${path}?sign_out=true`, null],
 ];
 

@@ -5,9 +5,10 @@
 // address, the app sends them back to it, and it lets them in once they confirm the address from the link of the mail.
 // The sign-ups from one domain wait for a moderator as on a server that approves registrations (the scenario's
 // `approvalDomain`): such a person is let in only once a moderator approves, whether or not the address is confirmed.
-// A person who signs up from an invite's link finds its code in the form.
+// A person who signs up from an invite's link finds its code in the form. The way on from the confirmed address leads
+// a new account through the welcome step (welcome.spec.ts); the other tests open the sign-in, which goes home at once.
 
-import { Frame, SignIn, SignUp, VerifyEmail } from "./screens";
+import { Frame, SignIn, SignUp, VerifyEmail, Welcome } from "./screens";
 import { expect, mailedLink, test } from "./test";
 
 test("a person signs up on a server open to everyone, confirms their email address from the mail's link, and is let in", async ({
@@ -37,7 +38,10 @@ test("a person signs up on a server open to everyone, confirms their email addre
   await expect(verify.outcome).toHaveText("Thank you. Your email address is confirmed.");
   await expect.poll(() => fresh.emailConfirmed(who)).toBe(true);
 
-  await signIn.open();
+  // The way on leads a new account through the welcome step, which it may skip, to the home timeline.
+  const welcome = new Welcome(page);
+  await welcome.arrive();
+  await welcome.skip();
   await expect(new Frame(page).heading("Home")).toBeVisible();
 });
 

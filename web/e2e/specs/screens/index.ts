@@ -7,7 +7,9 @@
 // once, before the answer, so asserting what it shows and then reloading or navigating is the flaky pattern: the
 // reload aborts the unanswered request and the server drops the write.
 
+export { AccountData } from "./account-data";
 export { AccountNote } from "./account-note";
+export { AccountStatus } from "./account-status";
 export { Apps } from "./apps";
 export { ArticleText } from "./article";
 export { ArticleEditor, type Upload } from "./article-editor";
@@ -19,13 +21,17 @@ export { EmojiPicker } from "./emoji-picker";
 export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
+export { FilterEditor, foldedBy, KeywordFilters } from "./keyword-filters";
 export { Invites } from "./invites";
 export { ListIndex } from "./lists";
 export { LoginProvider } from "./login-provider";
 export { streamOpened } from "./stream";
+export { NotificationSettings } from "./notification-settings";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";
 export { ownProfileHeading, Profile } from "./profile";
+export { ProfileForm, ProfileSettings } from "./profile-settings";
 export { Reactors } from "./reactors";
+export { Relationships } from "./relationships";
 export { ForgotPassword, PasswordReset } from "./reset";
 export { Security, TwoFactorSetup, virtualAuthenticator } from "./security";
 export { DisplaySettings, Landing, Settings } from "./settings";
@@ -33,5 +39,6 @@ export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { SignUp } from "./sign-up";
 export { Thread } from "./thread";
 export { VerifyEmail } from "./verify";
+export { Welcome } from "./welcome";
 export { Notice } from "./notice";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";

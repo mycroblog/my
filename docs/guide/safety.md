@@ -24,19 +24,19 @@ To hold the notifications of people you don't know until you accept them, use th
 ## Muting a server
 
 "Mute server" in the same menu, for an account of another server, mutes its whole server and subdomains; "Muted
-domains", under "Relationships" in the settings, lists and adds them. It hides the posts of its accounts from your
-timelines other than home, their boosts from your home timeline, and their notifications. The accounts of that server
-you follow stay on your home timeline. Only you are affected, and the server is not told.
+servers", under "Relationships" in the settings, lists them and lets you "Unmute" them. It hides the posts of its
+accounts from your timelines other than home, their boosts from your home timeline, and their notifications. The
+accounts of that server you follow stay on your home timeline. Only you are affected, and the server is not told.
 
 ## Filtering posts by keyword
 
-"Keyword filters", under "Display and notifications" in the settings, folds or hides the posts that contain words you
+"Keyword filters", under "People and filters" in the settings, folds or hides the posts that contain words you
 choose, whoever wrote them. [Keyword filters](keyword-filters.md) explains how to set them up and how their words match.
 
 ## When a moderator acts on your account
 
 The moderators of a server can limit or suspend an account. "Account status", under "Account and data" in the settings,
-lists the actions in effect ("Actions in effect") with their reason and when each one ends, and lets you appeal an
-action once ("Appeal"). You are notified of the moderators' notices and of the result of an appeal.
+lists the actions in effect ("Actions in effect") and the past ones with their reason and when each one ends; open an
+action to appeal it once ("Send appeal"). You are notified of the moderators' notices and of the result of an appeal.
 
 What the moderators may do, and which rules apply, is up to each server: read its rules before you appeal.

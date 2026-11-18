@@ -434,7 +434,8 @@ export function accessHandlers(c: AccessContext): Handlers {
     not_permitted:
       "Only some accounts can create invites on this server. Ask its administrators to let you create them.",
     not_approved: "Your registration is not approved. A moderator needs to approve it before you can create invites.",
-    restricted: "A moderation action keeps your account from creating invites for now.",
+    restricted:
+      "A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.",
     unknown: "You cannot create invites now.",
   };
 

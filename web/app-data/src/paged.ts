@@ -57,6 +57,31 @@ export type PagedList<T> = {
   readonly refetch: () => void;
 };
 
+/**
+ * A list the server answers whole, or that is read whole (every page of it at once), in the shape of a paged one whose
+ * last page is read: what a screen that shows lists of both kinds reads of it.
+ */
+export function wholeList<T>(query: {
+  readonly data: readonly T[] | undefined;
+  readonly status: "pending" | "error" | "success";
+  /** The client rejects with a ProblemError or a NetworkError of mykit, whatever the query's type says. */
+  readonly error: unknown;
+  readonly refetch: () => Promise<unknown>;
+}): PagedList<T> {
+  return {
+    items: query.data ?? [],
+    status: query.status,
+    error: query.error as Error | null,
+    hasNextPage: false,
+    isFetchingNextPage: false,
+    failedNextPage: false,
+    fetchNextPage: () => undefined,
+    refetch: () => {
+      void query.refetch();
+    },
+  };
+}
+
 /** A list whose pages carry more than items (`P`): the first page, which is the newest read of it, shows that more. */
 export type PagedListOf<T, P extends Page<T>> = PagedList<T> & { readonly firstPage: P | undefined };
 

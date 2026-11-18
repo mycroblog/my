@@ -6,6 +6,7 @@
 // specification's path, which refuses a request of no handler by name instead of answering it.
 
 import type { components, paths } from "@mycroblog/mykit";
+import { worded } from "./words";
 
 /** A schema of the API specification, by its name. */
 export type Schema<Name extends keyof components["schemas"]> = components["schemas"][Name];
@@ -182,10 +183,10 @@ export async function jsonOf(request: Request): Promise<unknown> {
 /** An answer of any operation, as the router reads it. */
 type AnyAnswer = ({ status: number; body?: unknown; type?: string; raw?: BodyInit } & Extra) | Refusal;
 
-/** The response of an answer. */
-function respond(answer: AnyAnswer): Response {
+/** The response of an answer to `request`: a problem in the words of the language the request asks for (words.ts). */
+function respond(answer: AnyAnswer, request: Request): Response {
   if ("problem" in answer)
-    return new Response(JSON.stringify(answer.problem), {
+    return new Response(JSON.stringify(worded(answer.problem, request)), {
       status: answer.problem.status,
       headers: { "Content-Type": "application/problem+json", ...answer.headers },
     });
@@ -232,6 +233,6 @@ export function createRouter(
       body: await jsonOf(request),
       request,
     });
-    return respond(answer);
+    return respond(answer, request);
   };
 }

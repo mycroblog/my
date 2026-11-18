@@ -28,7 +28,7 @@
     "description": "An entry of the settings menu, and the title of its page, where the reader edits their profile."
   },
   "settings.entry.profile.hint": {
-    "defaultMessage": "Name, bio, pictures, badges, approving followers, appearing in search",
+    "defaultMessage": "Name, bio, images, badges, approving followers, appearing in search",
     "description": "The line under Profile in the settings menu at /settings: what its page holds, so that the reader finds a setting without opening every entry. A list of nouns, without a full stop."
   },
   "settings.entry.display": {
@@ -60,7 +60,7 @@
     "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
   },
   "settings.entry.filters.hint": {
-    "defaultMessage": "Words and phrases that hide posts",
+    "defaultMessage": "Words and phrases that fold or hide posts",
     "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
   },
   "settings.entry.security": {
@@ -286,6 +286,1966 @@
   "settings.display.auto_insert.about": {
     "defaultMessage": "When off, they wait until you press the “new posts” button over the timeline.",
     "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  },
+  "settings.profile.section.you": {
+    "defaultMessage": "Your profile",
+    "description": "A section heading of the Profile page of the settings, over the reader's own avatar, name and handle as others see them with the button Edit profile, the hashtags they feature, and the switch that marks the account as a bot."
+  },
+  "settings.profile.section.badges": {
+    "defaultMessage": "Badges",
+    "description": "A section heading of the Profile page of the settings, over one switch for each badge the reader may show on their profile. The section is absent for a reader with no badge."
+  },
+  "settings.profile.section.badges.about": {
+    "defaultMessage": "Badges this server gave you. A badge shows beside your handle on your profile while it is on.",
+    "description": "The line under the Badges heading of the Profile page of the settings. A badge is a short name the server's administrators attach to some accounts (Moderator, Supporter); each is hidden until its owner shows it."
+  },
+  "settings.profile.section.follows": {
+    "defaultMessage": "Following and followers",
+    "description": "A section heading of the Profile page of the settings, over the switch that makes follows need the reader's approval and the choice of who sees the lists of whom they follow and who follows them."
+  },
+  "settings.profile.section.discovery": {
+    "defaultMessage": "How your account is found",
+    "description": "A section heading of the Profile page of the settings, over the switches that decide where the account and its public posts appear: suggestions and the search by name, search engines and this server's search of posts, AI, and the Atom feed."
+  },
+  "settings.profile.edit": {
+    "defaultMessage": "Edit profile",
+    "description": "The button that opens the form where the reader changes their profile (pictures, display name, bio, fields): beside the reader's name on the Profile page of the settings, and at the top of the reader's own profile. Also the title of that form's page."
+  },
+  "settings.profile.hashtags": {
+    "defaultMessage": "Featured hashtags",
+    "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
+  },
+  "settings.profile.hashtags.about": {
+    "defaultMessage": "Add up to {max, number}. They show on your profile.",
+    "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
+  },
+  "settings.profile.hashtags.placeholder": {
+    "defaultMessage": "Add a hashtag",
+    "description": "The placeholder of the field of featured hashtags while it takes another one; the same words as the hashtags of an article (compose.article.tags.placeholder)."
+  },
+  "settings.profile.hashtags.full": {
+    "defaultMessage": "No more hashtags",
+    "description": "The placeholder of the field of featured hashtags once it holds the most an account may feature, so that it takes no more."
+  },
+  "settings.profile.hashtags.remove": {
+    "defaultMessage": "Remove #{tag}",
+    "description": "The name of the button on a featured hashtag that removes it from the reader's profile, for assistive technology. tag is the hashtag without its #."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "Mark this account as a bot",
+    "description": "The label of a switch on the Profile page of the settings: on, the account says it is automated, and the profile shows the mark Bot (profile.bot) beside its name."
+  },
+  "settings.profile.bot.about": {
+    "defaultMessage": "For an account that a program posts from. “Bot” shows beside your name.",
+    "description": "The line under Mark this account as a bot. The quoted word is the mark on the profile (profile.bot)."
+  },
+  "settings.profile.badge": {
+    "defaultMessage": "Show “{label}”",
+    "description": "The label of the switch that shows one badge on the reader's profile, or hides it. label is the name on the badge, written by the server's administrators (Moderator)."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "Require approval to follow you",
+    "description": "The label of a switch on the Profile page of the settings: on, someone who wants to follow the reader sends a request, which the reader approves or declines; the profile then says Follow requests need approval (profile.locked)."
+  },
+  "settings.profile.locked.about": {
+    "defaultMessage": "People ask to follow you, and you approve or decline each request. Turning this off does not approve requests that are already waiting.",
+    "description": "The line under Require approval to follow you: what the switch does, and that the requests waiting when it is turned off stay until the reader answers them."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "Who can see your following and followers lists",
+    "description": "The label of the choice of who may open the lists of the accounts the reader follows and of their followers, on the Profile page of the settings. Its options are settings.profile.follows_visibility.option."
+  },
+  "settings.profile.follows_visibility.about": {
+    "defaultMessage": "The numbers stay visible to anyone.",
+    "description": "The line under Who can see your following and followers lists: how many accounts the reader follows and how many follow them shows on the profile whatever is chosen."
+  },
+  "settings.profile.follows_visibility.option": {
+    "defaultMessage": "{who, select, public {Anyone} followers {Followers} other {Only you}}",
+    "description": "An option of Who can see your following and followers lists; the composer's words for the same audiences (compose.audience.everyone, compose.audience.followers, compose.audience.nobody). who is public, followers or private."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "Appear in suggestions and in search by name",
+    "description": "The label of a switch on the Profile page of the settings: on, the account is suggested to other people and the search of accounts finds it by a part of its name."
+  },
+  "settings.profile.discoverable.about": {
+    "defaultMessage": "When off, the search finds your account only by its whole username.",
+    "description": "The line under Appear in suggestions and in search by name: what happens when the switch is off."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "Include your profile and public posts in search",
+    "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
+  },
+  "settings.profile.indexable.about": {
+    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} elsewhere {This server tells search engines not to list any account. Your choice is still sent to other servers, which may use it for their search.} other {This server tells search engines not to list any account. Your choice still decides whether this server's search of posts shows your posts.}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, server on one that tells search engines not to list any account and has a search of posts, where the choice applies to that search, and elsewhere on one that tells search engines not to list any account and has no search of posts: the choice then decides nothing on this server, but other servers receive it with the profile and may use it for their own search."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "Refuse AI training and use",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's pages on this server state that AI may neither train on them nor use them (in AI search, assistants and agents)."
+  },
+  "settings.profile.ai_opt_out.about": {
+    "defaultMessage": "{server, select, deny_training {This server already refuses AI training for every account. When on, your pages on this server also refuse use by AI search and assistants. Other servers and your media files do not carry this.} other {When on, your pages on this server tell AI crawlers not to train on them or use them. Other servers and your media files do not carry this.}}",
+    "description": "The line under Refuse AI training and use: what the switch does and where it stops (the copies of the reader's posts on other servers, and the media files, do not carry the statement). server is what the server itself states for every account: deny_training when it already refuses training and lets AI use the pages, anything else when it allows both."
+  },
+  "settings.profile.ai_opt_out.overridden": {
+    "defaultMessage": "This server already refuses AI training and use for every account, so your choice has no effect.",
+    "description": "The line under Refuse AI training and use while the switch is disabled and shows on: the server's administrators refuse both for every account, so both are refused whatever the reader chose."
+  },
+  "settings.profile.feed": {
+    "defaultMessage": "Offer an Atom feed of your public posts",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
+  },
+  "settings.profile.feed.about": {
+    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} other {People can read your public posts in a feed reader, without an account.}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
+  },
+  "settings.profile.edit.section.pictures": {
+    "defaultMessage": "Images",
+    "description": "A section heading of the Edit profile page of the settings, over the header image and the avatar."
+  },
+  "settings.profile.edit.section.text": {
+    "defaultMessage": "Name and bio",
+    "description": "A section heading of the Edit profile page of the settings, over the display name and the bio."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "Header image",
+    "description": "The label of the picture across the top of the reader's profile, on the Edit profile page of the settings."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "Avatar",
+    "description": "The label of the reader's avatar, the round picture beside their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.picture.choose": {
+    "defaultMessage": "Choose an image",
+    "description": "The button of the header image and of the avatar that opens the device's file picker, while there is no picture."
+  },
+  "settings.profile.picture.replace": {
+    "defaultMessage": "Replace",
+    "description": "The button of the header image and of the avatar that opens the device's file picker to choose another picture in place of the one shown."
+  },
+  "settings.profile.picture.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
+  },
+  "settings.profile.picture.failed": {
+    "defaultMessage": "{reason, select, processing {The server could not process this image. Choose another one.} other {This image could not be uploaded. Save again, or choose another one.}}",
+    "description": "Under the avatar or the header image on the Edit profile page when saving failed because of that picture and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
+  },
+  "settings.profile.name": {
+    "defaultMessage": "Display name",
+    "description": "The label of the field of the name the reader's account shows, on the Edit profile page of the settings."
+  },
+  "settings.profile.name.over": {
+    "defaultMessage": "The display name must be at most {max, number} characters.",
+    "description": "Under the display name when it is longer than the limit."
+  },
+  "settings.profile.name.rule": {
+    "defaultMessage": "The display name must be at most {max, number} characters on one line, without tabs or other control characters.",
+    "description": "Under the display name, on the Edit profile page and on the welcome step of a new account, when the server refused it: the rule a display name follows, since the server says only that the value is not valid. max is 30."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "Bio",
+    "description": "The label of the field of the text about the reader that their profile shows under their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.note.over": {
+    "defaultMessage": "The bio must be at most {max, number} characters.",
+    "description": "Under the bio when it is longer than the limit."
+  },
+  "settings.profile.count.left": {
+    "defaultMessage": "{count, plural, one {# character left} other {# characters left}}",
+    "description": "What the count beside the display name or the bio says to a screen reader near the field's limit: how many characters are left."
+  },
+  "settings.profile.count.over": {
+    "defaultMessage": "{count, plural, one {# character over} other {# characters over}}",
+    "description": "What the count beside the display name or the bio says to a screen reader past the field's limit: by how many characters it is over."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "Fields",
+    "description": "A section heading of the Edit profile page of the settings, and the name of the list under it: the short pairs of a label and its content that a profile shows under the bio (Website: https://example.org)."
+  },
+  "settings.profile.fields.about": {
+    "defaultMessage": "Add up to {max, number} pairs of a label and its content, such as a website or your pronouns. They show on your profile, and a web address becomes a link.",
+    "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
+  },
+  "settings.profile.fields.empty": {
+    "defaultMessage": "No fields yet. Add one to show something like a website or your pronouns on your profile.",
+    "description": "In the place of the list of fields on the Edit profile page while the profile has none, over the button Add a field."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "Add a field",
+    "description": "The button that adds an empty field (a label and its content) to the list on the Edit profile page."
+  },
+  "settings.profile.fields.name": {
+    "defaultMessage": "Label",
+    "description": "The name and placeholder of the first box of a field on the Edit profile page: the short name of the field (Website)."
+  },
+  "settings.profile.fields.value": {
+    "defaultMessage": "Content",
+    "description": "The name and placeholder of the second box of a field on the Edit profile page: what the profile shows under the label (https://example.org)."
+  },
+  "settings.profile.fields.legend": {
+    "defaultMessage": "Field {n, number}",
+    "description": "The name of one field of the list on the Edit profile page, for assistive technology, so that its two boxes are told from those of the next field. n is its place in the list, from 1."
+  },
+  "settings.profile.fields.remove": {
+    "defaultMessage": "Remove field {n, number}",
+    "description": "The name of the button that removes one field from the list on the Edit profile page, for assistive technology. n is the field's place in the list, from 1."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "Save",
+    "description": "The button at the bottom of the Edit profile page that saves every change of the form at once."
+  },
+  "settings.profile.save.failed": {
+    "defaultMessage": "Your profile could not be saved. Try again.",
+    "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
+  },
+  "settings.profile.save.picture_failed": {
+    "defaultMessage": "Your profile was not saved, because an image could not be used. See the note under the image.",
+    "description": "Beside the Save button of the Edit profile page when the avatar or the header image the reader picked could not be uploaded or was refused; what is wrong stands under that picture (settings.profile.picture.failed, or the server's own words)."
+  },
+  "settings.profile.leave.title": {
+    "defaultMessage": "Leave without saving?",
+    "description": "The question of the confirmation that opens when the reader leaves the Edit profile page with changes they have not saved."
+  },
+  "settings.profile.leave.text": {
+    "defaultMessage": "The changes you have not saved will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave the Edit profile page without saving."
+  },
+  "settings.profile.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves the Edit profile page and drops the changes not saved."
+  },
+  "settings.profile.leave.cancel": {
+    "defaultMessage": "Keep editing",
+    "description": "The button of the confirmation that stays on the Edit profile page, with the changes as the reader left them."
+  },
+  "settings.notifications.section.device": {
+    "defaultMessage": "This device",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), over what is kept on the device the reader is using and not on their account: whether it gets push notifications, and whether it plays the notification sound."
+  },
+  "settings.notifications.section.ordinary": {
+    "defaultMessage": "From other people",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification that come from what other people do (mentions, follows, boosts)."
+  },
+  "settings.notifications.section.ordinary.about": {
+    "defaultMessage": "Choose how each kind of notification reaches you. A kind with “In the app” off is not created, so it does not arrive any other way either.",
+    "description": "The line under the heading From other people of the notification settings page (settings.entry.notifications), over the first table of kinds by channel. In the app is the column settings.notifications.channel.in_app."
+  },
+  "settings.notifications.section.moderator": {
+    "defaultMessage": "For moderators",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification sent to the server's moderators and administrators (a new report, a sign-up to approve). Shown only to them."
+  },
+  "settings.notifications.section.instance": {
+    "defaultMessage": "From this server",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification the server itself sends the reader (the moderators' notices, announcements, its closure)."
+  },
+  "settings.notifications.push": {
+    "defaultMessage": "Push notifications",
+    "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns Web Push on or off for the device the reader is using. The line under it is notifications.push_offer."
+  },
+  "settings.notifications.push.no_server": {
+    "defaultMessage": "This server does not send push notifications.",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on: the server is not set up to send Web Push."
+  },
+  "settings.notifications.push.no_browser": {
+    "defaultMessage": "This browser cannot receive push notifications.",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on: the browser has no Web Push."
+  },
+  "settings.notifications.push.install": {
+    "defaultMessage": "On an iPhone or iPad, add this site to the Home Screen and open it from there to get push notifications.",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on in Safari on an iPhone or iPad: Web Push works there only once the site is added to the Home Screen and opened from it. Home Screen is Apple's name."
+  },
+  "settings.notifications.push.closed": {
+    "defaultMessage": "The browser's question closed without an answer. Turn this on to be asked again.",
+    "description": "Under the Push notifications switch of the notification settings page (settings.entry.notifications), after the reader turned it on and closed the browser's permission question without choosing: the switch went back to off. The same case as notifications.push_closed, for a switch."
+  },
+  "settings.notifications.sound": {
+    "defaultMessage": "Notification sound",
+    "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns the sound of new notifications on or off for the device the reader is using. Off until the reader turns it on."
+  },
+  "settings.notifications.sound.about": {
+    "defaultMessage": "A sound plays on this device when a notification arrives while the app is open. While this is on, choose which kinds in the “Sound” column below.",
+    "description": "The line under the Notification sound switch of the notification settings page (settings.entry.notifications). The Sound column (settings.notifications.channel.sound) of the tables below it appears once the switch is on, with every kind off."
+  },
+  "settings.notifications.sound.try": {
+    "defaultMessage": "Play the sound",
+    "description": "The button under the Notification sound switch of the notification settings page (settings.entry.notifications): it plays the notification sound once, so that the reader hears what it is."
+  },
+  "settings.notifications.sound.blocked": {
+    "defaultMessage": "The browser did not play the sound. Allow sound for this site in the browser's settings, then try again.",
+    "description": "Under the Notification sound switch of the notification settings page (settings.entry.notifications), after the reader turned it on or pressed Play the sound and the browser played nothing."
+  },
+  "settings.notifications.email_stopped": {
+    "defaultMessage": "Email to your address is stopped",
+    "description": "The heading of the notice at the top of the notification settings page (settings.entry.notifications) while the server no longer sends email to the reader's address. A sentence without a full stop."
+  },
+  "settings.notifications.email_stopped.about": {
+    "defaultMessage": "{kind, select, hard_bounce {An email to your address could not be delivered, so this server sends you no email, notifications included, until you verify the address again.} other {An email from this server was marked as spam, so notification emails are no longer sent to your address. To receive them again, ask the moderators of this server.}}",
+    "description": "Under settings.notifications.email_stopped: why the server stopped, and after a complaint the only way back. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again, with the button under this line) or complaint (the recipient marked an email as spam; only notification emails stop, until a moderator lifts it)."
+  },
+  "settings.notifications.email_stopped.verify": {
+    "defaultMessage": "Send the verification email",
+    "description": "The button of the notice settings.notifications.email_stopped after an email to the reader's address bounced: sends a new verification email, whose link shows the address works and lifts the stop."
+  },
+  "settings.notifications.email_stopped.sent": {
+    "defaultMessage": "Sent. Open the link in the email to receive email again.",
+    "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
+  },
+  "settings.notifications.email_stopped.verified": {
+    "defaultMessage": "Your address is already verified. Email is sent to it again.",
+    "description": "On the notification settings page, in the place of the notice settings.notifications.email_stopped once the reader pressed Send the verification email (settings.notifications.email_stopped.verify) and the server answered that the address is verified already: no email was sent, the notice is gone, and the server sends email to the address again. A status that takes the focus the button left."
+  },
+  "settings.notifications.email_stopped.wait": {
+    "defaultMessage": "{minutes, plural, =0 {You asked for the email too many times. Try again later.} one {You asked for the email too many times. Try again in # minute.} other {You asked for the email too many times. Try again in # minutes.}}",
+    "description": "Beside the button Send the verification email on the notification settings page when the server refused to send another one so soon; the same sentence as on the sign-up status page (server:auth.status.resend_rate_limited). minutes is how long the server asks the reader to wait, rounded up to whole minutes, or 0 when the server did not say."
+  },
+  "settings.notifications.email_stopped.not_sent": {
+    "defaultMessage": "The email could not be sent. Try again.",
+    "description": "Beside settings.notifications.email_stopped.verify when the server did not answer; the button beside it tries again."
+  },
+  "settings.notifications.column.kind": {
+    "defaultMessage": "Notification",
+    "description": "The header of the first column of a table of the notification settings page (settings.entry.notifications), the column of the kinds' names, for assistive technology only."
+  },
+  "settings.notifications.channel.in_app": {
+    "defaultMessage": "In the app",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification shows in the app's notifications. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.push": {
+    "defaultMessage": "Push",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification is sent to this device as a push notification. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.email": {
+    "defaultMessage": "Email",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification is sent by email. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.sound": {
+    "defaultMessage": "Sound",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification plays the notification sound on this device while the app is open. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.all": {
+    "defaultMessage": "All",
+    "description": "The name of the first row of a table of the notification settings page (settings.entry.notifications): each of its checkboxes turns one channel on or off for every kind of the table at once."
+  },
+  "settings.notifications.cell": {
+    "defaultMessage": "{kind}: {channel}",
+    "description": "The name of one checkbox of a table of the notification settings page (settings.entry.notifications), in the message that a change was not saved (settings.unsaved): kind is the row's name (settings.notifications.kind.*, or settings.notifications.all), channel the column's (settings.notifications.channel.*)."
+  },
+  "settings.notifications.reason.in_app_off": {
+    "defaultMessage": "“In the app” is off, so it does not arrive any other way.",
+    "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications) while its In the app checkbox is off: why its other checkboxes are off and cannot be changed."
+  },
+  "settings.notifications.reason.fixed": {
+    "defaultMessage": "{channels, select, both {Always arrives in the app and by email.} email {Always arrives by email.} other {Always arrives in the app.}}",
+    "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications): why some of its checkboxes are on and cannot be changed (the server sends these to everyone). channels is in_app, email, or both."
+  },
+  "settings.notifications.kind.mention": {
+    "defaultMessage": "Mentions",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.mention): keep the two the same."
+  },
+  "settings.notifications.kind.follow": {
+    "defaultMessage": "New followers",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow): keep the two the same."
+  },
+  "settings.notifications.kind.follow_request": {
+    "defaultMessage": "Follow requests",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_request): keep the two the same."
+  },
+  "settings.notifications.kind.follow_accepted": {
+    "defaultMessage": "Accepted follow requests",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_accepted): keep the two the same."
+  },
+  "settings.notifications.kind.boost": {
+    "defaultMessage": "Boosts",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.boost): keep the two the same."
+  },
+  "settings.notifications.kind.favourite": {
+    "defaultMessage": "Favourites",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.favourite): keep the two the same."
+  },
+  "settings.notifications.kind.reaction": {
+    "defaultMessage": "Emoji reactions",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.reaction): keep the two the same."
+  },
+  "settings.notifications.kind.quote": {
+    "defaultMessage": "Quotes",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.quote): keep the two the same."
+  },
+  "settings.notifications.kind.interaction_request": {
+    "defaultMessage": "Approval of replies, boosts and quotes",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to reply to, boost or quote a post of the reader, which waits for the reader's approval, or an author approved or declined the reader's own reply, boost or quote (notifications.kind.reply_request and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.poll_closed": {
+    "defaultMessage": "Ended polls",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.poll_closed): keep the two the same."
+  },
+  "settings.notifications.kind.account_moved": {
+    "defaultMessage": "Accounts you follow moving",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.account_moved): keep the two the same."
+  },
+  "settings.notifications.kind.voice": {
+    "defaultMessage": "Voice chats",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.voice): keep the two the same."
+  },
+  "settings.notifications.kind.event": {
+    "defaultMessage": "Events",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.event): keep the two the same."
+  },
+  "settings.notifications.kind.status": {
+    "defaultMessage": "New posts",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A new post of an account whose posts the reader asked to be notified of (notifications.kind.status). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.admin_report": {
+    "defaultMessage": "New reports",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_report): keep the two the same."
+  },
+  "settings.notifications.kind.admin_sign_up": {
+    "defaultMessage": "Registrations awaiting approval",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_sign_up): keep the two the same."
+  },
+  "settings.notifications.kind.admin_appeal": {
+    "defaultMessage": "New appeals",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_appeal): keep the two the same."
+  },
+  "settings.notifications.kind.admin_webhook_disabled": {
+    "defaultMessage": "Disabled webhooks",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_webhook_disabled): keep the two the same."
+  },
+  "settings.notifications.kind.admin_hook_failing": {
+    "defaultMessage": "Failing external reviews",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_failing): keep the two the same."
+  },
+  "settings.notifications.kind.admin_hook_appeal": {
+    "defaultMessage": "Appeals of refused posts",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_appeal): keep the two the same."
+  },
+  "settings.notifications.kind.admin_domain_list_failing": {
+    "defaultMessage": "Failing blocklist subscriptions",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_domain_list_failing): keep the two the same."
+  },
+  "settings.notifications.kind.admin_custom_emoji_request": {
+    "defaultMessage": "Custom emoji requests",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_custom_emoji_request): keep the two the same."
+  },
+  "settings.notifications.kind.admin_account_moved": {
+    "defaultMessage": "Limited accounts moving",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_account_moved): keep the two the same."
+  },
+  "settings.notifications.kind.admin_service_closure_due": {
+    "defaultMessage": "Closing date passed",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_service_closure_due): keep the two the same."
+  },
+  "settings.notifications.kind.admin_error_group": {
+    "defaultMessage": "New and recurring errors",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_error_group): keep the two the same."
+  },
+  "settings.notifications.kind.moderation": {
+    "defaultMessage": "Notices from the moderators",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.moderation): keep the two the same."
+  },
+  "settings.notifications.kind.service_closure": {
+    "defaultMessage": "Closure of this server",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server announced that it will close, changed the date, or withdrew the closure (notifications.kind.service_closure_announced and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.supporter": {
+    "defaultMessage": "Your supporter plan",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A payment of the reader's supporter plan failed, or the plan ended (notifications.kind.supporter_payment_failed and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.announcement": {
+    "defaultMessage": "Announcements",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An announcement of the server's administrators (notifications.kind.announcement). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.auto_delete_limit": {
+    "defaultMessage": "Notices of the automatic deletion of posts",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.auto_delete_limit): keep the two the same."
+  },
+  "settings.notifications.kind.unpublished_scheduled_status": {
+    "defaultMessage": "Scheduled posts that could not be published",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A post the reader scheduled could not be published at its time (notifications.kind.scheduled_status_failed). A noun phrase without a full stop."
+  },
+  "settings.notifications.policy": {
+    "defaultMessage": "Notifications from people you may not know",
+    "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
+  },
+  "settings.notifications.policy.actions": {
+    "defaultMessage": "What each choice does",
+    "description": "The name, for assistive technology, of the list under the heading Notifications from people you may not know that says what each of the three choices does: Accept, Hold back, Drop (settings.notifications.policy.action), each over its line (settings.notifications.policy.about.*)."
+  },
+  "settings.notifications.policy.about.accept": {
+    "defaultMessage": "The notification arrives as usual.",
+    "description": "The line under Accept in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.about.filter": {
+    "defaultMessage": "It waits in “Held-back notifications” until you accept or dismiss it.",
+    "description": "The line under Hold back in the list of what each choice does, under the heading Notifications from people you may not know. The quoted words are the name of the screen that lists them (notifications.held)."
+  },
+  "settings.notifications.policy.about.drop": {
+    "defaultMessage": "It is never created, so you cannot see it later.",
+    "description": "The line under Drop in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.action": {
+    "defaultMessage": "{action, select, accept {Accept} filter {Hold back} other {Drop}}",
+    "description": "An option of each choice of the section settings.notifications.policy: what happens to the notifications of a kind of sender. action is accept (they arrive as usual), filter (they are held back, in the screen notifications.held) or drop (no notification is made)."
+  },
+  "settings.notifications.policy.not_following": {
+    "defaultMessage": "People you do not follow",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts the reader does not follow."
+  },
+  "settings.notifications.policy.not_follower": {
+    "defaultMessage": "People who do not follow you",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts that do not follow the reader."
+  },
+  "settings.notifications.policy.new_account": {
+    "defaultMessage": "New accounts",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts created recently."
+  },
+  "settings.notifications.policy.new_account.about": {
+    "defaultMessage": "Accounts created less than 30 days ago.",
+    "description": "The line under the choice New accounts of the section settings.notifications.policy."
+  },
+  "settings.notifications.policy.unsolicited_private_mention": {
+    "defaultMessage": "Unrequested direct messages",
+    "description": "A choice of the section settings.notifications.policy: direct messages (posts whose audience is only the people they mention, the screen conversations.label) that the reader did not start. The app's words for them: direct messages, DM."
+  },
+  "settings.notifications.policy.unsolicited_private_mention.about": {
+    "defaultMessage": "Direct messages that do not reply to one you sent to that person.",
+    "description": "The line under the choice Unrequested direct messages of the section settings.notifications.policy: a direct message is unrequested unless the reader sent that person one in the same exchange."
+  },
+  "settings.notifications.policy.limited_account": {
+    "defaultMessage": "Accounts limited by the moderators",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts that the server's moderators limited."
+  },
+  "settings.notifications.policy.limited_account.about": {
+    "defaultMessage": "Accounts the moderators of this server limited, by themselves or with their whole server. This applies to people you follow too.",
+    "description": "The line under the choice Accounts limited by the moderators of the section settings.notifications.policy. The other choices never apply to people the reader follows; this one does."
+  },
+  "settings.relationships.list": {
+    "defaultMessage": "{list, select, blocked {Blocked accounts} muted {Muted accounts} servers {Muted servers} other {Followed hashtags}}",
+    "description": "The heading of a section of the settings' page Relationships, and the title of the page under it that holds the whole list. list is blocked (the accounts the reader blocks), muted (the accounts they mute), servers (the servers they mute) or hashtags (the hashtags they follow)."
+  },
+  "settings.relationships.empty": {
+    "defaultMessage": "{list, select, blocked {You have not blocked anyone. To block an account, choose “Block…” in the menu of its profile or of one of its posts.} muted {You have not muted anyone. To mute an account, choose “Mute” in the menu of its profile or of one of its posts.} servers {You have not muted any server. To mute one, choose “Mute server” in the menu of a profile or a post from it.} other {You do not follow any hashtag. To follow one, open it and choose “Follow”: its posts then join your home timeline.}}",
+    "description": "In place of a list of the settings' page Relationships while it is empty: what it would hold, and how something comes to be in it, in the words of the menus of a profile and of a post (profile.block, profile.mute, profile.mute_server) and of a hashtag's page (timeline.tag_follow). list is as in settings.relationships.list."
+  },
+  "settings.relationships.loading": {
+    "defaultMessage": "Loading this list…",
+    "description": "In place of a list of the settings' page Relationships while it is read from the server."
+  },
+  "settings.relationships.failed_list": {
+    "defaultMessage": "This list could not be loaded.",
+    "description": "In place of a list of the settings' page Relationships when it could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.relationships.failed_more": {
+    "defaultMessage": "The rest of this list could not be loaded.",
+    "description": "Under a list of the settings' page Relationships, on the page that holds the whole list, when its next accounts could not be read; Try again follows it (settings.retry)."
+  },
+  "settings.relationships.more": {
+    "defaultMessage": "Show more",
+    "description": "The button under a list on the page that holds the whole of one list of Relationships (blocked accounts, muted accounts…), which loads the next ones."
+  },
+  "settings.relationships.all": {
+    "defaultMessage": "{list, select, blocked {See all blocked accounts} muted {See all muted accounts} servers {See all muted servers} other {See all followed hashtags}}",
+    "description": "The button under the first few rows of a list on the settings' page Relationships, where the list has more, which opens the page that holds the whole list. list is as in settings.relationships.list."
+  },
+  "settings.relationships.unblock": {
+    "defaultMessage": "Unblock",
+    "description": "The button at the end of an account's row in Blocked accounts (settings, Relationships) that stops blocking it at once, as Unblock of a profile's menu does."
+  },
+  "settings.relationships.unmute": {
+    "defaultMessage": "Unmute",
+    "description": "The button at the end of a row in Muted accounts or Muted servers (settings, Relationships) that stops muting the account or the server at once, as Unmute of a profile's menu does."
+  },
+  "settings.relationships.unfollow": {
+    "defaultMessage": "Unfollow",
+    "description": "The button at the end of a hashtag's row in Followed hashtags (settings, Relationships) that stops following it at once: its posts no longer join the home timeline."
+  },
+  "settings.relationships.done": {
+    "defaultMessage": "{action, select, unblock {You unblocked {name}.} unmute {You unmuted {name}.} unmute_server {You unmuted the server {name}.} other {You unfollowed {name}.}}",
+    "description": "Under a list of the settings' page Relationships once the reader took a row out of it, where the focus goes, the row being gone. action is unblock, unmute (an account), unmute_server or unfollow (a hashtag); name is the account's handle (@user or @user@domain), the server's domain, or the hashtag with #."
+  },
+  "settings.relationships.failed": {
+    "defaultMessage": "{action, select, unblock {Unblocking {name} did not finish. Try again.} unmute {Unmuting {name} did not finish. Try again.} unmute_server {Unmuting the server {name} did not finish. Try again.} other {Unfollowing {name} did not finish. Try again.}}",
+    "description": "Under a list of the settings' page Relationships when taking a row out of it got no answer from the server (the network); the row and its button stay, to press again. action and name are as in settings.relationships.done."
+  },
+  "settings.relationships.muted.notifications": {
+    "defaultMessage": "Notifications hidden too",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): the mute hides the account's notifications as well as its posts. Without a full stop."
+  },
+  "settings.relationships.muted.until": {
+    "defaultMessage": "Until {date}",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
+  },
+  "settings.relationships.count": {
+    "defaultMessage": "{list, select, blocked {{more, select, yes {More than {count, number} accounts} other {{count, plural, one {# account} other {# accounts}}}}} muted {{more, select, yes {More than {count, number} accounts} other {{count, plural, one {# account} other {# accounts}}}}} servers {{more, select, yes {More than {count, number} servers} other {{count, plural, one {# server} other {# servers}}}}} other {{more, select, yes {More than {count, number} hashtags} other {{count, plural, one {# hashtag} other {# hashtags}}}}}}",
+    "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): how many it holds, as a phrase (9 servers). more is yes while the server has more than it sent so far (count is then those read). list is as in settings.relationships.list."
+  },
+  "settings.relationships.result": {
+    "defaultMessage": "{action, select, unblock {Unblocked} unmute {Unmuted} unmute_server {Unmuted} other {Unfollowed}}",
+    "description": "What a row of a list of Relationships says once the reader took it out (in place of its button and its facts), the row staying where it was until they leave the page: the account, server or hashtag stays named by the row. Without a full stop. action is as in settings.relationships.done."
+  },
+  "settings.filters.list": {
+    "defaultMessage": "Filters",
+    "description": "The heading of the one section of the settings' page Keyword filters, the list of the reader's filters; the count follows it."
+  },
+  "settings.filters.about": {
+    "defaultMessage": "Each one folds or hides the posts that contain its words, where it applies.",
+    "description": "The line under the heading of the list of keyword filters (settings, Keyword filters), what a filter does."
+  },
+  "settings.filters.full": {
+    "defaultMessage": "You have {max, number} filters, the most you can have. Delete one to add another.",
+    "description": "The line under the heading of the list of keyword filters when the reader has as many as the server keeps, in place of settings.filters.about, and Add a filter is not offered; also the submit bar's sentence when the server refused a new filter for that reason. max is 100."
+  },
+  "settings.filters.add": {
+    "defaultMessage": "Add a filter",
+    "description": "The primary button of the settings' page Keyword filters, at the end of the list's heading or under the sentence of an empty list, which opens the form of a new filter."
+  },
+  "settings.filters.empty": {
+    "defaultMessage": "You have no keyword filters. A filter folds or hides the posts that contain its words, where you choose.",
+    "description": "In place of the list of keyword filters while the reader has none; Add a filter follows it."
+  },
+  "settings.filters.place": {
+    "defaultMessage": "{context, select, home {home and lists} notifications {notifications} public {public timelines} thread {threads} other {profiles}}",
+    "description": "A place a keyword filter applies, inside settings.filters.where, so in lower case in en: home (the home timeline and the lists' timelines), notifications, public (the local, federated and hashtag timelines), thread (the posts before and after a post), account (a profile's posts)."
+  },
+  "settings.filters.expired": {
+    "defaultMessage": "Expired",
+    "description": "The state at the end of a filter's row in the list of keyword filters once its end has passed: it applies nowhere, and stays listed until deleted."
+  },
+  "settings.filters.edit.title": {
+    "defaultMessage": "{kind, select, new {New filter} other {Edit filter}}",
+    "description": "The title of the page of a keyword filter's form, under the settings' entry Keyword filters. kind is new (a filter being added) or edit (one that is there)."
+  },
+  "settings.filters.save": {
+    "defaultMessage": "{kind, select, new {Add} other {Save}}",
+    "description": "The button at the bottom of a keyword filter's form that saves the whole form: adds a new filter (new), or saves the changes of one that is there (edit); the page then goes back to the list."
+  },
+  "settings.filters.save.failed": {
+    "defaultMessage": "The filter could not be saved. Try again.",
+    "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
+  },
+  "settings.filters.save.refused": {
+    "defaultMessage": "To save, fix what is marked.",
+    "description": "In the bar at the bottom of a keyword filter's form when the form or the server found something wrong with a field, which says what under that field."
+  },
+  "settings.filters.section.filter": {
+    "defaultMessage": "Name and action",
+    "description": "The heading of the first section of a keyword filter's form, which holds its name, what it does to a matching post, and when it ends."
+  },
+  "settings.filters.name": {
+    "defaultMessage": "Name",
+    "description": "The label of the field of a keyword filter's name."
+  },
+  "settings.filters.name.hint": {
+    "defaultMessage": "A post it folds shows this name.",
+    "description": "The line under the label of a keyword filter's name: where the name shows (\"Matches filter Spoilers\" in place of a folded post)."
+  },
+  "settings.filters.name.missing": {
+    "defaultMessage": "Give the filter a name.",
+    "description": "Under the field of a keyword filter's name when the reader pressed Add or Save with it empty."
+  },
+  "settings.filters.name.over": {
+    "defaultMessage": "The name must be at most {max, number} characters.",
+    "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
+  },
+  "settings.filters.name.rule": {
+    "defaultMessage": "The name must be 1 to {max, number} characters on one line, without tabs or other control characters.",
+    "description": "Under the field of a keyword filter's name when the server refused it: the rule a name follows. max is 50."
+  },
+  "settings.filters.words": {
+    "defaultMessage": "Words",
+    "description": "The heading of the section of a keyword filter's form that lists its words and phrases; the count follows it."
+  },
+  "settings.filters.words.about": {
+    "defaultMessage": "A post that contains any of them matches. With “Whole word”, a word does not match inside a longer one.",
+    "description": "The line under the heading of a keyword filter's words: how they match, in one short sentence about Whole word (settings.filters.word.whole); the documentation explains the scripts that write words without spaces, where Whole word changes nothing."
+  },
+  "settings.filters.words.add": {
+    "defaultMessage": "Add a word",
+    "description": "The button at the end of the heading of a keyword filter's words, or under the sentence of an empty list, that adds a field for one more word or phrase."
+  },
+  "settings.filters.words.empty": {
+    "defaultMessage": "This filter has no words yet. Add a word or phrase for it to match.",
+    "description": "In place of a keyword filter's words when the reader removed every one; Add a word follows it."
+  },
+  "settings.filters.words.missing": {
+    "defaultMessage": "Add at least one word or phrase.",
+    "description": "Under a keyword filter's words when the reader pressed Add or Save with none written."
+  },
+  "settings.filters.words.left": {
+    "defaultMessage": "{count, plural, one {You can add one more word.} other {You can add # more words.}}",
+    "description": "Under a keyword filter's words when the filter or all the reader's filters come near the most words the server keeps: how many more can be added."
+  },
+  "settings.filters.words.filter_full": {
+    "defaultMessage": "This filter has {max, number} words, the most a filter can have. Remove one to add another.",
+    "description": "Under a keyword filter's words when the filter has as many as it can, and Add a word is disabled. max is 100."
+  },
+  "settings.filters.words.all_full": {
+    "defaultMessage": "Your filters have {max, number} words in all, the most they can have. Remove some here or from another filter to add more.",
+    "description": "Under a keyword filter's words when all the reader's filters have as many words as they can, and Add a word is disabled. max is 1,000."
+  },
+  "settings.filters.words.too_many": {
+    "defaultMessage": "A filter has at most {filter, number} words, and all your filters {max, number} in all. Remove some first.",
+    "description": "Under a keyword filter's words when the server refused the form because the words would pass one of its limits. filter is 100, max is 1,000."
+  },
+  "settings.filters.word": {
+    "defaultMessage": "Word or phrase {n, number}",
+    "description": "The label of the field of one word of a keyword filter. n is its place in the list, from 1."
+  },
+  "settings.filters.word.whole": {
+    "defaultMessage": "Whole word",
+    "description": "The checkbox beside a word of a keyword filter: the word matches only where no letter or digit touches it, not inside a longer word."
+  },
+  "settings.filters.word.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button beside a word of a keyword filter that takes it out of the form."
+  },
+  "settings.filters.word.remove_named": {
+    "defaultMessage": "Remove word {n, number}",
+    "description": "The name assistive technology reads of the button beside a word of a keyword filter (settings.filters.word.remove), which says which word it removes. n is the word's place, from 1."
+  },
+  "settings.filters.word.over": {
+    "defaultMessage": "A word must be at most {max, number} characters.",
+    "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
+  },
+  "settings.filters.word.rule": {
+    "defaultMessage": "A word must be 1 to {max, number} characters, without tabs or other control characters.",
+    "description": "Under the field of a word of a keyword filter when the server refused it: the rule a word follows. max is 100."
+  },
+  "settings.filters.contexts": {
+    "defaultMessage": "Where it applies",
+    "description": "The heading of the section of a keyword filter's form that holds the places it applies in, a checkbox each (settings.filters.context)."
+  },
+  "settings.filters.context": {
+    "defaultMessage": "{context, select, home {Home and lists} notifications {Notifications} public {Public timelines} thread {Threads} other {Profiles}}",
+    "description": "The checkbox of a place a keyword filter applies in. context is as in settings.filters.place."
+  },
+  "settings.filters.contexts.missing": {
+    "defaultMessage": "Choose at least one place.",
+    "description": "Under the places of a keyword filter when the reader pressed Add or Save with none checked."
+  },
+  "settings.filters.action": {
+    "defaultMessage": "Posts that match",
+    "description": "The label of the choice of what a keyword filter does to a post that holds one of its words (settings.filters.action.choice)."
+  },
+  "settings.filters.action.choice": {
+    "defaultMessage": "{action, select, warn {Fold behind the filter's name} other {Hide completely}}",
+    "description": "An option of what a keyword filter does to a matching post: warn shows only the filter's name with Show in its place, hide leaves it out of the list."
+  },
+  "settings.filters.ends": {
+    "defaultMessage": "Ends",
+    "description": "The label of the choice of when a keyword filter stops applying (settings.filters.ends.choice)."
+  },
+  "settings.filters.ends.choice": {
+    "defaultMessage": "{choice, select, never {Never} m30 {In 30 minutes} h1 {In 1 hour} h6 {In 6 hours} h12 {In 12 hours} d1 {In 1 day} w1 {In 1 week} other {At a date and time}}",
+    "description": "An option of when a keyword filter stops applying: never, after a duration counted from saving, or at a date and time the reader picks in a field that then shows (date)."
+  },
+  "settings.filters.ends.date": {
+    "defaultMessage": "Ends at",
+    "description": "The label of the field of the date and time a keyword filter ends at, in the reader's time zone, shown when At a date and time is chosen."
+  },
+  "settings.filters.ends.date_missing": {
+    "defaultMessage": "Choose a date and time.",
+    "description": "Under the end of a keyword filter when At a date and time is chosen and the field holds no date and time."
+  },
+  "settings.filters.ends.date_past": {
+    "defaultMessage": "Choose a date and time later than now.",
+    "description": "Under the end of a keyword filter when the date and time chosen has passed."
+  },
+  "settings.filters.ends.keep": {
+    "defaultMessage": "{state, select, ended {No change (ended {date})} other {No change (ends {date})}}",
+    "description": "The first option of when a keyword filter ends, for a filter that has an end: saving leaves the end as it is. state is ends or ended (the end has passed); date is the end, a date and time."
+  },
+  "settings.filters.ends.ended": {
+    "defaultMessage": "This filter ended on {date} and applies nowhere. Choose a new end to turn it on again.",
+    "description": "The line under Ends in the form of a keyword filter whose end has passed. date is the end, a date and time."
+  },
+  "settings.filters.delete": {
+    "defaultMessage": "Delete filter",
+    "description": "The heading of the last section of a keyword filter's form, for a filter that is there."
+  },
+  "settings.filters.delete.about": {
+    "defaultMessage": "Its words are deleted with it, and the posts it folded or hid show again.",
+    "description": "The line under the heading Delete filter: what deleting a keyword filter does."
+  },
+  "settings.filters.delete.open": {
+    "defaultMessage": "Delete…",
+    "description": "The button of the section Delete filter, which asks before deleting the keyword filter."
+  },
+  "settings.filters.delete.title": {
+    "defaultMessage": "Delete the filter “{name}”?",
+    "description": "The question of the confirmation before a keyword filter is deleted. name is the filter's name."
+  },
+  "settings.filters.delete.text": {
+    "defaultMessage": "Its words are deleted with it. This cannot be undone.",
+    "description": "The text of the confirmation before a keyword filter is deleted."
+  },
+  "settings.filters.delete.confirm": {
+    "defaultMessage": "Delete",
+    "description": "The button of the confirmation that deletes the keyword filter; the page then goes back to the list."
+  },
+  "settings.filters.delete.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of the confirmation that keeps the keyword filter."
+  },
+  "settings.filters.delete.failed": {
+    "defaultMessage": "The filter could not be deleted. Try again.",
+    "description": "In the bar at the bottom of a keyword filter's form when deleting it got no answer from the server."
+  },
+  "settings.filters.leave.title": {
+    "defaultMessage": "Leave without saving?",
+    "description": "The question of the confirmation that opens when the reader leaves a keyword filter's form with changes they have not saved."
+  },
+  "settings.filters.leave.text": {
+    "defaultMessage": "The changes you have not saved will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave a keyword filter's form without saving."
+  },
+  "settings.filters.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves a keyword filter's form and drops the changes not saved."
+  },
+  "settings.filters.leave.cancel": {
+    "defaultMessage": "Keep editing",
+    "description": "The button of the confirmation that stays on a keyword filter's form, with the changes as the reader left them."
+  },
+  "settings.filters.not_found": {
+    "defaultMessage": "This filter does not exist. It may have been deleted.",
+    "description": "In place of a keyword filter's form at an address that names no filter of the reader's; the link to the list follows it (settings.filters.all)."
+  },
+  "settings.filters.all": {
+    "defaultMessage": "See all filters",
+    "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
+  },
+  "settings.filters.fact.does": {
+    "defaultMessage": "{action, select, warn {Folds matching posts} other {Hides matching posts}}",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its first line: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out). A phrase, without a full stop."
+  },
+  "settings.filters.fact.words": {
+    "defaultMessage": "{count, plural, one {# word} other {# words}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after what it does on the same line: how many words or phrases it has. Without a full stop."
+  },
+  "settings.filters.fact.where": {
+    "defaultMessage": "In {places}",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its second line: where it applies. places is a list of settings.filters.place joined in the reader's language. A phrase, without a full stop."
+  },
+  "settings.filters.fact.ends": {
+    "defaultMessage": "{state, select, never {Never ends} ended {Ended {date}} other {Ends {date}}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after where it applies: when it stops applying. state is never, ends (it ends on date) or ended (it ended on date and applies nowhere); date is a day (Dec 18, 2026). Without a full stop."
+  },
+  "settings.account.status": {
+    "defaultMessage": "Account status",
+    "description": "A heading on the settings page Account and data, over what the moderators did to the reader's account; also the title of the page under it that lists the moderation actions on the account, the link after settings.account.action.not_found that leads there, and the button at the top of one action's page that goes back to it. A heading: no full stop."
+  },
+  "settings.account.status.in_effect": {
+    "defaultMessage": "{count, plural, one {A moderation action is in effect on your account} other {# moderation actions are in effect on your account}}",
+    "description": "The heading of the summary at the top of the settings page Account and data while moderators' actions are in effect on the reader's account (a limit, a restriction of posting). count is how many, 1 or more. A heading: no full stop."
+  },
+  "settings.account.status.in_effect.about": {
+    "defaultMessage": "{appealable, select, deadline {“Account status” says what each action does, why, and when it ends. You can appeal until {date}.} yes {“Account status” says what each action does, why, and when it ends. You can appeal an action once.} other {“Account status” says what each action does, why, when it ends, and where your appeal stands.}}",
+    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is deadline while the reader can still appeal one of the actions and the server says until when (date is the nearest last day, as the reader's locale writes a date), yes while they can and no last day is known, and anything else once every action is appealed or its time to appeal has passed."
+  },
+  "settings.account.status.open": {
+    "defaultMessage": "See account status",
+    "description": "The button of the summary at the top of the settings page Account and data that opens the page Account status (settings.account.status)."
+  },
+  "settings.account.status.row": {
+    "defaultMessage": "Moderation actions and appeals",
+    "description": "A row of the section Account status on the settings page Account and data, shown while no moderation action is in effect on the reader's account; it opens the page Account status, which lists the past actions and the reader's appeals."
+  },
+  "settings.account.status.row.none": {
+    "defaultMessage": "No moderation action is in effect on your account.",
+    "description": "The line under settings.account.status.row: the state of the reader's account while no moderators' action is in effect on it."
+  },
+  "settings.account.status.loading": {
+    "defaultMessage": "Loading your account status…",
+    "description": "In the section Account status of the settings page Account and data while the moderation actions on the reader's account are read from the server."
+  },
+  "settings.account.status.failed": {
+    "defaultMessage": "Your account status could not be loaded.",
+    "description": "In the section Account status of the settings page Account and data when the moderation actions on the reader's account could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.actions.active": {
+    "defaultMessage": "Actions in effect",
+    "description": "A heading on the settings page Account status, over the list of the moderators' actions in effect on the reader's account now. The page of an account kept out of the app says In effect (auth.status.action_active) with the same word. A heading: no full stop."
+  },
+  "settings.account.actions.active.empty": {
+    "defaultMessage": "No moderation action is in effect on your account. If a moderator acts on your account, the action appears here with its reason, and you can appeal it.",
+    "description": "In place of the list Actions in effect on the settings page Account status while no moderators' action is in effect on the reader's account: the fact, what appears there, and what the reader can then do."
+  },
+  "settings.account.actions.past": {
+    "defaultMessage": "Past actions",
+    "description": "A heading on the settings page Account status, over the list of the moderators' actions on the reader's account that ended or were lifted. A heading: no full stop."
+  },
+  "settings.account.actions.past.empty": {
+    "defaultMessage": "No past actions. An action that ended or was lifted stays listed here, with your appeal and its result.",
+    "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
+  },
+  "settings.account.actions.more": {
+    "defaultMessage": "Show more",
+    "description": "The button under the list Past actions on the settings page Account status, which loads the next, older actions."
+  },
+  "settings.account.actions.failed_more": {
+    "defaultMessage": "More past actions could not be loaded.",
+    "description": "Under the list Past actions on the settings page Account status when its next, older actions could not be read; Try again follows it (settings.retry)."
+  },
+  "settings.account.action.title": {
+    "defaultMessage": "Moderation action",
+    "description": "The title of the page of one moderators' action on the reader's account, under the settings page Account status: what the action does, the moderators' reason, the posts it is about, and the reader's appeal. A heading: no full stop."
+  },
+  "settings.account.action.ends": {
+    "defaultMessage": "{state, select, until {Ends on {date}} expired {Ended on {date}} lifted {Lifted on {date}} other {Lasts until a moderator lifts it}}",
+    "description": "A line of a moderators' action on the reader's account, in the lists of the settings page Account status and on the action's own page: when it ends or ended. state is until (in effect, with an end; date is the end), expired (it ended at date), lifted (a moderator lifted it at date), or anything else for an action in effect with no end. date is a date and a time as the reader's locale writes them. A line of a list: no full stop."
+  },
+  "settings.account.action.appeal_state": {
+    "defaultMessage": "{state, select, open {You can appeal until {date}} open_always {You can appeal} passed {The time to appeal passed on {date}} pending {Appeal under review} upheld {Appeal reviewed: action kept} overturned {Appeal reviewed: action lifted} other {This action can no longer be appealed}}",
+    "description": "A line of a moderators' action on the reader's account, in the lists of the settings page Account status: where its appeal stands. state is open (not appealed, can be until date), open_always (can be, no last day known), passed (not appealed, the last day was date), pending (appealed, waiting for the moderators), upheld (the moderators kept the action), overturned (they lifted it), or anything else for an action that was not appealed and cannot be. The words of pending, upheld and overturned are those of the page of an account kept out of the app (auth.status.appeal_state_label: Under review, Action kept, Action lifted). A line of a list: no full stop."
+  },
+  "settings.account.action.section.what": {
+    "defaultMessage": "What this action does",
+    "description": "A heading on the page of one moderators' action on the reader's account (settings.account.action.title), over what the action does to the account, in the server's words, and when it was taken and ends. A heading: no full stop."
+  },
+  "settings.account.action.section.reason": {
+    "defaultMessage": "The moderators' reason",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the kind of reason (spam, a violation of the server's rules) and the moderators' explanation to the reader. A heading: no full stop."
+  },
+  "settings.account.action.section.posts": {
+    "defaultMessage": "Posts this action is about",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the reader's posts the action acted on (marked as sensitive, or deleted). A heading: no full stop."
+  },
+  "settings.account.action.issued": {
+    "defaultMessage": "Taken on {date}",
+    "description": "A line under what a moderators' action does, on the action's page in the settings: when the moderators took it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.action.reason.none": {
+    "defaultMessage": "The moderators gave no explanation with this action.",
+    "description": "Under the kind of reason of a moderators' action on the reader's account, on the action's page in the settings, when the moderators wrote no explanation to the reader."
+  },
+  "settings.account.action.post": {
+    "defaultMessage": "Post of {date}",
+    "description": "A row of the list Posts this action is about, on the page of a moderators' action in the settings: one of the reader's posts, named by when it was posted, which the row opens; the start of its text follows on the next line. date is a date and a time as the reader's locale writes them."
+  },
+  "settings.account.action.posts.loading": {
+    "defaultMessage": "Loading the posts…",
+    "description": "In place of the list Posts this action is about, on the page of a moderators' action in the settings, while the posts are read from the server."
+  },
+  "settings.account.action.posts.gone": {
+    "defaultMessage": "{count, plural, one {# post is no longer on this server, so it cannot be opened.} other {# posts are no longer on this server, so they cannot be opened.}}",
+    "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
+  },
+  "settings.account.action.posts.failed": {
+    "defaultMessage": "{count, plural, one {# post could not be loaded. Reload the page to try again.} other {# posts could not be loaded. Reload the page to try again.}}",
+    "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on could not be read from the server now (it did not answer, or failed), which is not to say they are deleted (settings.account.action.posts.gone counts those). count is 1 or more."
+  },
+  "settings.account.action.not_found": {
+    "defaultMessage": "This moderation action is not listed on your account. Check the address.",
+    "description": "In place of the page of a moderators' action at an address that names no action on the reader's account; the link to the page Account status follows it (settings.account.status)."
+  },
+  "settings.account.appeal": {
+    "defaultMessage": "Appeal",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the form in which the reader asks the moderators to reconsider the action, or over the appeal they sent and its result. A heading: no full stop."
+  },
+  "settings.account.appeal.about": {
+    "defaultMessage": "{deadline, select, yes {You can appeal this action once, until {date}, and you cannot change your appeal after you send it. A moderator reads it and decides.} other {You can appeal this action once, and you cannot change your appeal after you send it. A moderator reads it and decides.}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once and the appeal cannot be changed, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
+  },
+  "settings.account.appeal.label": {
+    "defaultMessage": "Your appeal",
+    "description": "The label of the field in which the reader writes their appeal of a moderators' action on their account (why the moderators should reconsider it), on the action's page in the settings; also the label over the appeal they sent, once it is sent."
+  },
+  "settings.account.appeal.hint": {
+    "defaultMessage": "Say why the moderators should reconsider this action, in up to {max, number} characters.",
+    "description": "The hint of the field settings.account.appeal.label. max is the longest appeal the server takes, in characters."
+  },
+  "settings.account.appeal.missing": {
+    "defaultMessage": "Write your appeal before you send it.",
+    "description": "The error under the appeal field of a moderators' action, in the settings, when the reader sends it empty."
+  },
+  "settings.account.appeal.over": {
+    "defaultMessage": "Your appeal must be at most {max, number} characters.",
+    "description": "The error under the appeal field of a moderators' action, in the settings, when what the reader wrote is longer than the server takes. max is the most characters."
+  },
+  "settings.account.appeal.submit": {
+    "defaultMessage": "Send appeal",
+    "description": "The button at the bottom of the page of a moderators' action in the settings that sends the reader's appeal to the moderators. The page of an account kept out of the app says the same (auth.status.appeal_submit)."
+  },
+  "settings.account.appeal.not_sent": {
+    "defaultMessage": "{reason, select, field {The appeal was not sent. Check the field marked above.} other {The appeal could not be sent. Check your connection and try again.}}",
+    "description": "In the bar at the bottom of the page of a moderators' action in the settings, beside Send appeal, when the appeal was not sent. reason is field when what the reader wrote was refused (what is wrong stands under the field), other when the server could not be reached or answered with nothing the app knows."
+  },
+  "settings.account.appeal.sent": {
+    "defaultMessage": "Your appeal was sent.",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal; where the appeal stands follows it (settings.account.appeal.state)."
+  },
+  "settings.account.appeal.refused": {
+    "defaultMessage": "{reason, select, appealed {You have already appealed this action, and an action can be appealed once. Your earlier appeal and where it stands are shown here.} closed {The time to appeal this action has passed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} not_appealable {This action can no longer be appealed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} other {This action is no longer listed on your account, so your appeal was not sent. Go back to “Account status” to see the actions on your account.}}",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent; the form is then gone. reason is appealed (the action was appealed already, from another browser; that appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). about is the link to the server's About page, whose words are settings.account.appeal.about_page; Account status is settings.account.status."
+  },
+  "settings.account.appeal.about_page": {
+    "defaultMessage": "this server's About page",
+    "description": "The words of the link in settings.account.appeal.refused (its about) that leads to the server's About page (app.footer_about), where the server's contact is. It stands inside a sentence: no capital, no full stop."
+  },
+  "settings.account.appeal.unsent": {
+    "defaultMessage": "What you wrote, not sent",
+    "description": "The label over the text of the appeal the reader wrote, on the page of a moderators' action in the settings, after the server refused the appeal because the action can no longer be appealed: the text stays to be read and copied."
+  },
+  "settings.account.appeal.unsent.about": {
+    "defaultMessage": "Copy it if you want to send it to the moderators another way. It is not kept after you leave this page.",
+    "description": "Under the text of the appeal that was not sent (settings.account.appeal.unsent): what the reader can do with it, and that it is gone once they leave the page."
+  },
+  "settings.account.appeal.state": {
+    "defaultMessage": "{state, select, pending {Your appeal is waiting for a moderator's review. You will be notified of the result.} upheld {A moderator reviewed your appeal and kept the action.} overturned {A moderator reviewed your appeal and lifted the action.} other {You appealed this action.}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands, read alone when the page is opened later. state is pending, upheld (the action stays), or overturned (the action is lifted). The first sentence of each is the page of an account kept out of the app's (server:auth.status.appeal_state)."
+  },
+  "settings.account.appeal.sent_on": {
+    "defaultMessage": "Sent on {date}",
+    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.decided_on": {
+    "defaultMessage": "Reviewed on {date}",
+    "description": "A line under settings.account.appeal.sent_on, once the moderators decided the reader's appeal: when they did. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.answer": {
+    "defaultMessage": "The moderators' answer",
+    "description": "The label over the moderators' explanation of their decision on the reader's appeal, on the page of a moderators' action in the settings. The page of an account kept out of the app says the same (auth.status.appeal_answer)."
+  },
+  "settings.account.appeal.closed": {
+    "defaultMessage": "{deadline, select, yes {You did not appeal this action, and the time to appeal passed on {date}.} other {This action can no longer be appealed.}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, when the reader did not appeal the action and no longer can. deadline is yes when the last moment to appeal is known and has passed (date, a date and a time as the reader's locale writes them), no otherwise."
+  },
+  "settings.account.appeal.leave.title": {
+    "defaultMessage": "Leave without sending your appeal?",
+    "description": "The question of the confirmation that opens when the reader leaves the page of a moderators' action with an appeal they wrote and did not send."
+  },
+  "settings.account.appeal.leave.text": {
+    "defaultMessage": "What you wrote will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave the page of a moderators' action without sending the appeal written there."
+  },
+  "settings.account.appeal.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves the page of a moderators' action and drops the appeal the reader wrote and did not send."
+  },
+  "settings.account.appeal.leave.cancel": {
+    "defaultMessage": "Keep writing",
+    "description": "The button of the confirmation that stays on the page of a moderators' action, with the appeal as the reader wrote it."
+  },
+  "settings.account.data": {
+    "defaultMessage": "Data and posts",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Export, Import and Delete old posts automatically. A heading: no full stop."
+  },
+  "settings.account.arrival": {
+    "defaultMessage": "Moving to this account",
+    "description": "A heading on the settings page Account and data, over the row that leads to Aliases: what prepares a move from another account to this one. A heading: no full stop."
+  },
+  "settings.account.export": {
+    "defaultMessage": "Export",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader requests and downloads an archive of their account and downloads CSV files. A heading: no full stop."
+  },
+  "settings.account.export.row.about": {
+    "defaultMessage": "An archive of your account, and your follows, blocks, mutes and bookmarks as CSV files",
+    "description": "The line under the row Export on the settings page Account and data while no archive is being prepared or ready: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.export.row.standing": {
+    "defaultMessage": "{state, select, preparing {An archive is being prepared} ready_until {An archive is ready to download until {date}} other {An archive is ready to download}}",
+    "description": "The line under the row Export on the settings page Account and data, in place of settings.account.export.row.about, while the reader's archive is being prepared (state preparing) or can be downloaded (ready_until with date, the day the server removes it, as the reader's locale writes a date; anything else when no day is known). Without a full stop."
+  },
+  "settings.account.export.archive": {
+    "defaultMessage": "Archive",
+    "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
+  },
+  "settings.account.export.archive.about": {
+    "defaultMessage": "A ZIP file of your profile, your posts, your keyword filters, your private notes, the moderation actions on your account, and what you follow, block, mute and bookmark. The server prepares it in the background, which can take a while.",
+    "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
+  },
+  "settings.account.export.archive.loading": {
+    "defaultMessage": "Loading your archives…",
+    "description": "In the section Archive of the settings page Export while the reader's requests for an archive are read from the server."
+  },
+  "settings.account.export.archive.failed_read": {
+    "defaultMessage": "Your archives could not be loaded.",
+    "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.export.archive.none": {
+    "defaultMessage": "You have no archive. Request one, and download it here once it is ready.",
+    "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
+  },
+  "settings.account.export.archive.request": {
+    "defaultMessage": "Request an archive",
+    "description": "The button of the section Archive on the settings page Export that asks the server to prepare an archive of the reader's account."
+  },
+  "settings.account.export.archive.requested": {
+    "defaultMessage": "The archive was requested.",
+    "description": "The status of the section Archive on the settings page Export right after the reader pressed Request an archive and the server took the request; the list under it says where the archive stands."
+  },
+  "settings.account.export.archive.building": {
+    "defaultMessage": "An archive is already being prepared. You can request another once it is done.",
+    "description": "The status of the section Archive on the settings page Export when the server refused a request because it is still preparing an earlier archive."
+  },
+  "settings.account.export.archive.request_failed": {
+    "defaultMessage": "The archive could not be requested. Try again.",
+    "description": "The status of the section Archive on the settings page Export when the request for an archive got no answer from the server (the network)."
+  },
+  "settings.account.export.archive.download_failed": {
+    "defaultMessage": "The archive could not be downloaded. Try again.",
+    "description": "In the row of an archive in the list Archive on the settings page Export, under where it stands, when the download of that archive failed."
+  },
+  "settings.account.export.archive.row": {
+    "defaultMessage": "Archive of {date}",
+    "description": "The name of a row of the list Archive on the settings page Export: one archive, named by when the reader requested it. date is a date and a time as the reader's locale writes them. It does not say that it was requested: the status over the list says so right after a request (settings.account.export.archive.requested). No full stop."
+  },
+  "settings.account.export.archive.state": {
+    "defaultMessage": "{state, select, preparing {This archive is being prepared. You can leave this page meanwhile, and request another once it is ready.} ready {You can download this archive until {date}.} expired {This archive expired on {date}. Request a new one.} other {This archive could not be prepared. Request a new one.}}",
+    "description": "Under the name of an archive in the list Archive on the settings page Export: where it stands, the row's one line about it. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "Download",
+    "description": "The button of a row on the settings page Export that saves that row's file to the reader's device: an archive that is ready, or one of the CSV files. The row names the file."
+  },
+  "settings.account.export.saved": {
+    "defaultMessage": "The download of {name} started.",
+    "description": "In a row of the settings page Export, under its name, once the reader pressed that row's Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
+  },
+  "settings.account.export.csv": {
+    "defaultMessage": "CSV files",
+    "description": "A heading on the settings page Export, over the list of what the reader can download as a CSV file each. A heading: no full stop."
+  },
+  "settings.account.export.csv.about": {
+    "defaultMessage": "What you follow, block, mute and bookmark, a file each, in the format Mastodon uses, to import on another account. Mastodon has no file of followed hashtags: only servers that run this software can import that one.",
+    "description": "Under the heading CSV files on the settings page Export: what the files are and what they are for, and that the file of the row Followed hashtags (settings.account.csv.kind) is read only by this software."
+  },
+  "settings.account.export.csv.failed": {
+    "defaultMessage": "The file could not be downloaded. Try again.",
+    "description": "In a row of the list CSV files on the settings page Export, under its name, when the download of that row's file failed."
+  },
+  "settings.account.csv.kind": {
+    "defaultMessage": "{kind, select, following {Follows} followed_tags {Followed hashtags} blocks {Blocked accounts} mutes {Muted accounts} domain_mutes {Muted servers} other {Bookmarks}}",
+    "description": "What a CSV file lists, in the settings: the name of a row of the list CSV files on the page Export, an option of What the file lists on the page Import, and the name of an import in the list Recent imports. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. The same names as the lists of the settings page Relationships (settings.relationships.list). No full stop."
+  },
+  "settings.account.import": {
+    "defaultMessage": "Import",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader imports a CSV file. A heading: no full stop."
+  },
+  "settings.account.import.row.about": {
+    "defaultMessage": "Follows, blocks, mutes and bookmarks from CSV files",
+    "description": "The line under the row Import on the settings page Account and data while no import is in progress: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.import.row.standing": {
+    "defaultMessage": "An import is in progress: {processed, number} of {total, number} done",
+    "description": "The line under the row Import on the settings page Account and data, in place of settings.account.import.row.about, while the server carries out an import of the reader: how many of its entries are done. Without a full stop."
+  },
+  "settings.account.import.file.section": {
+    "defaultMessage": "File",
+    "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
+  },
+  "settings.account.import.about": {
+    "defaultMessage": "Choose a CSV file exported from this server or from Mastodon. Nothing changes until you choose “Import”.",
+    "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
+  },
+  "settings.account.import.kind": {
+    "defaultMessage": "What the file lists",
+    "description": "The label of the choice on the settings page Import of what the CSV file lists; its options are settings.account.csv.kind."
+  },
+  "settings.account.import.file": {
+    "defaultMessage": "CSV file",
+    "description": "The label of the field on the settings page Import that holds the file the reader chose from their device."
+  },
+  "settings.account.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {Choose another file} other {Choose a file}}",
+    "description": "The button of the field CSV file on the settings page Import that opens the device's file picker. chosen is yes once the field holds a file, whose name stands after the button."
+  },
+  "settings.account.import.file.none": {
+    "defaultMessage": "No file chosen",
+    "description": "Beside the button Choose a file on the settings page Import while the field holds no file, where the file's name stands once one is chosen. No full stop."
+  },
+  "settings.account.import.file.missing": {
+    "defaultMessage": "Choose the CSV file to import.",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import without having chosen a file."
+  },
+  "settings.account.import.file.unread": {
+    "defaultMessage": "This file could not be read as a CSV file. Choose another one.",
+    "description": "Under the field CSV file on the settings page Import when the browser could not read the file, or the server could not read it and gave no reason of its own."
+  },
+  "settings.account.import.file.too_large": {
+    "defaultMessage": "“{name}” is too large: a file holds up to {max, number} characters. Choose a smaller one.",
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes, the field then holding no file, or when the server refused the request as too large (413) as it previewed or started the import, the field then keeping the file. name is the file's name; max is 1000000."
+  },
+  "settings.account.import.file.empty": {
+    "defaultMessage": "Nothing in this file matches “What the file lists”. Check that choice, or choose another file.",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
+  },
+  "settings.account.import.mode": {
+    "defaultMessage": "How to import",
+    "description": "The label of the choice on the settings page Import between merging the file into what the reader has and replacing it; its options are settings.account.import.mode.choice."
+  },
+  "settings.account.import.mode.choice": {
+    "defaultMessage": "{mode, select, overwrite {Replace} other {Merge}}",
+    "description": "An option of How to import on the settings page Import, and a fact of an import in the list Recent imports: mode is overwrite (what the reader has becomes exactly what the file lists) or merge (the file's entries are added). No full stop."
+  },
+  "settings.account.import.mode.about": {
+    "defaultMessage": "{mode, select, overwrite {Makes the list exactly what the file lists: what you have now that the file does not list is removed.} other {Adds what the file lists to what you have now, and removes nothing.}}",
+    "description": "The line under How to import on the settings page Import: what the chosen way does. mode is as in settings.account.import.mode.choice."
+  },
+  "settings.account.import.preview": {
+    "defaultMessage": "Preview",
+    "description": "A heading on the settings page Import, over what importing the chosen file would do, before anything changes. A heading: no full stop."
+  },
+  "settings.account.import.preview.about": {
+    "defaultMessage": "This is what the server read in the file. It looks up accounts and posts on other servers when the import runs.",
+    "description": "Under the heading Preview on the settings page Import: where the numbers come from, and that an account or a post on another server may still not be found later."
+  },
+  "settings.account.import.preview.waiting": {
+    "defaultMessage": "{state, select, idle {Choose a file to see what importing it would do.} pending {Reading the file…} other {There is nothing to preview, because the file could not be read.}}",
+    "description": "In the section Preview of the settings page Import while it has no preview to show: state is idle (no file chosen yet), pending (the server is reading the file), or anything else when the file was refused, which the field CSV file explains."
+  },
+  "settings.account.import.preview.add": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {No new account to follow} one {# new account to follow} other {# new accounts to follow}}} followed_tags {{count, plural, =0 {No new hashtag to follow} one {# new hashtag to follow} other {# new hashtags to follow}}} blocks {{count, plural, =0 {No new account to block} one {# new account to block} other {# new accounts to block}}} mutes {{count, plural, =0 {No new account to mute} one {# new account to mute} other {# new accounts to mute}}} domain_mutes {{count, plural, =0 {No new server to mute} one {# new server to mute} other {# new servers to mute}}} other {{count, plural, =0 {No new post to bookmark} one {# new post to bookmark} other {# new posts to bookmark}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the import would add to what the reader has. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.present": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {# account you already follow} other {# accounts you already follow}}} followed_tags {{count, plural, one {# hashtag you already follow} other {# hashtags you already follow}}} blocks {{count, plural, one {# account you already block} other {# accounts you already block}}} mutes {{count, plural, one {# account you already mute} other {# accounts you already mute}}} domain_mutes {{count, plural, one {# server you already mute} other {# servers you already mute}}} other {{count, plural, one {# post you already bookmarked} other {# posts you already bookmarked}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the reader has already, which the import leaves as they are. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.remove": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {No account to unfollow} one {# account to unfollow, which the file does not list} other {# accounts to unfollow, which the file does not list}}} followed_tags {{count, plural, =0 {No hashtag to unfollow} one {# hashtag to unfollow, which the file does not list} other {# hashtags to unfollow, which the file does not list}}} blocks {{count, plural, =0 {No account to unblock} one {# account to unblock, which the file does not list} other {# accounts to unblock, which the file does not list}}} mutes {{count, plural, =0 {No account to unmute} one {# account to unmute, which the file does not list} other {# accounts to unmute, which the file does not list}}} domain_mutes {{count, plural, =0 {No server to unmute} one {# server to unmute, which the file does not list} other {# servers to unmute, which the file does not list}}} other {{count, plural, =0 {No bookmark to remove} one {# bookmark to remove, which the file does not list} other {# bookmarks to remove, which the file does not list}}}}",
+    "description": "The one fact under What “Replace” removes (settings.account.import.preview.removes) in the Preview on the settings page Import, when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.skipped": {
+    "defaultMessage": "{count, plural, one {# line is skipped} other {# lines are skipped}}",
+    "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
+  },
+  "settings.account.import.preview.skipped.line": {
+    "defaultMessage": "{reason, select, duplicate {Line {line, number} repeats an earlier line: “{value}”} other {Line {line, number} cannot be read: “{value}”}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as the file writes it, which stands in quotation marks so that it does not read as the app's own words, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+  },
+  "settings.account.import.preview.skipped.more": {
+    "defaultMessage": "{count, plural, one {And # more line} other {And # more lines}}",
+    "description": "The last line under settings.account.import.preview.skipped on the settings page Import when the file has more lines that cannot be read than the page writes out: how many more. No full stop."
+  },
+  "settings.account.import.preview.removes": {
+    "defaultMessage": "What “Replace” removes",
+    "description": "In the section Preview of the settings page Import when the reader chose Replace: the name over what the import would remove (settings.account.import.preview.remove), which stands last and apart from what it adds and skips. Replace is the option settings.account.import.mode.choice. No full stop."
+  },
+  "settings.account.import.submit": {
+    "defaultMessage": "Import",
+    "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.submit.removes": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {Importing unfollows # account.} other {Importing unfollows # accounts.}}} followed_tags {{count, plural, one {Importing unfollows # hashtag.} other {Importing unfollows # hashtags.}}} blocks {{count, plural, one {Importing unblocks # account.} other {Importing unblocks # accounts.}}} mutes {{count, plural, one {Importing unmutes # account.} other {Importing unmutes # accounts.}}} domain_mutes {{count, plural, one {Importing unmutes # server.} other {Importing unmutes # servers.}}} other {{count, plural, one {Importing removes # bookmark.} other {Importing removes # bookmarks.}}}}",
+    "description": "In the bar at the bottom of the settings page Import, right before Import, while Replace is chosen and the import would remove something: how many things the reader has now that the file does not list, which the import removes and cannot put back. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. One short sentence."
+  },
+  "settings.account.import.refused": {
+    "defaultMessage": "Nothing was imported. Fix what is marked.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when something is wrong with the file, which the field CSV file says."
+  },
+  "settings.account.import.failed": {
+    "defaultMessage": "The import could not be started. Try again.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server did not take the import and gave no reason of its own (the network)."
+  },
+  "settings.account.import.running": {
+    "defaultMessage": "Another import is still in progress. Start this one once it is done.",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server refused the import because it is still carrying out an earlier one of the reader."
+  },
+  "settings.account.import.started": {
+    "defaultMessage": "The import started. It goes on in the background, and you can leave this page.",
+    "description": "The status of the section Recent imports on the settings page Import right after the server took the reader's import; the list under it says how far it is."
+  },
+  "settings.account.import.replace.title": {
+    "defaultMessage": "{kind, select, following {Replace your follows?} followed_tags {Replace your followed hashtags?} blocks {Replace your blocked accounts?} mutes {Replace your muted accounts?} domain_mutes {Replace your muted servers?} other {Replace your bookmarks?}}",
+    "description": "The question of the confirmation that opens when the reader presses Import on the settings page Import with Replace chosen and the import would remove something. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.text": {
+    "defaultMessage": "{kind, select, following {{count, plural, one {You will unfollow # account that the file does not list.} other {You will unfollow # accounts that the file does not list.}} This cannot be undone.} followed_tags {{count, plural, one {You will unfollow # hashtag that the file does not list.} other {You will unfollow # hashtags that the file does not list.}} This cannot be undone.} blocks {{count, plural, one {You will unblock # account that the file does not list.} other {You will unblock # accounts that the file does not list.}} This cannot be undone.} mutes {{count, plural, one {You will unmute # account that the file does not list.} other {You will unmute # accounts that the file does not list.}} This cannot be undone.} domain_mutes {{count, plural, one {You will unmute # server that the file does not list.} other {You will unmute # servers that the file does not list.}} This cannot be undone.} other {{count, plural, one {# bookmark that the file does not list will be removed.} other {# bookmarks that the file does not list will be removed.}} This cannot be undone.}}",
+    "description": "The text of the confirmation that asks whether to replace what the reader has with what the file lists, on the settings page Import: what the import removes, and that it cannot be undone. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.confirm": {
+    "defaultMessage": "Replace",
+    "description": "The button of the confirmation on the settings page Import that starts the import that replaces what the reader has."
+  },
+  "settings.account.import.replace.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of the confirmation on the settings page Import that closes it without importing anything."
+  },
+  "settings.account.import.recent": {
+    "defaultMessage": "Recent imports",
+    "description": "A heading on the settings page Import, over the list of the imports the reader started in the last 7 days. A heading: no full stop."
+  },
+  "settings.account.import.recent.about": {
+    "defaultMessage": "The server carries an import out in the background. An account or a post it cannot find or act on is counted as failed. An import stays listed for 7 days.",
+    "description": "Under the heading Recent imports on the settings page Import: how an import runs, what failed means in a row's state (settings.account.import.row.state), and how long a row stays."
+  },
+  "settings.account.import.recent.loading": {
+    "defaultMessage": "Loading your imports…",
+    "description": "In the section Recent imports of the settings page Import while the reader's imports are read from the server."
+  },
+  "settings.account.import.recent.failed": {
+    "defaultMessage": "Your imports could not be loaded.",
+    "description": "In the section Recent imports of the settings page Import when the reader's imports could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.import.recent.none": {
+    "defaultMessage": "No import in the last 7 days.",
+    "description": "In place of the list Recent imports on the settings page Import while the server lists no import of the reader."
+  },
+  "settings.account.import.row.started": {
+    "defaultMessage": "Started on {date}",
+    "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.import.row.state": {
+    "defaultMessage": "{state, select, running {In progress: {processed, number} of {total, number} done} nothing {Finished: there was nothing to do} done {Finished: all {total, number} done} partly {Finished: {done, number} of {total, number} done, {failed, number} failed. Import the file again with “Merge” to try the rest.} other {Finished: all {total, number} failed. Import the file again with “Merge” to try them again.}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. After a failure it says what to do next: the server carries out every entry of a file again when it is imported again, finds the ones it has already done, and tries the others; Merge is the option settings.account.import.mode.choice. No full stop while nothing failed."
+  },
+  "settings.account.auto_delete": {
+    "defaultMessage": "Delete old posts automatically",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader chooses whether their posts are deleted once they pass an age, and which are kept. A heading: no full stop."
+  },
+  "settings.account.auto_delete.row.about": {
+    "defaultMessage": "Delete your posts once they pass an age you choose",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data until the reader's settings are read: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.auto_delete.row.standing": {
+    "defaultMessage": "{enabled, select, on {On: posts older than {days, plural, one {# day} other {# days}} are deleted} other {Off}}",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data: whether the automatic deletion is on, and past which age it deletes. days is 1 or more. Without a full stop."
+  },
+  "settings.account.auto_delete.loading": {
+    "defaultMessage": "Loading your settings for old posts…",
+    "description": "On the settings page Delete old posts automatically while the reader's settings are read from the server."
+  },
+  "settings.account.auto_delete.failed": {
+    "defaultMessage": "Your settings for old posts could not be loaded.",
+    "description": "On the settings page Delete old posts automatically when the reader's settings could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.bound": {
+    "defaultMessage": "{state, select, from {From {date}, this server's limit applies to your posts} now {This server's limit applies to your posts} other {This server's limit will apply to your posts}}",
+    "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
+  },
+  "settings.account.auto_delete.bound.about": {
+    "defaultMessage": "{state, select, now {You can no longer keep {items}{counted, select, yes {: {count, number} of your posts are being deleted} more {: more than {count, number} of your posts are being deleted} other {}}. Saving this page brings your settings within the limit.} other {You can then no longer keep {items}{counted, select, yes {: {count, number} of your posts will be deleted then} more {: more than {count, number} of your posts will be deleted then} none {: none of your posts will be deleted then} other {}}. Saving this page applies the limit now.}}",
+    "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
+  },
+  "settings.account.auto_delete.section.when": {
+    "defaultMessage": "When posts are deleted",
+    "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.when.about": {
+    "defaultMessage": "A post past the age below is deleted as if you had deleted it yourself: here and on the servers it was sent to. This cannot be undone. Your boosts of other people's posts are not deleted.",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
+  },
+  "settings.account.auto_delete.when.about_limit": {
+    "defaultMessage": "This server keeps posts for {days, plural, one {# day} other {# days}} at most. A post past the age below is deleted here and on the servers it was sent to. This cannot be undone. Your boosts of other people's posts are not deleted.",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader and that their saved settings are within: the maximum, and what a deletion is. days is the maximum. A reader the maximum binds reads it in the summary instead (settings.account.auto_delete.bound.about) and settings.account.auto_delete.when.about here."
+  },
+  "settings.account.auto_delete.enabled": {
+    "defaultMessage": "Automatic deletion",
+    "description": "The label of the choice on the settings page Delete old posts automatically between deleting old posts and not; its options are settings.account.auto_delete.enabled.choice."
+  },
+  "settings.account.auto_delete.enabled.choice": {
+    "defaultMessage": "{enabled, select, on {On} other {Off}}",
+    "description": "An option of Automatic deletion on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.enabled.fixed": {
+    "defaultMessage": "This server always deletes old posts, so this cannot be turned off.",
+    "description": "Under Automatic deletion on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: why the choice shows On and cannot be changed; also said there when the server refused a save that turned it off."
+  },
+  "settings.account.auto_delete.days": {
+    "defaultMessage": "Delete posts older than",
+    "description": "The label of the number field on the settings page Delete old posts automatically that holds the age, in days, past which a post is deleted; the unit days follows the field (settings.account.auto_delete.days.unit)."
+  },
+  "settings.account.auto_delete.days.unit": {
+    "defaultMessage": "days",
+    "description": "The unit after the number field Delete posts older than on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.days.about": {
+    "defaultMessage": "From 1 to {max, number} days",
+    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. max is the most days: the server's maximum where it sets one for the reader, else 3650. No full stop."
+  },
+  "settings.account.auto_delete.days.rule": {
+    "defaultMessage": "Enter a whole number of days from 1 to {max, number}.",
+    "description": "Under the number field Delete posts older than on the settings page Delete old posts automatically when it is empty as the reader presses Save, or the server refused its value. max is the most days the field takes."
+  },
+  "settings.account.auto_delete.section.kept": {
+    "defaultMessage": "Posts that are kept",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the kinds of posts that are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.kept.about": {
+    "defaultMessage": "A post that matches any of these is not deleted, however old.",
+    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically, over its checkboxes."
+  },
+  "settings.account.auto_delete.kept.fixed": {
+    "defaultMessage": "This server does not let you keep posts by their kind.",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, in place of its checkboxes, on a server whose maximum allows none of the kinds (pinned, bookmarked, favourited, with media, with a poll, articles)."
+  },
+  "settings.account.auto_delete.kept.rule": {
+    "defaultMessage": "This server does not let you keep one of the kinds you checked. Reload the page to see which you can check.",
+    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds; in the bar at the bottom where the section shows no checkbox."
+  },
+  "settings.account.auto_delete.keep": {
+    "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {Pinned posts} one {Your most recently pinned post} other {Your # most recently pinned posts}}} bookmarked {Posts you bookmarked} favourited {Posts you favourited} media {Posts with media} polls {Posts with a poll} other {Articles}}",
+    "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
+  },
+  "settings.account.auto_delete.keep.item": {
+    "defaultMessage": "{item, select, age {posts older than {days, plural, one {# day} other {# days}}} pinned {pinned posts} bookmarked {posts you bookmarked} favourited {posts you favourited} media {posts with media} polls {posts with a poll} articles {articles} audiences {posts by their audience} thresholds {posts by their boosts or favourites} more {more below} other {some posts your saved settings keep}}",
+    "description": "One thing in a list inside a sentence of the settings page Delete old posts automatically, joined to the others as the reader's language joins a list (A, B, and C): what a server's maximum does not let the reader keep (settings.account.auto_delete.keep.fixed, settings.account.auto_delete.bound.about). In lower case, since it never starts the sentence. item is age (posts past days days), a kind of post (pinned, bookmarked, favourited, media, polls, articles), audiences (posts kept for the audience they were made for), thresholds (posts kept for how often they were boosted or favourited), more (the last of a list cut after two: the rest is on the page below), or anything else when the page cannot tell which. No full stop."
+  },
+  "settings.account.auto_delete.keep.fixed": {
+    "defaultMessage": "This server does not let you keep {items}.",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the kinds of post the server's maximum does not allow to be kept, which are not offered as checkboxes. items is those kinds, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list. The same sentence form as settings.account.auto_delete.audiences.about (allowed no) and settings.account.auto_delete.thresholds.fixed."
+  },
+  "settings.account.auto_delete.section.audiences": {
+    "defaultMessage": "Posts kept by audience",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the visibilities (Public, Followers only…) whose posts are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.audiences.about": {
+    "defaultMessage": "{allowed, select, yes {Check an audience to keep every post you made for it.} other {This server does not let you keep posts by their audience.}}",
+    "description": "In the section Posts kept by audience of the settings page Delete old posts automatically. allowed yes: the line under the heading, over the checkboxes. allowed no: all the section says, in place of its checkboxes, on a server whose maximum does not allow it."
+  },
+  "settings.account.auto_delete.section.thresholds": {
+    "defaultMessage": "Posts kept by their boosts and favourites",
+    "description": "A heading on the settings page Delete old posts automatically, over the two numbers of boosts and of favourites from which a post is never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.thresholds.fixed": {
+    "defaultMessage": "This server does not let you keep posts by their boosts or favourites.",
+    "description": "All the section Posts kept by their boosts and favourites of the settings page Delete old posts automatically says, in place of its two fields, on a server whose maximum does not allow it."
+  },
+  "settings.account.auto_delete.threshold": {
+    "defaultMessage": "{of, select, boosts {Keep posts boosted at least} other {Keep posts favourited at least}}",
+    "description": "The label of a number field on the settings page Delete old posts automatically: how many times a post must have been boosted (of boosts) or favourited (of favourites) to be kept; the unit times follows the field (settings.account.auto_delete.threshold.unit)."
+  },
+  "settings.account.auto_delete.threshold.unit": {
+    "defaultMessage": "times",
+    "description": "The unit after the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.threshold.about": {
+    "defaultMessage": "0 keeps no post for this.",
+    "description": "The line under the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically: what 0 means."
+  },
+  "settings.account.auto_delete.threshold.rule": {
+    "defaultMessage": "Enter a whole number from 0 to {max, number}.",
+    "description": "Under a number field of Posts kept by their boosts and favourites on the settings page Delete old posts automatically when the server refused its value. max is 1000000."
+  },
+  "settings.account.auto_delete.section.count": {
+    "defaultMessage": "Posts that would be deleted",
+    "description": "A heading on the settings page Delete old posts automatically, right under When posts are deleted, over the count of the reader's posts that the settings on the page would delete now, before they are saved, and the oldest of them. A heading: no full stop."
+  },
+  "settings.account.auto_delete.count.about": {
+    "defaultMessage": "Counted now, for the settings on this page as they stand, before you save them. The server deletes at most 100 posts an hour, so many old posts take a while to go.",
+    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically, the second section of the page, right under When posts are deleted: what the count is of (every setting of the page, those under it too), and how fast the server deletes."
+  },
+  "settings.account.auto_delete.count.off": {
+    "defaultMessage": "Nothing is deleted while automatic deletion is off.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while Automatic deletion is Off on the page."
+  },
+  "settings.account.auto_delete.count.no_age": {
+    "defaultMessage": "Enter an age in days to count the posts.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the field Delete posts older than is empty."
+  },
+  "settings.account.auto_delete.count.loading": {
+    "defaultMessage": "Counting your posts…",
+    "description": "On the settings page Delete old posts automatically while the server counts what the settings on the page would delete: in the section Posts that would be deleted, and in the bar at the bottom right before Save, in the place of settings.account.auto_delete.save.count."
+  },
+  "settings.account.auto_delete.count": {
+    "defaultMessage": "{more, select, yes {More than {count, number} of your posts would be deleted.} other {{count, plural, =0 {None of your posts would be deleted.} one {# of your posts would be deleted.} other {# of your posts would be deleted.}}}}",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically: how many of the reader's posts the settings on the page would delete now. more is yes when the server stopped counting at count (1000)."
+  },
+  "settings.account.auto_delete.count.failed": {
+    "defaultMessage": "Your posts could not be counted.",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically when the server did not answer the count; Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.count.oldest": {
+    "defaultMessage": "The oldest of them",
+    "description": "The label over the list of up to 3 posts under the count on the settings page Delete old posts automatically: the oldest of the posts that would be deleted. No full stop."
+  },
+  "settings.account.auto_delete.count.post": {
+    "defaultMessage": "Post of {date}",
+    "description": "A row of the list The oldest of them on the settings page Delete old posts automatically: one of the reader's posts that would be deleted, named by when it was posted, which the row opens; the start of its text follows. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.auto_delete.save": {
+    "defaultMessage": "Save",
+    "description": "The button in the bar at the bottom of the settings page Delete old posts automatically that saves the whole page."
+  },
+  "settings.account.auto_delete.save.count": {
+    "defaultMessage": "{changed, select, yes {{more, select, yes {Saving deletes more than {count, number} of your posts.} other {Saving deletes {count, number} of your posts.}}} other {{more, select, yes {These settings delete more than {count, number} of your posts.} other {These settings delete {count, number} of your posts.}}}}",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, right before Save, while the settings on the page delete at least one of the reader's posts: how many. changed is yes when the page differs from the settings in effect, so that saving is what deletes them, and anything else when it shows the settings in effect as they are. more is yes when the server stopped counting at count (1000). count is 1 or more. One short sentence."
+  },
+  "settings.account.auto_delete.save.failed": {
+    "defaultMessage": "Your settings could not be saved. Try again.",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the server did not take the page and gave no reason of its own (the network)."
+  },
+  "settings.account.auto_delete.save.refused": {
+    "defaultMessage": "To save, fix what is marked.",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the page or the server found something wrong with a setting, which says what under that setting."
+  },
+  "settings.account.auto_delete.ask.title": {
+    "defaultMessage": "Delete your old posts?",
+    "description": "The question of the confirmation that opens when the reader presses Save on the settings page Delete old posts automatically and the save turns the deletion on or deletes posts the settings in effect keep (a younger age, fewer kinds kept)."
+  },
+  "settings.account.auto_delete.ask.text": {
+    "defaultMessage": "{counted, select, yes {Saving deletes {count, number} of your posts. This cannot be undone.} more {Saving deletes more than {count, number} of your posts. This cannot be undone.} none {None of your posts is old enough to be deleted yet. A post is deleted once it is older than {days, plural, one {# day} other {# days}}. This cannot be undone.} other {Saving deletes your posts older than {days, plural, one {# day} other {# days}} that you do not keep. This cannot be undone.}}",
+    "description": "The text of the confirmation that asks whether to save the settings page Delete old posts automatically: what the save deletes, and that deleted posts cannot be restored. counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known (still counting, or it failed). days is the age past which a post is deleted, 1 or more."
+  },
+  "settings.account.auto_delete.ask.confirm": {
+    "defaultMessage": "{deletes, select, yes {Save and delete} other {Save}}",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that saves the page. deletes is yes when the save deletes posts now, or may (the count is not known), and anything else when no post is old enough yet."
+  },
+  "settings.account.auto_delete.ask.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that closes it without saving; the page stays as the reader made it."
+  },
+  "settings.account.auto_delete.leave.title": {
+    "defaultMessage": "Leave without saving?",
+    "description": "The question of the confirmation that opens when the reader leaves the settings page Delete old posts automatically with changes they did not save."
+  },
+  "settings.account.auto_delete.leave.text": {
+    "defaultMessage": "The changes you have not saved will be lost. This cannot be undone.",
+    "description": "The text of the confirmation that asks whether to leave the settings page Delete old posts automatically without saving."
+  },
+  "settings.account.auto_delete.leave.confirm": {
+    "defaultMessage": "Leave",
+    "description": "The button of the confirmation that leaves the settings page Delete old posts automatically, the changes lost."
+  },
+  "settings.account.auto_delete.leave.cancel": {
+    "defaultMessage": "Keep editing",
+    "description": "The button of the confirmation that stays on the settings page Delete old posts automatically, with the changes as the reader made them."
+  },
+  "settings.account.aliases": {
+    "defaultMessage": "Aliases",
+    "description": "A row of the section Moving to this account on the settings page Account and data, and the title of the page it opens, where the reader names the accounts they move from. A heading: no full stop."
+  },
+  "settings.account.aliases.row.about": {
+    "defaultMessage": "Name the account you are moving from, so that its followers can move here",
+    "description": "The line under the row Aliases on the settings page Account and data while the reader has no alias: what the page is for. A phrase without a full stop."
+  },
+  "settings.account.aliases.row.standing": {
+    "defaultMessage": "{count, plural, one {# account can move its followers here} other {# accounts can move their followers here}}",
+    "description": "The line under the row Aliases on the settings page Account and data, in place of settings.account.aliases.row.about, while the reader has aliases: how many. count is 1 to 5. Without a full stop."
+  },
+  "settings.account.aliases.loading": {
+    "defaultMessage": "Loading your aliases…",
+    "description": "On the settings page Aliases while the reader's aliases are read from the server."
+  },
+  "settings.account.aliases.failed": {
+    "defaultMessage": "Your aliases could not be loaded.",
+    "description": "On the settings page Aliases when the reader's aliases could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.aliases.count": {
+    "defaultMessage": "{count, plural, =0 {No aliases} one {# of {max, number} aliases} other {# of {max, number} aliases}}",
+    "description": "The heading of the list on the settings page Aliases, whose title already names it: how many aliases the reader has, of the most an account can have (max is 5). A heading: no full stop."
+  },
+  "settings.account.aliases.about": {
+    "defaultMessage": "An alias is an account you are moving from. Naming it here lets that account move its followers to this one, and changes nothing else: you start the move from that account.",
+    "description": "Under the heading of the list on the settings page Aliases: what an alias is for, and that it does nothing by itself."
+  },
+  "settings.account.aliases.empty": {
+    "defaultMessage": "Add the account you are moving from below.",
+    "description": "In place of the list on the settings page Aliases while the reader has no alias; the section Add an alias follows."
+  },
+  "settings.account.aliases.added": {
+    "defaultMessage": "Added on {date}",
+    "description": "A fact under an alias in the list on the settings page Aliases: when the reader added it. date is a day as the reader's locale writes it. No full stop."
+  },
+  "settings.account.aliases.remove": {
+    "defaultMessage": "Remove",
+    "description": "The button of a row of the list on the settings page Aliases that removes that alias at once; the row names the account."
+  },
+  "settings.account.aliases.removed": {
+    "defaultMessage": "Removed",
+    "description": "What a row of the list on the settings page Aliases says once the reader removed that alias, in place of its button and its facts, the row staying where it was until they leave the page. Without a full stop."
+  },
+  "settings.account.aliases.removed.spoken": {
+    "defaultMessage": "You removed the alias {name}.",
+    "description": "What assistive technology reads in place of settings.account.aliases.removed, where the focus goes once an alias is removed. name is the account's handle (@user@domain), or its address where the server knows no handle."
+  },
+  "settings.account.aliases.remove.failed": {
+    "defaultMessage": "Removing the alias {name} did not finish. Try again.",
+    "description": "Under the list on the settings page Aliases when removing an alias got no answer from the server (the network); the row and its button stay, to press again. name is as in settings.account.aliases.removed.spoken."
+  },
+  "settings.account.aliases.add": {
+    "defaultMessage": "Add an alias",
+    "description": "A heading on the settings page Aliases, over the field that adds an alias by the account's address. A heading: no full stop."
+  },
+  "settings.account.aliases.add.label": {
+    "defaultMessage": "Account you are moving from",
+    "description": "The label of the field on the settings page Aliases where the reader enters the account to add as an alias."
+  },
+  "settings.account.aliases.add.hint": {
+    "defaultMessage": "Its handle, such as @name@example.com, or the address of its profile.",
+    "description": "The hint of a field that takes an account by its address, on the settings pages Aliases (Account you are moving from) and Move account (Account you are moving to): what the server takes."
+  },
+  "settings.account.aliases.add.submit": {
+    "defaultMessage": "Add",
+    "description": "The button under the field Account you are moving from on the settings page Aliases that adds that account as an alias."
+  },
+  "settings.account.aliases.add.missing": {
+    "defaultMessage": "Enter the handle or the address of the account.",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the reader pressed Add with the field empty."
+  },
+  "settings.account.aliases.add.invalid": {
+    "defaultMessage": "No account that can be an alias was found there. Check the handle, such as @name@example.com, or the address of the profile. Your own account cannot be an alias.",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the server found no account at what the reader entered, or one that cannot be an alias (the reader's own, something that is no account)."
+  },
+  "settings.account.aliases.add.failed": {
+    "defaultMessage": "The alias could not be added. Try again.",
+    "description": "The status of the section Add an alias on the settings page Aliases when adding got no answer from the server (the network)."
+  },
+  "settings.account.aliases.add.done": {
+    "defaultMessage": "The alias was added.",
+    "description": "The status of the section Add an alias on the settings page Aliases once the server added the alias, which the list above then shows."
+  },
+  "settings.account.aliases.full": {
+    "defaultMessage": "You have {max, number} aliases, the most an account can have. Remove one to add another.",
+    "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
+  },
+  "settings.account.departure": {
+    "defaultMessage": "Moving to another account",
+    "description": "A heading on the settings page Account and data, over the row that leads to Move account: moving this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move": {
+    "defaultMessage": "Move account",
+    "description": "A row of the section Moving to another account on the settings page Account and data, and the title of the page it opens, where the reader moves this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move.row.about": {
+    "defaultMessage": "Move your followers to another account of yours",
+    "description": "The line under the row Move account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.move.row.standing": {
+    "defaultMessage": "Moved to {handle}",
+    "description": "The line under the row Move account on the settings page Account and data, in place of settings.account.move.row.about, while this account has moved. {handle} is the handle of the account, as @name@example.com. Without a full stop."
+  },
+  "settings.account.end": {
+    "defaultMessage": "Deactivating or deleting this account",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Deactivate account and Delete account, the last section of the page. A heading: no full stop."
+  },
+  "settings.account.deactivate": {
+    "defaultMessage": "Deactivate account",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deactivates their account: it is hidden, and deleted later unless they sign in again. A heading: no full stop."
+  },
+  "settings.account.deactivate.row.about": {
+    "defaultMessage": "Hide your account and posts, which are deleted unless you sign in again in time",
+    "description": "The line under the row Deactivate account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.delete": {
+    "defaultMessage": "Delete account",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deletes their account at once. A heading: no full stop."
+  },
+  "settings.account.delete.row.about": {
+    "defaultMessage": "Delete your account and posts at once, for good",
+    "description": "The line under the row Delete account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.loading": {
+    "defaultMessage": "Loading your account…",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections while what they show is on its way."
+  },
+  "settings.account.failed": {
+    "defaultMessage": "Your account could not be loaded.",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections when what they show could not be read; the button Try again follows it."
+  },
+  "settings.account.end.signed_out": {
+    "defaultMessage": "You are signed out everywhere",
+    "description": "A fact in the first section of the settings pages Deactivate account and Delete account: what deactivating or deleting the account does to where the reader is signed in. Strong, over settings.account.end.signed_out.about. No full stop."
+  },
+  "settings.account.end.signed_out.about": {
+    "defaultMessage": "Every browser and app is signed out at once, this one too.",
+    "description": "The muted line under the fact You are signed out everywhere on the settings pages Deactivate account and Delete account."
+  },
+  "settings.account.move.effect": {
+    "defaultMessage": "What a move does",
+    "description": "The heading of the first section of the settings page Move account: what moves, what does not, and what becomes of this account. A heading: no full stop."
+  },
+  "settings.account.move.effect.followers": {
+    "defaultMessage": "Your followers move",
+    "description": "A fact in the section What a move does of the settings page Move account: the one thing that moves. Strong, over settings.account.move.effect.followers.about. No full stop."
+  },
+  "settings.account.move.effect.followers.about": {
+    "defaultMessage": "They follow the account you move to instead of this one.",
+    "description": "The muted line under the fact Your followers move on the settings page Move account."
+  },
+  "settings.account.move.effect.stays": {
+    "defaultMessage": "Everything else stays here",
+    "description": "A fact in the section What a move does of the settings page Move account: what does not move. Strong, over settings.account.move.effect.stays.about. No full stop."
+  },
+  "settings.account.move.effect.stays.about": {
+    "defaultMessage": "Your posts, the accounts you follow, your blocks, mutes and bookmarks do not move.",
+    "description": "The muted line under the fact Everything else stays here on the settings page Move account."
+  },
+  "settings.account.move.effect.account": {
+    "defaultMessage": "This account can no longer post or follow",
+    "description": "A fact in the section What a move does of the settings page Move account: what becomes of the account that moves. Strong, over settings.account.move.effect.account.about. No full stop."
+  },
+  "settings.account.move.effect.account.about": {
+    "defaultMessage": "Its profile says where you moved. You can still sign in, read, export your data and delete the account, but not post, boost, react, follow or vote.",
+    "description": "The muted line under the fact This account can no longer post or follow on the settings page Move account."
+  },
+  "settings.account.move.effect.wait": {
+    "defaultMessage": "You cannot move again for {days, plural, one {# day} other {# days}}",
+    "description": "A fact in the section What a move does of the settings page Move account: how long the account waits before another move. days is 30. Strong, over settings.account.move.effect.wait.about. No full stop."
+  },
+  "settings.account.move.effect.wait.about": {
+    "defaultMessage": "Cancelling the move does not shorten the wait, and does not bring your followers back.",
+    "description": "The muted line under the fact You cannot move again for 30 days on the settings page Move account."
+  },
+  "settings.account.move.effect.export": {
+    "defaultMessage": "To take your follows, blocks, mutes and bookmarks with you, export them as CSV files here and import them on the other account.",
+    "description": "A sentence at the end of the section What a move does of the settings page Move account; the link Export (settings.account.export) follows it."
+  },
+  "settings.account.move.alias": {
+    "defaultMessage": "First, on the account you are moving to",
+    "description": "The heading of the second section of the settings page Move account: what the reader does on the other account before the move. A heading: no full stop."
+  },
+  "settings.account.move.alias.about": {
+    "defaultMessage": "Add this account as an alias there: in its settings, under “Account and data”, open “Aliases” and enter this handle under “Add an alias”. Other software has the same under a similar name.",
+    "description": "The line under the heading First, on the account you are moving to of the settings page Move account, over this account's handle. Account and data, Aliases and Add an alias are settings.entry.account, settings.account.aliases and settings.account.aliases.add: the same words."
+  },
+  "settings.account.move.alias.handle": {
+    "defaultMessage": "This account's handle",
+    "description": "The name, for assistive technology, of the box on the settings page Move account that holds this account's handle (@name@example.com) for the reader to copy."
+  },
+  "settings.account.move.alias.copy": {
+    "defaultMessage": "Copy handle",
+    "description": "The button under this account's handle on the settings page Move account: it copies the handle."
+  },
+  "settings.account.move.form": {
+    "defaultMessage": "Move this account",
+    "description": "The heading of the last section of the settings page Move account, over the field Account you are moving to. A heading: no full stop."
+  },
+  "settings.account.move.target": {
+    "defaultMessage": "Account you are moving to",
+    "description": "The label of the field on the settings page Move account where the reader names the account this one moves to; its hint is settings.account.aliases.add.hint."
+  },
+  "settings.account.move.target.missing": {
+    "defaultMessage": "Enter the handle or the address of the account you are moving to.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader chose Move account with the field empty."
+  },
+  "settings.account.move.target.not_found": {
+    "defaultMessage": "No account was found there. Check the handle, such as @name@example.com, or the address of the profile.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the server found no account at what the reader entered."
+  },
+  "settings.account.move.target.own": {
+    "defaultMessage": "That is this account. Enter the account you are moving to.",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader entered this account itself."
+  },
+  "settings.account.move.refused": {
+    "defaultMessage": "{reason, select, alias_missing {{handle} does not list this account as an alias yet. On that account, add this account under “Aliases”, then try again.} target_moved {{handle} has moved to another account itself. Enter the account it moved to.} target_unavailable {You cannot move to {handle}: this server cannot reach that account, or does not accept it. Check the handle, or choose another account.} other {This account moved less than {days, plural, one {# day} other {# days}} ago, or has moved to {handle} before. It can move again {days, plural, one {# day} other {# days}} after its last move, and never to the same account twice.}}",
+    "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
+  },
+  "settings.account.move.confirm": {
+    "defaultMessage": "Your followers move to {handle}, and everything else stays here. Cancelling the move later does not bring them back, and this account cannot move again for {days, plural, one {# day} other {# days}}.",
+    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, what stays, and what cancelling the move later does not undo, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.confirm.title": {
+    "defaultMessage": "Move this account to {handle}?",
+    "description": "The title of the dialog opened by the button Move account on the settings page Move account, whose button Move account moves the account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.submit": {
+    "defaultMessage": "Move account",
+    "description": "The button that ends the settings page Move account: it asks the reader to confirm it's them, then moves the account."
+  },
+  "settings.account.move.moved": {
+    "defaultMessage": "This account moved to {handle}",
+    "description": "The summary at the top of the settings page Move account while this account has moved. {handle} is the handle of the account, as @name@example.com. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.moved.about": {
+    "defaultMessage": "Its followers were moved there. This account cannot post, boost, react, follow or vote; you can still sign in, read, export your data and delete it.",
+    "description": "The muted line under the summary This account moved to… on the settings page Move account."
+  },
+  "settings.account.move.cancel": {
+    "defaultMessage": "Cancelling the move",
+    "description": "The heading of the section of the settings page Move account that holds the button Cancel the move, while this account has moved. A heading: no full stop."
+  },
+  "settings.account.move.cancel.about": {
+    "defaultMessage": "Cancelling lets this account post and follow again, and tells other servers that it no longer moved. Followers who moved stay with {handle}, and the {days, plural, one {# day} other {# days}} before another move still count from this move.",
+    "description": "The line under the heading Cancelling the move on the settings page Move account: what cancelling does and does not undo. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.cancel.submit": {
+    "defaultMessage": "Cancel the move",
+    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens; also the link under the summary This account cannot be deactivated now on the settings page Deactivate account, for an account that moved, which leads to Move account."
+  },
+  "settings.account.move.cancel.title": {
+    "defaultMessage": "Cancel the move to {handle}?",
+    "description": "The title of the dialog opened by the button Cancel the move on the settings page Move account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.cancel.text": {
+    "defaultMessage": "Followers who already moved do not come back, and this account still cannot move again until {days, plural, one {# day} other {# days}} after this move.",
+    "description": "The text of the dialog Cancel the move to…? on the settings page Move account: what cancelling does not undo. days is 30."
+  },
+  "settings.account.move.cancel.keep": {
+    "defaultMessage": "Keep the move",
+    "description": "The button of the dialog Cancel the move to…? on the settings page Move account that closes it and cancels nothing, beside Cancel the move."
+  },
+  "settings.account.move.cancelled": {
+    "defaultMessage": "The move is cancelled",
+    "description": "The summary at the top of the settings page Move account once the reader cancelled the move. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.cancelled.about": {
+    "defaultMessage": "This account can post and follow again. Followers who moved stay with the other account.",
+    "description": "The muted line under the summary The move is cancelled on the settings page Move account."
+  },
+  "settings.account.move.later": {
+    "defaultMessage": "This account cannot move now",
+    "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, once the page knows the account cannot move now: the reader cancelled the move there, or the server refused a move as too soon. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.later.cancelled": {
+    "defaultMessage": "This account moved less than {days, plural, one {# day} other {# days}} ago. It can move again {days, plural, one {# day} other {# days}} after its last move.",
+    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
+  },
+  "settings.account.deactivate.effect": {
+    "defaultMessage": "What deactivating does",
+    "description": "The heading of the first section of the settings page Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.effect.hidden": {
+    "defaultMessage": "Your profile and posts are hidden",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.hidden.about. No full stop."
+  },
+  "settings.account.deactivate.effect.hidden.about": {
+    "defaultMessage": "Nobody can see them, on this server or on others. Some servers show the account as suspended, because they have no other way to show it.",
+    "description": "The muted line under the fact Your profile and posts are hidden on the settings page Deactivate account. Suspended is what a moderator does to an account (凍結)."
+  },
+  "settings.account.deactivate.effect.dropped": {
+    "defaultMessage": "Nothing reaches the account meanwhile",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.dropped.about. No full stop."
+  },
+  "settings.account.deactivate.effect.dropped.about": {
+    "defaultMessage": "Mentions, direct messages, notifications and new followers that come while it is deactivated are not kept, and are not there when you come back.",
+    "description": "The muted line under the fact Nothing reaches the account meanwhile on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.effect.kept": {
+    "defaultMessage": "Everything else is kept",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.kept.about. No full stop."
+  },
+  "settings.account.deactivate.effect.kept.about": {
+    "defaultMessage": "Your posts, the accounts you follow and your followers stay as they are.",
+    "description": "The muted line under the fact Everything else is kept on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after": {
+    "defaultMessage": "Coming back",
+    "description": "The heading of the second section of the settings page Deactivate account: until when the reader can reactivate the account, and what happens after. A heading: no full stop."
+  },
+  "settings.account.deactivate.after.reactivate": {
+    "defaultMessage": "Sign in by {date} to reactivate it",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. date is the day and time the account would be deleted if it were deactivated now, as the reader's locale writes them. Strong, over settings.account.deactivate.after.reactivate.about. No full stop."
+  },
+  "settings.account.deactivate.after.reactivate.about": {
+    "defaultMessage": "The account comes back as it was.",
+    "description": "The muted line under the fact Sign in by… to reactivate it on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after.deleted": {
+    "defaultMessage": "After that, the account is deleted",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
+  },
+  "settings.account.deactivate.after.deleted.about": {
+    "defaultMessage": "It is deleted for good, as “Delete account” deletes it. Where this server sends email, you get one email with the date when you deactivate, and no reminder before the deletion.",
+    "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
+  },
+  "settings.account.deactivate.first": {
+    "defaultMessage": "Before you deactivate",
+    "description": "The heading of the third section of the settings page Deactivate account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.deactivate.first.export": {
+    "defaultMessage": "Your data cannot be exported while the account is deactivated",
+    "description": "The line under the row Export in the section Before you deactivate of the settings page Deactivate account. Without a full stop."
+  },
+  "settings.account.deactivate.act": {
+    "defaultMessage": "Deactivate this account",
+    "description": "The heading of the last section of the settings page Deactivate account, over the button Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.act.about": {
+    "defaultMessage": "You are asked to confirm it's you, then signed out. If you do nothing more, the account is deleted on {date}.",
+    "description": "The line under the heading Deactivate this account on the settings page Deactivate account. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.act.about.held": {
+    "defaultMessage": "Once you confirm, you are signed out. If you do nothing more, the account is deleted on {date}.",
+    "description": "In place of settings.account.deactivate.act.about on the settings page Deactivate account once the reader confirmed it's them at another service: the button then asks only whether to go ahead. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.submit": {
+    "defaultMessage": "Deactivate account",
+    "description": "The button that ends the settings page Deactivate account: it asks the reader to confirm it's them, then deactivates the account and signs them out."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "You are signed out, and the account is deleted on {date} unless you sign in again before then.",
+    "description": "In the dialog Deactivate this account?, opened by the button Deactivate account on the settings page Deactivate account: what its button does, over how the reader confirms it's them. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "Deactivate this account?",
+    "description": "The title of the dialog opened by the button Deactivate account on the settings page Deactivate account, whose button Deactivate account deactivates it."
+  },
+  "settings.account.deactivate.refused": {
+    "defaultMessage": "This account cannot be deactivated now",
+    "description": "The summary at the top of the settings page Deactivate account while the server would refuse the deactivation; settings.account.deactivate.refused.reason says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.deactivate.refused.reason": {
+    "defaultMessage": "{reason, select, login_restricted {A moderation action keeps this account from signing in. “Account status” says which, and how to appeal it.} deletion_scheduled {This account is already waiting to be deleted. “Account status” says why.} already_deactivated {This account is already deactivated. Sign in again to reactivate it.} moved {This account moved to another account. Cancel the move first, under “Move account”.} registration_pending {The registration of this account is still waiting for a moderator's approval. Try again once it is approved.} paid_subscription {Your supporter plan is still running. Cancel it first, then deactivate the account.} last_administrator {This is the only administrator account that can sign in, and a deactivated account is deleted in the end. Make someone else an administrator first.} recently_reactivated {This account was reactivated a short while ago. You can deactivate it again from {date}.} reactivated {This account was reactivated a short while ago. Try again tomorrow.} other {The server did not say why. Reload the app, then try again.}}",
+    "description": "The muted line under the summary This account cannot be deactivated now on the settings page Deactivate account: why, and what to do. date (recently_reactivated only) is the day and time from which it can be deactivated again; reactivated is the same without a known time. Account status and Move account are settings.account.status and settings.account.move: the same words."
+  },
+  "settings.account.delete.effect": {
+    "defaultMessage": "What deleting does",
+    "description": "The heading of the first section of the settings page Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.effect.gone": {
+    "defaultMessage": "Your account and posts are deleted at once",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.gone.about. No full stop."
+  },
+  "settings.account.delete.effect.gone.about": {
+    "defaultMessage": "They disappear from this server, and other servers are told to delete them too.",
+    "description": "The muted line under the fact Your account and posts are deleted at once on the settings page Delete account."
+  },
+  "settings.account.delete.effect.final": {
+    "defaultMessage": "It cannot be undone",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.final.about. No full stop."
+  },
+  "settings.account.delete.effect.final.about": {
+    "defaultMessage": "There is no time to change your mind. To keep a way back for a while, deactivate the account instead.",
+    "description": "The muted line under the fact It cannot be undone on the settings page Delete account."
+  },
+  "settings.account.delete.effect.username": {
+    "defaultMessage": "The username is never free again",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.username.about. No full stop."
+  },
+  "settings.account.delete.effect.username.about": {
+    "defaultMessage": "Nobody, you included, can register {username} on this server again.",
+    "description": "The muted line under the fact The username is never free again on the settings page Delete account. {username} is the account's username on this server with its @, as @name."
+  },
+  "settings.account.delete.effect.erased": {
+    "defaultMessage": "The data is erased {days, plural, one {# day} other {# days}} later",
+    "description": "A fact in the section What deleting does of the settings page Delete account. days is 7. Strong, over settings.account.delete.effect.erased.about. No full stop."
+  },
+  "settings.account.delete.effect.erased.about": {
+    "defaultMessage": "Until then the server keeps it, hidden from everyone.",
+    "description": "The muted line under the fact The data is erased 7 days later on the settings page Delete account."
+  },
+  "settings.account.delete.first": {
+    "defaultMessage": "Before you delete",
+    "description": "The heading of the second section of the settings page Delete account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.delete.first.export": {
+    "defaultMessage": "Nothing can be exported once the account is deleted",
+    "description": "The line under the row Export in the section Before you delete of the settings page Delete account. Without a full stop."
+  },
+  "settings.account.delete.act": {
+    "defaultMessage": "Delete this account",
+    "description": "The heading of the last section of the settings page Delete account, over the button Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.act.about": {
+    "defaultMessage": "You are asked to confirm it's you. The account is then deleted at once, and you are signed out.",
+    "description": "The line under the heading Delete this account on the settings page Delete account."
+  },
+  "settings.account.delete.act.about.held": {
+    "defaultMessage": "Once you confirm, the account is deleted at once, and you are signed out.",
+    "description": "In place of settings.account.delete.act.about on the settings page Delete account once the reader confirmed it's them at another service: the button then asks only whether to go ahead."
+  },
+  "settings.account.delete.submit": {
+    "defaultMessage": "Delete account",
+    "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "The account and its posts are deleted at once, and you are signed out. This cannot be undone.",
+    "description": "In the dialog Delete this account?, opened by the button Delete account on the settings page Delete account: what its button does, over how the reader confirms it's them."
+  },
+  "settings.account.delete.confirm.title": {
+    "defaultMessage": "Delete this account?",
+    "description": "The title of the dialog opened by the button Delete account on the settings page Delete account, whose button Delete account deletes it."
+  },
+  "settings.account.delete.refused": {
+    "defaultMessage": "This account cannot be deleted now",
+    "description": "The summary at the end of the settings page Delete account, in place of the button Delete account, while the server would refuse the deletion; settings.account.delete.refused.last_administrator says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.delete.refused.last_administrator": {
+    "defaultMessage": "This is the only administrator account that can sign in. Make someone else an administrator first, then delete it.",
+    "description": "The muted line under the summary This account cannot be deleted now on the settings page Delete account: the server keeps its last administrator who can sign in."
   },
   "settings.security.sign_in": {
     "defaultMessage": "Sign-in",
@@ -751,6 +2711,14 @@
     "defaultMessage": "To confirm it's you, sign in to {provider} again. You then come back here and repeat what you started.",
     "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
   },
+  "settings.confirm.way.password": {
+    "defaultMessage": "Enter your current password to confirm it's you.",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with their password (the field Current password follows)."
+  },
+  "settings.confirm.way.passkey": {
+    "defaultMessage": "Your browser then asks for one of your passkeys to confirm it's you.",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with a passkey: pressing the button makes the browser ask for one."
+  },
   "settings.confirm.other.password": {
     "defaultMessage": "Use your password instead",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
@@ -778,6 +2746,14 @@
   "settings.confirm.returned.unknown": {
     "defaultMessage": "You confirmed it's you with the other service. Repeat what you started: this time you are not asked to confirm.",
     "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.returned.act": {
+    "defaultMessage": "You confirmed it's you with {provider}. Do it again below: this time you are only asked whether to go ahead.",
+    "description": "On the settings pages Move account, Deactivate account and Delete account when the browser comes back from another service where the reader confirmed it's them: the reader does it again, and the dialog then asks only whether to go ahead, with no password. provider is the name of the service as the administrators wrote it; it is not translated. Without a name, the page shows settings.confirm.returned.act.unknown."
+  },
+  "settings.confirm.returned.act.unknown": {
+    "defaultMessage": "You confirmed it's you with the other service. Do it again below: this time you are only asked whether to go ahead.",
+    "description": "As settings.confirm.returned.act, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.failed": {
     "defaultMessage": "This did not finish: the server could not be reached. Check your connection, then try again.",
@@ -1324,7 +3300,7 @@
     "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
   },
   "settings.invites.cannot.reason": {
-    "defaultMessage": "{reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}",
+    "defaultMessage": "{reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.} other {You cannot create invites now.}}",
     "description": "Under the title You cannot create invites (settings.invites.cannot): why the reader may not create invites now. reason is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value names no cause. The same sentences as the server's refusal (errors.invites.not_allowed_detail), which the list of invites gives only as the reason's name."
   },
   "settings.invites.link": {

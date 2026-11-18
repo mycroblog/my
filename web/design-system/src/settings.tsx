@@ -377,28 +377,37 @@ function SettingFrame({
   state,
   under,
   control,
+  across,
 }: {
   className: string;
   name: ReactNode;
   state: ReactNode;
   under: ReactNode;
   control: ReactNode;
+  /** The control fills a line of its own at every width. */
+  across: boolean;
 }) {
   const lined = under !== undefined && under !== null && under !== false;
   // In a wide frame: two rows, the name over the line under it, and the control beside both at their middle; a name
-  // with no line under it takes both rows, at the control's middle.
+  // with no line under it takes both rows, at the control's middle. A control that goes across stands in a third
+  // row, the frame's width, a little under the two.
   const wide = {
     root: "@min-[28rem]:grid @min-[28rem]:grid-cols-[minmax(0,1fr)_auto] @min-[28rem]:content-center @min-[28rem]:gap-y-0",
     name: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-1",
     alone: "@min-[28rem]:row-span-2 @min-[28rem]:self-center",
     control: "@min-[28rem]:col-start-2 @min-[28rem]:row-span-2 @min-[28rem]:row-start-1 @min-[28rem]:self-center",
-    under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2",
+    across: "@min-[28rem]:col-[1/-1] @min-[28rem]:row-start-3 @min-[28rem]:mt-screen-air",
+    under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2 @min-[28rem]:mt-0 @min-[28rem]:mb-0",
   };
+  // In a narrow frame the name stands on its control's line, at the control's middle, as a name with no line under
+  // it does, and the line about it under the two, a little air from the control and nearer to them than to the next
+  // setting by the room after it: it reads as its own, and no control stands above its name's line.
+  const narrow = { under: "mb-screen-field-gap" };
   const named = `flex min-w-0 flex-[9999_1_6rem] flex-wrap items-center gap-x-screen-row-gap ${wide.name}`;
   return (
     <div className="@container">
       <div className={`${className} flex flex-wrap items-center gap-x-screen-row-gap gap-y-screen-air ${wide.root}`}>
-        <div className={lined ? named : `${named} ${wide.alone}`}>
+        <div className={lined || across ? named : `${named} ${wide.alone}`}>
           <div className="max-w-full min-w-0 wrap-break-word">{name}</div>
           {state !== undefined && state !== null && state !== false && (
             <div className="min-w-0 grow basis-[clamp(0px,(100cqw_-_1px_-_100%)_*_9999,100%)] wrap-break-word">
@@ -406,8 +415,11 @@ function SettingFrame({
             </div>
           )}
         </div>
-        <div className={`min-w-0 flex-[1_1_auto] ${wide.control}`}>{control}</div>
-        {lined && <div className={`min-w-0 basis-full wrap-break-word ${wide.under}`}>{under}</div>}
+        {/* In a narrow frame a control that goes across is a dropped one at every width: the line comes under it. */}
+        <div className={`min-w-0 ${across ? `basis-full ${wide.across}` : `flex-[1_1_auto] ${wide.control}`}`}>
+          {control}
+        </div>
+        {lined && <div className={`min-w-0 basis-full wrap-break-word ${narrow.under} ${wide.under}`}>{under}</div>}
       </div>
     </div>
   );
@@ -439,6 +451,8 @@ export type SettingRowProps = {
    * chosen): close under the row, as the setting's own.
    */
   values?: ReactNode;
+  /** Its control fills a line of its own under the name at every width: one that grows with what it holds (tags). */
+  wide?: boolean | undefined;
   children: ReactNode;
 } & (
   | {
@@ -466,7 +480,8 @@ export type SettingRowProps = {
  * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
  * row's end, as wide as what it holds. In a narrow section (a phone) the line about it runs the row's width under the
  * name and the control, and where the two cannot share a line, the control fills a line of its own under the name, as
- * a field under its label (`SettingFrame`). Its control either saves at once, and the row takes its save state
+ * a field under its label (`SettingFrame`); a `wide` control (one that grows with what it holds: tags) has a line of
+ * its own at every width, the row's whole width. Its control either saves at once, and the row takes its save state
  * (`save`, ADR-0110 §6), which stands in the place of the line about it, or, with no such line, with the name: under
  * it beside the control, in the room the row's height holds (the name, at the middle of the control until then, gives
  * way to it), and beside it when the name has a line to itself; the control stays where it is. Or it is a field of a
@@ -483,6 +498,7 @@ export function SettingRow({
   isDisabled = false,
   reason,
   values,
+  wide = false,
   save,
   form,
   error,
@@ -509,6 +525,7 @@ export function SettingRow({
   const setting = (
     <SettingFrame
       className={s.root()}
+      across={wide}
       name={
         <label id={id} htmlFor={controlId} className={isDisabled ? `${s.label()} ${s.off()}` : s.label()}>
           {label}
@@ -567,9 +584,11 @@ const summary = tv({
  * The status summary that heads a screen while something there is to do (the security's, while two-factor
  * authentication is off): the state as its glyph and a sentence, what it means, and the next thing to do in a word or
  * two (a `Button`, the screen's primary action). It is the one place the screen says it and the one door to it: no
- * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed. A view that
- * takes another's place to say what came of it (an invite created) moves the focus to its title, which `titleRef`
- * reaches, so that a screen reader reads what happened first.
+ * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed. An action
+ * that is done in place (it sends an email) says what came of it beside itself (`result`, a `SaveState`), in a polite
+ * live region that is there from the start.
+ * A view that takes another's place to say what came of it (an invite created) moves the focus to its title, which
+ * `titleRef` reaches, so that a screen reader reads what happened first.
  */
 export function StatusSummary({
   icon,
@@ -577,6 +596,7 @@ export function StatusSummary({
   titleRef,
   about,
   action,
+  result,
 }: {
   /** The state's glyph: `caution` while something is to do, `accepted` once all is well. */
   icon: IconName;
@@ -586,6 +606,8 @@ export function StatusSummary({
   titleRef?: Ref<HTMLHeadingElement> | undefined;
   about: string;
   action?: ReactNode;
+  /** What came of the action done in place; `null` while it has nothing to say. Only with an `action`. */
+  result?: ReactNode | null;
 }) {
   const id = useId();
   const s = summary();
@@ -603,7 +625,14 @@ export function StatusSummary({
           <p className={s.about()}>{about}</p>
         </Stack>
       </Row>
-      {action !== undefined && <Row justify="start">{action}</Row>}
+      {action !== undefined && (
+        <Row wrap align="center" justify="start" gap="screen-row-gap">
+          <Row as="span" inline rigid>
+            {action}
+          </Row>
+          {result !== undefined && <Box role="status">{result}</Box>}
+        </Row>
+      )}
     </FramePanel>
   );
 }
@@ -626,10 +655,27 @@ const list = tv({
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
     // A fact is a few words around a date or an address: it breaks at its spaces alone, so that neither is cut.
     fact: "text-caption text-muted-text [word-break:keep-all]",
+    // A line about a stated fact is a sentence: it wraps between phrases, never inside a word of ja.
+    about: "text-caption text-muted-text [word-break:auto-phrase]",
+    // A row of several lines (a title over its facts): its title strong, as the menu's entries, and the rows further
+    // apart than its own lines are, so that each reads as one.
+    named: "font-label",
+    spaced: "py-screen-row-gap",
+    // What came of the reader's action on the row, in place of what it says of itself: in the text's color.
+    result: "text-caption text-text outline-hidden [word-break:auto-phrase]",
+    // What the reader may do with an account, at the middle of its avatar's height: level with the avatar and the
+    // name, however many lines are under them.
+    end: "min-h-avatar-post",
+    // An account's line under its name, set in to the name's start.
+    note: "ps-entry-name-start text-caption text-muted-text [word-break:auto-phrase]",
+    // Where it stands: the one line of the row in the text's color under its title, which the reader comes back for.
+    standing: "text-caption text-text [word-break:auto-phrase]",
     // A state at the row's end: words alone, muted, with no surface, which is a button's.
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
     empty: "text-muted-text [word-break:auto-phrase]",
+    // The name over a list of facts that stands apart from the ones before it.
+    lead: "font-label [word-break:auto-phrase]",
   },
   variants: {
     // What the row names does not work now: its title muted too, with no hue and no surface.
@@ -640,16 +686,32 @@ const list = tv({
 /**
  * What a section lists (the passkeys, the signed-in browsers, the filters), named by `label`: its rows. As the
  * `values` of a `SettingRow` (the languages a setting holds), it is the setting's own: set in from its start, its
- * rows close to each other.
+ * rows close to each other. With `id`, the list of a form (the words of a filter) takes the focus when what holds it
+ * gives it (no key leads to it), and `describedBy` names what is wrong with its rows as a whole, an error at
+ * `<id>-error` right under it, so that a refusal of them all is read with the list and comes into view
+ * (`focusRefusedField`).
  */
-export function SettingsList({ label, children }: { label: string; children: ReactNode }) {
+export function SettingsList({
+  label,
+  id,
+  describedBy,
+  children,
+}: {
+  label: string;
+  id?: string | undefined;
+  describedBy?: string | undefined;
+  children: ReactNode;
+}) {
   const s = list();
   const values = use(ValuesContext);
   return (
     <Stack
       as="ul"
       gap={values ? "screen-air" : undefined}
+      id={id}
+      tabIndex={id === undefined ? undefined : -1}
       aria-label={label}
+      aria-describedby={describedBy}
       className={values ? `${s.root()} ${s.values()}` : s.root()}
     >
       {children}
@@ -657,13 +719,64 @@ export function SettingsList({ label, children }: { label: string; children: Rea
   );
 }
 
+/** A line of a row's facts: one fact, or several joined by a middle dot, the line breaking between them first. */
+export type SettingsFactLine = string | readonly string[];
+
 /**
- * A row of a section's list: its glyph, a title over a caption or over the facts known of it, one a line (`facts`), a
- * state in a word or two at its end, in muted words with no surface (`state`), and what the reader may do with it (`end`: one or two buttons, a group named by the
- * row's title, so that one Remove is told from the next). With `href`, the whole row opens the screen under the
- * entry that holds it (changing the password, one filter), a chevron at its end in place of buttons. `inactive`, a
- * thing that does not work now (a revoked invite): its title in the muted color, so that the ones that work stand out
- * in a list of both.
+ * What came of the reader's action on a row (Unblocked), in place of what the row says of itself, its actions gone:
+ * `shown`, its words, and `spoken`, the sentence assistive technology reads in their place (You unblocked @kai.); its
+ * place takes the focus by `id`, where the button the reader pressed was.
+ */
+export type SettingsRowResult = { readonly id: string; readonly shown: string; readonly spoken: string };
+
+/**
+ * What came of an action of a row that leaves the row as it was (a download that started, or failed): its words, each
+ * a new element of the row's status (`n`, which counts what the row said), so that the same words are read again.
+ */
+export type SettingsRowSaid = { readonly text: string; readonly n: number };
+
+/** A row's result, a place the focus can be. */
+function RowResult({ result }: { result: SettingsRowResult }) {
+  return (
+    <span id={result.id} tabIndex={-1} className={list().result()}>
+      <span aria-hidden="true">{result.shown}</span>
+      <span className="sr-only">{result.spoken}</span>
+    </span>
+  );
+}
+
+/** A line of facts as one string: several joined, each a chunk that breaks inside only past the line's width. */
+function FactLine({ line }: { line: SettingsFactLine }) {
+  const s = list();
+  if (typeof line === "string") return <span className={s.fact()}>{line}</span>;
+  return (
+    <span className={s.fact()}>
+      {/* The dot ends the fact before it, so that a line that breaks there never starts with it. */}
+      {line.map((fact, i) => (
+        <Fragment key={fact}>
+          {i > 0 && " "}
+          <Box as="span" display="inline-block">
+            {i < line.length - 1 ? `${fact} ·` : fact}
+          </Box>
+        </Fragment>
+      ))}
+    </span>
+  );
+}
+
+/**
+ * A row of a section's list: its glyph, a title over a caption or over the facts known of it, a line each (`facts`:
+ * a fact, or several joined by a middle dot that the line breaks between first), then where it stands, the one line
+ * in the text's color (`standing`), a state in a word or two (`state`,
+ * muted words with no surface: at the row's end, or on the title's line where the row has facts, so that every
+ * row's facts keep one column), and what the reader may do with it (`end`: one or two buttons, a group named by the
+ * row's title, so that one Remove is told from the next). With `result`, what came of the reader's action stands in
+ * the caption's place and `end` is gone: the row keeps its place. With `said`, what came of an action that leaves the
+ * row as it was (a download) is its last line, in the text's color, and `end` stays: the place is a polite live
+ * region from the start (`null` while it has nothing to say), so that it is read where it happened, the focus staying
+ * on the button. With `href`, the whole row opens the screen under the entry that holds it (changing the password,
+ * one filter), a chevron at its end in place of buttons. `inactive`, a thing that does not work now (a revoked
+ * invite): its title in the muted color, so that the ones that work stand out in a list of both.
  */
 export function SettingsListRow({
   icon,
@@ -671,9 +784,12 @@ export function SettingsListRow({
   inactive = false,
   caption,
   facts,
+  standing,
   state,
   href,
   end,
+  result,
+  said,
 }: {
   icon?: IconName | undefined;
   title: string;
@@ -681,17 +797,38 @@ export function SettingsListRow({
   inactive?: boolean | undefined;
   caption?: string | undefined;
   /**
-   * What is known of it, each fact short and on a line of its own (which browser this is, when it signed in, when it
-   * was last used): a line too long for the row breaks between its words, never inside one, in ja too.
+   * What is known of it, a line each (which browser this is, when it signed in, when it was last used): a line too
+   * long for the row breaks between its facts, then between its words, never inside one, in ja too.
    */
-  facts?: readonly string[] | undefined;
+  facts?: readonly SettingsFactLine[] | undefined;
+  /**
+   * Where it stands, a line after its facts in the text's own color: what the reader comes back to the row for, and
+   * what changes while the rest stays (an appeal that waits, then what was decided of it).
+   */
+  standing?: string | undefined;
   state?: string | undefined;
   href?: string | undefined;
   end?: ReactNode;
+  result?: SettingsRowResult | undefined;
+  /** What came of an action that leaves the row as it was; `null` while it has nothing to say. */
+  said?: SettingsRowSaid | null | undefined;
 }) {
   const s = list({ inactive });
   const titleId = useId();
   const value = use(ValuesContext);
+  const named = (
+    <bdi id={titleId} className={facts === undefined ? s.title() : `${s.title()} ${s.named()}`}>
+      {title}
+    </bdi>
+  );
+  const stated = state !== undefined && (
+    <>
+      {" "}
+      <Box as="span" words className={s.state()}>
+        {state}
+      </Box>
+    </>
+  );
   // Its parts are a space apart in what assistive technology reads of the row, which no box of it shows.
   const parts = (
     <>
@@ -701,36 +838,55 @@ export function SettingsListRow({
         </Row>
       )}
       <Stack as="span" grow>
-        <bdi id={titleId} className={s.title()}>
-          {title}
-        </bdi>
-        {caption !== undefined && (
+        {facts === undefined || state === undefined ? (
+          named
+        ) : (
+          <Row as="span" wrap align="baseline" justify="between" gap="screen-tabs-gap">
+            {named}
+            {stated}
+          </Row>
+        )}
+        {result !== undefined ? (
           <>
             {" "}
-            <span className={s.caption()}>{caption}</span>
+            <RowResult result={result} />
           </>
+        ) : (
+          caption !== undefined && (
+            <>
+              {" "}
+              <span className={s.caption()}>{caption}</span>
+            </>
+          )
         )}
-        {facts?.map((fact) => (
-          <Fragment key={fact}>
+        {facts?.map((line) => (
+          <Fragment key={typeof line === "string" ? line : line.join(" · ")}>
             {" "}
-            <span className={s.fact()}>{fact}</span>
+            <FactLine line={line} />
           </Fragment>
         ))}
+        {standing !== undefined && (
+          <>
+            {" "}
+            <span className={s.standing()}>{standing}</span>
+          </>
+        )}
+        {said !== undefined && (
+          <>
+            {" "}
+            <span role="status" className={s.result()}>
+              {said !== null && <span key={said.n}>{said.text}</span>}
+            </span>
+          </>
+        )}
       </Stack>
-      {state !== undefined && (
-        <>
-          {" "}
-          <Box as="span" words className={s.state()}>
-            {state}
-          </Box>
-        </>
-      )}
+      {facts === undefined && stated}
     </>
   );
   if (href !== undefined)
     return (
       <Stack as="li">
-        <LinkRow as={<Link href={href} className={s.link()} />}>
+        <LinkRow as={<Link href={href} className={facts === undefined ? s.link() : `${s.link()} ${s.spaced()}`} />}>
           {parts}
           <Row as="span" inline rigid className={s.chevron()}>
             <Icon name="onward" place="action" />
@@ -739,14 +895,105 @@ export function SettingsListRow({
       </Stack>
     );
   return (
-    <Row as="li" align="center" gap="screen-row-gap" className={value ? s.value() : s.row()}>
+    <Row
+      as="li"
+      align="center"
+      gap="screen-row-gap"
+      className={value ? s.value() : facts === undefined ? s.row() : `${s.row()} ${s.spaced()}`}
+    >
       {parts}
-      {end !== undefined && end !== null && end !== false && (
+      {result === undefined && end !== undefined && end !== null && end !== false && (
         <Row as="span" inline rigid align="center" gap="screen-tabs-gap" role="group" aria-labelledby={titleId}>
           {end}
         </Row>
       )}
     </Row>
+  );
+}
+
+/**
+ * An account's row of a section's list: the account as another part draws it (`account`: its avatar, its name and
+ * handle, its profile's link), what the reader may do with it at the end, level with the name (`end`, a group named
+ * `label`), and the line under the name (`note`: what a mute covers), set in to the name's start. Where the end
+ * cannot share the name's line it stands right under the account and its line, closer than the next account is. With `result`, what came
+ * of the reader's action stands in the note's place and `end` is gone: the row keeps its place.
+ */
+export function SettingsAccountItem({
+  account,
+  label,
+  note,
+  end,
+  result,
+}: {
+  account: ReactNode;
+  /** The account's name for assistive technology, which names the group of `end`. */
+  label: string;
+  note?: ReactNode;
+  end?: ReactNode;
+  result?: SettingsRowResult | undefined;
+}) {
+  const s = list();
+  return (
+    // Wrapped, the end stands right under the account (its own box a little taller than the button), the next account
+    // a row's air and more away.
+    <Row as="li" wrap align="start" gapX="form-page-gap" gapY="0" className={`${s.row()} ${s.spaced()}`}>
+      <Stack grow="names" gap="hair">
+        {account}
+        {result !== undefined ? (
+          <p className={s.note()}>
+            <RowResult result={result} />
+          </p>
+        ) : (
+          note !== undefined && note !== null && note !== false && <div className={s.note()}>{note}</div>
+        )}
+      </Stack>
+      {result === undefined && end !== undefined && end !== null && end !== false && (
+        <Row
+          as="span"
+          inline
+          rigid
+          push="end"
+          align="center"
+          gap="screen-tabs-gap"
+          role="group"
+          aria-label={label}
+          className={s.end()}
+        >
+          {end}
+        </Row>
+      )}
+    </Row>
+  );
+}
+
+/**
+ * A row of a section's list whose value is a field (a word of a filter): the field (`field`, its label for assistive
+ * technology alone) and what goes with it (`children`: a checkbox, then Remove) on one line in a wide frame; in a
+ * narrow one the field fills its line, and they stand under it, the first at the start and the last at the end.
+ */
+export function SettingsFieldRow({ field, children }: { field: ReactNode; children: ReactNode }) {
+  return (
+    <li className={list().row()}>
+      <FieldLineFrame field={field}>{children}</FieldLineFrame>
+    </li>
+  );
+}
+
+/**
+ * The frame of a field and what goes with it, in a frame that knows its own width: on one line from 32 rem, the field
+ * taking the room left; under it, the field filling its line, and what goes with it on the next, the first at its
+ * start and the last at its end.
+ */
+function FieldLineFrame({ field, children }: { field: ReactNode; children: ReactNode }) {
+  return (
+    <div className="@container">
+      <div className="flex flex-wrap items-center gap-x-screen-row-gap @min-[32rem]:flex-nowrap">
+        <div className="min-w-0 grow basis-full @min-[32rem]:basis-0">{field}</div>
+        <div className="flex grow items-center justify-between gap-x-screen-row-gap @min-[32rem]:grow-0">
+          {children}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -770,29 +1017,48 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
 /**
  * What a section states and the reader cannot press (what an app was granted, where it comes from), named by `label`:
  * each fact a sentence over the muted lines about it, where it has some, the facts one under another at one distance
- * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall.
+ * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall. `shown`:
+ * its name stands over it, in a label's weight, for facts told from the ones before them by what they are (what an
+ * import removes, after what it adds).
  */
 export function SettingsFacts({
   label,
+  shown = false,
   items,
 }: {
   label: string;
+  shown?: boolean | undefined;
   items: readonly { text: string; about?: readonly string[] | undefined }[];
 }) {
   const s = list();
-  return (
-    <Stack as="ul" gap="screen-row-gap" aria-label={label} className={s.root()}>
+  const id = useId();
+  const facts = (
+    <Stack
+      as="ul"
+      gap="screen-row-gap"
+      {...(shown ? { "aria-labelledby": id } : { "aria-label": label })}
+      className={s.root()}
+    >
       {items.map((item) => (
         <Stack as="li" key={item.text}>
           <bdi className={s.title()}>{item.text}</bdi>
           {item.about?.map((line) => (
             <Fragment key={line}>
               {" "}
-              <span className={s.fact()}>{line}</span>
+              <span className={s.about()}>{line}</span>
             </Fragment>
           ))}
         </Stack>
       ))}
+    </Stack>
+  );
+  if (!shown) return facts;
+  return (
+    <Stack gap="screen-air">
+      <p id={id} className={s.lead()}>
+        {label}
+      </p>
+      {facts}
     </Stack>
   );
 }
@@ -953,20 +1219,52 @@ export function QrFrame({ label, size, path }: { label: string; size: number; pa
   );
 }
 
+const bar = tv({
+  slots: {
+    // What sending does, read toward the button it stands before: its lines end where the button starts.
+    about: "text-end [word-break:auto-phrase]",
+  },
+});
+
 /**
  * The submit bar of a form saved as a whole: its button (`children`, the screen's primary action) at the end, and
  * what came of sending right before it, in the same place every time (`result`: a `SaveState` once saved, a
  * `FormAlert` when refused). It ends the screen and stays at the bottom of the viewport while the form is longer,
  * the page keeping what takes the focus clear of it. The result's place is a polite live region from the start, so
  * that assistive technology hears what came of sending (a `FormAlert` at once, as an alert).
+ *
+ * `about` is what sending does as the form stands, where that cannot be undone (how many posts a save deletes): one
+ * short sentence beside the button, on its line at every width (a sentence too long for the room wraps beside the
+ * button, which never drops under it), so that the reader decides with it in view. It comes and goes as the form
+ * changes, often between the press of the button and its release (a field that tells its value as it loses the
+ * focus): the button keeps its element and its place, at the foot of the bar, which grows upward. The button names
+ * the sentence as its description (the `id` given here, in the button's `aria-describedby`); it is no live region,
+ * since what it says is read where the form counts it.
  */
-export function SubmitBar({ result, children }: { result?: ReactNode; children: ReactNode }) {
+export function SubmitBar({
+  result,
+  about,
+  children,
+}: {
+  result?: ReactNode;
+  about?: { readonly id: string; readonly text: string } | undefined;
+  children: ReactNode;
+}) {
+  const said = result !== undefined && result !== null && result !== false;
   return (
     <FrameFoot>
-      <Row wrap align="center" justify="end" gap="screen-row-gap">
+      {/* With nothing to say, the result's place is no line of its own over a sentence and a button that fill the bar. */}
+      <Row wrap align="center" justify="end" gap="screen-row-gap" gapY={said ? undefined : "0"}>
         <Box role="status">{result}</Box>
-        <Row as="span" inline rigid>
-          {children}
+        <Row align="center" justify="end" gap="screen-row-gap">
+          {about !== undefined && (
+            <p id={about.id} className={bar().about()}>
+              {about.text}
+            </p>
+          )}
+          <Row as="span" inline rigid self="end">
+            {children}
+          </Row>
         </Row>
       </Row>
     </FrameFoot>

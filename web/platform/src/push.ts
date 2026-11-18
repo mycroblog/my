@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Web Push, the notifications' permission and the app's badge (FR-206, ADR-0028 §17): whether this browser can receive
-// pushes (a Service Worker and the Push API), what the reader said to the site's notifications, asking them, and the
-// browser's push subscription, made with the server's application key through the app's Service Worker. The app's
-// badge shows a count where the platform has one (the Badging API), and nothing elsewhere. A browser that has none of
-// them answers so, and does nothing.
+// pushes (a Service Worker and the Push API), what the reader said to the site's notifications, asking them, following
+// what they said as it changes, and the browser's push subscription, made with the server's application key through
+// the app's Service Worker. The app's badge shows a count where the platform has one (the Badging API), and nothing
+// elsewhere. A browser that has none of them answers so, and does nothing.
 
 import { skipWaitingMessage } from "./sw-protocol";
 
@@ -24,11 +24,31 @@ export function supportsPush(): boolean {
   );
 }
 
+/**
+ * Whether this browser would receive Web Push once the site is installed: Safari on iOS and iPadOS has the Push API
+ * only in a site added to the Home Screen and opened from there, so a tab of it has none.
+ */
+export function pushNeedsInstall(): boolean {
+  if (supportsPush()) return false;
+  const browser = globalThis as unknown as {
+    navigator?: { platform?: string; maxTouchPoints?: number; standalone?: boolean };
+  };
+  const device = browser.navigator;
+  if (device === undefined) return false;
+  const platform = device.platform ?? "";
+  // An iPad says it is a Mac, with a touch screen that no Mac has.
+  const apple = /iphone|ipad|ipod/i.test(platform) || (/mac/i.test(platform) && (device.maxTouchPoints ?? 0) > 1);
+  return apple && device.standalone !== true;
+}
+
 /** What the reader said to this site's notifications. */
 export function notificationPermission(): NotificationPermissionState {
   if (typeof Notification === "undefined") return "unsupported";
   return Notification.permission;
 }
+
+/** Who follows what the reader said to the site's notifications (`watchNotificationPermission`). */
+const watchers = new Set<() => void>();
 
 /**
  * Asks the reader whether this site may show notifications, as a press of theirs asks (never on its own); what they
@@ -40,7 +60,42 @@ export async function askNotificationPermission(): Promise<NotificationPermissio
     return await Notification.requestPermission();
   } catch {
     return Notification.permission;
+  } finally {
+    // Whatever the reader answered, what they said to the site's notifications is read again by who follows it.
+    for (const changed of [...watchers]) changed();
   }
+}
+
+/**
+ * Calls `changed` whenever what the reader said to this site's notifications (`notificationPermission`) may have
+ * changed, until the function it returns is called: once a question of the app's was answered
+ * (`askNotificationPermission`), and, in a browser that tells of it (the Permissions API's `change` event), when the
+ * reader allows or blocks the site in the browser's own settings while the page is open. A browser that does not
+ * tell is followed by the app's questions alone.
+ */
+export function watchNotificationPermission(changed: () => void): () => void {
+  watchers.add(changed);
+  // The status is kept for as long as it is followed: a browser stops telling of one nothing holds.
+  let status: PermissionStatus | undefined;
+  let ended = false;
+  const permissions = typeof navigator === "undefined" ? undefined : (navigator.permissions as Permissions | undefined);
+  const asked =
+    permissions === undefined
+      ? undefined
+      : // A browser that does not know notifications by this name refuses, by a rejection or by throwing.
+        Promise.resolve()
+          .then(() => permissions.query({ name: "notifications" }))
+          .catch(() => undefined);
+  void asked?.then((answered) => {
+    if (ended || answered === undefined) return;
+    status = answered;
+    status.addEventListener("change", changed);
+  });
+  return () => {
+    ended = true;
+    watchers.delete(changed);
+    status?.removeEventListener("change", changed);
+  };
 }
 
 /**
@@ -97,9 +152,13 @@ function madeWith(subscription: PushSubscription, key: string): boolean {
 /**
  * Subscribes this browser to the pushes of the server whose application key is `key` (base64url), through the app's
  * Service Worker, and returns the subscription to register with the server. A subscription the browser holds with
- * another key (the server's changed) is ended first, since a browser keeps one. It rejects when the browser refuses.
+ * another key (the server's changed) is ended first, since a browser keeps one. It rejects when the browser refuses,
+ * and at once when the page has no Service Worker registered (its registration failed, or the build has none): the
+ * browser's `ready` waits for a worker without end, and would never settle then.
  */
 export async function subscribePush(key: string): Promise<PushSubscriptionData> {
+  if ((await navigator.serviceWorker.getRegistration()) === undefined)
+    throw new Error("platform: no Service Worker is registered, so there is nothing to subscribe through");
   const registration = await navigator.serviceWorker.ready;
   const held = await registration.pushManager.getSubscription();
   if (held !== null && !madeWith(held, key)) await held.unsubscribe();

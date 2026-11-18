@@ -60,7 +60,7 @@
     "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
   },
   "settings.entry.filters.hint": {
-    "defaultMessage": "投稿を隠す言葉やフレーズ",
+    "defaultMessage": "投稿を畳むか隠す言葉やフレーズ",
     "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
   },
   "settings.entry.security": {
@@ -286,6 +286,1966 @@
   "settings.display.auto_insert.about": {
     "defaultMessage": "オフにすると、タイムラインの上の「新しい投稿」のボタンを押すまで表示しません。",
     "description": "The line under Show new posts as they arrive: what happens when the switch is off. The quoted words are those of the button over a timeline (timeline.new_posts: 3 new posts)."
+  },
+  "settings.profile.section.you": {
+    "defaultMessage": "あなたのプロフィール",
+    "description": "A section heading of the Profile page of the settings, over the reader's own avatar, name and handle as others see them with the button Edit profile, the hashtags they feature, and the switch that marks the account as a bot."
+  },
+  "settings.profile.section.badges": {
+    "defaultMessage": "バッジ",
+    "description": "A section heading of the Profile page of the settings, over one switch for each badge the reader may show on their profile. The section is absent for a reader with no badge."
+  },
+  "settings.profile.section.badges.about": {
+    "defaultMessage": "このサーバーから付与されたバッジです。オンにしたバッジは、プロフィールのハンドルの横に表示されます。",
+    "description": "The line under the Badges heading of the Profile page of the settings. A badge is a short name the server's administrators attach to some accounts (Moderator, Supporter); each is hidden until its owner shows it."
+  },
+  "settings.profile.section.follows": {
+    "defaultMessage": "フォローとフォロワー",
+    "description": "A section heading of the Profile page of the settings, over the switch that makes follows need the reader's approval and the choice of who sees the lists of whom they follow and who follows them."
+  },
+  "settings.profile.section.discovery": {
+    "defaultMessage": "アカウントの見つかり方",
+    "description": "A section heading of the Profile page of the settings, over the switches that decide where the account and its public posts appear: suggestions and the search by name, search engines and this server's search of posts, AI, and the Atom feed."
+  },
+  "settings.profile.edit": {
+    "defaultMessage": "プロフィールを編集",
+    "description": "The button that opens the form where the reader changes their profile (pictures, display name, bio, fields): beside the reader's name on the Profile page of the settings, and at the top of the reader's own profile. Also the title of that form's page."
+  },
+  "settings.profile.hashtags": {
+    "defaultMessage": "注目のハッシュタグ",
+    "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
+  },
+  "settings.profile.hashtags.about": {
+    "defaultMessage": "{max, number} 個まで追加できます。プロフィールに表示されます。",
+    "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
+  },
+  "settings.profile.hashtags.placeholder": {
+    "defaultMessage": "ハッシュタグを追加",
+    "description": "The placeholder of the field of featured hashtags while it takes another one; the same words as the hashtags of an article (compose.article.tags.placeholder)."
+  },
+  "settings.profile.hashtags.full": {
+    "defaultMessage": "これ以上は追加できません",
+    "description": "The placeholder of the field of featured hashtags once it holds the most an account may feature, so that it takes no more."
+  },
+  "settings.profile.hashtags.remove": {
+    "defaultMessage": "#{tag} を外す",
+    "description": "The name of the button on a featured hashtag that removes it from the reader's profile, for assistive technology. tag is the hashtag without its #."
+  },
+  "settings.profile.bot": {
+    "defaultMessage": "ボットのアカウントとして表示する",
+    "description": "The label of a switch on the Profile page of the settings: on, the account says it is automated, and the profile shows the mark Bot (profile.bot) beside its name."
+  },
+  "settings.profile.bot.about": {
+    "defaultMessage": "プログラムが投稿するアカウント向けです。名前の横に「ボット」と表示されます。",
+    "description": "The line under Mark this account as a bot. The quoted word is the mark on the profile (profile.bot)."
+  },
+  "settings.profile.badge": {
+    "defaultMessage": "「{label}」を表示する",
+    "description": "The label of the switch that shows one badge on the reader's profile, or hides it. label is the name on the badge, written by the server's administrators (Moderator)."
+  },
+  "settings.profile.locked": {
+    "defaultMessage": "フォローを承認制にする",
+    "description": "The label of a switch on the Profile page of the settings: on, someone who wants to follow the reader sends a request, which the reader approves or declines; the profile then says Follow requests need approval (profile.locked)."
+  },
+  "settings.profile.locked.about": {
+    "defaultMessage": "フォローはリクエストとして届き、それぞれ承認するか断ります。オフにしても、すでに届いているリクエストは承認されません。",
+    "description": "The line under Require approval to follow you: what the switch does, and that the requests waiting when it is turned off stay until the reader answers them."
+  },
+  "settings.profile.follows_visibility": {
+    "defaultMessage": "フォローとフォロワーの一覧を見られる人",
+    "description": "The label of the choice of who may open the lists of the accounts the reader follows and of their followers, on the Profile page of the settings. Its options are settings.profile.follows_visibility.option."
+  },
+  "settings.profile.follows_visibility.about": {
+    "defaultMessage": "人数は誰でも見られます。",
+    "description": "The line under Who can see your following and followers lists: how many accounts the reader follows and how many follow them shows on the profile whatever is chosen."
+  },
+  "settings.profile.follows_visibility.option": {
+    "defaultMessage": "{who, select, public {誰でも} followers {フォロワー} other {自分だけ}}",
+    "description": "An option of Who can see your following and followers lists; the composer's words for the same audiences (compose.audience.everyone, compose.audience.followers, compose.audience.nobody). who is public, followers or private."
+  },
+  "settings.profile.discoverable": {
+    "defaultMessage": "おすすめと名前の検索に表示する",
+    "description": "The label of a switch on the Profile page of the settings: on, the account is suggested to other people and the search of accounts finds it by a part of its name."
+  },
+  "settings.profile.discoverable.about": {
+    "defaultMessage": "オフにすると、ユーザー名が完全に一致したときだけ検索で見つかります。",
+    "description": "The line under Appear in suggestions and in search by name: what happens when the switch is off."
+  },
+  "settings.profile.indexable": {
+    "defaultMessage": "プロフィールと公開投稿を検索に載せる",
+    "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
+  },
+  "settings.profile.indexable.about": {
+    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されることがあります。} engines {検索エンジンに表示されることがあります。} elsewhere {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。この選択はほかのサーバーにも送られ、そのサーバーの検索で使われることがあります。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。このサーバーの投稿の検索に載せるかどうかは、この選択で決まります。}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, server on one that tells search engines not to list any account and has a search of posts, where the choice applies to that search, and elsewhere on one that tells search engines not to list any account and has no search of posts: the choice then decides nothing on this server, but other servers receive it with the profile and may use it for their own search."
+  },
+  "settings.profile.ai_opt_out": {
+    "defaultMessage": "AI の学習と利用を拒否する",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's pages on this server state that AI may neither train on them nor use them (in AI search, assistants and agents)."
+  },
+  "settings.profile.ai_opt_out.about": {
+    "defaultMessage": "{server, select, deny_training {このサーバーは、すべてのアカウントで AI の学習を拒否しています。オンにすると、このサーバーのあなたのページは、AI の検索やアシスタントでの利用も拒否します。ほかのサーバーとメディアのファイルには反映されません。} other {オンにすると、このサーバーのあなたのページが、AI のクローラーに学習と利用の拒否を伝えます。ほかのサーバーとメディアのファイルには反映されません。}}",
+    "description": "The line under Refuse AI training and use: what the switch does and where it stops (the copies of the reader's posts on other servers, and the media files, do not carry the statement). server is what the server itself states for every account: deny_training when it already refuses training and lets AI use the pages, anything else when it allows both."
+  },
+  "settings.profile.ai_opt_out.overridden": {
+    "defaultMessage": "このサーバーは、すべてのアカウントで AI の学習と利用を拒否しているため、この選択は反映されません。",
+    "description": "The line under Refuse AI training and use while the switch is disabled and shows on: the server's administrators refuse both for every account, so both are refused whatever the reader chose."
+  },
+  "settings.profile.feed": {
+    "defaultMessage": "公開投稿の Atom フィードを出す",
+    "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
+  },
+  "settings.profile.feed.about": {
+    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; once the reader sets it, it keeps their choice."
+  },
+  "settings.profile.edit.section.pictures": {
+    "defaultMessage": "画像",
+    "description": "A section heading of the Edit profile page of the settings, over the header image and the avatar."
+  },
+  "settings.profile.edit.section.text": {
+    "defaultMessage": "名前と自己紹介",
+    "description": "A section heading of the Edit profile page of the settings, over the display name and the bio."
+  },
+  "settings.profile.header": {
+    "defaultMessage": "ヘッダー画像",
+    "description": "The label of the picture across the top of the reader's profile, on the Edit profile page of the settings."
+  },
+  "settings.profile.avatar": {
+    "defaultMessage": "アバター",
+    "description": "The label of the reader's avatar, the round picture beside their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.picture.choose": {
+    "defaultMessage": "画像を選ぶ",
+    "description": "The button of the header image and of the avatar that opens the device's file picker, while there is no picture."
+  },
+  "settings.profile.picture.replace": {
+    "defaultMessage": "画像を変更",
+    "description": "The button of the header image and of the avatar that opens the device's file picker to choose another picture in place of the one shown."
+  },
+  "settings.profile.picture.remove": {
+    "defaultMessage": "外す",
+    "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
+  },
+  "settings.profile.picture.failed": {
+    "defaultMessage": "{reason, select, processing {サーバーがこの画像を処理できませんでした。別の画像を選んでください。} other {この画像をアップロードできませんでした。もう一度保存するか、別の画像を選んでください。}}",
+    "description": "Under the avatar or the header image on the Edit profile page when saving failed because of that picture and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
+  },
+  "settings.profile.name": {
+    "defaultMessage": "表示名",
+    "description": "The label of the field of the name the reader's account shows, on the Edit profile page of the settings."
+  },
+  "settings.profile.name.over": {
+    "defaultMessage": "表示名は {max, number} 文字以内にしてください。",
+    "description": "Under the display name when it is longer than the limit."
+  },
+  "settings.profile.name.rule": {
+    "defaultMessage": "表示名は 1 行で {max, number} 文字以内にしてください。タブなどの制御文字は使えません。",
+    "description": "Under the display name, on the Edit profile page and on the welcome step of a new account, when the server refused it: the rule a display name follows, since the server says only that the value is not valid. max is 30."
+  },
+  "settings.profile.note": {
+    "defaultMessage": "自己紹介",
+    "description": "The label of the field of the text about the reader that their profile shows under their name, on the Edit profile page of the settings."
+  },
+  "settings.profile.note.over": {
+    "defaultMessage": "自己紹介は {max, number} 文字以内にしてください。",
+    "description": "Under the bio when it is longer than the limit."
+  },
+  "settings.profile.count.left": {
+    "defaultMessage": "{count, plural, other {残り # 文字}}",
+    "description": "What the count beside the display name or the bio says to a screen reader near the field's limit: how many characters are left."
+  },
+  "settings.profile.count.over": {
+    "defaultMessage": "{count, plural, other {# 文字超過}}",
+    "description": "What the count beside the display name or the bio says to a screen reader past the field's limit: by how many characters it is over."
+  },
+  "settings.profile.fields": {
+    "defaultMessage": "補足情報",
+    "description": "A section heading of the Edit profile page of the settings, and the name of the list under it: the short pairs of a label and its content that a profile shows under the bio (Website: https://example.org)."
+  },
+  "settings.profile.fields.about": {
+    "defaultMessage": "ラベルと内容の組を {max, number} 個まで追加できます (Web サイト、呼び方など)。プロフィールに表示され、URL はリンクになります。",
+    "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
+  },
+  "settings.profile.fields.empty": {
+    "defaultMessage": "補足情報はまだありません。追加すると、Web サイトや呼び方などをプロフィールに表示できます。",
+    "description": "In the place of the list of fields on the Edit profile page while the profile has none, over the button Add a field."
+  },
+  "settings.profile.fields.add": {
+    "defaultMessage": "補足情報を追加",
+    "description": "The button that adds an empty field (a label and its content) to the list on the Edit profile page."
+  },
+  "settings.profile.fields.name": {
+    "defaultMessage": "ラベル",
+    "description": "The name and placeholder of the first box of a field on the Edit profile page: the short name of the field (Website)."
+  },
+  "settings.profile.fields.value": {
+    "defaultMessage": "内容",
+    "description": "The name and placeholder of the second box of a field on the Edit profile page: what the profile shows under the label (https://example.org)."
+  },
+  "settings.profile.fields.legend": {
+    "defaultMessage": "補足情報 {n, number}",
+    "description": "The name of one field of the list on the Edit profile page, for assistive technology, so that its two boxes are told from those of the next field. n is its place in the list, from 1."
+  },
+  "settings.profile.fields.remove": {
+    "defaultMessage": "補足情報 {n, number} を外す",
+    "description": "The name of the button that removes one field from the list on the Edit profile page, for assistive technology. n is the field's place in the list, from 1."
+  },
+  "settings.profile.save": {
+    "defaultMessage": "保存",
+    "description": "The button at the bottom of the Edit profile page that saves every change of the form at once."
+  },
+  "settings.profile.save.failed": {
+    "defaultMessage": "プロフィールを保存できませんでした。もう一度試してください。",
+    "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
+  },
+  "settings.profile.save.picture_failed": {
+    "defaultMessage": "画像を使えなかったため、プロフィールは保存されませんでした。画像の下の説明を確認してください。",
+    "description": "Beside the Save button of the Edit profile page when the avatar or the header image the reader picked could not be uploaded or was refused; what is wrong stands under that picture (settings.profile.picture.failed, or the server's own words)."
+  },
+  "settings.profile.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves the Edit profile page with changes they have not saved."
+  },
+  "settings.profile.leave.text": {
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
+    "description": "The text of the confirmation that asks whether to leave the Edit profile page without saving."
+  },
+  "settings.profile.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves the Edit profile page and drops the changes not saved."
+  },
+  "settings.profile.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on the Edit profile page, with the changes as the reader left them."
+  },
+  "settings.notifications.section.device": {
+    "defaultMessage": "この端末",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), over what is kept on the device the reader is using and not on their account: whether it gets push notifications, and whether it plays the notification sound."
+  },
+  "settings.notifications.section.ordinary": {
+    "defaultMessage": "ほかの人から",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification that come from what other people do (mentions, follows, boosts)."
+  },
+  "settings.notifications.section.ordinary.about": {
+    "defaultMessage": "通知の種類ごとに、届け方を選びます。「アプリ内」をオフにした種類の通知は作られないので、ほかの方法でも届きません。",
+    "description": "The line under the heading From other people of the notification settings page (settings.entry.notifications), over the first table of kinds by channel. In the app is the column settings.notifications.channel.in_app."
+  },
+  "settings.notifications.section.moderator": {
+    "defaultMessage": "モデレーター向け",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification sent to the server's moderators and administrators (a new report, a sign-up to approve). Shown only to them."
+  },
+  "settings.notifications.section.instance": {
+    "defaultMessage": "このサーバーから",
+    "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification the server itself sends the reader (the moderators' notices, announcements, its closure)."
+  },
+  "settings.notifications.push": {
+    "defaultMessage": "プッシュ通知",
+    "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns Web Push on or off for the device the reader is using. The line under it is notifications.push_offer."
+  },
+  "settings.notifications.push.no_server": {
+    "defaultMessage": "このサーバーはプッシュ通知を送りません。",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on: the server is not set up to send Web Push."
+  },
+  "settings.notifications.push.no_browser": {
+    "defaultMessage": "このブラウザはプッシュ通知を受け取れません。",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on: the browser has no Web Push."
+  },
+  "settings.notifications.push.install": {
+    "defaultMessage": "iPhone と iPad では、このサイトをホーム画面に追加して、そこから開くとプッシュ通知を受け取れます。",
+    "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on in Safari on an iPhone or iPad: Web Push works there only once the site is added to the Home Screen and opened from it. Home Screen is Apple's name."
+  },
+  "settings.notifications.push.closed": {
+    "defaultMessage": "ブラウザの確認に答えないまま閉じられました。もう一度確認するには、オンにしてください。",
+    "description": "Under the Push notifications switch of the notification settings page (settings.entry.notifications), after the reader turned it on and closed the browser's permission question without choosing: the switch went back to off. The same case as notifications.push_closed, for a switch."
+  },
+  "settings.notifications.sound": {
+    "defaultMessage": "通知音",
+    "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns the sound of new notifications on or off for the device the reader is using. Off until the reader turns it on."
+  },
+  "settings.notifications.sound.about": {
+    "defaultMessage": "アプリを開いている間に通知が届くと、この端末で音を鳴らします。オンの間、鳴らす種類を下の「音」の列で選べます。",
+    "description": "The line under the Notification sound switch of the notification settings page (settings.entry.notifications). The Sound column (settings.notifications.channel.sound) of the tables below it appears once the switch is on, with every kind off."
+  },
+  "settings.notifications.sound.try": {
+    "defaultMessage": "音を鳴らしてみる",
+    "description": "The button under the Notification sound switch of the notification settings page (settings.entry.notifications): it plays the notification sound once, so that the reader hears what it is."
+  },
+  "settings.notifications.sound.blocked": {
+    "defaultMessage": "ブラウザが音を再生しませんでした。ブラウザの設定でこのサイトの音の再生を許可してから、もう一度試してください。",
+    "description": "Under the Notification sound switch of the notification settings page (settings.entry.notifications), after the reader turned it on or pressed Play the sound and the browser played nothing."
+  },
+  "settings.notifications.email_stopped": {
+    "defaultMessage": "あなたのアドレスへのメールを止めています",
+    "description": "The heading of the notice at the top of the notification settings page (settings.entry.notifications) while the server no longer sends email to the reader's address. A sentence without a full stop."
+  },
+  "settings.notifications.email_stopped.about": {
+    "defaultMessage": "{kind, select, hard_bounce {あなたのアドレスへのメールが届かなかったため、アドレスをもう一度確認するまで、通知を含むメールを送りません。} other {このサーバーからのメールが迷惑メールとして報告されたため、通知のメールを送っていません。もう一度受け取るには、このサーバーのモデレーターに問い合わせてください。}}",
+    "description": "Under settings.notifications.email_stopped: why the server stopped, and after a complaint the only way back. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again, with the button under this line) or complaint (the recipient marked an email as spam; only notification emails stop, until a moderator lifts it)."
+  },
+  "settings.notifications.email_stopped.verify": {
+    "defaultMessage": "確認のメールを送る",
+    "description": "The button of the notice settings.notifications.email_stopped after an email to the reader's address bounced: sends a new verification email, whose link shows the address works and lifts the stop."
+  },
+  "settings.notifications.email_stopped.sent": {
+    "defaultMessage": "送りました。メールのリンクを開くと、またメールが届くようになります。",
+    "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
+  },
+  "settings.notifications.email_stopped.verified": {
+    "defaultMessage": "アドレスはすでに確認されています。このアドレスへのメールは再開されました。",
+    "description": "On the notification settings page, in the place of the notice settings.notifications.email_stopped once the reader pressed Send the verification email (settings.notifications.email_stopped.verify) and the server answered that the address is verified already: no email was sent, the notice is gone, and the server sends email to the address again. A status that takes the focus the button left."
+  },
+  "settings.notifications.email_stopped.wait": {
+    "defaultMessage": "{minutes, plural, =0 {確認のメールを求めた回数が多すぎます。しばらくしてからもう一度試してください。} other {確認のメールを求めた回数が多すぎます。# 分後にもう一度試してください。}}",
+    "description": "Beside the button Send the verification email on the notification settings page when the server refused to send another one so soon; the same sentence as on the sign-up status page (server:auth.status.resend_rate_limited). minutes is how long the server asks the reader to wait, rounded up to whole minutes, or 0 when the server did not say."
+  },
+  "settings.notifications.email_stopped.not_sent": {
+    "defaultMessage": "メールを送れませんでした。もう一度試してください。",
+    "description": "Beside settings.notifications.email_stopped.verify when the server did not answer; the button beside it tries again."
+  },
+  "settings.notifications.column.kind": {
+    "defaultMessage": "通知",
+    "description": "The header of the first column of a table of the notification settings page (settings.entry.notifications), the column of the kinds' names, for assistive technology only."
+  },
+  "settings.notifications.channel.in_app": {
+    "defaultMessage": "アプリ内",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification shows in the app's notifications. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.push": {
+    "defaultMessage": "プッシュ",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification is sent to this device as a push notification. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.email": {
+    "defaultMessage": "メール",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification is sent by email. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.channel.sound": {
+    "defaultMessage": "音",
+    "description": "A column header of the tables of the notification settings page (settings.entry.notifications), and the label under a checkbox on a phone: the notification plays the notification sound on this device while the app is open. Keep it very short: it stands in a column 4.5rem wide."
+  },
+  "settings.notifications.all": {
+    "defaultMessage": "すべて",
+    "description": "The name of the first row of a table of the notification settings page (settings.entry.notifications): each of its checkboxes turns one channel on or off for every kind of the table at once."
+  },
+  "settings.notifications.cell": {
+    "defaultMessage": "{kind}: {channel}",
+    "description": "The name of one checkbox of a table of the notification settings page (settings.entry.notifications), in the message that a change was not saved (settings.unsaved): kind is the row's name (settings.notifications.kind.*, or settings.notifications.all), channel the column's (settings.notifications.channel.*)."
+  },
+  "settings.notifications.reason.in_app_off": {
+    "defaultMessage": "「アプリ内」がオフなので、ほかの方法でも届きません。",
+    "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications) while its In the app checkbox is off: why its other checkboxes are off and cannot be changed."
+  },
+  "settings.notifications.reason.fixed": {
+    "defaultMessage": "{channels, select, both {アプリ内とメールには必ず届きます。} email {メールには必ず届きます。} other {アプリ内には必ず届きます。}}",
+    "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications): why some of its checkboxes are on and cannot be changed (the server sends these to everyone). channels is in_app, email, or both."
+  },
+  "settings.notifications.kind.mention": {
+    "defaultMessage": "メンション",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.mention): keep the two the same."
+  },
+  "settings.notifications.kind.follow": {
+    "defaultMessage": "新しいフォロワー",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow): keep the two the same."
+  },
+  "settings.notifications.kind.follow_request": {
+    "defaultMessage": "フォローリクエスト",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_request): keep the two the same."
+  },
+  "settings.notifications.kind.follow_accepted": {
+    "defaultMessage": "承認されたフォローリクエスト",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_accepted): keep the two the same."
+  },
+  "settings.notifications.kind.boost": {
+    "defaultMessage": "ブースト",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.boost): keep the two the same."
+  },
+  "settings.notifications.kind.favourite": {
+    "defaultMessage": "お気に入り",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.favourite): keep the two the same."
+  },
+  "settings.notifications.kind.reaction": {
+    "defaultMessage": "絵文字リアクション",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.reaction): keep the two the same."
+  },
+  "settings.notifications.kind.quote": {
+    "defaultMessage": "引用",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.quote): keep the two the same."
+  },
+  "settings.notifications.kind.interaction_request": {
+    "defaultMessage": "返信・ブースト・引用の承認",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to reply to, boost or quote a post of the reader, which waits for the reader's approval, or an author approved or declined the reader's own reply, boost or quote (notifications.kind.reply_request and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.poll_closed": {
+    "defaultMessage": "締切済みの投票",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.poll_closed): keep the two the same."
+  },
+  "settings.notifications.kind.account_moved": {
+    "defaultMessage": "フォロー中のアカウントの移転",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.account_moved): keep the two the same."
+  },
+  "settings.notifications.kind.voice": {
+    "defaultMessage": "通話",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.voice): keep the two the same."
+  },
+  "settings.notifications.kind.event": {
+    "defaultMessage": "イベント",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.event): keep the two the same."
+  },
+  "settings.notifications.kind.status": {
+    "defaultMessage": "新しい投稿",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A new post of an account whose posts the reader asked to be notified of (notifications.kind.status). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.admin_report": {
+    "defaultMessage": "新しい通報",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_report): keep the two the same."
+  },
+  "settings.notifications.kind.admin_sign_up": {
+    "defaultMessage": "承認待ちの登録",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_sign_up): keep the two the same."
+  },
+  "settings.notifications.kind.admin_appeal": {
+    "defaultMessage": "新しい異議申し立て",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_appeal): keep the two the same."
+  },
+  "settings.notifications.kind.admin_webhook_disabled": {
+    "defaultMessage": "無効になった webhook",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_webhook_disabled): keep the two the same."
+  },
+  "settings.notifications.kind.admin_hook_failing": {
+    "defaultMessage": "外部の審査の失敗",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_failing): keep the two the same."
+  },
+  "settings.notifications.kind.admin_hook_appeal": {
+    "defaultMessage": "拒否された投稿への異議申し立て",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_appeal): keep the two the same."
+  },
+  "settings.notifications.kind.admin_domain_list_failing": {
+    "defaultMessage": "ブロックリストの購読の失敗",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_domain_list_failing): keep the two the same."
+  },
+  "settings.notifications.kind.admin_custom_emoji_request": {
+    "defaultMessage": "カスタム絵文字の申請",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_custom_emoji_request): keep the two the same."
+  },
+  "settings.notifications.kind.admin_account_moved": {
+    "defaultMessage": "制限中のアカウントの移転",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_account_moved): keep the two the same."
+  },
+  "settings.notifications.kind.admin_service_closure_due": {
+    "defaultMessage": "閉鎖日を過ぎたとき",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_service_closure_due): keep the two the same."
+  },
+  "settings.notifications.kind.admin_error_group": {
+    "defaultMessage": "新しいエラーと再発したエラー",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_error_group): keep the two the same."
+  },
+  "settings.notifications.kind.moderation": {
+    "defaultMessage": "モデレーターからのお知らせ",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.moderation): keep the two the same."
+  },
+  "settings.notifications.kind.service_closure": {
+    "defaultMessage": "このサーバーの閉鎖",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server announced that it will close, changed the date, or withdrew the closure (notifications.kind.service_closure_announced and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.supporter": {
+    "defaultMessage": "サポーターのプラン",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A payment of the reader's supporter plan failed, or the plan ended (notifications.kind.supporter_payment_failed and the like). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.announcement": {
+    "defaultMessage": "お知らせ",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An announcement of the server's administrators (notifications.kind.announcement). A noun phrase without a full stop."
+  },
+  "settings.notifications.kind.auto_delete_limit": {
+    "defaultMessage": "投稿の自動削除のお知らせ",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.auto_delete_limit): keep the two the same."
+  },
+  "settings.notifications.kind.unpublished_scheduled_status": {
+    "defaultMessage": "公開できなかった予約投稿",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A post the reader scheduled could not be published at its time (notifications.kind.scheduled_status_failed). A noun phrase without a full stop."
+  },
+  "settings.notifications.policy": {
+    "defaultMessage": "知らないかもしれない人からの通知",
+    "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
+  },
+  "settings.notifications.policy.actions": {
+    "defaultMessage": "それぞれの選択でどうなるか",
+    "description": "The name, for assistive technology, of the list under the heading Notifications from people you may not know that says what each of the three choices does: Accept, Hold back, Drop (settings.notifications.policy.action), each over its line (settings.notifications.policy.about.*)."
+  },
+  "settings.notifications.policy.about.accept": {
+    "defaultMessage": "通知はいつもどおり届きます。",
+    "description": "The line under Accept in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.about.filter": {
+    "defaultMessage": "受け入れるか消すまで「保留中の通知」で待ちます。",
+    "description": "The line under Hold back in the list of what each choice does, under the heading Notifications from people you may not know. The quoted words are the name of the screen that lists them (notifications.held)."
+  },
+  "settings.notifications.policy.about.drop": {
+    "defaultMessage": "通知は作られないので、あとから見ることもできません。",
+    "description": "The line under Drop in the list of what each choice does, under the heading Notifications from people you may not know."
+  },
+  "settings.notifications.policy.action": {
+    "defaultMessage": "{action, select, accept {受け入れる} filter {保留する} other {破棄する}}",
+    "description": "An option of each choice of the section settings.notifications.policy: what happens to the notifications of a kind of sender. action is accept (they arrive as usual), filter (they are held back, in the screen notifications.held) or drop (no notification is made)."
+  },
+  "settings.notifications.policy.not_following": {
+    "defaultMessage": "あなたがフォローしていない人",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts the reader does not follow."
+  },
+  "settings.notifications.policy.not_follower": {
+    "defaultMessage": "あなたをフォローしていない人",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts that do not follow the reader."
+  },
+  "settings.notifications.policy.new_account": {
+    "defaultMessage": "新しいアカウント",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts created recently."
+  },
+  "settings.notifications.policy.new_account.about": {
+    "defaultMessage": "作られてから 30 日たっていないアカウントです。",
+    "description": "The line under the choice New accounts of the section settings.notifications.policy."
+  },
+  "settings.notifications.policy.unsolicited_private_mention": {
+    "defaultMessage": "求めていない DM",
+    "description": "A choice of the section settings.notifications.policy: direct messages (posts whose audience is only the people they mention, the screen conversations.label) that the reader did not start. The app's words for them: direct messages, DM."
+  },
+  "settings.notifications.policy.unsolicited_private_mention.about": {
+    "defaultMessage": "あなたがその人に送った DM への返信ではない DM です。",
+    "description": "The line under the choice Unrequested direct messages of the section settings.notifications.policy: a direct message is unrequested unless the reader sent that person one in the same exchange."
+  },
+  "settings.notifications.policy.limited_account": {
+    "defaultMessage": "モデレーターが制限したアカウント",
+    "description": "A choice of the section settings.notifications.policy: the notifications of accounts that the server's moderators limited."
+  },
+  "settings.notifications.policy.limited_account.about": {
+    "defaultMessage": "このサーバーのモデレーターが、個別に、またはサーバーごと制限したアカウントです。フォローしている人にも当てはまります。",
+    "description": "The line under the choice Accounts limited by the moderators of the section settings.notifications.policy. The other choices never apply to people the reader follows; this one does."
+  },
+  "settings.relationships.list": {
+    "defaultMessage": "{list, select, blocked {ブロックしたアカウント} muted {ミュートしたアカウント} servers {ミュートしたサーバー} other {フォロー中のハッシュタグ}}",
+    "description": "The heading of a section of the settings' page Relationships, and the title of the page under it that holds the whole list. list is blocked (the accounts the reader blocks), muted (the accounts they mute), servers (the servers they mute) or hashtags (the hashtags they follow)."
+  },
+  "settings.relationships.empty": {
+    "defaultMessage": "{list, select, blocked {ブロックしているアカウントはありません。アカウントをブロックするには、そのプロフィールか投稿のメニューで「ブロック…」を選びます。} muted {ミュートしているアカウントはありません。アカウントをミュートするには、そのプロフィールか投稿のメニューで「ミュート」を選びます。} servers {ミュートしているサーバーはありません。サーバーをミュートするには、そのサーバーのアカウントのプロフィールか投稿のメニューで「サーバーをミュート」を選びます。} other {フォローしているハッシュタグはありません。ハッシュタグを開いて「フォロー」を選ぶと、その投稿がホームタイムラインに届きます。}}",
+    "description": "In place of a list of the settings' page Relationships while it is empty: what it would hold, and how something comes to be in it, in the words of the menus of a profile and of a post (profile.block, profile.mute, profile.mute_server) and of a hashtag's page (timeline.tag_follow). list is as in settings.relationships.list."
+  },
+  "settings.relationships.loading": {
+    "defaultMessage": "この一覧を読み込んでいます…",
+    "description": "In place of a list of the settings' page Relationships while it is read from the server."
+  },
+  "settings.relationships.failed_list": {
+    "defaultMessage": "この一覧を読み込めませんでした。",
+    "description": "In place of a list of the settings' page Relationships when it could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.relationships.failed_more": {
+    "defaultMessage": "この一覧の続きを読み込めませんでした。",
+    "description": "Under a list of the settings' page Relationships, on the page that holds the whole list, when its next accounts could not be read; Try again follows it (settings.retry)."
+  },
+  "settings.relationships.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under a list on the page that holds the whole of one list of Relationships (blocked accounts, muted accounts…), which loads the next ones."
+  },
+  "settings.relationships.all": {
+    "defaultMessage": "{list, select, blocked {ブロックしたアカウントをすべて表示} muted {ミュートしたアカウントをすべて表示} servers {ミュートしたサーバーをすべて表示} other {フォロー中のハッシュタグをすべて表示}}",
+    "description": "The button under the first few rows of a list on the settings' page Relationships, where the list has more, which opens the page that holds the whole list. list is as in settings.relationships.list."
+  },
+  "settings.relationships.unblock": {
+    "defaultMessage": "ブロックを解除",
+    "description": "The button at the end of an account's row in Blocked accounts (settings, Relationships) that stops blocking it at once, as Unblock of a profile's menu does."
+  },
+  "settings.relationships.unmute": {
+    "defaultMessage": "ミュートを解除",
+    "description": "The button at the end of a row in Muted accounts or Muted servers (settings, Relationships) that stops muting the account or the server at once, as Unmute of a profile's menu does."
+  },
+  "settings.relationships.unfollow": {
+    "defaultMessage": "フォローを解除",
+    "description": "The button at the end of a hashtag's row in Followed hashtags (settings, Relationships) that stops following it at once: its posts no longer join the home timeline."
+  },
+  "settings.relationships.done": {
+    "defaultMessage": "{action, select, unblock {{name} のブロックを解除しました。} unmute {{name} のミュートを解除しました。} unmute_server {サーバー {name} のミュートを解除しました。} other {{name} のフォローを解除しました。}}",
+    "description": "Under a list of the settings' page Relationships once the reader took a row out of it, where the focus goes, the row being gone. action is unblock, unmute (an account), unmute_server or unfollow (a hashtag); name is the account's handle (@user or @user@domain), the server's domain, or the hashtag with #."
+  },
+  "settings.relationships.failed": {
+    "defaultMessage": "{action, select, unblock {{name} のブロックの解除を完了できませんでした。もう一度試してください。} unmute {{name} のミュートの解除を完了できませんでした。もう一度試してください。} unmute_server {サーバー {name} のミュートの解除を完了できませんでした。もう一度試してください。} other {{name} のフォローの解除を完了できませんでした。もう一度試してください。}}",
+    "description": "Under a list of the settings' page Relationships when taking a row out of it got no answer from the server (the network); the row and its button stay, to press again. action and name are as in settings.relationships.done."
+  },
+  "settings.relationships.muted.notifications": {
+    "defaultMessage": "通知も非表示",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): the mute hides the account's notifications as well as its posts. Without a full stop."
+  },
+  "settings.relationships.muted.until": {
+    "defaultMessage": "{date}まで",
+    "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
+  },
+  "settings.relationships.count": {
+    "defaultMessage": "{list, select, blocked {{more, select, yes {{count, number} 件を超えるアカウント} other {{count, plural, other {# 件のアカウント}}}}} muted {{more, select, yes {{count, number} 件を超えるアカウント} other {{count, plural, other {# 件のアカウント}}}}} servers {{more, select, yes {{count, number} 件を超えるサーバー} other {{count, plural, other {# 件のサーバー}}}}} other {{more, select, yes {{count, number} 件を超えるハッシュタグ} other {{count, plural, other {# 件のハッシュタグ}}}}}}",
+    "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): how many it holds, as a phrase (9 servers). more is yes while the server has more than it sent so far (count is then those read). list is as in settings.relationships.list."
+  },
+  "settings.relationships.result": {
+    "defaultMessage": "{action, select, unblock {ブロックを解除しました} unmute {ミュートを解除しました} unmute_server {ミュートを解除しました} other {フォローを解除しました}}",
+    "description": "What a row of a list of Relationships says once the reader took it out (in place of its button and its facts), the row staying where it was until they leave the page: the account, server or hashtag stays named by the row. Without a full stop. action is as in settings.relationships.done."
+  },
+  "settings.filters.list": {
+    "defaultMessage": "フィルタ",
+    "description": "The heading of the one section of the settings' page Keyword filters, the list of the reader's filters; the count follows it."
+  },
+  "settings.filters.about": {
+    "defaultMessage": "それぞれ、適用する場所で、その言葉を含む投稿を畳むか隠します。",
+    "description": "The line under the heading of the list of keyword filters (settings, Keyword filters), what a filter does."
+  },
+  "settings.filters.full": {
+    "defaultMessage": "フィルタは上限の {max, number} 個に達しています。追加するには、どれかを削除してください。",
+    "description": "The line under the heading of the list of keyword filters when the reader has as many as the server keeps, in place of settings.filters.about, and Add a filter is not offered; also the submit bar's sentence when the server refused a new filter for that reason. max is 100."
+  },
+  "settings.filters.add": {
+    "defaultMessage": "フィルタを追加",
+    "description": "The primary button of the settings' page Keyword filters, at the end of the list's heading or under the sentence of an empty list, which opens the form of a new filter."
+  },
+  "settings.filters.empty": {
+    "defaultMessage": "キーワードフィルタはありません。フィルタは、その言葉を含む投稿を、選んだ場所で畳むか隠します。",
+    "description": "In place of the list of keyword filters while the reader has none; Add a filter follows it."
+  },
+  "settings.filters.place": {
+    "defaultMessage": "{context, select, home {ホームとリスト} notifications {通知} public {公開タイムライン} thread {スレッド} other {プロフィール}}",
+    "description": "A place a keyword filter applies, inside settings.filters.where, so in lower case in en: home (the home timeline and the lists' timelines), notifications, public (the local, federated and hashtag timelines), thread (the posts before and after a post), account (a profile's posts)."
+  },
+  "settings.filters.expired": {
+    "defaultMessage": "期限切れ",
+    "description": "The state at the end of a filter's row in the list of keyword filters once its end has passed: it applies nowhere, and stays listed until deleted."
+  },
+  "settings.filters.edit.title": {
+    "defaultMessage": "{kind, select, new {新しいフィルタ} other {フィルタを編集}}",
+    "description": "The title of the page of a keyword filter's form, under the settings' entry Keyword filters. kind is new (a filter being added) or edit (one that is there)."
+  },
+  "settings.filters.save": {
+    "defaultMessage": "{kind, select, new {追加} other {保存}}",
+    "description": "The button at the bottom of a keyword filter's form that saves the whole form: adds a new filter (new), or saves the changes of one that is there (edit); the page then goes back to the list."
+  },
+  "settings.filters.save.failed": {
+    "defaultMessage": "フィルタを保存できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
+  },
+  "settings.filters.save.refused": {
+    "defaultMessage": "示した箇所を直してください。",
+    "description": "In the bar at the bottom of a keyword filter's form when the form or the server found something wrong with a field, which says what under that field."
+  },
+  "settings.filters.section.filter": {
+    "defaultMessage": "名前と動作",
+    "description": "The heading of the first section of a keyword filter's form, which holds its name, what it does to a matching post, and when it ends."
+  },
+  "settings.filters.name": {
+    "defaultMessage": "名前",
+    "description": "The label of the field of a keyword filter's name."
+  },
+  "settings.filters.name.hint": {
+    "defaultMessage": "畳んだ投稿にこの名前が表示されます。",
+    "description": "The line under the label of a keyword filter's name: where the name shows (\"Matches filter Spoilers\" in place of a folded post)."
+  },
+  "settings.filters.name.missing": {
+    "defaultMessage": "フィルタの名前を入力してください。",
+    "description": "Under the field of a keyword filter's name when the reader pressed Add or Save with it empty."
+  },
+  "settings.filters.name.over": {
+    "defaultMessage": "名前は {max, number} 文字以内にしてください。",
+    "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
+  },
+  "settings.filters.name.rule": {
+    "defaultMessage": "名前は 1 行で 1〜{max, number} 文字にしてください。タブなどの制御文字は使えません。",
+    "description": "Under the field of a keyword filter's name when the server refused it: the rule a name follows. max is 50."
+  },
+  "settings.filters.words": {
+    "defaultMessage": "言葉",
+    "description": "The heading of the section of a keyword filter's form that lists its words and phrases; the count follows it."
+  },
+  "settings.filters.words.about": {
+    "defaultMessage": "どれか 1 つを含む投稿が一致します。「単語全体」にすると、長い単語の一部には一致しません。",
+    "description": "The line under the heading of a keyword filter's words: how they match, in one short sentence about Whole word (settings.filters.word.whole); the documentation explains the scripts that write words without spaces, where Whole word changes nothing."
+  },
+  "settings.filters.words.add": {
+    "defaultMessage": "言葉を追加",
+    "description": "The button at the end of the heading of a keyword filter's words, or under the sentence of an empty list, that adds a field for one more word or phrase."
+  },
+  "settings.filters.words.empty": {
+    "defaultMessage": "まだ言葉がありません。一致させる言葉やフレーズを追加してください。",
+    "description": "In place of a keyword filter's words when the reader removed every one; Add a word follows it."
+  },
+  "settings.filters.words.missing": {
+    "defaultMessage": "言葉かフレーズを 1 つ以上追加してください。",
+    "description": "Under a keyword filter's words when the reader pressed Add or Save with none written."
+  },
+  "settings.filters.words.left": {
+    "defaultMessage": "{count, plural, other {あと # 語追加できます。}}",
+    "description": "Under a keyword filter's words when the filter or all the reader's filters come near the most words the server keeps: how many more can be added."
+  },
+  "settings.filters.words.filter_full": {
+    "defaultMessage": "このフィルタの言葉は上限の {max, number} 語に達しています。追加するには、どれかを外してください。",
+    "description": "Under a keyword filter's words when the filter has as many as it can, and Add a word is disabled. max is 100."
+  },
+  "settings.filters.words.all_full": {
+    "defaultMessage": "すべてのフィルタの言葉は、合わせて上限の {max, number} 語に達しています。追加するには、このフィルタかほかのフィルタから言葉を外してください。",
+    "description": "Under a keyword filter's words when all the reader's filters have as many words as they can, and Add a word is disabled. max is 1,000."
+  },
+  "settings.filters.words.too_many": {
+    "defaultMessage": "フィルタごとの言葉は {filter, number} 語まで、すべてのフィルタで合わせて {max, number} 語までです。先にいくつか外してください。",
+    "description": "Under a keyword filter's words when the server refused the form because the words would pass one of its limits. filter is 100, max is 1,000."
+  },
+  "settings.filters.word": {
+    "defaultMessage": "言葉・フレーズ {n, number}",
+    "description": "The label of the field of one word of a keyword filter. n is its place in the list, from 1."
+  },
+  "settings.filters.word.whole": {
+    "defaultMessage": "単語全体",
+    "description": "The checkbox beside a word of a keyword filter: the word matches only where no letter or digit touches it, not inside a longer word."
+  },
+  "settings.filters.word.remove": {
+    "defaultMessage": "外す",
+    "description": "The button beside a word of a keyword filter that takes it out of the form."
+  },
+  "settings.filters.word.remove_named": {
+    "defaultMessage": "言葉 {n, number} を外す",
+    "description": "The name assistive technology reads of the button beside a word of a keyword filter (settings.filters.word.remove), which says which word it removes. n is the word's place, from 1."
+  },
+  "settings.filters.word.over": {
+    "defaultMessage": "言葉は {max, number} 文字以内にしてください。",
+    "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
+  },
+  "settings.filters.word.rule": {
+    "defaultMessage": "言葉は 1〜{max, number} 文字にしてください。タブなどの制御文字は使えません。",
+    "description": "Under the field of a word of a keyword filter when the server refused it: the rule a word follows. max is 100."
+  },
+  "settings.filters.contexts": {
+    "defaultMessage": "適用する場所",
+    "description": "The heading of the section of a keyword filter's form that holds the places it applies in, a checkbox each (settings.filters.context)."
+  },
+  "settings.filters.context": {
+    "defaultMessage": "{context, select, home {ホームとリスト} notifications {通知} public {公開タイムライン} thread {スレッド} other {プロフィール}}",
+    "description": "The checkbox of a place a keyword filter applies in. context is as in settings.filters.place."
+  },
+  "settings.filters.contexts.missing": {
+    "defaultMessage": "場所を 1 つ以上選んでください。",
+    "description": "Under the places of a keyword filter when the reader pressed Add or Save with none checked."
+  },
+  "settings.filters.action": {
+    "defaultMessage": "一致した投稿",
+    "description": "The label of the choice of what a keyword filter does to a post that holds one of its words (settings.filters.action.choice)."
+  },
+  "settings.filters.action.choice": {
+    "defaultMessage": "{action, select, warn {フィルタ名を残して畳む} other {完全に隠す}}",
+    "description": "An option of what a keyword filter does to a matching post: warn shows only the filter's name with Show in its place, hide leaves it out of the list."
+  },
+  "settings.filters.ends": {
+    "defaultMessage": "期限",
+    "description": "The label of the choice of when a keyword filter stops applying (settings.filters.ends.choice)."
+  },
+  "settings.filters.ends.choice": {
+    "defaultMessage": "{choice, select, never {なし} m30 {30 分後} h1 {1 時間後} h6 {6 時間後} h12 {12 時間後} d1 {1 日後} w1 {1 週間後} other {日時を指定}}",
+    "description": "An option of when a keyword filter stops applying: never, after a duration counted from saving, or at a date and time the reader picks in a field that then shows (date)."
+  },
+  "settings.filters.ends.date": {
+    "defaultMessage": "終了日時",
+    "description": "The label of the field of the date and time a keyword filter ends at, in the reader's time zone, shown when At a date and time is chosen."
+  },
+  "settings.filters.ends.date_missing": {
+    "defaultMessage": "日時を選んでください。",
+    "description": "Under the end of a keyword filter when At a date and time is chosen and the field holds no date and time."
+  },
+  "settings.filters.ends.date_past": {
+    "defaultMessage": "今より後の日時を選んでください。",
+    "description": "Under the end of a keyword filter when the date and time chosen has passed."
+  },
+  "settings.filters.ends.keep": {
+    "defaultMessage": "{state, select, ended {そのまま ({date}に終了)} other {そのまま ({date}まで)}}",
+    "description": "The first option of when a keyword filter ends, for a filter that has an end: saving leaves the end as it is. state is ends or ended (the end has passed); date is the end, a date and time."
+  },
+  "settings.filters.ends.ended": {
+    "defaultMessage": "このフィルタは{date}に終了し、どこにも適用されていません。新しい期限を選ぶと、再び有効になります。",
+    "description": "The line under Ends in the form of a keyword filter whose end has passed. date is the end, a date and time."
+  },
+  "settings.filters.delete": {
+    "defaultMessage": "フィルタを削除",
+    "description": "The heading of the last section of a keyword filter's form, for a filter that is there."
+  },
+  "settings.filters.delete.about": {
+    "defaultMessage": "言葉も一緒に削除され、このフィルタで畳んだり隠したりしていた投稿が再び表示されます。",
+    "description": "The line under the heading Delete filter: what deleting a keyword filter does."
+  },
+  "settings.filters.delete.open": {
+    "defaultMessage": "削除…",
+    "description": "The button of the section Delete filter, which asks before deleting the keyword filter."
+  },
+  "settings.filters.delete.title": {
+    "defaultMessage": "フィルタ「{name}」を削除しますか？",
+    "description": "The question of the confirmation before a keyword filter is deleted. name is the filter's name."
+  },
+  "settings.filters.delete.text": {
+    "defaultMessage": "言葉も一緒に削除されます。取り消せません。",
+    "description": "The text of the confirmation before a keyword filter is deleted."
+  },
+  "settings.filters.delete.confirm": {
+    "defaultMessage": "削除",
+    "description": "The button of the confirmation that deletes the keyword filter; the page then goes back to the list."
+  },
+  "settings.filters.delete.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation that keeps the keyword filter."
+  },
+  "settings.filters.delete.failed": {
+    "defaultMessage": "フィルタを削除できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of a keyword filter's form when deleting it got no answer from the server."
+  },
+  "settings.filters.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves a keyword filter's form with changes they have not saved."
+  },
+  "settings.filters.leave.text": {
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
+    "description": "The text of the confirmation that asks whether to leave a keyword filter's form without saving."
+  },
+  "settings.filters.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves a keyword filter's form and drops the changes not saved."
+  },
+  "settings.filters.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on a keyword filter's form, with the changes as the reader left them."
+  },
+  "settings.filters.not_found": {
+    "defaultMessage": "このフィルタはありません。削除された可能性があります。",
+    "description": "In place of a keyword filter's form at an address that names no filter of the reader's; the link to the list follows it (settings.filters.all)."
+  },
+  "settings.filters.all": {
+    "defaultMessage": "すべてのフィルタを見る",
+    "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
+  },
+  "settings.filters.fact.does": {
+    "defaultMessage": "{action, select, warn {一致した投稿を畳む} other {一致した投稿を隠す}}",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its first line: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out). A phrase, without a full stop."
+  },
+  "settings.filters.fact.words": {
+    "defaultMessage": "{count, plural, other {# 語}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after what it does on the same line: how many words or phrases it has. Without a full stop."
+  },
+  "settings.filters.fact.where": {
+    "defaultMessage": "{places}に適用",
+    "description": "A fact under a filter's name in the list of keyword filters, first on its second line: where it applies. places is a list of settings.filters.place joined in the reader's language. A phrase, without a full stop."
+  },
+  "settings.filters.fact.ends": {
+    "defaultMessage": "{state, select, never {期限なし} ended {{date}に終了} other {{date}まで}}",
+    "description": "A fact under a filter's name in the list of keyword filters, after where it applies: when it stops applying. state is never, ends (it ends on date) or ended (it ended on date and applies nowhere); date is a day (Dec 18, 2026). Without a full stop."
+  },
+  "settings.account.status": {
+    "defaultMessage": "アカウントの状態",
+    "description": "A heading on the settings page Account and data, over what the moderators did to the reader's account; also the title of the page under it that lists the moderation actions on the account, the link after settings.account.action.not_found that leads there, and the button at the top of one action's page that goes back to it. A heading: no full stop."
+  },
+  "settings.account.status.in_effect": {
+    "defaultMessage": "{count, plural, other {このアカウントに適用中のモデレーションの処分が # 件あります}}",
+    "description": "The heading of the summary at the top of the settings page Account and data while moderators' actions are in effect on the reader's account (a limit, a restriction of posting). count is how many, 1 or more. A heading: no full stop."
+  },
+  "settings.account.status.in_effect.about": {
+    "defaultMessage": "{appealable, select, deadline {「アカウントの状態」で、処分の内容、理由、終わる時期を確認できます。{date} まで異議を申し立てられます。} yes {「アカウントの状態」で、処分の内容、理由、終わる時期を確認できます。異議申し立ては処分 1 件につき 1 回できます。} other {「アカウントの状態」で、処分の内容、理由、終わる時期と、異議申し立ての状況を確認できます。}}",
+    "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is deadline while the reader can still appeal one of the actions and the server says until when (date is the nearest last day, as the reader's locale writes a date), yes while they can and no last day is known, and anything else once every action is appealed or its time to appeal has passed."
+  },
+  "settings.account.status.open": {
+    "defaultMessage": "アカウントの状態を確認する",
+    "description": "The button of the summary at the top of the settings page Account and data that opens the page Account status (settings.account.status)."
+  },
+  "settings.account.status.row": {
+    "defaultMessage": "モデレーションの処分と異議申し立て",
+    "description": "A row of the section Account status on the settings page Account and data, shown while no moderation action is in effect on the reader's account; it opens the page Account status, which lists the past actions and the reader's appeals."
+  },
+  "settings.account.status.row.none": {
+    "defaultMessage": "このアカウントに適用中の処分はありません。",
+    "description": "The line under settings.account.status.row: the state of the reader's account while no moderators' action is in effect on it."
+  },
+  "settings.account.status.loading": {
+    "defaultMessage": "アカウントの状態を読み込んでいます…",
+    "description": "In the section Account status of the settings page Account and data while the moderation actions on the reader's account are read from the server."
+  },
+  "settings.account.status.failed": {
+    "defaultMessage": "アカウントの状態を読み込めませんでした。",
+    "description": "In the section Account status of the settings page Account and data when the moderation actions on the reader's account could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.actions.active": {
+    "defaultMessage": "適用中の処分",
+    "description": "A heading on the settings page Account status, over the list of the moderators' actions in effect on the reader's account now. The page of an account kept out of the app says In effect (auth.status.action_active) with the same word. A heading: no full stop."
+  },
+  "settings.account.actions.active.empty": {
+    "defaultMessage": "このアカウントに適用中の処分はありません。モデレーターがこのアカウントを処分すると、理由とともにここに表示され、異議を申し立てられます。",
+    "description": "In place of the list Actions in effect on the settings page Account status while no moderators' action is in effect on the reader's account: the fact, what appears there, and what the reader can then do."
+  },
+  "settings.account.actions.past": {
+    "defaultMessage": "過去の処分",
+    "description": "A heading on the settings page Account status, over the list of the moderators' actions on the reader's account that ended or were lifted. A heading: no full stop."
+  },
+  "settings.account.actions.past.empty": {
+    "defaultMessage": "過去の処分はありません。終了した処分や解除された処分は、異議申し立てとその結果とともにここに残ります。",
+    "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
+  },
+  "settings.account.actions.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the list Past actions on the settings page Account status, which loads the next, older actions."
+  },
+  "settings.account.actions.failed_more": {
+    "defaultMessage": "過去の処分の続きを読み込めませんでした。",
+    "description": "Under the list Past actions on the settings page Account status when its next, older actions could not be read; Try again follows it (settings.retry)."
+  },
+  "settings.account.action.title": {
+    "defaultMessage": "モデレーションの処分",
+    "description": "The title of the page of one moderators' action on the reader's account, under the settings page Account status: what the action does, the moderators' reason, the posts it is about, and the reader's appeal. A heading: no full stop."
+  },
+  "settings.account.action.ends": {
+    "defaultMessage": "{state, select, until {{date} に終わります} expired {{date} に終了しました} lifted {{date} に解除されました} other {モデレーターが解除するまで続きます}}",
+    "description": "A line of a moderators' action on the reader's account, in the lists of the settings page Account status and on the action's own page: when it ends or ended. state is until (in effect, with an end; date is the end), expired (it ended at date), lifted (a moderator lifted it at date), or anything else for an action in effect with no end. date is a date and a time as the reader's locale writes them. A line of a list: no full stop."
+  },
+  "settings.account.action.appeal_state": {
+    "defaultMessage": "{state, select, open {{date} まで異議を申し立てられます} open_always {異議を申し立てられます} passed {異議を申し立てられる期間は {date} に過ぎました} pending {異議申し立ては審査中です} upheld {異議申し立ての結果: 処分は維持されました} overturned {異議申し立ての結果: 処分は解除されました} other {この処分にはもう異議を申し立てられません}}",
+    "description": "A line of a moderators' action on the reader's account, in the lists of the settings page Account status: where its appeal stands. state is open (not appealed, can be until date), open_always (can be, no last day known), passed (not appealed, the last day was date), pending (appealed, waiting for the moderators), upheld (the moderators kept the action), overturned (they lifted it), or anything else for an action that was not appealed and cannot be. The words of pending, upheld and overturned are those of the page of an account kept out of the app (auth.status.appeal_state_label: Under review, Action kept, Action lifted). A line of a list: no full stop."
+  },
+  "settings.account.action.section.what": {
+    "defaultMessage": "処分の内容",
+    "description": "A heading on the page of one moderators' action on the reader's account (settings.account.action.title), over what the action does to the account, in the server's words, and when it was taken and ends. A heading: no full stop."
+  },
+  "settings.account.action.section.reason": {
+    "defaultMessage": "モデレーターが示した理由",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the kind of reason (spam, a violation of the server's rules) and the moderators' explanation to the reader. A heading: no full stop."
+  },
+  "settings.account.action.section.posts": {
+    "defaultMessage": "対象の投稿",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the reader's posts the action acted on (marked as sensitive, or deleted). A heading: no full stop."
+  },
+  "settings.account.action.issued": {
+    "defaultMessage": "{date} に処分されました",
+    "description": "A line under what a moderators' action does, on the action's page in the settings: when the moderators took it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.action.reason.none": {
+    "defaultMessage": "この処分について、モデレーターからの説明はありません。",
+    "description": "Under the kind of reason of a moderators' action on the reader's account, on the action's page in the settings, when the moderators wrote no explanation to the reader."
+  },
+  "settings.account.action.post": {
+    "defaultMessage": "{date} の投稿",
+    "description": "A row of the list Posts this action is about, on the page of a moderators' action in the settings: one of the reader's posts, named by when it was posted, which the row opens; the start of its text follows on the next line. date is a date and a time as the reader's locale writes them."
+  },
+  "settings.account.action.posts.loading": {
+    "defaultMessage": "投稿を読み込んでいます…",
+    "description": "In place of the list Posts this action is about, on the page of a moderators' action in the settings, while the posts are read from the server."
+  },
+  "settings.account.action.posts.gone": {
+    "defaultMessage": "{count, plural, other {# 件の投稿はこのサーバーにもうないため、開けません。}}",
+    "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on were deleted (by the action or since) and so have no page to open. count is 1 or more."
+  },
+  "settings.account.action.posts.failed": {
+    "defaultMessage": "{count, plural, other {# 件の投稿を読み込めませんでした。ページを再読み込みして、もう一度試してください。}}",
+    "description": "Under the list Posts this action is about, on the page of a moderators' action in the settings: how many of the posts the action acted on could not be read from the server now (it did not answer, or failed), which is not to say they are deleted (settings.account.action.posts.gone counts those). count is 1 or more."
+  },
+  "settings.account.action.not_found": {
+    "defaultMessage": "この処分は、このアカウントの処分の一覧にありません。アドレスを確かめてください。",
+    "description": "In place of the page of a moderators' action at an address that names no action on the reader's account; the link to the page Account status follows it (settings.account.status)."
+  },
+  "settings.account.appeal": {
+    "defaultMessage": "異議申し立て",
+    "description": "A heading on the page of one moderators' action on the reader's account, over the form in which the reader asks the moderators to reconsider the action, or over the appeal they sent and its result. A heading: no full stop."
+  },
+  "settings.account.appeal.about": {
+    "defaultMessage": "{deadline, select, yes {この処分への異議申し立ては 1 回だけ、{date} までできます。送ったあとは内容を変更できません。モデレーターが内容を読んで審査します。} other {この処分への異議申し立ては 1 回だけできます。送ったあとは内容を変更できません。モデレーターが内容を読んで審査します。}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, over the appeal form: that an action is appealed once and the appeal cannot be changed, the last moment to appeal, and who decides. deadline is yes when the server says the last moment (date, a date and a time as the reader's locale writes them), no otherwise."
+  },
+  "settings.account.appeal.label": {
+    "defaultMessage": "異議申し立ての内容",
+    "description": "The label of the field in which the reader writes their appeal of a moderators' action on their account (why the moderators should reconsider it), on the action's page in the settings; also the label over the appeal they sent, once it is sent."
+  },
+  "settings.account.appeal.hint": {
+    "defaultMessage": "モデレーターにこの処分を見直してほしい理由を、{max, number} 文字以内で書いてください。",
+    "description": "The hint of the field settings.account.appeal.label. max is the longest appeal the server takes, in characters."
+  },
+  "settings.account.appeal.missing": {
+    "defaultMessage": "異議申し立ての内容を書いてから送ってください。",
+    "description": "The error under the appeal field of a moderators' action, in the settings, when the reader sends it empty."
+  },
+  "settings.account.appeal.over": {
+    "defaultMessage": "異議申し立ての内容は {max, number} 文字以内にしてください。",
+    "description": "The error under the appeal field of a moderators' action, in the settings, when what the reader wrote is longer than the server takes. max is the most characters."
+  },
+  "settings.account.appeal.submit": {
+    "defaultMessage": "異議を申し立てる",
+    "description": "The button at the bottom of the page of a moderators' action in the settings that sends the reader's appeal to the moderators. The page of an account kept out of the app says the same (auth.status.appeal_submit)."
+  },
+  "settings.account.appeal.not_sent": {
+    "defaultMessage": "{reason, select, field {異議申し立てを送れませんでした。上の項目を確認してください。} other {異議申し立てを送れませんでした。接続を確認して、もう一度試してください。}}",
+    "description": "In the bar at the bottom of the page of a moderators' action in the settings, beside Send appeal, when the appeal was not sent. reason is field when what the reader wrote was refused (what is wrong stands under the field), other when the server could not be reached or answered with nothing the app knows."
+  },
+  "settings.account.appeal.sent": {
+    "defaultMessage": "異議申し立てを送りました。",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal; where the appeal stands follows it (settings.account.appeal.state)."
+  },
+  "settings.account.appeal.refused": {
+    "defaultMessage": "{reason, select, appealed {この処分にはすでに異議を申し立てています。異議申し立ては処分 1 件につき 1 回だけです。前に送った内容と状況はここで確認できます。} closed {この処分に異議を申し立てられる期間が過ぎているため、送れませんでした。モデレーターに問い合わせるには、{about}にある連絡先を確認してください。} not_appealable {この処分にはもう異議を申し立てられないため、送れませんでした。モデレーターに問い合わせるには、{about}にある連絡先を確認してください。} other {この処分はこのアカウントの処分の一覧からなくなったため、送れませんでした。「アカウントの状態」に戻って、処分の一覧を確認してください。}}",
+    "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent; the form is then gone. reason is appealed (the action was appealed already, from another browser; that appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). about is the link to the server's About page, whose words are settings.account.appeal.about_page; Account status is settings.account.status."
+  },
+  "settings.account.appeal.about_page": {
+    "defaultMessage": "「このサーバーについて」のページ",
+    "description": "The words of the link in settings.account.appeal.refused (its about) that leads to the server's About page (app.footer_about), where the server's contact is. It stands inside a sentence: no capital, no full stop."
+  },
+  "settings.account.appeal.unsent": {
+    "defaultMessage": "書いた内容 (送られていません)",
+    "description": "The label over the text of the appeal the reader wrote, on the page of a moderators' action in the settings, after the server refused the appeal because the action can no longer be appealed: the text stays to be read and copied."
+  },
+  "settings.account.appeal.unsent.about": {
+    "defaultMessage": "別の方法でモデレーターに伝えるときは、コピーしてください。このページを離れると消えます。",
+    "description": "Under the text of the appeal that was not sent (settings.account.appeal.unsent): what the reader can do with it, and that it is gone once they leave the page."
+  },
+  "settings.account.appeal.state": {
+    "defaultMessage": "{state, select, pending {異議申し立てはモデレーターの審査待ちです。結果は通知でお知らせします。} upheld {モデレーターが異議申し立てを審査し、処分を維持しました。} overturned {モデレーターが異議申し立てを審査し、処分を解除しました。} other {この処分に異議を申し立てました。}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, once the reader appealed it: where the appeal stands, read alone when the page is opened later. state is pending, upheld (the action stays), or overturned (the action is lifted). The first sentence of each is the page of an account kept out of the app's (server:auth.status.appeal_state)."
+  },
+  "settings.account.appeal.sent_on": {
+    "defaultMessage": "{date} に送信",
+    "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.decided_on": {
+    "defaultMessage": "{date} に審査",
+    "description": "A line under settings.account.appeal.sent_on, once the moderators decided the reader's appeal: when they did. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.appeal.answer": {
+    "defaultMessage": "モデレーターからの回答",
+    "description": "The label over the moderators' explanation of their decision on the reader's appeal, on the page of a moderators' action in the settings. The page of an account kept out of the app says the same (auth.status.appeal_answer)."
+  },
+  "settings.account.appeal.closed": {
+    "defaultMessage": "{deadline, select, yes {この処分には異議を申し立てておらず、申し立てられる期間は {date} に過ぎました。} other {この処分にはもう異議を申し立てられません。}}",
+    "description": "Under the heading Appeal on the page of a moderators' action in the settings, when the reader did not appeal the action and no longer can. deadline is yes when the last moment to appeal is known and has passed (date, a date and a time as the reader's locale writes them), no otherwise."
+  },
+  "settings.account.appeal.leave.title": {
+    "defaultMessage": "異議申し立てを送らずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves the page of a moderators' action with an appeal they wrote and did not send."
+  },
+  "settings.account.appeal.leave.text": {
+    "defaultMessage": "書いた内容は失われます。取り消せません。",
+    "description": "The text of the confirmation that asks whether to leave the page of a moderators' action without sending the appeal written there."
+  },
+  "settings.account.appeal.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves the page of a moderators' action and drops the appeal the reader wrote and did not send."
+  },
+  "settings.account.appeal.leave.cancel": {
+    "defaultMessage": "書き続ける",
+    "description": "The button of the confirmation that stays on the page of a moderators' action, with the appeal as the reader wrote it."
+  },
+  "settings.account.data": {
+    "defaultMessage": "データと投稿",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Export, Import and Delete old posts automatically. A heading: no full stop."
+  },
+  "settings.account.arrival": {
+    "defaultMessage": "このアカウントへの移転",
+    "description": "A heading on the settings page Account and data, over the row that leads to Aliases: what prepares a move from another account to this one. A heading: no full stop."
+  },
+  "settings.account.export": {
+    "defaultMessage": "エクスポート",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader requests and downloads an archive of their account and downloads CSV files. A heading: no full stop."
+  },
+  "settings.account.export.row.about": {
+    "defaultMessage": "アカウントのアーカイブと、フォロー・ブロック・ミュート・ブックマークの CSV ファイル",
+    "description": "The line under the row Export on the settings page Account and data while no archive is being prepared or ready: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.export.row.standing": {
+    "defaultMessage": "{state, select, preparing {アーカイブを準備しています} ready_until {アーカイブをダウンロードできます ({date} まで)} other {アーカイブをダウンロードできます}}",
+    "description": "The line under the row Export on the settings page Account and data, in place of settings.account.export.row.about, while the reader's archive is being prepared (state preparing) or can be downloaded (ready_until with date, the day the server removes it, as the reader's locale writes a date; anything else when no day is known). Without a full stop."
+  },
+  "settings.account.export.archive": {
+    "defaultMessage": "アーカイブ",
+    "description": "A heading on the settings page Export, over the archive of the reader's account: the ZIP file the server prepares on request. A heading: no full stop."
+  },
+  "settings.account.export.archive.about": {
+    "defaultMessage": "プロフィール、投稿、キーワードフィルタ、非公開のメモ、このアカウントへのモデレーションの処分、フォロー・ブロック・ミュート・ブックマークをまとめた ZIP ファイルです。サーバーがバックグラウンドで準備するため、時間がかかることがあります。",
+    "description": "Under the heading Archive on the settings page Export: what the archive holds and that it is not ready at once."
+  },
+  "settings.account.export.archive.loading": {
+    "defaultMessage": "アーカイブを読み込んでいます…",
+    "description": "In the section Archive of the settings page Export while the reader's requests for an archive are read from the server."
+  },
+  "settings.account.export.archive.failed_read": {
+    "defaultMessage": "アーカイブを読み込めませんでした。",
+    "description": "In the section Archive of the settings page Export when the reader's requests for an archive could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.export.archive.none": {
+    "defaultMessage": "アーカイブはありません。依頼すると、準備ができしだいここからダウンロードできます。",
+    "description": "In place of the list in the section Archive of the settings page Export while the reader has requested no archive lately; the button Request an archive follows it (settings.account.export.archive.request)."
+  },
+  "settings.account.export.archive.request": {
+    "defaultMessage": "アーカイブを依頼",
+    "description": "The button of the section Archive on the settings page Export that asks the server to prepare an archive of the reader's account."
+  },
+  "settings.account.export.archive.requested": {
+    "defaultMessage": "アーカイブを依頼しました。",
+    "description": "The status of the section Archive on the settings page Export right after the reader pressed Request an archive and the server took the request; the list under it says where the archive stands."
+  },
+  "settings.account.export.archive.building": {
+    "defaultMessage": "アーカイブはすでに準備中です。完了すると、次を依頼できます。",
+    "description": "The status of the section Archive on the settings page Export when the server refused a request because it is still preparing an earlier archive."
+  },
+  "settings.account.export.archive.request_failed": {
+    "defaultMessage": "アーカイブを依頼できませんでした。もう一度試してください。",
+    "description": "The status of the section Archive on the settings page Export when the request for an archive got no answer from the server (the network)."
+  },
+  "settings.account.export.archive.download_failed": {
+    "defaultMessage": "アーカイブをダウンロードできませんでした。もう一度試してください。",
+    "description": "In the row of an archive in the list Archive on the settings page Export, under where it stands, when the download of that archive failed."
+  },
+  "settings.account.export.archive.row": {
+    "defaultMessage": "{date} のアーカイブ",
+    "description": "The name of a row of the list Archive on the settings page Export: one archive, named by when the reader requested it. date is a date and a time as the reader's locale writes them. It does not say that it was requested: the status over the list says so right after a request (settings.account.export.archive.requested). No full stop."
+  },
+  "settings.account.export.archive.state": {
+    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。その間、このページを離れてもかまいません。準備ができると、次を依頼できます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しく依頼してください。} other {このアーカイブは準備できませんでした。新しく依頼してください。}}",
+    "description": "Under the name of an archive in the list Archive on the settings page Export: where it stands, the row's one line about it. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
+  },
+  "settings.account.export.download": {
+    "defaultMessage": "ダウンロード",
+    "description": "The button of a row on the settings page Export that saves that row's file to the reader's device: an archive that is ready, or one of the CSV files. The row names the file."
+  },
+  "settings.account.export.saved": {
+    "defaultMessage": "{name} のダウンロードを開始しました。",
+    "description": "In a row of the settings page Export, under its name, once the reader pressed that row's Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
+  },
+  "settings.account.export.csv": {
+    "defaultMessage": "CSV ファイル",
+    "description": "A heading on the settings page Export, over the list of what the reader can download as a CSV file each. A heading: no full stop."
+  },
+  "settings.account.export.csv.about": {
+    "defaultMessage": "フォロー・ブロック・ミュート・ブックマークを、それぞれ Mastodon と同じ形式のファイルにします。別のアカウントでインポートできます。フォロー中のハッシュタグのファイルは Mastodon にはないため、インポートできるのはこのソフトウェアで動くサーバーだけです。",
+    "description": "Under the heading CSV files on the settings page Export: what the files are and what they are for, and that the file of the row Followed hashtags (settings.account.csv.kind) is read only by this software."
+  },
+  "settings.account.export.csv.failed": {
+    "defaultMessage": "ファイルをダウンロードできませんでした。もう一度試してください。",
+    "description": "In a row of the list CSV files on the settings page Export, under its name, when the download of that row's file failed."
+  },
+  "settings.account.csv.kind": {
+    "defaultMessage": "{kind, select, following {フォロー} followed_tags {フォロー中のハッシュタグ} blocks {ブロックしたアカウント} mutes {ミュートしたアカウント} domain_mutes {ミュートしたサーバー} other {ブックマーク}}",
+    "description": "What a CSV file lists, in the settings: the name of a row of the list CSV files on the page Export, an option of What the file lists on the page Import, and the name of an import in the list Recent imports. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. The same names as the lists of the settings page Relationships (settings.relationships.list). No full stop."
+  },
+  "settings.account.import": {
+    "defaultMessage": "インポート",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader imports a CSV file. A heading: no full stop."
+  },
+  "settings.account.import.row.about": {
+    "defaultMessage": "CSV ファイルからフォロー・ブロック・ミュート・ブックマークをインポート",
+    "description": "The line under the row Import on the settings page Account and data while no import is in progress: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.import.row.standing": {
+    "defaultMessage": "インポートを実行中です ({total, number} 件中 {processed, number} 件完了)",
+    "description": "The line under the row Import on the settings page Account and data, in place of settings.account.import.row.about, while the server carries out an import of the reader: how many of its entries are done. Without a full stop."
+  },
+  "settings.account.import.file.section": {
+    "defaultMessage": "ファイル",
+    "description": "A heading on the settings page Import, over the form: what the file lists, the file, and how it is imported. A heading: no full stop."
+  },
+  "settings.account.import.about": {
+    "defaultMessage": "このサーバーか Mastodon でエクスポートした CSV ファイルを選んでください。「インポート」を押すまでは何も変わりません。",
+    "description": "Under the heading File on the settings page Import: which files can be imported, and that choosing one does nothing yet. Import is the button settings.account.import.submit."
+  },
+  "settings.account.import.kind": {
+    "defaultMessage": "ファイルの内容",
+    "description": "The label of the choice on the settings page Import of what the CSV file lists; its options are settings.account.csv.kind."
+  },
+  "settings.account.import.file": {
+    "defaultMessage": "CSV ファイル",
+    "description": "The label of the field on the settings page Import that holds the file the reader chose from their device."
+  },
+  "settings.account.import.file.choose": {
+    "defaultMessage": "{chosen, select, yes {別のファイルを選ぶ} other {ファイルを選ぶ}}",
+    "description": "The button of the field CSV file on the settings page Import that opens the device's file picker. chosen is yes once the field holds a file, whose name stands after the button."
+  },
+  "settings.account.import.file.none": {
+    "defaultMessage": "ファイルが選ばれていません",
+    "description": "Beside the button Choose a file on the settings page Import while the field holds no file, where the file's name stands once one is chosen. No full stop."
+  },
+  "settings.account.import.file.missing": {
+    "defaultMessage": "インポートする CSV ファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import without having chosen a file."
+  },
+  "settings.account.import.file.unread": {
+    "defaultMessage": "このファイルを CSV ファイルとして読み込めませんでした。別のファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the browser could not read the file, or the server could not read it and gave no reason of its own."
+  },
+  "settings.account.import.file.too_large": {
+    "defaultMessage": "「{name}」は大きすぎます。ファイルは {max, number} 文字までです。小さいファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the file the reader chose is longer than the server takes, the field then holding no file, or when the server refused the request as too large (413) as it previewed or started the import, the field then keeping the file. name is the file's name; max is 1000000."
+  },
+  "settings.account.import.file.empty": {
+    "defaultMessage": "このファイルには、「ファイルの内容」で選んだものがありません。選んだ内容を確認するか、別のファイルを選んでください。",
+    "description": "Under the field CSV file on the settings page Import when the reader pressed Import and the server found no entry of the chosen kind in the file. What the file lists is the choice settings.account.import.kind."
+  },
+  "settings.account.import.mode": {
+    "defaultMessage": "インポートの方法",
+    "description": "The label of the choice on the settings page Import between merging the file into what the reader has and replacing it; its options are settings.account.import.mode.choice."
+  },
+  "settings.account.import.mode.choice": {
+    "defaultMessage": "{mode, select, overwrite {置き換え} other {統合}}",
+    "description": "An option of How to import on the settings page Import, and a fact of an import in the list Recent imports: mode is overwrite (what the reader has becomes exactly what the file lists) or merge (the file's entries are added). No full stop."
+  },
+  "settings.account.import.mode.about": {
+    "defaultMessage": "{mode, select, overwrite {リストをファイルの内容どおりにします。今あるもののうち、ファイルにないものは削除されます。} other {ファイルの内容を今あるものに追加します。何も削除しません。}}",
+    "description": "The line under How to import on the settings page Import: what the chosen way does. mode is as in settings.account.import.mode.choice."
+  },
+  "settings.account.import.preview": {
+    "defaultMessage": "プレビュー",
+    "description": "A heading on the settings page Import, over what importing the chosen file would do, before anything changes. A heading: no full stop."
+  },
+  "settings.account.import.preview.about": {
+    "defaultMessage": "サーバーがファイルを読み取った結果です。ほかのサーバーのアカウントや投稿は、インポートの実行時に検索します。",
+    "description": "Under the heading Preview on the settings page Import: where the numbers come from, and that an account or a post on another server may still not be found later."
+  },
+  "settings.account.import.preview.waiting": {
+    "defaultMessage": "{state, select, idle {ファイルを選ぶと、インポートの内容をここで確認できます。} pending {ファイルを読み取っています…} other {ファイルを読み込めなかったため、プレビューできません。}}",
+    "description": "In the section Preview of the settings page Import while it has no preview to show: state is idle (no file chosen yet), pending (the server is reading the file), or anything else when the file was refused, which the field CSV file explains."
+  },
+  "settings.account.import.preview.add": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {新しくフォローするアカウントはありません} other {# 件のアカウントを新しくフォローします}}} followed_tags {{count, plural, =0 {新しくフォローするハッシュタグはありません} other {# 件のハッシュタグを新しくフォローします}}} blocks {{count, plural, =0 {新しくブロックするアカウントはありません} other {# 件のアカウントを新しくブロックします}}} mutes {{count, plural, =0 {新しくミュートするアカウントはありません} other {# 件のアカウントを新しくミュートします}}} domain_mutes {{count, plural, =0 {新しくミュートするサーバーはありません} other {# 件のサーバーを新しくミュートします}}} other {{count, plural, =0 {新しくブックマークする投稿はありません} other {# 件の投稿を新しくブックマークします}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the import would add to what the reader has. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.present": {
+    "defaultMessage": "{kind, select, following {{count, plural, other {# 件のアカウントはすでにフォローしています}}} followed_tags {{count, plural, other {# 件のハッシュタグはすでにフォローしています}}} blocks {{count, plural, other {# 件のアカウントはすでにブロックしています}}} mutes {{count, plural, other {# 件のアカウントはすでにミュートしています}}} domain_mutes {{count, plural, other {# 件のサーバーはすでにミュートしています}}} other {{count, plural, other {# 件の投稿はすでにブックマークしています}}}}",
+    "description": "A fact of the Preview on the settings page Import: how many entries of the file the reader has already, which the import leaves as they are. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.remove": {
+    "defaultMessage": "{kind, select, following {{count, plural, =0 {フォローを解除するアカウントはありません} other {ファイルにない # 件のアカウントのフォローを解除します}}} followed_tags {{count, plural, =0 {フォローを解除するハッシュタグはありません} other {ファイルにない # 件のハッシュタグのフォローを解除します}}} blocks {{count, plural, =0 {ブロックを解除するアカウントはありません} other {ファイルにない # 件のアカウントのブロックを解除します}}} mutes {{count, plural, =0 {ミュートを解除するアカウントはありません} other {ファイルにない # 件のアカウントのミュートを解除します}}} domain_mutes {{count, plural, =0 {ミュートを解除するサーバーはありません} other {ファイルにない # 件のサーバーのミュートを解除します}}} other {{count, plural, =0 {削除するブックマークはありません} other {ファイルにない # 件のブックマークを削除します}}}}",
+    "description": "The one fact under What “Replace” removes (settings.account.import.preview.removes) in the Preview on the settings page Import, when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+  },
+  "settings.account.import.preview.skipped": {
+    "defaultMessage": "{count, plural, other {# 行をスキップします}}",
+    "description": "A fact of the Preview on the settings page Import: how many lines of the file are no entries and are left out, each with why under it (settings.account.import.preview.skipped.line). count is 1 or more. No full stop."
+  },
+  "settings.account.import.preview.skipped.line": {
+    "defaultMessage": "{reason, select, duplicate {{line, number} 行目「{value}」は前の行と重複しています} other {{line, number} 行目「{value}」は読み取れません}}",
+    "description": "A line under settings.account.import.preview.skipped on the settings page Import: one line of the file the import leaves out. line is its number in the file, value is the line as the file writes it, which stands in quotation marks so that it does not read as the app's own words, reason is duplicate (an earlier line names the same thing) or invalid (it names no account, hashtag, server or post). No full stop."
+  },
+  "settings.account.import.preview.skipped.more": {
+    "defaultMessage": "{count, plural, other {ほか # 行}}",
+    "description": "The last line under settings.account.import.preview.skipped on the settings page Import when the file has more lines that cannot be read than the page writes out: how many more. No full stop."
+  },
+  "settings.account.import.preview.removes": {
+    "defaultMessage": "「置き換え」で削除されるもの",
+    "description": "In the section Preview of the settings page Import when the reader chose Replace: the name over what the import would remove (settings.account.import.preview.remove), which stands last and apart from what it adds and skips. Replace is the option settings.account.import.mode.choice. No full stop."
+  },
+  "settings.account.import.submit": {
+    "defaultMessage": "インポート",
+    "description": "The button in the bar at the bottom of the settings page Import that sends the chosen file to the server to be imported."
+  },
+  "settings.account.import.submit.removes": {
+    "defaultMessage": "{kind, select, following {インポートで {count, number} 件のフォローを解除します。} followed_tags {インポートで {count, number} 件のハッシュタグのフォローを解除します。} blocks {インポートで {count, number} 件のブロックを解除します。} mutes {インポートで {count, number} 件のミュートを解除します。} domain_mutes {インポートで {count, number} 件のサーバーのミュートを解除します。} other {インポートで {count, number} 件のブックマークを削除します。}}",
+    "description": "In the bar at the bottom of the settings page Import, right before Import, while Replace is chosen and the import would remove something: how many things the reader has now that the file does not list, which the import removes and cannot put back. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. One short sentence."
+  },
+  "settings.account.import.refused": {
+    "defaultMessage": "インポートしていません。示した箇所を直してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when something is wrong with the file, which the field CSV file says."
+  },
+  "settings.account.import.failed": {
+    "defaultMessage": "インポートを開始できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server did not take the import and gave no reason of its own (the network)."
+  },
+  "settings.account.import.running": {
+    "defaultMessage": "別のインポートを実行中です。完了してから開始してください。",
+    "description": "In the bar at the bottom of the settings page Import, beside Import, when the server refused the import because it is still carrying out an earlier one of the reader."
+  },
+  "settings.account.import.started": {
+    "defaultMessage": "インポートを開始しました。バックグラウンドで進むため、このページを離れてもかまいません。",
+    "description": "The status of the section Recent imports on the settings page Import right after the server took the reader's import; the list under it says how far it is."
+  },
+  "settings.account.import.replace.title": {
+    "defaultMessage": "{kind, select, following {フォローを置き換えますか？} followed_tags {フォロー中のハッシュタグを置き換えますか？} blocks {ブロックしたアカウントを置き換えますか？} mutes {ミュートしたアカウントを置き換えますか？} domain_mutes {ミュートしたサーバーを置き換えますか？} other {ブックマークを置き換えますか？}}",
+    "description": "The question of the confirmation that opens when the reader presses Import on the settings page Import with Replace chosen and the import would remove something. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.text": {
+    "defaultMessage": "{kind, select, following {ファイルにない {count, number} 件のアカウントのフォローを解除します。取り消せません。} followed_tags {ファイルにない {count, number} 件のハッシュタグのフォローを解除します。取り消せません。} blocks {ファイルにない {count, number} 件のアカウントのブロックを解除します。取り消せません。} mutes {ファイルにない {count, number} 件のアカウントのミュートを解除します。取り消せません。} domain_mutes {ファイルにない {count, number} 件のサーバーのミュートを解除します。取り消せません。} other {ファイルにない {count, number} 件のブックマークを削除します。取り消せません。}}",
+    "description": "The text of the confirmation that asks whether to replace what the reader has with what the file lists, on the settings page Import: what the import removes, and that it cannot be undone. count is 1 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks."
+  },
+  "settings.account.import.replace.confirm": {
+    "defaultMessage": "置き換える",
+    "description": "The button of the confirmation on the settings page Import that starts the import that replaces what the reader has."
+  },
+  "settings.account.import.replace.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation on the settings page Import that closes it without importing anything."
+  },
+  "settings.account.import.recent": {
+    "defaultMessage": "最近のインポート",
+    "description": "A heading on the settings page Import, over the list of the imports the reader started in the last 7 days. A heading: no full stop."
+  },
+  "settings.account.import.recent.about": {
+    "defaultMessage": "インポートはサーバーがバックグラウンドで実行します。見つからない、または操作できないアカウントや投稿は、失敗として数えます。インポートは 7 日間ここに表示されます。",
+    "description": "Under the heading Recent imports on the settings page Import: how an import runs, what failed means in a row's state (settings.account.import.row.state), and how long a row stays."
+  },
+  "settings.account.import.recent.loading": {
+    "defaultMessage": "インポートを読み込んでいます…",
+    "description": "In the section Recent imports of the settings page Import while the reader's imports are read from the server."
+  },
+  "settings.account.import.recent.failed": {
+    "defaultMessage": "インポートを読み込めませんでした。",
+    "description": "In the section Recent imports of the settings page Import when the reader's imports could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.import.recent.none": {
+    "defaultMessage": "この 7 日間にインポートはありません。",
+    "description": "In place of the list Recent imports on the settings page Import while the server lists no import of the reader."
+  },
+  "settings.account.import.row.started": {
+    "defaultMessage": "{date} に開始",
+    "description": "A fact under the name of an import in the list Recent imports on the settings page Import, after Merge or Replace on the same line: when the reader started it. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.import.row.state": {
+    "defaultMessage": "{state, select, running {実行中: {total, number} 件中 {processed, number} 件完了} nothing {完了: 実行するものはありませんでした} done {完了: {total, number} 件すべて成功} partly {完了: {total, number} 件中 {done, number} 件成功、{failed, number} 件失敗。同じファイルを「統合」でもう一度インポートすると、残りをやり直します。} other {完了: {total, number} 件すべて失敗。同じファイルを「統合」でもう一度インポートすると、やり直します。}}",
+    "description": "Under the facts of an import in the list Recent imports on the settings page Import: where it stands. state is running (the server is carrying it out; processed of total are done), nothing (it finished with nothing to add or remove), done (all of total were carried out), partly (done were carried out and failed could not be), or anything else when none of total could be. After a failure it says what to do next: the server carries out every entry of a file again when it is imported again, finds the ones it has already done, and tries the others; Merge is the option settings.account.import.mode.choice. No full stop while nothing failed."
+  },
+  "settings.account.auto_delete": {
+    "defaultMessage": "古い投稿の自動削除",
+    "description": "A row of the section Data and posts on the settings page Account and data, and the title of the page it opens, where the reader chooses whether their posts are deleted once they pass an age, and which are kept. A heading: no full stop."
+  },
+  "settings.account.auto_delete.row.about": {
+    "defaultMessage": "指定した日数を過ぎた自分の投稿を削除する",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data until the reader's settings are read: what the page holds. A phrase without a full stop."
+  },
+  "settings.account.auto_delete.row.standing": {
+    "defaultMessage": "{enabled, select, on {オン: {days, number} 日を過ぎた投稿を削除します} other {オフ}}",
+    "description": "The line under the row Delete old posts automatically on the settings page Account and data: whether the automatic deletion is on, and past which age it deletes. days is 1 or more. Without a full stop."
+  },
+  "settings.account.auto_delete.loading": {
+    "defaultMessage": "古い投稿の設定を読み込んでいます…",
+    "description": "On the settings page Delete old posts automatically while the reader's settings are read from the server."
+  },
+  "settings.account.auto_delete.failed": {
+    "defaultMessage": "古い投稿の設定を読み込めませんでした。",
+    "description": "On the settings page Delete old posts automatically when the reader's settings could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.bound": {
+    "defaultMessage": "{state, select, from {{date} から、このサーバーの上限が投稿に適用されます} now {このサーバーの上限が投稿に適用されています} other {このサーバーの上限が投稿に適用されます}}",
+    "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
+  },
+  "settings.account.auto_delete.bound.about": {
+    "defaultMessage": "{state, select, now {{items}を残せなくなりました{counted, select, yes {。{count, number} 件の投稿が削除されます} more {。{count, number} 件を超える投稿が削除されます} other {}}。このページで保存すると、設定は上限の範囲内になります。} from {この日から、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、上限がすぐに適用されます。} other {上限が適用されると、{items}を残せなくなります{counted, select, yes {。そのとき {count, number} 件の投稿が削除されます} more {。そのとき {count, number} 件を超える投稿が削除されます} none {。そのとき削除される投稿はありません} other {}}。このページで保存すると、上限がすぐに適用されます。}}",
+    "description": "Under settings.account.auto_delete.bound, in two short sentences: what changes for this account when the server's maximum applies, how many posts are deleted then, and what saving does. state is as in settings.account.auto_delete.bound. items is what the reader's saved settings keep and the maximum does not, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list (two at most and “more below” when more differ). counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known."
+  },
+  "settings.account.auto_delete.section.when": {
+    "defaultMessage": "削除する時期",
+    "description": "A heading on the settings page Delete old posts automatically, over whether the deletion is on and the age past which a post is deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.when.about": {
+    "defaultMessage": "下の日数を過ぎた投稿は、自分で削除したときと同じように、このサーバーと送信先のサーバーから削除されます。取り消せません。ほかの人の投稿のブーストは削除されません。",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server that sets no maximum for the reader: what a deletion is."
+  },
+  "settings.account.auto_delete.when.about_limit": {
+    "defaultMessage": "このサーバーが投稿を残すのは最長 {days, number} 日です。下の日数を過ぎた投稿は、このサーバーと送信先のサーバーから削除されます。取り消せません。ほかの人の投稿のブーストは削除されません。",
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader and that their saved settings are within: the maximum, and what a deletion is. days is the maximum. A reader the maximum binds reads it in the summary instead (settings.account.auto_delete.bound.about) and settings.account.auto_delete.when.about here."
+  },
+  "settings.account.auto_delete.enabled": {
+    "defaultMessage": "自動削除",
+    "description": "The label of the choice on the settings page Delete old posts automatically between deleting old posts and not; its options are settings.account.auto_delete.enabled.choice."
+  },
+  "settings.account.auto_delete.enabled.choice": {
+    "defaultMessage": "{enabled, select, on {オン} other {オフ}}",
+    "description": "An option of Automatic deletion on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.enabled.fixed": {
+    "defaultMessage": "このサーバーでは古い投稿が必ず削除されるため、オフにできません。",
+    "description": "Under Automatic deletion on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: why the choice shows On and cannot be changed; also said there when the server refused a save that turned it off."
+  },
+  "settings.account.auto_delete.days": {
+    "defaultMessage": "この日数を過ぎた投稿を削除",
+    "description": "The label of the number field on the settings page Delete old posts automatically that holds the age, in days, past which a post is deleted; the unit days follows the field (settings.account.auto_delete.days.unit)."
+  },
+  "settings.account.auto_delete.days.unit": {
+    "defaultMessage": "日",
+    "description": "The unit after the number field Delete posts older than on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.days.about": {
+    "defaultMessage": "1〜{max, number} 日",
+    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. max is the most days: the server's maximum where it sets one for the reader, else 3650. No full stop."
+  },
+  "settings.account.auto_delete.days.rule": {
+    "defaultMessage": "1〜{max, number} の整数で日数を入力してください。",
+    "description": "Under the number field Delete posts older than on the settings page Delete old posts automatically when it is empty as the reader presses Save, or the server refused its value. max is the most days the field takes."
+  },
+  "settings.account.auto_delete.section.kept": {
+    "defaultMessage": "残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the kinds of posts that are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.kept.about": {
+    "defaultMessage": "どれかに当てはまる投稿は、どれだけ古くても削除されません。",
+    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically, over its checkboxes."
+  },
+  "settings.account.auto_delete.kept.fixed": {
+    "defaultMessage": "このサーバーでは、種類で投稿を残すことはできません。",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, in place of its checkboxes, on a server whose maximum allows none of the kinds (pinned, bookmarked, favourited, with media, with a poll, articles)."
+  },
+  "settings.account.auto_delete.kept.rule": {
+    "defaultMessage": "このサーバーでは、チェックした種類の一部を残せません。ページを再読み込みすると、チェックできる種類を確認できます。",
+    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds; in the bar at the bottom where the section shows no checkbox."
+  },
+  "settings.account.auto_delete.keep": {
+    "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {ピン留めした投稿} other {最近ピン留めした # 件の投稿}}} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} other {記事}}",
+    "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
+  },
+  "settings.account.auto_delete.keep.item": {
+    "defaultMessage": "{item, select, age {{days, number} 日を過ぎた投稿} pinned {ピン留めした投稿} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} articles {記事} audiences {公開範囲で残していた投稿} thresholds {ブーストやお気に入りの数で残していた投稿} more {そのほか下記のもの} other {保存済みの設定で残している一部の投稿}}",
+    "description": "One thing in a list inside a sentence of the settings page Delete old posts automatically, joined to the others as the reader's language joins a list (A, B, and C): what a server's maximum does not let the reader keep (settings.account.auto_delete.keep.fixed, settings.account.auto_delete.bound.about). In lower case, since it never starts the sentence. item is age (posts past days days), a kind of post (pinned, bookmarked, favourited, media, polls, articles), audiences (posts kept for the audience they were made for), thresholds (posts kept for how often they were boosted or favourited), more (the last of a list cut after two: the rest is on the page below), or anything else when the page cannot tell which. No full stop."
+  },
+  "settings.account.auto_delete.keep.fixed": {
+    "defaultMessage": "このサーバーでは、{items}を残すことはできません。",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the kinds of post the server's maximum does not allow to be kept, which are not offered as checkboxes. items is those kinds, each as settings.account.auto_delete.keep.item, joined as the reader's language joins a list. The same sentence form as settings.account.auto_delete.audiences.about (allowed no) and settings.account.auto_delete.thresholds.fixed."
+  },
+  "settings.account.auto_delete.section.audiences": {
+    "defaultMessage": "公開範囲ごとに残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the visibilities (Public, Followers only…) whose posts are never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.audiences.about": {
+    "defaultMessage": "{allowed, select, yes {チェックした公開範囲の投稿は、すべて残します。} other {このサーバーでは、公開範囲で投稿を残すことはできません。}}",
+    "description": "In the section Posts kept by audience of the settings page Delete old posts automatically. allowed yes: the line under the heading, over the checkboxes. allowed no: all the section says, in place of its checkboxes, on a server whose maximum does not allow it."
+  },
+  "settings.account.auto_delete.section.thresholds": {
+    "defaultMessage": "ブーストやお気に入りの数で残す投稿",
+    "description": "A heading on the settings page Delete old posts automatically, over the two numbers of boosts and of favourites from which a post is never deleted. A heading: no full stop."
+  },
+  "settings.account.auto_delete.thresholds.fixed": {
+    "defaultMessage": "このサーバーでは、ブーストやお気に入りの数で投稿を残すことはできません。",
+    "description": "All the section Posts kept by their boosts and favourites of the settings page Delete old posts automatically says, in place of its two fields, on a server whose maximum does not allow it."
+  },
+  "settings.account.auto_delete.threshold": {
+    "defaultMessage": "{of, select, boosts {この回数以上ブーストされた投稿を残す} other {この回数以上お気に入りにされた投稿を残す}}",
+    "description": "The label of a number field on the settings page Delete old posts automatically: how many times a post must have been boosted (of boosts) or favourited (of favourites) to be kept; the unit times follows the field (settings.account.auto_delete.threshold.unit)."
+  },
+  "settings.account.auto_delete.threshold.unit": {
+    "defaultMessage": "回",
+    "description": "The unit after the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically."
+  },
+  "settings.account.auto_delete.threshold.about": {
+    "defaultMessage": "0 にすると、この条件では残しません。",
+    "description": "The line under the number fields Keep posts boosted at least and Keep posts favourited at least on the settings page Delete old posts automatically: what 0 means."
+  },
+  "settings.account.auto_delete.threshold.rule": {
+    "defaultMessage": "0〜{max, number} の整数を入力してください。",
+    "description": "Under a number field of Posts kept by their boosts and favourites on the settings page Delete old posts automatically when the server refused its value. max is 1000000."
+  },
+  "settings.account.auto_delete.section.count": {
+    "defaultMessage": "削除される投稿",
+    "description": "A heading on the settings page Delete old posts automatically, right under When posts are deleted, over the count of the reader's posts that the settings on the page would delete now, before they are saved, and the oldest of them. A heading: no full stop."
+  },
+  "settings.account.auto_delete.count.about": {
+    "defaultMessage": "保存する前の、このページの設定で今数えた結果です。サーバーが削除するのは毎時 100 件までのため、古い投稿が多いと時間がかかります。",
+    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically, the second section of the page, right under When posts are deleted: what the count is of (every setting of the page, those under it too), and how fast the server deletes."
+  },
+  "settings.account.auto_delete.count.off": {
+    "defaultMessage": "自動削除がオフの間は、何も削除されません。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while Automatic deletion is Off on the page."
+  },
+  "settings.account.auto_delete.count.no_age": {
+    "defaultMessage": "日数を入力すると、投稿を数えます。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the field Delete posts older than is empty."
+  },
+  "settings.account.auto_delete.count.loading": {
+    "defaultMessage": "投稿を数えています…",
+    "description": "On the settings page Delete old posts automatically while the server counts what the settings on the page would delete: in the section Posts that would be deleted, and in the bar at the bottom right before Save, in the place of settings.account.auto_delete.save.count."
+  },
+  "settings.account.auto_delete.count": {
+    "defaultMessage": "{more, select, yes {{count, number} 件を超える投稿が削除されます。} other {{count, plural, =0 {削除される投稿はありません。} other {# 件の投稿が削除されます。}}}}",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically: how many of the reader's posts the settings on the page would delete now. more is yes when the server stopped counting at count (1000)."
+  },
+  "settings.account.auto_delete.count.failed": {
+    "defaultMessage": "投稿を数えられませんでした。",
+    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically when the server did not answer the count; Try again follows it (settings.retry)."
+  },
+  "settings.account.auto_delete.count.oldest": {
+    "defaultMessage": "そのうち最も古い投稿",
+    "description": "The label over the list of up to 3 posts under the count on the settings page Delete old posts automatically: the oldest of the posts that would be deleted. No full stop."
+  },
+  "settings.account.auto_delete.count.post": {
+    "defaultMessage": "{date} の投稿",
+    "description": "A row of the list The oldest of them on the settings page Delete old posts automatically: one of the reader's posts that would be deleted, named by when it was posted, which the row opens; the start of its text follows. date is a date and a time as the reader's locale writes them. No full stop."
+  },
+  "settings.account.auto_delete.save": {
+    "defaultMessage": "保存",
+    "description": "The button in the bar at the bottom of the settings page Delete old posts automatically that saves the whole page."
+  },
+  "settings.account.auto_delete.save.count": {
+    "defaultMessage": "{changed, select, yes {{more, select, yes {保存すると {count, number} 件を超える投稿が削除されます。} other {保存すると {count, number} 件の投稿が削除されます。}}} other {{more, select, yes {この設定で {count, number} 件を超える投稿が削除されます。} other {この設定で {count, number} 件の投稿が削除されます。}}}}",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, right before Save, while the settings on the page delete at least one of the reader's posts: how many. changed is yes when the page differs from the settings in effect, so that saving is what deletes them, and anything else when it shows the settings in effect as they are. more is yes when the server stopped counting at count (1000). count is 1 or more. One short sentence."
+  },
+  "settings.account.auto_delete.save.failed": {
+    "defaultMessage": "設定を保存できませんでした。もう一度試してください。",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the server did not take the page and gave no reason of its own (the network)."
+  },
+  "settings.account.auto_delete.save.refused": {
+    "defaultMessage": "示した箇所を直してください。",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the page or the server found something wrong with a setting, which says what under that setting."
+  },
+  "settings.account.auto_delete.ask.title": {
+    "defaultMessage": "古い投稿を削除しますか？",
+    "description": "The question of the confirmation that opens when the reader presses Save on the settings page Delete old posts automatically and the save turns the deletion on or deletes posts the settings in effect keep (a younger age, fewer kinds kept)."
+  },
+  "settings.account.auto_delete.ask.text": {
+    "defaultMessage": "{counted, select, yes {保存すると {count, number} 件の投稿が削除されます。取り消せません。} more {保存すると {count, number} 件を超える投稿が削除されます。取り消せません。} none {今は削除される投稿はありません。投稿は {days, number} 日を過ぎると削除されます。取り消せません。} other {保存すると、{days, number} 日を過ぎた投稿のうち、残す対象でないものが削除されます。取り消せません。}}",
+    "description": "The text of the confirmation that asks whether to save the settings page Delete old posts automatically: what the save deletes, and that deleted posts cannot be restored. counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known (still counting, or it failed). days is the age past which a post is deleted, 1 or more."
+  },
+  "settings.account.auto_delete.ask.confirm": {
+    "defaultMessage": "{deletes, select, yes {保存して削除} other {保存}}",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that saves the page. deletes is yes when the save deletes posts now, or may (the count is not known), and anything else when no post is old enough yet."
+  },
+  "settings.account.auto_delete.ask.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that closes it without saving; the page stays as the reader made it."
+  },
+  "settings.account.auto_delete.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question of the confirmation that opens when the reader leaves the settings page Delete old posts automatically with changes they did not save."
+  },
+  "settings.account.auto_delete.leave.text": {
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
+    "description": "The text of the confirmation that asks whether to leave the settings page Delete old posts automatically without saving."
+  },
+  "settings.account.auto_delete.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button of the confirmation that leaves the settings page Delete old posts automatically, the changes lost."
+  },
+  "settings.account.auto_delete.leave.cancel": {
+    "defaultMessage": "編集を続ける",
+    "description": "The button of the confirmation that stays on the settings page Delete old posts automatically, with the changes as the reader made them."
+  },
+  "settings.account.aliases": {
+    "defaultMessage": "別名",
+    "description": "A row of the section Moving to this account on the settings page Account and data, and the title of the page it opens, where the reader names the accounts they move from. A heading: no full stop."
+  },
+  "settings.account.aliases.row.about": {
+    "defaultMessage": "移転元のアカウントを登録して、フォロワーをこのアカウントに移せるようにする",
+    "description": "The line under the row Aliases on the settings page Account and data while the reader has no alias: what the page is for. A phrase without a full stop."
+  },
+  "settings.account.aliases.row.standing": {
+    "defaultMessage": "{count, plural, other {# 件のアカウントがフォロワーをここに移せます}}",
+    "description": "The line under the row Aliases on the settings page Account and data, in place of settings.account.aliases.row.about, while the reader has aliases: how many. count is 1 to 5. Without a full stop."
+  },
+  "settings.account.aliases.loading": {
+    "defaultMessage": "別名を読み込んでいます…",
+    "description": "On the settings page Aliases while the reader's aliases are read from the server."
+  },
+  "settings.account.aliases.failed": {
+    "defaultMessage": "別名を読み込めませんでした。",
+    "description": "On the settings page Aliases when the reader's aliases could not be read (the network, the server); Try again follows it (settings.retry)."
+  },
+  "settings.account.aliases.count": {
+    "defaultMessage": "{count, plural, =0 {別名はありません} other {別名 # 件 (最大 {max, number} 件)}}",
+    "description": "The heading of the list on the settings page Aliases, whose title already names it: how many aliases the reader has, of the most an account can have (max is 5). A heading: no full stop."
+  },
+  "settings.account.aliases.about": {
+    "defaultMessage": "別名は、移転元のアカウントです。ここに登録すると、そのアカウントからこのアカウントへフォロワーを移せるようになります。登録しただけでは何も変わりません。移転は移転元のアカウントで始めます。",
+    "description": "Under the heading of the list on the settings page Aliases: what an alias is for, and that it does nothing by itself."
+  },
+  "settings.account.aliases.empty": {
+    "defaultMessage": "下で移転元のアカウントを追加してください。",
+    "description": "In place of the list on the settings page Aliases while the reader has no alias; the section Add an alias follows."
+  },
+  "settings.account.aliases.added": {
+    "defaultMessage": "{date} に追加",
+    "description": "A fact under an alias in the list on the settings page Aliases: when the reader added it. date is a day as the reader's locale writes it. No full stop."
+  },
+  "settings.account.aliases.remove": {
+    "defaultMessage": "削除",
+    "description": "The button of a row of the list on the settings page Aliases that removes that alias at once; the row names the account."
+  },
+  "settings.account.aliases.removed": {
+    "defaultMessage": "削除しました",
+    "description": "What a row of the list on the settings page Aliases says once the reader removed that alias, in place of its button and its facts, the row staying where it was until they leave the page. Without a full stop."
+  },
+  "settings.account.aliases.removed.spoken": {
+    "defaultMessage": "別名 {name} を削除しました。",
+    "description": "What assistive technology reads in place of settings.account.aliases.removed, where the focus goes once an alias is removed. name is the account's handle (@user@domain), or its address where the server knows no handle."
+  },
+  "settings.account.aliases.remove.failed": {
+    "defaultMessage": "別名 {name} の削除を完了できませんでした。もう一度試してください。",
+    "description": "Under the list on the settings page Aliases when removing an alias got no answer from the server (the network); the row and its button stay, to press again. name is as in settings.account.aliases.removed.spoken."
+  },
+  "settings.account.aliases.add": {
+    "defaultMessage": "別名を追加",
+    "description": "A heading on the settings page Aliases, over the field that adds an alias by the account's address. A heading: no full stop."
+  },
+  "settings.account.aliases.add.label": {
+    "defaultMessage": "移転元のアカウント",
+    "description": "The label of the field on the settings page Aliases where the reader enters the account to add as an alias."
+  },
+  "settings.account.aliases.add.hint": {
+    "defaultMessage": "@name@example.com のようなハンドルか、プロフィールのアドレス。",
+    "description": "The hint of a field that takes an account by its address, on the settings pages Aliases (Account you are moving from) and Move account (Account you are moving to): what the server takes."
+  },
+  "settings.account.aliases.add.submit": {
+    "defaultMessage": "追加",
+    "description": "The button under the field Account you are moving from on the settings page Aliases that adds that account as an alias."
+  },
+  "settings.account.aliases.add.missing": {
+    "defaultMessage": "アカウントのハンドルかアドレスを入力してください。",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the reader pressed Add with the field empty."
+  },
+  "settings.account.aliases.add.invalid": {
+    "defaultMessage": "別名にできるアカウントが見つかりませんでした。@name@example.com のようなハンドルか、プロフィールのアドレスを確認してください。自分のアカウントは別名にできません。",
+    "description": "Under the field Account you are moving from on the settings page Aliases when the server found no account at what the reader entered, or one that cannot be an alias (the reader's own, something that is no account)."
+  },
+  "settings.account.aliases.add.failed": {
+    "defaultMessage": "別名を追加できませんでした。もう一度試してください。",
+    "description": "The status of the section Add an alias on the settings page Aliases when adding got no answer from the server (the network)."
+  },
+  "settings.account.aliases.add.done": {
+    "defaultMessage": "別名を追加しました。",
+    "description": "The status of the section Add an alias on the settings page Aliases once the server added the alias, which the list above then shows."
+  },
+  "settings.account.aliases.full": {
+    "defaultMessage": "別名は上限の {max, number} 件に達しています。追加するには、どれかを削除してください。",
+    "description": "In the section Add an alias of the settings page Aliases, in place of the field, while the reader has the most aliases an account can have; also its status when the server refused one more. max is 5."
+  },
+  "settings.account.departure": {
+    "defaultMessage": "別のアカウントへの移転",
+    "description": "A heading on the settings page Account and data, over the row that leads to Move account: moving this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move": {
+    "defaultMessage": "アカウントの移転",
+    "description": "A row of the section Moving to another account on the settings page Account and data, and the title of the page it opens, where the reader moves this account's followers to another account. A heading: no full stop."
+  },
+  "settings.account.move.row.about": {
+    "defaultMessage": "フォロワーを自分の別のアカウントに移す",
+    "description": "The line under the row Move account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.move.row.standing": {
+    "defaultMessage": "移転先: {handle}",
+    "description": "The line under the row Move account on the settings page Account and data, in place of settings.account.move.row.about, while this account has moved. {handle} is the handle of the account, as @name@example.com. Without a full stop."
+  },
+  "settings.account.end": {
+    "defaultMessage": "このアカウントの無効化と削除",
+    "description": "A heading on the settings page Account and data, over the rows that lead to Deactivate account and Delete account, the last section of the page. A heading: no full stop."
+  },
+  "settings.account.deactivate": {
+    "defaultMessage": "アカウントの無効化",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deactivates their account: it is hidden, and deleted later unless they sign in again. A heading: no full stop."
+  },
+  "settings.account.deactivate.row.about": {
+    "defaultMessage": "アカウントと投稿を隠し、期限までにログインし直さなければ削除する",
+    "description": "The line under the row Deactivate account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.delete": {
+    "defaultMessage": "アカウントの削除",
+    "description": "A row of the last section on the settings page Account and data, and the title of the page it opens, where the reader deletes their account at once. A heading: no full stop."
+  },
+  "settings.account.delete.row.about": {
+    "defaultMessage": "アカウントと投稿をすぐに、完全に削除する",
+    "description": "The line under the row Delete account on the settings page Account and data: what the page behind it does. Without a full stop."
+  },
+  "settings.account.loading": {
+    "defaultMessage": "アカウントを読み込んでいます…",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections while what they show is on its way."
+  },
+  "settings.account.failed": {
+    "defaultMessage": "アカウントを読み込めませんでした。",
+    "description": "On the settings pages Move account, Deactivate account and Delete account, in place of their sections when what they show could not be read; the button Try again follows it."
+  },
+  "settings.account.end.signed_out": {
+    "defaultMessage": "すべてのブラウザとアプリからログアウトします",
+    "description": "A fact in the first section of the settings pages Deactivate account and Delete account: what deactivating or deleting the account does to where the reader is signed in. Strong, over settings.account.end.signed_out.about. No full stop."
+  },
+  "settings.account.end.signed_out.about": {
+    "defaultMessage": "このブラウザも含めて、すぐにログアウトします。",
+    "description": "The muted line under the fact You are signed out everywhere on the settings pages Deactivate account and Delete account."
+  },
+  "settings.account.move.effect": {
+    "defaultMessage": "移転で起きること",
+    "description": "The heading of the first section of the settings page Move account: what moves, what does not, and what becomes of this account. A heading: no full stop."
+  },
+  "settings.account.move.effect.followers": {
+    "defaultMessage": "フォロワーが移ります",
+    "description": "A fact in the section What a move does of the settings page Move account: the one thing that moves. Strong, over settings.account.move.effect.followers.about. No full stop."
+  },
+  "settings.account.move.effect.followers.about": {
+    "defaultMessage": "このアカウントの代わりに、移転先のアカウントをフォローします。",
+    "description": "The muted line under the fact Your followers move on the settings page Move account."
+  },
+  "settings.account.move.effect.stays": {
+    "defaultMessage": "それ以外はこのアカウントに残ります",
+    "description": "A fact in the section What a move does of the settings page Move account: what does not move. Strong, over settings.account.move.effect.stays.about. No full stop."
+  },
+  "settings.account.move.effect.stays.about": {
+    "defaultMessage": "投稿・フォロー・ブロック・ミュート・ブックマークは移りません。",
+    "description": "The muted line under the fact Everything else stays here on the settings page Move account."
+  },
+  "settings.account.move.effect.account": {
+    "defaultMessage": "このアカウントでは投稿やフォローができなくなります",
+    "description": "A fact in the section What a move does of the settings page Move account: what becomes of the account that moves. Strong, over settings.account.move.effect.account.about. No full stop."
+  },
+  "settings.account.move.effect.account.about": {
+    "defaultMessage": "プロフィールには移転先が表示されます。ログイン・閲覧・データのエクスポート・アカウントの削除は引き続きできますが、投稿・ブースト・リアクション・フォロー・投票はできません。",
+    "description": "The muted line under the fact This account can no longer post or follow on the settings page Move account."
+  },
+  "settings.account.move.effect.wait": {
+    "defaultMessage": "次の移転は {days, number} 日後までできません",
+    "description": "A fact in the section What a move does of the settings page Move account: how long the account waits before another move. days is 30. Strong, over settings.account.move.effect.wait.about. No full stop."
+  },
+  "settings.account.move.effect.wait.about": {
+    "defaultMessage": "移転を取り消しても、この期間は短くならず、フォロワーも戻りません。",
+    "description": "The muted line under the fact You cannot move again for 30 days on the settings page Move account."
+  },
+  "settings.account.move.effect.export": {
+    "defaultMessage": "フォロー・ブロック・ミュート・ブックマークを引き継ぐには、ここで CSV ファイルにエクスポートし、移転先のアカウントでインポートしてください。",
+    "description": "A sentence at the end of the section What a move does of the settings page Move account; the link Export (settings.account.export) follows it."
+  },
+  "settings.account.move.alias": {
+    "defaultMessage": "先に、移転先のアカウントで",
+    "description": "The heading of the second section of the settings page Move account: what the reader does on the other account before the move. A heading: no full stop."
+  },
+  "settings.account.move.alias.about": {
+    "defaultMessage": "このアカウントを別名に追加してください。設定の「アカウントとデータ」から「別名」を開き、「別名を追加」にこのハンドルを入力します。ほかのソフトウェアにも、似た名前の同じ設定があります。",
+    "description": "The line under the heading First, on the account you are moving to of the settings page Move account, over this account's handle. Account and data, Aliases and Add an alias are settings.entry.account, settings.account.aliases and settings.account.aliases.add: the same words."
+  },
+  "settings.account.move.alias.handle": {
+    "defaultMessage": "このアカウントのハンドル",
+    "description": "The name, for assistive technology, of the box on the settings page Move account that holds this account's handle (@name@example.com) for the reader to copy."
+  },
+  "settings.account.move.alias.copy": {
+    "defaultMessage": "ハンドルをコピー",
+    "description": "The button under this account's handle on the settings page Move account: it copies the handle."
+  },
+  "settings.account.move.form": {
+    "defaultMessage": "このアカウントを移転",
+    "description": "The heading of the last section of the settings page Move account, over the field Account you are moving to. A heading: no full stop."
+  },
+  "settings.account.move.target": {
+    "defaultMessage": "移転先のアカウント",
+    "description": "The label of the field on the settings page Move account where the reader names the account this one moves to; its hint is settings.account.aliases.add.hint."
+  },
+  "settings.account.move.target.missing": {
+    "defaultMessage": "移転先のアカウントのハンドルかアドレスを入力してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader chose Move account with the field empty."
+  },
+  "settings.account.move.target.not_found": {
+    "defaultMessage": "アカウントが見つかりませんでした。@name@example.com のようなハンドルか、プロフィールのアドレスを確認してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the server found no account at what the reader entered."
+  },
+  "settings.account.move.target.own": {
+    "defaultMessage": "それはこのアカウントです。移転先のアカウントを入力してください。",
+    "description": "Under the field Account you are moving to on the settings page Move account, when the reader entered this account itself."
+  },
+  "settings.account.move.refused": {
+    "defaultMessage": "{reason, select, alias_missing {{handle} の別名に、このアカウントがまだありません。移転先のアカウントで「別名」にこのアカウントを追加してから、もう一度試してください。} target_moved {{handle} は別のアカウントへ移転済みです。その移転先のアカウントを入力してください。} target_unavailable {{handle} へは移転できません。このサーバーからそのアカウントに接続できないか、このサーバーが受け入れていません。ハンドルを確認するか、別のアカウントを選んでください。} other {このアカウントは移転してから {days, number} 日たっていないか、以前 {handle} に移転したことがあります。前回の移転から {days, number} 日たつと再び移転できますが、同じアカウントへは二度移転できません。}}",
+    "description": "On the settings page Move account, why the server refused the move, once the reader confirmed it: under the field Account you are moving to (alias_missing, target_moved, target_unavailable), or before the button Move account (anything else: the wait after a move, days is 30). {handle} is the handle of the account, as @name@example.com. Aliases is settings.account.aliases: the same word."
+  },
+  "settings.account.move.confirm": {
+    "defaultMessage": "フォロワーが {handle} へ移り、それ以外はこのアカウントに残ります。あとで移転を取り消してもフォロワーは戻らず、{days, number} 日間は再び移転できません。",
+    "description": "In the dialog Move this account to…?, opened by the button Move account on the settings page Move account: what its button does, what stays, and what cancelling the move later does not undo, over how the reader confirms it's them. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.confirm.title": {
+    "defaultMessage": "このアカウントを {handle} に移転しますか？",
+    "description": "The title of the dialog opened by the button Move account on the settings page Move account, whose button Move account moves the account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.submit": {
+    "defaultMessage": "アカウントを移転する",
+    "description": "The button that ends the settings page Move account: it asks the reader to confirm it's them, then moves the account."
+  },
+  "settings.account.move.moved": {
+    "defaultMessage": "このアカウントは {handle} に移転しました",
+    "description": "The summary at the top of the settings page Move account while this account has moved. {handle} is the handle of the account, as @name@example.com. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.moved.about": {
+    "defaultMessage": "フォロワーは移転先に移りました。このアカウントでは投稿・ブースト・リアクション・フォロー・投票ができません。ログイン・閲覧・データのエクスポート・アカウントの削除は引き続きできます。",
+    "description": "The muted line under the summary This account moved to… on the settings page Move account."
+  },
+  "settings.account.move.cancel": {
+    "defaultMessage": "移転の取り消し",
+    "description": "The heading of the section of the settings page Move account that holds the button Cancel the move, while this account has moved. A heading: no full stop."
+  },
+  "settings.account.move.cancel.about": {
+    "defaultMessage": "取り消すと、このアカウントで再び投稿やフォローができるようになり、移転をやめたことがほかのサーバーに伝わります。移ったフォロワーは {handle} に残ります。次の移転までの {days, number} 日は、この移転から数えます。",
+    "description": "The line under the heading Cancelling the move on the settings page Move account: what cancelling does and does not undo. {handle} is the handle of the account, as @name@example.com. days is 30."
+  },
+  "settings.account.move.cancel.submit": {
+    "defaultMessage": "移転を取り消す",
+    "description": "The button of the section Cancelling the move on the settings page Move account, and the confirming button of the dialog it opens; also the link under the summary This account cannot be deactivated now on the settings page Deactivate account, for an account that moved, which leads to Move account."
+  },
+  "settings.account.move.cancel.title": {
+    "defaultMessage": "{handle} への移転を取り消しますか？",
+    "description": "The title of the dialog opened by the button Cancel the move on the settings page Move account. {handle} is the handle of the account, as @name@example.com."
+  },
+  "settings.account.move.cancel.text": {
+    "defaultMessage": "すでに移ったフォロワーは戻りません。次の移転も、この移転から {days, number} 日たつまでできません。",
+    "description": "The text of the dialog Cancel the move to…? on the settings page Move account: what cancelling does not undo. days is 30."
+  },
+  "settings.account.move.cancel.keep": {
+    "defaultMessage": "取り消さない",
+    "description": "The button of the dialog Cancel the move to…? on the settings page Move account that closes it and cancels nothing, beside Cancel the move."
+  },
+  "settings.account.move.cancelled": {
+    "defaultMessage": "移転を取り消しました",
+    "description": "The summary at the top of the settings page Move account once the reader cancelled the move. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.cancelled.about": {
+    "defaultMessage": "このアカウントで再び投稿やフォローができます。移ったフォロワーは移転先のアカウントに残ります。",
+    "description": "The muted line under the summary The move is cancelled on the settings page Move account."
+  },
+  "settings.account.move.later": {
+    "defaultMessage": "このアカウントは今は移転できません",
+    "description": "The summary at the end of the settings page Move account, in place of the field and the button Move account, once the page knows the account cannot move now: the reader cancelled the move there, or the server refused a move as too soon. A sentence as a heading: no full stop."
+  },
+  "settings.account.move.later.cancelled": {
+    "defaultMessage": "このアカウントは移転してから {days, number} 日たっていません。前回の移転から {days, number} 日たつと再び移転できます。",
+    "description": "The muted line under the summary This account cannot move now on the settings page Move account, once the reader cancelled the move there: a cancelled move still counts. days is 30."
+  },
+  "settings.account.deactivate.effect": {
+    "defaultMessage": "無効化で起きること",
+    "description": "The heading of the first section of the settings page Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.effect.hidden": {
+    "defaultMessage": "プロフィールと投稿が隠れます",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.hidden.about. No full stop."
+  },
+  "settings.account.deactivate.effect.hidden.about": {
+    "defaultMessage": "このサーバーでもほかのサーバーでも、誰からも見えなくなります。サーバーによっては、無効化を表す方法がないため、アカウントが凍結されたように表示されます。",
+    "description": "The muted line under the fact Your profile and posts are hidden on the settings page Deactivate account. Suspended is what a moderator does to an account (凍結)."
+  },
+  "settings.account.deactivate.effect.dropped": {
+    "defaultMessage": "無効化のあいだは何も届きません",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.dropped.about. No full stop."
+  },
+  "settings.account.deactivate.effect.dropped.about": {
+    "defaultMessage": "無効化のあいだに届いたメンション・DM・通知・新しいフォロワーは保存されず、もとに戻しても表示されません。",
+    "description": "The muted line under the fact Nothing reaches the account meanwhile on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.effect.kept": {
+    "defaultMessage": "それ以外はそのまま残ります",
+    "description": "A fact in the section What deactivating does of the settings page Deactivate account. Strong, over settings.account.deactivate.effect.kept.about. No full stop."
+  },
+  "settings.account.deactivate.effect.kept.about": {
+    "defaultMessage": "投稿・フォロー・フォロワーはそのまま残ります。",
+    "description": "The muted line under the fact Everything else is kept on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after": {
+    "defaultMessage": "もとに戻すには",
+    "description": "The heading of the second section of the settings page Deactivate account: until when the reader can reactivate the account, and what happens after. A heading: no full stop."
+  },
+  "settings.account.deactivate.after.reactivate": {
+    "defaultMessage": "{date} までにログインすると、もとに戻せます",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. date is the day and time the account would be deleted if it were deactivated now, as the reader's locale writes them. Strong, over settings.account.deactivate.after.reactivate.about. No full stop."
+  },
+  "settings.account.deactivate.after.reactivate.about": {
+    "defaultMessage": "アカウントは無効化の前の状態に戻ります。",
+    "description": "The muted line under the fact Sign in by… to reactivate it on the settings page Deactivate account."
+  },
+  "settings.account.deactivate.after.deleted": {
+    "defaultMessage": "その後、アカウントは削除されます",
+    "description": "A fact in the section Coming back of the settings page Deactivate account. Strong, over settings.account.deactivate.after.deleted.about. No full stop."
+  },
+  "settings.account.deactivate.after.deleted.about": {
+    "defaultMessage": "「アカウントの削除」と同じく、完全に削除されます。このサーバーがメールを送る場合は、無効化したときに削除の日付を知らせるメールが 1 通届きます。削除の前にもう一度知らせることはありません。",
+    "description": "The muted line under the fact After that, the account is deleted on the settings page Deactivate account. Delete account is settings.account.delete: the same words."
+  },
+  "settings.account.deactivate.first": {
+    "defaultMessage": "無効化の前に",
+    "description": "The heading of the third section of the settings page Deactivate account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.deactivate.first.export": {
+    "defaultMessage": "無効化のあいだはデータをエクスポートできません",
+    "description": "The line under the row Export in the section Before you deactivate of the settings page Deactivate account. Without a full stop."
+  },
+  "settings.account.deactivate.act": {
+    "defaultMessage": "このアカウントを無効化",
+    "description": "The heading of the last section of the settings page Deactivate account, over the button Deactivate account. A heading: no full stop."
+  },
+  "settings.account.deactivate.act.about": {
+    "defaultMessage": "本人確認のあと、ログアウトします。そのままにすると、アカウントは {date} に削除されます。",
+    "description": "The line under the heading Deactivate this account on the settings page Deactivate account. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.act.about.held": {
+    "defaultMessage": "確認するとログアウトします。そのままにすると、アカウントは {date} に削除されます。",
+    "description": "In place of settings.account.deactivate.act.about on the settings page Deactivate account once the reader confirmed it's them at another service: the button then asks only whether to go ahead. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.submit": {
+    "defaultMessage": "アカウントを無効化する",
+    "description": "The button that ends the settings page Deactivate account: it asks the reader to confirm it's them, then deactivates the account and signs them out."
+  },
+  "settings.account.deactivate.confirm": {
+    "defaultMessage": "ログアウトし、それまでにログインし直さなければ、アカウントは {date} に削除されます。",
+    "description": "In the dialog Deactivate this account?, opened by the button Deactivate account on the settings page Deactivate account: what its button does, over how the reader confirms it's them. date is the day and time the account would be deleted, as the reader's locale writes them."
+  },
+  "settings.account.deactivate.confirm.title": {
+    "defaultMessage": "このアカウントを無効化しますか？",
+    "description": "The title of the dialog opened by the button Deactivate account on the settings page Deactivate account, whose button Deactivate account deactivates it."
+  },
+  "settings.account.deactivate.refused": {
+    "defaultMessage": "このアカウントはいま無効化できません",
+    "description": "The summary at the top of the settings page Deactivate account while the server would refuse the deactivation; settings.account.deactivate.refused.reason says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.deactivate.refused.reason": {
+    "defaultMessage": "{reason, select, login_restricted {モデレーションの処分により、このアカウントはログインできません。処分の内容と異議申し立ての方法は「アカウントの状態」で確認できます。} deletion_scheduled {このアカウントはすでに削除される予定です。理由は「アカウントの状態」で確認できます。} already_deactivated {このアカウントはすでに無効化されています。もとに戻すには、ログインし直してください。} moved {このアカウントは別のアカウントへ移転しました。先に「アカウントの移転」で移転を取り消してください。} registration_pending {このアカウントの登録はモデレーターの承認待ちです。承認されてから、もう一度試してください。} paid_subscription {サポーターのプランが続いています。先に解約してから、アカウントを無効化してください。} last_administrator {ログインできる管理者はこのアカウントだけで、無効化したアカウントは最後には削除されます。先にほかの人を管理者にしてください。} recently_reactivated {このアカウントは、もとに戻したばかりです。{date} から再び無効化できます。} reactivated {このアカウントは、もとに戻したばかりです。明日もう一度試してください。} other {理由はサーバーから伝えられませんでした。アプリを再読み込みしてから、もう一度試してください。}}",
+    "description": "The muted line under the summary This account cannot be deactivated now on the settings page Deactivate account: why, and what to do. date (recently_reactivated only) is the day and time from which it can be deactivated again; reactivated is the same without a known time. Account status and Move account are settings.account.status and settings.account.move: the same words."
+  },
+  "settings.account.delete.effect": {
+    "defaultMessage": "削除で起きること",
+    "description": "The heading of the first section of the settings page Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.effect.gone": {
+    "defaultMessage": "アカウントと投稿がすぐに削除されます",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.gone.about. No full stop."
+  },
+  "settings.account.delete.effect.gone.about": {
+    "defaultMessage": "このサーバーから消え、ほかのサーバーにも削除が伝えられます。",
+    "description": "The muted line under the fact Your account and posts are deleted at once on the settings page Delete account."
+  },
+  "settings.account.delete.effect.final": {
+    "defaultMessage": "取り消せません",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.final.about. No full stop."
+  },
+  "settings.account.delete.effect.final.about": {
+    "defaultMessage": "考え直すための期間はありません。しばらく戻れるようにしておくには、代わりにアカウントを無効化してください。",
+    "description": "The muted line under the fact It cannot be undone on the settings page Delete account."
+  },
+  "settings.account.delete.effect.username": {
+    "defaultMessage": "ユーザー名は二度と使えません",
+    "description": "A fact in the section What deleting does of the settings page Delete account. Strong, over settings.account.delete.effect.username.about. No full stop."
+  },
+  "settings.account.delete.effect.username.about": {
+    "defaultMessage": "あなたを含め、誰もこのサーバーで {username} をもう一度登録できません。",
+    "description": "The muted line under the fact The username is never free again on the settings page Delete account. {username} is the account's username on this server with its @, as @name."
+  },
+  "settings.account.delete.effect.erased": {
+    "defaultMessage": "データは {days, number} 日後に消去されます",
+    "description": "A fact in the section What deleting does of the settings page Delete account. days is 7. Strong, over settings.account.delete.effect.erased.about. No full stop."
+  },
+  "settings.account.delete.effect.erased.about": {
+    "defaultMessage": "それまではサーバーに残りますが、誰にも見えません。",
+    "description": "The muted line under the fact The data is erased 7 days later on the settings page Delete account."
+  },
+  "settings.account.delete.first": {
+    "defaultMessage": "削除の前に",
+    "description": "The heading of the second section of the settings page Delete account, over the row that leads to Export. A heading: no full stop."
+  },
+  "settings.account.delete.first.export": {
+    "defaultMessage": "削除したあとは、データをエクスポートできません",
+    "description": "The line under the row Export in the section Before you delete of the settings page Delete account. Without a full stop."
+  },
+  "settings.account.delete.act": {
+    "defaultMessage": "このアカウントを削除",
+    "description": "The heading of the last section of the settings page Delete account, over the button Delete account. A heading: no full stop."
+  },
+  "settings.account.delete.act.about": {
+    "defaultMessage": "本人確認のあと、アカウントはすぐに削除され、ログアウトします。",
+    "description": "The line under the heading Delete this account on the settings page Delete account."
+  },
+  "settings.account.delete.act.about.held": {
+    "defaultMessage": "確認すると、アカウントはすぐに削除され、ログアウトします。",
+    "description": "In place of settings.account.delete.act.about on the settings page Delete account once the reader confirmed it's them at another service: the button then asks only whether to go ahead."
+  },
+  "settings.account.delete.submit": {
+    "defaultMessage": "アカウントを削除する",
+    "description": "The button that ends the settings page Delete account: it asks the reader to confirm it's them, then deletes the account and signs them out."
+  },
+  "settings.account.delete.confirm": {
+    "defaultMessage": "アカウントと投稿はすぐに削除され、ログアウトします。取り消せません。",
+    "description": "In the dialog Delete this account?, opened by the button Delete account on the settings page Delete account: what its button does, over how the reader confirms it's them."
+  },
+  "settings.account.delete.confirm.title": {
+    "defaultMessage": "このアカウントを削除しますか？",
+    "description": "The title of the dialog opened by the button Delete account on the settings page Delete account, whose button Delete account deletes it."
+  },
+  "settings.account.delete.refused": {
+    "defaultMessage": "このアカウントは今は削除できません",
+    "description": "The summary at the end of the settings page Delete account, in place of the button Delete account, while the server would refuse the deletion; settings.account.delete.refused.last_administrator says why under it. A sentence as a heading: no full stop."
+  },
+  "settings.account.delete.refused.last_administrator": {
+    "defaultMessage": "ログインできる管理者はこのアカウントだけです。先にほかの人を管理者にしてから、削除してください。",
+    "description": "The muted line under the summary This account cannot be deleted now on the settings page Delete account: the server keeps its last administrator who can sign in."
   },
   "settings.security.sign_in": {
     "defaultMessage": "ログイン",
@@ -751,6 +2711,14 @@
     "defaultMessage": "本人確認のため、{provider} にもう一度ログインしてください。そのあとここに戻り、始めた操作をもう一度行います。",
     "description": "The sentence of the dialog Confirm it's you when the reader confirms at another service they linked: the app is left for that service's page, and the reader comes back to the same page of the settings, where they do again what they started (settings.confirm.returned). provider is the name of the service; it is not translated."
   },
+  "settings.confirm.way.password": {
+    "defaultMessage": "本人確認のため、現在のパスワードを入力してください。",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with their password (the field Current password follows)."
+  },
+  "settings.confirm.way.passkey": {
+    "defaultMessage": "続けると、本人確認のためにブラウザがパスキーを求めます。",
+    "description": "The muted sentence of the dialog that asks before moving, deactivating or deleting the account, under what the button does, when the reader confirms it's them with a passkey: pressing the button makes the browser ask for one."
+  },
   "settings.confirm.other.password": {
     "defaultMessage": "代わりにパスワードを使う",
     "description": "A text button in the dialog Confirm it's you that changes the way to confirm to the password."
@@ -778,6 +2746,14 @@
   "settings.confirm.returned.unknown": {
     "defaultMessage": "ほかのサービスで本人確認が完了しました。始めた操作をもう一度行ってください。今回は確認を求められません。",
     "description": "As settings.confirm.returned, when the page does not know the name of the service the browser came back from."
+  },
+  "settings.confirm.returned.act": {
+    "defaultMessage": "{provider} で本人確認が完了しました。下からもう一度操作してください。今回は、続けるかどうかだけを確認します。",
+    "description": "On the settings pages Move account, Deactivate account and Delete account when the browser comes back from another service where the reader confirmed it's them: the reader does it again, and the dialog then asks only whether to go ahead, with no password. provider is the name of the service as the administrators wrote it; it is not translated. Without a name, the page shows settings.confirm.returned.act.unknown."
+  },
+  "settings.confirm.returned.act.unknown": {
+    "defaultMessage": "ほかのサービスで本人確認が完了しました。下からもう一度操作してください。今回は、続けるかどうかだけを確認します。",
+    "description": "As settings.confirm.returned.act, when the page does not know the name of the service the browser came back from."
   },
   "settings.confirm.failed": {
     "defaultMessage": "サーバーに接続できなかったため、完了できませんでした。接続を確かめてから、もう一度試してください。",
@@ -1324,7 +3300,7 @@
     "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
   },
   "settings.invites.cannot.reason": {
-    "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。} other {いまは招待を作れません。}}",
+    "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。} other {いまは招待を作れません。}}",
     "description": "Under the title You cannot create invites (settings.invites.cannot): why the reader may not create invites now. reason is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value names no cause. The same sentences as the server's refusal (errors.invites.not_allowed_detail), which the list of invites gives only as the reason's name."
   },
   "settings.invites.link": {

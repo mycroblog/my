@@ -29,7 +29,8 @@ If the server sends email, it sends a link to confirm your email address. Open i
 Until the account is approved and the address is confirmed, you can sign in but you only see what you are waiting for
 ("Your account is not ready yet").
 
-After sign-up, while you follow no one, your home timeline shows people the server suggests, if it suggests any.
+After sign-up, a welcome step asks for a display name and an avatar, both optional ("Skip for now"); while you follow no one, your
+home timeline then shows people the server suggests, if it suggests any.
 
 ## Signing in
 
@@ -61,7 +62,11 @@ to your account and signs them out.
 
 ## Settings
 
-"Settings" in the navigation opens the settings: "Display and posting", "Security", "Apps", and "Invites" when you can
-create invites. Under "Security" you manage your password, passkeys, two-factor authentication, linked accounts, and
-signed-in browsers; "Apps" lists the apps you allowed to use your account, which you can revoke, and the apps you
-registered; "Invites" creates invite links and revokes them.
+"Settings" in the navigation opens the settings. They hold "Profile", which changes how your account looks and where
+it is found; "Display and posting"; "Notifications"; "Relationships", which lists the accounts you block and mute, the
+servers you mute and the hashtags you follow, each with the button that undoes it; "Keyword filters", which lists your
+filters and adds, changes and deletes them; "Security", where you manage your password, passkeys, two-factor
+authentication, linked accounts, and signed-in browsers; "Apps", which lists the apps you allowed to use your account,
+which you can revoke, and the apps you registered; "Invites", when you can create invites, which creates invite links
+and revokes them; and "Account and data", which holds "Account status", your data and posts, and moving, deactivating or
+deleting the account ([Moving your account](moving-your-account.md)).

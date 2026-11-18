@@ -46,6 +46,19 @@ export class Profile {
     return this.page.getByRole("region", { name: this.person.displayName, exact: true });
   }
 
+  /**
+   * The pictures of the card, each a decoration beside the name that says whose it is: the header and the avatar of a
+   * person who has them, none for one who has neither.
+   */
+  get pictures(): Locator {
+    return this.card.getByRole("presentation", { includeHidden: true });
+  }
+
+  /** The link on the reader's own profile that leads to the form that edits it. */
+  get editProfile(): Locator {
+    return this.card.getByRole("link", { name: "Edit profile", exact: true });
+  }
+
   /** The button that follows the person; "Follow back" when they follow the reader. */
   get followButton(): Locator {
     return this.card.getByRole("button", { name: /^Follow( back)?$/ });
@@ -67,6 +80,31 @@ export class Profile {
   async unfollow(): Promise<void> {
     await answered(this.page, { methods: ["DELETE"], path: /\/accounts\/[^/]+\/follow$/ }, async () => {
       await this.followingButton.click();
+    });
+  }
+
+  /** The button on the card of a person the reader blocks, which lifts the block. */
+  get unblockButton(): Locator {
+    return this.card.getByRole("button", { name: "Unblock", exact: true });
+  }
+
+  /** Opens the card's More, and returns its item named `name`. */
+  async moreItem(name: string): Promise<Locator> {
+    await this.card.getByRole("button", { name: "More", exact: true }).click();
+    return this.page.getByRole("menu", { name: "More", exact: true }).getByRole("menuitem", { name, exact: true });
+  }
+
+  /**
+   * Blocks the person from the card's More, Block… and its confirmation, which asks by the person's handle, and
+   * returns once the server has answered.
+   */
+  async block(): Promise<void> {
+    await (await this.moreItem("Block…")).click();
+    // The handle stands in the question between the marks that isolate its direction (U+2068, U+2069).
+    const handle = `${String.fromCodePoint(0x2068)}?@${escape(this.person.username)}${String.fromCodePoint(0x2069)}?`;
+    const asking = this.page.getByRole("alertdialog", { name: new RegExp(`^Block ${handle}\\?$`) });
+    await answered(this.page, { methods: ["POST"], path: /\/accounts\/[^/]+\/block$/ }, async () => {
+      await asking.getByRole("button", { name: "Block", exact: true }).click();
     });
   }
 

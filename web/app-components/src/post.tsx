@@ -12,8 +12,11 @@
 // (post.reply, post.boost, post.favourite, post.more) act while focus is inside it. A screen may add a line of its own
 // over it (`context`: pinned, or the heading of a thread's replies), lines under the reactions (`details`: a focused
 // post's date and counts), and a line after the actions (`after`: a thread's fold), inside its surface. Its author's name leads to their profile and its time to the post's own page (paths.ts). It shows its
-// extent by a surface only while hovered or focused (Entry). It fetches nothing and keeps no state of the server's: each
-// action is a callback, and what the action changes comes back in the next status.
+// extent by a surface only while hovered or focused (Entry). A post that the reader's keyword filters matched
+// (`filtered`, ADR-0157 §10) is folded whole under the line that names the filters, which the reader shows; a quoted
+// post that they matched is folded alone (post-filter.tsx).
+// It fetches nothing and keeps no state of the server's: each action is a callback, and what the action changes comes
+// back in the next status.
 
 import {
   ActionRow,
@@ -55,13 +58,15 @@ import {
   type IconName,
   type MediaItem,
 } from "@my/design-system";
-import { Component, Fragment, useId, useState, type ReactNode } from "react";
+import { Component, useId, useState, type ReactNode } from "react";
 import { AccountName as Name, handleOf, nameOf, sentenceHandleOf } from "./account";
+import { format } from "./format";
 import { languageName, stringsIn } from "./locale";
 import type { MessageId } from "./messages.gen";
 import { accountPath, statusPath } from "./paths";
 import { PollBox, PollChoices, PollFoot, PollResults } from "./poll";
 import { EmojiText, excerptHtml, PostContent } from "./post-content";
+import { FilterFold } from "./post-filter";
 import type { PostArticle, PostMedia, PostReaction, PostStatus, PostTranslation, PostVisibility } from "./status";
 
 /** What the reader asked of a post, on the status it shows (a boost's boosted status). */
@@ -149,8 +154,9 @@ export type PostProps = {
    */
   authorMenu?: ReactNode;
   /**
-   * What it holds back is shown at first: its content warning open, and its sensitive media, its card's image and a
-   * sensitive article's cover and text uncovered; folded and covered by default. The reader hides each again.
+   * What it holds back is shown at first: the post that its filters fold and its content warning open, and its
+   * sensitive media, its card's image and a sensitive article's cover and text uncovered; folded and covered by
+   * default. The reader hides each again.
    */
   defaultShown?: boolean | undefined;
   /**
@@ -201,37 +207,6 @@ const failures: Record<TranslationFailure["reason"], MessageId> = {
 };
 
 type T = ReturnType<typeof stringsIn>["t"];
-
-// The first of the characters no text holds (the private use area), each standing for a part drawn by React inside a
-// formatted string.
-const firstSlot = 0xe000;
-const slotPattern = /([-])/u;
-
-/**
- * The string `id` with each of `parts` drawn by React in its argument's place, so that a name keeps its custom emoji
- * and its isolation inside a sentence, and no transform of the message (a pseudo-locale's) reaches it.
- */
-export function format(
-  t: T,
-  id: MessageId,
-  parts: Readonly<Record<string, ReactNode>>,
-  held: readonly string[] = [],
-): ReactNode {
-  const names = Object.keys(parts);
-  const text = t(id, Object.fromEntries(names.map((name, i) => [name, String.fromCodePoint(firstSlot + i)])));
-  const pieces = text.split(slotPattern);
-  const nameAt = (slot: string | undefined) =>
-    slot === undefined ? undefined : names[(slot.codePointAt(0) ?? firstSlot) - firstSlot];
-  return pieces.map((piece, i) => {
-    // The words beside a held part keep to it ("by LibreTranslate", "LibreTranslate が"): the spaces do not break.
-    if (i % 2 === 0) {
-      const before = held.includes(nameAt(pieces[i + 1]) ?? "") ? piece.replace(/ $/u, " ") : piece;
-      return held.includes(nameAt(pieces[i - 1]) ?? "") ? before.replace(/^ /u, " ") : before;
-    }
-    const name = names[(piece.codePointAt(0) ?? firstSlot) - firstSlot] ?? "";
-    return <Fragment key={i}>{parts[name]}</Fragment>;
-  });
-}
 
 // Each visibility's glyph, and the name it says for assistive technology.
 export const visibilities: Record<PostVisibility, { icon: IconName; label: MessageId }> = {
@@ -392,6 +367,18 @@ function Quote({ status }: { status: PostStatus }) {
         sensitive={status.sensitive ?? false}
       />
     </Embed>
+  );
+}
+
+/** The quoted post, folded alone under the line of the filters it matched, when it matched any. */
+function QuoteFold({ status, defaultShown }: { status: PostStatus; defaultShown: boolean }) {
+  const [shown, setShown] = useState(defaultShown);
+  const filtered = status.filtered ?? [];
+  if (filtered.length === 0) return <Quote status={status} />;
+  return (
+    <FilterFold filtered={filtered} shown={shown} onShownChange={setShown}>
+      <Quote status={status} />
+    </FilterFold>
   );
 }
 
@@ -941,6 +928,13 @@ export function Post({
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
   const shown = status.boost ?? status;
+  // The filters the post matched are the row's: a boost carries those of the post it boosts. They fold the post whole
+  // under their line, who boosted it, its author and its actions too, and leave the screen's own lines (`context`,
+  // `after`); the reader shows it, and folds it again.
+  const filtered = status.filtered ?? [];
+  const [unfolded, setUnfolded] = useState(defaultShown);
+  const fold = useId();
+  const folded = filtered.length > 0 && !unfolded;
   const act: Act = (action) => {
     if (signIn !== undefined && needsAccount.has(action.type)) signIn(shown);
     else onAction?.(action);
@@ -988,7 +982,7 @@ export function Post({
       <Contained key={shown.card?.url}>
         <Card status={shown} size={cardSize} defaultShown={defaultShown} />
       </Contained>
-      {quoted !== undefined && <Quote status={quoted} />}
+      {quoted !== undefined && <QuoteFold status={quoted} defaultShown={defaultShown} />}
     </>
   );
   const viewer = (
@@ -1103,9 +1097,8 @@ export function Post({
         )}
       </>
     );
-  return (
-    <Entry lang={known(shown.language)} labelledBy={name}>
-      {context}
+  const post = (
+    <>
       <Context status={status} shown={shown} t={t} lang={lang} replyingTo={replyingTo} />
       {article !== undefined && reading === undefined && byline}
       {body}
@@ -1121,6 +1114,19 @@ export function Post({
         authorMenu={authorMenu}
         defaultMenuOpen={defaultMenuOpen}
       />
+    </>
+  );
+  return (
+    // Folded, the line of its filters names the entry, in its author's place.
+    <Entry lang={known(shown.language)} labelledBy={folded ? fold : name}>
+      {context}
+      {filtered.length === 0 ? (
+        post
+      ) : (
+        <FilterFold filtered={filtered} id={fold} shown={unfolded} onShownChange={setUnfolded}>
+          <Stack gap="entry">{post}</Stack>
+        </FilterFold>
+      )}
       {after}
       {viewer}
     </Entry>

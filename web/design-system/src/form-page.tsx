@@ -233,7 +233,16 @@ const form = tv({
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
-    fieldError: "font-label [word-break:auto-phrase]",
+    // On a raised surface (a section of a settings screen), an error is a caption, as every line under a control
+    // there is (the line about a setting, its save state), at the caption's own weight: its glyph and the text's
+    // color tell it from a hint.
+    fieldError: [
+      // Brought into view (focusRefusedField), it keeps a little air to what is held at the viewport's bottom.
+      "scroll-mb-shell-inset font-label [word-break:auto-phrase]",
+      "[[data-surface-raised]_&]:text-caption [[data-surface-raised]_&]:font-(--text-caption--font-weight)",
+    ],
+    // A statement under a field, no error: the text's color, a caption on a raised surface, at its own weight.
+    fieldNote: "text-text [word-break:auto-phrase] [[data-surface-raised]_&]:text-caption",
     checkInput: [
       "size-form-page-check accent-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
@@ -256,7 +265,8 @@ const form = tv({
     // A textarea starts at a control's height, or as tall as the lines it says it shows (`rows`), and the reader may
     // make it taller.
     height: {
-      line: { input: "h-control-form" },
+      // A line as tall as the field: a field cuts what reaches under a shorter line (the tail of a g).
+      line: { input: "h-control-form leading-(--control-form-height)" },
       area: { input: "h-control-form resize-y py-control-timeline-inline" },
       rows: { input: "min-h-control-form resize-y py-control-timeline-inline" },
     },
@@ -372,7 +382,10 @@ export type TextFieldProps = {
   maxLength?: number | undefined;
   /** A textarea instead of a line: a control's height at rest, which the reader may make taller. */
   multiline?: boolean | undefined;
-  /** How many lines a textarea shows at rest, where one is too few (addresses, one a line). */
+  /**
+   * How many lines a multiline field shows at rest, where one is too few (a bio: three; addresses, one a line); a
+   * control's height without it.
+   */
   rows?: number | undefined;
   readOnly?: boolean | undefined;
   /** A link at the end of the label's line (Forgot your password?). */
@@ -383,6 +396,11 @@ export type TextFieldProps = {
   autoFocus?: boolean | undefined;
   /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
   onChange?: ((value: string) => void) | undefined;
+  /**
+   * Its label names it for assistive technology alone, where the place it stands in says what it is (the words of a
+   * list, one under another, each a field), and `end` is not drawn.
+   */
+  labelHidden?: boolean | undefined;
 };
 
 /**
@@ -411,6 +429,7 @@ export function TextField({
   describedBy,
   autoFocus,
   onChange,
+  labelHidden = false,
 }: TextFieldProps) {
   const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
   const holder = use(FieldContext);
@@ -441,12 +460,18 @@ export function TextField({
   };
   return (
     <Stack gap="form-page-field-gap">
-      <Row align="baseline" justify="between" gap="form-page-alert-gap">
-        <label className={s.label()} htmlFor={id}>
+      {labelHidden ? (
+        <label className="sr-only" htmlFor={id}>
           {label}
         </label>
-        {end}
-      </Row>
+      ) : (
+        <Row align="baseline" justify="between" gap="form-page-alert-gap">
+          <label className={s.label()} htmlFor={id}>
+            {label}
+          </label>
+          {end}
+        </Row>
+      )}
       {hint && (
         <p id={`${id}-hint`} className={s.hint()}>
           {hint}
@@ -476,6 +501,31 @@ export function TextField({
   );
 }
 
+/**
+ * Puts the focus on the field of `id` that was refused (a `TextField`, either field of a `PairField`, the button of a
+ * `PictureField`, a `PairList`, the control of a `SettingRow`), and brings its error, right under it, into view with
+ * it: a browser scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which
+ * grows as it says that nothing was sent), and the error under the field would stay behind it. The error is the one at
+ * `${id}-error`, else the one among what describes the field (a `SettingRow`'s, which stands at the row's id). It comes
+ * into view once the page has measured that bar again, a frame after the one that drew the refusal.
+ */
+export function focusRefusedField(id: string): void {
+  const field = document.getElementById(id);
+  field?.focus();
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const described = field
+        ?.getAttribute("aria-describedby")
+        ?.split(/\s+/)
+        .find((by) => by.endsWith("-error"));
+      const error =
+        document.getElementById(`${id}-error`) ?? (described === undefined ? null : document.getElementById(described));
+      // A DOM that lays nothing out (a test's) has nothing to scroll.
+      if (error !== null && "scrollIntoView" in error) error.scrollIntoView({ block: "nearest" });
+    });
+  });
+}
+
 /** A field's error, right under what it is about. */
 export function FieldError({ id, children }: { id?: string | undefined; children: string }) {
   return (
@@ -486,7 +536,24 @@ export function FieldError({ id, children }: { id?: string | undefined; children
   );
 }
 
-/** A checkbox with its label at its end, its error under it; it posts `value` under `name` when checked. */
+/**
+ * A statement about a field's value that is no error (a filter that has ended), right under the field, in the text's
+ * color with the glyph an error has; the field it is about names it in its `describedBy`, and is not invalid.
+ */
+export function FieldNote({ id, children }: { id?: string | undefined; children: string }) {
+  return (
+    <GlyphLine nudge="error" gap="entry-caption" as={<p id={id} className={form().fieldNote()} />}>
+      <Icon name="error" place="caption" />
+      <span dir="auto">{children}</span>
+    </GlyphLine>
+  );
+}
+
+/**
+ * A checkbox with its label at its end, its error under it; it posts `value` under `name` when checked. `touch`: the
+ * label, its press target, is a finger's target tall, the box at its middle (one of a settings section's checkboxes,
+ * one under another).
+ */
 export function CheckField({
   id,
   name,
@@ -498,6 +565,8 @@ export function CheckField({
   required,
   error,
   describedBy,
+  touch = false,
+  disabled,
 }: {
   id: string;
   name: string;
@@ -510,12 +579,16 @@ export function CheckField({
   required?: boolean | undefined;
   error?: string | undefined;
   describedBy?: string | undefined;
+  touch?: boolean | undefined;
+  /** It cannot be changed now (the form it is in is being sent): dimmed, as every disabled control. */
+  disabled?: boolean | undefined;
 }) {
   const s = form();
   const described = [describedBy, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
+  const look = [touch ? "min-h-icon-button-touch" : "", disabled === true ? "opacity-disabled" : ""].join(" ").trim();
   return (
     <Stack gap="form-page-field-gap">
-      <Row as="label" align="start" gap="form-page-alert-gap">
+      <Row as="label" align={touch ? "center" : "start"} gap="form-page-alert-gap" className={look || undefined}>
         <Box
           rigid
           as={
@@ -534,6 +607,7 @@ export function CheckField({
                 })
               }
               required={required}
+              disabled={disabled}
               aria-invalid={error ? true : undefined}
               aria-describedby={described}
             />
@@ -771,9 +845,11 @@ const bare = tv({
 /**
  * A field of a date and a time (`datetime-local`) with no label of its own: `label` names it for assistive technology,
  * `value`, `min` and `max` are as the browser holds them (2026-11-16T09:00), `invalid` draws the line of a refusal,
- * and `describedBy` names the ids that describe it.
+ * and `describedBy` names the ids that describe it. With `id`, what holds it gives it the focus when its value is
+ * refused (`focusRefusedField`, its error at `<id>-error`), and a label of the page can be for it.
  */
 export function DateTimeField({
+  id,
   label,
   value,
   onChange,
@@ -781,7 +857,9 @@ export function DateTimeField({
   max,
   invalid = false,
   describedBy,
+  disabled,
 }: {
+  id?: string | undefined;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -789,6 +867,8 @@ export function DateTimeField({
   max?: string | undefined;
   invalid?: boolean;
   describedBy?: string | undefined;
+  /** It cannot be changed now (the form it is in is being sent). */
+  disabled?: boolean | undefined;
 }) {
   return (
     <Box
@@ -796,11 +876,13 @@ export function DateTimeField({
       shrink
       as={
         <input
+          id={id}
           type="datetime-local"
           className={bare().dateTime()}
           aria-label={label}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
+          disabled={disabled}
           value={value}
           min={min}
           max={max}

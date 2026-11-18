@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { describe, expect, test } from "bun:test";
-import { hashtagPath, notificationPath, tagPath, type NotificationTarget } from "./paths";
+import { autoDeletePath, hashtagPath, notificationPath, tagPath, type NotificationTarget } from "./paths";
 
 describe("tagPath", () => {
   test("is the app's address of a hashtag, its name encoded", () => {
@@ -93,11 +93,16 @@ describe("notificationPath", () => {
       "moderation_notice",
       "report_resolved",
       "service_closure",
-      "auto_delete_limit",
       "scheduled_status_failed",
       "supporter_payment_failed",
       "admin_webhook_disabled",
     ])
       expect([type, of(type)]).toEqual([type, "/notifications"]);
+  });
+
+  test("the notice of the server's auto-delete limit opens the auto-delete settings, whatever else it carries", () => {
+    expect(of("auto_delete_limit")).toBe("/settings/account/auto-delete");
+    expect(of("auto_delete_limit", { account: sora, status: post })).toBe("/settings/account/auto-delete");
+    expect(autoDeletePath).toBe("/settings/account/auto-delete");
   });
 });

@@ -17,9 +17,11 @@
 // while a time is set, opens the form of its time within the server's limits, in the reader's zone; while it has one,
 // a line over the row says when, and Schedule takes Post's place, which stays alone at the row's end. A menu in the
 // head, before close, keeps it as a draft or opens the drafts (drafts.tsx). A draft whose scheduled post failed says
-// why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. Its
-// state is the hook's (use-composer.ts).
+// why and what Post does now, and a save refused for a newer draft saved elsewhere says so and opens that one. A new
+// post the server's automated review refused offers its appeal in the error's place (refused.tsx). Its state is the
+// hook's (use-composer.ts).
 
+import { useHookAppeal } from "@my/app-data";
 import {
   isRemote,
   PollCard,
@@ -62,6 +64,7 @@ import { formatParts } from "../slots";
 import { AudienceTool, visibilityIcon, type AudiencePanel } from "./audience";
 import { EditorFailed, editorsHere, PostText, retryEditors, WarningText } from "./editors";
 import { ComposerEmoji } from "./emoji";
+import { postHeld, RefusedAppeal } from "./refused";
 import { useSuggestions } from "./suggest";
 import { Language, Schedule } from "./tools";
 import {
@@ -322,6 +325,8 @@ export function ComposerView({
   const over = problems.over > 0;
   // What the server refused of an input it named, beside that input (field-errors.ts).
   const refused = c.phase.kind === "failed" ? c.phase : undefined;
+  // The appeal of a post the server's review refused, as the server has it: while it holds the post back, Post waits.
+  const appeal = useHookAppeal(refused?.appeal?.decision ?? "", refused?.appeal !== undefined);
   const textError =
     over && !editorsDown ? t("compose.too_long", { max: settings.maxChars }) : fieldError(refused, "text");
   const cwError = fieldError(refused, "cw");
@@ -399,7 +404,10 @@ export function ComposerView({
         ) : undefined
       }
       alert={
-        alert === undefined ? undefined : (
+        alert === undefined ? undefined : refused?.appeal !== undefined ? (
+          // A post the server's review refused: its alert offers the appeal, then says where the appeal stands.
+          <RefusedAppeal refusal={refused.appeal} appeal={appeal} text={draft.text} />
+        ) : (
           <FormAlert
             // A draft gone is told in the text's weight: Post, right after it, posts what is written as a new post.
             regular={gone}
@@ -490,7 +498,13 @@ export function ComposerView({
         )
       }
       action={
-        <Button kind="primary" size="timeline" busy={busy} isDisabled={editorsDown} onPress={c.submit}>
+        <Button
+          kind="primary"
+          size="timeline"
+          busy={busy}
+          isDisabled={editorsDown || postHeld(appeal)}
+          onPress={c.submit}
+        >
           {t(
             editing
               ? "compose.save"

@@ -56,7 +56,24 @@ export { AuthorizedAppScreen, useAuthorizedAppTitle } from "./settings/apps/auth
 export { appsPath, appsPaths, useAppsTitle, type AppScreenProps } from "./settings/apps/parts";
 export { AppRegister, loadAppRegister } from "./settings/apps/register";
 export { AppToken } from "./settings/apps/token";
-export { useConfirmation, useProviderReturn, type ConfirmationOptions, type Confirmed } from "./settings/confirmation";
+export {
+  confirmationKeptKey,
+  forgetConfirmationKept,
+  useConfirmation,
+  useProviderReturn,
+  type ConfirmationAct,
+  type ConfirmationOptions,
+  type Confirmed,
+} from "./settings/confirmation";
+export {
+  ProfileAvatarField,
+  profileEditPath,
+  ProfileNameField,
+  usePickedPicture,
+  useProfileIdentity,
+  type PickedPicture,
+  type ProfileIdentity,
+} from "./profile-identity";
 export {
   loadSettingsEntry,
   loadSettingsFacts,
@@ -78,6 +95,34 @@ export { SecurityPasskey } from "./settings/security/passkey";
 export { SecurityPassword } from "./settings/security/password";
 export { loadSecuritySettings, SecuritySettings } from "./settings/security/security";
 export { SecurityTwoFactor } from "./settings/security/two-factor";
+export {
+  loadModerationAction,
+  ModerationActionScreen,
+  useModerationActionTitle,
+  type ModerationActionProps,
+} from "./settings/account-action";
+export { AccountStatusScreen, loadAccountStatus, useAccountStatusTitle } from "./settings/account-status";
+export { AccountExportScreen, loadAccountExport, useAccountExportTitle } from "./settings/account-export";
+export { AccountImportScreen, loadAccountImport, useAccountImportTitle } from "./settings/account-import";
+export {
+  AccountAutoDelete,
+  loadAccountAutoDelete,
+  useAccountAutoDeleteTitle,
+  type AccountAutoDeleteProps,
+} from "./settings/account-auto-delete";
+export { AccountAliasesScreen, loadAccountAliases, useAccountAliasesTitle } from "./settings/account-aliases";
+export { AccountMoveScreen, loadAccountMoveSettings, useAccountMoveTitle } from "./settings/account-move";
+export {
+  AccountDeactivateScreen,
+  AccountDeleteScreen,
+  loadAccountDeactivateSettings,
+  loadAccountDeleteSettings,
+  useAccountDeactivateTitle,
+  useAccountDeleteTitle,
+} from "./settings/account-end";
+export { loadProfileEdit, ProfileEdit, useProfileEditTitle, type ProfileEditProps } from "./settings/profile-edit";
+export { FilterEdit, loadFilterEdit, useFilterEditTitle, type FilterEditProps } from "./settings/filter-edit";
+export { loadRelationshipSettings, RelationshipListScreen, useRelationshipListTitle } from "./settings/relationships";
 export { SettingsBeside, settingsEntryPath, settingsFactsWaitMs, SettingsIndex } from "./settings/menu";
 export {
   SettingsEntryScreen,
@@ -97,3 +142,4 @@ export { FindPeople, loadPeople } from "./people/people";
 export { Search } from "./search/search";
 export { ListMembers, loadListMembers } from "./timeline/list-members";
 export { loadTagTimeline, TagTimeline } from "./timeline/tag";
+export { useWelcomeTitle, Welcome, type WelcomeProps, type WelcomeSpecimen } from "./welcome/welcome";

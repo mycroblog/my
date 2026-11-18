@@ -82,14 +82,20 @@ const newer = (a: string, b: string | undefined) => b === undefined || a > b;
 
 // ---- What the reader read after the marker -------------------------------------------------------------------------
 
-type Store = { seen: ReadonlySet<string>; readonly listeners: Set<() => void>; moving: Promise<void> };
+type Store = {
+  seen: ReadonlySet<string>;
+  readonly listeners: Set<() => void>;
+  moving: Promise<void>;
+  /** Who is told of each notification the stream brings. */
+  readonly arrivals: Set<(notification: NotificationItem) => void>;
+};
 
 const stores = new WeakMap<AppData, Store>();
 
 function storeOf(data: AppData): Store {
   let store = stores.get(data);
   if (!store) {
-    store = { seen: new Set(), listeners: new Set(), moving: Promise.resolve() };
+    store = { seen: new Set(), listeners: new Set(), moving: Promise.resolve(), arrivals: new Set() };
     stores.set(data, store);
   }
   return store;
@@ -247,6 +253,7 @@ export function receiveNotification(data: AppData, notification?: NotificationIt
   if (notification !== undefined && requestTypes.has(notification.type)) receiveInteractionRequests(data);
   if (notification?.type === "follow_request") receiveFollowRequests(data);
   if (notification !== undefined) {
+    for (const told of storeOf(data).arrivals) told(notification);
     for (const { filter, queryKey } of lists(data)) {
       const types = filters[filter];
       if (types !== undefined && !types.includes(notification.type)) continue;
@@ -270,6 +277,18 @@ export function receiveNotification(data: AppData, notification?: NotificationIt
     queryKey,
     (marker) => marker && { ...marker, unread_count: marker.unread_count + 1 },
   );
+}
+
+/**
+ * Tells `listener` of each notification the stream brings, as it arrives, until the function it returns is called. A
+ * notification the reader's policy holds back is none the stream brings (ADR-0158 §7).
+ */
+export function watchNotifications(data: AppData, listener: (notification: NotificationItem) => void): () => void {
+  const { arrivals } = storeOf(data);
+  arrivals.add(listener);
+  return () => {
+    arrivals.delete(listener);
+  };
 }
 
 /** Puts the count of the notification requests that the stream received into the cache. */

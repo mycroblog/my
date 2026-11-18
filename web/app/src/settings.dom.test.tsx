@@ -15,6 +15,7 @@ import { settingsFindings } from "@my/design-system/test/settings";
 import { screen, waitFor, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
 import { browserCaches, ownDevice } from "./test/device";
+import { followSignOut, leaveEndedSession } from "./sign-out";
 import { fakeApp, fakeTabs, withoutToken } from "./test/server";
 import { rail } from "./test/viewport";
 
@@ -41,10 +42,22 @@ const groups = (menu: HTMLElement) =>
 const beside = (name = "Settings") =>
   screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
 
+const profileHint = "Name, bio, images, badges, approving followers, appearing in search";
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
+const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
+const relationshipsHint = "Blocked accounts, muted accounts, muted servers, followed hashtags";
+const filtersHint = "Words and phrases that fold or hide posts";
 const securityHint = "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers";
 const appsHint = "Apps you allowed to use your account, apps you registered";
 const invitesHint = "Invite codes and links to bring people to this server";
+const accountHint =
+  "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion";
+
+/**
+ * The count of the entry Account and data in `menu`, there once the actions on the reader's account are read: one of
+ * the fake's is in effect and can be appealed.
+ */
+const counted = (menu: HTMLElement, label = "1 item to check") => within(menu).findByText(label);
 
 /**
  * The menu beside a screen opened by its address once it lists Invites: whether the reader may create invites is
@@ -64,12 +77,22 @@ describe("the menu", () => {
     expect(app.path()).toBe("/settings");
     expect(app.title()).toContain("Settings");
     const menu = main().getByRole("navigation", { name: "Settings" });
-    // Two groups have an entry; a group without one is not drawn.
-    expect(groups(menu)).toEqual(["General", "Sign-in and access"]);
-    const [display, security, apps, invites, ...others] = rows(menu);
+    await counted(menu);
+    // Every group has an entry; a group without one is not drawn.
+    expect(groups(menu)).toEqual(["General", "People and filters", "Sign-in and access", "Account"]);
+    const [profile, display, notifications, relationships, filters, security, apps, invites, account, ...others] =
+      rows(menu);
     // An entry's row says its name, then what it holds.
+    expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
+    expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
     expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
+    expect(notifications?.[0]).toMatch(new RegExp(`^Notifications\\s*${notificationsHint}$`));
+    expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
+    expect(relationships?.[0]).toMatch(new RegExp(`^Relationships\\s*${relationshipsHint}$`));
+    expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
+    expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
+    expect(filters?.slice(1)).toEqual(["/settings/filters", null]);
     expect(security?.[0]).toMatch(new RegExp(`^Security\\s*${securityHint}$`));
     expect(security?.slice(1)).toEqual(["/settings/security", null]);
     expect(apps?.[0]).toMatch(new RegExp(`^Apps\\s*${appsHint}$`));
@@ -77,6 +100,9 @@ describe("the menu", () => {
     // The reader may create invites, which the settings read before the menu opens.
     expect(invites?.[0]).toMatch(new RegExp(`^Invites\\s*${invitesHint}$`));
     expect(invites?.slice(1)).toEqual(["/settings/invites", null]);
+    // Then how many things wait there, as its badge and as what the badge means.
+    expect(account?.[0]).toMatch(new RegExp(`^Account and data\\s*${accountHint}\\s*1\\s*1 item to check$`));
+    expect(account?.slice(1)).toEqual(["/settings/account", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.
     expect(beside()).toHaveLength(0);
@@ -121,12 +147,18 @@ describe("an entry", () => {
     const [menu, ...others] = beside();
     if (menu === undefined) throw new Error("test: no settings menu beside the screen");
     expect(others).toHaveLength(0);
-    expect(groups(menu)).toEqual(["General", "Sign-in and access"]);
+    await counted(menu);
+    expect(groups(menu)).toEqual(["General", "People and filters", "Sign-in and access", "Account"]);
     expect(rows(menu)).toEqual([
+      ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
+      ["Notifications", "/settings/notifications", null],
+      ["Relationships", "/settings/relationships", null],
+      ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
       ["Apps", "/settings/apps", null],
       ["Invites", "/settings/invites", null],
+      ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
@@ -144,11 +176,17 @@ describe("an entry", () => {
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
     await withInvites();
+    for (const menu of beside()) await counted(menu);
     expect(beside().flatMap(rows)).toEqual([
+      ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
+      ["Notifications", "/settings/notifications", null],
+      ["Relationships", "/settings/relationships", null],
+      ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
       ["Apps", "/settings/apps", null],
       ["Invites", "/settings/invites", null],
+      ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
     const all = main().getByRole("link", { name: "See all settings" });
@@ -204,11 +242,17 @@ describe("the display language", () => {
     });
     expect(document.documentElement.lang).toBe("ja");
     expect(app.title()).toContain("表示と投稿");
+    for (const menu of beside("設定")) await counted(menu, "確認が必要な項目 1 件");
     expect(beside("設定").flatMap(rows)).toEqual([
+      ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
+      ["通知", "/settings/notifications", null],
+      ["つながり", "/settings/relationships", null],
+      ["キーワードフィルタ", "/settings/filters", null],
       ["セキュリティ", "/settings/security", null],
       ["アプリ", "/settings/apps", null],
       ["招待", "/settings/invites", null],
+      ["アカウントとデータ 1確認が必要な項目 1 件", "/settings/account", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);
     expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);
@@ -418,6 +462,58 @@ describe("signing out", () => {
     expect(app.fake.revocations).toEqual([]);
     expect(app.data.queryClient.getQueryCache().getAll()).toHaveLength(0);
     expect(caches()).toEqual([]);
+  });
+
+  // What a confirmation under way kept in the tab (`my.confirmation.*`, a provider's return) is the session's: no
+  // later session of the tab finds it, however this one ends (this tab's sign-out, another tab's, the server's end).
+  // What a part forgets of it is the feature's (settings/confirmation.dom.test.tsx) and the platform's (tab-values).
+  /** Gives the tab's storage what two confirmations kept, and returns the keys of a confirmation it holds. */
+  const keptConfirmations = () => {
+    sessionStorage.clear();
+    sessionStorage.setItem("my.confirmation.link", "kept");
+    sessionStorage.setItem("my.confirmation.account_move", "kept");
+    return () => Object.keys(sessionStorage).filter((key) => key.startsWith("my.confirmation."));
+  };
+
+  test("following a sign-out made in another tab leaves nothing a confirmation kept in this tab", () => {
+    const kept = keptConfirmations();
+    const { data } = fakeApp();
+
+    followSignOut({ data, leave: () => undefined });
+
+    expect(kept()).toEqual([]);
+  });
+
+  test("leaving a session the server ended leaves nothing a confirmation kept in the tab", async () => {
+    const kept = keptConfirmations();
+    const { data } = withoutToken(fakeApp());
+
+    await leaveEndedSession({ data, leave: () => undefined });
+
+    expect(kept()).toEqual([]);
+  });
+
+  test("Sign out leaves nothing a confirmation kept in the tab", async () => {
+    const kept = keptConfirmations();
+    const app = await renderApp("/settings");
+
+    await signedOut(app);
+
+    expect(app.left()).toEqual(["/"]);
+    expect(kept()).toEqual([]);
+  });
+
+  test("a sign-out whose revocation the server fails removes nothing a confirmation kept", async () => {
+    const kept = keptConfirmations();
+    const app = await renderApp("/settings?sign_out=true", { revocation: "fails" });
+    await read(app);
+
+    await app.user.click(within(await confirmation()).getByRole("button", { name: "Sign out" }));
+
+    await screen.findByRole("alert");
+    expect(app.left()).toEqual([]);
+    expect(kept().sort()).toEqual(["my.confirmation.account_move", "my.confirmation.link"]);
+    sessionStorage.clear();
   });
 
   test("a revocation the server fails leaves the confirmation open, saying so, removes nothing, and the app stays", async () => {

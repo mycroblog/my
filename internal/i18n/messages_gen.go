@@ -1461,6 +1461,13 @@ func (l *Localizer) ServerErrorsImportInvalidCsv() string {
 	return l.format("server:errors.import.invalid_csv", nil)
 }
 
+// ServerErrorsImportTooLargeDetail formats "server:errors.import.too_large_detail". Detail of the HTTP 413 API error when the CSV file the user imports (follows, blocks, mutes, or bookmarks) is too large to send. {max} is the maximum number of characters of the file.
+//
+//	en: {max, plural, one {A CSV file can have at most # character. Split the file and import each part.} other {A CSV file can have at most # characters. Split the file and import each part.}}
+func (l *Localizer) ServerErrorsImportTooLargeDetail(max int) string {
+	return l.format("server:errors.import.too_large_detail", map[string]any{"max": max})
+}
+
 // ServerErrorsInsufficientScope formats "server:errors.insufficient_scope". API error title for HTTP 403 when the access token lacks a permission (OAuth scope) that the operation needs.
 //
 //	en: This app is not allowed to do this.
@@ -1482,9 +1489,9 @@ func (l *Localizer) ServerErrorsInteractionRequestAnswered() string {
 	return l.format("server:errors.interaction_request.answered", nil)
 }
 
-// ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying).
+// ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying); says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account).
 //
-//	en: A moderation action keeps your account from following, favouriting, boosting, or replying for now.
+//	en: A moderation action keeps your account from following, favouriting, boosting, or replying for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.
 func (l *Localizer) ServerErrorsInteractionRestricted() string {
 	return l.format("server:errors.interaction_restricted", nil)
 }
@@ -1554,7 +1561,7 @@ func (l *Localizer) ServerErrorsInvitesNotAllowed() string {
 
 // ServerErrorsInvitesNotAllowedDetail formats "server:errors.invites.not_allowed_detail". Detail of the HTTP 403 API error when the user may not create invites of their own, shown under the title "You cannot create invites." {reason} is registration_closed (the server takes no new accounts), not_permitted (the server lets only some accounts create invites), not_approved (the registration of the account is pending or rejected), or restricted (a moderation action on the account); any other value is a refusal that names no cause.
 //
-//	en: {reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}
+//	en: {reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.} other {You cannot create invites now.}}
 func (l *Localizer) ServerErrorsInvitesNotAllowedDetail(reason string) string {
 	return l.format("server:errors.invites.not_allowed_detail", map[string]any{"reason": reason})
 }
@@ -2290,9 +2297,9 @@ func (l *Localizer) ServerErrorsStatusPollWithMedia() string {
 	return l.format("server:errors.status.poll_with_media", nil)
 }
 
-// ServerErrorsStatusPostingRestricted formats "server:errors.status.posting_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from posting.
+// ServerErrorsStatusPostingRestricted formats "server:errors.status.posting_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from posting; says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account).
 //
-//	en: A moderation action keeps your account from posting for now.
+//	en: A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.
 func (l *Localizer) ServerErrorsStatusPostingRestricted() string {
 	return l.format("server:errors.status.posting_restricted", nil)
 }
@@ -2404,7 +2411,7 @@ func (l *Localizer) ServerErrorsSupportersIneligible() string {
 
 // ServerErrorsSupportersIneligibleDetail formats "server:errors.supporters.ineligible_detail". API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted.
 //
-//	en: {reason, select, not_local {Only the users of this server can subscribe.} email_unverified {Verify your email address first.} restricted {Your account is restricted.} other {You cannot subscribe now.}}
+//	en: {reason, select, not_local {Only the users of this server can subscribe.} email_unverified {Verify your email address first.} restricted {A moderation action restricts your account. To see why or to appeal, open “Account status” under “Account and data” in the settings.} other {You cannot subscribe now.}}
 func (l *Localizer) ServerErrorsSupportersIneligibleDetail(reason string) string {
 	return l.format("server:errors.supporters.ineligible_detail", map[string]any{"reason": reason})
 }

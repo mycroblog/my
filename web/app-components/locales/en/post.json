@@ -318,5 +318,13 @@
   "post.article_sensitive": {
     "defaultMessage": "Sensitive article",
     "description": "The line on the page of a sensitive article, above its folded cover and text, with a Show button; its title and summary stay shown."
+  },
+  "post.filtered": {
+    "defaultMessage": "{count, plural, one {Matches filter {names}} other {Matches filters {names}}}",
+    "description": "The line in place of a post that matched keyword filters of the reader (words they chose to fold posts by), followed by a Show (disclosure.show) or Hide button that shows the post or folds it again. names is the list of the filters' names, each in quotation marks (post.filter_name); count is how many filters matched."
+  },
+  "post.filter_name": {
+    "defaultMessage": "“{name}”",
+    "description": "The name of one keyword filter, in the quotation marks of the language, as post.filtered lists it; name is what the reader called the filter, in any language."
   }
 }

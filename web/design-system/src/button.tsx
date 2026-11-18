@@ -26,6 +26,11 @@ export type ButtonProps = Omit<AriaButtonProps, "className" | "style" | "render"
   busy?: boolean;
   /** The keys that run the button's action (what `useAction` returns), for assistive technology. */
   "aria-keyshortcuts"?: string | undefined;
+  /**
+   * On a touch screen, its press target reaches the touch height above and below it, as an icon button's does: a
+   * button of a row that is a finger's target tall (a list's Remove), drawn a timeline control's height.
+   */
+  touch?: boolean | undefined;
   children: ReactNode;
 };
 
@@ -127,14 +132,14 @@ type Size = ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
  * is its label's on one line, up to the width of what holds it. An icon button's press target reaches the touch height on a touch screen; the frame's
  * action in the rail is as wide as the rail.
  */
-const arrangement = (kind: Kind, size: Size) =>
+const arrangement = (kind: Kind, size: Size, touch = false) =>
   ({
     inline: true,
     align: "center",
     justify: "center",
     anchor: true,
     rigid: true,
-    touch: kind === "icon",
+    touch: kind === "icon" || touch,
     full: size === "side",
   }) satisfies RowProps;
 
@@ -179,6 +184,7 @@ export function ButtonBase({
   pressed,
   "aria-keyshortcuts": keyshortcuts,
   "aria-description": description,
+  touch,
   children,
   ...rest
 }: Omit<ButtonProps, "kind" | "size"> & {
@@ -192,7 +198,7 @@ export function ButtonBase({
   const s = button({ kind, size, busy });
   return (
     <Row
-      {...arrangement(kind, size)}
+      {...arrangement(kind, size, touch)}
       as={
         <AriaButton
           {...rest}

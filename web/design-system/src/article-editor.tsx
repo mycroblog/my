@@ -7,12 +7,13 @@
 // its end the limits, the form's error and the row of the tools and the action, held at the bottom of the viewport as
 // the page scrolls. The head, the two columns and the row share one width, centred. Every word is the caller's.
 
-import { useRef, useState, type ReactElement, type ReactNode } from "react";
+import { use, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { ToggleButton, ToggleButtonGroup } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { ArticleText, ArticleTitle } from "./article";
 import { Button } from "./button";
 import { CaptionLine } from "./entry";
+import { describedBy as idsOf, FieldContext } from "./field";
 import { FieldError, GlyphLabel } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Icon } from "./icons";
@@ -588,15 +589,22 @@ export function CoverRemove({ label, onPress = () => undefined }: { label: strin
 
 const tags = tv({
   slots: {
+    // On a raised surface (a section of a settings screen), the field takes the page's surface and a hashtag the
+    // raised one, as every field does there.
     root: [
-      "box-border min-h-control-form rounded-control bg-surface-raised",
+      "box-border min-h-control-form rounded-control bg-surface-raised [[data-surface-raised]_&]:bg-surface",
       "py-article-tags-inset ps-article-tags-inset pe-control-timeline-inline",
     ],
-    tag: "h-chip rounded-control bg-surface ps-chip-inline text-body text-text whitespace-nowrap",
+    tag: [
+      "h-chip rounded-control bg-surface ps-chip-inline text-body text-text whitespace-nowrap",
+      "[[data-surface-raised]_&]:bg-surface-raised",
+    ],
     // What is typed takes the room left on the line, and goes on a next one where less than its least width is left.
+    // Its line, and its placeholder's, which a browser gives a line of its own, is as tall as the field: a field cuts
+    // what reaches under a shorter line (the tail of a g).
     input: [
       "h-chip min-w-article-tag-input border-0 bg-transparent p-0 ps-article-tags-inset font-sans text-body text-text",
-      "outline-hidden placeholder:text-muted-text",
+      "leading-(--chip-height) outline-hidden placeholder:text-muted-text",
     ],
   },
 });
@@ -604,7 +612,8 @@ const tags = tv({
 /**
  * The hashtags: each on the page's surface with its remove, inside a field's surface that takes the next one. What is
  * typed becomes a hashtag (without its `#`) at Enter, a comma, a space or leaving the field, and Backspace in the empty
- * field takes the last one back into it to change; once `full`, the field takes no more.
+ * field takes the last one back into it to change; once `full`, the field takes no more. In a setting's row, a press
+ * on the row's name puts the focus on it, and what the row says of it (the line about it, its save state) describes it.
  */
 export function TagInput({
   label,
@@ -624,6 +633,7 @@ export function TagInput({
   onRemove?: ((tag: string) => void) | undefined;
 }) {
   const s = tags();
+  const holder = use(FieldContext);
   const [typed, setTyped] = useState("");
   const add = (text: string) => {
     const tag = text.trim().replace(/^#+/, "");
@@ -648,8 +658,10 @@ export function TagInput({
         grow
         as={
           <input
+            id={holder.id}
             className={s.input()}
             aria-label={label}
+            aria-describedby={idsOf(holder.describedBy, holder.stateBy)}
             placeholder={placeholder}
             dir="auto"
             value={typed}

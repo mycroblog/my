@@ -51,15 +51,20 @@ export {
   type DraftRowProps,
   type ScheduleFormProps,
 } from "./drafts";
+export { plainText } from "./diff";
 export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";
 export { languageName } from "./locale";
 export {
+  accountMovePath,
   accountPath,
+  autoDeletePath,
+  dataExportPath,
   followRequestsPath,
   hashtagPath,
   heldOfPath,
   heldPath,
   notificationPath,
+  notificationSettingsPath,
   reactorsPath,
   statusPath,
   tagPath,
@@ -81,8 +86,10 @@ export { Post, type PostAction, type PostPicker, type PostProps, type Translatio
 export { excerptHtml, PostContent, ServerDomain, type ContentEmoji, type PostContentProps } from "./post-content";
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";
 export { PostDetails } from "./post-details";
+export { FilterSentence } from "./post-filter";
 export type {
   PostAccount,
+  PostFiltered,
   PostMedia,
   PostMention,
   PostReaction,

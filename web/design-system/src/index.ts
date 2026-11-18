@@ -104,7 +104,9 @@ export {
   CheckField,
   DateTimeField,
   FieldError,
+  FieldNote,
   focusOnLoadAttribute,
+  focusRefusedField,
   Form,
   FormAccount,
   FormActions,
@@ -129,6 +131,9 @@ export {
   type TextFieldProps,
 } from "./form-page";
 export { IconButton, type IconButtonProps } from "./icon-button";
+export { PairField, PairList, type PairFieldProps } from "./pair-field";
+export { PictureField, type PictureFieldProps } from "./picture-field";
+export { FileField, type FileFieldProps } from "./file-field";
 export { Icon, icons, type IconName, type IconPlace } from "./icons";
 export { whenIdle } from "./idle";
 export { catalogReader, type Strings } from "./locale";
@@ -265,6 +270,8 @@ export {
   SettingsGroup,
   SettingsItem,
   SettingsList,
+  SettingsAccountItem,
+  SettingsFieldRow,
   SettingsListRow,
   SettingsMenu,
   SettingsNote,
@@ -274,7 +281,18 @@ export {
   StatusSummary,
   SubmitBar,
   type SettingRowProps,
+  type SettingsFactLine,
+  type SettingsRowResult,
+  type SettingsRowSaid,
 } from "./settings";
+export {
+  ChannelCell,
+  ChannelGap,
+  ChannelRow,
+  ChannelTable,
+  type ChannelCellProps,
+  type ChannelColumn,
+} from "./channels";
 export { useScrollRestoration, type ScrollMode } from "./scroll";
 export { ActionScope, helpAction, ShortcutProvider, useAction } from "./shortcuts";
 export { RelativeTime, type RelativeTimeProps } from "./time";

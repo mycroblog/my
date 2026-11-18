@@ -7,6 +7,7 @@
 export { clearCaches } from "./caches";
 export { isOnline, watchOnline } from "./connection";
 export { readDeviceValue, writeDeviceValue } from "./device-values";
+export { forgetTabValues, readTabValue, writeTabValue } from "./tab-values";
 export { namesCommandKey } from "./keyboard";
 export { watchKeyboardInset } from "./keyboard-inset";
 export { browserLanguages } from "./languages";
@@ -24,15 +25,18 @@ export {
 export {
   askNotificationPermission,
   notificationPermission,
+  pushNeedsInstall,
   registerServiceWorker,
   showAppBadge,
   subscribePush,
   supportsPush,
   takeUpdate,
+  watchNotificationPermission,
   type NotificationPermissionState,
   type PushSubscriptionData,
 } from "./push";
 export { copyText, shareLink, type ShareOutcome } from "./share";
+export { playSound, trySound } from "./sound";
 export { joinTabGroup, type TabGroup } from "./tabs";
 export {
   browserName,

@@ -83,6 +83,9 @@ func (s *Server) maxBody(pattern string) int64 {
 	if pattern == setBrandPattern {
 		return maxSetBrandBody
 	}
+	if isImportPattern(pattern) {
+		return maxImportBody
+	}
 	return maxRequestBody
 }
 
@@ -107,7 +110,11 @@ func (s *Server) writeTooLarge(w http.ResponseWriter, r *http.Request, pattern s
 		s.writeProblem(w, r, http.StatusRequestEntityTooLarge, ProblemTypeMediaTooLarge, l.ServerErrorsMediaTooLarge(), "")
 		return
 	}
-	s.writeProblem(w, r, http.StatusRequestEntityTooLarge, ProblemTypeBlank, l.ServerErrorsRequestTooLarge(), "")
+	var detail string
+	if isImportPattern(pattern) {
+		detail = l.ServerErrorsImportTooLargeDetail(maxImportTextLength)
+	}
+	s.writeProblem(w, r, http.StatusRequestEntityTooLarge, ProblemTypeBlank, l.ServerErrorsRequestTooLarge(), detail)
 }
 
 // mediaProblem returns the problem of an error of the media use cases, or false for an

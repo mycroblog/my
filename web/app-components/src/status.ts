@@ -93,6 +93,9 @@ export type PostPoll = {
 /** An account a status mentions (the API's StatusMention). */
 export type PostMention = { id: string; username: string; acct: string };
 
+/** A keyword filter of the reader's that a status matched (the API's FilterResult), as far as its fold names it. */
+export type PostFiltered = { filter: { id: string; title: string } };
+
 /** Whether the reader may interact with a status in one way (the API's InteractionPermission). */
 type PostPermission = "allowed" | "pending" | "denied";
 
@@ -120,6 +123,11 @@ export type PostStatus = {
   boost?: PostStatus | undefined;
   media_attachments: readonly PostMedia[];
   mentions: readonly PostMention[];
+  /**
+   * The reader's keyword filters that it matched where it is shown, which fold it (ADR-0157 §10); a boost carries
+   * those of the status it boosts, and a quoted status its own.
+   */
+  filtered?: readonly PostFiltered[] | undefined;
   /** The custom emoji of the text and the content warning. */
   emojis: readonly ContentEmoji[];
   replies_count: number;
