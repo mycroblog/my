@@ -799,13 +799,17 @@
     "defaultMessage": "いまアカウントを使えるアプリはありません。アプリにアカウントの利用を許可すると、ここに表示されます。",
     "description": "In the place of the list of authorized apps while it is empty."
   },
-  "settings.apps.authorized.last_used": {
+  "settings.last_used": {
     "defaultMessage": "最終利用: {date}",
-    "description": "A line under an authorized app's name in the list, and under the day it was authorized on the app's own page. date is the day and the time, to the hour, the app last used the account, written out in the reader's language (Mar 3, 2026, 2:00 PM). The same words as the signed-in browsers' (settings.security.browsers.last_used)."
+    "description": "A line of its own under the name of something that uses the account, in a list of the settings (a signed-in browser, an authorized app), and under the day an app was authorized on its own page. date is the day and the hour it last used the account, written out in the reader's language (Mar 3, 2 PM)."
   },
   "settings.apps.authorized.unused": {
     "defaultMessage": "利用の記録なし",
     "description": "In the place of settings.apps.authorized.last_used when the server has recorded no use of the account by the app."
+  },
+  "settings.apps.authorized.website": {
+    "defaultMessage": "申告されたサイト: {url}",
+    "description": "A line under where an authorized app comes from, on the app's own page: the app's home page, which is the app's own claim and not verified by the server. url is the address the app declared. The same words as the consent page's (server:auth.authorize.website)."
   },
   "settings.apps.authorized.since": {
     "defaultMessage": "{date} に許可",
@@ -1031,17 +1035,17 @@
     "defaultMessage": "{what, select, client_id {クライアント ID をコピー} secret {シークレットをコピー} access_token {アクセストークンをコピー} other {リフレッシュトークンをコピー}}",
     "description": "The button under a value of an app shown to copy, which copies it. what is client_id, secret, access_token, or other (the refresh token): a page may show two of them, so each button names what it copies."
   },
-  "settings.apps.copied": {
+  "settings.copy.copied": {
     "defaultMessage": "コピーしました",
-    "description": "Beside a button that copies a value of an app, once it was copied. The same words as the Security pages' (settings.security.two_factor.copied)."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep (a setup key, recovery codes, a client ID, a secret, a token), once it was copied."
   },
-  "settings.apps.copy_failed": {
+  "settings.copy.failed": {
     "defaultMessage": "コピーできませんでした。テキストを選択してコピーしてください。",
-    "description": "Beside a button that copies a value of an app, when the browser refused to copy. The same words as the Security pages' (settings.security.two_factor.copy_failed)."
+    "description": "Beside a button of the settings that copies a value shown to copy and keep, when the browser refused to copy."
   },
-  "settings.apps.once.done": {
+  "settings.once.done": {
     "defaultMessage": "完了する",
-    "description": "The button at the end of a page that shows values of an app once (a new app's client ID and secret, a new secret, an access token and a refresh token). It goes back to the page the reader came from. The same words as the Security pages' (settings.security.two_factor.recovery.done)."
+    "description": "The button at the end of a page of the settings that shows once what the reader must keep (recovery codes; a new app's client ID and secret, a new secret, an access token and a refresh token). It goes back to the page the reader came from."
   },
   "settings.apps.edit": {
     "defaultMessage": "アプリの設定",

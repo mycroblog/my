@@ -146,7 +146,7 @@ export const buttonsOf = (dialog: HTMLElement): string[] =>
     .map((button) => button.getAttribute("aria-label") ?? button.textContent);
 
 /** How the stubbed browser's passkey prompt ends: with a credential, or as the browser refuses it. */
-export type PasskeyAnswer = "credential" | "cancelled" | "exists";
+type PasskeyAnswer = "credential" | "cancelled" | "exists";
 
 /** What the stubbed browser did: the prompts it showed, and how the next one ends. */
 export type PasskeyBrowser = { created: number; asked: number; answer: PasskeyAnswer };

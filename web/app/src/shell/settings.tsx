@@ -14,6 +14,7 @@ import {
   SettingsMissing,
   useSettingsTitle,
   type SettingsAddress,
+  type SettingsSessionProps,
   type SettingsSubProps,
 } from "@my/app-features";
 import { FrameAside } from "@my/design-system";
@@ -56,7 +57,8 @@ type UnderProps = {
   /** The address of the screen it stands under, where that is not the entry's. */
   under?: string | undefined;
   title: string;
-  Screen: ComponentType<SettingsSubProps>;
+  /** The screen: every one takes what a screen under an entry is given, and one that may end the session the way out. */
+  Screen: ComponentType<SettingsSubProps & SettingsSessionProps>;
 };
 
 /**

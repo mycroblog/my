@@ -103,7 +103,7 @@ export function Kept({ what, label, value }: { what: KeptWhat; label: string; va
           {t("settings.apps.copy", { what })}
         </Button>
       }
-      result={copied === undefined ? undefined : t(copied ? "settings.apps.copied" : "settings.apps.copy_failed")}
+      result={copied === undefined ? undefined : t(copied ? "settings.copy.copied" : "settings.copy.failed")}
     />
   );
 }
@@ -111,8 +111,8 @@ export function Kept({ what, label, value }: { what: KeptWhat; label: string; va
 /**
  * The screen that shows what the server gives only once, in the place of the screen that asked for it: first what
  * happened (`said`) and what it means (`about`), then each value in a section under its own name, a secret under the
- * statement that it is not shown again, right at it; a client ID, which the app's screen shows again, has none. The
- * way on ends the screen, which the reader presses once they kept what must be kept.
+ * statement that it is not shown again, right at it; a client ID, which the app's screen shows again, has none.
+ * Finish ends the screen, which the reader presses once they kept what must be kept.
  */
 export function Once({
   title,
@@ -129,8 +129,6 @@ export function Once({
   onDone: () => void;
 }): ReactNode {
   const { t } = stringsIn(useLocale().locale);
-  // What must be kept: nothing where a client ID alone is shown, which the app's screen shows again.
-  const secrets = values.filter((value) => value.what !== "client_id").length;
   return (
     <SettingsScreen
       sub
@@ -138,7 +136,7 @@ export function Once({
       foot={
         <SubmitBar>
           <Button kind="primary" onPress={onDone}>
-            {t("settings.apps.once.done", { kept: secrets === 0 ? "none" : secrets === 1 ? "one" : "several" })}
+            {t("settings.once.done")}
           </Button>
         </SubmitBar>
       }

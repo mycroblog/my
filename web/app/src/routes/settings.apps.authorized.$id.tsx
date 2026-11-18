@@ -4,7 +4,13 @@
 // ADR-0090 §5): where it comes from, what it was granted, when it was authorized and last used, and revoking it. Back,
 // in its head, goes to Apps. Without a session it asks the reader to sign in.
 
-import { AuthorizedAppScreen, loadAppsSettings, useAuthorizedAppTitle, type SettingsSubProps } from "@my/app-features";
+import {
+  AuthorizedAppScreen,
+  loadAppsSettings,
+  useAuthorizedAppTitle,
+  type SettingsSessionProps,
+  type SettingsSubProps,
+} from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { SettingsUnder } from "../shell/settings";
@@ -17,7 +23,7 @@ export const Route = createFileRoute("/settings/apps/authorized/$id")({
 });
 
 /** The screen of the app the address names. */
-function Screen(props: SettingsSubProps) {
+function Screen(props: SettingsSubProps & SettingsSessionProps) {
   const { id } = Route.useParams();
   return <AuthorizedAppScreen key={id} id={id} {...props} />;
 }

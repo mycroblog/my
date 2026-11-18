@@ -66,6 +66,7 @@ export {
   type SettingsEntryProps,
   type SettingsFacts,
   type SettingsGroupId,
+  type SettingsSessionProps,
   type SettingsSubProps,
 } from "./settings/entries";
 export { InviteCreate } from "./settings/invites/create";

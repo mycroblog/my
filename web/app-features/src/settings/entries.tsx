@@ -62,6 +62,10 @@ export type SettingsEntryProps = SettingsAddress & {
 export type SettingsSubProps = SettingsAddress & {
   /** Goes back to the screen this one is under, its entry's for most: its head's back, and the end of what it does. */
   onBack: () => void;
+};
+
+/** What a screen under an entry that may end the browser's session is given beside, by the route that places it. */
+export type SettingsSessionProps = {
   /**
    * The server ended this browser's session with what the reader just did on the screen (revoking the server's own
    * web client among the authorized apps): removes what the session left in this browser and leaves the app, as

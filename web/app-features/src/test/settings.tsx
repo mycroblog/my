@@ -44,7 +44,7 @@ export const addressProps = (address: Address) => ({
 });
 
 /** An address with `fragment`, at which nothing happened yet. */
-export const addressAt = (fragment = ""): Address => ({
+const addressAt = (fragment = ""): Address => ({
   fragment,
   backs: 0,
   fragmentsRead: 0,
@@ -57,7 +57,7 @@ export const addressAt = (fragment = ""): Address => ({
  * instance, and returns the reader's hands. The server's answers reach the screen when they come, not inside an act()
  * of the test, so React is told so until the test ends, and a test waits for what it asserts.
  */
-export async function drawnSettings({ data }: FakeData, settings: ReactNode, locale = "en"): Promise<UserEvent> {
+async function drawnSettings({ data }: FakeData, settings: ReactNode, locale = "en"): Promise<UserEvent> {
   const environment = globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean };
   const wrapped = environment.IS_REACT_ACT_ENVIRONMENT;
   environment.IS_REACT_ACT_ENVIRONMENT = false;

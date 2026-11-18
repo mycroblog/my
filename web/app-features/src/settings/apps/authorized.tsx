@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // An app the account authorized, the screen under Apps at /settings/apps/authorized/{id} (FR-003, ADR-0090 §4, §5):
-// where the app comes from, in the consent page's words, and the site it names; when the reader first authorized it
+// where the app comes from, in the consent page's words, and the site it names, said as its own claim, as that page
+// says it, since only the host and the registrant are what the server verified; when the reader first authorized it
 // and when it last used the account; what it was granted, each scope as the consent page words it, in that page's
 // groups, the heaviest first; and Revoke, after a confirmation that says what stops working.
 //
@@ -25,7 +26,7 @@ import {
 } from "@my/design-system";
 import { useState } from "react";
 import { stringsIn } from "../../locale";
-import type { SettingsSubProps } from "../entries";
+import type { SettingsSessionProps, SettingsSubProps } from "../entries";
 import { Asking, useDates } from "../security/parts";
 import { originOf, Unread, type AppScreenProps } from "./parts";
 import { groupedScopes } from "./scopes";
@@ -36,7 +37,11 @@ export function useAuthorizedAppTitle(id: string): string {
   return useAuthorizedApps()?.find((app) => app.id === id)?.name ?? t("settings.apps.authorized");
 }
 
-export function AuthorizedAppScreen({ id, onBack, onSessionEnded }: SettingsSubProps & AppScreenProps) {
+export function AuthorizedAppScreen({
+  id,
+  onBack,
+  onSessionEnded,
+}: SettingsSubProps & SettingsSessionProps & AppScreenProps) {
   const { locale } = useLocale();
   const { t } = stringsIn(locale);
   const { day, hour } = useDates();
@@ -67,13 +72,18 @@ export function AuthorizedAppScreen({ id, onBack, onSessionEnded }: SettingsSubP
           <SettingsFacts
             label={t("settings.apps.about")}
             items={[
-              { text: originOf(app, t), about: app.website === undefined ? undefined : [app.website] },
+              {
+                text: originOf(app, t),
+                // The site is the app's own word, and reads as that: the line above alone is what the server knows.
+                about:
+                  app.website === undefined ? undefined : [t("settings.apps.authorized.website", { url: app.website })],
+              },
               {
                 text: t("settings.apps.authorized.since", { date: day(app.authorized_at) }),
                 about: [
                   app.last_used_at === undefined
                     ? t("settings.apps.authorized.unused")
-                    : t("settings.apps.authorized.last_used", { date: hour(app.last_used_at) }),
+                    : t("settings.last_used", { date: hour(app.last_used_at) }),
                 ],
               },
             ]}

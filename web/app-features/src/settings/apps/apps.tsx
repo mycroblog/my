@@ -66,7 +66,7 @@ function Authorized() {
                 originOf(app, t),
                 app.last_used_at === undefined
                   ? t("settings.apps.authorized.unused")
-                  : t("settings.apps.authorized.last_used", { date: hour(app.last_used_at) }),
+                  : t("settings.last_used", { date: hour(app.last_used_at) }),
               ]}
               href={appsPaths.authorized(app.id)}
             />
