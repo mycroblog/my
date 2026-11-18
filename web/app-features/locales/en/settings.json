@@ -1304,8 +1304,8 @@
     "description": "A muted line of an invite's row, under its state: uses is how many people signed up with the invite, max how many it allows. Not a sentence: no full stop."
   },
   "settings.invites.ends": {
-    "defaultMessage": "Ends {date}",
-    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "defaultMessage": "Expires {date}",
+    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when the invite expires, whether it works again before that or not. The word of the state Expired (settings.invites.state), so that it is not read as the day the server takes new accounts again. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.left": {
     "defaultMessage": "You can create {left, plural, one {# more invite} other {# more invites}}. You can have {max, plural, one {# usable invite} other {# usable invites}} at a time.",
@@ -1320,8 +1320,8 @@
     "description": "The button under the list Your invites that shows the next, older invites."
   },
   "settings.invites.cannot": {
-    "defaultMessage": "You cannot create invites.",
-    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The same words as the server's refusal (errors.invites.not_allowed)."
+    "defaultMessage": "You cannot create invites",
+    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
   },
   "settings.invites.cannot.reason": {
     "defaultMessage": "{reason, select, registration_closed {This server takes no new accounts now, so no invite can be created.} not_permitted {Only some accounts can create invites on this server. Ask its administrators to let you create them.} not_approved {Your registration is not approved. A moderator needs to approve it before you can create invites.} restricted {A moderation action keeps your account from creating invites for now.} other {You cannot create invites now.}}",
@@ -1352,7 +1352,7 @@
     "description": "The name of the row in the section Revoke invite: what revoking gives."
   },
   "settings.invites.revoke.about": {
-    "defaultMessage": "Its link and its code stop working at once, for good. People who signed up with it keep their accounts.",
+    "defaultMessage": "Its link and its code stop working at once, and this cannot be undone. People who signed up with it keep their accounts.",
     "description": "The line under settings.invites.revoke.row, and the text of the confirmation under settings.invites.revoke.title: what stops working, that it cannot be undone, and what stays."
   },
   "settings.invites.revoke.title": {
@@ -1388,8 +1388,8 @@
     "description": "An alert before the button Create invite when the server refused the invite because a value is over what it allows now: its administrators lowered a limit after the page was opened, and the page then shows the new limits. field is max_uses (too many people) or other (too long a time)."
   },
   "settings.invites.created": {
-    "defaultMessage": "The invite is created.",
-    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy."
+    "defaultMessage": "The invite is created",
+    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy. No full stop: it is a heading."
   },
   "settings.invites.missing": {
     "defaultMessage": "This invite is not among your invites. Check the address.",

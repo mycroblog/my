@@ -1305,10 +1305,10 @@
   },
   "settings.invites.ends": {
     "defaultMessage": "期限: {date}",
-    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when it ends, whether it works again or not. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
+    "description": "A muted line of an invite's row, for an invite that does not work for now (while the reader may not create invites, or while the server takes no new accounts): when the invite expires, whether it works again before that or not. The word of the state Expired (settings.invites.state), so that it is not read as the day the server takes new accounts again. date is a day and an hour (Nov 25, 3 PM). Not a sentence: no full stop."
   },
   "settings.invites.left": {
-    "defaultMessage": "あと {left, number} 件作れます。同時に持てる使える招待は {max, number} 件までです。",
+    "defaultMessage": "あと {left, number} 件作れます。使える招待は、同時に {max, number} 件まで持てます。",
     "description": "A sentence in the section Your invites when the reader is one invite short of the most usable invites the server allows: left is how many more they can create (1), max the most usable invites one account may have at once."
   },
   "settings.invites.full": {
@@ -1320,8 +1320,8 @@
     "description": "The button under the list Your invites that shows the next, older invites."
   },
   "settings.invites.cannot": {
-    "defaultMessage": "招待を作れません。",
-    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The same words as the server's refusal (errors.invites.not_allowed)."
+    "defaultMessage": "招待を作れません",
+    "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
   },
   "settings.invites.cannot.reason": {
     "defaultMessage": "{reason, select, registration_closed {このサーバーはいま新しいアカウントを受け付けていないので、招待を作れません。} not_permitted {このサーバーでは、一部のアカウントだけが招待を作れます。作りたいときは、サーバーの管理者に頼んでください。} not_approved {登録が承認されていません。招待を作るには、モデレーターの承認が必要です。} restricted {モデレーションの処分により、いまはこのアカウントで招待を作れません。} other {いまは招待を作れません。}}",
@@ -1388,8 +1388,8 @@
     "description": "An alert before the button Create invite when the server refused the invite because a value is over what it allows now: its administrators lowered a limit after the page was opened, and the page then shows the new limits. field is max_uses (too many people) or other (too long a time)."
   },
   "settings.invites.created": {
-    "defaultMessage": "招待を作成しました。",
-    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy."
+    "defaultMessage": "招待を作成しました",
+    "description": "The title of the summary that heads the page Create invite once the invite is created, which takes the focus as the form gives way to it; the line under it says what to do with the invite's link (settings.invites.link.about), shown under it to copy. No full stop: it is a heading."
   },
   "settings.invites.missing": {
     "defaultMessage": "この招待は一覧にありません。アドレスを確かめてください。",
