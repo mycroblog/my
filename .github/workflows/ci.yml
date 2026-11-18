@@ -1031,7 +1031,7 @@ jobs:
           password: ${{ github.token }}
       - name: Find or build the image
         id: image
-        run: echo "image=$(scripts/browser-image.sh ensure)" >> "$GITHUB_OUTPUT"
+        run: echo "image=" >> "$GITHUB_OUTPUT" # PROBE: no image, to run the jobs' fallback
 
   web-stories-test:
     # The tests in a browser on the built catalog of the Storybook host (ADR-0171 §1, §4), with the E2E tests' runner
