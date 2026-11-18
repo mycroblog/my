@@ -3,8 +3,9 @@
 // Issuing a token, the screen under an app the reader registered, at /settings/apps/{id}/token (ADR-0090 §2, §17): an
 // access token and a refresh token of the app for the reader's own account, with no consent page and no redirect. The
 // form holds the scopes, by their names, which start as all of the app's: the reader takes out what the token should
-// not carry, and an empty field asks for all of them. Issued, the screen shows the two tokens, which the server gives
-// this once: it says so plainly, each has its Copy, and the button at its end goes back to the app.
+// not carry, and an empty field asks for all of them. Issued, the screen says so, with the token's scopes and how
+// long it works, then shows the two tokens, which the server gives this once: each stands under its name and the plain
+// statement that it is not shown again, with its Copy, and the button at the screen's end goes back to the app.
 //
 // A permission scope (`admin:<permission>`) is only ever carried by a token issued here, and only for a permission
 // the reader's account has: the screen says so, and the field starts without the ones the account cannot have. What
@@ -54,14 +55,12 @@ export function AppToken({ id, onBack }: SettingsSubProps & AppScreenProps) {
     return (
       <Once
         title={t("settings.apps.token")}
-        heading={t("settings.apps.token.heading")}
-        about={t("settings.apps.token.once")}
         said={t("settings.apps.token.issued")}
+        about={t("settings.apps.token.facts", { scope: made.scope, minutes: Math.round(made.expires_in / 60) })}
         values={[
           { what: "access_token", label: t("settings.apps.token.access"), value: made.access_token },
           { what: "refresh_token", label: t("settings.apps.token.refresh"), value: made.refresh_token },
         ]}
-        note={t("settings.apps.token.facts", { scope: made.scope, minutes: Math.round(made.expires_in / 60) })}
         onDone={onBack}
       />
     );

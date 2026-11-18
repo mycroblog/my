@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Registering an app, the screen under Apps at /settings/apps/new (ADR-0090 §1): a form saved as a whole, the fields
-// of form.tsx (the name and the website, the redirect URIs and the scopes) and the type. Registered, the screen shows the
-// app's client ID and, for a confidential app, its secret, which the server gives this once: the screen says so
-// plainly, each has its Copy, and the button at its end goes back to Apps, whose list holds the app.
+// of form.tsx (the name and the website, the redirect URIs and the scopes) and the type. Registered, the screen says
+// so, then shows the app's client ID and, for a confidential app, its secret, which the server gives this once: the
+// secret stands under the plain statement of that, each has its Copy, and the button at the screen's end goes back to
+// Apps, whose list holds the app.
 //
 // What the server refuses of a field shows under that field, and anything else right before the button, in the
 // server's words (25 apps already, too many registered within the hour). A server whose administrators turned
@@ -57,9 +58,8 @@ export function AppRegister({ onBack }: SettingsSubProps) {
     return (
       <Once
         title={made.app.name}
-        heading={t("settings.apps.credentials")}
-        about={t(secret === undefined ? "settings.apps.secret.none" : "settings.apps.secret.once")}
         said={t("settings.apps.registered", { name: made.app.name })}
+        about={t(secret === undefined ? "settings.apps.secret.none" : "settings.apps.registered.about")}
         values={[
           { what: "client_id", label: t("settings.apps.client_id"), value: made.app.client_id },
           ...(secret === undefined

@@ -130,6 +130,8 @@ export function AppAccessFields({ app, faults }: FieldsProps) {
         defaultValue={app?.redirect_uris.join("\n")}
         autoCapitalize="none"
         multiline
+        // One a line: a second and a third stay in view.
+        rows={3}
       />
       <TextField
         id={`${id}-scope`}

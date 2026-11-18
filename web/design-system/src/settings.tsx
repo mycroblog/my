@@ -14,7 +14,8 @@
 // menu is not beside the screen; a screen under an entry (`sub`: changing the password, one filter) keeps its head at
 // every width, the way back leading to its entry. A section holds rows: a setting (its name over a line about it, the
 // control at the row's end), a list of what the reader keeps there with its one add action in the section's head, or
-// what stands in the list's place while it is empty, which leads to adding; a sentence that is no setting, with the
+// what stands in the list's place while it is empty, which leads to adding; the facts it states, which are not
+// pressed and stand closer than rows; a sentence that is no setting, with the
 // links to where the reader acts on it; what they copy and keep (recovery codes, a key), with the action that copies
 // it; or a QR code for a camera, dark on light in either scheme. The status summary heads a screen while
 // something there is to do: the state as a glyph and a sentence, what it means, and the next thing to do. A state is
@@ -726,6 +727,36 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
           {action}
         </Row>
       )}
+    </Stack>
+  );
+}
+
+/**
+ * What a section states and the reader cannot press (what an app was granted, where it comes from), named by `label`:
+ * each fact a sentence over the muted lines about it, where it has some, the facts one under another at one distance
+ * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall.
+ */
+export function SettingsFacts({
+  label,
+  items,
+}: {
+  label: string;
+  items: readonly { text: string; about?: readonly string[] | undefined }[];
+}) {
+  const s = list();
+  return (
+    <Stack as="ul" gap="screen-row-gap" aria-label={label} className={s.root()}>
+      {items.map((item) => (
+        <Stack as="li" key={item.text}>
+          <bdi className={s.title()}>{item.text}</bdi>
+          {item.about?.map((line) => (
+            <Fragment key={line}>
+              {" "}
+              <span className={s.fact()}>{line}</span>
+            </Fragment>
+          ))}
+        </Stack>
+      ))}
     </Stack>
   );
 }

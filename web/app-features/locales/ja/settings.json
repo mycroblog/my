@@ -801,7 +801,7 @@
   },
   "settings.apps.authorized.last_used": {
     "defaultMessage": "最終利用: {date}",
-    "description": "In the line under an authorized app's name in the list, after a middle dot, and on the app's own page. date is the day and the time, to the hour, the app last used the account, written out in the reader's language (Mar 3, 2026, 2:00 PM). The same words as the signed-in browsers' (settings.security.browsers.last_used)."
+    "description": "A line under an authorized app's name in the list, and under the day it was authorized on the app's own page. date is the day and the time, to the hour, the app last used the account, written out in the reader's language (Mar 3, 2026, 2:00 PM). The same words as the signed-in browsers' (settings.security.browsers.last_used)."
   },
   "settings.apps.authorized.unused": {
     "defaultMessage": "利用の記録なし",
@@ -829,7 +829,7 @@
   },
   "settings.apps.own.registered": {
     "defaultMessage": "{date} に登録",
-    "description": "In the line under the name of one of the reader's own apps in the list, after its type and a middle dot. date is the day it was registered, written out in the reader's language (Mar 3, 2026)."
+    "description": "A line under the name of one of the reader's own apps in the list, under the line of its type. date is the day it was registered, written out in the reader's language (Mar 3, 2026)."
   },
   "settings.apps.own.disabled": {
     "defaultMessage": "無効",
@@ -837,7 +837,7 @@
   },
   "settings.apps.type": {
     "defaultMessage": "{type, select, confidential {コンフィデンシャル} other {パブリック}}",
-    "description": "The type of an OAuth app, in a developer's words, in the line under an app's name in the list of the reader's own apps. confidential: the app can keep a secret (a server, a bot). other: a public app, which cannot (an app on a phone or in a browser)."
+    "description": "The type of an OAuth app, in a developer's words, as a line under an app's name in the list of the reader's own apps. confidential: the app can keep a secret (a server, a bot). other: a public app, which cannot (an app on a phone or in a browser)."
   },
   "settings.apps.missing": {
     "defaultMessage": "このアプリは一覧にありません。許可が取り消されたか、削除された可能性があります。",
@@ -968,40 +968,44 @@
     "description": "The error under a field of the form of an app when the reader sent it with that field empty. field is name, redirect_uris, or other (the scopes)."
   },
   "settings.apps.registered": {
-    "defaultMessage": "「{name}」を登録しました。",
-    "description": "At the top of the page that shows the client ID, and the secret of a confidential app, right after the reader registered an app. name is the name they gave it."
+    "defaultMessage": "「{name}」を登録しました",
+    "description": "The sentence that heads the page shown right after the reader registered an app, over the app's client ID and, for a confidential app, its secret. name is the name they gave it. No full stop: it is a heading."
+  },
+  "settings.apps.registered.about": {
+    "defaultMessage": "クライアント ID は、アプリのページでいつでも確認できます。シークレットが表示されるのは、この 1 回だけです。",
+    "description": "Under settings.apps.registered, for a confidential app: which of the two values under it the reader finds again later, and which not."
   },
   "settings.apps.disabled": {
     "defaultMessage": "サーバーの管理者がこのアプリを無効にしています",
     "description": "The sentence of the status summary at the top of the page of one of the reader's own apps while the server's administrators have it disabled. No full stop: it is a heading."
   },
   "settings.apps.disabled.about": {
-    "defaultMessage": "管理者が有効に戻すまで、このアプリは許可できず、トークンの取得も、発行済みのトークンの使用もできません。",
-    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled."
+    "defaultMessage": "{type, select, confidential {管理者が有効に戻すまで、このアプリは許可できず、トークンの取得も、発行済みのトークンの使用もできません。シークレットの再発行、設定の変更、アプリの削除はできます。} other {管理者が有効に戻すまで、このアプリは許可できず、トークンの取得も、発行済みのトークンの使用もできません。設定の変更とアプリの削除はできます。}}",
+    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled, and what the reader may still do on the page, where the way to a token is then not offered. type is confidential (the app has a secret, which can still be made again), or other (a public app)."
   },
   "settings.apps.credentials": {
     "defaultMessage": "認証情報",
-    "description": "The heading of the section of the page of one of the reader's own apps that shows its client ID and offers a new secret and a token; the heading of the page that shows a new app's client ID and secret once; also the name of that section's list for assistive technology."
+    "description": "The heading of the section of the page of one of the reader's own apps that shows its client ID and offers a new secret and a token; also the name of that section's list for assistive technology."
   },
   "settings.apps.client_id": {
     "defaultMessage": "クライアント ID",
-    "description": "The name of the public identifier of an app, shown to copy; for assistive technology. A developer's word (OAuth)."
+    "description": "The name of the public identifier of an app: the heading over it on the page that shows a new app's values, and the name of the value shown to copy, for assistive technology. A developer's word (OAuth)."
   },
   "settings.apps.secret": {
     "defaultMessage": "クライアントシークレット",
-    "description": "The name of the secret of a confidential app: of the row about it on the app's page, and of the secret shown once to copy, for assistive technology. A developer's word (OAuth)."
+    "description": "The name of the secret of a confidential app: of the row about it on the app's page, the heading over the secret on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
   },
   "settings.apps.secret.caption": {
     "defaultMessage": "発行したときにだけ表示されます。なくした場合は、再発行してください。",
     "description": "The line under Client secret in its row on the page of a confidential app."
   },
-  "settings.apps.secret.once": {
-    "defaultMessage": "いまシークレットをコピーして、安全な場所に保管してください。このシークレットは二度と表示されません。",
-    "description": "The line under the heading Credentials on the page that shows the secret of a confidential app once (right after it was registered, or after a new secret was made). It must say plainly that the secret will not be shown again."
+  "settings.apps.once.about": {
+    "defaultMessage": "いまコピーして、安全な場所に保管してください。二度と表示されません。",
+    "description": "The line under the heading of a value the server shows only once (Client secret, Access token, Refresh token), right over the value, on the page that shows it right after it was made. It must say plainly that the value will not be shown again."
   },
   "settings.apps.secret.none": {
     "defaultMessage": "パブリックのアプリにはシークレットがありません。クライアント ID は、アプリのページでいつでも確認できます。",
-    "description": "The line under the heading Credentials on the page that shows the client ID of a public app right after it was registered."
+    "description": "Under settings.apps.registered, in place of settings.apps.registered.about, for a public app: the page shows its client ID alone."
   },
   "settings.apps.secret.rotate": {
     "defaultMessage": "再発行",
@@ -1016,8 +1020,12 @@
     "description": "Under settings.apps.secret.rotate.title in the confirmation: what making a new secret ends, that it cannot be undone, and what keeps working."
   },
   "settings.apps.secret.rotated": {
-    "defaultMessage": "新しいシークレットを発行しました。以前のシークレットは使えません。",
-    "description": "At the top of the page that shows the new secret of a confidential app right after the reader made it."
+    "defaultMessage": "新しいシークレットを発行しました",
+    "description": "The sentence that heads the page that shows the new secret of a confidential app right after the reader made it. No full stop: it is a heading."
+  },
+  "settings.apps.secret.rotated.about": {
+    "defaultMessage": "以前のシークレットは使えません。トークンの更新には、新しいシークレットが必要です。",
+    "description": "Under settings.apps.secret.rotated: what the new secret means for the app."
   },
   "settings.apps.copy": {
     "defaultMessage": "{what, select, client_id {クライアント ID をコピー} secret {シークレットをコピー} access_token {アクセストークンをコピー} other {リフレッシュトークンをコピー}}",
@@ -1077,7 +1085,7 @@
   },
   "settings.apps.token.heading": {
     "defaultMessage": "自分のアカウントのトークン",
-    "description": "The heading of the section with the field Scopes on the page Issue token, and of the page that shows the token once."
+    "description": "The heading of the section with the field Scopes on the page Issue token."
   },
   "settings.apps.token.about": {
     "defaultMessage": "このアプリのアクセストークンとリフレッシュトークンを、あなたのアカウントに発行します。許可の画面もリダイレクトもありません。",
@@ -1096,24 +1104,20 @@
     "description": "A sentence in the place of the form on the page Issue token, for an app the server's administrators disabled."
   },
   "settings.apps.token.issued": {
-    "defaultMessage": "トークンを発行しました。",
-    "description": "At the top of the page that shows an access token and a refresh token right after the reader issued them."
-  },
-  "settings.apps.token.once": {
-    "defaultMessage": "いま両方をコピーして、安全な場所に保管してください。このトークンは二度と表示されません。",
-    "description": "The line under the heading on the page that shows an access token and a refresh token once. It must say plainly that they will not be shown again."
+    "defaultMessage": "トークンを発行しました",
+    "description": "The sentence that heads the page that shows an access token and a refresh token right after the reader issued them. No full stop: it is a heading."
   },
   "settings.apps.token.access": {
     "defaultMessage": "アクセストークン",
-    "description": "The name of the access token shown once to copy, for assistive technology. A developer's word (OAuth)."
+    "description": "The name of the access token: the heading over it on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
   },
   "settings.apps.token.refresh": {
     "defaultMessage": "リフレッシュトークン",
-    "description": "The name of the refresh token shown once to copy, for assistive technology. A developer's word (OAuth)."
+    "description": "The name of the refresh token: the heading over it on the page that shows it once, and the name of that value for assistive technology. A developer's word (OAuth)."
   },
   "settings.apps.token.facts": {
     "defaultMessage": "スコープは {scope} です。アクセストークンの有効期間は {minutes, plural, other {# 分}}です。そのあとはリフレッシュトークンで新しい組を取得します。リフレッシュトークンは 1 回だけ使えます。",
-    "description": "A sentence under the access token and the refresh token shown once. scope is the names of the scopes the token has, separated by spaces (read write:statuses); minutes is how long the access token works."
+    "description": "Under settings.apps.token.issued, over the access token and the refresh token shown once. scope is the names of the scopes the token has, separated by spaces (read write:statuses); minutes is how long the access token works."
   },
   "settings.apps.scope.admin": {
     "defaultMessage": "アカウントに許された範囲での、サーバーの管理",

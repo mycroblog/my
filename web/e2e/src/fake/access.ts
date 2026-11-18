@@ -314,7 +314,7 @@ export function accessHandlers(c: AccessContext): Handlers {
       : [
           {
             id: idOf(ids.own, 0),
-            client_id: "cl_7f3a91c0e2b84d5a",
+            client_id: "Jq3vX8nB2mK7pL0wR5tY9u",
             name: "Morning bot",
             website: "https://bot.example/",
             redirect_uris: ["http://127.0.0.1/callback"],
@@ -325,7 +325,7 @@ export function accessHandlers(c: AccessContext): Handlers {
           },
           {
             id: idOf(ids.own, 1),
-            client_id: "cl_2d90b6a41c7e3f58",
+            client_id: "E4iO6aS1dF3gH8jZ2xC7vN",
             name: "Home dashboard",
             redirect_uris: ["https://dash.example/callback", "http://127.0.0.1:5173/callback"],
             scope: "read",
@@ -335,7 +335,7 @@ export function accessHandlers(c: AccessContext): Handlers {
           },
           {
             id: idOf(ids.own, 2),
-            client_id: "cl_a41e8c07d95b2f63",
+            client_id: "b5M-kQ9wT_r2Ye6Ui0Op3A",
             name: "Old importer",
             redirect_uris: ["https://importer.example/done"],
             scope: "read write",
@@ -345,7 +345,23 @@ export function accessHandlers(c: AccessContext): Handlers {
           },
         ];
 
-  const secretOf = () => `secret-${String(next()).padStart(4, "0")}-${(started % 99_991).toString(36)}`;
+  /**
+   * Text as the server's random values are, base64url, `length` characters of it: the same for the same `seed`, and
+   * another for a fake started at another time.
+   */
+  const randomText = (seed: number, length: number) => {
+    const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+    let state = (Math.imul(seed + 1, 2_654_435_761) ^ started) >>> 0;
+    let text = "";
+    for (let i = 0; i < length; i += 1) {
+      state = (Math.imul(state, 1_664_525) + 1_013_904_223) >>> 0;
+      text += alphabet.charAt(state >>> 26);
+    }
+    return text;
+  };
+  /** A secret or a token as the server makes one: its prefix, then 256 random bits (43 characters). */
+  const tokenOf = (prefix: "my_cs_" | "my_at_" | "my_rt_", seed: number) => `${prefix}${randomText(seed, 43)}`;
+  const secretOf = () => tokenOf("my_cs_", next());
 
   /** A setting of an app the server refuses, as it answers one: the member it is about, and what is wrong with it. */
   const invalid = (field: string) =>
@@ -653,7 +669,8 @@ export function accessHandlers(c: AccessContext): Handlers {
       const n = next();
       const app: OAuthApp = {
         id: idAt(Date.now(), 75_500 + n),
-        client_id: `cl_${n.toString(16).padStart(16, "0")}`,
+        // 128 random bits, as the server names a client.
+        client_id: randomText(1000 + n, 22),
         name: body.name.trim(),
         ...(body.website === undefined || body.website === "" ? {} : { website: body.website }),
         redirect_uris: body.redirect_uris,
@@ -714,11 +731,11 @@ export function accessHandlers(c: AccessContext): Handlers {
       return {
         status: 201,
         body: {
-          access_token: `at-${String(n).padStart(4, "0")}-${(started % 99_991).toString(36)}`,
+          access_token: tokenOf("my_at_", n),
           token_type: "Bearer",
           // An hour, as the server's access tokens last.
           expires_in: 3600,
-          refresh_token: `rt-${String(n).padStart(4, "0")}-${(started % 99_989).toString(36)}`,
+          refresh_token: tokenOf("my_rt_", 5000 + n),
           scope: wanted.join(" "),
         },
       };

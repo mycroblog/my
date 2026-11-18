@@ -15,6 +15,7 @@ import {
   BackButton,
   Button,
   ModalPresence,
+  SettingsFacts,
   SettingsList,
   SettingsListRow,
   SettingsNote,
@@ -63,34 +64,32 @@ export function AuthorizedAppScreen({ id, onBack, onSessionEnded }: SettingsSubP
       <SettingsScreen sub title={app.name} back={back}>
         <SettingsSection heading={t("settings.apps.about")}>
           {!own && <SettingsNote>{t("settings.apps.unverified")}</SettingsNote>}
-          <SettingsList label={t("settings.apps.about")}>
-            <SettingsListRow icon="apps" title={originOf(app, t)} caption={app.website} />
-            <SettingsListRow
-              icon="time"
-              title={t("settings.apps.authorized.since", { date: day(app.authorized_at) })}
-              caption={
-                app.last_used_at === undefined
-                  ? t("settings.apps.authorized.unused")
-                  : t("settings.apps.authorized.last_used", { date: hour(app.last_used_at) })
-              }
-            />
-          </SettingsList>
+          <SettingsFacts
+            label={t("settings.apps.about")}
+            items={[
+              { text: originOf(app, t), about: app.website === undefined ? undefined : [app.website] },
+              {
+                text: t("settings.apps.authorized.since", { date: day(app.authorized_at) }),
+                about: [
+                  app.last_used_at === undefined
+                    ? t("settings.apps.authorized.unused")
+                    : t("settings.apps.authorized.last_used", { date: hour(app.last_used_at) }),
+                ],
+              },
+            ]}
+          />
         </SettingsSection>
+        {/* What it was granted is read, not pressed: facts, at one distance under every heading. */}
         {groupedScopes(app.scope, t).map(({ risk, scopes }) => (
           <SettingsSection
             key={risk}
             heading={t("settings.apps.permissions", { risk })}
             count={new Intl.NumberFormat(locale).format(scopes.length)}
           >
-            <SettingsList label={t("settings.apps.permissions", { risk })}>
-              {scopes.map((scope) => (
-                <SettingsListRow
-                  key={scope.scope}
-                  title={scope.text}
-                  caption={scope.cautions.length === 0 ? undefined : scope.cautions.join(" · ")}
-                />
-              ))}
-            </SettingsList>
+            <SettingsFacts
+              label={t("settings.apps.permissions", { risk })}
+              items={scopes.map((scope) => ({ text: scope.text, about: scope.cautions }))}
+            />
           </SettingsSection>
         ))}
         <SettingsSection heading={t("settings.apps.revoke.heading")}>

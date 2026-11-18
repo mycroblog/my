@@ -7,9 +7,9 @@
 // rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
 // to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; a
 // number field given a number outside what it takes; what the reader copies and keeps (recovery codes shown once,
-// before and after copying); the key of an authenticator app as a QR code and as text; and rows that say what is
-// known of each thing, one fact a line, under which a sentence of the section stands
-// with the links to where the reader acts on it.
+// before and after copying; a secret of a server's length, which wraps in its box); the key of an authenticator app as
+// a QR code and as text; rows that say what is known of each thing, one fact a line, under which a sentence of the
+// section stands with the links to where the reader acts on it; and the facts a section states, which are not pressed.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
@@ -24,6 +24,7 @@ import {
   QrFrame,
   SettingRow,
   SettingsEmpty,
+  SettingsFacts,
   SettingsList,
   SettingsListRow,
   SettingsNote,
@@ -118,6 +119,16 @@ const en = {
     "If you do not recognize a sign-in, sign that browser out, change your password, and check which apps can use your account.",
   changePassword: "Change password",
   apps: "Check your apps",
+  secret: "Client secret",
+  secretAbout: "Copy it now and keep it somewhere safe: it is not shown again.",
+  copySecret: "Copy secret",
+  attention: "Permissions that need your attention",
+  reads: "Permissions that only read",
+  granted: [
+    ["Read your account, posts, and timelines", ["Can read your direct messages"]],
+    ["Post and change things for you", ["Can post, edit and delete posts as you", "Can change your profile"]],
+  ] as [string, string[]][],
+  read: ["Read your bookmarks", "Read your keyword filters", "Read the accounts and domains you mute"],
 };
 
 const ja: typeof en = {
@@ -205,6 +216,16 @@ const ja: typeof en = {
     "心当たりのないログインがあるときは、そのブラウザをログアウトし、パスワードを変更して、アカウントを使えるアプリを確認してください。",
   changePassword: "パスワードを変更",
   apps: "アプリを確認",
+  secret: "クライアントシークレット",
+  secretAbout: "いまコピーして、安全な場所に保管してください。二度と表示されません。",
+  copySecret: "シークレットをコピー",
+  attention: "特に注意が必要な権限",
+  reads: "読み取りだけの権限",
+  granted: [
+    ["アカウント・投稿・タイムラインの読み取り", ["ダイレクトメッセージを読めます"]],
+    ["あなたに代わっての投稿と変更", ["あなたとして投稿・編集・削除ができます", "プロフィールを変更できます"]],
+  ],
+  read: ["ブックマークの読み取り", "キーワードフィルタの読み取り", "ミュートしているアカウントとドメインの読み取り"],
 };
 
 const useWords = () => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
@@ -650,6 +671,43 @@ function Notes() {
 }
 
 // Tagged `themes`: the check of every story shows it in dark too.
+/**
+ * A secret shown once, as long as a server makes one: whole in its box, on as many lines as it takes, under the words
+ * that say it is not shown again and over the button that copies it.
+ */
+function Secret() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.secret} about={w.secretAbout}>
+        <CopyBlock
+          label={w.secret}
+          values={["my_cs_Jq3vX8nB2mK7pL0wR5tY9uE4iO6aS1dF3gH8jZ2xC7v"]}
+          action={<Button size="timeline">{w.copySecret}</Button>}
+        />
+      </SettingsSection>
+    </Column>
+  );
+}
+
+/**
+ * What a section states and nothing in it is pressed: facts one under another at one distance, with a muted line or
+ * two about them or none, the same under each heading.
+ */
+function Facts() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.attention} count={String(w.granted.length)}>
+        <SettingsFacts label={w.attention} items={w.granted.map(([text, about]) => ({ text, about }))} />
+      </SettingsSection>
+      <SettingsSection heading={w.reads} count={String(w.read.length)}>
+        <SettingsFacts label={w.reads} items={w.read.map((text) => ({ text }))} />
+      </SettingsSection>
+    </Column>
+  );
+}
+
 const meta = { title: "Settings parts", tags: ["themes"] } satisfies Meta;
 export default meta;
 
@@ -677,5 +735,9 @@ export const CodesToKeep: Story = { render: () => <Kept /> };
 export const AuthenticatorSetup: Story = { render: () => <Authenticator /> };
 /** Rows of facts, one a line, and a sentence of the section with the links to where the reader acts on it. */
 export const NoteWithLinks: Story = { render: () => <Notes /> };
+/** A secret of a server's length shown once: it wraps inside its box, whole, at any width. */
+export const SecretToKeep: Story = { render: () => <Secret /> };
+/** Facts a section states, with and without a line about them: one distance between them, and under each heading. */
+export const StatedFacts: Story = { render: () => <Facts /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

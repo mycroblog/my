@@ -4,8 +4,8 @@
 // the apps its reader registered.
 //
 // - Authorized apps: each by its name, where it comes from in the consent page's words, and when it last used the
-//   account; a row opens the app's screen (authorized.tsx), which holds what it was granted and the way to revoke it.
-//   The server's own web client is one of them.
+//   account, a fact a line; a row opens the app's screen (authorized.tsx), which holds what it was granted and the
+//   way to revoke it. The server's own web client is one of them.
 // - Your apps: each by its name, its type and the day it was registered, and that the administrators disabled it where
 //   they did; a row opens the app's screen (app.tsx), and Register an app the screen that registers one
 //   (register.tsx). Whether the server lets users register apps, the API says only by refusing a registration: from
@@ -61,14 +61,13 @@ function Authorized() {
           {apps.map((app) => (
             <SettingsListRow
               key={app.id}
-              icon="apps"
               title={app.name}
-              caption={[
+              facts={[
                 originOf(app, t),
                 app.last_used_at === undefined
                   ? t("settings.apps.authorized.unused")
                   : t("settings.apps.authorized.last_used", { date: hour(app.last_used_at) }),
-              ].join(" · ")}
+              ]}
               href={appsPaths.authorized(app.id)}
             />
           ))}
@@ -104,12 +103,11 @@ function Own() {
           {apps.map((app) => (
             <SettingsListRow
               key={app.id}
-              icon="apps"
               title={app.name}
-              caption={[
+              facts={[
                 t("settings.apps.type", { type: app.client_type }),
                 t("settings.apps.own.registered", { date: day(app.created_at) }),
-              ].join(" · ")}
+              ]}
               state={app.disabled ? t("settings.apps.own.disabled") : undefined}
               href={appsPaths.app(app.id)}
             />

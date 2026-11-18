@@ -253,10 +253,12 @@ const form = tv({
     widget: "min-h-form-page-widget",
   },
   variants: {
-    // A textarea starts at a control's height, and the reader may make it taller.
-    multiline: {
-      false: { input: "h-control-form" },
-      true: { input: "h-control-form resize-y py-control-timeline-inline" },
+    // A textarea starts at a control's height, or as tall as the lines it says it shows (`rows`), and the reader may
+    // make it taller.
+    height: {
+      line: { input: "h-control-form" },
+      area: { input: "h-control-form resize-y py-control-timeline-inline" },
+      rows: { input: "min-h-control-form resize-y py-control-timeline-inline" },
     },
     strong: { true: { caution: "font-label" } },
     // A sentence that tells what happened rather than what is wrong (a draft gone): in the text's own weight.
@@ -368,8 +370,10 @@ export type TextFieldProps = {
   required?: boolean | undefined;
   minLength?: number | undefined;
   maxLength?: number | undefined;
-  /** A textarea of a few rows instead of a line. */
+  /** A textarea instead of a line: a control's height at rest, which the reader may make taller. */
   multiline?: boolean | undefined;
+  /** How many lines a textarea shows at rest, where one is too few (addresses, one a line). */
+  rows?: number | undefined;
   readOnly?: boolean | undefined;
   /** A link at the end of the label's line (Forgot your password?). */
   end?: ReactNode;
@@ -401,13 +405,14 @@ export function TextField({
   minLength,
   maxLength,
   multiline = false,
+  rows,
   readOnly,
   end,
   describedBy,
   autoFocus,
   onChange,
 }: TextFieldProps) {
-  const s = form({ multiline });
+  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
   const holder = use(FieldContext);
   const described = idsOf(
     describedBy,
@@ -448,7 +453,7 @@ export function TextField({
         </p>
       )}
       {multiline ? (
-        <Box full as={<textarea {...common} className={s.input()} rows={4} dir="auto" />} />
+        <Box full as={<textarea {...common} className={s.input()} rows={rows ?? 4} dir="auto" />} />
       ) : (
         <Box
           full

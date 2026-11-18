@@ -261,6 +261,7 @@ export {
   QrFrame,
   SettingRow,
   SettingsEmpty,
+  SettingsFacts,
   SettingsGroup,
   SettingsItem,
   SettingsList,

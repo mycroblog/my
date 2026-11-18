@@ -10,8 +10,10 @@
 // - Delete app, after a confirmation that says every token of it stops working, for everyone, for good; deleted, the
 //   screen goes back to Apps.
 //
-// While the server's administrators have the app disabled, a summary at the screen's top says so and what it means.
-// An address that names no app of the reader's says so in the sections' place, with the way to the list.
+// While the server's administrators have the app disabled, a summary at the screen's top says so, what it means and
+// what the reader may still do, and the way to a token, which such an app does not get, is not offered. A new secret
+// stays: the server takes one, and a secret that leaked is a reason an app is disabled for. An address that names no
+// app of the reader's says so in the sections' place, with the way to the list.
 
 import {
   oAuthAppQuery,
@@ -88,15 +90,17 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
     return (
       <Once
         title={app.name}
-        heading={t("settings.apps.credentials")}
-        about={t("settings.apps.secret.once")}
         said={t("settings.apps.secret.rotated")}
+        about={t("settings.apps.secret.rotated.about")}
         values={[{ what: "secret", label: t("settings.apps.secret"), value: secret }]}
         onDone={() => {
           setSecret(undefined);
         }}
       />
     );
+
+  /** A confidential app keeps a secret, which its reader may make again. */
+  const secretive = app.client_type === "confidential";
 
   const submit = (form: HTMLFormElement) => {
     if (busy) return;
@@ -154,34 +158,39 @@ export function OwnApp({ id, onBack }: SettingsSubProps & AppScreenProps) {
             <StatusSummary
               icon="caution"
               title={t("settings.apps.disabled")}
-              about={t("settings.apps.disabled.about")}
+              about={t("settings.apps.disabled.about", { type: app.client_type })}
             />
           )}
           <SettingsSection heading={t("settings.apps.credentials")}>
             <Kept what="client_id" label={t("settings.apps.client_id")} value={app.client_id} />
-            <SettingsList label={t("settings.apps.credentials")}>
-              {app.client_type === "confidential" && (
-                <SettingsListRow
-                  title={t("settings.apps.secret")}
-                  caption={t("settings.apps.secret.caption")}
-                  end={
-                    <Button
-                      size="timeline"
-                      onPress={() => {
-                        setAsking("secret");
-                      }}
-                    >
-                      {t("settings.apps.secret.rotate")}
-                    </Button>
-                  }
-                />
-              )}
-              <SettingsListRow
-                title={t("settings.apps.token")}
-                caption={t("settings.apps.token.caption")}
-                href={appsPaths.token(app.id)}
-              />
-            </SettingsList>
+            {(secretive || !app.disabled) && (
+              <SettingsList label={t("settings.apps.credentials")}>
+                {secretive && (
+                  <SettingsListRow
+                    title={t("settings.apps.secret")}
+                    caption={t("settings.apps.secret.caption")}
+                    end={
+                      <Button
+                        size="timeline"
+                        onPress={() => {
+                          setAsking("secret");
+                        }}
+                      >
+                        {t("settings.apps.secret.rotate")}
+                      </Button>
+                    }
+                  />
+                )}
+                {/* A disabled app gets no token, as the summary says: the way to one is not offered. */}
+                {!app.disabled && (
+                  <SettingsListRow
+                    title={t("settings.apps.token")}
+                    caption={t("settings.apps.token.caption")}
+                    href={appsPaths.token(app.id)}
+                  />
+                )}
+              </SettingsList>
+            )}
           </SettingsSection>
           <SettingsSection key={round} heading={t("settings.apps.edit")} about={t("settings.apps.edit.about")}>
             <AppIdentityFields app={app} faults={faults} />
