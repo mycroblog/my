@@ -1484,7 +1484,7 @@ func (l *Localizer) ServerErrorsInteractionRequestAnswered() string {
 
 // ServerErrorsInteractionRestricted formats "server:errors.interaction_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying); says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account).
 //
-//	en: A moderation action keeps your account from following, favouriting, boosting, or replying for now. To see why or to appeal, open Account status under Account and data in the settings.
+//	en: A moderation action keeps your account from following, favouriting, boosting, or replying for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.
 func (l *Localizer) ServerErrorsInteractionRestricted() string {
 	return l.format("server:errors.interaction_restricted", nil)
 }
@@ -2285,7 +2285,7 @@ func (l *Localizer) ServerErrorsStatusPollWithMedia() string {
 
 // ServerErrorsStatusPostingRestricted formats "server:errors.status.posting_restricted". Detail of the HTTP 403 API error when a moderator restricted the account from posting; says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account).
 //
-//	en: A moderation action keeps your account from posting for now. To see why or to appeal, open Account status under Account and data in the settings.
+//	en: A moderation action keeps your account from posting for now. To see why or to appeal, open “Account status” under “Account and data” in the settings.
 func (l *Localizer) ServerErrorsStatusPostingRestricted() string {
 	return l.format("server:errors.status.posting_restricted", nil)
 }
@@ -2397,7 +2397,7 @@ func (l *Localizer) ServerErrorsSupportersIneligible() string {
 
 // ServerErrorsSupportersIneligibleDetail formats "server:errors.supporters.ineligible_detail". API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted.
 //
-//	en: {reason, select, not_local {Only the users of this server can subscribe.} email_unverified {Verify your email address first.} restricted {A moderation action restricts your account. To see why or to appeal, open Account status under Account and data in the settings.} other {You cannot subscribe now.}}
+//	en: {reason, select, not_local {Only the users of this server can subscribe.} email_unverified {Verify your email address first.} restricted {A moderation action restricts your account. To see why or to appeal, open “Account status” under “Account and data” in the settings.} other {You cannot subscribe now.}}
 func (l *Localizer) ServerErrorsSupportersIneligibleDetail(reason string) string {
 	return l.format("server:errors.supporters.ineligible_detail", map[string]any{"reason": reason})
 }

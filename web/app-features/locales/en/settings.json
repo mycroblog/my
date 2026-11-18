@@ -1132,7 +1132,7 @@
     "description": "The heading of the summary at the top of the settings page Account and data while moderators' actions are in effect on the reader's account (a limit, a restriction of posting). count is how many, 1 or more. A heading: no full stop."
   },
   "settings.account.status.in_effect.about": {
-    "defaultMessage": "{appealable, select, deadline {Account status says what each action does, why, and when it ends. You can appeal until {date}.} yes {Account status says what each action does, why, and when it ends. You can appeal an action once.} other {Account status says what each action does, why, when it ends, and where your appeal stands.}}",
+    "defaultMessage": "{appealable, select, deadline {“Account status” says what each action does, why, and when it ends. You can appeal until {date}.} yes {“Account status” says what each action does, why, and when it ends. You can appeal an action once.} other {“Account status” says what each action does, why, when it ends, and where your appeal stands.}}",
     "description": "Under settings.account.status.in_effect: what the page Account status (settings.account.status) holds, before the button that opens it. appealable is deadline while the reader can still appeal one of the actions and the server says until when (date is the nearest last day, as the reader's locale writes a date), yes while they can and no last day is known, and anything else once every action is appealed or its time to appeal has passed."
   },
   "settings.account.status.open": {
@@ -1168,7 +1168,7 @@
     "description": "A heading on the settings page Account status, over the list of the moderators' actions on the reader's account that ended or were lifted. A heading: no full stop."
   },
   "settings.account.actions.past.empty": {
-    "defaultMessage": "No past action. An action that ended or was lifted stays listed here, with your appeal and its result.",
+    "defaultMessage": "No past actions. An action that ended or was lifted stays listed here, with your appeal and its result.",
     "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
   },
   "settings.account.actions.more": {
@@ -1176,7 +1176,7 @@
     "description": "The button under the list Past actions on the settings page Account status, which loads the next, older actions."
   },
   "settings.account.actions.failed_more": {
-    "defaultMessage": "The older actions could not be loaded.",
+    "defaultMessage": "More past actions could not be loaded.",
     "description": "Under the list Past actions on the settings page Account status when its next, older actions could not be read; Try again follows it (settings.retry)."
   },
   "settings.account.action.title": {
@@ -1248,7 +1248,7 @@
     "description": "The error under the appeal field of a moderators' action, in the settings, when the reader sends it empty."
   },
   "settings.account.appeal.over": {
-    "defaultMessage": "Shorten your appeal to {max, number} characters or fewer.",
+    "defaultMessage": "Your appeal must be at most {max, number} characters.",
     "description": "The error under the appeal field of a moderators' action, in the settings, when what the reader wrote is longer than the server takes. max is the most characters."
   },
   "settings.account.appeal.submit": {
@@ -1264,7 +1264,7 @@
     "description": "Said under the heading Appeal on the page of a moderators' action in the settings, right after the reader sent their appeal; where the appeal stands follows it (settings.account.appeal.state)."
   },
   "settings.account.appeal.refused": {
-    "defaultMessage": "{reason, select, appealed {You have already appealed this action, and an action can be appealed once. Your earlier appeal and where it stands are shown here.} closed {The time to appeal this action has passed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} not_appealable {This action can no longer be appealed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} other {This action is no longer listed on your account, so your appeal was not sent. Go back to Account status to see the actions on your account.}}",
+    "defaultMessage": "{reason, select, appealed {You have already appealed this action, and an action can be appealed once. Your earlier appeal and where it stands are shown here.} closed {The time to appeal this action has passed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} not_appealable {This action can no longer be appealed, so your appeal was not sent. To reach the moderators, see the contact on {about}.} other {This action is no longer listed on your account, so your appeal was not sent. Go back to “Account status” to see the actions on your account.}}",
     "description": "Said under the heading Appeal on the page of a moderators' action in the settings when the server refused the appeal the reader sent; the form is then gone. reason is appealed (the action was appealed already, from another browser; that appeal then shows on the page), closed (the last moment to appeal has passed), not_appealable (the action cannot be appealed any more), or other (the action is not on the account any more). about is the link to the server's About page, whose words are settings.account.appeal.about_page; Account status is settings.account.status."
   },
   "settings.account.appeal.about_page": {
@@ -1288,7 +1288,7 @@
     "description": "A line under where the reader's appeal of a moderators' action stands, on the action's page in the settings: when they sent it. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.appeal.decided_on": {
-    "defaultMessage": "Decided on {date}",
+    "defaultMessage": "Reviewed on {date}",
     "description": "A line under settings.account.appeal.sent_on, once the moderators decided the reader's appeal: when they did. date is a date and a time as the reader's locale writes them. No full stop."
   },
   "settings.account.appeal.answer": {

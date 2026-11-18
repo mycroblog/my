@@ -824,7 +824,7 @@
     "description": "The question of the confirmation before the reader appeals the refusal of their post by this server's automated review, in the composer."
   },
   "compose.refused.appeal.text": {
-    "defaultMessage": "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once, and an appeal cannot be taken back.",
+    "defaultMessage": "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once. This cannot be undone.",
     "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
   },
   "compose.refused.appeal.confirm": {
@@ -836,7 +836,7 @@
     "description": "The button of the confirmation compose.refused.appeal.title that closes it without appealing."
   },
   "compose.refused.appeal.state": {
-    "defaultMessage": "{state, select, pending {This post was not published. Your appeal was sent, and you will be notified of the result. If the moderators lift the refusal, post it again: to keep it until then, save it as a draft.} upheld {This post was not published. A moderator reviewed your appeal and kept the refusal. Change the post and try again.} overturned {A moderator reviewed your appeal and lifted the refusal. Post again.} other {This post was not published. You appealed the refusal.}}",
+    "defaultMessage": "{state, select, pending {This post was not published. Your appeal was sent, and you will be notified of the result. If the moderators lift the refusal, post it again. To keep it until then, save it as a draft.} upheld {This post was not published. A moderator reviewed your appeal and kept the refusal. Change the post and try again.} overturned {A moderator reviewed your appeal and lifted the refusal. Post again.} other {This post was not published. You appealed the refusal.}}",
     "description": "In place of the error of a post that this server's automated review refused, in the composer, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators: Post is disabled until the post is changed; the server keeps no refused post, so the reader posts it again once the refusal is lifted, and keeps it meanwhile with Save as draft, compose.drafts.save), upheld (the refusal stays; Post is disabled until the post is changed), or overturned (the moderators cancelled the refusal: Post, right after this sentence, posts it again)."
   },
   "compose.refused.appeal.failed": {
