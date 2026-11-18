@@ -112,21 +112,25 @@ describe("an entry", () => {
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
   });
 
-  test("that the address names but the settings do not have says so, and leads back to Settings", async () => {
+  test("that the address names but the settings do not have says so under the place's name, and leads to all settings", async () => {
     const app = await renderApp("/settings/nothing");
 
+    // The screen keeps the name of the place the reader is in, as a missing announcement keeps Announcements.
+    expect(heading()).toBe("Settings");
+    expect(app.title()).toContain("Settings");
     expect(main().getByRole("alert").textContent).toMatch(
-      /^This settings page does not exist\. Check the address, or go back to Settings\.\s*Settings$/,
+      /^This settings page does not exist\. Check the address\.\s*See all settings$/,
     );
-    expect(heading()).not.toBe("Settings");
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
     expect(beside().flatMap(rows)).toEqual([
       ["Display and posting", "/settings/display", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
+    const all = main().getByRole("link", { name: "See all settings" });
+    expect(all.getAttribute("href")).toBe("/settings");
 
-    await app.user.click(main().getByRole("link", { name: "Settings" }));
+    await app.user.click(all);
 
     await main().findByRole("navigation", { name: "Settings" });
     expect(app.path()).toBe("/settings");

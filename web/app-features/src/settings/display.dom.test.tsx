@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Display and posting, the settings' first entry (#3199): each control shows what the server holds and saves a change
-// at once with a PATCH /preferences of its own, and says on its row how the save went: saving, saved for about two
-// seconds, or not saved, with the control back at the server's value and the way to try the same change again, or
-// with the server's own words when it refuses the value. Before the preferences are read the screen says that it
+// at once with a PATCH /preferences of its own, and says in its row's status region how the save went: saving, saved
+// for about two seconds, or not saved, with the control back at the server's value and the way to try the same change
+// again, or with the server's own words when it refuses the value. The switch that requires media descriptions stands
+// on and fixed where the server requires them of everyone. Before the preferences are read the screen says that it
 // loads them, and when they cannot be read, that too. What a change does to the app (its language, its times, its
 // timelines) is the app's test and each feature's; what shows while a change is on its way, preferences.dom.test.tsx.
 
@@ -61,19 +62,37 @@ const offered = (name: string) =>
 const toggle = (name: string) => screen.getByRole<HTMLInputElement>("switch", { name });
 /** The section of the screen titled `name`. */
 const section = (name: string) => within(screen.getByRole("region", { name }));
+/**
+ * What the status regions among `regions` say: each row that saves at once keeps one from the start, empty while it
+ * has nothing to say, so a state is found by its words.
+ */
+const said = (regions: readonly HTMLElement[]) =>
+  regions.map((status) => status.textContent).filter((words) => words !== "");
 /** What the rows of the section titled `name` say of a save. */
-const saves = (name: string) =>
-  section(name)
-    .queryAllByRole("status")
-    .map((status) => status.textContent);
-/** The languages the timelines show, as the screen lists them. */
+const saves = (name: string) => said(section(name).queryAllByRole("status"));
+/** What describes `control`, part by part. */
+const describedBy = (control: HTMLElement) =>
+  (control.getAttribute("aria-describedby") ?? "")
+    .split(" ")
+    .map((id) => document.getElementById(id)?.textContent ?? "");
+/**
+ * The languages the timelines show, the values of the row Languages to show: the list of that name in the Timelines'
+ * section, each item with its language and the name of the button that removes it.
+ */
 const shownLanguages = () =>
-  screen
+  section("Timelines")
     .queryAllByRole("list", { name: "Languages to show" })
-    .flatMap((list) => within(list).getAllByRole("button"))
-    .map((button) => button.getAttribute("aria-label") ?? button.textContent);
+    .flatMap((list) => within(list).getAllByRole("listitem"))
+    .map((item) => {
+      const remove = within(item).getByRole("button");
+      return {
+        // The item's words before its button's.
+        language: item.textContent.slice(0, item.textContent.length - remove.textContent.length),
+        remove: remove.getAttribute("aria-label") ?? remove.textContent,
+      };
+    });
 
-const describing = "Ask me for a description before posting media without one";
+const describing = "Require media descriptions";
 const arriving = "Show new posts as they arrive";
 
 /** An account's own choices, none of them a new account's. */
@@ -122,7 +141,12 @@ describe("each control is at what the server holds", () => {
     expect(chosen("Who can quote")).toBe("Followers");
     expect(chosen("Post language")).toBe("日本語");
     expect(toggle(describing).checked).toBe(true);
-    expect(shownLanguages()).toEqual(["Remove English", "Remove 日本語"]);
+    expect(shownLanguages()).toEqual([
+      { language: "English", remove: "Remove English" },
+      { language: "日本語", remove: "Remove 日本語" },
+    ]);
+    // With languages chosen, the picker offers one more.
+    expect(chosen("Languages to show")).toBe("Add a language");
     expect(toggle(arriving).checked).toBe(false);
   });
 
@@ -227,7 +251,7 @@ describe("the timelines' languages", () => {
     await sent.served();
 
     await waitFor(() => {
-      expect(shownLanguages()).toEqual(["Remove 日本語"]);
+      expect(shownLanguages()).toEqual([{ language: "日本語", remove: "Remove 日本語" }]);
     });
     expect(offered("Languages to show")).not.toContain("日本語");
     expect(offered("Languages to show")).toContain("English");
@@ -289,7 +313,7 @@ describe("the row of a control says how its save goes", () => {
 
     expect(saves("Display")).toEqual(["Saving…"]);
     // The other rows say nothing: the save is this control's.
-    expect(screen.getAllByRole("status")).toHaveLength(1);
+    expect(said(screen.getAllByRole("status"))).toEqual(["Saving…"]);
 
     sent.release();
     await waitFor(() => {
@@ -362,6 +386,37 @@ describe("the row of a control says how its save goes", () => {
   });
 });
 
+describe("requiring media descriptions", () => {
+  test("is the reader's to switch, and says what it does", async () => {
+    await read();
+
+    expect(toggle(describing).disabled).toBe(false);
+    expect(describedBy(toggle(describing))).toEqual([
+      "When on, media needs a description (alt text) before you can post it.",
+    ]);
+  });
+
+  test("on a server that requires them for everyone, the switch stands on, cannot be changed, says why, and sends nothing", async () => {
+    // The reader's own preference is off: the server's rule is what the switch shows.
+    const { fake, user } = await read({ requiresDescriptions: true });
+    const sent = fake.script("PATCH /preferences");
+
+    expect(toggle(describing).checked).toBe(true);
+    expect(toggle(describing).disabled).toBe(true);
+    expect(describedBy(toggle(describing))).toEqual([
+      "This server requires a description for all media, so this is always on.",
+    ]);
+
+    await user.click(toggle(describing));
+    // The next change the reader makes is the first the server hears of.
+    await user.click(toggle(arriving));
+
+    expect((await sent.served()).body).toEqual({ timeline_auto_insert: false });
+    expect(sent.seen).toHaveLength(1);
+    expect(toggle(describing).checked).toBe(true);
+  });
+});
+
 describe("who can see a new post", () => {
   test("offers Local between Public and Quiet public", async () => {
     await read();
@@ -383,12 +438,13 @@ describe("before the preferences are read", () => {
     await drawn(on);
     await reading.arrived();
 
-    expect(screen.getAllByRole("status").map((status) => status.textContent)).toEqual(["Loading your settings…"]);
+    expect(said(screen.getAllByRole("status"))).toEqual(["Loading your settings…"]);
     expect(screen.queryAllByRole("combobox")).toHaveLength(0);
 
     reading.release();
     await screen.findByRole("combobox", { name: "Display language" });
-    expect(screen.queryAllByRole("status")).toHaveLength(0);
+    // The notice is gone, and no row has anything to say yet.
+    expect(said(screen.queryAllByRole("status"))).toEqual([]);
   });
 
   test("a read that fails says so, and Try again reads them", async () => {
