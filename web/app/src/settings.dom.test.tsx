@@ -43,6 +43,7 @@ const beside = (name = "Settings") =>
 
 const profileHint = "Name, bio, pictures, badges, approving followers, appearing in search";
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
+const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
 
 describe("the menu", () => {
   test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
@@ -58,12 +59,14 @@ describe("the menu", () => {
     const menu = main().getByRole("navigation", { name: "Settings" });
     // One group has entries; a group without one is not drawn.
     expect(groups(menu)).toEqual(["General"]);
-    const [profile, display, ...others] = rows(menu);
+    const [profile, display, notifications, ...others] = rows(menu);
     // An entry's row says its name, then what it holds.
     expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
     expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
     expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
+    expect(notifications?.[0]).toMatch(new RegExp(`^Notifications\\s*${notificationsHint}$`));
+    expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.
     expect(beside()).toHaveLength(0);
@@ -111,6 +114,7 @@ describe("an entry", () => {
     expect(rows(menu)).toEqual([
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
+      ["Notifications", "/settings/notifications", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
@@ -130,6 +134,7 @@ describe("an entry", () => {
     expect(beside().flatMap(rows)).toEqual([
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
+      ["Notifications", "/settings/notifications", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
     const all = main().getByRole("link", { name: "See all settings" });
@@ -188,6 +193,7 @@ describe("the display language", () => {
     expect(beside("設定").flatMap(rows)).toEqual([
       ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
+      ["通知", "/settings/notifications", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);
     expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);
