@@ -36,7 +36,7 @@ import { raisedSurface } from "./button";
 import { FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
 import { Box, Layers, Row, Stack } from "./layout";
-import { ScreenTitle } from "./list";
+import { BackLead, ScreenTitle } from "./list";
 import { useReader } from "./locale";
 import { SaveControlContext } from "./save-state";
 import { FrameFoot, FrameHead, FramePanel } from "./shell";
@@ -269,8 +269,9 @@ export function SettingsScreen({
   foot?: ReactNode;
   children?: ReactNode;
 }) {
+  // The way back is the reader's only one where it shows: as the text reads, a finger's target tall.
   const head = (
-    <ScreenTitle glyph={icon} back={back}>
+    <ScreenTitle glyph={icon} back={back === undefined ? undefined : <BackLead value>{back}</BackLead>}>
       {title}
     </ScreenTitle>
   );
@@ -346,38 +347,60 @@ export function SettingsSection({
 const ValuesContext = createContext(false);
 
 /**
- * The frame of a setting: its name (`name`) over the line under it (`under`) at the start, taking the room left on
- * their line, and its control (`control`) at the end, as wide as what it holds. Beside the control the name's block
- * stands at the middle of the control, with or without a line under it. Where the two cannot share a line, the
- * control fills a line of its own right under the block, as a field under its label, and the row's space stays above
- * the name. `reserve`, for a name with no line under it yet (a save state will stand there): on a line of its own the
- * name keeps that line's room above it, so that the state finds its room and the control under it does not move. The
- * block is on a line of its own when it is as wide as the frame, which the padding reads (a length that is the room
- * or nothing).
+ * The frame of a setting: its name (`name`), its control (`control`) and the line under the name (`under`), in a
+ * frame that knows its own width.
+ *
+ * - In a wide frame (a tablet's column and wider): the name over the line under it at the start, the control at the
+ *   end, at the middle of both.
+ * - In a narrow one (a phone): the name and the control share the first line, the control at its end, and the line
+ *   under the name runs the frame's whole width under both, where it reads in fewer lines. Where the two cannot share
+ *   a line, the control fills a line of its own right under the name, as a field under its label, and the line about
+ *   it comes under the control.
+ *
+ * `state` is the place of a save state for a name with no line under it (with one, the state stands in that line's
+ * place): under the name beside the control, in the room the row's height holds, and beside the name when the name
+ * has a line to itself, so that it moves neither the control nor the rows. The name has a line to itself when its
+ * block is as wide as the frame, which the state's width reads (a length that is the whole line or nothing).
  */
 function SettingFrame({
   className,
-  reserve,
   name,
+  state,
   under,
   control,
 }: {
   className: string;
-  reserve: boolean;
   name: ReactNode;
+  state: ReactNode;
   under: ReactNode;
   control: ReactNode;
 }) {
-  const room =
-    "pt-[clamp(0px,(100%_-_100cqw_+_1px)_*_9999,calc(var(--text-caption)_*_var(--text-caption--line-height)))]";
+  const lined = under !== undefined && under !== null && under !== false;
+  // In a wide frame: two rows, the name over the line under it, and the control beside both at their middle; a name
+  // with no line under it takes both rows, at the control's middle.
+  const wide = {
+    root: "@min-[28rem]:grid @min-[28rem]:grid-cols-[minmax(0,1fr)_auto] @min-[28rem]:content-center @min-[28rem]:gap-y-0",
+    name: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-1",
+    alone: "@min-[28rem]:row-span-2 @min-[28rem]:self-center",
+    control: "@min-[28rem]:col-start-2 @min-[28rem]:row-span-2 @min-[28rem]:row-start-1 @min-[28rem]:self-center",
+    under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2",
+  };
+  const named = `flex min-w-0 flex-[9999_1_6rem] flex-wrap items-center gap-x-screen-row-gap ${wide.name}`;
   return (
-    <Row wrap align="center" className={`${className} @container gap-x-screen-row-gap gap-y-screen-air`}>
-      <Stack grow="setting" pack="center">
-        <Box className={reserve ? room : undefined}>{name}</Box>
-        {under}
-      </Stack>
-      <Box grow="control">{control}</Box>
-    </Row>
+    <div className="@container">
+      <div className={`${className} flex flex-wrap items-center gap-x-screen-row-gap gap-y-screen-air ${wide.root}`}>
+        <div className={lined ? named : `${named} ${wide.alone}`}>
+          <div className="max-w-full min-w-0 wrap-break-word">{name}</div>
+          {state !== undefined && state !== null && state !== false && (
+            <div className="min-w-0 grow basis-[clamp(0px,(100cqw_-_1px_-_100%)_*_9999,100%)] wrap-break-word">
+              {state}
+            </div>
+          )}
+        </div>
+        <div className={`min-w-0 flex-[1_1_auto] ${wide.control}`}>{control}</div>
+        {lined && <div className={`min-w-0 basis-full wrap-break-word ${wide.under}`}>{under}</div>}
+      </div>
+    </div>
   );
 }
 
@@ -426,14 +449,16 @@ export type SettingRowProps = {
 
 /**
  * A setting: its name over a line about it at the row's start, its control (a `Select`, a `NumberField`) at the
- * row's end, as wide as what it holds; where the two cannot share a line, the control fills a line of its own under
- * the name, as a field under its label. Its control either saves at once, and the row takes its save state (`save`,
- * ADR-0110 §6), which stands in the place of the line about it, or, with no such line, under the name, in the room
- * the row's height holds beside the control (the name, at the middle of the control until then, gives way to it, and
- * the control stays where it is); or it is a field of a form saved as a whole (`form`), with no state of its own.
- * What the setting holds beyond its control's value (`values`) stands close under the row. The row names its control
- * (`id`, the control's `labelledBy`, which a `Select` and a `NumberField` take from the row by themselves), describes
- * it by the line about it and by the save state, and a press on the name puts the focus on it.
+ * row's end, as wide as what it holds. In a narrow section (a phone) the line about it runs the row's width under the
+ * name and the control, and where the two cannot share a line, the control fills a line of its own under the name, as
+ * a field under its label (`SettingFrame`). Its control either saves at once, and the row takes its save state
+ * (`save`, ADR-0110 §6), which stands in the place of the line about it, or, with no such line, with the name: under
+ * it beside the control, in the room the row's height holds (the name, at the middle of the control until then, gives
+ * way to it), and beside it when the name has a line to itself; the control stays where it is. Or it is a field of a
+ * form saved as a whole (`form`), with no state of its own. What the setting holds beyond its control's value
+ * (`values`) stands close under the row. The row names its control (`id`, the control's `labelledBy`, which a
+ * `Select` and a `NumberField` take from the row by themselves), describes it by the line about it and by the save
+ * state, and a press on the name puts the focus on it.
  */
 export function SettingRow({
   id,
@@ -454,31 +479,30 @@ export function SettingRow({
   const controlId = `${id}-control`;
   const aboutId = `${id}-about`;
   const stateId = `${id}-state`;
+  // The state's place, a live region that is there before the state is.
+  const state = saves && (
+    <span id={stateId} role="status">
+      <SaveControlContext value={() => document.getElementById(controlId)?.focus()}>
+        {saying && save}
+      </SaveControlContext>
+    </span>
+  );
   const setting = (
     <SettingFrame
       className={s.root()}
-      reserve={saves && below === undefined && !saying}
       name={
         <label id={id} htmlFor={controlId} className={isDisabled ? `${s.label()} ${s.off()}` : s.label()}>
           {label}
         </label>
       }
+      state={below === undefined && state}
       under={
-        (below !== undefined || saves) && (
+        below !== undefined && (
           <Layers>
-            {below !== undefined && (
-              <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
-                {below}
-              </span>
-            )}
-            {/* The state's place, a live region that is there before the state is. */}
-            {saves && (
-              <span id={stateId} role="status">
-                <SaveControlContext value={() => document.getElementById(controlId)?.focus()}>
-                  {saying && save}
-                </SaveControlContext>
-              </span>
-            )}
+            <span id={aboutId} className={saying ? `${s.about()} ${s.covered()}` : s.about()}>
+              {below}
+            </span>
+            {state}
           </Layers>
         )
       }
