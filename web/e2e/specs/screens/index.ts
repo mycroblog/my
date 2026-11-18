@@ -19,6 +19,7 @@ export { EmojiPicker } from "./emoji-picker";
 export { countLink, Follows } from "./follows";
 export { Frame, Menu, type MenuPlace, type Place } from "./frame";
 export { Hashtag } from "./hashtag";
+export { Invites } from "./invites";
 export { ListIndex } from "./lists";
 export { LoginProvider } from "./login-provider";
 export { streamOpened } from "./stream";

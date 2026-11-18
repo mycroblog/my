@@ -341,6 +341,36 @@ test("what a reader copies is a list named by its label, a value an item, whole;
   expect(screen.getByRole("button", { name: "Copy secret" }) === copy).toBe(true);
 });
 
+// A row of something that does not work now (`inactive`) differs to the eye alone: what a reader of the page's tree
+// gets is the row it would be otherwise, and its facts say that it does not work.
+test("a row of something that does not work now is the same link by the same name, neither disabled nor hidden: its facts say so", () => {
+  render(
+    <SettingsList label="Invites">
+      <SettingsListRow title="k17wdrqp" facts={["Usable until Nov 25", "Used 0 of 1 time"]} href="/invites/1" />
+      <SettingsListRow title="k3np5b83" inactive facts={["Revoked", "Used 0 of 3 times"]} href="/invites/2" />
+      <SettingsListRow title="k4vlj2ys" inactive facts={["Expired Nov 15"]} />
+    </SettingsList>,
+  );
+
+  const list = within(screen.getByRole("list", { name: "Invites" }));
+  expect(list.getAllByRole("listitem").map((row) => row.textContent.replace(/\s+/g, " "))).toEqual([
+    "k17wdrqp Usable until Nov 25 Used 0 of 1 time",
+    "k3np5b83 Revoked Used 0 of 3 times",
+    "k4vlj2ys Expired Nov 15",
+  ]);
+  const works = list.getByRole("link", { name: /^k17wdrqp\s*Usable until Nov 25\s*Used 0 of 1 time$/ });
+  const revoked = list.getByRole("link", { name: /^k3np5b83\s*Revoked\s*Used 0 of 3 times$/ });
+  expect(revoked.getAttribute("href")).toBe("/invites/2");
+  // Nothing but its words tells the one that does not work from the one that does.
+  const told = (link: HTMLElement) =>
+    link
+      .getAttributeNames()
+      .filter((name) => name.startsWith("aria-") || name === "tabindex")
+      .map((name) => [name, link.getAttribute(name)]);
+  expect(told(revoked)).toEqual(told(works));
+  expect(list.getAllByRole("link")).toHaveLength(2);
+});
+
 // ---- A setting's row ----------------------------------------------------------------------------------------------
 
 const sizes = [

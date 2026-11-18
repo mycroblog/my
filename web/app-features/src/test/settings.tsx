@@ -84,6 +84,8 @@ export type Given = {
   before?: (on: FakeData) => void;
   /** The reader's language, English by default. */
   locale?: string;
+  /** What the server is besides the account: its registration mode, a one-person server and its reader. */
+  server?: Omit<FakeOptions, "access">;
 };
 
 /**
@@ -93,9 +95,9 @@ export type Given = {
 export async function settingsOn(
   access: Access,
   make: (props: ReturnType<typeof addressProps>) => ReactNode,
-  { fragment, before, locale }: Given = {},
+  { fragment, before, locale, server }: Given = {},
 ): Promise<FakeData & { address: Address; user: UserEvent }> {
-  const on = fakeData({ access });
+  const on = fakeData({ ...server, access });
   before?.(on);
   const address = addressAt(fragment?.(on.fake));
   const user = await drawnSettings(on, make(addressProps(address)), locale);

@@ -33,6 +33,16 @@ export class SignUp {
     return this.page.getByRole("textbox", { name: "Invite code", exact: true });
   }
 
+  /** What the form says under the invite code when the server does not take it, and created no account. */
+  get inviteNotValid(): Locator {
+    return this.page
+      .getByRole("main")
+      .getByText(
+        "This invite code is not valid. It may have expired or been used up. Ask the person who invited you for a new one.",
+        { exact: true },
+      );
+  }
+
   /** Fills in the form as `who` and sends it. */
   async as(who: Newcomer): Promise<void> {
     await this.page.getByRole("textbox", { name: "Username", exact: true }).fill(who.username);
