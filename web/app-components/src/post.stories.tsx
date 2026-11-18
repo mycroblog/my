@@ -11,9 +11,11 @@
 // one's own post and another's, the confirmations of delete and of delete and redraft, edited posts, and an edit
 // history; and what a post carries besides images: its link card in both sizes, without an image and with its author,
 // a video, a GIF, a sound and a file, the kinds mixed, sensitive media covered and shown, and the media viewer opened
-// from it. Each post answers its actions as the timeline's do, in a column of the timeline's width.
+// from it; and a post that the reader's keyword filters matched: folded under the filter's name, shown, behind a
+// content warning too, as a boost, matched by several filters, its quoted post alone, and in ja. Each post answers its
+// actions as the timeline's do, in a column of the timeline's width.
 
-import { useLocale } from "@my/design-system";
+import { I18nProvider, useLocale } from "@my/design-system";
 import { Preview, PreviewExpanded, type PreviewState } from "@my/design-system/preview";
 import { pickerSections, pickerStrings, searchPicker } from "@my/design-system/samples";
 import { breakpoint, rootPx } from "@my/design-tokens";
@@ -82,6 +84,58 @@ const local: TimelinePost = {
 
 const hour = 60 * minute;
 const day = 24 * hour;
+
+// Posts that the reader's keyword filters matched (FR-209): one filter, behind a content warning too, a boost, several
+// filters, a quoted post alone, and in ja.
+const spoiler: TimelinePost = {
+  id: "filtered",
+  lang: "en",
+  author: { name: "Lena Novak", handle: "@lena@toot.example.eu" },
+  ago: 12 * minute,
+  visibility: "public",
+  text: "That season finale! I did not expect the lighthouse keeper to be the narrator all along.",
+  counts: { replies: 4, boosts: 2, favourites: 15 },
+  filtered: ["Spoilers"],
+};
+const spoilerWarned: TimelinePost = { ...spoiler, id: "filtered-cw", cw: "The season finale, in detail" };
+const spoilerBoosted: TimelinePost = {
+  ...spoiler,
+  id: "filtered-boost",
+  boostedBy: { name: "Kenji 🍜 Watanabe", handle: "@kenji@my.example" },
+};
+const spoilerSeveral: TimelinePost = {
+  ...spoiler,
+  id: "filtered-several",
+  text: "The season finale aired on election night, right after the marathon. I watched all three.",
+  filtered: ["Spoilers", "Election season", "Marathon week"],
+};
+const spoilerQuoted: TimelinePost = {
+  id: "filtered-quote",
+  lang: "en",
+  author: { name: "Ravi", handle: "@ravi@fedi.example.net" },
+  ago: 30 * minute,
+  visibility: "public",
+  text: "No comment from me until everyone has caught up.",
+  quote: {
+    lang: spoiler.lang,
+    author: spoiler.author,
+    ago: spoiler.ago,
+    visibility: spoiler.visibility,
+    text: spoiler.text,
+    filtered: ["Spoilers"],
+  },
+  counts: { replies: 1, boosts: 0, favourites: 6 },
+};
+const spoilerJa: TimelinePost = {
+  id: "filtered-ja",
+  lang: "ja",
+  author: { name: "たくや", handle: "@takuya@example.jp" },
+  ago: 2 * hour,
+  visibility: "public",
+  text: "最終回、灯台守がずっと語り手だったとは思わなかった。冒頭の電話のシーン、あれが全部だった。",
+  counts: { replies: 0, boosts: 1, favourites: 3 },
+  filtered: ["ネタバレ"],
+};
 
 // Polls (FR-112): open, in flight, voted, hidden until the end, ended, and the reader's own, in en and ja.
 const meetup: TimelinePost = {
@@ -251,7 +305,7 @@ function Shown({
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-} & Pick<PostProps, "cardSize" | "defaultViewing" | "defaultMenuOpen">) {
+} & Pick<PostProps, "cardSize" | "defaultShown" | "defaultViewing" | "defaultMenuOpen">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -498,6 +552,32 @@ export const Local: Story = { ...fixed, render: () => <Shown post={local} /> };
 export const Boosted: Story = { ...fixed, render: () => <Shown post={byId("news-boost")} /> };
 export const Reply: Story = { ...fixed, render: () => <Shown post={byId("ken-reply")} /> };
 export const ContentWarning: Story = { ...fixed, render: () => <Shown post={byId("takuya-cw")} /> };
+/** A post that one of the reader's keyword filters matched: all of it folded under the line that names the filter. */
+export const Filtered: Story = { ...fixed, render: () => <Shown post={spoiler} /> };
+/** The same, shown: the line stays over the post, ending in Hide. */
+export const FilteredShown: Story = { ...fixed, render: () => <Shown post={spoiler} defaultShown /> };
+/** One behind a content warning too: the filter's fold alone, the warning folded inside it for the next press. */
+export const FilteredContentWarning: Story = { ...fixed, render: () => <Shown post={spoilerWarned} /> };
+/** The same with both shown: the filter's line over the post, whose warning's line stands over its text. */
+export const FilteredContentWarningShown: Story = {
+  ...fixed,
+  render: () => <Shown post={spoilerWarned} defaultShown />,
+};
+/** A boost of a post that a filter matched, folded as the post is: who boosted it shows with the post. */
+export const FilteredBoost: Story = { ...fixed, render: () => <Shown post={spoilerBoosted} /> };
+/** One that several filters matched: the line names each. */
+export const FilteredSeveral: Story = { ...fixed, render: () => <Shown post={spoilerSeveral} /> };
+/** A post that quotes one a filter matched: the quoted post alone is folded. */
+export const FilteredQuote: Story = { ...fixed, render: () => <Shown post={spoilerQuoted} /> };
+/** For a reader of ja, whatever the toolbar's locale: the line and its button in ja, the filter's name as given. */
+export const FilteredJapanese: Story = {
+  ...fixed,
+  render: () => (
+    <I18nProvider locale="ja">
+      <Shown post={spoilerJa} />
+    </I18nProvider>
+  ),
+};
 export const Images: Story = { ...fixed, render: () => <Shown post={byId("ravi-two")} /> };
 export const Quoting: Story = { ...fixed, render: () => <Shown post={byId("ravi-quote")} /> };
 export const Reactions: Story = { ...fixed, render: () => <Shown post={byId("hana-four")} /> };

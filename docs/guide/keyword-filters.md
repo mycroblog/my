@@ -8,7 +8,7 @@ result. Only you see your filters, and nobody is told about them.
 
 Open "Keyword filters" under "Display and notifications" in the settings, and choose "Add a filter":
 
-1. **Name:** what a folded post shows in its place ("Filtered: Season finale"), up to 50 characters.
+1. **Name:** what a folded post shows in its place ("Matches filter “Season finale”"), up to 50 characters.
 2. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
    makes it match only as a whole word (see [How words match](#how-words-match)).
 3. **Where it applies:** your home timeline and lists, your notifications, the local, federated, and hashtag
@@ -25,12 +25,12 @@ boosts, nor the posts they quote.
 
 ## What a filtered post looks like
 
-A post that a "Fold" filter matches shows only "Filtered:" and the names of the filters it matched, and "Show". Its
-author, text, and pictures stay out of sight, and a screen reader reads only that line, until you choose "Show". A post
-folds again when you come back to the page.
+A post that a "Fold" filter matches shows only "Matches filter" with the names of the filters it matched, and "Show".
+Its author, text, and pictures stay out of sight, and a screen reader reads only that line, until you choose "Show";
+"Hide" folds it again, as does coming back to the page.
 
 A notification about such a post shows the same line instead of the post's text. When only a quoted post matches, only
-the quote is folded, even for "Hide", with "Show the quoted post". A boost is filtered by the post it boosts.
+the quote is folded, even for "Hide", with a "Show" of its own. A boost is filtered by the post it boosts.
 
 A post you open yourself, from a link or a notification, is folded rather than hidden, so the link still shows
 something.

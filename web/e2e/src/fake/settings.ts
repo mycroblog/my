@@ -5,7 +5,8 @@
 // featured hashtags, the cells of the notification settings and the notification policy, the policy that deletes old
 // posts and its estimate, imports of a CSV file, the account's aliases and its move, its deactivation and deletion, and
 // the moderators' actions on the account with their appeals. Each is kept in memory and answered as the server answers;
-// `FakeSettings` is what a fake starts with, which a test replaces in part.
+// `FakeSettings` is what a fake starts with, which a test replaces in part. The filters also judge the statuses the
+// rest of the fake answers a read with (`judged`): they fold or leave out what their words match.
 //
 // An import started stays in progress for a moment (`importSeconds`), then reads as finished. A confirmation (a move,
 // a deactivation, a deletion) holds with the reader's password, a passkey or the confirmation of an external login.
@@ -14,6 +15,8 @@ import { day, idAt, notFound, page, problem, type PageQuery } from "./common";
 import type { Answer, Handlers, Schema } from "./spec";
 
 type KeywordFilter = Schema<"KeywordFilter">;
+type FilterContext = Schema<"KeywordFilterContext">;
+type Status = Schema<"Status">;
 type BadgeChoice = Schema<"BadgeChoice">;
 type FeaturedHashtag = Schema<"FeaturedHashtag">;
 type AutoDeletePolicy = Schema<"AutoDeletePolicy">;
@@ -187,6 +190,8 @@ export type SettingsEnv = {
   origin: string;
   /** The reader's password, which confirms a move, a deactivation and a deletion. */
   password: string;
+  /** The ID of the reader's account; none for a visitor, who has no filters. */
+  viewerId: string | undefined;
   /** The ID of the account of a person of the seed, if there is one. */
   accountExists: (id: string) => boolean;
   /** Some of the reader's own posts, newest first, as statuses (what an estimate shows as examples). */
@@ -212,6 +217,14 @@ const estimate = (days: number) => Math.max(0, Math.round(1500 / (1 + days / 20)
 /** The pieces of the settings the rest of the fake reads back. */
 export type SettingsState = {
   handlers: Handlers;
+  /**
+   * The statuses of a read as the reader's keyword filters leave them where `context` shows them (ADR-0157 §6): one
+   * that a `hide` filter matches is left out, and one that only `warn` filters match carries them in its `filtered`,
+   * a boost those of the post it boosts; a quoted post carries its own and never leaves out the post that quotes it.
+   * `opened` is the post the reader opened, which a `hide` filter folds too. The reader's own posts and boosts, and
+   * what they quote, never match; nor does anything for a visitor.
+   */
+  judged: (statuses: readonly Status[], context: FilterContext, opened?: boolean) => Status[];
   /** The reader's featured hashtags, as the profile lists them. */
   featured: () => FeaturedHashtag[];
   /** The badges the reader shows on their profile now. */
@@ -263,6 +276,56 @@ export function createSettings(env: SettingsEnv): SettingsState {
   });
   const nowFilter = (f: KeywordFilter): KeywordFilter =>
     f.expires_at === undefined ? f : { ...f, expired: Date.parse(f.expires_at) <= Date.now() };
+
+  // What a filter's words are looked for in, each text on its own: the text without its markup, the content warning,
+  // the poll's options and the descriptions of the media. A word matches wherever a text holds it, whatever its case:
+  // whole words, and the forms of a character the server takes as one (ADR-0157 §4, §5), are the server's alone.
+  const textsOf = (s: Status): string[] =>
+    [
+      s.content.replace(/<\/p>|<br\s*\/?>/g, " ").replace(/<[^>]*>/g, ""),
+      s.spoiler_text,
+      ...(s.poll?.options.map((option) => option.title) ?? []),
+      ...s.media_attachments.flatMap((m) => m.description ?? []),
+    ].map((text) => text.toLowerCase());
+  /** The filters in effect in `context` that `s` matches, each with the words of it that matched. */
+  const matchesOf = (s: Status, context: FilterContext) => {
+    const texts = textsOf(s);
+    return filters
+      .map(nowFilter)
+      .filter((f) => !f.expired && f.contexts.includes(context))
+      .flatMap((f) => {
+        const words = f.keywords
+          .map((k) => k.keyword)
+          .filter((word) => word !== "" && texts.some((text) => text.includes(word.toLowerCase())));
+        return words.length === 0 ? [] : [{ filter: f, words }];
+      });
+  };
+  type Match = ReturnType<typeof matchesOf>[number];
+  const marked = (s: Status, matches: readonly Match[]): Status =>
+    matches.length === 0
+      ? s
+      : {
+          ...s,
+          filtered: matches.map((m) => ({
+            filter: { id: m.filter.id, title: m.filter.title },
+            keyword_matches: m.words,
+          })),
+        };
+  const judged = (statuses: readonly Status[], context: FilterContext, opened = false): Status[] =>
+    statuses.flatMap((row) => {
+      const shown = row.boost ?? row;
+      const own = (s: Status) => s.account.id === env.viewerId;
+      if (env.viewerId === undefined || own(row) || own(shown)) return [row];
+      const matches = matchesOf(shown, context);
+      if (!opened && matches.some((m) => m.filter.action === "hide")) return [];
+      const quoted = shown.quote?.quoted_status;
+      const inQuote = quoted === undefined || own(quoted) ? [] : matchesOf(quoted, context);
+      const inner =
+        shown.quote === undefined || quoted === undefined || inQuote.length === 0
+          ? shown
+          : { ...shown, quote: { ...shown.quote, quoted_status: marked(quoted, inQuote) } };
+      return [marked(row.boost === undefined ? inner : { ...row, boost: inner }, matches)];
+    });
 
   // ---- Badges and featured hashtags --------------------------------------------------------------------------------
 
@@ -651,5 +714,5 @@ export function createSettings(env: SettingsEnv): SettingsState {
 
   const shownBadges = () =>
     badges.filter((b) => b.displayed).map(({ role_id, label, color }) => ({ role_id, label, color }));
-  return { handlers, featured: featuredBody, shownBadges };
+  return { handlers, judged, featured: featuredBody, shownBadges };
 }

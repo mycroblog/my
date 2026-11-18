@@ -319,7 +319,11 @@ export type FakeOptions = {
   /**
    * The reader's personal settings at the start, in place of `defaultSettings` for the members given (settings.ts):
    * their keyword filters, badges, featured hashtags, notification policy, auto-delete policy and its maximum, imports,
-   * aliases, why the account cannot be deactivated, and the moderators' actions with their appeals.
+   * aliases, why the account cannot be deactivated, and the moderators' actions with their appeals. The filters in
+   * effect apply to what the reader reads, as on the server (ADR-0157 §6): in the contexts a filter names (the home and
+   * list timelines and the stream's posts, the notifications, the public and hashtag timelines, a thread, a profile's
+   * posts), a post of another that holds one of its words is left out by `hide`, or carries the filter in its
+   * `filtered` by `warn`; the post read alone is folded by either.
    */
   settings?: Partial<FakeSettings>;
   /** The domains the reader mutes at the start. */
@@ -455,7 +459,10 @@ export type FakeApi = {
   send: (event: FakeStreamEvent) => void;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
-  /** Adds `count` posts to the home timeline, sends them on the stream, and returns them, newest first. */
+  /**
+   * Adds `count` posts to the home timeline, sends them on the stream as the reader's keyword filters leave them, and
+   * returns them, newest first.
+   */
   newPosts: (count: number) => Status[];
   /** Adds a notification (a favourite of the reader's post), sends it on the stream, and returns it. */
   newNotification: () => Notification;
@@ -638,11 +645,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     started,
     origin: fakeOrigin,
     password: personOf(viewer).password,
+    viewerId: visitor ? undefined : idOf(viewer),
     accountExists: (id) => usernameOf.has(id),
     ownStatuses: () => posts.filter((p) => p.author === viewer && visible(p)).map((p) => statusOf(p)),
     settings: { ...defaultSettings, ...o.settings },
   });
   const shownBadges = personal.shownBadges;
+  /** The statuses of a read as the reader's keyword filters leave them in a context (settings.ts). */
+  const judged = personal.judged;
 
   /** What the reader changed of their own profile (PATCH /accounts/update_credentials); the seed's person otherwise. */
   const edit: {
@@ -2277,10 +2287,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return accountPage(listed, query);
   }
 
-  /** The reader's notification as its list shows it now: with its post as it is, none once that is deleted. */
+  /**
+   * The reader's notification as its list shows it now: with its post as it is, and as their keyword filters leave it
+   * among the notifications; none once the post is deleted, or while a filter hides it.
+   */
   const notificationNow = (n: Notification): Notification[] => {
     if (n.status === undefined) return [n];
-    const now = current(n.status)[0];
+    const [now] = judged(current(n.status), "notifications");
     return now === undefined ? [] : [{ ...n, status: now }];
   };
 
@@ -2313,7 +2326,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- Timelines, hashtags, lists, bookmarks ----------------------------------------------------------------------
 
     "GET /timelines/home": async ({ query }) => {
-      const { from, body } = page(homeNow(), query);
+      const { from, body } = page(judged(homeNow(), "home"), query);
       if (o.failFirst === true && from === 0 && Date.now() - started < 1000)
         return problem(500, "Internal Server Error");
       // The retry after the first page failed comes late, so that the screen shows it loading again.
@@ -2335,7 +2348,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         .filter((p) => hashtagsOf(versionsOf(p).at(-1)?.text ?? p.text).includes(tag))
         .toReversed()
         .map((p) => statusOf(p));
-      return statusPage(shown, query);
+      return statusPage(judged(shown, "public"), query);
     },
     "GET /timelines/local": ({ query }) => publicTimeline("local", query),
     "GET /timelines/federated": ({ query }) => publicTimeline("federated", query),
@@ -2344,7 +2357,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const found = lists.find((l) => l.id === params.id);
       if (found === undefined) return notFound();
       return statusPage(
-        homeNow().filter((s) => found.members.includes(s.account.username)),
+        judged(
+          homeNow().filter((s) => found.members.includes(s.account.username)),
+          "home",
+        ),
         query,
       );
     },
@@ -2613,8 +2629,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "GET /accounts/{id}/statuses": ({ params, query }) => {
       const all = profilePosts(usernameOf.get(params.id) ?? "");
-      if (query.get("pinned") === "true")
-        return { status: 200, body: { items: all.filter((p) => p.pinned === true).map((p) => statusOf(p)) } };
+      if (query.get("pinned") === "true") {
+        const pinned = all.filter((p) => p.pinned === true).map((p) => statusOf(p));
+        return { status: 200, body: { items: judged(pinned, "account") } };
+      }
       const shown =
         query.get("articles") === "true"
           ? all.filter((p) => p.article !== undefined)
@@ -2622,7 +2640,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             ? all.filter((p) => p.replyTo === undefined)
             : all;
       return statusPage(
-        shown.map((p) => statusOf(p)),
+        judged(
+          shown.map((p) => statusOf(p)),
+          "account",
+        ),
         query,
       );
     },
@@ -2790,7 +2811,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const own = made.get(params.id);
       if (own !== undefined) return { status: 200, body: own };
       const p = shownPost(params.id);
-      return p === undefined ? notFound() : { status: 200, body: statusOf(p, 0, true) };
+      // The post the reader opened is never left out: a filter that hides it in a thread folds it (ADR-0157 §6).
+      const [opened] = p === undefined ? [] : judged([statusOf(p, 0, true)], "thread", true);
+      return opened === undefined ? notFound() : { status: 200, body: opened };
     },
     "PUT /statuses/{id}": ({ params, body }) => {
       const p = shownPost(params.id);
@@ -2871,7 +2894,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /statuses/{id}/context": ({ params }) => {
       if (made.has(params.id)) return { status: 200, body: { ancestors: [], descendants: [] } };
       const key = keyOf.get(params.id);
-      return key === undefined ? notFound() : { status: 200, body: contextOf(key) };
+      if (key === undefined) return notFound();
+      const { ancestors, descendants } = contextOf(key);
+      return {
+        status: 200,
+        body: { ancestors: judged(ancestors, "thread"), descendants: judged(descendants, "thread") },
+      };
     },
     "POST /statuses/{id}/mute": ({ params }) =>
       acted(params.id, (p) => {
@@ -3304,7 +3332,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       .filter((p) => o.visitor === true || (!hidden(p.author) && !mutedServer(p.author)))
       .toReversed()
       .map((p) => statusOf(p));
-    return statusPage(shown, query);
+    return statusPage(judged(shown, "public"), query);
   }
 
   const markerNow = (): Schema<"NotificationMarker"> =>
@@ -3395,7 +3423,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return { ...statusOf(p), id: idAt(at, 900_000 + added), created_at: new Date(at).toISOString() };
     }).toReversed();
     home.unshift(...fresh);
-    for (const status of fresh.toReversed()) send({ type: "update", status });
+    // The stream sends each as the home timeline shows it: folded by a filter, or not at all (ADR-0157 §7).
+    for (const status of judged(fresh.toReversed(), "home")) send({ type: "update", status });
     return fresh;
   }
 
