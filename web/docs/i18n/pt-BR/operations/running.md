@@ -138,7 +138,7 @@ O servidor confia no `X-Forwarded-For` dos pools de endereços padrão do Docker
 O serviço de execução única `garage-init` prepara o armazenamento a cada `up`. Ele fica dentro da rede do Compose, já que o servidor
 serve a mídia por conta própria. Um nó é um disco: faça backup do volume `garage` ou do bucket ([Backup](backup.md#media-in-a-bucket)).
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## Obter a imagem
 
 A imagem do servidor é `ghcr.io/mycroblog/my`, pública, para `linux/amd64` e `linux/arm64`, com todos os adaptadores.
@@ -170,7 +170,6 @@ Onde executá-la:
 - **Kubernetes**: baixe-a do `ghcr.io` como está.
 - **Cloud Run**: use a imagem do `ghcr.io` diretamente. Uma implantação resolve a tag para um digest.
 - **AWS (ECS, EKS)**: copie a imagem para o Amazon ECR, ou use um pull through cache do ECR, que precisa de credenciais do ghcr.io.
-- **Uma imagem menor**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` em um checkout compila uma com menos adaptadores ([build tags](../reference/build-tags.md)). É uma compilação sua, portanto não é coberta pelas verificações abaixo.
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### Verificar uma imagem

@@ -80,13 +80,13 @@
 - PR が §3 の原稿か `web/docs` を変えたとき、UI Preview と同じ形で `/next/` だけのビルドを PR の Preview に置く。PR のビルドは信頼しないデータとして扱い、配信の側では実行しない
 - 独自ドメインは §11 の `mycroblog.dev` とする
 - `main` への push で `/next/` を更新し、リリース（`release.yml`）で `/latest/` とそのマイナー版を更新する。リリースの手順は `.claude/skills/release/SKILL.md` に足す
-- Merge Queue の `check` は、`web/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
+- Merge Queue の `gate` は、`web/docs` か §3 の原稿が変わったときにサイトをビルドし、ビルドが通ることを検査する（ADR-0079 の変更の文脈に足す）
 - 検索は Starlight の組み込み（Pagefind）を使い、外部の検索サービスを使わない
 - 解析は Cloudflare Web Analytics を、ダッシュボードが出す手動のスニペット（`static.cloudflareinsights.com/beacon.min.js` の `<script defer>`）で、本番のサイトにだけ置く
   - 目的は、どのページ・ロケール・版が読まれ、読み手がどこから来るかを知り、次に書くものと訳すものを決めることである
   - サイトのトークンはリポジトリの変数 `DOCS_SITE_CF_BEACON_TOKEN` に置く。トークンはすべてのページに載る公開の値なので、シークレットにしない。
     `docs-site-deploy.yml` だけがこれを `scripts/docs-site.sh build` に渡し、ビルドがすべての版とロケールのページの `head` にビーコンを足す。
-    変数がないビルド（手元のビルド・`docs:site-dev`・Merge Queue の `check`・フォーク）にはビーコンがない。PR の Preview のビルド（`build-preview`）は、環境に値があっても受け取らない
+    変数がないビルド（手元のビルド・`docs:site-dev`・Merge Queue の `gate`・フォーク）にはビーコンがない。PR の Preview のビルド（`build-preview`）は、環境に値があっても受け取らない
   - ダッシュボードの自動挿入は使わない。手動のスニペットと併せると同じページを二度数え、ビーコンの有無がリポジトリの外で決まるためである
   - 同意のバナーは置かない。ビーコンが Cookie を設定せず、`localStorage`・`sessionStorage`・IndexedDB に何も書かないことが条件であり、ブラウザーで確かめる。何かを保存すると分かったら、この決定を見直す。
     Starlight そのものが配色のテーマ（`localStorage`）とサイドバーの開閉（`sessionStorage`）を保存するのはページの表示のためであり、外へ送らないので、この条件の外とする。お知らせにはそのことも書く

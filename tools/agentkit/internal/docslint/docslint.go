@@ -11,7 +11,7 @@
 // there must be removed once its file follows the rule, so the lists only shrink.
 //
 // Inventory checks the other direction, from the code to the documents: every name users and operators see (a
-// command of `my`, a metric, a webhook event type, a build tag, a task) is mentioned in the document they look it up in.
+// command of `my`, a metric, a webhook event type, a task) is mentioned in the document they look it up in.
 package docslint
 
 import (

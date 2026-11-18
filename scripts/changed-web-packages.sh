@@ -3,7 +3,7 @@
 #
 # Prints the packages under web/ whose tests the changes since BASE reach, one directory name per line (`app` for
 # web/app): each changed package and every package that depends on it, directly or through others (ADR-0079 §18).
-# `scripts/task.sh web:test PACKAGES=...` runs them; `scripts/task.sh check:changed` and the `changes` job of
+# `scripts/task.sh web:test PACKAGES=...` runs them; `scripts/task.sh check:changed` and the `select` job of
 # .github/workflows/ci.yml ask it which.
 #
 #   scripts/changed-web-packages.sh BASE          changes from the merge base of BASE and HEAD to the working tree,

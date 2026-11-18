@@ -1,4 +1,4 @@
-<!-- source: plugins 4a60f7abbec9 -->
+<!-- source: plugins f6f944095e31 -->
 # Plugins
 
 Ein Plugin ist ein separates Programm oder ein Dienst, den du betreibst und dem der Server über das Netzwerk eine eng umrissene Aufgabe übergibt.
@@ -6,7 +6,6 @@ Der Server verbindet sich nur mit einer Adresse: Er startet, stoppt oder überwa
 oder auf einer anderen Maschine.
 
 Standardmäßig wird nichts delegiert. Ein Server ohne Plugin-Adresse öffnet keine Verbindung und startet keinen Prozess.
-Der Build-Tag [`no_plugins`](../reference/build-tags.md) nimmt den Plugin-Client aus der Binärdatei.
 
 ![Wo Plugins sitzen: Der my-Prozess übergibt sechs Ports an ein Plugin und fragt fünf Entscheidungs-Hooks, alles über einen Plugin-Client, der sich mit den Plugins verbindet, die du betreibst; der untere Teil des Diagramms zeigt, was jedes tut, wenn ein Aufruf fehlschlägt. Die Liste unten beschreibt jeden Teil.](images/plugins.svg)
 

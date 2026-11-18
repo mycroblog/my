@@ -16,7 +16,8 @@ import (
 	"github.com/mycroblog/my/tools/agentkit/internal/repo"
 )
 
-// fastStep is one check of `agentkit check`: a command that a pull request's preflight or a quick tool decides.
+// fastStep is one check of `agentkit check`: a quick command that a job of the pull request or a static job of the
+// merge queue decides.
 type fastStep struct {
 	name string
 	dir  string // relative to the working tree
@@ -221,18 +222,18 @@ func fastPlan(root string, changed []string) [][]fastStep {
 			[]fastStep{{name: "docs:lint", argv: []string{"scripts/task.sh", "docs:lint"}}},
 			[]fastStep{{name: "docs:rules", argv: []string{"scripts/task.sh", "docs:rules"}}})
 	}
-	// A context map that changed, or a document one of them may point at, is checked as the merge queue's repo job
-	// checks it; it takes about a second.
+	// A context map that changed, or a document one of them may point at, is checked as the merge queue's
+	// docs-static job checks it; it takes about a second.
 	if maps || md {
 		plan = append(plan, []fastStep{{name: "agentkit:map-check", argv: []string{"scripts/task.sh", "agentkit:map-check"}}})
 	}
 	if len(shFiles) > 0 {
 		// Only the changed scripts are inputs, so a script that sources another would report SC1091 (not followed),
-		// which shell:lint, given every script, does not; the merge queue's shell:lint still checks the sourcing.
+		// which shell:lint, given every script, does not; the pull request's shell-lint job still checks the sourcing.
 		plan = append(plan, []fastStep{{name: "shellcheck", argv: append([]string{"shellcheck", "-e", "SC1091"}, shFiles...)}})
 	}
 	if len(tofuFiles) > 0 {
-		// As the pull request's tofu-fmt job. Formatting loads no provider, and tofu refuses to start when the
+		// As the pull request's tofu-format job. Formatting loads no provider, and tofu refuses to start when the
 		// plugin cache directory of the environment does not exist yet.
 		plan = append(plan, []fastStep{{name: "tofu fmt", argv: append([]string{"tofu", "fmt", "-check"}, tofuFiles...), env: []string{"TF_PLUGIN_CACHE_DIR="}}})
 	}

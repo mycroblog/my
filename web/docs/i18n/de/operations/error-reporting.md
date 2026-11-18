@@ -138,7 +138,7 @@ Der Server spricht das Sentry-Protokoll selbst, es ist also kein Sentry-SDK bete
 - **GlitchTip**: Kopiere den DSN des Projekts. Es ist Open Source und läuft auf einem kleinen Server. Prüfe, welche Alert-Regeln deine Version für neue und wiederkehrende Issues anbietet.
 - **Datadog Error Tracking**: Verwende den Sentry-DSN deiner Datadog-Site, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. Datadog verlangt den Tag `service`, den der Server immer setzt. Datadog speichert diese Ereignisse als Logs und gruppiert sie in Error Tracking. Wenn du die Logzeile stattdessen mit einem Agent oder Forwarder an Datadog schickst (Error Tracking for Logs), steht der Stack in `message`; ordne ihn mit einer Log-Pipeline `error.stack` zu, sonst erkennt Datadog ihn nicht als Stack. Der Exporter `sentry` braucht keine solche Zuordnung.
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### OTLP-Backends
 
 ```sh
@@ -149,7 +149,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 Jeder Bericht ist ein OpenTelemetry-Log-Record namens `exception`, mit der Severity `ERROR` (`FATAL`, wenn er den Prozess beendet), `exception.type`, `exception.message`, `exception.stacktrace`, `my.error.fingerprint`, `my.error.where`, `my.error.source`, `my.error.kind` und den Trace- und Span-IDs. Er geht per OTLP/HTTP (Protobuf, gzip) mit derselben Resource wie die Metriken und Traces hinaus.
 
-Ob das Backend diese Records in gruppierte Fehler umwandelt, hängt vom Backend ab: Manche bauen ihre Fehleransichten nur aus Trace-Daten, und Datadog braucht `error.stack`. Verwende für Sentry, GlitchTip und Datadog `sentry`. Verwende `otlp`, wenn du die Records neben deinen anderen Logs haben willst. Der Build-Tag `no_otel` lässt `otlp` weg ([Build-Tags](../reference/build-tags.md)).
+Ob das Backend diese Records in gruppierte Fehler umwandelt, hängt vom Backend ab: Manche bauen ihre Fehleransichten nur aus Trace-Daten, und Datadog braucht `error.stack`. Verwende für Sentry, GlitchTip und Datadog `sentry`. Verwende `otlp`, wenn du die Records neben deinen anderen Logs haben willst.
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## Was das Scrubbing garantiert und was nicht

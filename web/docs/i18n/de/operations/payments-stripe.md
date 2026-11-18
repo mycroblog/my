@@ -127,7 +127,7 @@ Der Zustand des Anbieters (der Modus, wann der letzte Webhook ankam, und das Erg
 Es listet auch `duplicate_charge`: Ein zweites Abonnement ist noch nicht gekündigt und erstattet. Siehe [Betrieb](#7-operation).
 „Jetzt abgleichen“ im Abschnitt (`POST /api/v1/admin/payment_reconciliation/runs`) gleicht sofort ab, statt auf den geplanten Lauf zu warten. Es ist auf einmal pro UTC-Stunde begrenzt (ein zweiter Aufruf in derselben Stunde gibt `429` zurück), und das Audit-Log erfasst `payment_reconcile_queued`.
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. Den Server konfigurieren
 
 ```sh
@@ -139,7 +139,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` prüft die Konfiguration. Eine Binärdatei, die mit dem Build-Tag `no_payments_stripe` gebaut wurde, lehnt `payments = stripe` ab (siehe [build-tags.md](../reference/build-tags.md)).
+`my config check` prüft die Konfiguration.
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. Im Testmodus ausprobieren

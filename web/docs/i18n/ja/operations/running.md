@@ -138,7 +138,7 @@ cp example.env .env
 一度だけ動くサービス `garage-init` が、`up` のたびにストアを準備します。サーバーがメディアを自分で配信するので、ストアは Compose のネットワークの
 中にとどまります。1 ノードは 1 台のディスクです。ボリューム `garage` かバケットをバックアップしてください ([バックアップ](backup.md#media-in-a-bucket))。
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## イメージを入手する
 
 サーバーのイメージは `ghcr.io/mycroblog/my` です。公開されていて、`linux/amd64` と `linux/arm64` に対応し、すべてのアダプターを含みます。
@@ -165,7 +165,6 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 - **Kubernetes**: `ghcr.io` からそのまま pull します。
 - **Cloud Run**: `ghcr.io` のイメージを直接使います。デプロイのときにタグがダイジェストに解決されます。
 - **AWS (ECS、EKS)**: イメージを Amazon ECR にコピーするか、ECR のプルスルーキャッシュを使います。プルスルーキャッシュには ghcr.io の認証情報が必要です。
-- **小さいイメージ**: チェックアウトで `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` を実行すると、アダプターを減らしたイメージをビルドできます ([ビルドタグ](../reference/build-tags.md))。自分のビルドなので、下の検証の対象にはなりません。
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### イメージを検証する

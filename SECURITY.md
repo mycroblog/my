@@ -14,7 +14,7 @@ Include as much of the following as you can:
 - The affected component (server, web client, mobile app) and version, or the commit of `main`.
 - What an attacker can do, and what they need first (an account, a role, a federated server they control, ...).
 - Steps to reproduce, a proof of concept, or the requests and responses involved.
-- The configuration that matters: database, queue and storage adapters, build tags, instance settings.
+- The configuration that matters: database, queue and storage adapters, instance settings.
 - Whether you plan to publish your findings, and when.
 
 ## In scope

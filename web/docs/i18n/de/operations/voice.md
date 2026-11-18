@@ -5,7 +5,7 @@ Mit dem Sprachchat können angemeldete Nutzer einen Raum öffnen, andere einlade
 Dieser Leitfaden behandelt diese Wahl, die STUN- und TURN-Server oder den Medienserver, den jede Wahl braucht, und was du zu Deployment, Datenschutz und Moderation wissen solltest.
 Jede hier genannte Einstellung ist in der [Konfigurationsreferenz](../reference/configuration.md#voice) beschrieben.
 
-<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
+<!-- source: choose-how-the-audio-travels 1fe795fb2216 -->
 ## Wählen, wie das Audio übertragen wird
 
 `voice` wählt eine Methode für die ganze Instanz; jeder Raum nutzt sie.
@@ -42,7 +42,6 @@ Hinweise zur Wahl:
 - Bei `p2p` läuft das Audio nie über diesen Server (es läuft über den TURN-Server, wenn einer verwendet wird). Die Last des Servers sind nur die Raumnachrichten, Heartbeats und Streams.
 - Eine kleine Instanz wird am besten mit `p2p` bedient oder mit dem kostenlosen Build-Tarif von LiveKit Cloud (siehe [LiveKit Cloud](#livekit-cloud)).
 - Bei `livekit` oder `sora` werden die STUN- und TURN-Einstellungen und die ICE-Richtlinie unten nicht verwendet (der Server warnt beim Start, wenn du sie setzt), weil der Medienserver seine eigenen Server mitbringt. Die IP-Adressen der Teilnehmer sind dann nur für den Medienserver sichtbar, nicht für die anderen Teilnehmer.
-- Die Build-Tags `no_voice_livekit` und `no_voice_sora` lassen die beiden Medienserver-Methoden aus einem Binary weg ([Build-Tags](../reference/build-tags.md)).
 - Liefere die Instanz über HTTPS aus: Browser erlauben Mikrofonzugriff nur auf sicheren Seiten.
 
 Die Limits halten die Kosten eines kostenpflichtigen Medienservers begrenzt. `0` hebt jedes davon auf, außer dem letzten:

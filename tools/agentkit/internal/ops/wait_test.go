@@ -60,10 +60,10 @@ func wait(t *testing.T, o WaitOptions) (int, []string) {
 
 func TestWaitSaysThatItWaits(t *testing.T) {
 	state := filepath.Dir(fakeGH(t, ghWait))
-	running := checkJSON("lint", "", 81) + "," + checkJSON("changes", "SUCCESS", 80)
+	running := checkJSON("server-lint", "", 81) + "," + checkJSON("select", "SUCCESS", 80)
 	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", waitHead, running, false))
 	write(t, filepath.Join(state, "pr4"), prJSON("OPEN", "MERGEABLE", waitHead,
-		checkJSON("lint", "SUCCESS", 81)+","+checkJSON("changes", "SUCCESS", 80)+","+checkJSON("check", "SUCCESS", 82), false))
+		checkJSON("server-lint", "SUCCESS", 81)+","+checkJSON("select", "SUCCESS", 80)+","+checkJSON("gate", "SUCCESS", 82), false))
 	code, lines := wait(t, WaitOptions{Timeout: 5 * time.Second})
 	want := []string{
 		"waiting for CI of #20 at 012345678: 1 checks pending",
@@ -79,7 +79,7 @@ func TestWaitSaysThatItWaits(t *testing.T) {
 // TestWaitPassedAtOnce checks that a wait with nothing to wait for prints its result alone.
 func TestWaitPassedAtOnce(t *testing.T) {
 	state := filepath.Dir(fakeGH(t, ghWait))
-	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", waitHead, checkJSON("check", "SUCCESS", 82), false))
+	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", waitHead, checkJSON("gate", "SUCCESS", 82), false))
 	if code, lines := wait(t, WaitOptions{Timeout: 5 * time.Second}); code != 0 || len(lines) != 1 || lines[0] != "PR #20: CI passed (1 checks, mergeable mergeable)" {
 		t.Errorf("exit %d, got %q", code, lines)
 	}
@@ -91,19 +91,19 @@ func TestWaitTimeout(t *testing.T) {
 		opts         WaitOptions
 		first, last  string
 	}{
-		{"checks running", checkJSON("lint", "", 81) + "," + checkJSON("server-test", "", 83) + "," + checkJSON("changes", "SUCCESS", 80), WaitOptions{},
+		{"checks running", checkJSON("server-lint", "", 81) + "," + checkJSON("server-test", "", 83) + "," + checkJSON("select", "SUCCESS", 80), WaitOptions{},
 			"waiting for CI of #20 at 012345678: 2 checks pending",
-			"PR #20: timed out after 30ms, CI has not ended: still pending: lint, server-test"},
+			"PR #20: timed out after 30ms, CI has not ended: still pending: server-lint, server-test"},
 		{"no check", "", WaitOptions{},
 			"waiting for CI of #20 at 012345678: no check has started yet",
 			"PR #20: timed out after 30ms, CI has not ended: no check has started"},
-		{"the gate has not reported", checkJSON("lint", "SUCCESS", 81), WaitOptions{},
+		{"the gate has not reported", checkJSON("server-lint", "SUCCESS", 81), WaitOptions{},
 			"waiting for CI of #20 at 012345678: 0 checks pending",
-			"PR #20: timed out after 30ms, CI has not ended: the required check `check` has not reported"},
-		{"a failure with --all", checkJSON("lint", "FAILURE", 81) + "," + checkJSON("server-test", "", 83), WaitOptions{All: true},
+			"PR #20: timed out after 30ms, CI has not ended: the required check `gate` has not reported"},
+		{"a failure with --all", checkJSON("server-lint", "FAILURE", 81) + "," + checkJSON("server-test", "", 83), WaitOptions{All: true},
 			"waiting for CI of #20 at 012345678: 1 checks pending",
-			"PR #20: timed out after 30ms, CI has not ended: still pending: server-test; failed: lint"},
-		{"the push has not arrived", checkJSON("check", "SUCCESS", 82), WaitOptions{Branch: "feat/12-x", Head: "fedcba9876543210"},
+			"PR #20: timed out after 30ms, CI has not ended: still pending: server-test; failed: server-lint"},
+		{"the push has not arrived", checkJSON("gate", "SUCCESS", 82), WaitOptions{Branch: "feat/12-x", Head: "fedcba9876543210"},
 			"waiting for CI of #20 at fedcba987: GitHub has not seen the push yet",
 			"PR #20: timed out after 30ms, CI has not ended: the pull request was never read at its head"},
 	}
@@ -134,9 +134,9 @@ func TestWaitFailedBeforeAnyTest(t *testing.T) {
 	const claim = "failed before any test ran"
 	apt := []string{"job-apt-unresolved-1.txt", "job-apt-unresolved-2.txt", "job-apt-unresolved-3.txt", "job-apt-unresolved-1.txt"}
 	rollup := func(jobs int) string {
-		cs := []string{checkJSON("check", "FAILURE", 99), checkJSON("changes", "SUCCESS", 80)}
+		cs := []string{checkJSON("gate", "FAILURE", 99), checkJSON("select", "SUCCESS", 80)}
 		for i := 0; i < jobs; i++ {
-			cs = append(cs, checkJSON(fmt.Sprintf("ui-test (%d/%d)", i+1, jobs), "FAILURE", 81+i))
+			cs = append(cs, checkJSON(fmt.Sprintf("web-e2e (%d)", i+1), "FAILURE", 81+i))
 		}
 		return strings.Join(cs, ",")
 	}
@@ -152,7 +152,7 @@ func TestWaitFailedBeforeAnyTest(t *testing.T) {
 	t.Run("every job on the same host", func(t *testing.T) {
 		setup(t, 4)
 		code, lines := wait(t, WaitOptions{Timeout: 5 * time.Second})
-		want := "PR #20: CI failed: check, ui-test (1/4), ui-test (2/4), ui-test (3/4), ui-test (4/4); " +
+		want := "PR #20: CI failed: gate, web-e2e (1), web-e2e (2), web-e2e (3), web-e2e (4); " +
 			"failed before any test ran: the runner could not reach azure.archive.ubuntu.com (rerun: gh run rerun 1 --failed)"
 		if code != 1 || lines[0] != want {
 			t.Errorf("exit %d, got the first line\n%s\nwant\n%s", code, lines[0], want)
@@ -174,7 +174,7 @@ func TestWaitFailedBeforeAnyTest(t *testing.T) {
 		state := setup(t, 4)
 		write(t, filepath.Join(state, "job84"), "--- FAIL: TestThing (0.00s)\n##[error]Process completed with exit code 1.\n")
 		code, lines := wait(t, WaitOptions{Timeout: 5 * time.Second})
-		if code != 1 || strings.Contains(lines[0], claim) || !strings.HasPrefix(lines[0], "PR #20: CI failed: check, ui-test (1/4)") {
+		if code != 1 || strings.Contains(lines[0], claim) || !strings.HasPrefix(lines[0], "PR #20: CI failed: gate, web-e2e (1)") {
 			t.Errorf("exit %d, got the first line %q", code, lines[0])
 		}
 	})
@@ -184,7 +184,7 @@ func TestWaitFailedBeforeAnyTest(t *testing.T) {
 			t.Fatal(err)
 		}
 		code, lines := wait(t, WaitOptions{Timeout: 5 * time.Second})
-		if code != 1 || strings.Contains(lines[0], claim) || !strings.Contains(strings.Join(lines, "\n"), "== ui-test (2/2): could not read the log") {
+		if code != 1 || strings.Contains(lines[0], claim) || !strings.Contains(strings.Join(lines, "\n"), "== web-e2e (2): could not read the log") {
 			t.Errorf("exit %d, got\n%s", code, strings.Join(lines, "\n"))
 		}
 	})
@@ -198,8 +198,8 @@ const (
 // TestWaitEndsWhenTheHeadMoves checks that a push during the wait ends it: the checks of the head it waits for
 // are cancelled, and the new head's are not the ones it was asked about.
 func TestWaitEndsWhenTheHeadMoves(t *testing.T) {
-	running := checkJSON("lint", "", 81)
-	failed := checkJSON("lint", "FAILURE", 91) + "," + checkJSON("check", "FAILURE", 92)
+	running := checkJSON("server-lint", "", 81)
+	failed := checkJSON("server-lint", "FAILURE", 91) + "," + checkJSON("gate", "FAILURE", 92)
 	cases := []struct {
 		name   string
 		opts   WaitOptions
@@ -249,8 +249,8 @@ func TestWaitEndsWhenTheHeadMoves(t *testing.T) {
 // goes on, does not read that head's failure, and reports the pushed head's result.
 func TestWaitForThePush(t *testing.T) {
 	state := filepath.Dir(fakeGH(t, ghWait))
-	write(t, filepath.Join(state, "pr1"), prJSON("OPEN", "MERGEABLE", olderHead, checkJSON("lint", "FAILURE", 91), false))
-	write(t, filepath.Join(state, "pr3"), prJSON("OPEN", "MERGEABLE", waitHead, checkJSON("check", "SUCCESS", 82), false))
+	write(t, filepath.Join(state, "pr1"), prJSON("OPEN", "MERGEABLE", olderHead, checkJSON("server-lint", "FAILURE", 91), false))
+	write(t, filepath.Join(state, "pr3"), prJSON("OPEN", "MERGEABLE", waitHead, checkJSON("gate", "SUCCESS", 82), false))
 	code, lines := wait(t, WaitOptions{Branch: "feat/12-x", Head: waitHead, Timeout: 5 * time.Second})
 	want := []string{
 		"waiting for CI of #20 at 012345678: GitHub has not seen the push yet",
@@ -274,8 +274,8 @@ func landStates(t *testing.T, state string, prs ...string) {
 // TestLandFollowsTheHead checks that a push while Land waits does not end it or leave it waiting for the old
 // head: it says that the head moved, once, and goes on with the new head's checks.
 func TestLandFollowsTheHead(t *testing.T) {
-	failed := checkJSON("lint", "FAILURE", 91)
-	running := checkJSON("lint", "", 81)
+	failed := checkJSON("server-lint", "FAILURE", 91)
+	running := checkJSON("server-lint", "", 81)
 	t.Run("auto-merge stays on", func(t *testing.T) {
 		main, _, state, log, head := landSetup(t)
 		landStates(t, state,
@@ -285,7 +285,7 @@ func TestLandFollowsTheHead(t *testing.T) {
 			prJSON("OPEN", "MERGEABLE", newerHead, running, true),
 			prJSON("OPEN", "MERGEABLE", newerHead, failed, true))
 		code, out := land(t, main)
-		if code != 1 || !strings.Contains(out, "PR #20: CI failed: lint") {
+		if code != 1 || !strings.Contains(out, "PR #20: CI failed: server-lint") {
 			t.Errorf("exit %d, want the failure of the new head:\n%s", code, out)
 		}
 		if n := strings.Count(out, "PR #20: the head moved to bbbbbbbbb; following it\n"); n != 1 {
@@ -346,7 +346,7 @@ esac`
 // although the previous head's had the same result.
 func TestWatchReportsANewHead(t *testing.T) {
 	state := filepath.Dir(fakeGH(t, ghWatch))
-	failed := checkJSON("lint", "FAILURE", 91)
+	failed := checkJSON("server-lint", "FAILURE", 91)
 	write(t, filepath.Join(state, "list1"), "["+prJSON("OPEN", "MERGEABLE", olderHead, failed, false)+"]")
 	write(t, filepath.Join(state, "list3"), "["+prJSON("OPEN", "MERGEABLE", newerHead, failed, false)+"]")
 	write(t, filepath.Join(state, "list5"), "[]")
@@ -361,9 +361,9 @@ func TestWatchReportsANewHead(t *testing.T) {
 		events = append(events, e)
 	}
 	want := []string{
-		"#20 ci-failed lint — feat: x",
+		"#20 ci-failed server-lint — feat: x",
 		"#20 head-moved bbbbbbbbb — feat: x",
-		"#20 ci-failed lint — feat: x",
+		"#20 ci-failed server-lint — feat: x",
 		"#20 merged — feat: x",
 	}
 	if strings.Join(events, "\n") != strings.Join(want, "\n") {
@@ -373,7 +373,7 @@ func TestWatchReportsANewHead(t *testing.T) {
 
 func TestLandSaysThatItWaits(t *testing.T) {
 	main, _, state, _, head := landSetup(t)
-	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, checkJSON("lint", "", 81)+","+checkJSON("changes", "SUCCESS", 80), true))
+	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, checkJSON("server-lint", "", 81)+","+checkJSON("select", "SUCCESS", 80), true))
 	r, err := repo.Open(main)
 	if err != nil {
 		t.Fatal(err)
@@ -386,7 +386,7 @@ func TestLandSaysThatItWaits(t *testing.T) {
 		"waiting for CI of #20 at " + head[:9] + ": 1 checks pending",
 		"still waiting: 1 pending, 1 passed",
 	}
-	last := "PR #20: timed out after 30ms, not merged: still pending: lint; run pr land again to keep waiting"
+	last := "PR #20: timed out after 30ms, not merged: still pending: server-lint; run pr land again to keep waiting"
 	if code != LandTimeout || len(lines) < 4 || strings.Join(lines[:3], "\n") != strings.Join(want, "\n") || lines[len(lines)-1] != last {
 		t.Errorf("exit %d, got\n%s\nwant first\n%s\nand last\n%s", code, out.String(), strings.Join(want, "\n"), last)
 	}

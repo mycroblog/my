@@ -31,7 +31,6 @@ On Google Cloud, the `billing` section of [`mycroblog-gcp`](../../deploy/opentof
 
 The server calls `GetCostAndUsage` of AWS Cost Explorer once per billing month (a UTC calendar month), grouped by service (`SERVICE`) and record type (`RECORD_TYPE`). The endpoint is always `us-east-1`.
 Amounts are in USD. While Cost Explorer marks a month as estimated (`Estimated`), the server records the amount up to the previous day as an estimate, and once it no longer does, as final.
-A binary built with the build tag `no_billing_aws` refuses `aws` (see [build-tags.md](../reference/build-tags.md)).
 
 ### Cost and limits
 
@@ -154,7 +153,6 @@ When you cannot set up the export, there is also a simple method that imports on
 The billing month is the export's `invoice.month`, a calendar month in US Pacific time (with daylight saving time). Dates are recorded in Pacific time as they are.
 Amounts are in the billing account's currency, summed as `NUMERIC` per billing month, service (`service.description`), and charge type (`cost_type`), and credits (`credits[]`) become one credit line per service. The export's correction rows that cancel earlier rows are part of the sum.
 The export has no mark for finality, so the import that runs from the 5th (Pacific time) of the next month treats the month as final, and until then records it as an estimate from the first day of the month to the day of the last usage. After it is final, the import still reads the month again until the 15th and records any difference as a correction.
-A binary built with the build tag `no_billing_gcp` refuses `gcp` (see [build-tags.md](../reference/build-tags.md)).
 
 ### Cost and limits
 
@@ -262,7 +260,6 @@ This method imports **only an approximate total based on estimates**.
 4. Set `MY_BILLING_GCP_METHOD=budget` and `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`.
 
 Authentication is the same Application Default Credentials as for BigQuery (see the table in [IAM roles](#iam-roles) above).
-The build tag `no_billing_gcp` removes this method too. The Pub/Sub client library is shared with `stream = pubsub`, so it leaves the binary only when you also set `no_pubsub` (see [build-tags.md](../reference/build-tags.md)).
 
 #### How notifications are read
 
@@ -290,7 +287,6 @@ The build tag `no_billing_gcp` removes this method too. The Pub/Sub client libra
 The server reads the billable usage of a Cloudflare account: the usage charges of its pay-as-you-go products, such as R2, Workers, and D1, one record per metric and day.
 It sums them by product (`R2`, `Workers`, `D1`) into UTC calendar months, so each product is one usage line a month. Usage within a free allowance is imported too, at 0.
 Only an account billed pay-as-you-go has this data; an Enterprise contract account fails with `not_enabled`.
-A binary built with the build tag `no_billing_cloudflare` refuses `cloudflare` (see [build-tags.md](../reference/build-tags.md)).
 
 ### What it does not import
 

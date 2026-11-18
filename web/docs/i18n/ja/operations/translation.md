@@ -93,5 +93,3 @@ Amazon Translate はプロバイダー `aws` です。サーバーは、ほか�
 Amazon Translate は送った文字数で課金し、最初の 12 か月には無料枠があります（[料金](https://aws.amazon.com/translate/pricing/)）。サーバーが送るのは投稿の言葉だけです。メンション、ハッシュタグ、リンク、コードはサーバーにとどまり、それぞれ HTML のマークアップの短いプレースホルダーとして送られます。`translation_user_monthly_characters` と `translation_server_monthly_characters` の月ごとの上限は、払ってもよい範囲に収めてください。
 
 **AWS Organizations の [AI サービスのオプトアウトポリシー](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html)がアカウントに適用されていない限り、Amazon はテキストを保存し、自社のサービスの改善に使うことがあり、それが別のリージョンで行われる可能性もあります。** オプトアウトしていなければ、Amazon はそのテキストについて単なるあなたのサービス提供者ではありません。そのことをプライバシーポリシーに書き（[プライバシーポリシーのテンプレート](privacy-policy-template.md#the-services-you-choose)）、`translation_provider_visibilities` で `aws` に `private` や `direct` を許可しないでください。既定では、このプロバイダーが受け取るのは `public`、`local`、`unlisted` の投稿だけです。
-
-ビルドタグ `no_translator_aws` でビルドしたサーバーにはこのプロバイダーがなく、`translator_aws_region` が設定されていると起動を拒否します（[ビルドタグ](../reference/build-tags.md)）。

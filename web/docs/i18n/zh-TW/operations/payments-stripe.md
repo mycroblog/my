@@ -124,7 +124,7 @@ Stripe 限制每個訂閱每分鐘最多開立 10 張新發票、每天 20 張�
 它也會列出 `duplicate_charge`：第二個訂閱尚未被取消與退款。請參閱[營運](#7-operation)。
 該區段中的「Reconcile now」（`POST /api/v1/admin/payment_reconciliation/runs`）會立即對帳，而不是等待排程的執行。它限制為每個 UTC 小時一次（同一小時內第二次呼叫會回傳 `429`），而稽核紀錄會記錄 `payment_reconcile_queued`。
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. 設定伺服器
 
 ```sh
@@ -136,7 +136,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` 會驗證設定。以建置標籤 `no_payments_stripe` 建置的執行檔會拒絕 `payments = stripe`（請參閱 [build-tags.md](../reference/build-tags.md)）。
+`my config check` 會驗證設定。
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. 在測試模式中試用

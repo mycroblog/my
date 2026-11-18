@@ -88,7 +88,7 @@ PAY.JP 的 webhook 用账户的**来源令牌**（`whook_...`，位于请求头 
 
 PAY.JP 只会每 3 分钟重发一次通知，最多 3 次，超过之后的通知要等你在控制台中重新发送才会送达。对账会修复漏收的通知，因此**建议把 `payments_reconcile_interval` 设为 1 小时**。支付服务商的状态（模式、最后一次收到 webhook 的时间，以及最后一次对账的结果）显示在管理页面 `/admin/supporters` 的“支付服务商”部分。
 
-<!-- source: 4-configure-the-server b0d24c7a2da0 -->
+<!-- source: 4-configure-the-server 5f0d4e9b413b -->
 ## 4. 配置服务器
 
 ```sh
@@ -101,7 +101,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` 会验证配置。使用构建标签 `no_payments_payjp` 构建的二进制文件会拒绝 `payments = payjp`（参见 [build-tags.md](../reference/build-tags.md)）。
+`my config check` 会验证配置。
 
 <!-- source: 5-try-it-in-test-mode f6ebbada0e0e -->
 ## 5. 在测试模式下试用

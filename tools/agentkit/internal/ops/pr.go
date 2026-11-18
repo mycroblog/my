@@ -349,7 +349,7 @@ func viewPR(n int) (prState, error) {
 // summarize returns the CI result of a pull request (none, failed, pending, cancelled, passed) from the latest
 // run of each check, the names of the failed checks (of the cancelled ones for cancelled), and whether any
 // check is still running. Cancelled is a run that someone stopped, or that no newer run replaced. It is
-// passed only when the required gate (the CI workflow's `check`) is among the checks and passed: other checks passing
+// passed only when the required gate (the CI workflow's `gate`) is among the checks and passed: other checks passing
 // while the gate has not reported yet is pending.
 func summarize(cs []check) (string, []string, bool) {
 	if len(cs) == 0 {
@@ -383,10 +383,10 @@ func summarize(cs []check) (string, []string, bool) {
 	return "passed", nil, false
 }
 
-// gate is the required status check of the protect-main ruleset: the `check` job of the CI workflow, which
+// gate is the required status check of the protect-main ruleset: the `gate` job of the CI workflow, which
 // passes only when every job it needs passed or was skipped.
 const (
-	gateName     = "check"
+	gateName     = "gate"
 	gateWorkflow = "CI"
 )
 
@@ -653,7 +653,7 @@ func failureReport(n int, p prState, failed []string, logDir string) (lines []st
 	var hosts map[string]int // the hosts every failed job read so far could not reach
 	runs := map[int64]bool{}
 	for _, c := range latest(p.StatusCheckRollup) {
-		// `check` only collects the other jobs' results; its log says nothing new.
+		// `gate` only collects the other jobs' results; its log says nothing new.
 		if c.result() != "failed" || c.name() == gateName {
 			continue
 		}

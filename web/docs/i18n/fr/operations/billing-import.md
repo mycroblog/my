@@ -27,12 +27,11 @@ Les modules [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/R
 | Cloudflare | Pas par ces modules. Définissez `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` et `MY_BILLING_CLOUDFLARE_API_TOKEN` (depuis un secret) comme pour un plugin |
 | Un plugin | Pas par ces modules. Sans module de facturation dans les `backends`, définissez `MY_BILLING_SOURCES = plugin` et les réglages du [plugin](#a-plugin-billing_sources--plugin) dans l’`env` du module d’application ; à côté d’un module de facturation, le module d’application refuse `MY_BILLING_SOURCES` dans `env` ; ajoutez donc un backend à vous qui renvoie `billing_sources = ["plugin"]` ([les champs d’un backend](../../deploy/opentofu/README.md)) |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
 
 Le serveur appelle `GetCostAndUsage` d’AWS Cost Explorer une fois par mois de facturation (un mois calendaire UTC), groupé par service (`SERVICE`) et par type d’enregistrement (`RECORD_TYPE`). Le point de terminaison est toujours `us-east-1`.
 Les montants sont en USD. Tant que Cost Explorer marque un mois comme estimé (`Estimated`), le serveur enregistre le montant jusqu’à la veille comme une estimation, et dès qu’il ne le fait plus, comme définitif.
-Un binaire construit avec le build tag `no_billing_aws` refuse `aws` (voir [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### Coût et limites
@@ -157,7 +156,7 @@ Les valeurs de Cost Explorer et la facture peuvent différer à cause du moment 
 
 Une nouvelle tentative ne peut pas corriger un échec autre que `throttled` et `unavailable` : le serveur l’enregistre donc et s’arrête, et l’import planifié du lendemain réessaie.
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud (`billing_sources = gcp`)
 
 Google Cloud n’a aucune API qui renvoie les coûts réels : le serveur agrège donc l’export Cloud Billing vers BigQuery (coût d’utilisation standard) une fois par jour avec un `jobs.query` de BigQuery (`billing_gcp_method = bigquery`, la valeur par défaut).
@@ -165,7 +164,6 @@ Quand vous ne pouvez pas configurer l’export, il existe aussi une méthode sim
 Le mois de facturation est l'`invoice.month` de l’export, un mois calendaire à l’heure du Pacifique américain (avec heure d’été). Les dates sont enregistrées à l’heure du Pacifique telles quelles.
 Les montants sont dans la devise du compte de facturation, sommés en `NUMERIC` par mois de facturation, service (`service.description`) et type de frais (`cost_type`), et les crédits (`credits[]`) deviennent une ligne de crédit par service. Les lignes de correction de l’export qui annulent des lignes antérieures font partie de la somme.
 L’export n’a aucune marque de finalité : l’import qui s’exécute à partir du 5 (heure du Pacifique) du mois suivant traite donc le mois comme définitif, et jusque-là l’enregistre comme une estimation du premier jour du mois au jour de la dernière utilisation. Une fois définitif, l’import relit encore le mois jusqu’au 15 et enregistre toute différence comme une correction.
-Un binaire construit avec le build tag `no_billing_gcp` refuse `gcp` (voir [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### Coût et limites
@@ -254,7 +252,7 @@ Cette méthode n’importe **qu’un total approximatif fondé sur des estimatio
 - Un mois estimé est enregistré comme le coût du premier jour du mois au jour (heure du Pacifique) où la dernière notification a été publiée.
 - Le filtrage est décidé par le périmètre du budget (projets, services, une clé et une valeur de label), et `billing_gcp_projects` et `billing_gcp_label` ne sont pas utilisés.
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### Préparer le budget, le topic et l’abonnement
 
 1. Créez un topic et un abonnement pull que seul ce serveur lit. Voyez « How notifications are read » ci-dessous pour les raisons de la durée de rétention et de l’expiration.
@@ -280,7 +278,6 @@ Cette méthode n’importe **qu’un total approximatif fondé sur des estimatio
 4. Définissez `MY_BILLING_GCP_METHOD=budget` et `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`.
 
 L’authentification est la même que pour BigQuery, les Application Default Credentials (voir le tableau de [Rôles IAM](#iam-roles) ci-dessus).
-Le build tag `no_billing_gcp` retire aussi cette méthode. La bibliothèque cliente Pub/Sub est partagée avec `stream = pubsub` : elle ne quitte donc le binaire que si vous définissez aussi `no_pubsub` (voir [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### Comment les notifications sont lues
@@ -305,13 +302,12 @@ Le build tag `no_billing_gcp` retire aussi cette méthode. La bibliothèque clie
 | `unavailable` | `UNAVAILABLE`, `INTERNAL` et similaires, défaillance réseau | La tâche réessaie après une pause |
 | `invalid_response` | Un message qui ne peut pas être lu comme une notification de budget, un budget qui n’est pas mensuel, deux budgets ayant le même nom d’affichage | Rendez le budget mensuel, donnez aux budgets des noms d’affichage distincts, et n’envoyez aucun autre message au topic |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare (`billing_sources = cloudflare`)
 
 Le serveur lit l’utilisation facturable d’un compte Cloudflare : les frais d’utilisation de ses produits facturés à l’usage, tels que R2, Workers et D1, un enregistrement par métrique et par jour.
 Il les additionne par produit (`R2`, `Workers`, `D1`) dans des mois calendaires UTC ; chaque produit forme donc une ligne d’utilisation par mois. L’utilisation comprise dans un quota gratuit est elle aussi importée, à 0.
 Seul un compte facturé à l’usage possède ces données ; un compte sous contrat Enterprise échoue avec `not_enabled`.
-Un binaire compilé avec le build tag `no_billing_cloudflare` refuse `cloudflare` (voir [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### Ce qu’il n’importe pas

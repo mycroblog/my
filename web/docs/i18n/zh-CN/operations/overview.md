@@ -16,7 +16,7 @@
 - **你选择的组件。** 图中间的每个组件都有一个选择其适配器的设置，列在[下一节](#parts-you-choose-by-configuration)中。
 - **服务器外部的服务。** CAPTCHA、语音聊天、支付、插件和云费用导入在你设置之前都保持关闭，设置后服务器会调用你指定的服务。
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## 通过配置选择的部分
 
 每个部分都是[配置参考](../reference/configuration.md)中的一个设置，可以写在 TOML 文件中，也可以作为环境变量设置（`MY_` 加上大写的键，例如 `MY_DATABASE`）。每个列表中的第一个选项是默认值。凡是保存数据的部分，请在第一次启动之前选定：设置改变时，数据不会自己迁移。
@@ -43,7 +43,7 @@
 | 追踪 | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`、`otlp` | [追踪](running.md#traces) |
 | 错误报告 | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none`（只有日志行和错误分组）、`sentry`（Sentry、GlitchTip、Datadog）、`otlp` | [错误报告](error-reporting.md) |
 
-发布的二进制文件和容器镜像包含表中的每个适配器。你自己构建的二进制文件可以用[构建标签](../reference/build-tags.md)去掉你不用的适配器，之后它会在启动时拒绝这些适配器的设置。
+发布的二进制文件和容器镜像包含表中的每个适配器。
 
 `my config check` 会在你启动服务器之前，一次性报告配置的所有问题（[生产检查清单](production-checklist.md)）。
 

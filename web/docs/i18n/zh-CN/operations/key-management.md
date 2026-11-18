@@ -93,7 +93,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 - 无法重新包裹的机密保持不变，并连同行 ID 一起报告，命令以 1 退出。原因要么是配置中没有它的 KEK
   （消息中会写明密钥 ID：把那把 KEK 加入 `kek_previous` 后再运行一次），要么是存储的值已损坏或是从其他行复制过来的。只要 `my kek status` 仍统计到某把 KEK 下的机密，就不要把它从 `kek_previous` 中删除。
 
-<!-- source: google-cloud-kms 1c47dd463234 -->
+<!-- source: google-cloud-kms 46a4c691c58f -->
 ## Google Cloud KMS
 
 在 `key_manager = gcpkms` 时，由一把对称的 Cloud KMS 密钥（用途为 `ENCRYPT_DECRYPT` 的 CryptoKey）包裹数据加密密钥，KEK 从不离开 Cloud KMS。即使数据库转储和配置同时泄露，机密也不会暴露：解密需要使用该密钥的权限。
@@ -101,7 +101,6 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
 - 把 `kms_key` 设置为密钥的资源名称，不带版本：`projects/{project}/locations/{location}/keyRings/{ring}/cryptoKeys/{key}`。超过 248 字节的名称在启动时会被拒绝。已存储机密的密钥 ID 是 `gcpkms:` 加上这个名称。
 - 服务器使用应用默认凭据（Application Default Credentials）进行身份验证：在 Cloud Run 上是该服务的服务账号；在其他环境中是 `GOOGLE_APPLICATION_CREDENTIALS`。向该服务账号授予密钥（而不是项目）上的 `roles/cloudkms.cryptoKeyEncrypterDecrypter`，供所有进程（例如 web 和 worker）以及 `my kek status`、`my kek rewrap` 命令使用。没有该角色时，读取机密会失败，错误中会写明该角色；密钥版本不存在或已停用时也同样失败，这些错误在修正配置之前不会重试。配额错误或 Cloud KMS 不可用属于临时问题，需要该机密的工作会重试。
 - 服务器会把 Cloud KMS 解密的数据加密密钥保留 `kms_dek_cache_ttl`（默认 `10m`），因此大多数机密读取不会调用 Cloud KMS。
-- 构建标签 `no_gcpkms` 会把该适配器排除在二进制文件之外（[构建标签](../reference/build-tags.md)）。
 
 <!-- source: rotate-the-key-in-cloud-kms ba58f052af2a -->
 ### 在 Cloud KMS 中轮换密钥
@@ -115,7 +114,7 @@ Cloud KMS 中的轮换（手动进行，或为密钥设置轮换周期）会添�
 3. 以相同的配置运行 `my kek rewrap`。当 `my kek status` 不再统计到旧密钥 ID 下的机密时，删除 `kms_key_previous` 并重启。
 4. 此后才停用旧密钥的版本；只要你还保留第 3 步之前的数据库备份，就要让这些版本保持可恢复：恢复这些备份时还需要它们。
 
-<!-- source: aws-kms f97406d91b4c -->
+<!-- source: aws-kms b74cad9cc18f -->
 ## AWS KMS
 
 在 `key_manager = awskms` 时，由一把对称的 AWS KMS 密钥（密钥规格 `SYMMETRIC_DEFAULT`、密钥用途 `ENCRYPT_DECRYPT`、客户托管）包裹数据加密密钥，KEK 从不离开 AWS KMS。即使数据库转储和配置同时泄露，机密也不会暴露：解密需要使用该密钥的权限。
@@ -136,7 +135,6 @@ Cloud KMS 中的轮换（手动进行，或为密钥设置轮换周期）会添�
 - 当密钥不存在、已停用或等待删除，或者不是对称加密密钥时，服务器无法启动。之后，缺少权限或密钥被停用会使机密读取失败，错误中会写明原因，这些错误在修正配置之前不会重试。限流（`ThrottlingException`）或 AWS KMS 不可用属于临时问题，需要该机密的工作会重试。
 - 每次调用的加密上下文包含机密的行 ID 和列名（`{"my-aad": ...}`，以 base64url 编码）。CloudTrail 会以明文记录它；其中不含机密。
 - 费用：AWS 对每把客户托管密钥按月收费（撰写本文时为 1 美元，其密钥材料的前两次轮换各另收同样的费用），超出每月免费额度的请求按次收费（参见 [AWS KMS 定价](https://aws.amazon.com/kms/pricing/)）。服务器会把 AWS KMS 解密的数据加密密钥保留 `kms_dek_cache_ttl`（默认 `10m`），因此一台有 10 个持续投递的 actor 的服务器，每个进程每月大约发出 43,000 次请求，超出免费额度的费用只有几美分。
-- 构建标签 `no_awskms` 会把该适配器排除在二进制文件之外（[构建标签](../reference/build-tags.md)）。
 
 <!-- source: retire-an-aws-kms-key b670091ad7f1 -->
 ### 淘汰 AWS KMS 密钥
@@ -150,7 +148,7 @@ AWS KMS 的自动密钥轮换会保留密钥的 ARN 及其之前的密钥材料�
 3. 以相同的配置运行 `my kek rewrap`。当 `my kek status` 不再统计到旧密钥 ID 下的机密时，删除 `kms_key_previous` 并重启。
 4. 此后才停用旧密钥；只要你还保留第 3 步之前的数据库备份，就要保留它：恢复这些备份时还需要它。
 
-<!-- source: a-plugin 43023e60bac9 -->
+<!-- source: a-plugin 336458ba764e -->
 ## 插件
 
 在 `key_manager = plugin` 时，由你自己的[插件](plugins.md)保管 KEK（放在 Vault、HSM 或它选择的任何地方），并为服务器包裹数据加密密钥。
@@ -167,7 +165,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - 已存储机密的密钥 ID 是 `plugin:` 加上插件为其 KEK 给出的 ID，该 ID 是 1 到 248 字节的可见 ASCII 字符。
 - **保留已存储机密仍在引用的每一把 KEK。** 插件中的轮换会在下一次包裹时体现为新的 ID。之前包裹的机密仍引用旧 ID，插件必须仍能解开它们。`my kek rewrap` 会把它们迁移到当前 ID，`my kek status` 会统计剩余的数量。
 - 插件和 KMS 不能同时使用：使用插件时会拒绝 `kms_key` 和 `kms_key_previous`，在 `key_manager = gcpkms` 或 `awskms` 时也会拒绝 `plugin_key_manager_address`。
-- 构建标签 `no_plugins` 会把该适配器排除在二进制文件之外（[构建标签](../reference/build-tags.md)）。
 
 <!-- source: when-the-server-starts 5faeda92e43b -->
 ### 服务器启动时

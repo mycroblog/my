@@ -1,4 +1,4 @@
-<!-- source: plugins 4a60f7abbec9 -->
+<!-- source: plugins f6f944095e31 -->
 # Plugins
 
 Un plugin es un programa o servicio aparte que tú ejecutas y al que el servidor entrega una tarea concreta a través de la red.
@@ -6,7 +6,6 @@ El servidor solo se conecta a una dirección: no inicia, detiene ni vigila el pl
 o en otra máquina.
 
 De forma predeterminada no se delega nada. Un servidor sin dirección de plugin no abre ninguna conexión ni inicia ningún proceso.
-La etiqueta de compilación [`no_plugins`](../reference/build-tags.md) quita el cliente de plugins del binario.
 
 ![Dónde encajan los plugins: el proceso my entrega seis puertos a un plugin y consulta cinco hooks de decisión, todo a través de un único cliente de plugins que se conecta a los plugins que ejecutas; la parte inferior del diagrama muestra qué hace cada uno cuando una llamada falla. La lista siguiente describe cada parte.](images/plugins.svg)
 

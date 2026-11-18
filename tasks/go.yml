@@ -23,9 +23,11 @@ vars:
   AI_ROBOTS_SHA256: b9dc1b13171c3440cd41a51ab9ac3f998b00e30b5987c4bdbecad4f8a21bc99e
 
 tasks:
+  # go:vet and go:test compile every package, so `check` needs no build of its own; CI builds first (go:build), so that
+  # the checks after it read the build cache.
   check:
     desc: Run all offline Go checks in parallel
-    deps: [mod-check, vet, lint, test, build, build-tags, licenses, sqlc-check]
+    deps: [mod-check, shard-check, vet, lint, test-sleep, test, fakes-check, licenses, sqlc-check]
 
   mod-check:
     desc: Fail if go.mod/go.sum (and those of tools and tools/buf) are not tidy, or go.work does not load or lists the wrong modules
@@ -47,17 +49,36 @@ tasks:
     cmds:
       - go vet ./...
 
+  # The shards (scripts/go-shard.sh) are for CI, which gives each a runner: golangci-lint and `go test` use every core.
+  shard-check:
+    desc: Fail if a package of the server module is in no shard of scripts/go-shard.sh, which no CI job would then test or lint
+    cmds:
+      - scripts/go-shard.sh --check
+
   lint:
-    desc: Run golangci-lint (includes the depguard architecture boundaries) and refuse time.Sleep in the Go tests beyond its baseline (scripts/go-test-sleep.sh)
+    desc: Run golangci-lint (includes the depguard architecture boundaries) on the server module, or on its shard SHARD (scripts/go-shard.sh)
+    vars:
+      PACKAGES:
+        sh: '{{if .SHARD}}scripts/go-shard.sh {{shellQuote .SHARD}}{{else}}echo ./...{{end}}'
     cmds:
       # golangci-lint holds a lock while it runs: wait for it rather than fail beside go:lint or agentkit:lint.
-      - golangci-lint run --allow-serial-runners ./...
-      - scripts/go-test-sleep.sh
+      - golangci-lint run --allow-serial-runners {{.PACKAGES}}
+
+  # The Go tests of every module, not of the server alone. CI passes the pull request's base (BASE=HEAD^1).
+  test-sleep:
+    desc: Refuse time.Sleep in the Go tests beyond its baseline, which may only shrink since the merge base with BASE (default origin/main) (scripts/go-test-sleep.sh)
+    vars:
+      BASE: '{{.BASE | default "origin/main"}}'
+    cmds:
+      - scripts/go-test-sleep.sh --base {{shellQuote .BASE}}
 
   test:
-    desc: Run Go tests (PostgreSQL tests on pgmem, ADR-0015)
+    desc: Run the Go tests of the server module, or of its shard SHARD (scripts/go-shard.sh); the PostgreSQL tests run on pgmem (ADR-0015)
+    vars:
+      PACKAGES:
+        sh: '{{if .SHARD}}scripts/go-shard.sh {{shellQuote .SHARD}}{{else}}echo ./...{{end}}'
     cmds:
-      - go test ./...
+      - go test {{.PACKAGES}}
 
   test-postgres:
     desc: Run the PostgreSQL tests whose result can differ from pgmem on a postgres container (needs Docker; CI in the slow suite, and in the merge queue when the PostgreSQL adapters change)
@@ -100,7 +121,7 @@ tasks:
       - go test -count=1 -run LiveKitServer ./internal/adapter/voice/livekit/
 
   test-acme:
-    desc: Run the instance.ACMEClient contract of the ACME adapter and the server with tls = acme (-run Pebble in internal/adapter/acme and internal/platform) against Pebble, Let's Encrypt's test CA, run as a Go tool from tools/go.mod (pkg/testkit/pebbletest) (CI with the container contracts and in the slow suite)
+    desc: Run the instance.ACMEClient contract of the ACME adapter and the server with tls = acme (-run Pebble in internal/adapter/acme and internal/platform) against Pebble, Let's Encrypt's test CA, run as a Go tool from tools/go.mod (pkg/testkit/pebbletest) (CI in the slow suite, and in the merge queue when the ACME code changes)
     env:
       TEST_ACME: pebble
     cmds:
@@ -113,11 +134,9 @@ tasks:
     cmds:
       - go test -count=1 -run SearchServer ./internal/adapter/search/...
 
-  warm:
-    desc: Download the modules and build the packages and the Go tools once, so that the Go checks a CI job runs in parallel read the build cache instead of each compiling the same packages
+  tools:
+    desc: Build the Go tools of tools/go.mod and tools/buf/go.mod (sqlc, oapi-codegen, buf, ...) once, so that the checks of a CI job that run them do not each build them
     cmds:
-      - go mod download
-      - go build ./...
       - go build -modfile=tools/go.mod tool
       - go build -modfile=tools/buf/go.mod tool
 
@@ -128,26 +147,38 @@ tasks:
     cmds:
       - go build ./...
 
-  build-tags:
-    desc: Build (CGO_ENABLED=0) and vet with the representative sets of the build tags, fail when cmd/my links an adapter that a tag leaves out or a test fake without e2e_fakes, run the tests of the e2e_fakes build, and run with each tag alone the tests that only a build with that tag has, such as no_plugins (docs/reference/build-tags.md)
+  # The fakes of the test build (ADR-0015 §6): one that records payments as paid must never reach a released binary.
+  # It reads the packages cmd/my depends on (`go list -deps`) and builds nothing.
+  fakes-check:
+    desc: Fail when cmd/my without the build tag e2e_fakes depends on a fake or on a package only tests may link, or when cmd/my with e2e_fakes lacks a fake (scripts/go-fakes.sh)
     cmds:
-      - scripts/go-build-tags.sh
+      - scripts/go-fakes.sh
+
+  # Not part of `check`: it compiles the test build's packages and their tests (CI in the slow suite).
+  fakes-test:
+    desc: Run go vet on the test build (the build tag e2e_fakes) and the tests that only it has, named *E2EFakes* (scripts/go-fakes.sh test)
+    cmds:
+      - scripts/go-fakes.sh test
 
   licenses:
     desc: Fail on dependency licenses incompatible with AGPL-3.0
     cmds:
       - "{{.GO_TOOL}} go-licenses check --allowed_licenses={{.GO_ALLOWED_LICENSES}} ./..."
 
+  # The test build keeps the paths (no -trimpath): -trimpath is part of every package's key in the build cache, so a
+  # build with it reads nothing of what the checks built, and compiles the whole server (ADR-0079 §7). A test build is
+  # never released, so its paths reach no one.
   bin:
-    desc: Build bin/my with the build of web:build embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS=no_postgres,no_valkey leaves adapters out; GO_TAGS=e2e_fakes makes the test build, never to be released)
+    desc: Build bin/my with the build of web:build embedded and the version from git (VERSION=v1.2.3 overrides; GO_TAGS passes build tags; GO_TAGS=e2e_fakes makes the test build, never to be released)
     deps: [":web:build"]
     vars:
       VERSION:
         sh: '{{if .VERSION}}echo {{shellQuote .VERSION}}{{else}}git describe --tags --match "v[0-9]*" --always --dirty 2>/dev/null || echo dev{{end}}'
+      TRIMPATH: '{{if contains "e2e_fakes" .GO_TAGS}}{{else}}-trimpath{{end}}'
     env:
       CGO_ENABLED: "0"
     cmds:
-      - go build -trimpath -tags "{{.GO_TAGS}}" -ldflags "-X main.version={{.VERSION}}" -o bin/my ./cmd/my
+      - go build {{.TRIMPATH}} -tags "{{.GO_TAGS}}" -ldflags "-X main.version={{.VERSION}}" -o bin/my ./cmd/my
 
   config-docs:
     desc: Regenerate docs/reference/configuration.md, deploy/docker/example.env, and the settings list of the OpenTofu modules from the config schema (go:test fails when they are stale)

@@ -131,7 +131,7 @@ MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; t
 - **GlitchTip**：复制项目的 DSN。它是开源的，可以在小型服务器上运行。请确认你所用的版本为新出现和再次出现的问题提供了哪些告警规则。
 - **Datadog Error Tracking**：使用你的 Datadog 站点的 Sentry DSN，`https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`。Datadog 要求有 `service` 标签，服务器始终会设置它。Datadog 把这些事件存储为日志，并在 Error Tracking 中分组。如果你改为用代理或转发器把日志行发送到 Datadog（Error Tracking for Logs），调用栈位于 `message` 中；请用日志管道把它映射到 `error.stack`，否则 Datadog 不会把它识别为调用栈。`sentry` 导出器不需要这样的映射。
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### OTLP 后端
 
 ```sh
@@ -142,7 +142,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 每份报告都是一条名为 `exception` 的 OpenTelemetry 日志记录，严重级别为 `ERROR`（导致进程停止时为 `FATAL`），带有 `exception.type`、`exception.message`、`exception.stacktrace`、`my.error.fingerprint`、`my.error.where`、`my.error.source`、`my.error.kind`，以及跟踪 ID 和 span ID。它通过 OTLP/HTTP（protobuf、gzip）发送，使用与指标和跟踪相同的资源。
 
-后端是否会把这些记录变成分组的错误取决于后端：有些后端只根据跟踪数据构建错误视图，而 Datadog 需要 `error.stack`。对于 Sentry、GlitchTip 和 Datadog，请使用 `sentry`。如果你希望这些记录与其他日志放在一起，请使用 `otlp`。构建标签 `no_otel` 会去掉 `otlp`（[构建标签](../reference/build-tags.md)）。
+后端是否会把这些记录变成分组的错误取决于后端：有些后端只根据跟踪数据构建错误视图，而 Datadog 需要 `error.stack`。对于 Sentry、GlitchTip 和 Datadog，请使用 `sentry`。如果你希望这些记录与其他日志放在一起，请使用 `otlp`。
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## 清洗能保证什么、不能保证什么

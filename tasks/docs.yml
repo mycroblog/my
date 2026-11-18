@@ -1,7 +1,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Documentation and the repository's bookkeeping: markdownlint, the documentation rules, the ADR numbers, and that CI runs every check
-# (the docs context of scripts/changed-contexts.sh).
+# What the documents say of the tree (the docs context of scripts/changed-contexts.sh, which every path selects):
+# markdownlint, the documentation rules, the context maps and the inventories that agentkit checks, the ADR numbers,
+# and that CI runs every check.
 version: "3"
 
 vars:
@@ -9,8 +10,8 @@ vars:
 
 tasks:
   check:
-    desc: Run the documentation checks, markdownlint, the documentation rules, the ADR numbers, and the CI coverage of `check`, in parallel
-    deps: [lint, rules, adr-numbers, ci-coverage]
+    desc: Run the documentation checks, markdownlint, the documentation rules, the context maps, the inventories, the ADR numbers, and the CI coverage of `check`, in parallel
+    deps: [lint, rules, ":agentkit:map-check", ":agentkit:inventory", adr-numbers, ci-coverage]
 
   lint:
     desc: Lint Markdown files

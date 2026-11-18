@@ -11,9 +11,7 @@ Most commands read the configuration as the server does: from the environment, a
 `-config` or `MY_CONFIG` ([configuration reference](configuration.md)). A command exits with 2 when its command
 line is wrong, without changing anything.
 
-A binary built with build tags that leave adapters out has the same commands; the ones that need what a tag left out
-are marked below and fail with a message that names the tag. A test build adds `my dev push-service`
-([build tags](build-tags.md)).
+A test build adds `my dev push-service` ([contributing guide](../../CONTRIBUTING.md#the-fake-push-service)).
 
 ## `my`
 
@@ -1972,8 +1970,6 @@ removed. Back up PostgreSQL with pg_dump instead.
 
 ### `my db backup`
 
-A binary built with the build tag `no_sqlite` has no SQLite and refuses to back up.
-
 ```text
 my db backup [-config <file>] <file>
 my db backup copies a SQLite database (database = sqlite) to the new <file>, which
@@ -2684,8 +2680,6 @@ Its help is the help of [`my maintenance`](#my-maintenance).
 
 ## `my plugin`
 
-A binary built with the build tag `no_plugins` has no plugins: `my plugin` and its subcommands exit with 1 and say so.
-
 Subcommands: [`test`](#my-plugin-test).
 
 ```text
@@ -2901,8 +2895,6 @@ because of an error or a refused drop.
 ```
 
 ### `my schema apply`
-
-A binary built with the build tag `no_sqlite` or `no_postgres` cannot apply the schema of the database that the tag leaves out.
 
 ```text
 my schema apply [-dry-run] [-allow-destructive] [-config <file>]

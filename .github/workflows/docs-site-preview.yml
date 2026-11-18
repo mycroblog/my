@@ -4,7 +4,7 @@ name: Docs site preview
 # alone, from the pull request's checkout (`scripts/docs-site.sh build-preview`), uploaded as the artifact
 # `docs-site-preview`. docs-site-preview-deploy.yml publishes it on the Preview pr-<number> of the Worker my-docs when
 # this workflow completes. This workflow holds no secret and no write permission, so it runs the same for pull requests
-# from forks; it is not part of the required `check` and never blocks a merge. A pull request that changes none of
+# from forks; it is not part of the required `gate` and never blocks a merge. A pull request that changes none of
 # these paths gets no preview.
 
 on:
@@ -16,6 +16,7 @@ on:
       - "docs/reference/**"
       - "docs/guide/**"
       - "docs/developers/**"
+      - "docs/plugins/**"
       - "web/docs/**"
       - "api/openapi.yaml"
       - "scripts/docs-site.sh"

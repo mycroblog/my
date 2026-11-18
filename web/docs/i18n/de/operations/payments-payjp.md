@@ -108,7 +108,7 @@ Der Server unterscheidet die Ereignisse der API v1 und v2 an ihrer Form, sodass 
 PAY.JP sendet eine Benachrichtigung nur alle 3 Minuten erneut, höchstens 3 Mal, und eine Benachrichtigung darüber hinaus kommt nicht an, bis du sie im Dashboard erneut sendest. Der Abgleich repariert, was verpasst wurde, daher wird **empfohlen, `payments_reconcile_interval` auf 1 Stunde zu setzen**.
 Der Zustand des Anbieters (der Modus, wann der letzte Webhook ankam, und das Ergebnis des letzten Abgleichs) wird im Abschnitt „Zahlungsanbieter“ von `/admin/supporters` in der Administration angezeigt.
 
-<!-- source: 4-configure-the-server b0d24c7a2da0 -->
+<!-- source: 4-configure-the-server 5f0d4e9b413b -->
 ## 4. Den Server konfigurieren
 
 ```sh
@@ -121,7 +121,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` prüft die Konfiguration. Eine Binärdatei, die mit dem Build-Tag `no_payments_payjp` gebaut wurde, lehnt `payments = payjp` ab (siehe [build-tags.md](../reference/build-tags.md)).
+`my config check` prüft die Konfiguration.
 
 <!-- source: 5-try-it-in-test-mode f6ebbada0e0e -->
 ## 5. Im Testmodus ausprobieren

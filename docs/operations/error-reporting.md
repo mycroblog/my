@@ -154,7 +154,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 Each report is an OpenTelemetry log record named `exception`, with severity `ERROR` (`FATAL` when it stops the process), `exception.type`, `exception.message`, `exception.stacktrace`, `my.error.fingerprint`, `my.error.where`, `my.error.source`, `my.error.kind`, and the trace and span IDs. It goes over OTLP/HTTP (protobuf, gzip) with the same resource as the metrics and traces.
 
-Whether the backend turns these records into grouped errors depends on the backend: some build their error views from trace data only, and Datadog needs `error.stack`. For Sentry, GlitchTip, and Datadog, use `sentry`. Use `otlp` when you want the records next to your other logs. The build tag `no_otel` leaves `otlp` out ([Build tags](../reference/build-tags.md)).
+Whether the backend turns these records into grouped errors depends on the backend: some build their error views from trace data only, and Datadog needs `error.stack`. For Sentry, GlitchTip, and Datadog, use `sentry`. Use `otlp` when you want the records next to your other logs.
 
 ## What scrubbing does and does not guarantee
 

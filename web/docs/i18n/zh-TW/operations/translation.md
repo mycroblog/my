@@ -91,5 +91,3 @@ Amazon Translate 是服務 `aws`。伺服器會和使用其他 AWS 服務時一�
 Amazon Translate 依傳送的字元數計費，前 12 個月有免費方案（[定價](https://aws.amazon.com/translate/pricing/)）。伺服器只會傳送貼文中的文字：提及、主題標籤、連結與程式碼都留在伺服器上，各自以 HTML 標記中的簡短預留位置傳送。請把 `translation_user_monthly_characters` 與 `translation_server_monthly_characters` 的每月上限控制在你願意支付的範圍內。
 
 **除非該帳戶受到 AWS Organizations 的 [AI 服務選擇退出政策](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html)涵蓋，否則 Amazon 可能會儲存文字並用來改善其服務，而且可能在其他區域進行**。沒有選擇退出時，Amazon 就不只是你處理這些文字的服務供應商：請在你的隱私權政策中說明這一點（[隱私權政策範本](privacy-policy-template.md#the-services-you-choose)），並且不要在 `translation_provider_visibilities` 中為 `aws` 允許 `private` 或 `direct`。預設情況下，這個服務只會收到 `public`、`local` 與 `unlisted` 貼文。
-
-以建置標籤 `no_translator_aws` 建置的伺服器不含這個服務，若設定了 `translator_aws_region` 就會拒絕啟動（[建置標籤](../reference/build-tags.md)）。

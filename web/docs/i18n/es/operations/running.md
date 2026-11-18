@@ -138,7 +138,7 @@ El servidor confía en el `X-Forwarded-For` de los grupos de direcciones por def
 El servicio puntual `garage-init` prepara el almacén en cada `up`. Se mantiene dentro de la red de Compose, ya que el servidor
 sirve los archivos multimedia por sí mismo. Un nodo es un disco: haz una copia de seguridad del volumen `garage` o del bucket ([Copias de seguridad](backup.md#media-in-a-bucket)).
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## Obtener la imagen
 
 La imagen del servidor es `ghcr.io/mycroblog/my`, pública, para `linux/amd64` y `linux/arm64`, con todos los adaptadores.
@@ -170,7 +170,6 @@ Dónde ejecutarla:
 - **Kubernetes**: descárgala de `ghcr.io` tal cual.
 - **Cloud Run**: usa directamente la imagen de `ghcr.io`. Un despliegue resuelve la etiqueta a un digest.
 - **AWS (ECS, EKS)**: copia la imagen a Amazon ECR, o usa un pull through cache de ECR, que necesita credenciales de ghcr.io.
-- **Una imagen más pequeña**: `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .` en un checkout compila una con menos adaptadores ([etiquetas de compilación](../reference/build-tags.md)). Es tu propia compilación, así que no la cubren las comprobaciones siguientes.
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### Verificar una imagen

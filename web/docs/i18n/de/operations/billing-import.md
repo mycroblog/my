@@ -28,12 +28,11 @@ Die Module [`billing-aws`](../../deploy/opentofu/modules/internal/billing-aws/RE
 | Cloudflare | Nicht durch diese Module. Setze `MY_BILLING_SOURCES`, `MY_BILLING_CLOUDFLARE_ACCOUNT_ID` und `MY_BILLING_CLOUDFLARE_API_TOKEN` (aus einem Secret) wie bei einem Plugin |
 | Ein Plugin | Nicht durch diese Module. Setze ohne Billing-Modul in den `backends` `MY_BILLING_SOURCES = plugin` und die Einstellungen [des Plugins](#a-plugin-billing_sources--plugin) im `env` des App-Moduls; neben einem Billing-Modul lehnt das App-Modul `MY_BILLING_SOURCES` im `env` ab, füge also ein eigenes Backend hinzu, das `billing_sources = ["plugin"]` zurückgibt ([die Felder eines Backends](../../deploy/opentofu/README.md)) |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
 
 Der Server ruft `GetCostAndUsage` von AWS Cost Explorer einmal pro Abrechnungsmonat (ein UTC-Kalendermonat) auf, gruppiert nach Dienst (`SERVICE`) und Datensatzart (`RECORD_TYPE`). Der Endpunkt ist immer `us-east-1`.
 Beträge sind in USD. Solange Cost Explorer einen Monat als geschätzt markiert (`Estimated`), erfasst der Server den Betrag bis zum Vortag als Schätzung, und sobald er das nicht mehr tut, als endgültig.
-Eine Binärdatei, die mit dem Build-Tag `no_billing_aws` gebaut wurde, lehnt `aws` ab (siehe [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### Kosten und Limits
@@ -158,7 +157,7 @@ Die Werte von Cost Explorer und die Rechnung können sich wegen des Zeitpunkts d
 
 Eine Wiederholung kann einen anderen Fehler als `throttled` und `unavailable` nicht beheben, daher erfasst der Server ihn und hält an, und der geplante Import des nächsten Tages versucht es erneut.
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud (`billing_sources = gcp`)
 
 Google Cloud hat keine API, die tatsächliche Kosten liefert, daher aggregiert der Server den Cloud-Billing-Export nach BigQuery (Standard usage cost) einmal am Tag mit einem BigQuery-`jobs.query` (`billing_gcp_method = bigquery`, der Standard).
@@ -166,7 +165,6 @@ Wenn du den Export nicht einrichten kannst, gibt es auch eine einfache Methode, 
 Der Abrechnungsmonat ist der `invoice.month` des Exports, ein Kalendermonat in US-Pazifikzeit (mit Sommerzeit). Daten werden unverändert in Pazifikzeit erfasst.
 Beträge sind in der Währung des Rechnungskontos und werden als `NUMERIC` pro Abrechnungsmonat, Dienst (`service.description`) und Gebührenart (`cost_type`) summiert; Gutschriften (`credits[]`) werden zu einer Gutschriftzeile pro Dienst. Die Korrekturzeilen des Exports, die frühere Zeilen aufheben, gehören zur Summe.
 Der Export hat keine Markierung für Endgültigkeit, daher behandelt der Import, der ab dem 5. (Pazifikzeit) des Folgemonats läuft, den Monat als endgültig und erfasst ihn bis dahin als Schätzung vom ersten Tag des Monats bis zum Tag der letzten Nutzung. Nachdem er endgültig ist, liest der Import den Monat bis zum 15. weiterhin erneut und erfasst jede Differenz als Korrektur.
-Eine Binärdatei, die mit dem Build-Tag `no_billing_gcp` gebaut wurde, lehnt `gcp` ab (siehe [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### Kosten und Limits
@@ -255,7 +253,7 @@ Diese Methode importiert **nur eine ungefähre Summe auf Basis von Schätzungen*
 - Ein geschätzter Monat wird als die Kosten vom ersten Tag des Monats bis zu dem Tag (Pazifikzeit) erfasst, an dem die letzte Benachrichtigung veröffentlicht wurde.
 - Die Filterung bestimmt der Geltungsbereich des Budgets (Projekte, Dienste, ein Label-Schlüssel und -Wert); `billing_gcp_projects` und `billing_gcp_label` werden nicht verwendet.
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### Das Budget, das Topic und die Subscription vorbereiten
 
 1. Lege ein Topic und eine Pull-Subscription an, die nur dieser Server liest. Die Gründe für die Aufbewahrungsdauer und den Ablauf findest du unten unter „So werden Benachrichtigungen gelesen“.
@@ -281,7 +279,6 @@ Diese Methode importiert **nur eine ungefähre Summe auf Basis von Schätzungen*
 4. Setze `MY_BILLING_GCP_METHOD=budget` und `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`.
 
 Die Authentifizierung erfolgt über dieselben Application Default Credentials wie bei BigQuery (siehe die Tabelle unter [IAM-Rollen](#iam-roles) oben).
-Der Build-Tag `no_billing_gcp` entfernt auch diese Methode. Die Pub/Sub-Clientbibliothek wird mit `stream = pubsub` geteilt, sie verlässt die Binärdatei also nur, wenn du außerdem `no_pubsub` setzt (siehe [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### So werden Benachrichtigungen gelesen
@@ -306,13 +303,12 @@ Der Build-Tag `no_billing_gcp` entfernt auch diese Methode. Die Pub/Sub-Clientbi
 | `unavailable` | `UNAVAILABLE`, `INTERNAL` und Ähnliches, Netzwerkfehler | Der Job versucht es nach einer Pause erneut |
 | `invalid_response` | Eine Nachricht, die sich nicht als Budget-Benachrichtigung lesen lässt, ein Budget, das nicht monatlich ist, zwei Budgets mit demselben Anzeigenamen | Mache das Budget monatlich, gib den Budgets verschiedene Anzeigenamen und sende keine anderen Nachrichten an das Topic |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare (`billing_sources = cloudflare`)
 
 Der Server liest die abrechenbare Nutzung eines Cloudflare-Kontos: die Nutzungsentgelte seiner nutzungsabhängig abgerechneten Produkte wie R2, Workers und D1, ein Datensatz pro Metrik und Tag.
 Er summiert sie nach Produkt (`R2`, `Workers`, `D1`) in UTC-Kalendermonate, sodass jedes Produkt eine Nutzungszeile pro Monat ist. Auch Nutzung innerhalb eines Freikontingents wird importiert, mit 0.
 Nur ein nutzungsabhängig abgerechnetes Konto hat diese Daten; ein Konto mit Enterprise-Vertrag schlägt mit `not_enabled` fehl.
-Ein Binary, das mit dem Build-Tag `no_billing_cloudflare` gebaut wurde, lehnt `cloudflare` ab (siehe [build-tags.md](../reference/build-tags.md)).
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### Was nicht importiert wird

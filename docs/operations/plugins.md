@@ -5,7 +5,6 @@ The server only connects to an address: it does not start, stop, or watch the pl
 or on another machine.
 
 Nothing is delegated by default. A server without a plugin address opens no connection and starts no process.
-The build tag [`no_plugins`](../reference/build-tags.md) takes the plugin client out of the binary.
 
 ![Where plugins sit: the my process hands six ports to a plugin and asks five decision hooks, all through one plugin client that connects to the plugins you run; the bottom of the diagram shows what each does when a call fails. The list below describes each part.](images/plugins.svg)
 

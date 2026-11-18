@@ -26,7 +26,7 @@ Vom oberen Rand des Diagramms nach unten:
 - **Dienste außerhalb des Servers.** CAPTCHA, Sprach-Chat, Zahlungen, Plugins und der Import von Cloud-Kosten bleiben jeweils aus,
   bis du sie einstellst, und der Server ruft dann den Dienst auf, den du nennst.
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## Teile, die du per Konfiguration wählst
 
 Jeder Teil ist eine Einstellung der [Konfigurationsreferenz](../reference/configuration.md), gesetzt in einer TOML-Datei oder als
@@ -55,8 +55,7 @@ Wo ein Teil Daten hält, wähle ihn vor dem ersten Start: Die Daten ziehen nicht
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Fehlerberichte | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (nur die Logzeile und die Fehlergruppen), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Fehlerberichte](error-reporting.md) |
 
-Das veröffentlichte Binary und das Container-Image enthalten jeden Adapter der Tabelle. Ein Binary, das du selbst baust, kann die
-Adapter, die du nicht nutzt, mit [Build-Tags](../reference/build-tags.md) weglassen und lehnt dann ihre Einstellungen beim Start ab.
+Das veröffentlichte Binary und das Container-Image enthalten jeden Adapter der Tabelle.
 
 `my config check` meldet jedes Problem der Konfiguration auf einmal, bevor du den Server startest
 ([Produktions-Checkliste](production-checklist.md)).

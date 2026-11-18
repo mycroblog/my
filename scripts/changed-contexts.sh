@@ -2,8 +2,8 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 #
 # Prints the check contexts that the changes since BASE touch, one per line, including the contexts that
-# depend on them. `scripts/task.sh check:changed` runs the matching `<context>:check` tasks, and the `changes` job of
-# .github/workflows/ci.yml picks from them the jobs of the full check (server-static, client-test, docker, ...).
+# depend on them. `scripts/task.sh check:changed` runs the matching `<context>:check` tasks, and scripts/ci-jobs.sh
+# picks from them the jobs of .github/workflows/ci.yml.
 #
 #   scripts/changed-contexts.sh BASE          changes from the merge base of BASE and HEAD to the working tree,
 #                                             plus untracked files (local use)
@@ -11,7 +11,9 @@
 #   scripts/changed-contexts.sh --files FILE  the paths listed in FILE, one per line (CI and tests)
 #
 # Contexts:
-#   docs    Markdown lint, the documentation rules, the ADR numbers (docs:check)
+#   docs    what the documents say of the tree, which any change can make wrong: the context maps, which cover every
+#           path, the names each document must mention, the links and the rules of the documents, Markdown lint,
+#           the ADR numbers (docs:check)
 #   go      the Go module, sqlc, and the Go tests                (go:check)
 #   i18n    the catalogs and their generated accessors           (i18n:check)
 #   api     the OpenAPI spec and the code generated from it      (api:check)
@@ -20,11 +22,11 @@
 #   docker  the Dockerfile and the deployments                   (docker:check, the Docker smoke test)
 #   shell   the shell scripts                                    (shell:check)
 #   schema  the desired-state schema files                       (db:check-all)
-#   agentkit tools/agentkit and the context map (the context-map.yaml files), which covers every path (agentkit:check)
+#   agentkit tools/agentkit, a Go module of its own, and the server's go.sum, which bounds its dependencies (agentkit:check)
 #   mykit   pkg/mykit and pkg/mybot, the client libraries, Go modules of their own, and their integration tests (mykit:check)
 #   tofu the OpenTofu modules of deploy/opentofu          (tofu:check)
 #   site    the documentation site web/docs and what it publishes: docs/operations, docs/reference, docs/guide,
-#           docs/developers, docs/README.md (its sidebar), and api/openapi.yaml
+#           docs/developers, docs/plugins, docs/README.md (its sidebar), and api/openapi.yaml
 #           (site:check: the build of docs:site-build, the tsc, Oxlint, and knip of web/docs, and the check of its translations)
 #   e2e     the E2E tests of web/e2e against the demo server (web:e2e, a job of its own rather than a part of `check`):
 #           the workspace packages @my/app and @my/e2e depend on (is_e2e), and the server code the demo server builds
@@ -35,9 +37,10 @@
 # A change to shared configuration (Taskfile.yml, .tool-versions, tools/go.mod, and ci.yml, which runs the
 # checks, and the actions) selects every context, and so does any path no rule below knows; the tasks of one area
 # (tasks/<area>.yml) select that area's contexts and those of the areas whose tasks call it; the other workflows select
-# none. Any path no rule knows selects every context: a new kind of file runs everything until a
-# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go and mykit; bun.lock: the
-# workspace's members, web, i18n, mykit, and site), so a Dependabot pull request runs the jobs that use the dependency.
+# none but docs. Any path no rule knows selects every context: a new kind of file runs everything until a
+# rule is added for it. A dependency update selects the contexts of its toolchain only (go.mod: go, mykit, and agentkit;
+# bun.lock: the workspace's members, web, i18n, mykit, and site), so a Dependabot pull request runs the jobs that use
+# the dependency.
 set -euo pipefail
 
 ALL=(docs go i18n api web docker shell schema agentkit mykit tofu site e2e stories)
@@ -171,8 +174,9 @@ select_task_area() {
 # classify PATH selects the contexts of one changed path. Rules add up: web/docs/README.md is docs and site.
 classify() {
   local path="$1" known=0
-  # The context-map.yaml files must cover every path, so any change can break `agentkit map check`.
-  select_contexts agentkit
+  # The context maps must cover every path, and the documents name what the code has and link to its files, so any
+  # change can break the checks of the documents.
+  select_contexts docs
   if is_e2e "$path"; then
     select_contexts e2e
   fi
@@ -187,13 +191,18 @@ classify() {
     # Shared configuration, which every check runs through: the task runner and its tasks, the tool versions (go-task,
     # sqlc, oapi-codegen, and go-licenses are pinned in tools/go.mod), and the workflows. Everything.
     Taskfile.yml | scripts/task.sh | .tool-versions | .github/workflows/ci.yml | \
-      .github/actions/* | scripts/changed-contexts.sh | tools/go.mod | tools/go.sum)
+      .github/actions/* | scripts/changed-contexts.sh | scripts/ci-jobs.sh | tools/go.mod | tools/go.sum)
       select_contexts "${ALL[@]}"
       return
       ;;
     # The tasks of one area: its contexts, and those of the areas whose tasks call one of its tasks (`:web:build`).
     tasks/*.yml)
       select_task_area "$(basename "$path" .yml)"
+      return
+      ;;
+    # The image the browser tests run in, and what names and builds it.
+    .github/images/* | scripts/browser-image.sh)
+      select_contexts shell e2e stories
       return
       ;;
     # The other workflows (the slow suite, the Nightly, the release, the previews, the deploys) run no check of a pull
@@ -203,8 +212,9 @@ classify() {
       ;;
     # The dependencies of one toolchain: the contexts that build with them.
     # pkg/mykit/integration and pkg/mybot/integration resolve the server's dependencies, so a bump leaves them untidy.
+    # agentkit:deps-check holds tools/agentkit to the module versions of the server's go.sum.
     go.mod | go.sum)
-      select_contexts go mykit
+      select_contexts go mykit agentkit
       return
       ;;
     # The workspace of Dependabot's Go updates: go:mod-check reads it, and it names modules of these contexts.
@@ -254,27 +264,26 @@ classify() {
       ;;
     # The copy role's knowledge: its word decisions are rules of the copy lint, and its shape a documentation rule.
     .claude/knowledge/copy/*)
-      select_contexts docs i18n
+      select_contexts i18n
       return
       ;;
   esac
   case "$path" in
-    # A Go module of its own: its Go files are not the go context's.
-    # The documentation rules of docs:rules (agentkit docs lint).
-    tools/agentkit/*.md | tools/agentkit/internal/docslint/*)
-      select_contexts docs
+    # A Go module of its own: its Go files are not the go context's, and its documents are checked as every other.
+    tools/agentkit/*.md)
       return
       ;;
     tools/agentkit/*)
+      select_contexts agentkit
       return
       ;;
     scripts/agentkit*.sh)
-      select_contexts shell
+      select_contexts shell agentkit
       return
       ;;
     # Not the docker context, which deploy/* selects below: no image or Compose file is involved.
     deploy/opentofu/*.md)
-      select_contexts docs tofu
+      select_contexts tofu
       return
       ;;
     deploy/opentofu/*.sh)
@@ -288,7 +297,6 @@ classify() {
     # pkg/mykit is a Go module of its own too (ADR-0093). Its generated client comes from the spec, and the license
     # scope check of the api context reads its SPDX headers, which mykit:check runs as well.
     pkg/mykit/*.md | pkg/mybot/*.md)
-      select_contexts docs
       return
       ;;
     # pkg/mybot, a Go module of its own on top of pkg/mykit (ADR-0093), is checked by the mykit context too.
@@ -299,21 +307,20 @@ classify() {
   esac
   case "$path" in
     *.md | .markdownlint-cli2.jsonc | docs/* | scripts/adr-new.sh | scripts/adr-numbers.sh)
-      select_contexts docs
       known=1
       ;;
   esac
   case "$path" in
     # The documentation site (ADR-0150 §7): its package and the documents it copies in and builds. site:check runs its
     # tsc, Oxlint, and knip.
-    web/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/README.md)
+    web/docs/* | docs/operations/* | docs/reference/* | docs/guide/* | docs/developers/* | docs/plugins/* | docs/README.md)
       select_contexts site
       known=1
       ;;
   esac
   case "$path" in
     # go test fails when the generated configuration or command reference is stale (go:config-docs, go:cli-docs).
-    *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-build-tags.sh | scripts/go-work-check.sh | scripts/stable-mtime.py | \
+    *.go | cmd/* | internal/* | pkg/* | queries/* | sqlc.yaml | .golangci.yml | scripts/sqlc.sh | scripts/go-fakes.sh | scripts/go-shard.sh | scripts/go-work-check.sh | scripts/stable-mtime.py | \
       scripts/go-test-sleep.sh | scripts/go-test-sleep.baseline | docs/reference/configuration.md | docs/reference/cli.md)
       select_contexts go
       known=1
@@ -380,10 +387,10 @@ classify() {
       ;;
   esac
   case "$path" in
-    # tofu:env-check reads the configuration reference and names the guide, and tofu-workers-check.sh keeps the lists of
+    # tofu:env-check reads the configuration reference and names the two guides, and tofu-workers-check.sh keeps the lists of
     # modules/workers in step with the server's job types and the table of what stays together. A change to the
     # configuration schema changes the reference and the settings list (under deploy/opentofu), so tofu:coverage runs.
-    scripts/tofu-* | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md | internal/platform/job_types.go | docs/operations/running.md)
+    scripts/tofu-* | docs/reference/configuration.md | docs/operations/deploy-cloud-run.md | docs/operations/billing-import.md | internal/platform/job_types.go | docs/operations/running.md)
       select_contexts tofu
       known=1
       ;;

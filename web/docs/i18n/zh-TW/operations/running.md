@@ -107,7 +107,7 @@ cp example.env .env
 
 **內附的 Garage**。搭配 `COMPOSE_PROFILES=garage` 的 `compose.s3.yaml` 需要 `example.env` 開頭所列的值。一次性的服務 `garage-init` 會在每次 `up` 時準備儲存空間。它只在 Compose 網路內部運作，因為媒體由伺服器自己提供。一個節點就是一顆硬碟：請備份磁碟區 `garage` 或儲存貯體（[備份](backup.md#media-in-a-bucket)）。
 
-<!-- source: get-the-image 5a210413433f -->
+<!-- source: get-the-image 89a97ed4f1d2 -->
 ## 取得映像檔
 
 伺服器映像檔是 `ghcr.io/mycroblog/my`，公開提供，支援 `linux/amd64` 和 `linux/arm64`，並包含所有轉接器。
@@ -133,7 +133,6 @@ ghcr.io/mycroblog/my:0.1.0@sha256:...
 - **Kubernetes**：直接從 `ghcr.io` 拉取。
 - **Cloud Run**：直接使用 `ghcr.io` 的映像檔。部署時會把標籤解析為摘要值。
 - **AWS（ECS、EKS）**：把映像檔複製到 Amazon ECR，或使用 ECR 提取快取（需要 ghcr.io 的憑證）。
-- **較小的映像檔**：在簽出的原始碼中執行 `docker build --build-arg VERSION=<name> --build-arg GO_TAGS=... -t my:<name> .`，可以建置包含較少轉接器的映像檔（[建置標籤](../reference/build-tags.md)）。這是你自己的建置，所以不在下列驗證的範圍內。
 
 <!-- source: verify-an-image 76b9a1293edb -->
 ### 驗證映像檔

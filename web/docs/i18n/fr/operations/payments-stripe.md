@@ -127,7 +127,7 @@ L’état du prestataire (le mode, la date d’arrivée du dernier webhook, et l
 Il liste aussi `duplicate_charge` : une deuxième souscription n’est pas encore annulée ni remboursée. Voir [Exploitation](#7-operation).
 « Rapprocher maintenant » dans la section (`POST /api/v1/admin/payment_reconciliation/runs`) rapproche immédiatement au lieu d’attendre l’exécution planifiée. Il est limité à une fois par heure UTC (un deuxième appel dans la même heure renvoie `429`), et le journal d’audit enregistre `payment_reconcile_queued`.
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. Configurer le serveur
 
 ```sh
@@ -139,7 +139,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` vérifie la configuration. Un binaire compilé avec le build tag `no_payments_stripe` refuse `payments = stripe` (consultez [build-tags.md](../reference/build-tags.md)).
+`my config check` vérifie la configuration.
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. Essayer en mode test

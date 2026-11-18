@@ -91,5 +91,3 @@ Amazon Translate 的服务商 ID 是 `aws`。与其他 AWS 服务一样，服务
 Amazon Translate 按发送的字符收费，前 12 个月有免费套餐（[价格](https://aws.amazon.com/translate/pricing/)）。服务器只发送帖子中的文字：提及、话题标签、链接和代码留在服务器上，每一项都以 HTML 标记中的简短占位符代替。请把 `translation_user_monthly_characters` 和 `translation_server_monthly_characters` 的每月限额控制在你愿意支付的范围内。
 
 **除非账号受 AWS Organizations 的 [AI 服务退出策略](https://docs.aws.amazon.com/organizations/latest/userguide/orgs_manage_policies_ai-opt-out.html) 约束，否则 Amazon 可能会存储文本并用于改进其服务，且可能在其他区域进行。** 没有退出时，对于这些文本，Amazon 就不仅仅是你的服务提供方：请在隐私政策中说明这一点（[隐私政策模板](privacy-policy-template.md#the-services-you-choose)），并且不要在 `translation_provider_visibilities` 中为 `aws` 允许 `private` 或 `direct`。默认情况下，该服务商只会收到 `public`、`local` 和 `unlisted` 帖子。
-
-使用构建标签 `no_translator_aws` 构建的服务器没有该服务商，并且在设置了 `translator_aws_region` 时会拒绝启动（参见[构建标签](../reference/build-tags.md)）。

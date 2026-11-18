@@ -61,7 +61,7 @@ func runOf(id int, workflow, name, conclusion string, job int) check {
 }
 
 func TestSummarize(t *testing.T) {
-	gate := run("CI", "check", "SUCCESS", 99)
+	gate := run("CI", "gate", "SUCCESS", 99)
 	cases := []struct {
 		name        string
 		cs          []check
@@ -71,65 +71,65 @@ func TestSummarize(t *testing.T) {
 	}{
 		{"no checks", nil, "none", nil, false},
 		{"cancelled run replaced by a passing one", []check{
-			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "SUCCESS", 20), gate,
+			run("CI", "server-lint", "CANCELLED", 10), run("CI", "server-lint", "SUCCESS", 20), gate,
 		}, "passed", nil, false},
 		{"newer run listed first", []check{
-			run("CI", "lint", "SUCCESS", 20), run("CI", "lint", "CANCELLED", 10), gate,
+			run("CI", "server-lint", "SUCCESS", 20), run("CI", "server-lint", "CANCELLED", 10), gate,
 		}, "passed", nil, false},
 		{"cancelled run replaced by a running one", []check{
-			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "", 20),
+			run("CI", "server-lint", "CANCELLED", 10), run("CI", "server-lint", "", 20),
 		}, "pending", nil, true},
 		{"failure of the newer run", []check{
-			run("CI", "lint", "CANCELLED", 10), run("CI", "lint", "FAILURE", 20), run("CI", "test", "SUCCESS", 21),
-		}, "failed", []string{"lint"}, false},
+			run("CI", "server-lint", "CANCELLED", 10), run("CI", "server-lint", "FAILURE", 20), run("CI", "server-test", "SUCCESS", 21),
+		}, "failed", []string{"server-lint"}, false},
 		{"failure of an older run replaced by a pass", []check{
-			run("CI", "lint", "FAILURE", 10), run("CI", "lint", "SUCCESS", 20), gate,
+			run("CI", "server-lint", "FAILURE", 10), run("CI", "server-lint", "SUCCESS", 20), gate,
 		}, "passed", nil, false},
 		{"only cancelled checks left", []check{
-			run("CI", "test", "CANCELLED", 11), run("CI", "lint", "CANCELLED", 10),
-		}, "cancelled", []string{"lint", "test"}, false},
+			run("CI", "server-test", "CANCELLED", 11), run("CI", "server-lint", "CANCELLED", 10),
+		}, "cancelled", []string{"server-lint", "server-test"}, false},
 		{"same name in two workflows", []check{
-			run("CI", "check", "SUCCESS", 20), run("Nightly", "check", "FAILURE", 10),
-		}, "failed", []string{"check"}, false},
+			run("CI", "gate", "SUCCESS", 20), run("Nightly", "gate", "FAILURE", 10),
+		}, "failed", []string{"gate"}, false},
 		{"status context", []check{
 			{Typename: "StatusContext", Context: "ci/legacy", State: "SUCCESS"}, gate,
 		}, "passed", nil, false},
 		{"other checks passed, the gate has not reported", []check{
-			run("CI", "lint", "SUCCESS", 20), run("CI", "test", "SUCCESS", 21),
+			run("CI", "server-lint", "SUCCESS", 20), run("CI", "server-test", "SUCCESS", 21),
 		}, "pending", nil, true},
 		{"only a status context passed", []check{
 			{Typename: "StatusContext", Context: "ci/legacy", State: "SUCCESS"},
 		}, "pending", nil, true},
-		{"a check of another workflow named check is not the gate", []check{
-			run("Nightly", "check", "SUCCESS", 20), run("CI", "lint", "SUCCESS", 21),
+		{"a check of another workflow named gate is not the gate", []check{
+			run("Nightly", "gate", "SUCCESS", 20), run("CI", "server-lint", "SUCCESS", 21),
 		}, "pending", nil, true},
 		{"the gate is running", []check{
-			run("CI", "lint", "SUCCESS", 20), run("CI", "check", "", 22),
+			run("CI", "server-lint", "SUCCESS", 20), run("CI", "gate", "", 22),
 		}, "pending", nil, true},
 		{"the gate passed", []check{
-			run("CI", "lint", "SUCCESS", 20), run("CI", "check", "SUCCESS", 22),
+			run("CI", "server-lint", "SUCCESS", 20), run("CI", "gate", "SUCCESS", 22),
 		}, "passed", nil, false},
 		// A label starts a second run of CI on the same head; its concurrency group cancels the first, whose
 		// gate fails while the newer run has not reached its gate yet (#2383).
 		{"failed gate of a cancelled run, the newer run is running", []check{
-			runOf(100, "CI", "changes", "SUCCESS", 10), runOf(100, "CI", "lint", "CANCELLED", 11),
-			runOf(100, "CI", "client-test", "SKIPPED", 12), runOf(100, "CI", "check", "FAILURE", 30),
-			runOf(200, "CI", "changes", "SUCCESS", 20), runOf(200, "CI", "lint", "", 21),
+			runOf(100, "CI", "select", "SUCCESS", 10), runOf(100, "CI", "server-lint", "CANCELLED", 11),
+			runOf(100, "CI", "web-test", "SKIPPED", 12), runOf(100, "CI", "gate", "FAILURE", 30),
+			runOf(200, "CI", "select", "SUCCESS", 20), runOf(200, "CI", "server-lint", "", 21),
 			runOf(9, "UI preview", "build", "SUCCESS", 5),
 		}, "pending", nil, true},
 		{"failed gate of a cancelled run, the newer run passed", []check{
-			runOf(100, "CI", "lint", "CANCELLED", 11), runOf(100, "CI", "client-test", "SKIPPED", 12),
-			runOf(100, "CI", "check", "FAILURE", 30),
-			runOf(200, "CI", "lint", "SUCCESS", 21), runOf(200, "CI", "client-test (1/2)", "SUCCESS", 22),
-			runOf(200, "CI", "check", "SUCCESS", 40),
+			runOf(100, "CI", "server-lint", "CANCELLED", 11), runOf(100, "CI", "web-test", "SKIPPED", 12),
+			runOf(100, "CI", "gate", "FAILURE", 30),
+			runOf(200, "CI", "server-lint", "SUCCESS", 21), runOf(200, "CI", "web-test (app)", "SUCCESS", 22),
+			runOf(200, "CI", "gate", "SUCCESS", 40),
 		}, "passed", nil, false},
 		{"failure of the newest run after a cancelled one", []check{
-			runOf(100, "CI", "lint", "CANCELLED", 11), runOf(100, "CI", "check", "FAILURE", 30),
-			runOf(200, "CI", "lint", "FAILURE", 21), runOf(200, "CI", "test", "", 22),
-		}, "failed", []string{"lint"}, true},
+			runOf(100, "CI", "server-lint", "CANCELLED", 11), runOf(100, "CI", "gate", "FAILURE", 30),
+			runOf(200, "CI", "server-lint", "FAILURE", 21), runOf(200, "CI", "server-test", "", 22),
+		}, "failed", []string{"server-lint"}, true},
 		{"rerun of a failed job in the newest run", []check{
-			runOf(200, "CI", "lint", "FAILURE", 21), runOf(200, "CI", "check", "FAILURE", 23),
-			runOf(200, "CI", "lint", "SUCCESS", 31), runOf(200, "CI", "check", "SUCCESS", 33),
+			runOf(200, "CI", "server-lint", "FAILURE", 21), runOf(200, "CI", "gate", "FAILURE", 23),
+			runOf(200, "CI", "server-lint", "SUCCESS", 31), runOf(200, "CI", "gate", "SUCCESS", 33),
 		}, "passed", nil, false},
 	}
 	for _, c := range cases {

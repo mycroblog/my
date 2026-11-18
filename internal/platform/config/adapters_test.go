@@ -33,9 +33,9 @@ func TestLoadRejectsExcludedAdapters(t *testing.T) {
 		got = append(got, is.String())
 	}
 	for _, want := range []string{
-		`database (MY_DATABASE): "postgres" is not in this build: the build tag no_postgres left its adapter out (https://mycroblog.dev/next/reference/build-tags/)`,
-		`stream (MY_STREAM): "postgres" is not in this build: the build tag no_postgres left its adapter out (https://mycroblog.dev/next/reference/build-tags/)`,
-		`billing_sources (MY_BILLING_SOURCES): "gcp" is not in this build: the build tag no_billing_gcp left its adapter out (https://mycroblog.dev/next/reference/build-tags/)`,
+		`database (MY_DATABASE): "postgres" is not in this build: the build tag no_postgres left its adapter out`,
+		`stream (MY_STREAM): "postgres" is not in this build: the build tag no_postgres left its adapter out`,
+		`billing_sources (MY_BILLING_SOURCES): "gcp" is not in this build: the build tag no_billing_gcp left its adapter out`,
 	} {
 		if !slices.Contains(got, want) {
 			t.Errorf("issues = %q, want %q among them", got, want)
@@ -43,7 +43,7 @@ func TestLoadRejectsExcludedAdapters(t *testing.T) {
 	}
 
 	_, _, err = Load(source(with(minimal(), "MY_BILLING_SOURCES", "aws"), nil))
-	want := `billing_sources (MY_BILLING_SOURCES): "aws" is not in this build: the build tag no_billing_aws left its adapter out (https://mycroblog.dev/next/reference/build-tags/)`
+	want := `billing_sources (MY_BILLING_SOURCES): "aws" is not in this build: the build tag no_billing_aws left its adapter out`
 	if !errors.As(err, &ve) || len(ve.Issues) != 1 || ve.Issues[0].String() != want {
 		t.Errorf("Load() with billing_sources = aws: %v, want %q", err, want)
 	}
@@ -51,7 +51,7 @@ func TestLoadRejectsExcludedAdapters(t *testing.T) {
 
 func TestExcludedError(t *testing.T) {
 	got := ExcludedError("kv", "valkey", "no_valkey").Error()
-	want := `kv = "valkey" is not in this build: the build tag no_valkey left its adapter out (https://mycroblog.dev/next/reference/build-tags/)`
+	want := `kv = "valkey" is not in this build: the build tag no_valkey left its adapter out`
 	if got != want {
 		t.Errorf("ExcludedError() = %q, want %q", got, want)
 	}

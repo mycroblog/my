@@ -108,7 +108,7 @@ PAY.JP の Webhook は、アカウントの **origin token**（`whook_...`、ヘ
 PAY.JP が通知を再送するのは 3 分ごとに最大 3 回だけで、それを過ぎた通知はダッシュボードから再送するまで届きません。受け取り損ねたものは照合が補うので、**`payments_reconcile_interval` を 1 時間にすることをおすすめします**。
 プロバイダーの状態（モード、最後に Webhook が届いた時刻、最後の照合の結果）は、管理画面の `/admin/supporters` にある「決済の事業者」の欄に表示されます。
 
-<!-- source: 4-configure-the-server b0d24c7a2da0 -->
+<!-- source: 4-configure-the-server 5f0d4e9b413b -->
 ## 4. サーバーを設定する
 
 ```sh
@@ -121,7 +121,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` で設定を確認できます。ビルドタグ `no_payments_payjp` を付けてビルドしたバイナリは `payments = payjp` を拒否します（[build-tags.md](../reference/build-tags.md) を参照してください）。
+`my config check` で設定を確認できます。
 
 <!-- source: 5-try-it-in-test-mode f6ebbada0e0e -->
 ## 5. テストモードで試す

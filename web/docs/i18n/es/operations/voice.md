@@ -5,7 +5,7 @@ El chat de voz permite a los usuarios con la sesión iniciada abrir una sala, in
 Esta guía explica esa elección, los servidores STUN y TURN o el servidor multimedia que necesita cada opción, y lo que conviene saber sobre el despliegue, la privacidad y la moderación.
 Toda la configuración que se nombra aquí se describe en la [referencia de configuración](../reference/configuration.md#voice).
 
-<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
+<!-- source: choose-how-the-audio-travels 1fe795fb2216 -->
 ## Elegir cómo viaja el audio
 
 `voice` elige un método para toda la instancia; todas las salas lo usan.
@@ -42,7 +42,6 @@ Notas sobre la elección:
 - Con `p2p` el audio nunca pasa por este servidor (pasa por el servidor TURN cuando se usa uno). La carga del servidor son solo los mensajes de la sala, los latidos y los flujos.
 - Una instancia pequeña se sirve mejor con `p2p`, o con el plan gratuito Build de LiveKit Cloud (consulta [LiveKit Cloud](#livekit-cloud)).
 - Con `livekit` o `sora`, la configuración de STUN y TURN y la política de ICE de más abajo no se usan (el servidor avisa al arrancar si los defines), porque el servidor multimedia aporta sus propios servidores. Las direcciones IP de los participantes solo las ve entonces el servidor multimedia, no los demás participantes.
-- Las etiquetas de compilación `no_voice_livekit` y `no_voice_sora` dejan fuera de un binario los dos métodos con servidor multimedia ([etiquetas de compilación](../reference/build-tags.md)).
 - Sirve la instancia por HTTPS: los navegadores permiten el acceso al micrófono solo en páginas seguras.
 
 Los límites mantienen acotado el costo de un servidor multimedia de pago. `0` quita cualquiera de ellos salvo el último:

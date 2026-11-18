@@ -127,7 +127,7 @@ El estado del proveedor (el modo, cuándo llegó el último webhook, y el result
 También lista `duplicate_charge`: una segunda suscripción aún no se ha cancelado y reembolsado. Consulta [Operación](#7-operation).
 «Conciliar ahora» en la sección (`POST /api/v1/admin/payment_reconciliation/runs`) concilia de inmediato en lugar de esperar a la ejecución programada. Está limitado a una vez por hora UTC (una segunda llamada en la misma hora devuelve `429`), y el registro de auditoría guarda `payment_reconcile_queued`.
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. Configurar el servidor
 
 ```sh
@@ -139,7 +139,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` verifica la configuración. Un binario compilado con la etiqueta de compilación `no_payments_stripe` rechaza `payments = stripe` (consulta [build-tags.md](../reference/build-tags.md)).
+`my config check` verifica la configuración.
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. Probar en modo de prueba

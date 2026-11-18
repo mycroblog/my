@@ -577,7 +577,7 @@ case "$1 $2" in
     esac ;;
   "pr merge") ;;
   "run list") echo '[{"databaseId":7,"headBranch":"gh-readonly-queue/main/pr-21-abc","conclusion":"failure"},{"databaseId":8,"headBranch":"gh-readonly-queue/main/pr-20-abc","conclusion":"failure"}]' ;;
-  "run view") echo '{"jobs":[{"databaseId":81,"name":"server-test","conclusion":"failure"},{"databaseId":82,"name":"check","conclusion":"failure"}]}' ;;
+  "run view") echo '{"jobs":[{"databaseId":81,"name":"server-test","conclusion":"failure"},{"databaseId":82,"name":"gate","conclusion":"failure"}]}' ;;
   "api graphql")
     case "$*" in
       *mergeQueueEntry*)
@@ -748,7 +748,7 @@ func TestLandClosesFinishedMilestone(t *testing.T) {
 }
 
 func TestLandFailures(t *testing.T) {
-	failed := `{"__typename":"CheckRun","name":"preflight","workflowName":"CI","status":"COMPLETED","conclusion":"FAILURE","detailsUrl":"https://github.com/o/r/actions/runs/1/job/81"}`
+	failed := `{"__typename":"CheckRun","name":"docs-lint","workflowName":"CI","status":"COMPLETED","conclusion":"FAILURE","detailsUrl":"https://github.com/o/r/actions/runs/1/job/81"}`
 	cases := []struct {
 		name  string
 		setup func(state, head string)
@@ -760,12 +760,12 @@ func TestLandFailures(t *testing.T) {
 		}, LandConflict, []string{"PR #20 conflicts with its base", "fix: in the branch's worktree: git fetch origin && git merge origin/main"}},
 		{"ci failed", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
-		}, 1, []string{"PR #20: CI failed: preflight\n", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
+		}, 1, []string{"PR #20: CI failed: docs-lint\n", "--- FAIL: TestThing", "fix: repair it in the branch's worktree"}},
 		{"ci failed before any test ran", func(state, head string) {
 			write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", head, failed, true))
 			write(t, filepath.Join(state, "job81"), fixture(t, "job-apt-unresolved-1.txt"))
 		}, 1, []string{
-			"PR #20: CI failed: preflight; failed before any test ran: the runner could not reach azure.archive.ubuntu.com (rerun: gh run rerun 1 --failed)\n",
+			"PR #20: CI failed: docs-lint; failed before any test ran: the runner could not reach azure.archive.ubuntu.com (rerun: gh run rerun 1 --failed)\n",
 			"E: Unable to locate package unzip", "fix: gh run rerun 1 --failed; then run pr land again",
 		}},
 		{"dropped by the queue", func(state, head string) {

@@ -34,7 +34,7 @@ TypeScript は `bun fmt` で整形する。依存は Dependabot で検知し更�
 - ルートの木（`routeTree.gen.ts`）は、Vite を通さず `@tanstack/router-generator`（MIT）の `Generator` と `getConfig` を直接呼んで作る。
   `vite.config.ts` と同じ設定（`target: "react"`、`autoCodeSplitting: true`）で回すと、200 ms で、コミットしていたファイルとバイト単位で同じものができた（1.167.40、2026-10-23）。版を固定して直接の依存にする。
 - エディタの型検査のために、`task generate` を一度回す手順を CONTRIBUTING.md に書く。開発の起動も生成を `deps` に持つ。
-- コミットする生成物の鮮度は、Merge Queue の `server-static`（ADR-0079）で検査する。2 つの PR の入力を重ねると古くなりうるからである。
+- コミットする生成物の鮮度は、Merge Queue（ADR-0079）で検査する。2 つの PR の入力を重ねると古くなりうるからである。
 
 ### 2. 疑似ロケール
 
@@ -67,7 +67,7 @@ Go が整形するのは `client` 以外の名前空間だけである（Go の�
 ```text
 Taskfile.yml              ルート。includes と check・check:changed・generate だけを書く
 tasks/
-  go.yml                  go:vet・go:lint・go:test・go:build・go:build-tags・go:licenses・go:mod・go:sqlc
+  go.yml                  go:vet・go:lint・go:test・go:build・go:fakes-check・go:licenses・go:mod・go:sqlc
   web.yml                 web:*（install・build・licenses・fmt）
   i18n.yml / api.yml      i18n:*・api:*（生成は sources / generates を宣言する）
   db.yml / docker.yml / docs.yml / agentkit.yml
@@ -130,7 +130,7 @@ TypeScript と JavaScript のコードは `bun fmt` で整形し、CI で検査�
   - `sortImports`・`sortTailwindcss`・`sortPackageJson`・`jsdoc` は使わない（既定で切れている）。import の順と Tailwind のクラスは Oxlint と `better-tailwindcss` が受け持つ。
 - 範囲も `[fmt]` の `ignorePatterns` に置き、範囲の外と生成物（`*.gen.*`）を外す（`.gitignore` のファイルも読まない）。根で引数なしの `bun fmt` は `web:fmt` と同じ。
 - タスクは `web:fmt`（書き込む）と `web:fmt-check`（`bun fmt --check`。整形が要るファイルがあると失敗する）で、範囲の全部を一度に扱う。
-  `web:check`・`i18n:check`・`mykit:check`・`site:check` が `web:fmt-check` を持つので、`check:changed` はどのパッケージを変えても検査する。CI では、Pull Request の preflight と、Merge Queue の `repo` ジョブで動かす（ADR-0079）。
+  `web:check`・`i18n:check`・`mykit:check`・`site:check` が `web:fmt-check` を持つので、`check:changed` はどのパッケージを変えても検査する。CI では、Pull Request の `ts-format` ジョブで動かす（ADR-0079）。
 - TypeScript を変えたら、コミットの前に `scripts/task.sh web:fmt` を回す。整形したファイルの衝突は、解いたあとで `web:fmt` を回し直す。
 - 一度の整形は整形だけのコミットにし、根の `.git-blame-ignore-revs` に挙げる。
 
@@ -143,7 +143,7 @@ NFR-SEC-8 の依存関係の既知の脆弱性の検知は、Dependabot で行�
   ecosystem は `gomod`（`/`・`/tools`。§11）、`bun`（`/`。Dependabot は text 形式の `bun.lock` に対応する）、`github-actions`、`docker`（`/` の `Dockerfile` と `/pkg/mybot/examples`）。
 - **cooldown**: すべての ecosystem で `cooldown.default-days: 3` を設定し、公開から 3 日未満の版への更新 PR を作らない。公開から 3 日未満の版を入れない決まり（`bunfig.toml` の `minimumReleaseAge`）と揃える。
   cooldown は版更新だけに効き、脆弱性を直す security update には効かない。
-- Dependabot の PR も通常の PR と同じく CI の `check` を通してから人間がマージする。
+- Dependabot の PR も通常の PR と同じく CI の `gate` を通してから人間がマージする。
   `Dockerfile` の Go・Node.js・Bun のタグは `.tool-versions` と一致させる必要がある（`docker:dockerfile-check`）ので、タグの版は `ignore` にして手で上げ、Dependabot は `FROM` の digest だけを上げる。
 
 ### 11. Go の更新と go.work

@@ -107,7 +107,7 @@ PAY.JP 的 Webhook 以帳號的**來源權杖**（`whook_...`，在標頭 `X-Pay
 PAY.JP 只會每 3 分鐘重送一次通知，最多 3 次，超過之後的通知，在你從儀表板重送之前不會送達。對帳會修補漏接的部分，所以**建議將 `payments_reconcile_interval` 設為 1 小時**。
 服務提供者的狀態（模式、上次收到 Webhook 的時間，以及上次對帳的結果）會顯示在管理介面 `/admin/supporters` 的「付款服務提供者」區段。
 
-<!-- source: 4-configure-the-server b0d24c7a2da0 -->
+<!-- source: 4-configure-the-server 5f0d4e9b413b -->
 ## 4. 設定伺服器
 
 ```sh
@@ -120,7 +120,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=1h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` 會驗證設定。以建置標籤 `no_payments_payjp` 建置的二進位檔會拒絕 `payments = payjp`（請參閱 [build-tags.md](../reference/build-tags.md)）。
+`my config check` 會驗證設定。
 
 <!-- source: 5-try-it-in-test-mode f6ebbada0e0e -->
 ## 5. 在測試模式下試用

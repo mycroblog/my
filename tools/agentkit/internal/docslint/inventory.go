@@ -5,7 +5,6 @@ package docslint
 import (
 	"fmt"
 	"go/ast"
-	"go/build/constraint"
 	"go/parser"
 	"go/token"
 	"os"
@@ -57,11 +56,6 @@ var inventories = []inventory{
 		name: "webhook-events", what: "the webhook event type",
 		docs:    []string{"docs/reference/webhooks.md"},
 		collect: webhookEvents, mentions: codeSpanMentions,
-	},
-	{
-		name: "build-tags", what: "the build tag",
-		docs:    []string{"docs/reference/build-tags.md"},
-		collect: buildTags, mentions: codeSpanMentions,
 	},
 	{
 		name: "job-types", what: "the job type",
@@ -507,62 +501,6 @@ func codeSpanMentions(docs []string) func(string) bool {
 		set[strings.TrimSpace(m[1])] = true
 	}
 	return func(name string) bool { return set[name] }
-}
-
-// --- build tags ----------------------------------------------------------------------------------------------
-
-// buildTags returns the tags that leave a part out of the server: the `no_*` tags of the `//go:build` lines of
-// the server module's Go files (not of the modules of their own, such as tools/agentkit and pkg/mykit).
-func buildTags(root string, files []string) ([]Item, error) {
-	var modules []string
-	for _, f := range files {
-		if path.Base(f) == "go.mod" && f != "go.mod" {
-			modules = append(modules, path.Dir(f)+"/")
-		}
-	}
-	found := map[string]string{}
-	for _, f := range files {
-		if !strings.HasSuffix(f, ".go") || hasAnyPrefix(f, modules) {
-			continue
-		}
-		src, err := os.ReadFile(filepath.Join(root, f))
-		if err != nil {
-			return nil, err
-		}
-		for i, l := range strings.Split(string(src), "\n") {
-			l = strings.TrimSpace(l)
-			if strings.HasPrefix(l, "package ") {
-				break
-			}
-			if !constraint.IsGoBuild(l) {
-				continue
-			}
-			expr, err := constraint.Parse(l)
-			if err != nil {
-				return nil, fmt.Errorf("%s:%d: %w", f, i+1, err)
-			}
-			expr.Eval(func(tag string) bool {
-				if _, ok := found[tag]; !ok && strings.HasPrefix(tag, "no_") {
-					found[tag] = fmt.Sprintf("%s:%d", f, i+1)
-				}
-				return true
-			})
-		}
-	}
-	out := make([]Item, 0, len(found))
-	for _, tag := range sortedKeys(found) {
-		out = append(out, Item{tag, found[tag]})
-	}
-	return out, nil
-}
-
-func hasAnyPrefix(s string, prefixes []string) bool {
-	for _, p := range prefixes {
-		if strings.HasPrefix(s, p) {
-			return true
-		}
-	}
-	return false
 }
 
 // --- tasks ---------------------------------------------------------------------------------------------------

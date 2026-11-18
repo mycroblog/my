@@ -40,7 +40,6 @@ Notes on the choice:
 - With `p2p` the audio never passes through this server (it passes through the TURN server when one is used). The server's load is only the room messages, heartbeats and streams.
 - A small instance is best served by `p2p`, or by the free Build plan of LiveKit Cloud (see [LiveKit Cloud](#livekit-cloud)).
 - With `livekit` or `sora`, the STUN and TURN settings and the ICE policy below are not used (the server warns at start if you set them), because the media server brings its own servers. Participants' IP addresses are then visible only to the media server, not to the other participants.
-- The build tags `no_voice_livekit` and `no_voice_sora` leave the two media-server methods out of a binary ([build tags](../reference/build-tags.md)).
 - Serve the instance over HTTPS: browsers allow microphone access only on secure pages.
 
 The limits keep the cost of a paid media server bounded. `0` removes any of them except the last:

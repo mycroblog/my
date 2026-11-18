@@ -114,7 +114,7 @@ my kek rewrap   # re-wrap every secret that a key of kek_previous wraps with kek
   (el mensaje nombra el ID de clave: añade esa KEK a `kek_previous` y ejecútalo de nuevo), o bien el valor guardado está dañado o se copió de otra fila.
   No quites una KEK de `kek_previous` mientras `my kek status` siga contando secretos bajo ella.
 
-<!-- source: google-cloud-kms 1c47dd463234 -->
+<!-- source: google-cloud-kms 46a4c691c58f -->
 ## Google Cloud KMS
 
 Con `key_manager = gcpkms`, una clave simétrica de Cloud KMS (una CryptoKey con el propósito `ENCRYPT_DECRYPT`) envuelve las claves de cifrado de datos, y la KEK nunca sale de Cloud KMS.
@@ -128,7 +128,6 @@ Un volcado filtrado de la base de datos junto con una configuración filtrada si
   Sin él, leer un secreto falla con un error que nombra el rol; una versión de clave ausente o desactivada falla igualmente, y esos errores no se reintentan hasta que se corrija la configuración.
   Un error de cuota o un Cloud KMS no disponible es temporal, y el trabajo que necesitaba el secreto se reintenta.
 - El servidor conserva durante `kms_dek_cache_ttl` (por defecto `10m`) una clave de cifrado de datos que Cloud KMS descifró, de modo que la mayoría de las lecturas de un secreto no llaman a Cloud KMS.
-- La etiqueta de compilación `no_gcpkms` deja el adaptador fuera del binario ([Etiquetas de compilación](../reference/build-tags.md)).
 
 <!-- source: rotate-the-key-in-cloud-kms ba58f052af2a -->
 ### Rotar la clave en Cloud KMS
@@ -144,7 +143,7 @@ Cloud KMS no indica qué secretos envolvió una versión, así que, para retirar
 3. Ejecuta `my kek rewrap`, con la misma configuración. Cuando `my kek status` ya no cuente secretos bajo el ID de la clave antigua, quita `kms_key_previous` y reinicia.
 4. Solo entonces desactiva las versiones de la clave antigua, y mantenlas recuperables mientras conserves copias de seguridad de la base de datos hechas antes del paso 3: restaurar una de ellas las necesita de nuevo.
 
-<!-- source: aws-kms f97406d91b4c -->
+<!-- source: aws-kms b74cad9cc18f -->
 ## AWS KMS
 
 Con `key_manager = awskms`, una clave simétrica de AWS KMS (especificación de clave `SYMMETRIC_DEFAULT`, uso de clave `ENCRYPT_DECRYPT`, administrada por el cliente) envuelve las claves de cifrado de datos, y la KEK nunca sale de AWS KMS.
@@ -173,7 +172,6 @@ Un volcado filtrado de la base de datos junto con una configuración filtrada si
 - Costo: AWS cobra una tarifa mensual por cada clave administrada por el cliente (1 USD en el momento de escribir esto, más lo mismo por cada una de las dos primeras rotaciones de su material de clave) y una tarifa por solicitud por encima de un nivel gratuito mensual
   (consulta los [precios de AWS KMS](https://aws.amazon.com/kms/pricing/)). El servidor conserva durante `kms_dek_cache_ttl` (por defecto `10m`) una clave de cifrado de datos que AWS KMS descifró,
   de modo que un servidor con diez actores que entregan todo el tiempo hace unas 43 000 solicitudes al mes por proceso, unos pocos céntimos por encima del nivel gratuito.
-- La etiqueta de compilación `no_awskms` deja el adaptador fuera del binario ([Etiquetas de compilación](../reference/build-tags.md)).
 
 <!-- source: retire-an-aws-kms-key b670091ad7f1 -->
 ### Retirar una clave de AWS KMS
@@ -187,7 +185,7 @@ Para dejar de usar una clave, o para apuntar un alias a otra clave, traslada pri
 3. Ejecuta `my kek rewrap`, con la misma configuración. Cuando `my kek status` ya no cuente secretos bajo el ID de la clave antigua, quita `kms_key_previous` y reinicia.
 4. Solo entonces desactiva la clave antigua, y consérvala mientras conserves copias de seguridad de la base de datos hechas antes del paso 3: restaurar una de ellas la necesita de nuevo.
 
-<!-- source: a-plugin 43023e60bac9 -->
+<!-- source: a-plugin 336458ba764e -->
 ## Un plugin
 
 Con `key_manager = plugin`, un [plugin](plugins.md) tuyo guarda la KEK, en Vault, en un HSM o donde elija, y envuelve las claves de cifrado de datos para el servidor.
@@ -205,7 +203,6 @@ MY_PLUGIN_KEY_MANAGER_ADDRESS=unix:///run/my/key_manager.sock
 - El ID de clave de los secretos guardados es `plugin:` seguido del ID que da el plugin a su KEK, que es de 1 a 248 bytes de ASCII visible.
 - **Conserva todas las KEK que algún secreto guardado siga nombrando.** Una rotación en el plugin se muestra como un ID nuevo en el siguiente envoltorio. Los secretos envueltos antes siguen nombrando el ID antiguo, y el plugin debe poder abrirlos todavía. `my kek rewrap` los traslada al ID actual, y `my kek status` cuenta los que quedan.
 - Un plugin y un KMS nunca sirven a la vez: `kms_key` y `kms_key_previous` se rechazan con un plugin, y también `plugin_key_manager_address` con `key_manager = gcpkms` o `awskms`.
-- La etiqueta de compilación `no_plugins` deja el adaptador fuera del binario ([Etiquetas de compilación](../reference/build-tags.md)).
 
 <!-- source: when-the-server-starts 5faeda92e43b -->
 ### Cuando el servidor arranca

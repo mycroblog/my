@@ -2,7 +2,7 @@
 
 // Package fakeplugin is the plugin that the adapters and `my plugin test` are tested against (ADR-0146 §16), in two
 // forms: one built on the Connect library, and one of net/http and encoding/json alone, as a small plugin is written.
-// Only tests link it: scripts/go-build-tags.sh fails when cmd/my depends on it.
+// Only tests link it: scripts/go-fakes.sh fails when cmd/my depends on it.
 package fakeplugin
 
 import (

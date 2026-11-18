@@ -3,8 +3,8 @@
 # The task runner of the repository (ADR-0081). Run it with scripts/task.sh, never with a `task` on PATH;
 # `scripts/task.sh --list` lists the tasks. Each area keeps its tasks in tasks/<area>.yml under its own namespace:
 # a new area is a new file there and one line under `includes`. This file holds only the includes, the checks across
-# areas (check, check:changed), and the generators (generate). The CI jobs are workflow steps that each call one of the
-# area tasks (ADR-0079); scripts/ci-coverage.sh fails when a check of `check` runs in no step.
+# areas (check, check:changed), and the generators (generate). Each step of a CI job calls one of the area tasks
+# (ADR-0079 §11); scripts/ci-coverage.sh fails when a check of `check` runs in no step.
 #
 # Pass variables as arguments (`scripts/task.sh go:bin VERSION=v1.2.3`) or in the environment.
 version: "3"
@@ -19,8 +19,8 @@ vars:
   # npm dependencies of the Bun workspace must satisfy the same allowlist, plus the permissive BlueOak-1.0.0, which
   # sax, lru-cache, and common-ancestor-path use.
   NPM_ALLOWED_LICENSES: "{{.GO_ALLOWED_LICENSES}},BlueOak-1.0.0"
-  # Comma-separated build tags of go:bin and docker:build that leave adapters out of the server
-  # (docs/reference/build-tags.md); empty builds every adapter.
+  # Comma-separated Go build tags of go:bin and docker:build; empty builds every adapter. GO_TAGS=e2e_fakes makes the
+  # test build (CONTRIBUTING.md, "Build tags").
   GO_TAGS: '{{.GO_TAGS | default ""}}'
   # The contexts of `check` (scripts/changed-contexts.sh), each with a `<context>:check` task.
   CHECKS: '{{.CHECKS | default "docs go i18n api web docker agentkit mykit site"}}'
@@ -93,8 +93,8 @@ tasks:
 
   # The check of the site context. The tasks of the documentation site live in tasks/docs.yml (ADR-0150 §2), so the
   # context has no namespace of its own in which `check` could find a `site:check`.
-  # Its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge queue's repo job (bun fmt also in the
-  # preflight).
+  # Its tsc, Oxlint, knip, and bun fmt run here; CI runs them in the merge queue's jobs site-test and site-build, and bun fmt
+  # in the pull request's ts-format.
   site:check:
     desc: "Build the documentation site (web/docs) as the deploy combines it, which fails on a broken link or #anchor between its pages, on a page that does not render, or on a robots.txt, root sitemap, noindex, or page metadata that is missing or wrong, run its unit tests, and run tsc, Oxlint, and knip on it, the check of its translations, and the TS formatting (web:fmt-check)"
     deps: [docs:site-index-check, docs:site-typecheck, docs:site-test, docs:site-lint, docs:site-knip, docs:site-translations-check, web:fmt-check]

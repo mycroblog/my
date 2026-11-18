@@ -3,7 +3,7 @@
 
 語音聊天讓已登入的使用者開設聊天室、邀請其他人並交談。在你選擇音訊的傳輸方式之前，它都是關閉的。本指南說明這個選擇、每種方式所需的 STUN 和 TURN 伺服器或媒體伺服器，以及部署、隱私和審核方面需要知道的事。這裡提到的每個設定都說明於[設定參考](../reference/configuration.md#voice)中。
 
-<!-- source: choose-how-the-audio-travels 6aa60440d4e1 -->
+<!-- source: choose-how-the-audio-travels 1fe795fb2216 -->
 ## 選擇音訊的傳輸方式
 
 `voice` 為整個實例選擇一種方式；每個聊天室都使用它。
@@ -29,7 +29,6 @@
 - 使用 `p2p` 時，音訊從不經過這個伺服器（有使用 TURN 伺服器時，則會經過它）。伺服器的負載只有聊天室訊息、心跳和串流。
 - 小型實例最適合使用 `p2p`，或使用 LiveKit Cloud 免費的 Build 方案（請參閱 [LiveKit Cloud](#livekit-cloud)）。
 - 使用 `livekit` 或 `sora` 時，STUN 和 TURN 設定與下方的 ICE 政策都不會用到（如果你設定了，伺服器會在啟動時警告），因為媒體伺服器自備伺服器。這時參與者的 IP 位址只有媒體伺服器看得到，其他參與者看不到。
-- 建置標籤 `no_voice_livekit` 和 `no_voice_sora` 可以將這兩種媒體伺服器方式從二進位檔中排除（[建置標籤](../reference/build-tags.md)）。
 - 請以 HTTPS 提供實例：瀏覽器只允許在安全的頁面上使用麥克風。
 
 這些上限讓付費媒體伺服器的成本維持在可控範圍內。除了最後一項之外，`0` 都會移除該項上限：

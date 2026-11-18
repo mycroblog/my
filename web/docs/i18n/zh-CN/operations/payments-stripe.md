@@ -102,7 +102,7 @@ Stripe 还按账号分配读取请求：30 天内平均每笔交易 500 次，�
 
 支付服务商的状态（模式、最后一个 webhook 到达的时间，以及最后一次对账的结果和失败种类）显示在管理后台 `/admin/supporters` 的“支付服务商”部分，也可以通过管理 API `GET /api/v1/admin/payment_status`（权限 `manage_supporters`）查看。该部分会说明如何修复每种对账失败。`warnings` 会列出 `no_webhook`（从未记录过任何 webhook）和 `reconciliation_corrected`（最后一次对账修复了某个订阅）。出现其中任何一个时，都应怀疑 webhook 配置有误。它还会列出 `duplicate_charge`：第二个订阅尚未被取消和退款。参见[运营](#7-operation)。该部分中的“立即对账”（`POST /api/v1/admin/payment_reconciliation/runs`）会立即对账，而不必等待计划的运行。它每个 UTC 小时最多运行一次（同一小时内的第二次调用返回 `429`），审计日志会记录 `payment_reconcile_queued`。
 
-<!-- source: 4-configure-the-server 7b3f7d01839f -->
+<!-- source: 4-configure-the-server 5aec7d28d520 -->
 ## 4. 配置服务器
 
 ```sh
@@ -114,7 +114,7 @@ MY_PAYMENTS_RECONCILE_INTERVAL=6h
 MY_PAYMENTS_RECONCILE_MAX_REQUESTS=1000
 ```
 
-`my config check` 会验证配置。用构建标签 `no_payments_stripe` 构建的二进制文件会拒绝 `payments = stripe`（参见 [build-tags.md](../reference/build-tags.md)）。
+`my config check` 会验证配置。
 
 <!-- source: 5-try-it-in-test-mode 94db104964c3 -->
 ## 5. 在测试模式下试用

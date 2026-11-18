@@ -138,7 +138,7 @@ MY_ERRORS_SENTRY_DSN_FILE=/run/secrets/sentry_dsn   # or MY_ERRORS_SENTRY_DSN; t
 - **GlitchTip**: プロジェクトの DSN をコピーします。オープンソースで、小さなサーバーで動きます。新しい issue と再発した issue に対して、お使いのバージョンがどのアラートルールを提供しているか確認してください。
 - **Datadog Error Tracking**: お使いの Datadog サイトの Sentry DSN、`https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1` を使います。Datadog には `service` タグが必要ですが、サーバーは常にこれを設定します。Datadog はこれらのイベントをログとして保存し、Error Tracking でまとめます。代わりにエージェントやフォワーダーでログの行を Datadog に送る場合（Error Tracking for Logs）、スタックは `message` に入っています。ログパイプラインでこれを `error.stack` に割り当ててください。そうしないと Datadog はこれをスタックとして認識しません。`sentry` のエクスポーターには、このような割り当ては必要ありません。
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### OTLP のバックエンド
 
 ```sh
@@ -149,7 +149,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 各報告は `exception` という名前の OpenTelemetry のログレコードで、重大度 `ERROR`（プロセスを停止させるときは `FATAL`）、`exception.type`、`exception.message`、`exception.stacktrace`、`my.error.fingerprint`、`my.error.where`、`my.error.source`、`my.error.kind`、トレース ID とスパン ID を持ちます。メトリクスやトレースと同じリソースで、OTLP/HTTP（protobuf、gzip）で送られます。
 
-これらのレコードがまとめられたエラーになるかどうかはバックエンドによります。トレースのデータだけからエラーの画面を作るバックエンドもあり、Datadog には `error.stack` が必要です。Sentry、GlitchTip、Datadog には `sentry` を使ってください。ほかのログと並べてレコードを置きたいときに `otlp` を使います。ビルドタグ `no_otel` を付けると `otlp` は含まれません（[ビルドタグ](../reference/build-tags.md)）。
+これらのレコードがまとめられたエラーになるかどうかはバックエンドによります。トレースのデータだけからエラーの画面を作るバックエンドもあり、Datadog には `error.stack` が必要です。Sentry、GlitchTip、Datadog には `sentry` を使ってください。ほかのログと並べてレコードを置きたいときに `otlp` を使います。
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## スクラブが保証すること、しないこと

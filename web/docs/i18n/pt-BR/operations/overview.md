@@ -19,7 +19,7 @@ De cima para baixo no diagrama:
 - **As partes que você escolhe.** Cada parte no meio do diagrama tem uma configuração que escolhe o seu adaptador, listada na [próxima seção](#parts-you-choose-by-configuration).
 - **Serviços fora do servidor.** CAPTCHA, chat de voz, pagamentos, plugins e a importação de custos de nuvem ficam desligados até você configurá-los, e então o servidor chama o serviço que você indicar.
 
-<!-- source: parts-you-choose-by-configuration e6ed30fe127d -->
+<!-- source: parts-you-choose-by-configuration de382d807c25 -->
 ## Partes que você escolhe por configuração
 
 Cada parte é uma configuração da [referência de configuração](../reference/configuration.md), definida em um arquivo TOML
@@ -49,8 +49,7 @@ configuração muda.
 | Traces | [`traces_exporter`](../reference/configuration.md#traces_exporter) | `none`, `otlp` | [Traces](running.md#traces) |
 | Relatórios de erro | [`errors_exporter`](../reference/configuration.md#errors_exporter) | `none` (somente a linha de log e os grupos de erro), `sentry` (Sentry, GlitchTip, Datadog), `otlp` | [Relatórios de erro](error-reporting.md) |
 
-O binário publicado e a imagem de contêiner trazem todos os adaptadores da tabela. Um binário que você mesmo compila pode
-deixar de fora os que não usa, com [build tags](../reference/build-tags.md), e então recusa as configurações deles ao iniciar.
+O binário publicado e a imagem de contêiner trazem todos os adaptadores da tabela.
 
 `my config check` informa todos os problemas da configuração de uma vez, antes de você iniciar o servidor
 ([checklist de produção](production-checklist.md)).

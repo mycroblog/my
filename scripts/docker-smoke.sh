@@ -1,13 +1,17 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
-# Smoke test of deploy/docker/compose.yaml, the path an operator takes: build the server image with the override
-# compose.build.yaml and give it the published image's name, so that the plain compose.yaml starts it as it starts a
-# pulled one. Start the stack on an empty volume (my db upgrade -check, my schema apply, my db upgrade, then the server), wait for readiness, create an admin, check WebFinger, the Actor,
-# NodeInfo, the embedded brand assets and web client, and sign in as a web client does over plain HTTP on localhost
-# (README.md, "Quick start"). Then start the stack again on the same volume, as an upgrade does, and check that the
-# one-off services ran in order, that the server is ready with the data kept, and that a failing one-off service
-# keeps the server stopped (docs/operations/database.md, "Upgrading"). The settings come from a copy of example.env and
-# the KEK from a secret file, as for an operator; the check of the layers is `docker compose config` on each of them.
+# Smoke test of deploy/docker/compose.yaml, the path an operator takes: what only the image and the Compose files show
+# (ADR-0079 §4). The Go tests and the E2E tests own what the server does; this owns that the image builds and holds
+# what it must, and that the Compose files start it as an operator would. It builds the server image with the override
+# compose.build.yaml and gives it the published image's name, so that the plain compose.yaml starts it as it starts a
+# pulled one; starts the stack on an empty volume (my db upgrade -check, my schema apply, my db upgrade, then the
+# server) and waits for readiness; checks the order of the one-off services, that the env file and the KEK's secret
+# file reach the container, the version the image reports, the brand assets and the web client it embeds, and a
+# sign-in as a web client does over plain HTTP on localhost (README.md, "Quick start"). Then it starts the stack again
+# on the same volume, as an upgrade does, and checks that the one-off services ran in order, that the server is ready
+# with the data kept, and that a failing one-off service keeps the server stopped (docs/operations/database.md,
+# "Upgrading"). The settings come from a copy of example.env and the KEK from a secret file, as for an operator; the
+# check of the layers is `docker compose config` on each of them.
 # Prints the logs on failure and always removes the stack and its volume.
 # With SMOKE_PUBLISHED=<image tag> (0.1.0), it pulls that published image instead of building, to check a release.
 # Usage: scripts/docker-smoke.sh   (needs docker with compose, curl, jq, openssl)
@@ -154,25 +158,9 @@ if [[ "$out" == *MY_VERSION* || "$out" == *MY_HTTP_PORT* ]]; then fail "my confi
 
 printf 'smoke-test-password\n' | "${compose[@]}" exec -T my my admin create -username alice -email alice@example.com
 
-accept_ap='application/activity+json'
-webfinger="$(curl -fsS "$base/.well-known/webfinger?resource=acct:alice@$MY_HOST")"
-echo "$webfinger" | jq -e --arg subject "acct:alice@$MY_HOST" '.subject == $subject' >/dev/null ||
-	fail "WebFinger subject is not acct:alice@$MY_HOST: $webfinger"
-actor_id="$(echo "$webfinger" | jq -er '.links[] | select(.rel == "self" and .type == "application/activity+json") | .href')" ||
-	fail "WebFinger has no ActivityPub self link: $webfinger"
-[[ "$actor_id" == "https://$MY_HOST/ap/actors/"* ]] || fail "unexpected Actor id in WebFinger: $actor_id"
-
-# The id is https://{host}/...; fetch it from the published port over plain HTTP.
-actor="$(curl -fsS -H "Accept: $accept_ap" "$base${actor_id#"https://$MY_HOST"}")"
-echo "$actor" | jq -e --arg id "$actor_id" '
-	.id == $id and .type == "Person" and .preferredUsername == "alice"
-	and (.inbox | startswith($id)) and (.outbox | startswith($id))
-	and .publicKey.id == ($id + "#main-key") and .publicKey.owner == $id
-	and (.publicKey.publicKeyPem | startswith("-----BEGIN PUBLIC KEY-----"))
-' >/dev/null || fail "unexpected Actor: $actor"
-
+# The version the image was built with reaches what the server reports, and the instance has the account.
 nodeinfo="$(curl -fsS "$base/nodeinfo/2.1")"
-echo "$nodeinfo" | jq -e --arg v "$want_version" '.version == "2.1" and .software.version == $v and .usage.users.total == 1' >/dev/null ||
+echo "$nodeinfo" | jq -e --arg v "$want_version" '.software.version == $v and .usage.users.total == 1' >/dev/null ||
 	fail "unexpected NodeInfo: $nodeinfo"
 
 # The image embeds web/brand (ADR-0028): the Web App Manifest's icons are served.
@@ -207,8 +195,6 @@ api_origin="$(echo "$config" | jq -r '.apiOrigin')"
 access="$(web_sign_in "$api_origin" "$MY_WEB_ORIGIN" alice@example.com smoke-test-password)"
 me="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/accounts/verify_credentials")"
 echo "$me" | jq -e '.username == "alice"' >/dev/null || fail "unexpected verify_credentials: $me"
-home="$(curl -fsS -H "Authorization: Bearer $access" "$api_origin/api/v1/timelines/home")"
-echo "$home" | jq -e '.items | type == "array"' >/dev/null || fail "unexpected home timeline: $home"
 
 # Start again on the same volume, as an upgrade to a new image does: the one-off services run again in order on the
 # existing database, and the server comes back ready with the account kept.
@@ -216,9 +202,7 @@ echo "docker-smoke: starting again on the same volume" >&2
 "${compose[@]}" up -d --force-recreate
 wait_ready
 check_order "ok: the database matches the schema; nothing to apply"
-curl -fsS "$base/.well-known/webfinger?resource=acct:alice@$MY_HOST" | jq -e --arg subject "acct:alice@$MY_HOST" '.subject == $subject' >/dev/null ||
-	fail "the account is gone after the second start"
-curl -fsS "$base/nodeinfo/2.1" | jq -e '.usage.users.total == 1' >/dev/null || fail "unexpected NodeInfo after the second start"
+curl -fsS "$base/nodeinfo/2.1" | jq -e '.usage.users.total == 1' >/dev/null || fail "the account is gone after the second start"
 
 # A failing one-off service keeps the server stopped: upgrade-check exits with 2 on an unknown flag here.
 echo "docker-smoke: checking that a failing upgrade-check keeps the server stopped" >&2
@@ -233,4 +217,4 @@ rm -f "$failing"
 state="$(docker inspect -f '{{.State.Status}}' "$("${compose[@]}" ps -a -q my)")"
 [[ "$state" != running ]] || fail "the server started although upgrade-check failed"
 
-echo "docker-smoke: ok ($actor_id)" >&2
+echo "docker-smoke: ok" >&2

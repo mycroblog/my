@@ -27,7 +27,7 @@ func TestSiteVersion(t *testing.T) {
 func TestPageURL(t *testing.T) {
 	t.Parallel()
 	for _, tc := range []struct{ version, document, want string }{
-		{Next, "docs/reference/build-tags.md", "https://mycroblog.dev/next/reference/build-tags/"},
+		{Next, "docs/reference/configuration.md", "https://mycroblog.dev/next/reference/configuration/"},
 		{"v0.1", "docs/operations/alerts.md#myqueuebacklog", "https://mycroblog.dev/v0.1/operations/alerts/#myqueuebacklog"},
 		{"latest", "docs/developers/README.md", "https://mycroblog.dev/latest/developers/"},
 		{Next, "docs/operations/Running.md", "https://mycroblog.dev/next/operations/running/"},

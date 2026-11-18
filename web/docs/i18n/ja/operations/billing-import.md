@@ -28,12 +28,11 @@ Cloudflare にはそのようなチェーンがないので、Cloudflare の取�
 | Cloudflare | これらのモジュールでは行いません。プラグインの場合と同じように、`MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID`、`MY_BILLING_CLOUDFLARE_API_TOKEN`（シークレットから）を設定します |
 | プラグイン | これらのモジュールでは行いません。`backends` に利用料金のモジュールがないときは、アプリのモジュールの `env` に `MY_BILLING_SOURCES = plugin` と [プラグイン](#a-plugin-billing_sources--plugin) の設定を指定します。利用料金のモジュールと並べるときは、アプリのモジュールが `env` の `MY_BILLING_SOURCES` を拒否するため、`billing_sources = ["plugin"]` を返す独自のバックエンドを追加します（[バックエンドのフィールド](../../deploy/opentofu/README.md)） |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS (`billing_sources = aws`)
 
 サーバーは、請求月（UTC の暦月）ごとに 1 回、AWS Cost Explorer の `GetCostAndUsage` を、サービス（`SERVICE`）とレコードの種類（`RECORD_TYPE`）でグループ化して呼び出します。エンドポイントは常に `us-east-1` です。
 金額は USD です。Cost Explorer が月を見積もり（`Estimated`）としている間は、前日までの金額を見積もりとして記録し、そうでなくなったら確定として記録します。
-ビルドタグ `no_billing_aws` を付けてビルドしたバイナリは `aws` を拒否します（[build-tags.md](../reference/build-tags.md) を参照してください）。
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### 費用と上限
@@ -158,7 +157,7 @@ Cost Explorer の値と請求書は、更新のタイミングと端数処理の
 
 `throttled` と `unavailable` 以外の失敗は再試行しても直らないため、サーバーは記録して止まり、翌日の定期の取り込みがもう一度試みます。
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud (`billing_sources = gcp`)
 
 Google Cloud には実際の費用を返す API がないため、サーバーは BigQuery への Cloud Billing のエクスポート（標準の使用料金）を 1 日に 1 回、BigQuery の `jobs.query` で集計します（`billing_gcp_method = bigquery`、既定値）。
@@ -166,7 +165,6 @@ Google Cloud には実際の費用を返す API がないため、サーバー�
 請求月はエクスポートの `invoice.month` で、米国太平洋時間（夏時間あり）の暦月です。日付は太平洋時間のまま記録します。
 金額は請求先アカウントの通貨で、請求月・サービス（`service.description`）・料金の種類（`cost_type`）ごとに `NUMERIC` として合計し、クレジット（`credits[]`）はサービスごとに 1 行のクレジットになります。以前の行を打ち消すエクスポートの訂正の行も合計に含めます。
 エクスポートには確定を示す印がないため、翌月の 5 日（太平洋時間）以降に走る取り込みでその月を確定として扱い、それまでは月の初日から最後の利用日までの見積もりとして記録します。確定したあとも、取り込みは 15 日までその月をもう一度読み、差があれば訂正として記録します。
-ビルドタグ `no_billing_gcp` を付けてビルドしたバイナリは `gcp` を拒否します（[build-tags.md](../reference/build-tags.md) を参照してください）。
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### 費用と上限
@@ -255,7 +253,7 @@ push ではなく pull を使うため、通知がサーバー（たとえば Cl
 - 見積もりの月は、月の初日から最後の通知が発行された日（太平洋時間）までの費用として記録します。
 - 絞り込みは予算のスコープ（プロジェクト、サービス、1 つのラベルのキーと値）で決まり、`billing_gcp_projects` と `billing_gcp_label` は使いません。
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### 予算、トピック、サブスクリプションを用意する
 
 1. このサーバーだけが読むトピックと pull サブスクリプションを作成します。保持期間と有効期限の理由は、下の「通知の読み方」を参照してください。
@@ -281,7 +279,6 @@ push ではなく pull を使うため、通知がサーバー（たとえば Cl
 4. `MY_BILLING_GCP_METHOD=budget` と `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget` を設定します。
 
 認証は BigQuery と同じ Application Default Credentials です（上の [IAM のロール](#iam-roles) の表を参照してください）。
-ビルドタグ `no_billing_gcp` はこの方法も取り除きます。Pub/Sub のクライアントライブラリは `stream = pubsub` と共有しているため、バイナリから取り除かれるのは `no_pubsub` も指定したときだけです（[build-tags.md](../reference/build-tags.md) を参照してください）。
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### 通知の読み方
@@ -306,13 +303,12 @@ push ではなく pull を使うため、通知がサーバー（たとえば Cl
 | `unavailable` | `UNAVAILABLE`、`INTERNAL` など、ネットワークの障害 | ジョブが間を置いて再試行します |
 | `invalid_response` | 予算の通知として読めないメッセージ、月次でない予算、表示名が同じ 2 つの予算 | 予算を月次にし、予算ごとに別の表示名を付け、トピックにほかのメッセージを送らないようにします |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare (`billing_sources = cloudflare`)
 
 サーバーは、Cloudflare アカウントの課金対象の利用量を読み取ります。従量課金の製品（R2、Workers、D1 など）の利用料金で、指標と日ごとに 1 件の記録です。
 これを製品（`R2`、`Workers`、`D1`）ごとに UTC の暦月へ合計するので、各製品は 1 か月に利用の 1 行になります。無料枠の範囲内の利用も、0 として取り込みます。
 このデータがあるのは、従量課金のアカウントだけです。Enterprise の契約のアカウントでは `not_enabled` で失敗します。
-ビルドタグ `no_billing_cloudflare` を付けてビルドしたバイナリは `cloudflare` を拒否します（[build-tags.md](../reference/build-tags.md) を参照してください）。
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### 取り込まないもの

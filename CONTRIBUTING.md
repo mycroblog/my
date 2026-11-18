@@ -28,8 +28,8 @@ Docker, agentkit, `pkg/mykit` with `pkg/mybot`, and the documentation site (`doc
 `api:check`, `web:check`, `docker:check`, `agentkit:check`, `mykit:check`, `site:check`).
 `CHECKS="go web"` runs some of them only. `TASK_CONCURRENCY` limits the parallelism; locally `scripts/task.sh` defaults it to half the CPUs.
 `scripts/task.sh check:changed` (optional locally) runs only the contexts you changed and those that depend on them (compared with
-`BASE=origin/main`); CI decides the same way (`scripts/changed-contexts.sh`) which jobs to skip, and the required
-check `check` collects the results of the jobs ([CI](#ci)).
+`BASE=origin/main`); CI decides from the same contexts which jobs to run (`scripts/ci-jobs.sh`), and the required
+check `gate` collects the results of the jobs ([CI](#ci)).
 
 The checks need no network once the Go modules and tools and the npm packages of the Bun workspace have been
 downloaded the first time. They cover Markdown lint and the documentation rules, the ADR index, Go
@@ -42,11 +42,11 @@ formatting and dependency licenses of the Bun workspace, and the documentation s
 - Dependabot Alerts on GitHub report known vulnerabilities in dependencies, and Dependabot opens the version update
   pull requests (`.github/dependabot.yml`). `go.work` at the root exists for its Go updates alone: tasks run with
   `GOWORK=off`, and a bare `go` command in `pkg/mykit`, `pkg/mybot`, or `tools` needs it too.
-- The Docker Compose smoke test (building the image, applying the schema, creating an administrator, checking
-  WebFinger, the actor, and NodeInfo) needs Docker, so `scripts/task.sh check` leaves it out; run it with
-  `scripts/task.sh docker:smoke`. CI runs it on pull requests that change the Docker setup, `cmd/`, or
-  `internal/platform/`, and nightly; it builds the linux/arm64 image on pull requests that change the Docker setup and
-  nightly.
+- The Docker Compose smoke test (what only the image and the Compose files show: the build, the order of the
+  one-off services, the env file and the secret, what the image embeds, a sign-in) needs Docker, so
+  `scripts/task.sh check` leaves it out; run it with `scripts/task.sh docker:smoke`. CI runs it on pull requests that
+  change the Dockerfile, `.dockerignore`, `deploy/docker/`, or `web/brand/`, and nightly, when it also builds the
+  linux/arm64 image.
 - The live interoperability tests against Mastodon, GoToSocial, Misskey, and Akkoma are not part of `scripts/task.sh check`
   either: run them with `scripts/task.sh docker:federation-live` (CI runs them nightly; see
   [test/federation-live/README.md](test/federation-live/README.md)).
@@ -119,8 +119,8 @@ so no hosts file entry is needed. The server runs with `profile = development` a
   models, and translations fail until it answers.
 - The Go code and the web client's build are not reloaded: `docker compose restart my` builds both again and restarts
   the server. `scripts/task.sh web:dev` serves the client with reloading.
-- `GO_TAGS` builds the server with [build tags](docs/reference/build-tags.md), such as `GO_TAGS=e2e_fakes` for the
-  test build with the fake push service, payment provider, search index, and translation provider.
+- `GO_TAGS=e2e_fakes` builds the [test build](#build-tags), with the fake push service, payment provider, search
+  index, and translation provider.
 - Put the variables of the table and `GO_TAGS` in a `.env` file next to `compose.yaml`; it is never committed. A port
   that another program uses must move there.
 - `my` runs as the owner of the checkout in the stage `dev` of the `Dockerfile` (`scripts/dev-compose.sh`), so
@@ -146,7 +146,7 @@ The tests do not use these services: they start what they need themselves, and `
    the branch up to date with `git rebase origin/main`.
 5. Add it to the merge queue with `gh pr merge <PR> -R mycroblog/my --auto --merge` (`scripts/agentkit.sh pr land`
    also follows it to the merge and cleans up). `main` only receives merges from the merge queue.
-6. If the queue drops the pull request because of a conflict or a failing `check`, fix it while the rest of the queue
+6. If the queue drops the pull request because of a conflict or a failing `gate`, fix it while the rest of the queue
    proceeds: rebase onto `main`, regenerate the committed generated files (`scripts/agentkit.sh regen`) instead of
    resolving their conflicts by hand, push with `--force-with-lease`, and queue it again.
 
@@ -168,12 +168,13 @@ git config blame.ignoreRevsFile .git-blame-ignore-revs
 
 ## CI
 
-A pull request runs only what its own files decide (formatting, licenses, lint of the changed modules); the merge
-queue runs the compile, type, and test checks once, on the merged state, for the contexts the group changes, and is
-the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
-before a release. The workflows in `.github/workflows/` say which job runs what: each step is named after the task it
-runs, so a failed step is reproduced with `scripts/task.sh <step name>`, and `scripts/agentkit.sh pr jobs <pr>`
-prints where the time went. To run the merge queue's jobs on a pull request (an outside contribution, a failure to
+A pull request runs what its own files decide (formatting, licenses), and for a Go module it changes the lint and
+then the tests; the merge queue runs the compile, type, and test checks on the merged state, for the contexts the
+group changes, and is the only gate ([ADR-0079](docs/adr/0079-ci-single-gate-merge-queue.md)). The slow suite runs nightly, by hand, and
+before a release. A job is named `<subject>-<kind>` (`server-test`, `web-static`, `docs-lint`), and each step after the
+task it runs, so a failed step is reproduced with `scripts/task.sh <step name>`; `scripts/agentkit.sh pr jobs <pr>`
+prints where the time went. The workflows in `.github/workflows/` say in their own comments what each job guarantees
+and where a new check goes; `scripts/ci-jobs.sh` says which change runs which job. To run the merge queue's jobs on a pull request (an outside contribution, a failure to
 investigate), add the label `allow:full-ci`.
 
 ## Schema changes
@@ -244,7 +245,7 @@ the same way; without a build they are blank.
   `scripts/web-icons.sh` renders the PNG icons and `internal/interface/web/preview-image.png` from its SVGs.
 - `scripts/task.sh web:dev` serves `web/app` on `http://localhost:5173` and passes `/api`, `/oauth` and `/auth` on to
   the server of `docker compose up` (`MY_SERVER` names another).
-- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`. Pass [build tags](docs/reference/build-tags.md) in `GO_TAGS` to leave unused adapters out of the binary.
+- `scripts/task.sh go:bin` runs `web:build` first and builds the single binary `bin/my`.
 - `my serve -dev-vite-origin <origin>` loads the client's scripts, and the auth screens', from the web client's Vite
   dev server at that origin.
   The shell is then never cached (`no-store`), and the CSP is a development one that allows that origin's scripts and
@@ -370,24 +371,33 @@ Pull requests and the merge queue check the same adapter against a stand-in SMTP
 
 ## Build tags
 
-[The reference](docs/reference/build-tags.md) lists the tags. The test build adds the fakes for tests:
+The build tag `e2e_fakes` makes the test build: it adds the fake payment provider (`payments = fake`), search index
+(`search = fake`), and translation provider (`translator_fake = true`), and the command `my dev push-service`.
+No released binary or image has it.
 
 ```sh
 scripts/task.sh go:bin GO_TAGS=e2e_fakes
 MY_PROFILE=development MY_PAYMENTS=fake bin/my serve
 ```
 
-Four checks keep the fakes out of production; each one stops them on its own when another one is bypassed. The first is at start, and [the reference](docs/reference/build-tags.md#test-builds) describes it. The others:
+Four checks keep the fakes out of production; each one stops them on its own when another one is bypassed:
 
-- **The build check.** `scripts/task.sh go:build-tags` fails when `cmd/my` without the tag (with no tags, or with any
-  representative set of `no_*` tags) depends on a fake. Only files with the constraint `//go:build e2e_fakes` import
-  them outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider,
-  `internal/platform/adapters_search_fake.go` the fake search index, and `cmd/my/dev_push_service.go` the fake push service.
+- **At start.** A binary without the tag rejects the three settings and has no `my dev` command. A test build refuses
+  them, and `my dev push-service`, unless `profile = development`, and logs a warning that it is a test build.
+- **The build check.** `scripts/task.sh go:fakes-check` (`scripts/go-fakes.sh`; part of `scripts/task.sh go:check`, and
+  CI runs it in the merge queue) fails when `cmd/my` without the tag depends on a fake or on a package that only tests
+  may link, or when the build with the tag lacks a fake. Only files with the constraint `//go:build e2e_fakes` import
+  the fakes outside the tests: `internal/platform/adapters_payments_fake.go` the fake payment provider,
+  `internal/platform/adapters_search_fake.go` the fake search index, `internal/platform/adapters_translator_fake.go`
+  the fake translation provider, and `cmd/my/dev_push_service.go` the fake push service.
 - **The container image.** The `Dockerfile` stops when `GO_TAGS` has `e2e_fakes`, before it compiles anything, and
   checks the binary it built as the release check does.
 - **The release.** `scripts/check-release-build.sh BINARY...` fails when the Go build info of a binary
   (`go version -m`, its `build -tags=` line) has `e2e_fakes`, or cannot be read. Every job that publishes a binary or an
   image runs it on what it publishes.
+
+`scripts/task.sh go:fakes-test` runs `go vet` on the test build and the tests that only it has, named `*E2EFakes*`;
+CI runs it in the slow suite.
 
 ### The fake push service
 
@@ -419,31 +429,20 @@ development Mailpit in [Emails](#emails)) and its SSRF guard lets the Web Push s
 | `POST /subscriptions/<id>/expire` | `204`; later push messages to it answer `410` |
 | `GET /subscriptions/<id>/messages` | `200` and `{"messages": [...]}`: every push message to it, oldest first, with `status`, `error` (why it was refused), `plaintext`, `ttl`, `urgency`, `topic`, `subject`, and `received_at` |
 
-### The check of the sets
+### Leaving an adapter out
 
-`scripts/task.sh go:build-tags` (part of `scripts/task.sh go:check` and, in CI, of the slow suite that gates releases)
-runs, for each representative set of tags, `CGO_ENABLED=0 go build` and `go vet` on every package,
-and fails when `cmd/my` still depends on a package that a tag of the set leaves out.
+An adapter that brings a dependency of its own is wired so that a build tag `no_<name>` can leave it out of the
+binary. The tags are an optimisation for developers who know the code, not a feature: nothing checks them, a tag may
+not build, and the documents for operators do not name them. The tests and every released binary and image have every
+adapter. A tag is wired like this:
 
-The sets are in [the reference](docs/reference/build-tags.md#sets-of-tags-that-are-checked), together with `e2e_fakes`, which also runs the tests that only this build has (named `*E2EFakes*`).
-
-It also fails when `cmd/my` without `e2e_fakes`, the build with no tags among them, depends on a fake, or when the set
-with `e2e_fakes` does not link the fakes.
-`scripts/go-build-tags.sh SET...` checks other sets. The tests (`scripts/task.sh go:test`) run without tags, on every adapter.
-
-### Adding a tag
-
-An adapter that brings a dependency of its own gets the tag `no_<name>`:
-
-- The platform wires it in `internal/platform/adapters_<name>.go` with the constraint `//go:build !no_<name>`, and
+- The platform wires the adapter in `internal/platform/adapters_<name>.go` with the constraint `//go:build !no_<name>`, and
   `internal/platform/adapters_no_<name>.go` (`//go:build no_<name>`) puts in its place a function of the same signature
   that returns `config.ExcludedError`. Nothing else in `cmd/` and `internal/platform` imports the adapter.
 - `internal/platform/config/adapters_no_<name>.go` calls `exclude` for the settings that select it, so that `Load`
   rejects them; a check of a setting that only this adapter reads goes in `adapters_<name>.go` likewise.
 - An adapter package shared by several dialects (such as `internal/adapter/kv/db`) puts the code of each dialect,
   its constructor, and its tests in files with the dialect's constraint.
-- Add the tag to the tables of [the reference](docs/reference/build-tags.md), to the choice documentation in `internal/platform/config/schema.go`
-  (`scripts/task.sh go:config-docs`), and to `excluded_packages` in `scripts/go-build-tags.sh`, and use it in one of the representative sets.
 
 ## Settings
 
@@ -484,7 +483,7 @@ mark an ADR `Accepted`.
 - `scripts/task.sh docs:rules` (part of `docs:check`) checks these rules and that relative links and their `#anchors`
   resolve; [docs/lint.yaml](docs/lint.yaml) lists the files each rule covers.
 - A change keeps the user and operator documents that describe it true: `scripts/agentkit.sh docs impact` lists those
-  of your change. Every command of `my`, metric, webhook event type, build tag, and task appears in its document
+  of your change. Every command of `my`, metric, webhook event type, and task appears in its document
   (`scripts/task.sh agentkit:inventory`).
 - The design documents and the agent instructions do not grow without the decider's `allow:docs-growth` label
   (`scripts/task.sh docs:growth`): an ADR holds a decision, its reasons, and when to revisit it, not what the code says.

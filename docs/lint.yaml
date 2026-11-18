@@ -215,14 +215,13 @@ knowledge:
 
 # The names users and operators see, which the code defines and a document must mention (agentkit docs inventory):
 # the commands of `my` (README.md, docs/operations/, docs/reference/), the metrics (docs/operations/running.md), the
-# webhook event types (docs/reference/webhooks.md), the build tags (docs/reference/build-tags.md), and the job types and periodic jobs
-# (docs/reference/jobs.md). Exclude a name here only with the reason in a comment;
-# the check fails when an excluded name is mentioned after all or no longer defined.
+# webhook event types (docs/reference/webhooks.md), and the job types and periodic jobs (docs/reference/jobs.md).
+# Exclude a name here only with the reason in a comment; the check fails when an excluded name is mentioned after all
+# or no longer defined.
 inventory:
   exclude:
     cli: []
     metrics: []
     webhook-events: []
-    build-tags: []
     job-types: []
     job-schedules: []

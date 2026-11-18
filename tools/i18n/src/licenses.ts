@@ -5,8 +5,8 @@
 //   bun run src/licenses.ts MIT,Apache-2.0,... [--exempt NAME=LICENSE,...] [node_modules ...]
 //   bun run src/licenses.ts MIT,Apache-2.0,... --deps-of PACKAGE_DIR
 //
-// The first argument is the allowed SPDX identifiers (i18n:licenses and web:licenses pass
-// NPM_ALLOWED_LICENSES of Taskfile.yml, mykit:ts-licenses MYKIT_ALLOWED_LICENSES of tasks/mykit.yml).
+// The first argument is the allowed SPDX identifiers (web:licenses passes NPM_ALLOWED_LICENSES of
+// Taskfile.yml, mykit:ts-licenses MYKIT_ALLOWED_LICENSES of tasks/mykit.yml).
 // The rest are the node_modules directories to check, tools/i18n's own when none is given. Both
 // layouts Bun installs are covered: hoisted packages and the isolated store in node_modules/.bun that
 // the workspace uses. Symlinks are skipped: in the isolated layout they point into the store, and

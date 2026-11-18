@@ -159,6 +159,3 @@ Organizations deckt das Konto ab.** Ohne das Opt-out ist Amazon für diesen Text
 Datenschutzerklärung ([Vorlage der Datenschutzerklärung](privacy-policy-template.md#the-services-you-choose)) und erlaube
 für `aws` nicht `private` oder `direct` in `translation_provider_visibilities`. Standardmäßig erhält der Anbieter nur `public`-,
 `local`- und `unlisted`-Beiträge.
-
-Ein Server, der mit dem Build-Tag `no_translator_aws` gebaut wurde, hat den Anbieter nicht und weigert sich zu starten, wenn
-`translator_aws_region` gesetzt ist ([Build-Tags](../reference/build-tags.md)).

@@ -138,7 +138,7 @@ O servidor fala o protocolo do Sentry por conta própria, então nenhum SDK do S
 - **GlitchTip**: copie o DSN do projeto. Ele é de código aberto e roda em um servidor pequeno. Verifique quais regras de alerta a sua versão oferece para problemas novos e recorrentes.
 - **Datadog Error Tracking**: use o DSN do Sentry do seu site do Datadog, `https://<DD_API_KEY>@sentry-intake.<DD_SITE>/1`. O Datadog exige a tag `service`, que o servidor sempre define. O Datadog guarda esses eventos como logs e os agrupa no Error Tracking. Se, em vez disso, você enviar a linha de log ao Datadog por um agente ou um encaminhador (Error Tracking for Logs), a pilha fica em `message`; mapeie-a para `error.stack` com um pipeline de logs, senão o Datadog não a vê como pilha. O exportador `sentry` não precisa desse mapeamento.
 
-<!-- source: otlp-backends 778540dabdc8 -->
+<!-- source: otlp-backends fe964b8f1b2c -->
 ### Backends OTLP
 
 ```sh
@@ -149,7 +149,7 @@ OTEL_EXPORTER_OTLP_HEADERS=authorization=Bearer%20...
 
 Cada relatório é um registro de log do OpenTelemetry chamado `exception`, com severidade `ERROR` (`FATAL` quando para o processo), `exception.type`, `exception.message`, `exception.stacktrace`, `my.error.fingerprint`, `my.error.where`, `my.error.source`, `my.error.kind` e os IDs de trace e de span. Ele vai por OTLP/HTTP (protobuf, gzip) com o mesmo recurso das métricas e dos traces.
 
-Se o backend transforma esses registros em erros agrupados depende do backend: alguns montam as visões de erro só a partir dos dados de trace, e o Datadog precisa de `error.stack`. Para Sentry, GlitchTip e Datadog, use `sentry`. Use `otlp` quando quiser os registros junto dos seus outros logs. A build tag `no_otel` deixa `otlp` de fora ([Build tags](../reference/build-tags.md)).
+Se o backend transforma esses registros em erros agrupados depende do backend: alguns montam as visões de erro só a partir dos dados de trace, e o Datadog precisa de `error.stack`. Para Sentry, GlitchTip e Datadog, use `sentry`. Use `otlp` quando quiser os registros junto dos seus outros logs.
 
 <!-- source: what-scrubbing-does-and-does-not-guarantee ccf1b4716bdd -->
 ## O que a sanitização faz e o que não garante

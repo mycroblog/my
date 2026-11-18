@@ -15,7 +15,7 @@ import (
 )
 
 // This file is the only one outside the tests that imports the fake translation provider, and only
-// the test builds with the build tag e2e_fakes have it (ADR-0015 §6). scripts/go-build-tags.sh
+// the test builds with the build tag e2e_fakes have it (ADR-0015 §6). scripts/go-fakes.sh
 // fails when cmd/my without the tag depends on the fake, the Dockerfile refuses the tag, and
 // scripts/check-release-build.sh refuses a binary built with it.
 

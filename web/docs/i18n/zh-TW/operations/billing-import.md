@@ -27,10 +27,10 @@ Cloudflare 沒有這樣的憑證鏈，所以它的匯入會從 [`billing_cloudfl
 | Cloudflare | 不由這些模組處理。請如同外掛一樣，設定 `MY_BILLING_SOURCES`、`MY_BILLING_CLOUDFLARE_ACCOUNT_ID` 和 `MY_BILLING_CLOUDFLARE_API_TOKEN`（來自 secret） |
 | 外掛 | 不由這些模組處理。`backends` 中沒有帳單模組時，請在 app 模組的 `env` 中設定 `MY_BILLING_SOURCES = plugin` 與[外掛](#a-plugin-billing_sources--plugin)的設定；與帳單模組並存時，app 模組會拒絕 `env` 中的 `MY_BILLING_SOURCES`，所以請加入你自己的後端，並讓它回傳 `billing_sources = ["plugin"]`（[後端的欄位](../../deploy/opentofu/README.md)） |
 
-<!-- source: aws-billing_sources--aws 9e5fa0132ca3 -->
+<!-- source: aws-billing_sources--aws 261038942b5b -->
 ## AWS（`billing_sources = aws`）
 
-伺服器會針對每個帳單月份（UTC 的日曆月）呼叫一次 AWS Cost Explorer 的 `GetCostAndUsage`，依服務（`SERVICE`）與紀錄類型（`RECORD_TYPE`）分組。端點一律是 `us-east-1`。金額以美元計。當 Cost Explorer 把某個月份標示為估計（`Estimated`）時，伺服器會把到前一天為止的金額記錄為估計值；不再標示後，則記錄為確定值。以建置標籤 `no_billing_aws` 建置的執行檔會拒絕 `aws`（請參閱 [build-tags.md](../reference/build-tags.md)）。
+伺服器會針對每個帳單月份（UTC 的日曆月）呼叫一次 AWS Cost Explorer 的 `GetCostAndUsage`，依服務（`SERVICE`）與紀錄類型（`RECORD_TYPE`）分組。端點一律是 `us-east-1`。金額以美元計。當 Cost Explorer 把某個月份標示為估計（`Estimated`）時，伺服器會把到前一天為止的金額記錄為估計值；不再標示後，則記錄為確定值。
 
 <!-- source: cost-and-limits a555f91984c3 -->
 ### 費用與上限
@@ -147,10 +147,10 @@ AWS Organizations 的管理帳戶可以看到組織中每個成員帳戶的費�
 
 除了 `throttled` 與 `unavailable` 之外的失敗，重試也無法修正，因此伺服器會記錄後停止，由隔天的排程匯入再試一次。
 
-<!-- source: google-cloud-billing_sources--gcp c74934cb4d9a -->
+<!-- source: google-cloud-billing_sources--gcp 7ae12d3e15df -->
 ## Google Cloud（`billing_sources = gcp`）
 
-Google Cloud 沒有回傳實際費用的 API，因此伺服器每天一次以 BigQuery 的 `jobs.query` 彙總匯出到 BigQuery 的 Cloud Billing 資料（標準使用費用）（`billing_gcp_method = bigquery`，預設）。無法設定匯出時，也有一種簡易方法，只從預算的 Pub/Sub 通知匯入大略的總額（請參閱[從預算通知匯入](#importing-from-budget-notifications-billing_gcp_method--budget)）。帳單月份是匯出資料的 `invoice.month`，也就是以美國太平洋時間（含夏令時間）計算的日曆月。日期依太平洋時間原樣記錄。金額以帳單帳戶的幣別計，依帳單月份、服務（`service.description`）與費用類型（`cost_type`）以 `NUMERIC` 加總，抵用額（`credits[]`）則成為每個服務一列的抵用額。匯出資料中用來抵銷先前列的更正列也會納入加總。匯出資料沒有表示確定的標記，因此從下個月 5 日（太平洋時間）起執行的匯入會把該月份視為確定，在那之前則記錄為從該月第一天到最後使用日的估計值。確定之後，匯入仍會在 15 日之前重新讀取該月份，並把任何差異記錄為更正。以建置標籤 `no_billing_gcp` 建置的執行檔會拒絕 `gcp`（請參閱 [build-tags.md](../reference/build-tags.md)）。
+Google Cloud 沒有回傳實際費用的 API，因此伺服器每天一次以 BigQuery 的 `jobs.query` 彙總匯出到 BigQuery 的 Cloud Billing 資料（標準使用費用）（`billing_gcp_method = bigquery`，預設）。無法設定匯出時，也有一種簡易方法，只從預算的 Pub/Sub 通知匯入大略的總額（請參閱[從預算通知匯入](#importing-from-budget-notifications-billing_gcp_method--budget)）。帳單月份是匯出資料的 `invoice.month`，也就是以美國太平洋時間（含夏令時間）計算的日曆月。日期依太平洋時間原樣記錄。金額以帳單帳戶的幣別計，依帳單月份、服務（`service.description`）與費用類型（`cost_type`）以 `NUMERIC` 加總，抵用額（`credits[]`）則成為每個服務一列的抵用額。匯出資料中用來抵銷先前列的更正列也會納入加總。匯出資料沒有表示確定的標記，因此從下個月 5 日（太平洋時間）起執行的匯入會把該月份視為確定，在那之前則記錄為從該月第一天到最後使用日的估計值。確定之後，匯入仍會在 15 日之前重新讀取該月份，並把任何差異記錄為更正。
 
 <!-- source: cost-and-limits-1 ca56b5d7b34d -->
 ### 費用與上限
@@ -235,7 +235,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 - 估計中的月份會記錄為從該月第一天到最後一則通知發布當天（太平洋時間）的費用。
 - 篩選由預算的範圍（專案、服務、一組標籤鍵與值）決定，不會使用 `billing_gcp_projects` 與 `billing_gcp_label`。
 
-<!-- source: prepare-the-budget-the-topic-and-the-subscription ee38acf8cb72 -->
+<!-- source: prepare-the-budget-the-topic-and-the-subscription b572859a6f7a -->
 #### 準備預算、主題與訂閱
 
 1. 建立只有這個伺服器會讀取的主題與 pull 訂閱。關於保留期間與到期時間的理由，請參閱下方的「如何讀取通知」。
@@ -257,7 +257,7 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 
 4. 設定 `MY_BILLING_GCP_METHOD=budget` 與 `MY_BILLING_GCP_BUDGET_SUBSCRIPTION=projects/<project>/subscriptions/my-billing-budget`。
 
-驗證方式與 BigQuery 相同，為應用程式預設憑證（請參閱上方 [IAM 角色](#iam-roles)中的表格）。建置標籤 `no_billing_gcp` 也會移除這個方法。Pub/Sub 用戶端函式庫與 `stream = pubsub` 共用，因此只有同時設定 `no_pubsub` 時，它才會從執行檔中移除（請參閱 [build-tags.md](../reference/build-tags.md)）。
+驗證方式與 BigQuery 相同，為應用程式預設憑證（請參閱上方 [IAM 角色](#iam-roles)中的表格）。
 
 <!-- source: how-notifications-are-read 646a6dd9b2b6 -->
 #### 如何讀取通知
@@ -281,13 +281,12 @@ bq add-iam-policy-binding --member=serviceAccount:<service account> \
 | `unavailable` | `UNAVAILABLE`、`INTERNAL` 等，網路故障 | 任務會在暫停後重試 |
 | `invalid_response` | 無法讀取為預算通知的訊息、非每月的預算、兩個顯示名稱相同的預算 | 把預算設為每月，為各預算取不同的顯示名稱，並且不要把其他訊息傳送到主題 |
 
-<!-- source: cloudflare-billing_sources--cloudflare bc447fe90dc9 -->
+<!-- source: cloudflare-billing_sources--cloudflare 6a292259a005 -->
 ## Cloudflare（`billing_sources = cloudflare`）
 
 伺服器會讀取 Cloudflare 帳號的計費用量：其隨用隨付產品（例如 R2、Workers 和 D1）的用量費用，每個指標每天一筆紀錄。
 它會依產品（`R2`、`Workers`、`D1`）加總到 UTC 的日曆月份，所以每個產品每個月是一行用量。在免費額度內的用量也會匯入，金額為 0。
 只有以隨用隨付計費的帳號才有這項資料；Enterprise 合約帳號會以 `not_enabled` 失敗。
-以建置標籤 `no_billing_cloudflare` 建置的二進位檔會拒絕 `cloudflare`（請參閱 [build-tags.md](../reference/build-tags.md)）。
 
 <!-- source: what-it-does-not-import 2028c00feb4d -->
 ### 它不會匯入的內容
