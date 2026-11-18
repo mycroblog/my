@@ -388,13 +388,16 @@ function SettingFrame({
     alone: "@min-[28rem]:row-span-2 @min-[28rem]:self-center",
     control: "@min-[28rem]:col-start-2 @min-[28rem]:row-span-2 @min-[28rem]:row-start-1 @min-[28rem]:self-center",
     across: "@min-[28rem]:col-[1/-1] @min-[28rem]:row-start-3 @min-[28rem]:mt-screen-air",
-    under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2",
+    under: "@min-[28rem]:col-start-1 @min-[28rem]:row-start-2 @min-[28rem]:mt-0 @min-[28rem]:mb-0",
   };
+  // In a narrow frame the line under the name stands tight under the line of the name and the control, as it does
+  // beside the control in a wide one, and the room after it parts it from the next setting: it reads as its own.
+  const narrow = { name: "self-end @min-[28rem]:self-auto", under: "-mt-screen-air mb-screen-air" };
   const named = `flex min-w-0 flex-[9999_1_6rem] flex-wrap items-center gap-x-screen-row-gap ${wide.name}`;
   return (
     <div className="@container">
       <div className={`${className} flex flex-wrap items-center gap-x-screen-row-gap gap-y-screen-air ${wide.root}`}>
-        <div className={lined || across ? named : `${named} ${wide.alone}`}>
+        <div className={lined && !across ? `${named} ${narrow.name}` : across ? named : `${named} ${wide.alone}`}>
           <div className="max-w-full min-w-0 wrap-break-word">{name}</div>
           {state !== undefined && state !== null && state !== false && (
             <div className="min-w-0 grow basis-[clamp(0px,(100cqw_-_1px_-_100%)_*_9999,100%)] wrap-break-word">
@@ -406,7 +409,7 @@ function SettingFrame({
         <div className={`min-w-0 ${across ? `basis-full ${wide.across}` : `flex-[1_1_auto] ${wide.control}`}`}>
           {control}
         </div>
-        {lined && <div className={`min-w-0 basis-full wrap-break-word ${wide.under}`}>{under}</div>}
+        {lined && <div className={`min-w-0 basis-full wrap-break-word ${narrow.under} ${wide.under}`}>{under}</div>}
       </div>
     </div>
   );
@@ -554,13 +557,16 @@ const summary = tv({
  * The status summary that heads a screen while something there is to do (the security's, while two-factor
  * authentication is off): the state as its glyph and a sentence, what it means, and the next thing to do in a word or
  * two (a `Button`, the screen's primary action). It is the one place the screen says it and the one door to it: no
- * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed.
+ * row under it repeats either. A state is words and a glyph, never a tile, which is what can be pressed. An action
+ * that is done in place (it sends an email) says what came of it beside itself (`result`, a `SaveState`), in a polite
+ * live region that is there from the start.
  */
 export function StatusSummary({
   icon,
   title,
   about,
   action,
+  result,
 }: {
   /** The state's glyph: `caution` while something is to do, `accepted` once all is well. */
   icon: IconName;
@@ -568,6 +574,8 @@ export function StatusSummary({
   title: string;
   about: string;
   action?: ReactNode;
+  /** What came of the action done in place; `null` while it has nothing to say. Only with an `action`. */
+  result?: ReactNode | null;
 }) {
   const id = useId();
   const s = summary();
@@ -585,7 +593,14 @@ export function StatusSummary({
           <p className={s.about()}>{about}</p>
         </Stack>
       </Row>
-      {action !== undefined && <Row justify="start">{action}</Row>}
+      {action !== undefined && (
+        <Row wrap align="center" justify="start" gap="screen-row-gap">
+          <Row as="span" inline rigid>
+            {action}
+          </Row>
+          {result !== undefined && <Box role="status">{result}</Box>}
+        </Row>
+      )}
     </FramePanel>
   );
 }

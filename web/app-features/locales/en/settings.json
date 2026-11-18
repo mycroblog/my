@@ -583,6 +583,22 @@
     "defaultMessage": "{kind, select, hard_bounce {An email to your address bounced, so this server sends it no email, notifications included, until you verify the address again.} other {An email from this server was marked as spam, so notification emails are no longer sent to your address.}}",
     "description": "Under settings.notifications.email_stopped: why the server stopped. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again) or complaint (the recipient marked an email as spam; only notification emails stop)."
   },
+  "settings.notifications.email_stopped.verify": {
+    "defaultMessage": "Send the verification email",
+    "description": "The button of the notice settings.notifications.email_stopped after an email to the reader's address bounced: sends a new verification email, whose link shows the address works and lifts the stop."
+  },
+  "settings.notifications.email_stopped.sent": {
+    "defaultMessage": "Sent. Open the link in the email to receive email again.",
+    "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
+  },
+  "settings.notifications.email_stopped.busy": {
+    "defaultMessage": "The verification email can be sent up to 3 times an hour. Try again later.",
+    "description": "Beside settings.notifications.email_stopped.verify when the server refused it because it already sent 3 verification emails in the last hour."
+  },
+  "settings.notifications.email_stopped.not_sent": {
+    "defaultMessage": "The email could not be sent.",
+    "description": "Beside settings.notifications.email_stopped.verify when the server did not answer; the button beside it tries again."
+  },
   "settings.notifications.column.kind": {
     "defaultMessage": "Notification",
     "description": "The header of the first column of a table of the notification settings page (settings.entry.notifications), the column of the kinds' names, for assistive technology only."

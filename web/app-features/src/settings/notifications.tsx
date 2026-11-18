@@ -14,7 +14,7 @@
 //   it is on. A cell saves as it is pressed and says so in its row; the first row turns a whole column on or off. A
 //   cell the server fixes is on and disabled, and a row turned off in the app, whose notifications are not made, has
 //   its other cells off and disabled; the row says why. Above them, when the server stopped sending email to the
-//   reader's address, why.
+//   reader's address, why, and after a bounce the action that sends the verification email whose link lifts it.
 // - The policy for notifications from people the reader may not know: for each of its five conditions, whether such
 //   a notification arrives, is held back, or never arrives, with what each does and the way to the held-back ones.
 //
@@ -41,6 +41,7 @@ import {
   useNotificationSoundKinds,
   usePreferences,
   usePushSwitch,
+  useResendVerificationEmail,
   viewerQuery,
   type AppData,
   type NotificationChannel,
@@ -480,6 +481,55 @@ function Policy({ policy, t }: { policy: NotificationPolicy; t: T }) {
   );
 }
 
+// ---- The stopped address -------------------------------------------------------------------------------------------
+
+/** What came of the last press of the summary's action. */
+type Sending = "sending" | "sent" | "busy" | "failed";
+
+/**
+ * Why the server stopped sending email to the reader's address. After a bounce, its action sends the verification
+ * email whose link lifts the stop, and what came of it stands beside it, until the next press; after a complaint
+ * there is no such step.
+ */
+function EmailStopped({ kind, t }: { kind: NonNullable<Preferences["email_suppression"]>["kind"]; t: T }) {
+  const resend = useResendVerificationEmail();
+  const [sending, setSending] = useState<Sending | null>(null);
+  const send = () => {
+    setSending("sending");
+    resend().then(setSending, () => {
+      setSending("failed");
+    });
+  };
+  const result =
+    sending === null || sending === "sending" ? null : sending === "sent" ? (
+      <SaveState state="saved">{t("settings.notifications.email_stopped.sent")}</SaveState>
+    ) : sending === "busy" ? (
+      <SaveState state="failed">{t("settings.notifications.email_stopped.busy")}</SaveState>
+    ) : (
+      // The action stays beside it, which is the way to try again.
+      <SaveState state="failed">{t("settings.notifications.email_stopped.not_sent")}</SaveState>
+    );
+  return kind === "hard_bounce" ? (
+    <StatusSummary
+      icon="caution"
+      title={t("settings.notifications.email_stopped")}
+      about={t("settings.notifications.email_stopped.about", { kind })}
+      action={
+        <Button kind="primary" busy={sending === "sending"} onPress={send}>
+          {t("settings.notifications.email_stopped.verify")}
+        </Button>
+      }
+      result={result}
+    />
+  ) : (
+    <StatusSummary
+      icon="caution"
+      title={t("settings.notifications.email_stopped")}
+      about={t("settings.notifications.email_stopped.about", { kind })}
+    />
+  );
+}
+
 // ---- The screen ----------------------------------------------------------------------------------------------------
 
 /** The sections of the screen, once what they show is read. */
@@ -511,13 +561,7 @@ function Sections({
   const stopped = emails ? preferences.email_suppression : undefined;
   return (
     <>
-      {stopped !== undefined && (
-        <StatusSummary
-          icon="caution"
-          title={t("settings.notifications.email_stopped")}
-          about={t("settings.notifications.email_stopped.about", { kind: stopped.kind })}
-        />
-      )}
+      {stopped !== undefined && <EmailStopped kind={stopped.kind} t={t} />}
       <SettingsSection heading={t("settings.notifications.section.device")}>
         <PushToggle push={push} refusal={refusal} t={t} />
         <Sound t={t} />

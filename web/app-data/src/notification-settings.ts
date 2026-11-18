@@ -3,7 +3,7 @@
 // per kind and channel, and the policy that holds back or drops the notifications of accounts that do not know them.
 // The rows are read in push.ts, with the Web Push subscription and the sound of this device; a write puts what the
 // server answered into the cache, and a new policy marks the held-back notifications.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { inOrder } from "./in-order";
@@ -78,6 +78,31 @@ export function useNotificationSettingsRead(): { status: "loading" | "failed" | 
 export function useChangeNotificationSettings(): (changes: readonly NotificationCellChange[]) => Promise<void> {
   const data = useAppData();
   return (changes) => changeNotificationSettings(data, changes);
+}
+
+// ---- The stopped address -------------------------------------------------------------------------------------------
+
+/**
+ * Sends the viewer a new verification email, whose link lifts the stop of email to their address after a hard bounce
+ * (`Preferences.email_suppression`): `sent` once it is queued, `busy` when the server sent as many as it sends in an
+ * hour. An address that is no longer stopped has nothing to verify: the preferences are read again, and it is `sent`.
+ * It rejects with any other problem.
+ */
+export async function resendVerificationEmail(data: AppData): Promise<"sent" | "busy"> {
+  try {
+    await data.api.POST("/accounts/email/verification");
+  } catch (error) {
+    if (error instanceof ProblemError && error.status === 429) return "busy";
+    if (!(error instanceof ProblemError && error.status === 409)) throw error;
+    await data.queryClient.invalidateQueries({ queryKey: preferencesQuery(data).queryKey });
+  }
+  return "sent";
+}
+
+/** Sends a new verification email, from a screen (`resendVerificationEmail`). */
+export function useResendVerificationEmail(): () => Promise<"sent" | "busy"> {
+  const data = useAppData();
+  return () => resendVerificationEmail(data);
 }
 
 // ---- The policy ----------------------------------------------------------------------------------------------------

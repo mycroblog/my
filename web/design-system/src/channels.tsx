@@ -8,8 +8,9 @@
 //
 // The table knows its own width. In a wide frame (a tablet's column and wider) it is a grid: the kinds down the
 // start, a column a channel under its name, a checkbox a finger's target. In a narrow one (a phone) a kind's name has a
-// line to itself and its checkboxes stand under it, each over its channel's name, in columns alike, so that no head
-// scrolls out of sight and nothing runs past the frame at the minimum width.
+// line to itself, its checkboxes stand under it, each over its channel's name, in columns alike, and the row's line
+// stands under them, its room kept in every row, said or not: no head scrolls out of sight, nothing runs past the
+// frame at the minimum width, and no state moves a checkbox. The first row, which turns whole columns, stands apart.
 //
 // For assistive technology it is a table named `label`: its first row the channels' names as column headers, a kind
 // the header of its row, and each checkbox named by its kind and its channel ("Mentions Email"), described by the
@@ -46,24 +47,42 @@ function ChannelFrame({ className, ...rest }: HTMLAttributes<HTMLDivElement> & {
 /**
  * A row of the table, in the tracks of so many channels. `head`, the row of the channels' names: in a wide frame it
  * heads the columns, and in a narrow one, where every checkbox stands over its channel's name, it is for assistive
- * technology alone.
+ * technology alone. A row of the body has a little air around it, and in a narrow frame a little more after it than
+ * before, so that its line, its last, keeps to its own checkboxes; `bulk`, the row that turns whole columns, stands
+ * apart from the kinds after it, a group of its own.
  */
 function ChannelLine({
   columns,
   head = false,
+  bulk = false,
   className,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { columns: ColumnCount; head?: boolean; className: string }) {
-  const shown = head ? "sr-only @min-[28rem]:not-sr-only @min-[28rem]:grid" : "";
+}: HTMLAttributes<HTMLDivElement> & { columns: ColumnCount; head?: boolean; bulk?: boolean; className: string }) {
+  const shown = head
+    ? "sr-only @min-[28rem]:not-sr-only @min-[28rem]:grid"
+    : `pt-screen-air pb-screen-row-block @min-[28rem]:pb-screen-air ${bulk ? "mb-screen-head-room" : ""}`;
   return <div {...rest} className={`${className} grid items-center gap-x-screen-air ${TRACKS[columns]} ${shown}`} />;
 }
 
 const PLACE = {
-  // The kind's name and the line with it: across the row in a narrow frame, the first column in a wide one. The line
-  // stands beside the name where there is room, and under it in a wide frame, which holds both in the row's height.
-  kind: "col-span-full flex min-w-0 flex-wrap items-baseline gap-x-screen-row-gap @min-[28rem]:col-span-1",
-  line: "min-w-0 flex-[1_1_auto] @min-[28rem]:basis-full",
-  cell: "min-w-0 @min-[28rem]:justify-self-center",
+  // The kind's name and the line with it. In a wide frame, the first column: the line under the name, both in the
+  // row's height. In a narrow one, across the row: the name over the checkboxes, and the line under them, which keeps
+  // its room in every row, said or not, so that a state that comes moves no checkbox; the empty room parts the rows.
+  // (The place spans the row's three lines and takes their heights, its name in the first and its line in the last;
+  // the cells stand in the second, over it, each in the column of its place in the row, which a grid places only where
+  // it is told.)
+  kind: [
+    "col-span-full row-[1/4] grid min-w-0 grid-cols-[minmax(0,1fr)] grid-rows-subgrid",
+    "@min-[28rem]:col-span-1 @min-[28rem]:row-auto @min-[28rem]:flex @min-[28rem]:flex-col",
+  ].join(" "),
+  name: "row-[1] @min-[28rem]:row-auto",
+  line: "row-[3] min-w-0 @min-[28rem]:row-auto",
+  // What keeps the line's room in a narrow frame: one line of its text, never seen.
+  room: "invisible @min-[28rem]:hidden",
+  cell: [
+    "row-[2] min-w-0 @min-[28rem]:row-auto @min-[28rem]:justify-self-center",
+    "@max-[28rem]:nth-2:col-[1] @max-[28rem]:nth-3:col-[2] @max-[28rem]:nth-4:col-[3] @max-[28rem]:nth-5:col-[4]",
+  ].join(" "),
   // The checkbox's target: narrow, the mark over its channel's name, from the cell's start; wide, the mark alone in
   // the middle of a finger's target.
   target: [
@@ -91,7 +110,7 @@ const table = tv({
   slots: {
     root: "text-body text-text",
     // A row is a finger's target tall, which holds a kind's name and one line under it beside its checkboxes.
-    row: "min-h-icon-button-touch py-screen-air",
+    row: "min-h-icon-button-touch",
     head: "text-center text-caption text-muted-text [word-break:auto-phrase]",
     kind: "[word-break:auto-phrase]",
     // The row that turns a whole column on or off: its name a label's weight.
@@ -103,7 +122,8 @@ const table = tv({
     channel: "text-caption text-muted-text",
     // Not drawn: the mark after it shows its state, and the ring of its focus.
     input: "peer cursor-pointer opacity-0 disabled:cursor-not-allowed",
-    caption: "text-caption text-muted-text [word-break:auto-phrase] peer-disabled:opacity-disabled",
+    // The channel's name keeps a caption's color under a cell that cannot change: the box alone shows that.
+    caption: "text-caption text-muted-text [word-break:auto-phrase]",
   },
 });
 
@@ -208,13 +228,16 @@ export function ChannelRow({
   const [states, setStates] = useState<HTMLElement | null>(null);
   const reasonId = reason === undefined ? undefined : `${id}-reason`;
   return (
-    <ChannelLine role="row" columns={countOf(columns)} className={s.row()}>
+    <ChannelLine role="row" columns={countOf(columns)} bulk={all} className={s.row()}>
       <ChannelPlace at="kind" role="rowheader" className="">
-        <span id={id} className={all ? `${s.kind()} ${s.all()}` : s.kind()}>
+        <ChannelPlace at="name" id={id} className={all ? `${s.kind()} ${s.all()}` : s.kind()}>
           {label}
-        </span>
+        </ChannelPlace>
         <ChannelPlace at="line" className={s.line()}>
           <Layers as="span" className="group/line">
+            <ChannelPlace at="room" className="" aria-hidden="true">
+              {" "}
+            </ChannelPlace>
             {reason !== undefined && (
               <span id={reasonId} className={s.reason()}>
                 {reason}
