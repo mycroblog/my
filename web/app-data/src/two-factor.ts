@@ -33,7 +33,8 @@ export async function setUpTotp(data: AppData): Promise<TotpSetup> {
  */
 export async function enableTotp(data: AppData, setupToken: string, code: string): Promise<readonly string[]> {
   const { data: codes } = await data.api.POST("/two_factor/totp", { body: { setup_token: setupToken, code } });
-  await data.queryClient.invalidateQueries({ queryKey: twoFactorQuery(data).queryKey });
+  // Read again even with no screen on it: a later write patches the cached state, which must not be the old one.
+  await data.queryClient.invalidateQueries({ queryKey: twoFactorQuery(data).queryKey, refetchType: "all" });
   return codes?.recovery_codes ?? [];
 }
 
