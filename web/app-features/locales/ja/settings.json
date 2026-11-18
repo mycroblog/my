@@ -316,7 +316,7 @@
     "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
   },
   "settings.profile.hashtags.about": {
-    "defaultMessage": "{max, number} 個まで選べます。プロフィールに表示されます。",
+    "defaultMessage": "{max, number} 個まで追加できます。プロフィールに表示されます。",
     "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
   },
   "settings.profile.hashtags.placeholder": {
@@ -376,12 +376,12 @@
     "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
   },
   "settings.profile.indexable.about": {
-    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されます。} engines {検索エンジンに表示されます。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。この選択は、このサーバーの投稿の検索にだけ反映されます。}}",
-    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that keeps search engines out and has a search of posts, where the choice applies to that search alone."
+    "defaultMessage": "{where, select, both {検索エンジンと、このサーバーの投稿の検索に表示されることがあります。} engines {検索エンジンに表示されることがあります。} other {このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っています。このサーバーの投稿の検索に載せるかどうかは、この選択で決まります。}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that tells search engines to stay out and has a search of posts, where the choice still decides that search. The server states what search engines may do and cannot make them obey: say may, never will."
   },
   "settings.profile.indexable.overridden": {
-    "defaultMessage": "このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っているため、この選択は反映されません。",
-    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators keep search engines out, and the server has no search of posts, so the reader's profile and posts are in no search whatever they chose."
+    "defaultMessage": "このサーバーは、すべてのアカウントで検索エンジンへの掲載を断っているため、この選択はこのサーバーでは反映されません。",
+    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators tell search engines to stay out, and the server has no search of posts, so on this server the reader's profile and posts are in no search whatever they chose. Here, because other servers still receive the reader's own choice."
   },
   "settings.profile.ai_opt_out": {
     "defaultMessage": "AI の学習と利用を拒否する",
@@ -400,8 +400,8 @@
     "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
   },
   "settings.profile.feed.about": {
-    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} overridden {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、検索についてのあなた自身の選択に合わせます。上のサーバーの決まりは、この選択を変えません。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
-    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled because the server keeps search engines out for every account: that switch then shows off, what the server enforces, while the feed still follows what the reader had chosen there; anything else once the reader set this switch, which then keeps their choice."
+    "defaultMessage": "{follows, select, yes {アカウントのない人も、フィードリーダーで公開投稿を読めます。ここで選ぶまでは、上の検索の設定に合わせて切り替わります。} overridden {アカウントのない人も、フィードリーダーで公開投稿を読めます。検索エンジンについてのこのサーバーの設定は、フィードには当てはまりません。} other {アカウントのない人も、フィードリーダーで公開投稿を読めます。}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled and shows off because the server tells search engines to stay out for every account: the feed is not held to that, so this switch may show on under a search switch that shows off, and the line says the server's choice stops at search engines; anything else once the reader set this switch, which then keeps their choice."
   },
   "settings.profile.edit.section.pictures": {
     "defaultMessage": "画像",
@@ -428,7 +428,7 @@
     "description": "The button of the header image and of the avatar that opens the device's file picker to choose another picture in place of the one shown."
   },
   "settings.profile.picture.remove": {
-    "defaultMessage": "削除",
+    "defaultMessage": "外す",
     "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
   },
   "settings.profile.picture.failed": {
@@ -488,7 +488,7 @@
     "description": "The name of one field of the list on the Edit profile page, for assistive technology, so that its two boxes are told from those of the next field. n is its place in the list, from 1."
   },
   "settings.profile.fields.remove": {
-    "defaultMessage": "補足情報 {n, number} を削除",
+    "defaultMessage": "補足情報 {n, number} を外す",
     "description": "The name of the button that removes one field from the list on the Edit profile page, for assistive technology. n is the field's place in the list, from 1."
   },
   "settings.profile.save": {
@@ -508,7 +508,7 @@
     "description": "The question of the confirmation that opens when the reader leaves the Edit profile page with changes they have not saved."
   },
   "settings.profile.leave.text": {
-    "defaultMessage": "保存していない変更は失われ、元に戻せません。",
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
     "description": "The text of the confirmation that asks whether to leave the Edit profile page without saving."
   },
   "settings.profile.leave.confirm": {
@@ -528,7 +528,7 @@
     "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification that come from what other people do (mentions, follows, boosts)."
   },
   "settings.notifications.section.ordinary.about": {
-    "defaultMessage": "通知の種類ごとに、届け方を選びます。アプリ内をオフにした種類の通知は作られないので、ほかの方法でも届きません。",
+    "defaultMessage": "通知の種類ごとに、届け方を選びます。「アプリ内」をオフにした種類の通知は作られないので、ほかの方法でも届きません。",
     "description": "The line under the heading From other people of the notification settings page (settings.entry.notifications), over the first table of kinds by channel. In the app is the column settings.notifications.channel.in_app."
   },
   "settings.notifications.section.moderator": {
@@ -556,7 +556,7 @@
     "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on in Safari on an iPhone or iPad: Web Push works there only once the site is added to the Home Screen and opened from it. Home Screen is Apple's name."
   },
   "settings.notifications.push.closed": {
-    "defaultMessage": "ブラウザの確認に答えないまま閉じられました。もう一度確認するには、もう一度オンにしてください。",
+    "defaultMessage": "ブラウザの確認に答えないまま閉じられました。もう一度確認するには、オンにしてください。",
     "description": "Under the Push notifications switch of the notification settings page (settings.entry.notifications), after the reader turned it on and closed the browser's permission question without choosing: the switch went back to off. The same case as notifications.push_closed, for a switch."
   },
   "settings.notifications.sound": {
@@ -564,7 +564,7 @@
     "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns the sound of new notifications on or off for the device the reader is using. Off until the reader turns it on."
   },
   "settings.notifications.sound.about": {
-    "defaultMessage": "アプリを開いている間に通知が届くと、この端末で音を鳴らします。鳴らす種類は、下の「音」の列で選びます。",
+    "defaultMessage": "アプリを開いている間に通知が届くと、この端末で音を鳴らします。オンの間、鳴らす種類を下の「音」の列で選べます。",
     "description": "The line under the Notification sound switch of the notification settings page (settings.entry.notifications). The Sound column (settings.notifications.channel.sound) of the tables below it appears once the switch is on, with every kind off."
   },
   "settings.notifications.sound.try": {
@@ -580,8 +580,8 @@
     "description": "The heading of the notice at the top of the notification settings page (settings.entry.notifications) while the server no longer sends email to the reader's address. A sentence without a full stop."
   },
   "settings.notifications.email_stopped.about": {
-    "defaultMessage": "{kind, select, hard_bounce {あなたのアドレスへのメールが返送されたため、アドレスをもう一度確認するまで、通知を含むメールを送りません。} other {このサーバーからのメールが迷惑メールとして報告されたため、通知のメールを送っていません。}}",
-    "description": "Under settings.notifications.email_stopped: why the server stopped. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again) or complaint (the recipient marked an email as spam; only notification emails stop)."
+    "defaultMessage": "{kind, select, hard_bounce {あなたのアドレスへのメールが届かなかったため、アドレスをもう一度確認するまで、通知を含むメールを送りません。} other {このサーバーからのメールが迷惑メールとして報告されたため、通知のメールを送っていません。もう一度受け取るには、このサーバーのモデレーターに問い合わせてください。}}",
+    "description": "Under settings.notifications.email_stopped: why the server stopped, and after a complaint the only way back. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again, with the button under this line) or complaint (the recipient marked an email as spam; only notification emails stop, until a moderator lifts it)."
   },
   "settings.notifications.email_stopped.verify": {
     "defaultMessage": "確認のメールを送る",
@@ -592,11 +592,11 @@
     "description": "Beside settings.notifications.email_stopped.verify once the server queued the verification email: what the reader does next."
   },
   "settings.notifications.email_stopped.busy": {
-    "defaultMessage": "確認のメールは一時間に3回まで送れます。しばらくしてから、もう一度試してください。",
+    "defaultMessage": "確認のメールは 1 時間に 3 回まで送れます。しばらくしてからもう一度試してください。",
     "description": "Beside settings.notifications.email_stopped.verify when the server refused it because it already sent 3 verification emails in the last hour."
   },
   "settings.notifications.email_stopped.not_sent": {
-    "defaultMessage": "メールを送れませんでした。",
+    "defaultMessage": "メールを送れませんでした。もう一度試してください。",
     "description": "Beside settings.notifications.email_stopped.verify when the server did not answer; the button beside it tries again."
   },
   "settings.notifications.column.kind": {
@@ -628,7 +628,7 @@
     "description": "The name of one checkbox of a table of the notification settings page (settings.entry.notifications), in the message that a change was not saved (settings.unsaved): kind is the row's name (settings.notifications.kind.*, or settings.notifications.all), channel the column's (settings.notifications.channel.*)."
   },
   "settings.notifications.reason.in_app_off": {
-    "defaultMessage": "アプリ内がオフなので、ほかの方法でも届きません。",
+    "defaultMessage": "「アプリ内」がオフなので、ほかの方法でも届きません。",
     "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications) while its In the app checkbox is off: why its other checkboxes are off and cannot be changed."
   },
   "settings.notifications.reason.fixed": {
@@ -637,107 +637,107 @@
   },
   "settings.notifications.kind.mention": {
     "defaultMessage": "メンション",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.mention): keep the two the same."
   },
   "settings.notifications.kind.follow": {
     "defaultMessage": "新しいフォロワー",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow): keep the two the same."
   },
   "settings.notifications.kind.follow_request": {
     "defaultMessage": "フォローリクエスト",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_request): keep the two the same."
   },
   "settings.notifications.kind.follow_accepted": {
     "defaultMessage": "承認されたフォローリクエスト",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_accepted): keep the two the same."
   },
   "settings.notifications.kind.boost": {
     "defaultMessage": "ブースト",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.boost): keep the two the same."
   },
   "settings.notifications.kind.favourite": {
     "defaultMessage": "お気に入り",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.favourite): keep the two the same."
   },
   "settings.notifications.kind.reaction": {
-    "defaultMessage": "リアクション",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop."
+    "defaultMessage": "絵文字リアクション",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.reaction): keep the two the same."
   },
   "settings.notifications.kind.quote": {
     "defaultMessage": "引用",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.quote): keep the two the same."
   },
   "settings.notifications.kind.interaction_request": {
-    "defaultMessage": "承認の依頼",
+    "defaultMessage": "返信・ブースト・引用の承認",
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to reply to, boost or quote a post of the reader, which waits for the reader's approval, or an author approved or declined the reader's own reply, boost or quote (notifications.kind.reply_request and the like). A noun phrase without a full stop."
   },
   "settings.notifications.kind.poll_closed": {
-    "defaultMessage": "終了した投票",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop."
+    "defaultMessage": "締切済みの投票",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.poll_closed): keep the two the same."
   },
   "settings.notifications.kind.account_moved": {
-    "defaultMessage": "移転したアカウント",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop."
+    "defaultMessage": "フォロー中のアカウントの移転",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.account_moved): keep the two the same."
   },
   "settings.notifications.kind.voice": {
-    "defaultMessage": "通話のルーム",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop."
+    "defaultMessage": "通話",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.voice): keep the two the same."
   },
   "settings.notifications.kind.event": {
     "defaultMessage": "イベント",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.event): keep the two the same."
   },
   "settings.notifications.kind.status": {
     "defaultMessage": "新しい投稿",
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A new post of an account whose posts the reader asked to be notified of (notifications.kind.status). A noun phrase without a full stop."
   },
   "settings.notifications.kind.admin_report": {
-    "defaultMessage": "通報",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop."
+    "defaultMessage": "新しい通報",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_report): keep the two the same."
   },
   "settings.notifications.kind.admin_sign_up": {
     "defaultMessage": "承認待ちの登録",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_sign_up): keep the two the same."
   },
   "settings.notifications.kind.admin_appeal": {
-    "defaultMessage": "異議申し立て",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop."
+    "defaultMessage": "新しい異議申し立て",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_appeal): keep the two the same."
   },
   "settings.notifications.kind.admin_webhook_disabled": {
     "defaultMessage": "無効になった webhook",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_webhook_disabled): keep the two the same."
   },
   "settings.notifications.kind.admin_hook_failing": {
-    "defaultMessage": "失敗し続ける外部の審査",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop."
+    "defaultMessage": "外部の審査の失敗",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_failing): keep the two the same."
   },
   "settings.notifications.kind.admin_hook_appeal": {
     "defaultMessage": "拒否された投稿への異議申し立て",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_appeal): keep the two the same."
   },
   "settings.notifications.kind.admin_domain_list_failing": {
-    "defaultMessage": "取得に失敗し続けるブロックリスト",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop."
+    "defaultMessage": "ブロックリストの購読の失敗",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_domain_list_failing): keep the two the same."
   },
   "settings.notifications.kind.admin_custom_emoji_request": {
     "defaultMessage": "カスタム絵文字の申請",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_custom_emoji_request): keep the two the same."
   },
   "settings.notifications.kind.admin_account_moved": {
-    "defaultMessage": "移転した制限中のアカウント",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop."
+    "defaultMessage": "制限中のアカウントの移転",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_account_moved): keep the two the same."
   },
   "settings.notifications.kind.admin_service_closure_due": {
-    "defaultMessage": "閉鎖日の経過",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop."
+    "defaultMessage": "閉鎖日を過ぎたとき",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_service_closure_due): keep the two the same."
   },
   "settings.notifications.kind.admin_error_group": {
-    "defaultMessage": "サーバーのエラー",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop."
+    "defaultMessage": "新しいエラーと再発したエラー",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_error_group): keep the two the same."
   },
   "settings.notifications.kind.moderation": {
     "defaultMessage": "モデレーターからのお知らせ",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.moderation): keep the two the same."
   },
   "settings.notifications.kind.service_closure": {
     "defaultMessage": "このサーバーの閉鎖",
@@ -752,8 +752,8 @@
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An announcement of the server's administrators (notifications.kind.announcement). A noun phrase without a full stop."
   },
   "settings.notifications.kind.auto_delete_limit": {
-    "defaultMessage": "投稿の自動削除",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop."
+    "defaultMessage": "投稿の自動削除のお知らせ",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.auto_delete_limit): keep the two the same."
   },
   "settings.notifications.kind.unpublished_scheduled_status": {
     "defaultMessage": "公開できなかった予約投稿",
@@ -764,7 +764,7 @@
     "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
   },
   "settings.notifications.policy.about": {
-    "defaultMessage": "受け入れる: 通知はいつもどおり届きます。保留する: 受け入れるか消すまで「保留中の通知」で待ちます。破棄する: 通知は届きません。",
+    "defaultMessage": "受け入れる: 通知はいつもどおり届きます。保留する: 受け入れるか消すまで「保留中の通知」で待ちます。破棄する: 通知は作られないので、あとから見ることもできません。",
     "description": "The line under the heading settings.notifications.policy: what each of the three choices does. Accept, Hold back and Drop are the options of settings.notifications.policy.action; Held-back notifications is the screen notifications.held, where accepting and dismissing are notifications.held_accept and notifications.held_dismiss."
   },
   "settings.notifications.policy.action": {
@@ -784,23 +784,23 @@
     "description": "A choice of the section settings.notifications.policy: the notifications of accounts created recently."
   },
   "settings.notifications.policy.new_account.about": {
-    "defaultMessage": "作られてから30日たっていないアカウントです。",
+    "defaultMessage": "作られてから 30 日たっていないアカウントです。",
     "description": "The line under the choice New accounts of the section settings.notifications.policy."
   },
   "settings.notifications.policy.unsolicited_private_mention": {
-    "defaultMessage": "求めていない非公開のメンション",
-    "description": "A choice of the section settings.notifications.policy: mentions of the reader in direct posts that the reader did not start."
+    "defaultMessage": "求めていない DM",
+    "description": "A choice of the section settings.notifications.policy: direct messages (posts whose audience is only the people they mention, the screen conversations.label) that the reader did not start. The app's words for them: direct messages, DM."
   },
   "settings.notifications.policy.unsolicited_private_mention.about": {
-    "defaultMessage": "あなたが相手をメンションしたダイレクトの投稿への返信ではない、あなたをメンションしたダイレクトの投稿です。",
-    "description": "The line under the choice Unrequested private mentions of the section settings.notifications.policy. A direct post is one whose audience is only the people it mentions."
+    "defaultMessage": "あなたがその人に送った DM への返信ではない DM です。",
+    "description": "The line under the choice Unrequested direct messages of the section settings.notifications.policy: a direct message is unrequested unless the reader sent that person one in the same exchange."
   },
   "settings.notifications.policy.limited_account": {
     "defaultMessage": "モデレーターが制限したアカウント",
     "description": "A choice of the section settings.notifications.policy: the notifications of accounts that the server's moderators limited."
   },
   "settings.notifications.policy.limited_account.about": {
-    "defaultMessage": "このサーバーのモデレーターが、アカウントかそのサーバーごと制限したアカウントです。フォローしている人にも当てはまります。",
+    "defaultMessage": "このサーバーのモデレーターが、個別に、またはサーバーごと制限したアカウントです。フォローしている人にも当てはまります。",
     "description": "The line under the choice Accounts limited by the moderators of the section settings.notifications.policy. The other choices never apply to people the reader follows; this one does."
   }
 }

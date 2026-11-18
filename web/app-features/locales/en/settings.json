@@ -28,7 +28,7 @@
     "description": "An entry of the settings menu, and the title of its page, where the reader edits their profile."
   },
   "settings.entry.profile.hint": {
-    "defaultMessage": "Name, bio, pictures, badges, approving followers, appearing in search",
+    "defaultMessage": "Name, bio, images, badges, approving followers, appearing in search",
     "description": "The line under Profile in the settings menu at /settings: what its page holds, so that the reader finds a setting without opening every entry. A list of nouns, without a full stop."
   },
   "settings.entry.display": {
@@ -316,7 +316,7 @@
     "description": "The label of the field of the hashtags the reader features on their profile, on the Profile page of the settings; the profile's own words for them (profile.featured). A hashtag typed there is added at once."
   },
   "settings.profile.hashtags.about": {
-    "defaultMessage": "Up to {max, number}. They show on your profile.",
+    "defaultMessage": "Add up to {max, number}. They show on your profile.",
     "description": "The line under Featured hashtags on the Profile page of the settings. max is the most hashtags an account may feature (10)."
   },
   "settings.profile.hashtags.placeholder": {
@@ -376,12 +376,12 @@
     "description": "The label of a switch on the Profile page of the settings: on, search engines and this server's search of posts may show the reader's profile and public posts."
   },
   "settings.profile.indexable.about": {
-    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} other {This server keeps search engines out for every account. Your choice still decides whether this server's search of posts shows your posts.}}",
-    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that keeps search engines out and has a search of posts, where the choice applies to that search alone."
+    "defaultMessage": "{where, select, both {Search engines and this server's search of posts may show them.} engines {Search engines may show them.} other {This server tells search engines not to list any account. Your choice still decides whether this server's search of posts shows your posts.}}",
+    "description": "The line under Include your profile and public posts in search: where the choice applies. where is both on a server that lets search engines in and has a search of posts, engines on one that lets search engines in and has no search of posts, and server on one that tells search engines to stay out and has a search of posts, where the choice still decides that search. The server states what search engines may do and cannot make them obey: say may, never will."
   },
   "settings.profile.indexable.overridden": {
-    "defaultMessage": "This server keeps search engines out for every account, so your choice has no effect.",
-    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators keep search engines out, and the server has no search of posts, so the reader's profile and posts are in no search whatever they chose."
+    "defaultMessage": "This server tells search engines not to list any account, so your choice has no effect here.",
+    "description": "The line under Include your profile and public posts in search while the switch is disabled and shows off: the server's administrators tell search engines to stay out, and the server has no search of posts, so on this server the reader's profile and posts are in no search whatever they chose. Here, because other servers still receive the reader's own choice."
   },
   "settings.profile.ai_opt_out": {
     "defaultMessage": "Refuse AI training and use",
@@ -400,11 +400,11 @@
     "description": "The label of a switch on the Profile page of the settings: on, the reader's public posts can be read in a feed reader, from an Atom feed at the profile's address. Atom is the name of the feed format."
   },
   "settings.profile.feed.about": {
-    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} overridden {People can read your public posts in a feed reader, without an account. Until you choose here, this follows your own choice for search, which this server's rule above does not change.} other {People can read your public posts in a feed reader, without an account.}}",
-    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled because the server keeps search engines out for every account: that switch then shows off, what the server enforces, while the feed still follows what the reader had chosen there; anything else once the reader set this switch, which then keeps their choice."
+    "defaultMessage": "{follows, select, yes {People can read your public posts in a feed reader, without an account. Until you choose here, this follows the search setting above.} overridden {People can read your public posts in a feed reader, without an account. This server's choice for search engines does not apply to the feed.} other {People can read your public posts in a feed reader, without an account.}}",
+    "description": "The line under Offer an Atom feed of your public posts. follows is yes while the reader has never set this switch: it then turns on and off with the switch above it, Include your profile and public posts in search; overridden while they have never set it and the switch above is disabled and shows off because the server tells search engines to stay out for every account: the feed is not held to that, so this switch may show on under a search switch that shows off, and the line says the server's choice stops at search engines; anything else once the reader set this switch, which then keeps their choice."
   },
   "settings.profile.edit.section.pictures": {
-    "defaultMessage": "Pictures",
+    "defaultMessage": "Images",
     "description": "A section heading of the Edit profile page of the settings, over the header image and the avatar."
   },
   "settings.profile.edit.section.text": {
@@ -420,7 +420,7 @@
     "description": "The label of the reader's avatar, the round picture beside their name, on the Edit profile page of the settings."
   },
   "settings.profile.picture.choose": {
-    "defaultMessage": "Choose a picture",
+    "defaultMessage": "Choose an image",
     "description": "The button of the header image and of the avatar that opens the device's file picker, while there is no picture."
   },
   "settings.profile.picture.replace": {
@@ -432,7 +432,7 @@
     "description": "The button of the header image and of the avatar that removes the picture shown; the profile then shows none once the form is saved."
   },
   "settings.profile.picture.failed": {
-    "defaultMessage": "{reason, select, processing {The server could not process this picture. Choose another one.} other {This picture could not be uploaded. Save again, or choose another one.}}",
+    "defaultMessage": "{reason, select, processing {The server could not process this image. Choose another one.} other {This image could not be uploaded. Save again, or choose another one.}}",
     "description": "Under the avatar or the header image on the Edit profile page when saving failed because of that picture and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
   },
   "settings.profile.name": {
@@ -464,7 +464,7 @@
     "description": "A section heading of the Edit profile page of the settings, and the name of the list under it: the short pairs of a label and its content that a profile shows under the bio (Website: https://example.org)."
   },
   "settings.profile.fields.about": {
-    "defaultMessage": "Up to {max, number} pairs of a label and its content, such as a website or your pronouns. They show on your profile, and a web address becomes a link.",
+    "defaultMessage": "Add up to {max, number} pairs of a label and its content, such as a website or your pronouns. They show on your profile, and a web address becomes a link.",
     "description": "The line under the Fields heading of the Edit profile page. max is the most fields a profile has (4)."
   },
   "settings.profile.fields.empty": {
@@ -500,7 +500,7 @@
     "description": "Beside the Save button of the Edit profile page when saving failed and the server gave no reason (no connection)."
   },
   "settings.profile.save.picture_failed": {
-    "defaultMessage": "Your profile was not saved, because a picture could not be used. See the note under the picture.",
+    "defaultMessage": "Your profile was not saved, because an image could not be used. See the note under the image.",
     "description": "Beside the Save button of the Edit profile page when the avatar or the header image the reader picked could not be uploaded or was refused; what is wrong stands under that picture (settings.profile.picture.failed, or the server's own words)."
   },
   "settings.profile.leave.title": {
@@ -528,7 +528,7 @@
     "description": "A section heading of the notification settings page (settings.entry.notifications), and the name of its table: the kinds of notification that come from what other people do (mentions, follows, boosts)."
   },
   "settings.notifications.section.ordinary.about": {
-    "defaultMessage": "Choose how each kind of notification reaches you. A kind turned off in the app is not created, so it does not arrive any other way either.",
+    "defaultMessage": "Choose how each kind of notification reaches you. A kind with “In the app” off is not created, so it does not arrive any other way either.",
     "description": "The line under the heading From other people of the notification settings page (settings.entry.notifications), over the first table of kinds by channel. In the app is the column settings.notifications.channel.in_app."
   },
   "settings.notifications.section.moderator": {
@@ -556,7 +556,7 @@
     "description": "Why the Push notifications switch of the notification settings page (settings.entry.notifications) is off and cannot be turned on in Safari on an iPhone or iPad: Web Push works there only once the site is added to the Home Screen and opened from it. Home Screen is Apple's name."
   },
   "settings.notifications.push.closed": {
-    "defaultMessage": "The browser's question closed without an answer. Turn this on again to be asked again.",
+    "defaultMessage": "The browser's question closed without an answer. Turn this on to be asked again.",
     "description": "Under the Push notifications switch of the notification settings page (settings.entry.notifications), after the reader turned it on and closed the browser's permission question without choosing: the switch went back to off. The same case as notifications.push_closed, for a switch."
   },
   "settings.notifications.sound": {
@@ -564,7 +564,7 @@
     "description": "The switch, in the section This device of the notification settings page (settings.entry.notifications), that turns the sound of new notifications on or off for the device the reader is using. Off until the reader turns it on."
   },
   "settings.notifications.sound.about": {
-    "defaultMessage": "Plays on this device when a notification arrives while the app is open. Choose which kinds in the Sound column below.",
+    "defaultMessage": "A sound plays on this device when a notification arrives while the app is open. While this is on, choose which kinds in the “Sound” column below.",
     "description": "The line under the Notification sound switch of the notification settings page (settings.entry.notifications). The Sound column (settings.notifications.channel.sound) of the tables below it appears once the switch is on, with every kind off."
   },
   "settings.notifications.sound.try": {
@@ -580,8 +580,8 @@
     "description": "The heading of the notice at the top of the notification settings page (settings.entry.notifications) while the server no longer sends email to the reader's address. A sentence without a full stop."
   },
   "settings.notifications.email_stopped.about": {
-    "defaultMessage": "{kind, select, hard_bounce {An email to your address bounced, so this server sends it no email, notifications included, until you verify the address again.} other {An email from this server was marked as spam, so notification emails are no longer sent to your address.}}",
-    "description": "Under settings.notifications.email_stopped: why the server stopped. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again) or complaint (the recipient marked an email as spam; only notification emails stop)."
+    "defaultMessage": "{kind, select, hard_bounce {An email to your address could not be delivered, so this server sends you no email, notifications included, until you verify the address again.} other {An email from this server was marked as spam, so notification emails are no longer sent to your address. To receive them again, ask the moderators of this server.}}",
+    "description": "Under settings.notifications.email_stopped: why the server stopped, and after a complaint the only way back. kind is hard_bounce (an email to the address came back: the address does not exist or refuses email; every email stops until the reader verifies the address again, with the button under this line) or complaint (the recipient marked an email as spam; only notification emails stop, until a moderator lifts it)."
   },
   "settings.notifications.email_stopped.verify": {
     "defaultMessage": "Send the verification email",
@@ -596,7 +596,7 @@
     "description": "Beside settings.notifications.email_stopped.verify when the server refused it because it already sent 3 verification emails in the last hour."
   },
   "settings.notifications.email_stopped.not_sent": {
-    "defaultMessage": "The email could not be sent.",
+    "defaultMessage": "The email could not be sent. Try again.",
     "description": "Beside settings.notifications.email_stopped.verify when the server did not answer; the button beside it tries again."
   },
   "settings.notifications.column.kind": {
@@ -628,7 +628,7 @@
     "description": "The name of one checkbox of a table of the notification settings page (settings.entry.notifications), in the message that a change was not saved (settings.unsaved): kind is the row's name (settings.notifications.kind.*, or settings.notifications.all), channel the column's (settings.notifications.channel.*)."
   },
   "settings.notifications.reason.in_app_off": {
-    "defaultMessage": "Off in the app, so it does not arrive any other way.",
+    "defaultMessage": "“In the app” is off, so it does not arrive any other way.",
     "description": "The line with a kind's name in a table of the notification settings page (settings.entry.notifications) while its In the app checkbox is off: why its other checkboxes are off and cannot be changed."
   },
   "settings.notifications.reason.fixed": {
@@ -637,107 +637,107 @@
   },
   "settings.notifications.kind.mention": {
     "defaultMessage": "Mentions",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone mentioned the reader in a post (notifications.kind.mention). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.mention): keep the two the same."
   },
   "settings.notifications.kind.follow": {
     "defaultMessage": "New followers",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone followed the reader (notifications.kind.follow). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow): keep the two the same."
   },
   "settings.notifications.kind.follow_request": {
     "defaultMessage": "Follow requests",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to follow the reader (notifications.kind.follow_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_request): keep the two the same."
   },
   "settings.notifications.kind.follow_accepted": {
     "defaultMessage": "Accepted follow requests",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone accepted the reader's request to follow them (notifications.kind.follow_accepted). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.follow_accepted): keep the two the same."
   },
   "settings.notifications.kind.boost": {
     "defaultMessage": "Boosts",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone boosted a post of the reader (notifications.kind.boost). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.boost): keep the two the same."
   },
   "settings.notifications.kind.favourite": {
     "defaultMessage": "Favourites",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone favourited a post of the reader (notifications.kind.favourite). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.favourite): keep the two the same."
   },
   "settings.notifications.kind.reaction": {
-    "defaultMessage": "Reactions",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop."
+    "defaultMessage": "Emoji reactions",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone reacted to a post of the reader with an emoji (notifications.kind.reaction). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.reaction): keep the two the same."
   },
   "settings.notifications.kind.quote": {
     "defaultMessage": "Quotes",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone quoted a post of the reader (notifications.kind.quote). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.quote): keep the two the same."
   },
   "settings.notifications.kind.interaction_request": {
-    "defaultMessage": "Approval requests",
+    "defaultMessage": "Approval of replies, boosts and quotes",
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone asked to reply to, boost or quote a post of the reader, which waits for the reader's approval, or an author approved or declined the reader's own reply, boost or quote (notifications.kind.reply_request and the like). A noun phrase without a full stop."
   },
   "settings.notifications.kind.poll_closed": {
     "defaultMessage": "Ended polls",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A poll the reader took part in has ended (notifications.kind.poll_closed). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.poll_closed): keep the two the same."
   },
   "settings.notifications.kind.account_moved": {
-    "defaultMessage": "Accounts that moved",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop."
+    "defaultMessage": "Accounts you follow moving",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An account the reader follows moved to another account (notifications.kind.account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.account_moved): keep the two the same."
   },
   "settings.notifications.kind.voice": {
-    "defaultMessage": "Voice chat rooms",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop."
+    "defaultMessage": "Voice chats",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. Someone started a voice chat room, or invited the reader to one (notifications.kind.voice_room_started, voice_room_invited). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.voice): keep the two the same."
   },
   "settings.notifications.kind.event": {
     "defaultMessage": "Events",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An invitation to an event, a change of its date or place, a reminder before it starts (notifications.kind.event_invited and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.event): keep the two the same."
   },
   "settings.notifications.kind.status": {
     "defaultMessage": "New posts",
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. A new post of an account whose posts the reader asked to be notified of (notifications.kind.status). A noun phrase without a full stop."
   },
   "settings.notifications.kind.admin_report": {
-    "defaultMessage": "Reports",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop."
+    "defaultMessage": "New reports",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new report awaits them (notifications.kind.admin_report). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_report): keep the two the same."
   },
   "settings.notifications.kind.admin_sign_up": {
-    "defaultMessage": "Sign-ups awaiting approval",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop."
+    "defaultMessage": "Registrations awaiting approval",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new sign-up awaits approval (notifications.kind.admin_sign_up). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_sign_up): keep the two the same."
   },
   "settings.notifications.kind.admin_appeal": {
-    "defaultMessage": "Appeals",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop."
+    "defaultMessage": "New appeals",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: a new appeal of a moderation action awaits them (notifications.kind.admin_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_appeal): keep the two the same."
   },
   "settings.notifications.kind.admin_webhook_disabled": {
-    "defaultMessage": "Webhooks turned off",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop."
+    "defaultMessage": "Disabled webhooks",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the server turned one of its webhooks off after it kept failing (notifications.kind.admin_webhook_disabled). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_webhook_disabled): keep the two the same."
   },
   "settings.notifications.kind.admin_hook_failing": {
     "defaultMessage": "Failing external reviews",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: an external review of posts keeps failing (notifications.kind.admin_hook_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_failing): keep the two the same."
   },
   "settings.notifications.kind.admin_hook_appeal": {
     "defaultMessage": "Appeals of refused posts",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an appeal of a post that an external review refused awaits them (notifications.kind.admin_hook_appeal). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_hook_appeal): keep the two the same."
   },
   "settings.notifications.kind.admin_domain_list_failing": {
     "defaultMessage": "Failing blocklist subscriptions",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a blocklist the server subscribes to keeps failing to load (notifications.kind.admin_domain_list_failing). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_domain_list_failing): keep the two the same."
   },
   "settings.notifications.kind.admin_custom_emoji_request": {
     "defaultMessage": "Custom emoji requests",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a request for a custom emoji awaits review (notifications.kind.admin_custom_emoji_request). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_custom_emoji_request): keep the two the same."
   },
   "settings.notifications.kind.admin_account_moved": {
-    "defaultMessage": "Limited accounts that moved",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop."
+    "defaultMessage": "Limited accounts moving",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For moderators: an account they limited moved to another account (notifications.kind.admin_account_moved). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_account_moved): keep the two the same."
   },
   "settings.notifications.kind.admin_service_closure_due": {
     "defaultMessage": "Closing date passed",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: the announced closing date of the server has passed, and it is time to close it (notifications.kind.admin_service_closure_due). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_service_closure_due): keep the two the same."
   },
   "settings.notifications.kind.admin_error_group": {
-    "defaultMessage": "Server errors",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop."
+    "defaultMessage": "New and recurring errors",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. For administrators: a new error of the server was reported, or a resolved one happened again (notifications.kind.admin_error_group_created and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.admin_error_group): keep the two the same."
   },
   "settings.notifications.kind.moderation": {
     "defaultMessage": "Notices from the moderators",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop."
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The moderators' notices to the reader, the result of an appeal, the resolution of a report the reader filed (notifications.kind.moderation_notice and the like). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.moderation): keep the two the same."
   },
   "settings.notifications.kind.service_closure": {
     "defaultMessage": "Closure of this server",
@@ -752,8 +752,8 @@
     "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. An announcement of the server's administrators (notifications.kind.announcement). A noun phrase without a full stop."
   },
   "settings.notifications.kind.auto_delete_limit": {
-    "defaultMessage": "Automatic deletion of posts",
-    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop."
+    "defaultMessage": "Notices of the automatic deletion of posts",
+    "description": "A row of a table of the notification settings page (settings.entry.notifications): a kind of notification. The server's limit on how long posts are kept will delete old posts of the reader (notifications.kind.auto_delete_limit). A noun phrase without a full stop. The notification emails quote this name (server:mail.group.auto_delete_limit): keep the two the same."
   },
   "settings.notifications.kind.unpublished_scheduled_status": {
     "defaultMessage": "Scheduled posts that could not be published",
@@ -764,7 +764,7 @@
     "description": "A section heading of the notification settings page (settings.entry.notifications): for each kind of sender below it, what happens to their notifications."
   },
   "settings.notifications.policy.about": {
-    "defaultMessage": "Accept: the notification arrives as usual. Hold back: it waits in Held-back notifications until you accept or dismiss it. Drop: it never arrives.",
+    "defaultMessage": "Accept: the notification arrives as usual. Hold back: it waits in “Held-back notifications” until you accept or dismiss it. Drop: it is never created, so you cannot see it later.",
     "description": "The line under the heading settings.notifications.policy: what each of the three choices does. Accept, Hold back and Drop are the options of settings.notifications.policy.action; Held-back notifications is the screen notifications.held, where accepting and dismissing are notifications.held_accept and notifications.held_dismiss."
   },
   "settings.notifications.policy.action": {
@@ -772,11 +772,11 @@
     "description": "An option of each choice of the section settings.notifications.policy: what happens to the notifications of a kind of sender. action is accept (they arrive as usual), filter (they are held back, in the screen notifications.held) or drop (no notification is made)."
   },
   "settings.notifications.policy.not_following": {
-    "defaultMessage": "People you don't follow",
+    "defaultMessage": "People you do not follow",
     "description": "A choice of the section settings.notifications.policy: the notifications of accounts the reader does not follow."
   },
   "settings.notifications.policy.not_follower": {
-    "defaultMessage": "People who don't follow you",
+    "defaultMessage": "People who do not follow you",
     "description": "A choice of the section settings.notifications.policy: the notifications of accounts that do not follow the reader."
   },
   "settings.notifications.policy.new_account": {
@@ -788,12 +788,12 @@
     "description": "The line under the choice New accounts of the section settings.notifications.policy."
   },
   "settings.notifications.policy.unsolicited_private_mention": {
-    "defaultMessage": "Unrequested private mentions",
-    "description": "A choice of the section settings.notifications.policy: mentions of the reader in direct posts that the reader did not start."
+    "defaultMessage": "Unrequested direct messages",
+    "description": "A choice of the section settings.notifications.policy: direct messages (posts whose audience is only the people they mention, the screen conversations.label) that the reader did not start. The app's words for them: direct messages, DM."
   },
   "settings.notifications.policy.unsolicited_private_mention.about": {
-    "defaultMessage": "Direct posts that mention you without replying to one of yours that mentioned the sender.",
-    "description": "The line under the choice Unrequested private mentions of the section settings.notifications.policy. A direct post is one whose audience is only the people it mentions."
+    "defaultMessage": "Direct messages that do not reply to one you sent to that person.",
+    "description": "The line under the choice Unrequested direct messages of the section settings.notifications.policy: a direct message is unrequested unless the reader sent that person one in the same exchange."
   },
   "settings.notifications.policy.limited_account": {
     "defaultMessage": "Accounts limited by the moderators",

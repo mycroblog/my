@@ -41,7 +41,7 @@ const groups = (menu: HTMLElement) =>
 const beside = (name = "Settings") =>
   screen.queryAllByRole("navigation", { name }).filter((menu) => !screen.getByRole("main").contains(menu));
 
-const profileHint = "Name, bio, pictures, badges, approving followers, appearing in search";
+const profileHint = "Name, bio, images, badges, approving followers, appearing in search";
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
 const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
 

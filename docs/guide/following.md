@@ -19,7 +19,7 @@ A profile has the button "Follow". Depending on the account it says something el
 | Button | Meaning |
 | --- | --- |
 | Follow | You follow at once. |
-| Request to follow | The account approves its followers ("Approves followers"). The button then reads "Requested", and "Withdraw request" takes it back. |
+| Request to follow | The account approves its followers ("Follow requests need approval"). The button then reads "Requested", and "Withdraw request" takes it back. |
 | Follow back | The account follows you. |
 | Following | You follow it. Choosing it asks "Unfollow ...?". |
 

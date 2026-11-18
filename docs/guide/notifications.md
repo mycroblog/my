@@ -47,9 +47,9 @@ email; a notification about a post it only folds names the filter in its push no
 ## Holding notifications from people you don't know
 
 "Notifications from people you may not know", at the bottom of the notification settings, chooses what happens to the
-notifications of people who meet each condition: "People you don't follow", "People who don't follow you", "New
-accounts" (created less than 30 days ago), "Unrequested private mentions" (direct posts that mention you without
-replying to one of yours), and "Accounts limited by the moderators". For each you choose:
+notifications of people who meet each condition: "People you do not follow", "People who do not follow you", "New
+accounts" (created less than 30 days ago), "Unrequested direct messages" (direct messages that do not reply to one
+of yours), and "Accounts limited by the moderators". For each you choose:
 
 - **Accept**: the notification appears and reaches you the ways you chose above. Every condition accepts until you change it.
 - **Hold back**: the notification stays out of your notifications and the unread count, and sends no push, email, or sound. It waits to be answered.

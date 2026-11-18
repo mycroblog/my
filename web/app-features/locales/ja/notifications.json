@@ -436,7 +436,7 @@
     "description": "The line in place of the Web Push prompt once push notifications are on for this device."
   },
   "notifications.push_settings": {
-    "defaultMessage": "種類は設定で選べます",
+    "defaultMessage": "受け取る種類を設定で選ぶ",
     "description": "The link after notifications.push_on, once the reader turned Web Push on from the prompt over the notifications: it leads to the notification settings page (settings.entry.notifications), where they choose which kinds of notification are pushed, and turn it off."
   },
   "notifications.held_settings": {
