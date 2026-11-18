@@ -30,3 +30,30 @@ test("after a week it reads the date, with the year only when it is not the curr
   expect(read("ja", new Date(2025, 11, 20))).toBe("2025年12月20日");
   expect(relativeTime(ago(21 * d), now, "en").changes).toBe(false);
 });
+
+/** What a post of `at` reads as at `at` of `now`, for a reader in `zone`. */
+const readIn = (zone: string, at: string, when: string) => relativeTime(new Date(at), new Date(when), "en", zone).text;
+
+test("in a zone, the days are counted on the zone's calendar", () => {
+  // 23:00 on Nov 12 in New York, 13:00 on Nov 13 in Tokyo.
+  const when = "2026-11-13T04:00:00Z";
+  // 46 hours and a half before: 00:30 the day before in New York, 14:30 two days before in Tokyo.
+  expect(readIn("America/New_York", "2026-11-11T05:30:00Z", when)).toBe("1d ago");
+  expect(readIn("Asia/Tokyo", "2026-11-11T05:30:00Z", when)).toBe("2d ago");
+  // Less than a day is counted in hours and minutes, whatever the zone.
+  expect(readIn("America/New_York", "2026-11-13T03:40:00Z", when)).toBe("20m ago");
+  expect(readIn("Asia/Tokyo", "2026-11-13T03:40:00Z", when)).toBe("20m ago");
+});
+
+test("in a zone, the date after a week is the zone's, with the year when it is not the zone's current one", () => {
+  const when = "2026-11-13T04:00:00Z";
+  // 03:00 UTC on Oct 23 is still Oct 22 in New York.
+  expect(readIn("America/New_York", "2026-10-23T03:00:00Z", when)).toBe("Oct 22");
+  expect(readIn("Asia/Tokyo", "2026-10-23T03:00:00Z", when)).toBe("Oct 23");
+  // 02:00 UTC on Jan 1 is still last year in New York.
+  expect(readIn("America/New_York", "2026-01-01T02:00:00Z", when)).toBe("Dec 31, 2025");
+  expect(readIn("Asia/Tokyo", "2026-01-01T02:00:00Z", when)).toBe("Jan 1");
+  // And at that moment New York's current year is still the year of a post of Dec 20; Tokyo's is not.
+  expect(readIn("America/New_York", "2025-12-20T12:00:00Z", "2026-01-01T02:00:00Z")).toBe("Dec 20");
+  expect(readIn("Asia/Tokyo", "2025-12-20T12:00:00Z", "2026-01-01T02:00:00Z")).toBe("Dec 20, 2025");
+});

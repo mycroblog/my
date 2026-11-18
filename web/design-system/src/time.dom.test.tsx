@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-import { expect, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
+import { afterAll, beforeAll, describe, expect, test } from "bun:test";
+import { TimeZoneProvider } from "@my/design-system";
+import { cleanup, render, screen } from "@testing-library/react";
 import { I18nProvider } from "react-aria-components";
 import { RelativeTime } from "./time";
 
@@ -38,4 +39,47 @@ test("a time reads in the I18nProvider's locale, and in its own over it", () => 
   expect([provided?.textContent, provided?.lang]).toEqual(["2025年12月20日", "ja"]);
   expect(provided?.title).toMatch(/^2025年12月20日/);
   expect([own?.textContent, own?.lang]).toEqual(["Dec 20, 2025", "en"]);
+});
+
+describe("in the reader's time zone", () => {
+  const device = process.env.TZ;
+
+  beforeAll(() => {
+    process.env.TZ = "Asia/Tokyo";
+  });
+
+  afterAll(() => {
+    if (device === undefined) delete process.env.TZ;
+    else process.env.TZ = device;
+  });
+
+  /** The time of `date` under a provider of `timeZone`, alone in the document. */
+  function timeIn(timeZone: string | undefined, date: string) {
+    cleanup();
+    render(
+      <TimeZoneProvider timeZone={timeZone}>
+        <RelativeTime date={date} locale="en" />
+      </TimeZoneProvider>,
+    );
+    return screen.getByRole("time");
+  }
+
+  test("a time reads its date and its full date in the zone its provider gives", () => {
+    // 02:00 UTC on Jan 1, 2025 is 21:00 on Dec 31 in New York, and 11:00 on Jan 1 in Tokyo, the device's zone.
+    const newYork = timeIn("America/New_York", "2025-01-01T02:00:00Z");
+
+    expect(newYork.textContent).toBe("Dec 31, 2024");
+    expect(newYork.title).toMatch(/^December 31, 2024 at 9:00\sPM/);
+    // The moment is the same for machines.
+    expect(newYork.getAttribute("datetime")).toBe("2025-01-01T02:00:00.000Z");
+  });
+
+  test("with no zone given, or one the platform does not know, a time reads in the device's", () => {
+    for (const timeZone of [undefined, "Mars/Olympus_Mons"]) {
+      const time = timeIn(timeZone, "2025-01-01T02:00:00Z");
+
+      expect(time.textContent).toBe("Jan 1, 2025");
+      expect(time.title).toMatch(/^January 1, 2025 at 11:00\sAM/);
+    }
+  });
 });

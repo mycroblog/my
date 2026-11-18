@@ -4,9 +4,9 @@
 // a reader's press on a post asks of the server or of the screen. Sam reads a server that holds two posts of Yuki's.
 
 import { expect, test } from "bun:test";
-import { homeTimelineQuery } from "@my/app-data";
+import { homeTimelineQuery, preferencesQuery, receiveHomeStatuses } from "@my/app-data";
 import { scenario, type FakeOptions } from "@my/e2e/fake";
-import { cleanup, screen, waitFor, within } from "@testing-library/react";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
 import { PostActions, type ComposeRequest } from "../post-actions";
 import { fakeData, renderFeature } from "../test/feature";
 import { HomeTimeline, loadHomeTimeline } from "./home";
@@ -118,6 +118,58 @@ test("a vote in a post's poll reaches the server", async () => {
   await waitFor(() => {
     if (poll.queryAllByText(/your vote/).length !== 1) throw new Error("the poll shows no vote of the reader's");
   });
+});
+
+// Whether new posts go in by themselves is the reader's choice (#3199), which the shell read before any screen.
+
+/** The home timeline of a reader whose preferences are `preferences`, read as the shell reads them, and drawn. */
+async function homeWith(preferences: NonNullable<FakeOptions["preferences"]>) {
+  cleanup();
+  const made = fakeData({ ...server, preferences });
+  await made.data.queryClient.query(preferencesQuery(made.data));
+  await loadHomeTimeline(made.data);
+  const user = renderFeature(
+    made.data,
+    <PostActions onCompose={() => undefined}>
+      <HomeTimeline />
+    </PostActions>,
+  );
+  return { ...made, user, feed: within(screen.getByRole("feed", { name: "Home timeline" })) };
+}
+
+/** Two posts arrive on the reader's stream, as the app's stream hands them to the home timeline. */
+function twoArrive({ fake, data }: ReturnType<typeof fakeData>) {
+  const arrived = fake.newPosts(2);
+  act(() => {
+    receiveHomeStatuses(data, arrived);
+  });
+  return arrived;
+}
+
+test("for a reader who chose to hold new posts back, they wait behind the button, and go in when it is pressed", async () => {
+  const shown = await homeWith({ timeline_auto_insert: false });
+  expect(shown.feed.getAllByRole("article")).toHaveLength(2);
+
+  twoArrive(shown);
+
+  const button = await screen.findByRole("button", { name: "2 new posts" });
+  expect(shown.feed.getAllByRole("article")).toHaveLength(2);
+  await shown.user.click(button);
+  await waitFor(() => {
+    if (shown.feed.getAllByRole("article").length !== 4) throw new Error("the new posts did not go in");
+  });
+  expect(screen.queryAllByRole("button", { name: /new posts?$/ })).toHaveLength(0);
+});
+
+test("for a reader who did not, new posts go in by themselves, with no button", async () => {
+  const shown = await homeWith({ timeline_auto_insert: true });
+
+  twoArrive(shown);
+
+  await waitFor(() => {
+    if (shown.feed.getAllByRole("article").length !== 4) throw new Error("the new posts did not go in");
+  });
+  expect(screen.queryAllByRole("button", { name: /new posts?$/ })).toHaveLength(0);
 });
 
 /** The people suggested over the home timeline, and the feed under them, as the screen shows them. */

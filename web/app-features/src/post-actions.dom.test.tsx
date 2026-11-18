@@ -5,9 +5,10 @@
 
 import { expect, test } from "bun:test";
 import type { PostAction } from "@my/app-components";
+import { preferencesQuery, updatePreferences, type LinkCardSize } from "@my/app-data";
 import { scenario } from "@my/e2e/fake";
-import { screen, waitFor, within } from "@testing-library/react";
-import { PostActions, usePostActions, type ComposeRequest } from "./post-actions";
+import { act, cleanup, screen, waitFor, within } from "@testing-library/react";
+import { PostActions, usePostActions, usePostCardSize, type ComposeRequest } from "./post-actions";
 import { fakeData, renderFeature } from "./test/feature";
 import { HomeTimeline, loadHomeTimeline } from "./timeline/home";
 
@@ -285,4 +286,76 @@ test("a reaction that does not finish puts back the favourite it took, and Try a
   });
   expect(await reaction()).not.toBeNull();
   expect(favourited()).toBeNull();
+});
+
+// The size of a post's link card (#3199): the reader's choice, which every screen's post asks PostActions for. A
+// simulation tells a small card from a large one by nothing a reader meets, so the size is read where a post reads it;
+// what each size looks like is the design system's.
+
+/** The size a post under PostActions draws its link card in, on `made`'s data: `size()` is what it reads now. */
+function cardSizeOn({ data }: Pick<ReturnType<typeof fakeData>, "data">) {
+  const seen: { size?: LinkCardSize } = {};
+  function ReadsTheSize() {
+    seen.size = usePostCardSize();
+    return null;
+  }
+  renderFeature(
+    data,
+    <PostActions onCompose={() => undefined}>
+      <ReadsTheSize />
+    </PostActions>,
+  );
+  return () => seen.size;
+}
+
+/** Waits until the size read is `size`. */
+const becomes = (read: () => LinkCardSize | undefined, size: LinkCardSize) =>
+  waitFor(() => {
+    if (read() !== size) throw new Error(`a post's card is ${String(read())}, not ${size}`);
+  });
+
+test("a post's link card is large until the reader's preferences are read, then of the size they chose", async () => {
+  const made = fakeData({ preferences: { link_card_size: "small" } });
+  const read = made.fake.script("GET /preferences", { hold: "request" });
+
+  const size = cardSizeOn(made);
+  await read.arrived();
+  expect(size()).toBe("large");
+  read.release();
+
+  await becomes(size, "small");
+});
+
+test("a reader who chose no size gets large cards, and so does a reader without an account", async () => {
+  const reader = fakeData();
+  await reader.data.queryClient.query(preferencesQuery(reader.data));
+  expect(cardSizeOn(reader)()).toBe("large");
+
+  cleanup();
+  const visitor = fakeData({ visitor: true });
+  const size = cardSizeOn(visitor);
+  await waitFor(() => {
+    if (visitor.data.queryClient.isFetching() > 0) throw new Error("the server's answers are still on their way");
+  });
+  expect(size()).toBe("large");
+});
+
+test("a size chosen while posts show is theirs at once, and a choice the server refuses is taken back", async () => {
+  const made = fakeData();
+  await made.data.queryClient.query(preferencesQuery(made.data));
+  const size = cardSizeOn(made);
+  expect(size()).toBe("large");
+  const sent = made.fake.script("PATCH /preferences", { hold: "request", fail: 500 });
+
+  let refused: Promise<unknown> = Promise.resolve();
+  act(() => {
+    refused = updatePreferences(made.data, { link_card_size: "small" }).catch((error: unknown) => error);
+  });
+  // No turn passed: the request has not reached the server.
+  expect(size()).toBe("small");
+  await sent.arrived();
+  sent.release();
+  await act(() => refused);
+
+  expect(size()).toBe("large");
 });
