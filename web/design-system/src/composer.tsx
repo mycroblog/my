@@ -264,12 +264,27 @@ const count = tv({
   variants: { near: { true: "text-text" }, over: { true: "font-label text-text" } },
 });
 
-/** How many characters are left before the limit (negative past it): muted until `near` it, stronger past it. */
-export function CharCount({ left, near, label }: { left: number; near: number; label: string }) {
+/**
+ * How many characters are left before the limit (negative past it): muted until `near` it, stronger past it. `id` is
+ * the id of its words (`label`), by which the field it counts is described by them (`aria-describedby`).
+ */
+export function CharCount({
+  left,
+  near,
+  label,
+  id,
+}: {
+  left: number;
+  near: number;
+  label: string;
+  id?: string | undefined;
+}) {
   return (
     <span className={count({ near: left >= 0 && left <= near, over: left < 0 })}>
       <span aria-hidden="true">{left}</span>
-      <span className="sr-only">{label}</span>
+      <span id={id} className="sr-only">
+        {label}
+      </span>
     </span>
   );
 }

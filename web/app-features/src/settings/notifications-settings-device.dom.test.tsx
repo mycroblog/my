@@ -213,9 +213,9 @@ describe("the switch says how turning Web Push on and off goes", () => {
     expect(writes(drawn)).toEqual([]);
   });
 
-  // Defect: the browser blocks the site from the refusal on, so the switch cannot be turned on any more, as on a
-  // device where the site was blocked before the screen opened; it stays enabled until the screen is opened again.
-  test.failing("once the reader refused the browser's question, the switch is disabled", async () => {
+  // The browser blocks the site from the refusal on, so the switch cannot be turned on any more, as on a device where
+  // the site was blocked before the screen opened.
+  test("once the reader refused the browser's question, the switch is disabled", async () => {
     await refusedTheQuestion();
 
     expect(toggle(push).disabled).toBe(true);

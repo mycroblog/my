@@ -499,10 +499,11 @@ export function TextField({
 }
 
 /**
- * Puts the focus on the `TextField` of `id` that was refused, and brings its error, right under it, into view with
- * it: a browser scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which
- * grows as it says that nothing was sent), and the error under the field would stay behind it. The error comes into
- * view once the page has measured that bar again, a frame after the one that drew the refusal.
+ * Puts the focus on the field of `id` that was refused (a `TextField`, either field of a `PairField`, the button of a
+ * `PictureField`, a `PairList`), and brings its error (`${id}-error`), right under it, into view with it: a browser
+ * scrolls the focused field alone clear of what is held at the viewport's bottom (a submit bar, which grows as it
+ * says that nothing was sent), and the error under the field would stay behind it. The error comes into view once the
+ * page has measured that bar again, a frame after the one that drew the refusal.
  */
 export function focusRefusedField(id: string): void {
   document.getElementById(id)?.focus();

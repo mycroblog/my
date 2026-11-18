@@ -3,14 +3,15 @@
 // The name and the avatar an account goes by, as its owner sets them (FR-006): the two fields the form of the profile
 // (settings/profile-edit.tsx) and the welcome step of a new account share, and where that form is. `useProfileIdentity`
 // holds what the reader wrote and picked against the account as the server has it; `ProfileNameField` and
-// `ProfileAvatarField` show it, the name with its count near the limit, the avatar in its circle as it will show.
+// `ProfileAvatarField` show it, the name with its count near the limit, which describes the field once it shows
+// (`limitCount`, the bio's too), the avatar in its circle as it will show.
 // Nothing is saved here: whoever holds the fields saves `change` with app-data's `updateProfile`, places what the
 // server refused beside the field it names (`error`), and says `saved` once the server took it. A picture of the
 // profile that the reader picks, replaces or removes is `usePickedPicture`, the header's too.
 
 import { profileLimits, type Account, type ProfileChange } from "@my/app-data";
 import { CharCount, PictureField, TextField, useLocale } from "@my/design-system";
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactElement } from "react";
 import { stringsIn } from "./locale";
 
 /** The address of the form where the reader edits their profile, under the settings' entry Profile. */
@@ -122,12 +123,16 @@ export function useProfileIdentity(
   };
 }
 
-/** The count of a field near its limit, negative past it; none until it is near. */
-export function LimitCount({ left, near }: { left: number; near: number }) {
+/**
+ * The count of a field near its limit, negative past it; none until it is near. `id` is the id of its words, for the
+ * field to be described by them (`limitCount`).
+ */
+export function LimitCount({ id, left, near }: { id?: string | undefined; left: number; near: number }) {
   const { t } = stringsIn(useLocale().locale);
   if (left > near) return undefined;
   return (
     <CharCount
+      id={id}
       left={left}
       near={near}
       label={
@@ -137,6 +142,23 @@ export function LimitCount({ left, near }: { left: number; near: number }) {
       }
     />
   );
+}
+
+/**
+ * What the `TextField` of `id` takes of its count against a limit (`left` characters before it, counted from `near`
+ * it): the count at the end of its label and, once it shows, the count's words among what describes the field, so that
+ * a screen reader hears how much room is left with the field, and not only who sees it.
+ */
+export function limitCount(
+  id: string,
+  left: number,
+  near: number,
+): { end: ReactElement; describedBy: string | undefined } {
+  const countId = `${id}-count`;
+  return {
+    end: <LimitCount id={countId} left={left} near={near} />,
+    describedBy: left > near ? undefined : countId,
+  };
 }
 
 /** What the fields of the identity take from the form that holds them. */
@@ -154,16 +176,17 @@ type FieldProps = {
 export function ProfileNameField({ identity, id, error, busy = false }: FieldProps) {
   const { t } = stringsIn(useLocale().locale);
   const own = useId();
+  const fieldId = id ?? own;
   return (
     <TextField
-      id={id ?? own}
+      id={fieldId}
       name="display_name"
       label={t("settings.profile.name")}
       defaultValue={identity.displayName}
       onChange={identity.setDisplayName}
       autoComplete="nickname"
       readOnly={busy}
-      end={<LimitCount left={identity.nameLeft} near={10} />}
+      {...limitCount(fieldId, identity.nameLeft, 10)}
       error={identity.nameLeft < 0 ? t("settings.profile.name.over", { max: profileLimits.displayName }) : error}
     />
   );

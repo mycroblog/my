@@ -525,11 +525,9 @@ describe("the row of a control says how its save goes", () => {
       expect(shown()).toBe(true);
     });
 
-    // Defect: a hashtag the reader added is not in the list until the server answers, and the field is empty
-    // meanwhile, so the word shows nowhere; one removed stays listed the same way. The switches and the choice show
-    // the reader's choice at once.
-    const atOnce = kind === "the featured hashtags" ? test.failing : test;
-    atOnce(`${kind}: the control shows the reader's choice at once, before the server read the request`, async () => {
+    // A hashtag the reader added is in the list before the server answers, as the switches and the choice show the
+    // reader's choice at once: the field is empty by then, and the word would show nowhere.
+    test(`${kind}: the control shows the reader's choice at once, before the server read the request`, async () => {
       const { fake, user } = await read();
       const sent = fake.script(route, { hold: "request" });
       await change(user);

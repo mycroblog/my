@@ -111,7 +111,10 @@ function pushRefusal(serves: boolean, push: PushSwitch, t: T): string | undefine
 
 /**
  * Web Push for this device, on or off, as the prompt over the notifications turns it on: every kind the reader gets.
- * Where it cannot be turned on, it is off and disabled, and the line under it says why.
+ * Where it cannot be turned on, it is off and disabled, and the line under it says why: from the moment the reader
+ * refuses the browser's question too, since the browser blocks the site from then on. Where the browser tells that
+ * they allowed the site again in its settings, the switch is theirs again without a reload, and what it said of the
+ * refusal is gone (`Toggle`).
  */
 function PushToggle({ push, refusal, t }: { push: PushSwitch; refusal: string | undefined; t: T }) {
   const kinds = useNotificationKinds();
@@ -160,6 +163,9 @@ function Sound({ t }: { t: T }) {
           setSilent(false);
           save(async () => {
             setNotificationSound(next);
+            // Turning it on plays it once, on purpose: a browser lets a page sound only after a press of its reader
+            // started the page's audio (the platform's `trySound`), and this is the press the reader makes for the
+            // sound. It also tells them here, and not at the first notification, that the browser keeps the page silent.
             if (next) await play();
           });
         }}

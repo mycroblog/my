@@ -30,6 +30,7 @@ export {
   subscribePush,
   supportsPush,
   takeUpdate,
+  watchNotificationPermission,
   type NotificationPermissionState,
   type PushSubscriptionData,
 } from "./push";

@@ -11,9 +11,19 @@
 // say, the description keeping its room, or under a label that has none, and the row is a finger's target tall, which
 // holds a label and one line under it, so that the track and what is under the switch do not move. The
 // state's place is a polite live region from the start, and the state there describes the switch: assistive
-// technology hears it as it comes, and again with the switch.
+// technology hears it as it comes, and again with the switch. A switch disabled while it has the focus gives it to
+// the line under it that shows (no key leads there otherwise), and takes it back once it can be changed again.
 
-import { useId, useRef, type ComponentProps, type HTMLAttributes, type ReactNode } from "react";
+import {
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  type ComponentProps,
+  type HTMLAttributes,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { SwitchButton, SwitchField, Text } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { SaveControlContext } from "./save-state";
@@ -89,7 +99,7 @@ function TogglePlace({
   at,
   className,
   ...rest
-}: { at: keyof typeof PLACE; className: string } & HTMLAttributes<HTMLSpanElement>) {
+}: { at: keyof typeof PLACE; className: string; ref?: Ref<HTMLSpanElement> } & HTMLAttributes<HTMLSpanElement>) {
   return <span {...rest} className={`${className} ${PLACE[at]}`} />;
 }
 
@@ -134,8 +144,38 @@ export function Switch({
   const s = toggle();
   const stateId = useId();
   const input = useRef<HTMLInputElement>(null);
+  const note = useRef<HTMLElement>(null);
+  const state = useRef<HTMLSpanElement>(null);
   const below = isDisabled && reason !== undefined ? reason : description;
   const saying = save !== undefined && save !== null && save !== false;
+  // Disabled while it has the focus (what its own press came to fixes it: the browser now blocks the site), it cannot
+  // keep the focus, which would fall to the page: the line under it takes it, the one that shows, which says why, and
+  // gives it back when the switch can be changed again. Whether it had the focus is kept from its own events: by the
+  // time the switch is drawn disabled, it has lost it already, and that blur is no leaving of the reader's.
+  const focused = useRef(false);
+  useEffect(() => {
+    const control = input.current;
+    if (control === null) return undefined;
+    const took = () => {
+      focused.current = true;
+    };
+    const lost = () => {
+      if (!control.disabled) focused.current = false;
+    };
+    control.addEventListener("focus", took);
+    control.addEventListener("blur", lost);
+    return () => {
+      control.removeEventListener("focus", took);
+      control.removeEventListener("blur", lost);
+    };
+  }, []);
+  useLayoutEffect(() => {
+    const has = document.activeElement;
+    const onLine = has !== null && (has === state.current || has === note.current);
+    if (isDisabled && (focused.current || onLine)) (saying ? state : note).current?.focus();
+    else if (!isDisabled && onLine) input.current?.focus();
+    if (isDisabled) focused.current = false;
+  }, [isDisabled, saying]);
   return (
     <ToggleFrame
       className={`${s.root()} ${s.saves()}`}
@@ -156,12 +196,17 @@ export function Switch({
         </TogglePlace>
       </SwitchButton>
       {below !== undefined && (
-        <ToggleNote slot="description" className={saying ? `${s.description()} ${s.covered()}` : s.description()}>
+        <ToggleNote
+          ref={note}
+          tabIndex={-1}
+          slot="description"
+          className={saying ? `${s.description()} ${s.covered()}` : s.description()}
+        >
           {below}
         </ToggleNote>
       )}
       {/* The state's place, a live region that is there before the state is. */}
-      <TogglePlace at="state" className="" id={stateId} role="status">
+      <TogglePlace ref={state} tabIndex={-1} at="state" className="" id={stateId} role="status">
         <SaveControlContext value={() => input.current?.focus()}>{saying && save}</SaveControlContext>
       </TogglePlace>
     </ToggleFrame>

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Writes of one document whose every answer is the whole of it (the notification settings, the policy, the push
-// subscription), sent one at a time in the order they were made: two on their way at once could be answered crossed,
-// the older answer putting back in the cache what the newer one changed.
+// subscription, the featured hashtags), sent one at a time in the order they were made: two on their way at once could
+// be answered crossed, the older answer putting back in the cache what the newer one changed.
 import type { QueryClient } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 

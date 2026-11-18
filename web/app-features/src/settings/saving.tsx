@@ -37,13 +37,14 @@ type Saving =
 
 /**
  * The save state of the last change of the setting named `setting`, on the settings page at `page` (`state`, as the
- * `save` of a `SettingRow` or a `Switch` takes it: null while there is nothing to say), and `save`, which runs a write
- * of the setting and follows it, past the control's own life.
+ * `save` of a `SettingRow` or a `Switch` takes it: null while there is nothing to say), `save`, which runs a write
+ * of the setting and follows it, past the control's own life, and `forget`, after which the state says nothing of the
+ * change that last ended (what it said is of another time: its control could not be changed since, and can again).
  */
 export function useSaving(
   setting: string,
   page: string,
-): { state: ReactElement | null; save: (write: () => Promise<unknown>) => void } {
+): { state: ReactElement | null; save: (write: () => Promise<unknown>) => void; forget: () => void } {
   const [saving, setSaving] = useState<Saving | null>(null);
   /** The last change, which alone speaks, the timer that ends its "saved", and whether the control is gone. */
   const last = useRef<{ run: number; timer: ReturnType<typeof setTimeout> | undefined; gone: boolean }>({
@@ -100,5 +101,8 @@ export function useSaving(
     ) : (
       <SaveState state={saving.state} />
     );
-  return { state, save };
+  const forget = () => {
+    setSaving(null);
+  };
+  return { state, save, forget };
 }

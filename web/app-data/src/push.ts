@@ -12,6 +12,7 @@ import {
   readDeviceValue,
   subscribePush,
   supportsPush,
+  watchNotificationPermission,
   writeDeviceValue,
   type NotificationPermissionState,
   type PushSubscriptionData,
@@ -197,7 +198,10 @@ export type PushSwitch = {
   readonly subscription: PushSubscription | null | undefined;
   /** Whether this browser can receive pushes at all. */
   readonly supported: boolean;
-  /** What the reader said to the browser's notifications. */
+  /**
+   * What the reader said to the browser's notifications, as it is now: after the question a press here asked, and,
+   * where the browser tells of it, after they allow or block the site in the browser's settings.
+   */
   readonly permission: NotificationPermissionState;
   readonly turnOn: (alerts: readonly NotificationType[]) => Promise<PushTurnOn>;
   readonly turnOff: () => Promise<void>;
@@ -215,6 +219,11 @@ export function usePushSwitch(): PushSwitch {
   const viewer = useQuery(viewerQuery(data)).data;
   const key = useQuery(instanceQuery(data)).data?.push_server_key;
   const subscription = usePushSubscription();
+  const permission = useSyncExternalStore(
+    watchNotificationPermission,
+    notificationPermission,
+    (): NotificationPermissionState => "unsupported",
+  );
   const need = () => {
     if (viewer === undefined || key === undefined) throw new Error("app-data: the push switch is not ready");
     return { id: viewer.id, key };
@@ -222,7 +231,7 @@ export function usePushSwitch(): PushSwitch {
   return {
     subscription,
     supported: supportsPush(),
-    permission: notificationPermission(),
+    permission,
     turnOn: (alerts) => {
       const ready = need();
       return turnPushOn(data, ready.id, ready.key, alerts);

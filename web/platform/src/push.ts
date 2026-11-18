@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Web Push, the notifications' permission and the app's badge (FR-206, ADR-0028 §17): whether this browser can receive
-// pushes (a Service Worker and the Push API), what the reader said to the site's notifications, asking them, and the
-// browser's push subscription, made with the server's application key through the app's Service Worker. The app's
-// badge shows a count where the platform has one (the Badging API), and nothing elsewhere. A browser that has none of
-// them answers so, and does nothing.
+// pushes (a Service Worker and the Push API), what the reader said to the site's notifications, asking them, following
+// what they said as it changes, and the browser's push subscription, made with the server's application key through
+// the app's Service Worker. The app's badge shows a count where the platform has one (the Badging API), and nothing
+// elsewhere. A browser that has none of them answers so, and does nothing.
 
 import { skipWaitingMessage } from "./sw-protocol";
 
@@ -47,6 +47,9 @@ export function notificationPermission(): NotificationPermissionState {
   return Notification.permission;
 }
 
+/** Who follows what the reader said to the site's notifications (`watchNotificationPermission`). */
+const watchers = new Set<() => void>();
+
 /**
  * Asks the reader whether this site may show notifications, as a press of theirs asks (never on its own); what they
  * answered, `default` when they closed the question without choosing.
@@ -57,7 +60,42 @@ export async function askNotificationPermission(): Promise<NotificationPermissio
     return await Notification.requestPermission();
   } catch {
     return Notification.permission;
+  } finally {
+    // Whatever the reader answered, what they said to the site's notifications is read again by who follows it.
+    for (const changed of [...watchers]) changed();
   }
+}
+
+/**
+ * Calls `changed` whenever what the reader said to this site's notifications (`notificationPermission`) may have
+ * changed, until the function it returns is called: once a question of the app's was answered
+ * (`askNotificationPermission`), and, in a browser that tells of it (the Permissions API's `change` event), when the
+ * reader allows or blocks the site in the browser's own settings while the page is open. A browser that does not
+ * tell is followed by the app's questions alone.
+ */
+export function watchNotificationPermission(changed: () => void): () => void {
+  watchers.add(changed);
+  // The status is kept for as long as it is followed: a browser stops telling of one nothing holds.
+  let status: PermissionStatus | undefined;
+  let ended = false;
+  const permissions = typeof navigator === "undefined" ? undefined : (navigator.permissions as Permissions | undefined);
+  const asked =
+    permissions === undefined
+      ? undefined
+      : // A browser that does not know notifications by this name refuses, by a rejection or by throwing.
+        Promise.resolve()
+          .then(() => permissions.query({ name: "notifications" }))
+          .catch(() => undefined);
+  void asked?.then((answered) => {
+    if (ended || answered === undefined) return;
+    status = answered;
+    status.addEventListener("change", changed);
+  });
+  return () => {
+    ended = true;
+    watchers.delete(changed);
+    status?.removeEventListener("change", changed);
+  };
 }
 
 /**

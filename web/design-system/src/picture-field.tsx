@@ -34,6 +34,10 @@ const picture = tv({
 });
 
 export type PictureFieldProps = {
+  /**
+   * The id of the button that opens the picker, the field's control: what holds the field puts the focus on it when
+   * the picture was refused, its error (`${id}-error`) coming into view with it (`focusRefusedField`).
+   */
   id: string;
   label: string;
   /** How the picture shows where it is used: an avatar's circle, or a header's 3:1. */
@@ -73,6 +77,7 @@ export function PictureField({
   const actions = (
     <Row wrap align="center" gap="screen-tabs-gap">
       <Button
+        id={id}
         size="timeline"
         isDisabled={isDisabled}
         onPress={() => {

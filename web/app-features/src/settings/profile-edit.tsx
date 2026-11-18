@@ -11,7 +11,10 @@
 // server refused stands beside the input it is about, the submit bar saying the rest: a picture that could not be
 // uploaded or used, under that picture; a field of the list, under its pair, that field alone marked (the server
 // names the label or the content without saying of which field, so the form finds the first one its rule refuses).
-// A text over its limit is not sent: the focus goes to it. Leaving with changes not saved is the app's to notice
+// The focus goes from Save to the input the refusal names, what is wrong with it in view above the submit bar: the
+// text's field, the field of the pair, the button of the picture, the list for its pairs as a whole; a refusal that
+// names none leaves it on Save, by the bar's alert. A text over its limit is not sent: the focus goes to it the same
+// way, and its count, once it shows, is read with the field. Leaving with changes not saved is the app's to notice
 // (`onUnsaved` tells it there are some): it holds the reader back and gives `leaving`, and the screen asks whether to
 // leave without saving.
 
@@ -35,6 +38,7 @@ import {
   BackButton,
   Button,
   ConfirmDialog,
+  focusRefusedField,
   FormAlert,
   ModalPresence,
   PairField,
@@ -51,7 +55,7 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
 import {
-  LimitCount,
+  limitCount,
   ProfileAvatarField,
   ProfileNameField,
   usePickedPicture,
@@ -189,12 +193,15 @@ function EditForm({
   // The keys of the pairs the reader adds follow those the form opened with.
   const [opened] = useState(pairs.length);
   const nextKey = useRef(opened);
-  // What takes the focus once the list of fields is drawn again: the field after one removed, or what adds one.
-  const focusNext = useRef<string | undefined>(undefined);
+  // What takes the focus once the form is drawn again: the field after one removed, or what adds one; and the input
+  // the server refused, whose error comes into view with it, clear of the submit bar.
+  const focusNext = useRef<{ readonly id: string; readonly refused: boolean } | undefined>(undefined);
   useEffect(() => {
-    if (focusNext.current === undefined) return;
-    document.getElementById(focusNext.current)?.focus();
+    const next = focusNext.current;
+    if (next === undefined) return;
     focusNext.current = undefined;
+    if (next.refused) focusRefusedField(next.id);
+    else document.getElementById(next.id)?.focus();
   });
 
   const busy = sent.kind === "sending";
@@ -228,14 +235,31 @@ function EditForm({
   const nameId = `${id}-name`;
   const noteId = `${id}-note`;
   const addId = `${id}-add`;
+  const headerId = `${id}-header`;
+  const avatarId = `${id}-avatar`;
+  const listId = `${id}-fields`;
   const pairId = (key: number) => `${id}-pair-${String(key)}`;
+  /**
+   * The element of the input a refusal was placed on, which takes the focus (`focusRefusedField`): a text's field, a
+   * picture's button, the field of a pair that was sent at an index of `keys`, else the list of the pairs.
+   */
+  const elementOf = (input: Input, keys: readonly number[]): string => {
+    if (input === "name") return nameId;
+    if (input === "note") return noteId;
+    if (input === "header") return headerId;
+    if (input === "avatar") return avatarId;
+    const [, index, part] = /^field:(\d+):(name|value)$/.exec(input) ?? [];
+    const key = index === undefined ? undefined : keys[Number(index)];
+    if (key === undefined) return listId;
+    return part === "value" ? `${pairId(key)}-value` : pairId(key);
+  };
 
   const save = () => {
     if (busy) return;
-    // A text over its limit is not sent: its field says so already, and takes the focus.
+    // A text over its limit is not sent: its field says so already, and takes the focus, what is wrong in view.
     const over = identity.nameLeft < 0 ? nameId : noteLeft < 0 ? noteId : undefined;
     if (over !== undefined) {
-      document.getElementById(over)?.focus();
+      focusRefusedField(over);
       return;
     }
     if (!unsaved) {
@@ -257,7 +281,12 @@ function EditForm({
         setSent({ kind: "saved" });
       },
       (error: unknown) => {
-        setSent({ kind: "refused", refused: placed(error, fields, t), keys: sending.map((pair) => pair.key) });
+        const refusal = placed(error, fields, t);
+        const keys = sending.map((pair) => pair.key);
+        // What the refusal names takes the focus from Save; one that names nothing leaves it there, by the bar's alert.
+        if (refusal.field !== undefined)
+          focusNext.current = { id: elementOf(refusal.field.input, keys), refused: true };
+        setSent({ kind: "refused", refused: refusal, keys });
       },
     );
   };
@@ -299,7 +328,7 @@ function EditForm({
       >
         <SettingsSection heading={t("settings.profile.edit.section.pictures")}>
           <PictureField
-            id={`${id}-header`}
+            id={headerId}
             label={t("settings.profile.header")}
             shape="banner"
             src={header.src}
@@ -315,12 +344,7 @@ function EditForm({
             }
             isDisabled={busy}
           />
-          <ProfileAvatarField
-            id={`${id}-avatar`}
-            identity={identity}
-            error={fieldError(refused, "avatar")}
-            busy={busy}
-          />
+          <ProfileAvatarField id={avatarId} identity={identity} error={fieldError(refused, "avatar")} busy={busy} />
         </SettingsSection>
         <SettingsSection heading={t("settings.profile.edit.section.text")}>
           <ProfileNameField id={nameId} identity={identity} error={fieldError(refused, "name")} busy={busy} />
@@ -336,7 +360,7 @@ function EditForm({
               changed();
             }}
             readOnly={busy}
-            end={<LimitCount left={noteLeft} near={50} />}
+            {...limitCount(noteId, noteLeft, 50)}
             error={
               noteLeft < 0 ? t("settings.profile.note.over", { max: profileLimits.note }) : fieldError(refused, "note")
             }
@@ -351,7 +375,7 @@ function EditForm({
           {pairs.length === 0 ? (
             <SettingsEmpty action={add}>{t("settings.profile.fields.empty")}</SettingsEmpty>
           ) : (
-            <PairList id={`${id}-fields`} label={t("settings.profile.fields")} error={fieldsError}>
+            <PairList id={listId} label={t("settings.profile.fields")} error={fieldsError}>
               {pairs.map((pair, i) => (
                 <PairField
                   key={pair.key}
@@ -376,7 +400,7 @@ function EditForm({
                       // The button leaves with its pair: the focus goes to the pair that takes its place, the one
                       // before it, or what adds a first one.
                       const after = pairs[i + 1] ?? pairs[i - 1];
-                      focusNext.current = after === undefined ? addId : pairId(after.key);
+                      focusNext.current = { id: after === undefined ? addId : pairId(after.key), refused: false };
                       setPairs(pairs.filter((p) => p.key !== pair.key));
                       changed();
                     },

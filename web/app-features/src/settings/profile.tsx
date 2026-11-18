@@ -4,15 +4,16 @@
 // reader's profile as others see it, small (the profile's own head as a summary: the header image as a strip, the
 // avatar, the name with its marks, the handle with the badges shown, the first lines of the bio), with the door to
 // the form that edits it (profile-edit.tsx, a screen under this entry, saved as a whole), and what saves at once, each
-// control saying so in the line under its name (controls.tsx, saving.tsx): the hashtags they feature, saved as the
-// whole list at each one added or removed; whether the account is a bot; the badges they show, a list of one switch
-// each, a section that is absent with no badge (ADR-0070 §12); whether follows need their approval, and who sees the
-// lists of whom they follow and who follows them; and how the account is found: suggestions and the search by name,
-// search engines and this server's search of posts, AI, and the Atom feed, which follows the reader's choice for
-// search until they set it. The search choice stays the reader's whatever the server tells search engines: other
-// servers receive it with the profile and may use it for their search (ADR-0057 §6), and its line says what it
-// still decides. Where the server refuses AI training and use for every account, the AI choice decides nothing
-// anywhere: it is disabled, shows what the server enforces, and says so (ADR-0057 §1).
+// control showing the reader's choice from the press and saying where the save is in the line under its name
+// (controls.tsx, saving.tsx): the hashtags they feature, saved as the whole list at each one added or removed; whether
+// the account is a bot; the badges they show, a list of one switch each, a section that is absent with no badge
+// (ADR-0070 §12); whether follows need their approval, and who sees the lists of whom they follow and who follows
+// them; and how the account is found: suggestions and the search by name, search engines and this server's search of
+// posts, AI, and the Atom feed, which follows the reader's choice for search until they set it. The search choice
+// stays the reader's whatever the server tells search engines: other servers receive it with the profile and may use
+// it for their search (ADR-0057 §6), and its line says what it still decides. Where the server refuses AI training
+// and use for every account, the AI choice decides nothing anywhere: it is disabled, shows what the server enforces,
+// and says so (ADR-0057 §1).
 
 import { AccountName, handleOf, nameOf, PostContent, ProfileHead } from "@my/app-components";
 import {
@@ -51,9 +52,8 @@ import {
 import { useId } from "react";
 import { stringsIn } from "../locale";
 import { profileEditPath } from "../profile-identity";
-import { Choice, ReadingNotice, Toggle } from "./controls";
+import { Choice, ReadingNotice, Toggle, useChoice } from "./controls";
 import type { SettingsEntryProps } from "./entries";
-import { useSaving } from "./saving";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -124,13 +124,18 @@ function OwnProfile({ account, t }: { account: CredentialAccount; t: T }) {
   );
 }
 
-/** The hashtags the profile features: each with its remove, and the field that adds one, saved as the whole list. */
+/**
+ * The hashtags the profile features: each with its remove, and the field that adds one, saved as the whole list. The
+ * list shows the reader's change the moment they make it (one added is listed, one removed is gone) while it is on
+ * its way, as the switches of the screen do, and the next change starts from it; a save the server did not take puts
+ * back the server's list, and trying again sends the same list.
+ */
 function FeaturedHashtags({ t }: { t: T }) {
   const id = useId();
-  const names = useOwnFeaturedHashtags().map((tag) => tag.name);
+  const held = useOwnFeaturedHashtags().map((tag) => tag.name);
   const set = useSetFeaturedHashtags();
   const label = t("settings.profile.hashtags");
-  const { state, save } = useSaving(label, page);
+  const { shown: names, state, choose } = useChoice<readonly string[]>(label, page, held, set);
   const full = names.length >= profileLimits.featuredHashtags;
   const has = (tag: string) => names.some((name) => name.toLowerCase() === tag.toLowerCase());
   return (
@@ -148,10 +153,10 @@ function FeaturedHashtags({ t }: { t: T }) {
         placeholder={t(full ? "settings.profile.hashtags.full" : "settings.profile.hashtags.placeholder")}
         full={full}
         onAdd={(tag) => {
-          if (!has(tag)) save(() => set([...names, tag]));
+          if (!has(tag)) choose([...names, tag]);
         }}
         onRemove={(tag) => {
-          save(() => set(names.filter((name) => name !== tag)));
+          choose(names.filter((name) => name !== tag));
         }}
       />
     </SettingRow>

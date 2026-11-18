@@ -33,7 +33,8 @@ const pair = tv({
 
 /**
  * The pairs (`PairField`), one under another, named by `label`; `error` says what is wrong with them as a whole,
- * right under the list.
+ * right under the list. The list has the id `id` and takes the focus when what holds it gives it (no key leads to
+ * it), so that a refusal of the pairs as a whole is read with the list and comes into view (`focusRefusedField`).
  */
 export function PairList({
   id,
@@ -53,6 +54,8 @@ export function PairList({
         as="ul"
         plain
         gap="shell-edge"
+        id={id}
+        tabIndex={-1}
         aria-label={label}
         aria-describedby={error === undefined ? undefined : `${id}-error`}
       >
@@ -64,7 +67,11 @@ export function PairList({
 }
 
 export type PairFieldProps = {
-  /** The id of the name's field, for what holds the list to put the focus on the pair. */
+  /**
+   * The id of the name's field, for what holds the list to put the focus on the pair; the other field's is
+   * `${id}-value`, and what is wrong with either has its field's id with `-error`, as a `TextField`'s has
+   * (`focusRefusedField`).
+   */
   id?: string | undefined;
   /** Which pair it is, for assistive technology ("Field 2"). */
   legend: string;
@@ -105,14 +112,16 @@ export function PairField({
   autoFocus = false,
 }: PairFieldProps) {
   const s = pair();
-  const errorId = useId();
+  const own = useId();
+  const fieldId = { name: id ?? own, value: `${id ?? own}-value` } as const;
+  const errorId = error === undefined ? undefined : `${fieldId[error.of]}-error`;
   const field = (of: "name" | "value", label: string, text: string, onChange: (text: string) => void) => (
     <Box
       grow="names"
       className={s.field()}
       as={
         <input
-          id={of === "name" ? id : undefined}
+          id={fieldId[of]}
           value={text}
           placeholder={label}
           aria-label={label}

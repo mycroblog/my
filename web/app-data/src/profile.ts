@@ -14,6 +14,7 @@ import {
 } from "./accounts";
 import type { AppData } from "./app-data";
 import { refusedField, uploadAttachment } from "./compose";
+import { inOrder } from "./in-order";
 import { wholeList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 
@@ -194,16 +195,19 @@ export function useOwnFeaturedHashtags(): readonly FeaturedHashtag[] {
 
 /**
  * Features exactly the hashtags of `names` (with or without `#`, at most 10, an empty list features none), and
- * resolves once the cache holds the list as saved, here and as the profile shows it. It rejects with the server's
- * problem.
+ * resolves once the cache holds the list as saved, here and as the profile shows it. Each list is sent once the ones
+ * set before it were answered, so that the last one set is the one the server and the cache keep. It rejects with the
+ * server's problem.
  */
-export async function setFeaturedHashtags(data: AppData, names: readonly string[]): Promise<void> {
-  const { data: saved } = await data.api.PUT("/featured_tags", { body: { names: [...names] } });
-  if (saved === undefined) return;
-  const { queryClient } = data;
-  queryClient.setQueryData(ownFeaturedHashtagsQuery(data).queryKey, saved);
-  const id = queryClient.getQueryData<CredentialAccount>(viewerQuery(data).queryKey)?.id;
-  if (id !== undefined) queryClient.setQueryData(featuredHashtagsQuery(data, id).queryKey, saved);
+export function setFeaturedHashtags(data: AppData, names: readonly string[]): Promise<void> {
+  return inOrder(data, "/featured_tags", async () => {
+    const { data: saved } = await data.api.PUT("/featured_tags", { body: { names: [...names] } });
+    if (saved === undefined) return;
+    const { queryClient } = data;
+    queryClient.setQueryData(ownFeaturedHashtagsQuery(data).queryKey, saved);
+    const id = queryClient.getQueryData<CredentialAccount>(viewerQuery(data).queryKey)?.id;
+    if (id !== undefined) queryClient.setQueryData(featuredHashtagsQuery(data, id).queryKey, saved);
+  });
 }
 
 /** Sets the featured hashtags, from a screen (`setFeaturedHashtags`). */
