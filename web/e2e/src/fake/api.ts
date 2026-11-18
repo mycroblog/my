@@ -69,7 +69,7 @@ import {
 } from "../scenario";
 import { articleHtml, serverHtml } from "./html";
 import { createScripts, type Script, type Scripted } from "./script";
-import { accessHandlers, loginProviderIds, type AccessOptions, type FakeLoginProviderKind } from "./access";
+import { accessHandlers, appIds, loginProviderIds, type AccessOptions, type FakeLoginProviderKind } from "./access";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
 type Account = Schema<"Account">;
@@ -510,6 +510,12 @@ export type FakeApi = {
   notificationPath: (type: string) => string;
   /** The ID of the fake's login provider of `kind`, as a provider's return names it in the address's fragment. */
   loginProviderId: (kind: FakeLoginProviderKind) => string;
+  /**
+   * The ID of the fake's app at `index` of the apps the reader authorized (`authorized`: the server's web client, an
+   * app that registered itself, one known by its metadata document, one a user registered) or of the apps the reader
+   * registered (`own`: a confidential, a public and a disabled one); an ID that names no app past them.
+   */
+  appId: (list: "authorized" | "own", index: number) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -3541,5 +3547,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     heldPath,
     notificationPath,
     loginProviderId: (kind) => loginProviderIds(started, idAt)[kind],
+    appId: (list, index) => appIds(started, idAt)[list][index] ?? idAt(started, 74_990),
   };
 }

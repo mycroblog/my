@@ -717,7 +717,7 @@
   },
   "settings.confirm.cancel": {
     "defaultMessage": "Cancel",
-    "description": "The button that cancels, in the dialog Confirm it's you, in the dialog Enter a code, and in the confirmations of the Security page (removing a passkey, unlinking an account, signing a browser out)."
+    "description": "The button that cancels, in the dialog Confirm it's you, in the dialog Enter a code, and in the confirmations of the Security page (removing a passkey, unlinking an account, signing a browser out) and of the Apps pages (revoking an app, making a new secret, deleting an app)."
   },
   "settings.confirm.password": {
     "defaultMessage": "Current password",
@@ -769,6 +769,490 @@
   },
   "settings.confirm.failed": {
     "defaultMessage": "This did not finish: the server could not be reached. Check your connection, then try again.",
-    "description": "An alert on the Security pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
+    "description": "An alert on the Security pages and the Apps pages of the settings when a change got no answer from the server. When the server answers with a refusal, its own words show instead."
+  },
+  "settings.apps.authorized": {
+    "defaultMessage": "Authorized apps",
+    "description": "A section heading on the Apps page of the settings, over the list of the apps the reader allowed to use their account (the server's own web app among them); also the name of that list for assistive technology, and the title of the page of one such app until its name is read."
+  },
+  "settings.apps.authorized.origin": {
+    "defaultMessage": "{registration, select, first_party {This server's own web app} user {An app registered by {owner}} user_unknown {An app registered by a user of this server} metadata_document {Comes from {host}} other {An app that registered itself, with details it declared on its own}}",
+    "description": "Where an authorized app comes from: in the line under its name in the list, and on its own page. registration says how it was registered: first_party (the web app of this server, the one the reader is using), user (a user of this server registered it; owner is that user's handle, @hana), user_unknown (the same, when the user cannot be named), metadata_document (it is identified by a document at an address; host is that address's host name, which the server verified), other (it registered itself, and everything it says of itself is its own claim). The same words as the consent page's (server:auth.authorize.origin.*)."
+  },
+  "settings.apps.authorized.about": {
+    "defaultMessage": "Apps you allowed to use your account. Revoke one you no longer use or do not recognize.",
+    "description": "The line under the heading Authorized apps: what the list holds, and what to do about an app in it."
+  },
+  "settings.apps.authorized.none": {
+    "defaultMessage": "No app can use your account now. An app shows here once you allow it to use your account.",
+    "description": "In the place of the list of authorized apps while it is empty."
+  },
+  "settings.apps.authorized.last_used": {
+    "defaultMessage": "Last used {date}",
+    "description": "In the line under an authorized app's name in the list, after a middle dot, and on the app's own page. date is the day and the time, to the hour, the app last used the account, written out in the reader's language (Mar 3, 2026, 2:00 PM). The same words as the signed-in browsers' (settings.security.browsers.last_used)."
+  },
+  "settings.apps.authorized.unused": {
+    "defaultMessage": "No use recorded",
+    "description": "In the place of settings.apps.authorized.last_used when the server has recorded no use of the account by the app."
+  },
+  "settings.apps.authorized.since": {
+    "defaultMessage": "Authorized {date}",
+    "description": "On the page of an authorized app: when the reader first allowed it. date is the day, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.apps.own": {
+    "defaultMessage": "Your apps",
+    "description": "A section heading on the Apps page of the settings, over the list of the apps the reader registered as their developer; also the name of that list for assistive technology."
+  },
+  "settings.apps.own.about": {
+    "defaultMessage": "Apps you registered for a bot, a script or a client of your own.",
+    "description": "The line under the heading Your apps: what registering an app is for. A client is a program that uses the account through the server's programming interface."
+  },
+  "settings.apps.own.none": {
+    "defaultMessage": "You have not registered an app yet. Register one to get a client ID and tokens for a bot, a script or a client of your own.",
+    "description": "In the place of the list of the reader's own apps while it is empty, over the button Register an app."
+  },
+  "settings.apps.own.off": {
+    "defaultMessage": "This server's administrators have turned off app registration, so you cannot register an app now. Apps registered before keep working.",
+    "description": "A sentence in the section Your apps, in the place of the button Register an app, and in the place of the form on the page Register an app, once the server refused a registration because its administrators do not let users register apps."
+  },
+  "settings.apps.own.registered": {
+    "defaultMessage": "Registered {date}",
+    "description": "In the line under the name of one of the reader's own apps in the list, after its type and a middle dot. date is the day it was registered, written out in the reader's language (Mar 3, 2026)."
+  },
+  "settings.apps.own.disabled": {
+    "defaultMessage": "Disabled",
+    "description": "The state at the end of the row of one of the reader's own apps: the server's administrators disabled it."
+  },
+  "settings.apps.type": {
+    "defaultMessage": "{type, select, confidential {Confidential} other {Public}}",
+    "description": "The type of an OAuth app, in a developer's words, in the line under an app's name in the list of the reader's own apps. confidential: the app can keep a secret (a server, a bot). other: a public app, which cannot (an app on a phone or in a browser)."
+  },
+  "settings.apps.missing": {
+    "defaultMessage": "This app is not among your apps. It may have been revoked or deleted.",
+    "description": "In place of the page of one app (an authorized app, or one of the reader's own) at an address that names none of them; the link settings.apps.missing.all follows it on the same line."
+  },
+  "settings.apps.missing.all": {
+    "defaultMessage": "See your apps",
+    "description": "The link after settings.apps.missing that opens the Apps page of the settings."
+  },
+  "settings.apps.about": {
+    "defaultMessage": "About this app",
+    "description": "The heading of the first section of the page of an authorized app: where it comes from, its website, when the reader allowed it and when it last used the account; also the name of that list for assistive technology."
+  },
+  "settings.apps.unverified": {
+    "defaultMessage": "This server has not verified this app. Its name is the app's own claim.",
+    "description": "A sentence on the page of an authorized app that is not the server's own. The same words as the consent page's (server:auth.authorize.unverified)."
+  },
+  "settings.apps.permissions": {
+    "defaultMessage": "{risk, select, caution {Permissions that need your attention} write {Permissions that change things} other {Permissions that only read}}",
+    "description": "A section heading on the page of an authorized app, over the permissions of one weight the reader granted it; also the name of that list for assistive technology. risk is caution (permissions that read direct messages, act as the reader, or administer the server), write (permissions that change something), or other (permissions that only read). The same words as the consent page's (server:auth.authorize.group)."
+  },
+  "settings.apps.caution.dm": {
+    "defaultMessage": "Can read your direct messages",
+    "description": "The line under a permission on the page of an authorized app: the app can read direct messages. The same words as the consent page's (server:auth.authorize.caution.dm)."
+  },
+  "settings.apps.caution.post": {
+    "defaultMessage": "Can post, edit and delete posts as you",
+    "description": "The line under a permission on the page of an authorized app: the app can post, edit or delete posts as the reader. The same words as the consent page's (server:auth.authorize.caution.post)."
+  },
+  "settings.apps.caution.profile": {
+    "defaultMessage": "Can change your profile",
+    "description": "The line under a permission on the page of an authorized app: the app can change the reader's profile. The same words as the consent page's (server:auth.authorize.caution.profile)."
+  },
+  "settings.apps.revoke.heading": {
+    "defaultMessage": "Revoke access",
+    "description": "The heading of the last section of the page of an authorized app, which takes back what the reader allowed it; also the name of its one row's list for assistive technology."
+  },
+  "settings.apps.revoke.row": {
+    "defaultMessage": "Stop this app from using your account",
+    "description": "The name of the row in the section Revoke access: what revoking gives."
+  },
+  "settings.apps.revoke.about": {
+    "defaultMessage": "The app can no longer read or change anything with your account. To use it again, allow it again from the app.",
+    "description": "The line under settings.apps.revoke.row, for an app that is not the server's own: what revoking does, said before."
+  },
+  "settings.apps.revoke.about.web": {
+    "defaultMessage": "This is the app you are using now. Revoking it signs you out of every browser, this one included.",
+    "description": "The line under settings.apps.revoke.row, in place of settings.apps.revoke.about, for the server's own web app, the one the reader is using: what revoking it does."
+  },
+  "settings.apps.revoke.title": {
+    "defaultMessage": "Revoke {app}?",
+    "description": "The question of the confirmation before an authorized app is revoked. app is the app's name as the app gives it."
+  },
+  "settings.apps.revoke.text": {
+    "defaultMessage": "It can no longer use your account, and what it does for you stops working at once. You can allow it again later from the app.",
+    "description": "Under settings.apps.revoke.title in the confirmation, for an app that is not the server's own: what stops working, and that it can be undone by allowing the app again."
+  },
+  "settings.apps.revoke.text.web": {
+    "defaultMessage": "This is the app you are using now. Revoking it signs you out of every browser at once, this one included. You can sign in again afterwards.",
+    "description": "Under settings.apps.revoke.title in the confirmation, for the server's own web app, the one the reader is using: revoking it signs every browser out, this one too, and the reader can sign in again."
+  },
+  "settings.apps.revoke": {
+    "defaultMessage": "Revoke",
+    "description": "The button at the end of the row settings.apps.revoke.row, which asks before revoking; and the button of that confirmation (settings.apps.revoke.title) that revokes."
+  },
+  "settings.apps.register": {
+    "defaultMessage": "Register an app",
+    "description": "The button at the end of the heading Your apps (or under settings.apps.own.none) that leads to the page where the reader registers an app; the title of that page; and the button at its end that registers the app."
+  },
+  "settings.apps.form.identity": {
+    "defaultMessage": "Name and website",
+    "description": "The heading of the first section of the form that registers an app, with the fields Name and Website."
+  },
+  "settings.apps.form.name": {
+    "defaultMessage": "Name",
+    "description": "The label of the field for the name of an app the reader registers."
+  },
+  "settings.apps.form.name.hint": {
+    "defaultMessage": "Shown on the page where people allow the app. Up to {max, number} characters.",
+    "description": "The hint under the label Name of an app. max is a number of characters."
+  },
+  "settings.apps.form.website": {
+    "defaultMessage": "Website",
+    "description": "The label of the field for the address of the home page of an app the reader registers."
+  },
+  "settings.apps.form.website.hint": {
+    "defaultMessage": "Optional. An https or http address, shown on the same page.",
+    "description": "The hint under the label Website of an app: the field may stay empty; the same page is the one where people allow the app."
+  },
+  "settings.apps.form.authorization": {
+    "defaultMessage": "Authorization",
+    "description": "The heading of the second section of the form that registers an app, with the fields Redirect URIs and Scopes and the setting Type: what the app may ask for when someone allows it. A developer's word (OAuth)."
+  },
+  "settings.apps.form.redirect_uris": {
+    "defaultMessage": "Redirect URIs",
+    "description": "The label of the field for the redirect URIs of an app the reader registers. A developer's word (OAuth): the addresses the server may send the browser back to once someone allowed the app."
+  },
+  "settings.apps.form.redirect_uris.hint": {
+    "defaultMessage": "One per line, up to {max, number}. Each is an https address, an address with a scheme of your own such as com.example.app:/callback, or http://127.0.0.1 on any port.",
+    "description": "The hint under the label Redirect URIs. max is how many an app may have. com.example.app:/callback and http://127.0.0.1 are examples to keep as they are."
+  },
+  "settings.apps.form.scope": {
+    "defaultMessage": "Scopes",
+    "description": "The label of the field for the scopes of an app the reader registers, and of the field for the scopes of a token they issue. A developer's word (OAuth): the names of the permissions, such as read or write:statuses."
+  },
+  "settings.apps.form.scope.hint": {
+    "defaultMessage": "The most the app may ask for, separated by spaces, such as read write:statuses. An app cannot have admin, admin:read, admin:write or write:supporters.",
+    "description": "The hint under the label Scopes of an app. read, write:statuses, admin, admin:read, admin:write and write:supporters are names of scopes, to keep as they are."
+  },
+  "settings.apps.form.type": {
+    "defaultMessage": "Type",
+    "description": "The heading of the section of the form that registers an app in which the reader chooses whether the app is confidential or public; also the name of that choice for assistive technology."
+  },
+  "settings.apps.form.type.about": {
+    "defaultMessage": "The type decides whether the app has a secret. You cannot change it later.",
+    "description": "The line under the heading Type on the page Register an app: what the choice decides, and that it is final."
+  },
+  "settings.apps.form.type.choice": {
+    "defaultMessage": "{type, select, confidential {Confidential: keeps a secret, as a server or a bot can} other {Public: cannot keep a secret, as an app on a phone or in a browser}}",
+    "description": "One of the two choices of the type of an app the reader registers, with what it means. type is confidential, or other (public). The first word is the type's name, as settings.apps.type has it. No full stop: it is a choice."
+  },
+  "settings.apps.form.type.fixed": {
+    "defaultMessage": "{type, select, confidential {This is a confidential app: it has a secret.} other {This is a public app: it has no secret.}} The type cannot be changed. To use the other type, register a new app.",
+    "description": "A sentence at the end of the section App settings on the page of an app the reader registered: the app's type, which is shown and cannot be changed. type is confidential, or other (public)."
+  },
+  "settings.apps.form.missing": {
+    "defaultMessage": "{field, select, name {Enter a name.} redirect_uris {Enter at least one redirect URI.} other {Enter at least one scope.}}",
+    "description": "The error under a field of the form of an app when the reader sent it with that field empty. field is name, redirect_uris, or other (the scopes)."
+  },
+  "settings.apps.registered": {
+    "defaultMessage": "“{name}” is registered.",
+    "description": "At the top of the page that shows the client ID, and the secret of a confidential app, right after the reader registered an app. name is the name they gave it."
+  },
+  "settings.apps.disabled": {
+    "defaultMessage": "This server's administrators disabled this app",
+    "description": "The sentence of the status summary at the top of the page of one of the reader's own apps while the server's administrators have it disabled. No full stop: it is a heading."
+  },
+  "settings.apps.disabled.about": {
+    "defaultMessage": "Until they enable it again, nobody can allow it, and it cannot get tokens or use the ones it has.",
+    "description": "Under settings.apps.disabled in the status summary: what it means that the app is disabled."
+  },
+  "settings.apps.credentials": {
+    "defaultMessage": "Credentials",
+    "description": "The heading of the section of the page of one of the reader's own apps that shows its client ID and offers a new secret and a token; the heading of the page that shows a new app's client ID and secret once; also the name of that section's list for assistive technology."
+  },
+  "settings.apps.client_id": {
+    "defaultMessage": "Client ID",
+    "description": "The name of the public identifier of an app, shown to copy; for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.secret": {
+    "defaultMessage": "Client secret",
+    "description": "The name of the secret of a confidential app: of the row about it on the app's page, and of the secret shown once to copy, for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.secret.caption": {
+    "defaultMessage": "Shown only when it is made. If you lost it, make a new one.",
+    "description": "The line under Client secret in its row on the page of a confidential app."
+  },
+  "settings.apps.secret.once": {
+    "defaultMessage": "Copy the secret now and keep it somewhere safe: it is not shown again.",
+    "description": "The line under the heading Credentials on the page that shows the secret of a confidential app once (right after it was registered, or after a new secret was made). It must say plainly that the secret will not be shown again."
+  },
+  "settings.apps.secret.none": {
+    "defaultMessage": "A public app has no secret. Its client ID stays on the app's page.",
+    "description": "The line under the heading Credentials on the page that shows the client ID of a public app right after it was registered."
+  },
+  "settings.apps.secret.rotate": {
+    "defaultMessage": "Make a new secret",
+    "description": "The button at the end of the row Client secret, which asks before making a new secret; and the button of that confirmation (settings.apps.secret.rotate.title)."
+  },
+  "settings.apps.secret.rotate.title": {
+    "defaultMessage": "Make a new secret for {app}?",
+    "description": "The question of the confirmation before a new secret of a confidential app is made. app is the name the reader gave the app."
+  },
+  "settings.apps.secret.rotate.text": {
+    "defaultMessage": "The secret the app has now stops working at once, and this cannot be undone. The app needs the new secret to renew its tokens. The tokens it holds keep working.",
+    "description": "Under settings.apps.secret.rotate.title in the confirmation: what making a new secret ends, that it cannot be undone, and what keeps working."
+  },
+  "settings.apps.secret.rotated": {
+    "defaultMessage": "The new secret is ready. The old one no longer works.",
+    "description": "At the top of the page that shows the new secret of a confidential app right after the reader made it."
+  },
+  "settings.apps.copy": {
+    "defaultMessage": "{what, select, client_id {Copy client ID} secret {Copy secret} access_token {Copy access token} other {Copy refresh token}}",
+    "description": "The button under a value of an app shown to copy, which copies it. what is client_id, secret, access_token, or other (the refresh token): a page may show two of them, so each button names what it copies."
+  },
+  "settings.apps.copied": {
+    "defaultMessage": "Copied",
+    "description": "Beside a button that copies a value of an app, once it was copied. The same words as the Security pages' (settings.security.two_factor.copied)."
+  },
+  "settings.apps.copy_failed": {
+    "defaultMessage": "Could not copy. Select the text and copy it yourself.",
+    "description": "Beside a button that copies a value of an app, when the browser refused to copy. The same words as the Security pages' (settings.security.two_factor.copy_failed)."
+  },
+  "settings.apps.once.done": {
+    "defaultMessage": "{kept, select, one {I saved it} several {I saved them} other {Done}}",
+    "description": "The button at the end of a page that shows values of an app once. kept is one (a secret was shown), several (an access token and a refresh token were), or other (nothing secret: the client ID of a public app). It goes back to the page the reader came from."
+  },
+  "settings.apps.edit": {
+    "defaultMessage": "App settings",
+    "description": "The heading of the section of the page of one of the reader's own apps that holds the form to change it: its name, website, redirect URIs and scopes."
+  },
+  "settings.apps.edit.about": {
+    "defaultMessage": "Changes apply from the next time someone allows the app. Tokens the app already holds keep the scopes they have.",
+    "description": "The line under the heading App settings: what a change reaches."
+  },
+  "settings.apps.edit.submit": {
+    "defaultMessage": "Save changes",
+    "description": "The button at the end of the page of one of the reader's own apps that saves the form App settings."
+  },
+  "settings.apps.delete.heading": {
+    "defaultMessage": "Delete app",
+    "description": "The heading of the last section of the page of one of the reader's own apps; also the name of its one row's list for assistive technology."
+  },
+  "settings.apps.delete.row": {
+    "defaultMessage": "Delete this app for good",
+    "description": "The name of the row in the section Delete app."
+  },
+  "settings.apps.delete.about": {
+    "defaultMessage": "Every token of the app stops working at once, also for other people who allowed it. This cannot be undone.",
+    "description": "The line under settings.apps.delete.row, and under settings.apps.delete.title in the confirmation: what deleting the app ends, and that it cannot be undone."
+  },
+  "settings.apps.delete.title": {
+    "defaultMessage": "Delete {app}?",
+    "description": "The question of the confirmation before one of the reader's own apps is deleted. app is the name the reader gave the app."
+  },
+  "settings.apps.delete": {
+    "defaultMessage": "Delete",
+    "description": "The button at the end of the row settings.apps.delete.row, which asks before deleting the app; and the button of that confirmation (settings.apps.delete.title)."
+  },
+  "settings.apps.token": {
+    "defaultMessage": "Issue token",
+    "description": "A row of the section Credentials on the page of one of the reader's own apps, which opens the page where the reader issues a token of the app for their own account; the title of that page; and the button at its end that issues the token. The developers' guide names it by these words."
+  },
+  "settings.apps.token.caption": {
+    "defaultMessage": "An access token and a refresh token for your own account, with no page to allow the app",
+    "description": "The line under Issue token in its row: what its page gives."
+  },
+  "settings.apps.token.heading": {
+    "defaultMessage": "Token for your own account",
+    "description": "The heading of the section with the field Scopes on the page Issue token, and of the page that shows the token once."
+  },
+  "settings.apps.token.about": {
+    "defaultMessage": "The server issues an access token and a refresh token of this app for your account. Nobody is asked to allow it, and no browser is sent anywhere.",
+    "description": "The line under the heading Token for your own account on the page Issue token: what issuing a token does."
+  },
+  "settings.apps.token.scope.hint": {
+    "defaultMessage": "Separated by spaces, within the scopes of the app. Leave the field empty for all of them.",
+    "description": "The hint under the label Scopes on the page Issue token. The field starts with all the scopes of the app."
+  },
+  "settings.apps.token.admin": {
+    "defaultMessage": "Only a token issued here can carry a permission scope such as admin:manage_invites, and only for a permission your account has. An app that asks for one when someone else allows it is refused.",
+    "description": "A sentence under the field Scopes on the page Issue token. A permission scope is a scope named admin: and a permission of the server's staff (admin:manage_invites, to keep as it is); the reader can choose only those of the permissions their own account has."
+  },
+  "settings.apps.token.disabled": {
+    "defaultMessage": "This server's administrators disabled this app, so it gets no token until they enable it again.",
+    "description": "A sentence in the place of the form on the page Issue token, for an app the server's administrators disabled."
+  },
+  "settings.apps.token.issued": {
+    "defaultMessage": "The token is issued.",
+    "description": "At the top of the page that shows an access token and a refresh token right after the reader issued them."
+  },
+  "settings.apps.token.once": {
+    "defaultMessage": "Copy both now and keep them somewhere safe: they are not shown again.",
+    "description": "The line under the heading on the page that shows an access token and a refresh token once. It must say plainly that they will not be shown again."
+  },
+  "settings.apps.token.access": {
+    "defaultMessage": "Access token",
+    "description": "The name of the access token shown once to copy, for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.token.refresh": {
+    "defaultMessage": "Refresh token",
+    "description": "The name of the refresh token shown once to copy, for assistive technology. A developer's word (OAuth)."
+  },
+  "settings.apps.token.facts": {
+    "defaultMessage": "Its scopes are {scope}. The access token works for {minutes, plural, one {# minute} other {# minutes}}. The refresh token then gets a new pair, and works one time.",
+    "description": "A sentence under the access token and the refresh token shown once. scope is the names of the scopes the token has, separated by spaces (read write:statuses); minutes is how long the access token works."
+  },
+  "settings.apps.scope.admin": {
+    "defaultMessage": "Administer this server, within what your account may do",
+    "description": "A permission on the page of an authorized app (the scope admin). The same words as the consent page's (server:auth.authorize.scope.admin)."
+  },
+  "settings.apps.scope.admin_read": {
+    "defaultMessage": "Read this server's administration data, within what your account may do",
+    "description": "A permission on the page of an authorized app (the scope admin:read). The same words as the consent page's (server:auth.authorize.scope.admin_read)."
+  },
+  "settings.apps.scope.admin_write": {
+    "defaultMessage": "Change this server's administration data, within what your account may do",
+    "description": "A permission on the page of an authorized app (the scope admin:write). The same words as the consent page's (server:auth.authorize.scope.admin_write)."
+  },
+  "settings.apps.scope.admin_permission": {
+    "defaultMessage": "Use the permission {permission} your account has",
+    "description": "A permission on the page of an authorized app, for a permission scope admin:<permission>. permission is the name of a permission of the server's staff, such as manage_invites. The same words as the consent page's (server:auth.authorize.scope.admin_permission)."
+  },
+  "settings.apps.scope.follow": {
+    "defaultMessage": "Follow, block, and mute accounts",
+    "description": "A permission on the page of an authorized app (the scope follow). The same words as the consent page's (server:auth.authorize.scope.follow)."
+  },
+  "settings.apps.scope.push": {
+    "defaultMessage": "Receive push notifications",
+    "description": "A permission on the page of an authorized app (the scope push). The same words as the consent page's (server:auth.authorize.scope.push)."
+  },
+  "settings.apps.scope.read": {
+    "defaultMessage": "Read your account, posts, and timelines",
+    "description": "A permission on the page of an authorized app (the scope read). The same words as the consent page's (server:auth.authorize.scope.read)."
+  },
+  "settings.apps.scope.read_accounts": {
+    "defaultMessage": "Read accounts, your profile, and your settings",
+    "description": "A permission on the page of an authorized app (the scope read:accounts). The same words as the consent page's (server:auth.authorize.scope.read_accounts)."
+  },
+  "settings.apps.scope.read_blocks": {
+    "defaultMessage": "Read the accounts you block",
+    "description": "A permission on the page of an authorized app (the scope read:blocks). The same words as the consent page's (server:auth.authorize.scope.read_blocks)."
+  },
+  "settings.apps.scope.read_bookmarks": {
+    "defaultMessage": "Read your bookmarks",
+    "description": "A permission on the page of an authorized app (the scope read:bookmarks). The same words as the consent page's (server:auth.authorize.scope.read_bookmarks)."
+  },
+  "settings.apps.scope.read_custom_emojis": {
+    "defaultMessage": "Read the custom emoji you made and your requests for new ones",
+    "description": "A permission on the page of an authorized app (the scope read:custom_emojis). The same words as the consent page's (server:auth.authorize.scope.read_custom_emojis)."
+  },
+  "settings.apps.scope.read_direct": {
+    "defaultMessage": "Read the direct messages you send and receive",
+    "description": "A permission on the page of an authorized app (the scope read:direct). The same words as the consent page's (server:auth.authorize.scope.read_direct)."
+  },
+  "settings.apps.scope.read_events": {
+    "defaultMessage": "Read the events you can see",
+    "description": "A permission on the page of an authorized app (the scope read:events). The same words as the consent page's (server:auth.authorize.scope.read_events)."
+  },
+  "settings.apps.scope.read_filters": {
+    "defaultMessage": "Read your keyword filters",
+    "description": "A permission on the page of an authorized app (the scope read:filters). The same words as the consent page's (server:auth.authorize.scope.read_filters)."
+  },
+  "settings.apps.scope.read_finance": {
+    "defaultMessage": "Read the totals of this server's costs and income, within what your account may do",
+    "description": "A permission on the page of an authorized app (the scope read:finance). The same words as the consent page's (server:auth.authorize.scope.read_finance)."
+  },
+  "settings.apps.scope.read_follows": {
+    "defaultMessage": "Read your follows, follow requests, lists, and the accounts whose new posts notify you",
+    "description": "A permission on the page of an authorized app (the scope read:follows). The same words as the consent page's (server:auth.authorize.scope.read_follows)."
+  },
+  "settings.apps.scope.read_mutes": {
+    "defaultMessage": "Read the accounts and domains you mute",
+    "description": "A permission on the page of an authorized app (the scope read:mutes). The same words as the consent page's (server:auth.authorize.scope.read_mutes)."
+  },
+  "settings.apps.scope.read_notifications": {
+    "defaultMessage": "Read your notifications",
+    "description": "A permission on the page of an authorized app (the scope read:notifications). The same words as the consent page's (server:auth.authorize.scope.read_notifications)."
+  },
+  "settings.apps.scope.read_reports": {
+    "defaultMessage": "Read the reports you filed and whether they are resolved",
+    "description": "A permission on the page of an authorized app (the scope read:reports). The same words as the consent page's (server:auth.authorize.scope.read_reports)."
+  },
+  "settings.apps.scope.read_statuses": {
+    "defaultMessage": "Read posts and timelines",
+    "description": "A permission on the page of an authorized app (the scope read:statuses). The same words as the consent page's (server:auth.authorize.scope.read_statuses)."
+  },
+  "settings.apps.scope.read_supporters": {
+    "defaultMessage": "Read your subscription to the supporter plans",
+    "description": "A permission on the page of an authorized app (the scope read:supporters). The same words as the consent page's (server:auth.authorize.scope.read_supporters)."
+  },
+  "settings.apps.scope.read_voice": {
+    "defaultMessage": "Read the voice chat rooms you can see",
+    "description": "A permission on the page of an authorized app (the scope read:voice). The same words as the consent page's (server:auth.authorize.scope.read_voice)."
+  },
+  "settings.apps.scope.write": {
+    "defaultMessage": "Post and change things for you",
+    "description": "A permission on the page of an authorized app (the scope write). The same words as the consent page's (server:auth.authorize.scope.write)."
+  },
+  "settings.apps.scope.write_accounts": {
+    "defaultMessage": "Change your profile and settings",
+    "description": "A permission on the page of an authorized app (the scope write:accounts). The same words as the consent page's (server:auth.authorize.scope.write_accounts)."
+  },
+  "settings.apps.scope.write_blocks": {
+    "defaultMessage": "Block and unblock accounts",
+    "description": "A permission on the page of an authorized app (the scope write:blocks). The same words as the consent page's (server:auth.authorize.scope.write_blocks)."
+  },
+  "settings.apps.scope.write_bookmarks": {
+    "defaultMessage": "Add and remove bookmarks",
+    "description": "A permission on the page of an authorized app (the scope write:bookmarks). The same words as the consent page's (server:auth.authorize.scope.write_bookmarks)."
+  },
+  "settings.apps.scope.write_custom_emojis": {
+    "defaultMessage": "Request new custom emoji, and change and delete the ones you made",
+    "description": "A permission on the page of an authorized app (the scope write:custom_emojis). The same words as the consent page's (server:auth.authorize.scope.write_custom_emojis)."
+  },
+  "settings.apps.scope.write_events": {
+    "defaultMessage": "Create, change, and cancel events, answer them, and invite people to them",
+    "description": "A permission on the page of an authorized app (the scope write:events). The same words as the consent page's (server:auth.authorize.scope.write_events)."
+  },
+  "settings.apps.scope.write_favourites": {
+    "defaultMessage": "Add and remove favourites and emoji reactions",
+    "description": "A permission on the page of an authorized app (the scope write:favourites). The same words as the consent page's (server:auth.authorize.scope.write_favourites)."
+  },
+  "settings.apps.scope.write_filters": {
+    "defaultMessage": "Create, change, and delete your keyword filters",
+    "description": "A permission on the page of an authorized app (the scope write:filters). The same words as the consent page's (server:auth.authorize.scope.write_filters)."
+  },
+  "settings.apps.scope.write_follows": {
+    "defaultMessage": "Follow and unfollow accounts, answer follow requests, change lists, and subscribe to the new posts of accounts",
+    "description": "A permission on the page of an authorized app (the scope write:follows). The same words as the consent page's (server:auth.authorize.scope.write_follows)."
+  },
+  "settings.apps.scope.write_media": {
+    "defaultMessage": "Upload images, videos, and audio, and edit their descriptions",
+    "description": "A permission on the page of an authorized app (the scope write:media). The same words as the consent page's (server:auth.authorize.scope.write_media)."
+  },
+  "settings.apps.scope.write_mutes": {
+    "defaultMessage": "Mute and unmute accounts, domains, and threads",
+    "description": "A permission on the page of an authorized app (the scope write:mutes). The same words as the consent page's (server:auth.authorize.scope.write_mutes)."
+  },
+  "settings.apps.scope.write_notifications": {
+    "defaultMessage": "Mark notifications as read and dismiss them",
+    "description": "A permission on the page of an authorized app (the scope write:notifications). The same words as the consent page's (server:auth.authorize.scope.write_notifications)."
+  },
+  "settings.apps.scope.write_reports": {
+    "defaultMessage": "Report accounts and posts to the moderators",
+    "description": "A permission on the page of an authorized app (the scope write:reports). The same words as the consent page's (server:auth.authorize.scope.write_reports)."
+  },
+  "settings.apps.scope.write_statuses": {
+    "defaultMessage": "Post, edit, delete, boost, and pin posts, vote in polls, and set who may quote a post",
+    "description": "A permission on the page of an authorized app (the scope write:statuses). The same words as the consent page's (server:auth.authorize.scope.write_statuses)."
+  },
+  "settings.apps.scope.write_supporters": {
+    "defaultMessage": "Subscribe to the supporter plans, and change, cancel, and resume your subscription",
+    "description": "A permission on the page of an authorized app (the scope write:supporters). The same words as the consent page's (server:auth.authorize.scope.write_supporters)."
+  },
+  "settings.apps.scope.write_voice": {
+    "defaultMessage": "Open, join, and leave voice chat rooms, and host them",
+    "description": "A permission on the page of an authorized app (the scope write:voice). The same words as the consent page's (server:auth.authorize.scope.write_voice)."
   }
 }

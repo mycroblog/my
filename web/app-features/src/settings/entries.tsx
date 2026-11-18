@@ -9,6 +9,7 @@ import { usePermissions, type AppData, type Permission } from "@my/app-data";
 import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
+import { AppsSettings, loadAppsSettings } from "./apps/apps";
 import { DisplaySettings, loadDisplaySettings } from "./display";
 import { loadSecuritySettings, SecuritySettings } from "./security/security";
 
@@ -47,8 +48,14 @@ export type SettingsEntryProps = SettingsAddress & {
 
 /** What a screen under an entry (changing the password) is given by the route that places it. */
 export type SettingsSubProps = SettingsAddress & {
-  /** Goes back to the entry the screen is under: the press of its head's back, and the end of what it does. */
+  /** Goes back to the screen this one is under, its entry's for most: its head's back, and the end of what it does. */
   onBack: () => void;
+  /**
+   * The server ended this browser's session with what the reader just did on the screen (revoking the server's own
+   * web client among the authorized apps): removes what the session left in this browser and leaves the app, as
+   * after signing out.
+   */
+  onSessionEnded: () => void;
 };
 
 /**
@@ -99,6 +106,15 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.security.hint",
     Screen: SecuritySettings,
     load: loadSecuritySettings,
+  },
+  {
+    path: "apps",
+    group: "access",
+    icon: "apps",
+    name: "settings.entry.apps",
+    hint: "settings.entry.apps.hint",
+    Screen: AppsSettings,
+    load: loadAppsSettings,
   },
 ];
 

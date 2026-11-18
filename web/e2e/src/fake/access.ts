@@ -94,6 +94,19 @@ export const loginProviderIds = (
   mastodon: idAt(started - 60 * day, 71_002),
 });
 
+/**
+ * The IDs of the fake's apps, for a fake started at `started`: the apps the reader authorized, as the list has them
+ * (the server's web client, an app that registered itself, one known by its metadata document, one a user
+ * registered), and the reader's own (a confidential, a public and a disabled one).
+ */
+export const appIds = (
+  started: number,
+  idAt: AccessContext["idAt"],
+): { authorized: readonly string[]; own: readonly string[] } => ({
+  authorized: [0, 1, 2, 3].map((n) => idAt(started - 3 * day, 74_000 + n)),
+  own: [idAt(started - 50 * day, 75_000), idAt(started - 20 * day, 75_001), idAt(started - 200 * day, 75_002)],
+});
+
 /** A code of the recovery codes: ten, shown once. */
 const recoveryCodes = (round: number) =>
   Array.from(
@@ -245,9 +258,11 @@ export function accessHandlers(c: AccessContext): Handlers {
   ];
   let sessions: Session[] = o.sessions === "alone" ? allSessions.slice(0, 1) : allSessions;
 
+  const ids = appIds(started, idAt);
+  const idOf = (list: readonly string[], n: number) => list[n] ?? idAt(started, 74_900 + n);
   const allApps: App[] = [
     {
-      id: idAt(started - 3 * day, 74_000),
+      id: idOf(ids.authorized, 0),
       client_id: "web",
       name: "mycroblog",
       registration: "first_party",
@@ -257,7 +272,7 @@ export function accessHandlers(c: AccessContext): Handlers {
       last_used_at: time(0),
     },
     {
-      id: idAt(started - 3 * day, 74_001),
+      id: idOf(ids.authorized, 1),
       client_id: "tuskr-android",
       name: "Tuskr for Android",
       website: "https://tuskr.example/",
@@ -268,7 +283,7 @@ export function accessHandlers(c: AccessContext): Handlers {
       last_used_at: time(3 * hour),
     },
     {
-      id: idAt(started - 3 * day, 74_002),
+      id: idOf(ids.authorized, 2),
       client_id: "https://reader.example/client.json",
       name: "Feedlet",
       website: "https://reader.example/",
@@ -279,7 +294,7 @@ export function accessHandlers(c: AccessContext): Handlers {
       last_used_at: time(2 * day),
     },
     {
-      id: idAt(started - 3 * day, 74_003),
+      id: idOf(ids.authorized, 3),
       client_id: "yuki-bot",
       name: "Morning bot",
       registration: "user",
@@ -298,28 +313,28 @@ export function accessHandlers(c: AccessContext): Handlers {
       ? []
       : [
           {
-            id: idAt(started - 50 * day, 75_000),
+            id: idOf(ids.own, 0),
             client_id: "cl_7f3a91c0e2b84d5a",
             name: "Morning bot",
             website: "https://bot.example/",
-            redirect_uris: ["urn:ietf:wg:oauth:2.0:oob"],
+            redirect_uris: ["http://127.0.0.1/callback"],
             scope: "read write:statuses",
             client_type: "confidential",
             disabled: false,
             created_at: time(50 * day),
           },
           {
-            id: idAt(started - 20 * day, 75_001),
+            id: idOf(ids.own, 1),
             client_id: "cl_2d90b6a41c7e3f58",
             name: "Home dashboard",
-            redirect_uris: ["https://dash.example/callback", "http://localhost:5173/callback"],
+            redirect_uris: ["https://dash.example/callback", "http://127.0.0.1:5173/callback"],
             scope: "read",
             client_type: "public",
             disabled: false,
             created_at: time(20 * day),
           },
           {
-            id: idAt(started - 200 * day, 75_002),
+            id: idOf(ids.own, 2),
             client_id: "cl_a41e8c07d95b2f63",
             name: "Old importer",
             redirect_uris: ["https://importer.example/done"],
@@ -332,20 +347,23 @@ export function accessHandlers(c: AccessContext): Handlers {
 
   const secretOf = () => `secret-${String(next()).padStart(4, "0")}-${(started % 99_991).toString(36)}`;
 
+  /** A setting of an app the server refuses, as it answers one: the member it is about, and what is wrong with it. */
+  const invalid = (field: string) =>
+    problem(422, "This could not be done.", { field, detail: "This value is not valid. Check what you entered." });
+
   /** The fault of a setting of an app, as the server names it, or none. */
   function appFault(s: {
     name?: string | undefined;
     redirect_uris?: string[] | undefined;
     scope?: string | undefined;
   }) {
-    if (s.name !== undefined && (s.name.trim() === "" || s.name.length > 100))
-      return problem(422, "The name is not 1 to 100 characters", { field: "name" });
-    if (s.redirect_uris !== undefined) {
-      if (s.redirect_uris.length === 0) return problem(422, "An app needs a redirect URI", { field: "redirect_uris" });
-      if (!s.redirect_uris.every((u) => URL.canParse(u)))
-        return problem(422, "A redirect URI is not a URI", { field: "redirect_uris" });
-    }
-    if (s.scope !== undefined && s.scope.trim() === "") return problem(422, "An app needs a scope", { field: "scope" });
+    if (s.name !== undefined && (s.name.trim() === "" || s.name.length > 100)) return invalid("name");
+    if (
+      s.redirect_uris !== undefined &&
+      (s.redirect_uris.length === 0 || !s.redirect_uris.every((u) => URL.canParse(u)))
+    )
+      return invalid("redirect_uris");
+    if (s.scope !== undefined && s.scope.trim() === "") return invalid("scope");
     return null;
   }
 
@@ -691,15 +709,15 @@ export function accessHandlers(c: AccessContext): Handlers {
       const wanted = (body?.scope ?? found.scope).split(" ").filter((s) => s !== "");
       const allowed = found.scope.split(" ");
       // A scope is within the app's when it is one of them or under one (`write` holds `write:statuses`).
-      if (!wanted.every((s) => allowed.some((a) => a === s || s.startsWith(`${a}:`))))
-        return problem(422, "The scope goes beyond the app's", { field: "scope" });
+      if (!wanted.every((s) => allowed.some((a) => a === s || s.startsWith(`${a}:`)))) return invalid("scope");
       const n = next();
       return {
         status: 201,
         body: {
           access_token: `at-${String(n).padStart(4, "0")}-${(started % 99_991).toString(36)}`,
           token_type: "Bearer",
-          expires_in: 7200,
+          // An hour, as the server's access tokens last.
+          expires_in: 3600,
           refresh_token: `rt-${String(n).padStart(4, "0")}-${(started % 99_989).toString(36)}`,
           scope: wanted.join(" "),
         },

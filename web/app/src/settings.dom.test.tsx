@@ -43,6 +43,7 @@ const beside = (name = "Settings") =>
 
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
 const securityHint = "Password, passkeys, two-factor authentication, linked accounts, signed-in browsers";
+const appsHint = "Apps you allowed to use your account, apps you registered";
 
 describe("the menu", () => {
   test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
@@ -58,12 +59,14 @@ describe("the menu", () => {
     const menu = main().getByRole("navigation", { name: "Settings" });
     // Two groups have an entry; a group without one is not drawn.
     expect(groups(menu)).toEqual(["General", "Sign-in and access"]);
-    const [display, security, ...others] = rows(menu);
+    const [display, security, apps, ...others] = rows(menu);
     // An entry's row says its name, then what it holds.
     expect(display?.[0]).toMatch(new RegExp(`^Display and posting\\s*${displayHint}$`));
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
     expect(security?.[0]).toMatch(new RegExp(`^Security\\s*${securityHint}$`));
     expect(security?.slice(1)).toEqual(["/settings/security", null]);
+    expect(apps?.[0]).toMatch(new RegExp(`^Apps\\s*${appsHint}$`));
+    expect(apps?.slice(1)).toEqual(["/settings/apps", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.
     expect(beside()).toHaveLength(0);
@@ -111,6 +114,7 @@ describe("an entry", () => {
     expect(rows(menu)).toEqual([
       ["Display and posting", "/settings/display", "page"],
       ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
@@ -130,6 +134,7 @@ describe("an entry", () => {
     expect(beside().flatMap(rows)).toEqual([
       ["Display and posting", "/settings/display", null],
       ["Security", "/settings/security", null],
+      ["Apps", "/settings/apps", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
     const all = main().getByRole("link", { name: "See all settings" });
@@ -188,6 +193,7 @@ describe("the display language", () => {
     expect(beside("設定").flatMap(rows)).toEqual([
       ["表示と投稿", "/settings/display", "page"],
       ["セキュリティ", "/settings/security", null],
+      ["アプリ", "/settings/apps", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);
     expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);

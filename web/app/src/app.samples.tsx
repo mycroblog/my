@@ -12,6 +12,7 @@
 
 import {
   createAppData,
+  createOAuthApp,
   receiveHomeGap,
   receiveHomeStatuses,
   receiveNotification,
@@ -39,7 +40,8 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
   /**
-   * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind),
+   * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind, `{app:own:0}` and
+   * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members,
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
@@ -60,6 +62,11 @@ export type Fake = {
   call?: boolean;
   /** A newer build of the app waits (the service worker's), which a toast offers. */
   updateReady?: boolean;
+  /**
+   * The reader has tried to register an app before the story opens, and a server that does not let users register
+   * apps (`server.access.oauthApps: "disabled"`) refused it: the API says so nowhere else, and the app's data keeps it.
+   */
+  registrationTried?: boolean;
 };
 
 /** What the Stream panel offers a story: new posts and reconnections of the home timeline, or notifications. */
@@ -151,7 +158,8 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 
 /**
  * The app's path of `at`: a path as it is, with the ID of the fake's login provider of a kind in place of each
- * `{provider:<kind>}` (what a provider's return leaves in the fragment), the page of the announcement of `announcement:<key>`, the list of who
+ * `{provider:<kind>}` (what a provider's return leaves in the fragment) and the ID of the fake's app at an index of the
+ * apps the reader authorized or registered in place of each `{app:authorized:<index>}` and `{app:own:<index>}`, the page of the announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
  * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
  * person of `held:<username>`, the page of the reader's newest notification of `notification:<type>`, else the page of
@@ -159,9 +167,11 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
  */
 function pathOf(fake: FakeApi, at: string): string {
   if (at.startsWith("/"))
-    return at.replace(/\{provider:(github|oidc|mastodon)\}/g, (_, kind: FakeLoginProviderKind) =>
-      fake.loginProviderId(kind),
-    );
+    return at
+      .replace(/\{provider:(github|oidc|mastodon)\}/g, (_, kind: FakeLoginProviderKind) => fake.loginProviderId(kind))
+      .replace(/\{app:(authorized|own):(\d+)\}/g, (_, list: "authorized" | "own", index: string) =>
+        fake.appId(list, Number(index)),
+      );
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
@@ -232,6 +242,7 @@ function StoryApp({
   server,
   call = false,
   updateReady = false,
+  registrationTried = false,
   stream,
 }: Fake & { stream: Stream | undefined }) {
   const [{ fake, data, router, watch }] = useState(() => {
@@ -248,6 +259,11 @@ function StoryApp({
       undefined,
       watch,
     );
+    // The refusal is the one place the server says its users may not register apps; the data keeps it.
+    if (registrationTried)
+      void createOAuthApp(data, { name: "A bot", redirect_uris: [], scope: "read", client_type: "public" }).catch(
+        () => undefined,
+      );
     const router = createAppRouter({
       data: signedOut ? null : data,
       config: { apiOrigin: fakeOrigin, instanceName: fakeHost, defaultLocale: "en", clientId: "my-web" },

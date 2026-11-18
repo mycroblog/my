@@ -217,6 +217,7 @@ export {
   type BrowserSessionWrites,
 } from "./browser-sessions";
 export { loadSecurity, useSecurityRead } from "./security";
+export { loadApps, useAppsRead } from "./apps";
 export {
   authorizedAppsQuery,
   revokeAuthorizedApp,
@@ -228,11 +229,14 @@ export {
   createOAuthApp,
   deleteOAuthApp,
   issueOAuthAppToken,
+  oAuthAppRegistrationOff,
   oAuthAppQuery,
   oAuthAppsQuery,
   rotateOAuthAppSecret,
   updateOAuthApp,
   useOAuthApp,
+  useOAuthAppRead,
+  useOAuthAppRegistrationOff,
   useOAuthApps,
   useOAuthAppWrites,
   type CreateOAuthApp,
