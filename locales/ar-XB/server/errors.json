@@ -267,6 +267,10 @@
     "defaultMessage": "‮⊥ɥǝ ɟıʅǝ ɔɐuuoʇ qǝ ɹǝɐp ɐs ↃSɅ. Ↄɥoosǝ ɐ ↃSɅ ɟıʅǝ ɐup ʇɹʎ ɐƃɐıu.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
+  "errors.import.too_large_detail": {
+    "defaultMessage": "‮{max,plural,one{∀ ↃSɅ ɟıʅǝ ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ɔɥɐɹɐɔʇǝɹ. Sdʅıʇ ʇɥǝ ɟıʅǝ ɐup ıɯdoɹʇ ǝɐɔɥ dɐɹʇ.} other{∀ ↃSɅ ɟıʅǝ ɔɐu ɥɐʌǝ ɐʇ ɯosʇ # ɔɥɐɹɐɔʇǝɹs. Sdʅıʇ ʇɥǝ ɟıʅǝ ɐup ıɯdoɹʇ ǝɐɔɥ dɐɹʇ.}}‬",
+    "description": "Generated from en by tools/i18n; do not edit."
+  },
   "errors.insufficient_scope": {
     "defaultMessage": "‮⊥ɥıs ɐdd ıs uoʇ ɐʅʅoʍǝp ʇo po ʇɥıs.‬",
     "description": "Generated from en by tools/i18n; do not edit."

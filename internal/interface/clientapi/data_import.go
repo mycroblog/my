@@ -30,6 +30,26 @@ var (
 	ImportLimit = kernel.Limit{Name: "api.import", Max: 10, Window: 24 * time.Hour}
 )
 
+// The patterns of startDataImport and previewDataImport, whose bodies carry a whole CSV file.
+const (
+	startImportPattern   = "POST " + BasePath + "/imports"
+	previewImportPattern = "POST " + BasePath + "/imports/preview"
+)
+
+// maxImportTextLength is the maxLength of DataImportRequest.text, in characters.
+const maxImportTextLength = 1_000_000
+
+// maxImportBody is the largest body of an import or its preview: 6 MiB holds the longest text
+// even when every character is sent as a six-byte JSON escape (\u001f), the longest form a
+// character takes in a JSON string (a UTF-8 character is at most four bytes), with 291,456
+// bytes left over for kind, mode, and the JSON around them.
+const maxImportBody = 6 << 20
+
+// isImportPattern reports whether pattern is that of an import or its preview.
+func isImportPattern(pattern string) bool {
+	return pattern == startImportPattern || pattern == previewImportPattern
+}
+
 // Imports writes the viewer's CSV exports and runs the CSV imports; *appidentity.Imports
 // implements it.
 type Imports interface {

@@ -1461,6 +1461,13 @@ func (l *Localizer) ServerErrorsImportInvalidCsv() string {
 	return l.format("server:errors.import.invalid_csv", nil)
 }
 
+// ServerErrorsImportTooLargeDetail formats "server:errors.import.too_large_detail". Detail of the HTTP 413 API error when the CSV file the user imports (follows, blocks, mutes, or bookmarks) is too large to send. {max} is the maximum number of characters of the file.
+//
+//	en: {max, plural, one {A CSV file can have at most # character. Split the file and import each part.} other {A CSV file can have at most # characters. Split the file and import each part.}}
+func (l *Localizer) ServerErrorsImportTooLargeDetail(max int) string {
+	return l.format("server:errors.import.too_large_detail", map[string]any{"max": max})
+}
+
 // ServerErrorsInsufficientScope formats "server:errors.insufficient_scope". API error title for HTTP 403 when the access token lacks a permission (OAuth scope) that the operation needs.
 //
 //	en: This app is not allowed to do this.

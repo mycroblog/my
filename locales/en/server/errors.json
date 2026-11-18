@@ -87,6 +87,10 @@
     "defaultMessage": "The file cannot be read as CSV. Choose a CSV file and try again.",
     "description": "Detail of an API error (HTTP 422) when the file the user imports is not a valid CSV file, e.g. it has an unterminated quoted field."
   },
+  "errors.import.too_large_detail": {
+    "defaultMessage": "{max, plural, one {A CSV file can have at most # character. Split the file and import each part.} other {A CSV file can have at most # characters. Split the file and import each part.}}",
+    "description": "Detail of the HTTP 413 API error when the CSV file the user imports (follows, blocks, mutes, or bookmarks) is too large to send. {max} is the maximum number of characters of the file."
+  },
   "errors.insufficient_scope": {
     "defaultMessage": "This app is not allowed to do this.",
     "description": "API error title for HTTP 403 when the access token lacks a permission (OAuth scope) that the operation needs."
