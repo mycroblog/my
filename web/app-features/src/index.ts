@@ -50,14 +50,22 @@ export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
 export { Follows, loadFollows } from "./profile/follows";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
+export { useConfirmation, useProviderReturn, type ConfirmationOptions, type Confirmed } from "./settings/confirmation";
 export {
   loadSettingsEntry,
   settingsEntries,
+  type SettingsAddress,
   type SettingsEntry,
   type SettingsEntryProps,
   type SettingsFacts,
   type SettingsGroupId,
+  type SettingsSubProps,
 } from "./settings/entries";
+export { securityPath, securityPaths, useSecurityTitle } from "./settings/security/parts";
+export { SecurityPasskey } from "./settings/security/passkey";
+export { SecurityPassword } from "./settings/security/password";
+export { loadSecuritySettings, SecuritySettings } from "./settings/security/security";
+export { SecurityTwoFactor } from "./settings/security/two-factor";
 export { SettingsBeside, settingsEntryPath, SettingsIndex } from "./settings/menu";
 export { SettingsEntryScreen, useSettingsTitle, type SettingsEntryScreenProps } from "./settings/screen";
 export { SignOutDialog, type SignOutDialogProps } from "./settings/sign-out";

@@ -69,7 +69,7 @@ import {
 } from "../scenario";
 import { articleHtml, serverHtml } from "./html";
 import { createScripts, type Script, type Scripted } from "./script";
-import { accessHandlers, type AccessOptions } from "./access";
+import { accessHandlers, loginProviderIds, type AccessOptions, type FakeLoginProviderKind } from "./access";
 import { createRouter, exact, type Answer, type Handlers, type Refusal, type Route, type Schema } from "./spec";
 
 type Account = Schema<"Account">;
@@ -508,6 +508,8 @@ export type FakeApi = {
   heldPath: (username: string) => string;
   /** The app's address of the reader's newest notification of `type`: where a push or an email about it leads. */
   notificationPath: (type: string) => string;
+  /** The ID of the fake's login provider of `kind`, as a provider's return names it in the address's fragment. */
+  loginProviderId: (kind: FakeLoginProviderKind) => string;
 };
 
 /** The items of a page when the request names no `limit`, and the most it may name: the server's (Limit). */
@@ -1945,7 +1947,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     registrations: {
       mode: o.singleUser === true || o.closure !== undefined ? "closed" : (o.registrations ?? "open"),
     },
-    login_providers_only: false,
+    login_providers_only: o.access?.providersOnly === true,
     limits: {
       max_post_characters: 500,
       require_media_description: o.requiresDescriptions === true,
@@ -3538,5 +3540,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     conversationPath,
     heldPath,
     notificationPath,
+    loginProviderId: (kind) => loginProviderIds(started, idAt)[kind],
   };
 }

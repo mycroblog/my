@@ -56,7 +56,8 @@ After signing in you may see a page instead of the app:
 ## Signing out
 
 Choose "Sign out…", the last row of the settings, and confirm with "Sign out". It signs this browser out; your other
-browsers and apps stay signed in.
+browsers and apps stay signed in. "Signed-in browsers", under "Security" in the settings, lists the browsers signed in
+to your account and signs them out.
 
 ## Settings
 

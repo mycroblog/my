@@ -4,7 +4,7 @@
 // confirmation of a linked login provider. The passkey is asked of the browser here: the server's options for it, the
 // browser's prompt, and the assertion the operation then takes once, within 5 minutes. A provider's confirmation is
 // made on the provider's page and comes back in the fragment of the address (linked-identities.ts).
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { getPasskey } from "@my/platform";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -36,6 +36,28 @@ export function confirmationFields(
       return { passkey: confirmation.passkey };
     case "external":
       return { external_confirmation: confirmation.token };
+  }
+}
+
+const problems = "/api/v1/problems/";
+
+/**
+ * Whether the server refused an operation for its confirmation of `kind`, so that the reader confirms again, and not
+ * for the operation itself: a wrong password, a passkey that does not verify (the same problem is a new passkey's
+ * when the confirmation was none), a confirmation that expired or was used, or too many wrong ones (a 429).
+ */
+export function confirmationRefused(error: unknown, kind: Confirmation["kind"]): boolean {
+  if (!(error instanceof ProblemError)) return false;
+  if (error.status === 429) return true;
+  switch (error.type) {
+    case `${problems}wrong-password`:
+    case `${problems}passkey-confirmation-expired`:
+    case `${problems}external-confirmation-expired`:
+      return true;
+    case `${problems}invalid-passkey`:
+      return kind === "passkey";
+    default:
+      return false;
   }
 }
 

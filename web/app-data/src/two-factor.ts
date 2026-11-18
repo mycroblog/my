@@ -3,7 +3,7 @@
 // turning it on in two steps (the server gives a secret and a QR code, the reader enters a code the app makes from it),
 // turning it off, and making the recovery codes again. The recovery codes are returned by the writes that make them
 // and kept nowhere: the screen shows them once.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -58,6 +58,43 @@ export async function regenerateRecoveryCodes(data: AppData, code: string): Prom
     now === undefined ? now : { ...now, recovery_codes_remaining: made.length },
   );
   return made;
+}
+
+/**
+ * The setup the screen that turns two-factor authentication on shows: a new secret, asked for as the screen opens and
+ * kept while it stays open, never longer, so that the next visit gets another.
+ */
+export function totpSetupQuery(data: AppData) {
+  return {
+    queryKey: ["post", "/two_factor/totp/setup"] as const,
+    queryFn: () => setUpTotp(data),
+    staleTime: Infinity,
+    gcTime: 0,
+  };
+}
+
+/**
+ * The setup of the screen that turns two-factor authentication on: `loading` until the server gave a secret, `failed`
+ * when it did not, and `restart`, which asks for a new one (after a failure, or once the setup expired).
+ */
+export function useTotpSetup(): {
+  setup: TotpSetup | undefined;
+  status: "loading" | "failed" | "ready";
+  restart: () => void;
+} {
+  const { data, isError, isFetching, refetch } = useQuery(totpSetupQuery(useAppData()));
+  return {
+    setup: data,
+    status: data !== undefined ? "ready" : isError && !isFetching ? "failed" : "loading",
+    restart: () => {
+      void refetch();
+    },
+  };
+}
+
+/** Whether `error` says the setup of `enableTotp` is unknown or expired: the reader starts a new one (`setUpTotp`). */
+export function totpSetupExpired(error: unknown): boolean {
+  return error instanceof ProblemError && error.type === "/api/v1/problems/totp-setup-expired";
 }
 
 /** The state of two-factor authentication; undefined until the server answered. */

@@ -19,7 +19,14 @@ import {
   type AppData,
 } from "@my/app-data";
 import { enterCall, leaveCall, type Call } from "@my/app-features";
-import { createFakeApi, fakeHost, fakeOrigin, type FakeApi, type FakeOptions } from "@my/e2e/fake";
+import {
+  createFakeApi,
+  fakeHost,
+  fakeOrigin,
+  type FakeApi,
+  type FakeLoginProviderKind,
+  type FakeOptions,
+} from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { StoryContext } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
@@ -32,7 +39,8 @@ type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
 /** Where a screen's story opens the app, and the state the fake server answers in. */
 export type Fake = {
   /**
-   * The app's path, `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
+   * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind),
+   * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members,
    * `conversation:<index>` of the reader's conversation of direct messages at that index (newest first),
    * `reactions:<key>:<emoji>` of who reacted to a scenario post with an emoji, or the key of a scenario post whose page
@@ -142,14 +150,18 @@ function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
 }
 
 /**
- * The app's path of `at`: a path as it is, the page of the announcement of `announcement:<key>`, the list of who
+ * The app's path of `at`: a path as it is, with the ID of the fake's login provider of a kind in place of each
+ * `{provider:<kind>}` (what a provider's return leaves in the fragment), the page of the announcement of `announcement:<key>`, the list of who
  * reacted to a scenario post with an emoji of `reactions:<key>:<emoji>` (a reaction's name), the article editor of the
  * reader's draft of `article-draft:<key>` or of their article of `article-edit:<key>`, the held-back notifications of the
  * person of `held:<username>`, the page of the reader's newest notification of `notification:<type>`, else the page of
  * the scenario post of that key.
  */
 function pathOf(fake: FakeApi, at: string): string {
-  if (at.startsWith("/")) return at;
+  if (at.startsWith("/"))
+    return at.replace(/\{provider:(github|oidc|mastodon)\}/g, (_, kind: FakeLoginProviderKind) =>
+      fake.loginProviderId(kind),
+    );
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

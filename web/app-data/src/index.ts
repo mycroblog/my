@@ -150,6 +150,7 @@ export {
 export { domainMutesQuery, muteDomain, useMutedDomain, useMuteDomain } from "./domains";
 export {
   confirmationFields,
+  confirmationRefused,
   confirmWithPasskey,
   useConfirmWithPasskey,
   type Confirmation,
@@ -180,7 +181,10 @@ export {
   enableTotp,
   regenerateRecoveryCodes,
   setUpTotp,
+  totpSetupExpired,
+  totpSetupQuery,
   twoFactorQuery,
+  useTotpSetup,
   useTwoFactor,
   useTwoFactorWrites,
   type TotpSetup,
@@ -212,6 +216,7 @@ export {
   type BrowserSession,
   type BrowserSessionWrites,
 } from "./browser-sessions";
+export { loadSecurity, useSecurityRead } from "./security";
 export {
   authorizedAppsQuery,
   revokeAuthorizedApp,

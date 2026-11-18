@@ -5,8 +5,10 @@
 // setting's row and in a switch; the status summary, with something to do and with all well; a list with its one add
 // action, and empty, where what stands in its place leads to adding; the submit bar of a form saved as a whole, at
 // rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
-// to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; and a
-// number field given a number outside what it takes.
+// to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; a
+// number field given a number outside what it takes; what the reader copies and keeps (recovery codes shown once,
+// before and after copying); the key of an authenticator app as a QR code and as text; and a sentence of a section
+// with the links to where the reader acts on it.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
@@ -17,10 +19,13 @@ import { NumberField, Select } from "./field";
 import { FormAlert, TextField } from "./form-page";
 import { SaveState } from "./save-state";
 import {
+  CopyBlock,
+  QrFrame,
   SettingRow,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
+  SettingsNote,
   SettingsSection,
   StatusSummary,
   SubmitBar,
@@ -91,6 +96,21 @@ const en = {
   useProvider: "Continue with GitHub",
   usePassword: "Use your password instead",
   wrong: "That password is not right.",
+  recovery: "Recovery codes",
+  recoveryAbout:
+    "Each code signs you in once when you cannot use your authenticator app. Keep them somewhere safe: they are not shown again.",
+  copy: "Copy",
+  copied: "Copied",
+  setup: "Add to your authenticator app",
+  setupAbout: "Scan the QR code with your authenticator app, or enter the key by hand.",
+  qr: "QR code of the setup key",
+  key: "Setup key",
+  enter: "Enter the code",
+  codeHint: "The six-digit code your authenticator app shows now",
+  browsers: "Signed-in browsers",
+  advice: "Don't recognize a sign-in? Change your password, then check which apps can use your account.",
+  changePassword: "Change password",
+  apps: "Check your apps",
 };
 
 const ja: typeof en = {
@@ -157,6 +177,21 @@ const ja: typeof en = {
   useProvider: "GitHubで続ける",
   usePassword: "代わりにパスワードを使う",
   wrong: "パスワードが正しくありません。",
+  recovery: "リカバリーコード",
+  recoveryAbout:
+    "認証アプリを使えないとき、それぞれのコードで1回ずつログインできます。安全な場所に保管してください。このコードは二度と表示されません。",
+  copy: "コピー",
+  copied: "コピーしました",
+  setup: "認証アプリに追加",
+  setupAbout: "認証アプリでQRコードを読み取るか、キーを手で入力してください。",
+  qr: "セットアップキーのQRコード",
+  key: "セットアップキー",
+  enter: "コードを入力",
+  codeHint: "認証アプリにいま表示されている6桁のコード",
+  browsers: "ログイン中のブラウザ",
+  advice: "心当たりのないログインがあるときは、パスワードを変更し、アカウントを使えるアプリを確認してください。",
+  changePassword: "パスワードを変更",
+  apps: "アプリを確認",
 };
 
 const useWords = () => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
@@ -509,6 +544,86 @@ function ReauthInFlight() {
   );
 }
 
+const codes = [
+  "q6b4k-rs",
+  "q8f2m-s1",
+  "qa1c7-sn",
+  "qc7x3-t9",
+  "qe5h9-tv",
+  "qg3n5-uh",
+  "qi1t1-v3",
+  "qjz8x-vp",
+  "qlx4t-wb",
+  "qnv0p-wx",
+];
+
+// A finder pattern in place of a whole code: a square of 15 modules, the quiet zone of four included.
+const qrPath = "M4 4h7v7H4zM5 5v5h5V5zM6 6h3v3H6z";
+
+/** What the reader copies and keeps: recovery codes, shown once, before copying and after. */
+function Kept() {
+  const w = useWords();
+  return (
+    <Column>
+      {[undefined, w.copied].map((result) => (
+        <SettingsSection key={result ?? ""} heading={w.recovery} about={w.recoveryAbout}>
+          <CopyBlock
+            label={w.recovery}
+            values={codes}
+            action={<Button size="timeline">{w.copy}</Button>}
+            result={result}
+          />
+        </SettingsSection>
+      ))}
+    </Column>
+  );
+}
+
+/** The key of an authenticator app, as a QR code and as text to copy, then the field of the code the app makes. */
+function Authenticator() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.setup} about={w.setupAbout}>
+        <QrFrame label={w.qr} size={15} path={qrPath} />
+        <CopyBlock
+          label={w.key}
+          values={["JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP"]}
+          action={<Button size="timeline">{w.copy}</Button>}
+        />
+      </SettingsSection>
+      <SettingsSection heading={w.enter}>
+        <TextField id="authenticator-code" name="code" label={w.code} hint={w.codeHint} inputMode="numeric" />
+      </SettingsSection>
+      <SubmitBar>
+        <Button kind="primary">{w.turnOn}</Button>
+      </SubmitBar>
+    </Column>
+  );
+}
+
+/** A sentence of a section, after its list, with the links to where the reader acts on it. */
+function Notes() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.browsers}>
+        <SettingsList label={w.browsers}>
+          <SettingsListRow icon="public" title="Firefox on macOS" caption="Tokyo" />
+        </SettingsList>
+        <SettingsNote
+          links={[
+            { href: "/settings/security/password", label: w.changePassword },
+            { href: "/settings/apps", label: w.apps },
+          ]}
+        >
+          {w.advice}
+        </SettingsNote>
+      </SettingsSection>
+    </Column>
+  );
+}
+
 // Tagged `themes`: the check of every story shows it in dark too.
 const meta = { title: "Settings parts", tags: ["themes"] } satisfies Meta;
 export default meta;
@@ -531,5 +646,11 @@ export const AuthenticateAgain: Story = { render: () => <Reauth /> };
 export const AuthenticatingAgain: Story = { render: () => <ReauthInFlight /> };
 /** A setting that cannot be changed now, with its reason: a choice, a number, a switch. */
 export const DisabledSettings: Story = { render: () => <Disabled /> };
+/** Recovery codes shown once, to copy and keep: before copying, and once copied. */
+export const CodesToKeep: Story = { render: () => <Kept /> };
+/** Setting an authenticator app up: its key as a QR code and as text, then the code the app makes. */
+export const AuthenticatorSetup: Story = { render: () => <Authenticator /> };
+/** A sentence of a section with the links to where the reader acts on it. */
+export const NoteWithLinks: Story = { render: () => <Notes /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };

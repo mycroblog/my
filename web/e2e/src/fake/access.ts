@@ -31,6 +31,11 @@ export type AccessOptions = {
   linked?: "some" | "none" | "no-providers";
   /** Browsers signed in: four by default, the first the one that asks; `alone` is the one that asks only. */
   sessions?: "several" | "alone";
+  /**
+   * Sign-in is limited to the login providers (ADR-0106 §20–§22): the instance says so (`login_providers_only`), and
+   * setting or changing the password and adding a passkey are refused; removing either stays.
+   */
+  providersOnly?: boolean;
   /** Apps authorized: the server's web client and three apps by default. */
   authorizedApps?: "some" | "none";
   /** The reader's own OAuth apps: three by default (a public, a confidential, a disabled one), or none; `disabled` is a server that does not let users register apps. */
@@ -76,6 +81,19 @@ type StoredInvite = Omit<Invite, "state"> & { revoked: boolean; ineligible: bool
 
 const passkeyNames = ["MacBook Touch ID", "iPhone (iCloud Keychain)", "YubiKey 5C", "Pixel (Google Password Manager)"];
 
+/** The kinds of the fake's login providers, one of each. */
+export type FakeLoginProviderKind = "github" | "oidc" | "mastodon";
+
+/** The IDs of the fake's login providers, by kind, for a fake started at `started`. */
+export const loginProviderIds = (
+  started: number,
+  idAt: AccessContext["idAt"],
+): Record<FakeLoginProviderKind, string> => ({
+  github: idAt(started - 90 * day, 71_000),
+  oidc: idAt(started - 90 * day, 71_001),
+  mastodon: idAt(started - 60 * day, 71_002),
+});
+
 /** A code of the recovery codes: ten, shown once. */
 const recoveryCodes = (round: number) =>
   Array.from(
@@ -113,6 +131,8 @@ export function accessHandlers(c: AccessContext): Handlers {
     problem(422, "The confirmation expired", { type: "/api/v1/problems/passkey-confirmation-expired" });
   const externalExpired = () =>
     problem(422, "The confirmation expired", { type: "/api/v1/problems/external-confirmation-expired" });
+  const providersOnly = () =>
+    problem(403, "You sign in only with another service here", { type: "/api/v1/problems/login-providers-only" });
 
   type Confirmation = {
     password?: string | undefined;
@@ -160,18 +180,14 @@ export function accessHandlers(c: AccessContext): Handlers {
 
   // ---- Linked accounts ----------------------------------------------------------------------------------------------
 
+  const providerIds = loginProviderIds(started, idAt);
   const providers: Schema<"LinkableLoginProvider">[] =
     o.linked === "no-providers"
       ? []
       : [
-          { id: idAt(started - 90 * day, 71_000), kind: "github", display_name: "GitHub", allow_link: true },
-          { id: idAt(started - 90 * day, 71_001), kind: "oidc", display_name: "Example SSO", allow_link: true },
-          {
-            id: idAt(started - 60 * day, 71_002),
-            kind: "mastodon",
-            display_name: "mastodon.example",
-            allow_link: false,
-          },
+          { id: providerIds.github, kind: "github", display_name: "GitHub", allow_link: true },
+          { id: providerIds.oidc, kind: "oidc", display_name: "Example SSO", allow_link: true },
+          { id: providerIds.mastodon, kind: "mastodon", display_name: "mastodon.example", allow_link: false },
         ];
   const linked: Schema<"LinkedIdentity">[] =
     o.linked === "none" || o.linked === "no-providers"
@@ -404,6 +420,7 @@ export function accessHandlers(c: AccessContext): Handlers {
     // Password
     "GET /accounts/password": () => ({ status: 200, body: { has_password: password !== null } }),
     "POST /accounts/password": ({ body }) => {
+      if (o.providersOnly === true) return providersOnly();
       const refused = confirm({ ...body, password: body.current_password }, "current_password");
       if (refused !== null) return refused;
       if (body.new_password.length < 8 || body.new_password.length > 128)
@@ -429,6 +446,7 @@ export function accessHandlers(c: AccessContext): Handlers {
     // Passkeys
     "GET /passkeys": () => ({ status: 200, body: { items: passkeys } }),
     "POST /passkeys/registration": ({ body }) => {
+      if (o.providersOnly === true) return providersOnly();
       if (passkeys.length >= maxPasskeys)
         return problem(409, "You have as many passkeys as you may", { type: "/api/v1/problems/too-many-passkeys" });
       const refused = confirm(body);

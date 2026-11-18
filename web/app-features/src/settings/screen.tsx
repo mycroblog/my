@@ -15,14 +15,14 @@ export function useSettingsTitle(path: string): string | undefined {
   return entry === undefined ? undefined : t(entry.name);
 }
 
-export type SettingsEntryScreenProps = Pick<SettingsEntryProps, "languages"> & {
+export type SettingsEntryScreenProps = Omit<SettingsEntryProps, "back"> & {
   /** The last part of the address. */
   entry: string;
   /** Goes back to the menu. */
   onBack: () => void;
 };
 
-export function SettingsEntryScreen({ entry, onBack, languages }: SettingsEntryScreenProps) {
+export function SettingsEntryScreen({ entry, onBack, ...given }: SettingsEntryScreenProps) {
   const { t } = stringsIn(useLocale().locale);
   const found = useShownEntries().find((e) => e.path === entry);
   if (found === undefined)
@@ -31,5 +31,5 @@ export function SettingsEntryScreen({ entry, onBack, languages }: SettingsEntryS
         {t("settings.not_found")}
       </FeedNotice>
     );
-  return <found.Screen back={<BackButton onPress={onBack}>{t("settings.back")}</BackButton>} languages={languages} />;
+  return <found.Screen back={<BackButton onPress={onBack}>{t("settings.back")}</BackButton>} {...given} />;
 }

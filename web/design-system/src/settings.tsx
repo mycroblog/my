@@ -14,7 +14,9 @@
 // menu is not beside the screen; a screen under an entry (`sub`: changing the password, one filter) keeps its head at
 // every width, the way back leading to its entry. A section holds rows: a setting (its name over a line about it, the
 // control at the row's end), a list of what the reader keeps there with its one add action in the section's head, or
-// what stands in the list's place while it is empty, which leads to adding. The status summary heads a screen while
+// what stands in the list's place while it is empty, which leads to adding; a sentence that is no setting, with the
+// links to where the reader acts on it; what they copy and keep (recovery codes, a key), with the action that copies
+// it; or a QR code for a camera, dark on light in either scheme. The status summary heads a screen while
 // something there is to do: the state as a glyph and a sentence, what it means, and the next thing to do. A state is
 // always words and a glyph, on no surface of its own: a tile is what can be pressed.
 //
@@ -29,16 +31,17 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import { createContext, use, useId, type ReactElement, type ReactNode } from "react";
+import { createContext, Fragment, use, useId, type ReactElement, type ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { raisedSurface } from "./button";
+import { raisedSurface, TextLink } from "./button";
 import { FieldContext } from "./field";
 import { Icon, type IconName } from "./icons";
-import { Box, Layers, Row, Stack } from "./layout";
+import { Box, Grid, Layers, Row, Stack } from "./layout";
 import { ScreenTitle } from "./list";
 import { useReader } from "./locale";
 import { SaveControlContext } from "./save-state";
+import { actionJoint } from "./sentence";
 import { FrameFoot, FrameHead, FramePanel } from "./shell";
 
 /** Whether the menu stands beside a screen, on the page, its entries their glyph and name alone. */
@@ -686,6 +689,122 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
         </Row>
       )}
     </Stack>
+  );
+}
+
+const note = tv({
+  slots: {
+    root: "text-caption text-muted-text [word-break:auto-phrase]",
+    // The values to copy, on the page's surface, in the code's face; a long one breaks anywhere.
+    values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
+    value: "wrap-anywhere tabular-nums",
+    result: "text-caption text-muted-text",
+    // A QR code is dark on light whatever the scheme, or a camera does not read it.
+    qr: "rounded-control bg-surface p-screen-air text-text [color-scheme:light]",
+    code: "size-screen-qr fill-current",
+  },
+});
+
+/**
+ * A sentence in a section that is no setting and no state of a control: what a list's rows mean for the reader, what
+ * an action there will do, why one cannot be done; then the links to where they act on it (the password's screen, the
+ * apps), each a link of the text. Muted, at the caption's size.
+ */
+export function SettingsNote({
+  links,
+  children,
+}: {
+  /** Where the reader acts on what the sentence says, after it. */
+  links?: readonly { href: string; label: string }[] | undefined;
+  children: string;
+}) {
+  return (
+    <p className={note().root()}>
+      {children}
+      {/* The first link meets the sentence as an action does; each next one stands a middle dot after the one before. */}
+      {links?.map((link, i) => (
+        <Fragment key={link.href}>
+          {i === 0 ? actionJoint(children) : actionJoint(link.label)}
+          <TextLink href={link.href}>{link.label}</TextLink>
+        </Fragment>
+      ))}
+    </p>
+  );
+}
+
+/**
+ * What the reader copies and keeps (recovery codes, the key of an authenticator app, a secret shown once), named by
+ * `label`: the values in the code's face on the page's surface, each on a line of its own, two side by side where
+ * they fit, and under them the action that copies them all (`action`, a `Button`) with what came of it right after
+ * (`result`, read as it comes). A press on the values selects them all, for a reader who copies by hand.
+ */
+export function CopyBlock({
+  label,
+  values,
+  action,
+  result,
+}: {
+  label: string;
+  values: readonly string[];
+  action: ReactNode;
+  /** What came of copying, in a word or two (Copied). */
+  result?: string | undefined;
+}) {
+  const s = note();
+  return (
+    <Stack gap="screen-row-gap">
+      <Grid
+        as="ul"
+        columns={values.length > 1 ? 2 : 1}
+        gap="screen-air"
+        gapX="shell-edge"
+        aria-label={label}
+        className={s.values()}
+      >
+        {values.map((value) => (
+          <li key={value} className={s.value()}>
+            {value}
+          </li>
+        ))}
+      </Grid>
+      <Row wrap align="center" gap="screen-row-gap">
+        <Row as="span" inline rigid>
+          {action}
+        </Row>
+        <span role="status" className={s.result()}>
+          {result}
+        </span>
+      </Row>
+    </Stack>
+  );
+}
+
+/**
+ * A QR code for a camera to read (the key of an authenticator app), named by `label`: the dark modules of `path`,
+ * one unit a module, in a square view box of `size` modules that holds the quiet zone, dark on light in either
+ * scheme.
+ */
+export function QrFrame({ label, size, path }: { label: string; size: number; path: string }) {
+  const s = note();
+  return (
+    <Row justify="start">
+      <Box className={s.qr()}>
+        <Box
+          display="block"
+          as={
+            <svg
+              role="img"
+              aria-label={label}
+              viewBox={`0 0 ${String(size)} ${String(size)}`}
+              shapeRendering="crispEdges"
+              className={s.code()}
+            />
+          }
+        >
+          <path d={path} />
+        </Box>
+      </Box>
+    </Row>
   );
 }
 

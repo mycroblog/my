@@ -10,6 +10,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { loadSecuritySettings, SecuritySettings } from "./security/security";
 
 /** The groups of the menu, in its order, each under its heading. */
 export const settingsGroups = [
@@ -20,12 +21,34 @@ export const settingsGroups = [
 ] as const satisfies readonly { id: string; heading: MessageId }[];
 export type SettingsGroupId = (typeof settingsGroups)[number]["id"];
 
+/**
+ * What a screen of the settings reads of its address and of the app around it, for what leaves the app and comes
+ * back: going to a login provider to link an account or to confirm an operation (confirmation.tsx).
+ */
+export type SettingsAddress = {
+  /**
+   * The fragment of the screen's address, without its `#`: what a login provider's return leaves there
+   * (`linked=…`, `external_confirmation=…`, `external_error=…`), empty otherwise.
+   */
+  fragment: string;
+  /** Takes the fragment off the address, once the screen has read it, so that a reload does not read it again. */
+  onFragmentRead: () => void;
+  /** Leaves the app for `href`, a page that loads anew (a login provider's). */
+  leave: (href: string) => void;
+};
+
 /** What an entry's screen is given by the screen that places it. */
-export type SettingsEntryProps = {
+export type SettingsEntryProps = SettingsAddress & {
   /** The way back to the menu (a `BackButton`), for the head of the entry's `SettingsScreen`. */
   back: ReactNode;
   /** The languages the app can be shown in, as BCP 47 tags. */
   languages: readonly string[];
+};
+
+/** What a screen under an entry (changing the password) is given by the route that places it. */
+export type SettingsSubProps = SettingsAddress & {
+  /** Goes back to the entry the screen is under: the press of its head's back, and the end of what it does. */
+  onBack: () => void;
 };
 
 /**
@@ -67,6 +90,15 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.display.hint",
     Screen: DisplaySettings,
     load: loadDisplaySettings,
+  },
+  {
+    path: "security",
+    group: "access",
+    icon: "security",
+    name: "settings.entry.security",
+    hint: "settings.entry.security.hint",
+    Screen: SecuritySettings,
+    load: loadSecuritySettings,
   },
 ];
 
