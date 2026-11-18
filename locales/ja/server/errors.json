@@ -96,8 +96,8 @@
     "description": "Detail of the HTTP 403 insufficient-scope API error. {scope} is the missing OAuth scope, e.g. read:accounts (not translated)."
   },
   "errors.interaction_restricted": {
-    "defaultMessage": "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。",
-    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying)."
+    "defaultMessage": "モデレーションの処分により、今はこのアカウントでフォロー・お気に入り・ブースト・返信ができません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。",
+    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from interacting with others (following, favouriting, boosting, replying); says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account)."
   },
   "errors.internal": {
     "defaultMessage": "予期しないエラーが発生しました。しばらくしてからもう一度試してください。",
@@ -284,7 +284,7 @@
     "description": "API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why."
   },
   "errors.supporters.ineligible_detail": {
-    "defaultMessage": "{reason, select, not_local {このサーバーの利用者だけが加入できます。} email_unverified {先にメールアドレスを確認してください。} restricted {あなたのアカウントは制限されています。} other {いまは加入できません。}}",
+    "defaultMessage": "{reason, select, not_local {このサーバーの利用者だけが加入できます。} email_unverified {先にメールアドレスを確認してください。} restricted {モデレーションの処分により、このアカウントは制限されています。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。} other {いまは加入できません。}}",
     "description": "API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted."
   },
   "errors.supporters.subscribed": {
@@ -504,8 +504,8 @@
     "description": "Detail of the HTTP 422 API error when a new post has both a poll and attached media."
   },
   "errors.status.posting_restricted": {
-    "defaultMessage": "モデレーションの処分により、今はこのアカウントで投稿できません。",
-    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from posting."
+    "defaultMessage": "モデレーションの処分により、今はこのアカウントで投稿できません。理由の確認と異議申し立ては、設定の「アカウントとデータ」にある「アカウントの状態」からできます。",
+    "description": "Detail of the HTTP 403 API error when a moderator restricted the account from posting; says where the app shows the action and takes an appeal (the page Account status, appfeatures:settings.account.status, under the settings entry Account and data, appfeatures:settings.entry.account)."
   },
   "errors.status.quote_not_found": {
     "defaultMessage": "引用する投稿が見つかりません。引用を外してから、もう一度投稿してください。",

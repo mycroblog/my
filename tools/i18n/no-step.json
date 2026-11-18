@@ -40,7 +40,6 @@
     "server:errors.forbidden",
     "server:errors.gone",
     "server:errors.hook_decision.not_overridable",
-    "server:errors.interaction_restricted",
     "server:errors.refetch.not_remote",
     "server:errors.remote_account",
     "server:errors.report.not_resolved",
@@ -58,7 +57,6 @@
     "server:errors.status.not_pinnable",
     "server:errors.status.poll_missing",
     "server:errors.status.poll_not_editable",
-    "server:errors.status.posting_restricted",
     "server:errors.status.quote_not_allowed",
     "server:errors.status.reply_not_allowed",
     "server:errors.translation.unavailable",
@@ -99,9 +97,6 @@
     "server:errors.supporters.ineligible_detail#not_local",
     "server:errors.invalid_custom_emoji_detail#remote_emoji",
     "server:errors.invalid_custom_emoji_detail#local_emoji"
-  ],
-  "A moderation action restricts the reader's account, and the app has no screen yet to appeal it (#3115): there is no step to point to.": [
-    "server:errors.supporters.ineligible_detail#restricted"
   ],
   "The fallback of a rule the server checks, shown only for a reason the other branches do not name: no step fits every case.": [
     "server:errors.relay.invalid_detail#other",

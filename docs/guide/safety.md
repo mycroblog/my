@@ -36,7 +36,7 @@ choose, whoever wrote them. [Keyword filters](keyword-filters.md) explains how t
 ## When a moderator acts on your account
 
 The moderators of a server can limit or suspend an account. "Account status", under "Account and data" in the settings,
-lists the actions in effect ("Actions in effect") with their reason and when each one ends, and lets you appeal an
-action once ("Appeal"). You are notified of the moderators' notices and of the result of an appeal.
+lists the actions in effect ("Actions in effect") and the past ones with their reason and when each one ends; open an
+action to appeal it once ("Send appeal"). You are notified of the moderators' notices and of the result of an appeal.
 
 What the moderators may do, and which rules apply, is up to each server: read its rules before you appeal.

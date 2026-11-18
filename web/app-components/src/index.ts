@@ -51,6 +51,7 @@ export {
   type DraftRowProps,
   type ScheduleFormProps,
 } from "./drafts";
+export { plainText } from "./diff";
 export { EditHistory, type EditHistoryProps, type PostEdit } from "./edit-history";
 export { languageName } from "./locale";
 export {

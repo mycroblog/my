@@ -510,14 +510,21 @@ export {
 } from "./deactivation";
 export {
   appealHookDecision,
+  appealLimits,
   appealModerationAction,
+  appealRefusalOf,
   hookAppealQuery,
+  hookRefusalOf,
   ownModerationActionsQuery,
+  useActionStatuses,
   useAppeals,
   useHookAppeal,
+  useOwnModerationAction,
   useOwnModerationActions,
+  type AppealRefusal,
   type HookAppeal,
   type HookAppealRequest,
+  type HookRefusal,
   type ModerationAction,
   type ModerationAppeal,
 } from "./own-moderation";

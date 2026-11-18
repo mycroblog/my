@@ -1,12 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // What moderators did to the viewer's own account, and appealing it: the actions on their account and posts, newest
 // first, each with its reason, whether it can be appealed now, and the appeal and its outcome; and the appeal of a post
-// that a server hook refused. A write puts what the server answered into the cache.
+// that a server hook refused. A write puts what the server answered into the cache. What the server refuses of an
+// appeal is told by its kind (`appealRefusalOf`), and a refused post that can be appealed by its decision
+// (`hookRefusalOf`).
 import { ProblemError, type components } from "@mycroblog/mykit";
-import { useQuery } from "@tanstack/react-query";
+import { useQueries, useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import type { AppData } from "./app-data";
 import { pagedQuery, usePagedList, type Page, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
+import { useShadow } from "./shadow";
+import type { Status } from "./statuses";
+import { statusQuery } from "./thread";
 
 /** An action of the moderators on the viewer's account or posts. */
 export type ModerationAction = components["schemas"]["ModerationAction"];
@@ -19,6 +25,45 @@ export type HookAppeal = components["schemas"]["OwnHookAppeal"];
 
 /** What the viewer writes to appeal the refusal of a post: the post they tried, and why it should be let through. */
 export type HookAppealRequest = components["schemas"]["AppealHookDecisionRequest"];
+
+/** The most characters of what the viewer writes to appeal an action. */
+export const appealLimits = { text: 2000 } as const;
+
+/**
+ * Why the server refused an appeal: it was made already (`appealed`), the time to appeal has passed (`closed`), what
+ * it appeals cannot be appealed (`not_appealable`: a ban whose account is deleted, a decision that is no refusal in
+ * force), or what it appeals is not the viewer's or no longer kept (`gone`).
+ */
+export type AppealRefusal = "appealed" | "closed" | "not_appealable" | "gone";
+
+/** The kind of the server's refusal of an appeal that `error` is; undefined for any other failure. */
+export function appealRefusalOf(error: unknown): AppealRefusal | undefined {
+  if (!(error instanceof ProblemError)) return undefined;
+  if (error.type === "/api/v1/problems/already-appealed") return "appealed";
+  if (error.type === "/api/v1/problems/appeal-window-closed") return "closed";
+  if (error.type === "/api/v1/problems/not-appealable") return "not_appealable";
+  return error.status === 404 ? "gone" : undefined;
+}
+
+/** A post the server's automated review refused, as its author may appeal it. */
+export type HookRefusal = {
+  /** The decision to appeal (`useHookAppeal`, `appealHookDecision`). */
+  readonly decision: string;
+  /** The last moment it can be appealed, where the server says it. */
+  readonly deadline: string | undefined;
+};
+
+/**
+ * The refusal of a post by the server's automated review that `error` is, when its author may appeal it (the 422
+ * `/api/v1/problems/status-rejected` that names its decision); undefined for any other failure, a refused edit among
+ * them, which names none.
+ */
+export function hookRefusalOf(error: unknown): HookRefusal | undefined {
+  if (!(error instanceof ProblemError) || error.type !== "/api/v1/problems/status-rejected") return undefined;
+  const { hook_decision_id: decision, appeal_deadline: deadline } = error.problem;
+  if (typeof decision !== "string" || decision === "") return undefined;
+  return { decision, deadline: typeof deadline === "string" && deadline !== "" ? deadline : undefined };
+}
 
 /** The actions on the viewer's account, newest first, a page at a time; only those in effect now with `active`. */
 export function ownModerationActionsQuery({ api, queries }: AppData, active = false) {
@@ -36,6 +81,60 @@ export function ownModerationActionsQuery({ api, queries }: AppData, active = fa
 /** The actions on the viewer's account, for a screen. */
 export function useOwnModerationActions(active = false): PagedList<ModerationAction> {
   return usePagedList(ownModerationActionsQuery(useAppData(), active));
+}
+
+/**
+ * The action of `id` on the viewer's account. The server reads no action alone, so it is found in the list of them
+ * all, read a page after another until one holds it: `pending` until it is found or the list is read whole, `missing`
+ * when the whole list does not hold it, `error` when a page could not be read (`retry` reads it again). `reread`
+ * reads the list anew, for an action the server says is no longer as the cache has it.
+ */
+export function useOwnModerationAction(id: string): {
+  readonly action: ModerationAction | undefined;
+  readonly status: "pending" | "error" | "missing" | "success";
+  readonly retry: () => void;
+  readonly reread: () => void;
+} {
+  const data = useAppData();
+  const list = useOwnModerationActions();
+  const action = list.items.find((a) => a.id === id);
+  const failed = list.status === "error" || list.error !== null;
+  const more = action === undefined && list.status === "success" && !failed && list.hasNextPage;
+  const { fetchNextPage, isFetchingNextPage } = list;
+  useEffect(() => {
+    if (more && !isFetchingNextPage) fetchNextPage();
+  });
+  return {
+    action,
+    status:
+      action !== undefined ? "success" : failed ? "error" : list.status === "pending" || more ? "pending" : "missing",
+    retry: list.status === "error" ? list.refetch : list.fetchNextPage,
+    reread: () => {
+      // Every list of the actions: the ones in effect too, which the settings count from.
+      void data.queryClient.invalidateQueries({ queryKey: ownModerationActionsQuery(data).queryKey.slice(0, 2) });
+    },
+  };
+}
+
+/**
+ * The posts an action is about (its `status_ids`) as the viewer may open them now: those the server still shows them,
+ * in the action's order, and how many it no longer does (deleted, by the action or since); `pending` until the
+ * server answered for every one.
+ */
+export function useActionStatuses(ids: readonly string[]): {
+  readonly statuses: readonly Status[];
+  readonly gone: number;
+  readonly pending: boolean;
+} {
+  const data = useAppData();
+  const show = useShadow();
+  const reads = useQueries({ queries: ids.map((id) => ({ ...statusQuery(data, id), retry: false })) });
+  const statuses = reads.flatMap((read) => {
+    const shown = read.data === undefined ? undefined : show(read.data);
+    return shown === undefined ? [] : [shown];
+  });
+  const pending = reads.some((read) => read.isPending);
+  return { statuses, gone: pending ? 0 : ids.length - statuses.length, pending };
 }
 
 /**

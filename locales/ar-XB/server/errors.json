@@ -280,7 +280,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.interaction_restricted": {
-    "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ ɟoʅʅoʍıuƃ, ɟɐʌonɹıʇıuƃ, qoosʇıuƃ, oɹ ɹǝdʅʎıuƃ ɟoɹ uoʍ.‬",
+    "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ ɟoʅʅoʍıuƃ, ɟɐʌonɹıʇıuƃ, qoosʇıuƃ, oɹ ɹǝdʅʎıuƃ ɟoɹ uoʍ. ⊥o sǝǝ ʍɥʎ oɹ ʇo ɐddǝɐʅ, odǝu ∀ɔɔonuʇ sʇɐʇns nupǝɹ ∀ɔɔonuʇ ɐup pɐʇɐ ıu ʇɥǝ sǝʇʇıuƃs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.internal": {
@@ -732,7 +732,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.posting_restricted": {
-    "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ dosʇıuƃ ɟoɹ uoʍ.‬",
+    "defaultMessage": "‮∀ ɯopǝɹɐʇıou ɐɔʇıou ʞǝǝds ʎonɹ ɐɔɔonuʇ ɟɹoɯ dosʇıuƃ ɟoɹ uoʍ. ⊥o sǝǝ ʍɥʎ oɹ ʇo ɐddǝɐʅ, odǝu ∀ɔɔonuʇ sʇɐʇns nupǝɹ ∀ɔɔonuʇ ɐup pɐʇɐ ıu ʇɥǝ sǝʇʇıuƃs.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.quote_not_allowed": {
@@ -796,7 +796,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.supporters.ineligible_detail": {
-    "defaultMessage": "‮{reason,select,email_unverified{Ʌǝɹıɟʎ ʎonɹ ǝɯɐıʅ ɐppɹǝss ɟıɹsʇ.} not_local{Ouʅʎ ʇɥǝ nsǝɹs oɟ ʇɥıs sǝɹʌǝɹ ɔɐu snqsɔɹıqǝ.} other{⅄on ɔɐuuoʇ snqsɔɹıqǝ uoʍ.} restricted{⅄onɹ ɐɔɔonuʇ ıs ɹǝsʇɹıɔʇǝp.}}‬",
+    "defaultMessage": "‮{reason,select,email_unverified{Ʌǝɹıɟʎ ʎonɹ ǝɯɐıʅ ɐppɹǝss ɟıɹsʇ.} not_local{Ouʅʎ ʇɥǝ nsǝɹs oɟ ʇɥıs sǝɹʌǝɹ ɔɐu snqsɔɹıqǝ.} other{⅄on ɔɐuuoʇ snqsɔɹıqǝ uoʍ.} restricted{∀ ɯopǝɹɐʇıou ɐɔʇıou ɹǝsʇɹıɔʇs ʎonɹ ɐɔɔonuʇ. ⊥o sǝǝ ʍɥʎ oɹ ʇo ɐddǝɐʅ, odǝu ∀ɔɔonuʇ sʇɐʇns nupǝɹ ∀ɔɔonuʇ ɐup pɐʇɐ ıu ʇɥǝ sǝʇʇıuƃs.}}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.supporters.live_subscriptions": {

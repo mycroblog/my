@@ -9,6 +9,7 @@ import { usePermissions, type AppData, type Permission } from "@my/app-data";
 import type { IconName } from "@my/design-system";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
+import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
 import { DisplaySettings, loadDisplaySettings } from "./display";
 import { FilterSettings, loadFilterSettings } from "./filters";
 import { loadNotificationSettings, NotificationSettings } from "./notifications";
@@ -39,6 +40,8 @@ export type SettingsEntryProps = {
 export type SettingsFacts = {
   /** The permissions of the reader's account; none until the server said them. */
   readonly permissions: readonly Permission[];
+  /** How many moderators' actions in effect on the reader's account they can still appeal; none until they are read. */
+  readonly appealable: number;
 };
 
 /** An entry of the settings. */
@@ -108,11 +111,21 @@ export const settingsEntries: readonly SettingsEntry[] = [
     Screen: FilterSettings,
     load: loadFilterSettings,
   },
+  {
+    path: "account",
+    group: "account",
+    icon: "accountData",
+    name: "settings.entry.account",
+    hint: "settings.entry.account.hint",
+    count: ({ appealable }) => appealable,
+    Screen: AccountSettings,
+    load: loadAccountSettings,
+  },
 ];
 
 /** What the conditions and the counts of the entries read of the reader. */
 function useSettingsFacts(): SettingsFacts {
-  return { permissions: usePermissions() };
+  return { permissions: usePermissions(), appealable: useAppealableActions() };
 }
 
 /** An entry as the menu shows it to this reader. */

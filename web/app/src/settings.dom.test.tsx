@@ -46,6 +46,14 @@ const displayHint = "Language, time zone, link previews, defaults for new posts,
 const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
 const relationshipsHint = "Blocked accounts, muted accounts, muted servers, followed hashtags";
 const filtersHint = "Words and phrases that hide posts";
+const accountHint =
+  "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion";
+
+/**
+ * The count of the entry Account and data in `menu`, there once the actions on the reader's account are read: one of
+ * the fake's is in effect and can be appealed.
+ */
+const counted = (menu: HTMLElement, label = "1 item to check") => within(menu).findByText(label);
 
 describe("the menu", () => {
   test("opens from the navigation's Settings, with its entries in their groups and Sign out… last", async () => {
@@ -59,9 +67,10 @@ describe("the menu", () => {
     expect(app.path()).toBe("/settings");
     expect(app.title()).toContain("Settings");
     const menu = main().getByRole("navigation", { name: "Settings" });
-    // Two groups have entries; a group without one is not drawn.
-    expect(groups(menu)).toEqual(["General", "People and filters"]);
-    const [profile, display, notifications, relationships, filters, ...others] = rows(menu);
+    await counted(menu);
+    // Three groups have entries; a group without one is not drawn.
+    expect(groups(menu)).toEqual(["General", "People and filters", "Account"]);
+    const [profile, display, notifications, relationships, filters, account, ...others] = rows(menu);
     // An entry's row says its name, then what it holds.
     expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
     expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
@@ -73,6 +82,9 @@ describe("the menu", () => {
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
     expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
     expect(filters?.slice(1)).toEqual(["/settings/filters", null]);
+    // Then how many things wait there, as its badge and as what the badge means.
+    expect(account?.[0]).toMatch(new RegExp(`^Account and data\\s*${accountHint}\\s*1\\s*1 item to check$`));
+    expect(account?.slice(1)).toEqual(["/settings/account", null]);
     expect(others).toEqual([["Sign out…", "/settings?sign_out=true", null]]);
     // The menu is the screen: none beside it.
     expect(beside()).toHaveLength(0);
@@ -116,13 +128,15 @@ describe("an entry", () => {
     const [menu, ...others] = beside();
     if (menu === undefined) throw new Error("test: no settings menu beside the screen");
     expect(others).toHaveLength(0);
-    expect(groups(menu)).toEqual(["General", "People and filters"]);
+    await counted(menu);
+    expect(groups(menu)).toEqual(["General", "People and filters", "Account"]);
     expect(rows(menu)).toEqual([
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
       ["Notifications", "/settings/notifications", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
+      ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/display?sign_out=true", null],
     ]);
     expect(within(rail()).getByRole("link", { name: "Settings" }).getAttribute("aria-current")).toBe("page");
@@ -139,12 +153,14 @@ describe("an entry", () => {
     );
     expect(main().queryAllByRole("combobox")).toHaveLength(0);
     // The menu beside it marks no entry.
+    for (const menu of beside()) await counted(menu);
     expect(beside().flatMap(rows)).toEqual([
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
       ["Notifications", "/settings/notifications", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
+      ["Account and data 11 item to check", "/settings/account", null],
       ["Sign out…", "/settings/nothing?sign_out=true", null],
     ]);
     const all = main().getByRole("link", { name: "See all settings" });
@@ -200,12 +216,14 @@ describe("the display language", () => {
     });
     expect(document.documentElement.lang).toBe("ja");
     expect(app.title()).toContain("表示と投稿");
+    for (const menu of beside("設定")) await counted(menu, "確認が必要な項目 1 件");
     expect(beside("設定").flatMap(rows)).toEqual([
       ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
       ["通知", "/settings/notifications", null],
       ["つながり", "/settings/relationships", null],
       ["キーワードフィルタ", "/settings/filters", null],
+      ["アカウントとデータ 1確認が必要な項目 1 件", "/settings/account", null],
       ["ログアウト…", "/settings/display?sign_out=true", null],
     ]);
     expect(screen.getAllByRole("navigation", { name: "メイン" })).toHaveLength(2);

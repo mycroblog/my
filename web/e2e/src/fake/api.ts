@@ -531,6 +531,8 @@ export type FakeApi = {
   listPath: (index: number) => string;
   /** The app's address of the editor of the reader's keyword filter at `index`, oldest first. */
   filterPath: (index: number) => string;
+  /** The app's address of the moderators' action on the reader's account at `index`, newest first. */
+  actionPath: (index: number) => string;
   /** The ID of the seed's post of `key`, or of the reader's draft of that key. */
   idOf: (key: string) => string;
   /** The ID of the account of the seed's person of `username`. */
@@ -3643,6 +3645,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   const listPath = (index: number) => `/lists/${lists[index]?.id ?? "none"}`;
   const filterPath = (index: number) => `/settings/filters/${personal.filterId(index) ?? "none"}`;
+  const actionPath = (index: number) => `/settings/account/status/${personal.actionId(index) ?? "none"}`;
 
   const keyedId = (key: string) => {
     const post = statusId.get(key);
@@ -3671,6 +3674,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     announcementPath,
     listPath,
     filterPath,
+    actionPath,
     idOf: keyedId,
     accountId: (username) => idOf(personOf(username).username),
     conversationPath,

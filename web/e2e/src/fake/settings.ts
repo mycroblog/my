@@ -169,7 +169,70 @@ export type FakeSettings = {
   /** Why the account cannot be deactivated; none if it can. */
   deactivationRefusal: DeactivationPreview["refusal"];
   /** The actions of the moderators on the reader's account, newest first, with the appeals made. */
-  moderation: readonly Omit<ModerationAction, "id">[];
+  moderation: readonly FakeAction[];
+  /**
+   * How an appeal of an action is answered, where not as the server would: `closed` refuses every one because the
+   * time to appeal has passed, `waits` never answers.
+   */
+  appealSave?: "closed" | "waits" | undefined;
+};
+
+/**
+ * An action of the moderators as a fake starts with it: the server's action without its ID, its times a date or an
+ * offset from the start. Its labels are the server's words for its kind and its reason category, in the language the
+ * request asks for (en or ja), unless given; and it is about `ownPosts` of the reader's own posts, the newest, then
+ * the posts of `status_ids`.
+ */
+type FakeAction = Omit<ModerationAction, "id" | "kind_label" | "reason_category_label" | "status_ids"> & {
+  kind_label?: string | undefined;
+  reason_category_label?: string | undefined;
+  status_ids?: readonly string[] | undefined;
+  ownPosts?: number | undefined;
+};
+
+/** The server's words for the kinds of action and the reason categories (locales/<lang>/server/moderation.json). */
+const actionWords: Record<
+  "en" | "ja",
+  {
+    kind: Record<ModerationAction["kind"], string>;
+    category: Record<ModerationAction["reason_category"], string>;
+  }
+> = {
+  en: {
+    kind: {
+      warn: "Warning",
+      mark_statuses_sensitive: "Posts marked as sensitive",
+      delete_statuses: "Posts deleted",
+      force_sensitive: "Media always marked as sensitive",
+      limit: "Limited: posts shown to followers only and kept off the public timelines",
+      restrict_posting: "No posting, replying, boosting, or editing",
+      restrict_interaction: "No following, favouriting, boosting, or replying",
+      disable_login: "Sign-in disabled",
+      suspend: "Suspended: no use of the app, and the profile and posts are hidden",
+      ban: "Banned: the account is deleted",
+    },
+    category: {
+      spam: "Spam",
+      legal: "Legal reasons",
+      violation: "Violation of the server's rules",
+      other: "Other",
+    },
+  },
+  ja: {
+    kind: {
+      warn: "警告",
+      mark_statuses_sensitive: "投稿をセンシティブに指定",
+      delete_statuses: "投稿の削除",
+      force_sensitive: "メディアを常にセンシティブに指定",
+      limit: "公開範囲の制限 (投稿はフォロワー限定になり、公開タイムラインに出ない)",
+      restrict_posting: "投稿・返信・ブースト・編集の禁止",
+      restrict_interaction: "フォロー・お気に入り・ブースト・返信の禁止",
+      disable_login: "ログインの停止",
+      suspend: "凍結 (アプリを使えず、プロフィールと投稿が隠れる)",
+      ban: "BAN (アカウントは削除される)",
+    },
+    category: { spam: "スパム", legal: "法的な理由", violation: "サーバーのルール違反", other: "その他" },
+  },
 };
 
 /**
@@ -270,9 +333,7 @@ export const defaultSettings: FakeSettings = {
   moderation: [
     {
       kind: "limit",
-      kind_label: "Limited",
       reason_category: "violation",
-      reason_category_label: "Violation of the rules",
       public_reason: "Repeated replies that took other people's threads off their subject.",
       status_ids: [],
       state: "active",
@@ -283,9 +344,7 @@ export const defaultSettings: FakeSettings = {
     },
     {
       kind: "mark_statuses_sensitive",
-      kind_label: "Posts marked sensitive",
       reason_category: "other",
-      reason_category_label: "Other",
       public_reason: "Photos of a medical procedure without a content warning.",
       status_ids: [],
       state: "lifted",
@@ -351,6 +410,8 @@ export type SettingsState = {
   featured: () => FeaturedHashtag[];
   /** The badges the reader shows on their profile now. */
   shownBadges: () => { role_id: string; label: string; color: Schema<"BadgeColor"> }[];
+  /** The ID of the moderators' action on the reader's account at `index`, newest first; none past the last. */
+  actionId: (index: number) => string | undefined;
   /** The ID of the reader's filter at `index`, oldest first; none past the last. */
   filterId: (index: number) => string | undefined;
 };
@@ -608,9 +669,12 @@ export function createSettings(env: SettingsEnv): SettingsState {
   // ---- Moderation --------------------------------------------------------------------------------------------------
 
   let appealCount = 0;
-  const actions: ModerationAction[] = settings.moderation.map((a, i) => ({
+  const actions: ModerationAction[] = settings.moderation.map(({ ownPosts: _own, ...a }, i) => ({
     ...a,
     id: idAt(started, 130_000 + i),
+    kind_label: a.kind_label ?? actionWords.en.kind[a.kind],
+    reason_category_label: a.reason_category_label ?? actionWords.en.category[a.reason_category],
+    status_ids: [...(a.status_ids ?? [])],
     issued_at: at(a.issued_at),
     ...(a.expires_at === undefined ? {} : { expires_at: at(a.expires_at) }),
     ...(a.lifted_at === undefined ? {} : { lifted_at: at(a.lifted_at) }),
@@ -626,6 +690,24 @@ export function createSettings(env: SettingsEnv): SettingsState {
           },
         }),
   }));
+  /** The actions as the seed wrote them, by their IDs: what each leaves to the answer. */
+  const seededActions = new Map(actions.map((a, i) => [a.id, settings.moderation[i]]));
+  /**
+   * `action` as the server answers `request`: its labels in the language the request asks for, unless the seed gave
+   * them, and the reader's own posts it is about before its other posts.
+   */
+  const answered = (action: ModerationAction, request: Request): ModerationAction => {
+    const seed = seededActions.get(action.id);
+    const ja = request.headers.get("Accept-Language")?.toLowerCase().startsWith("ja") === true;
+    const words = actionWords[ja ? "ja" : "en"];
+    const own = (seed?.ownPosts ?? 0) > 0 ? env.ownStatuses().slice(0, seed?.ownPosts) : [];
+    return {
+      ...action,
+      kind_label: seed?.kind_label ?? words.kind[action.kind],
+      reason_category_label: seed?.reason_category_label ?? words.category[action.reason_category],
+      status_ids: [...own.map((s) => s.id), ...action.status_ids],
+    };
+  };
   const hookAppeals = new Map<string, OwnHookAppeal>();
 
   const pageOf = <T extends { id: string }>(items: readonly T[], query: PageQuery) => page(items, query).body;
@@ -809,14 +891,27 @@ export function createSettings(env: SettingsEnv): SettingsState {
       return { status: 204 };
     },
 
-    "GET /moderation/actions": ({ query }) => {
+    "GET /moderation/actions": ({ query, request }) => {
       const shown = query.get("active") === "true" ? actions.filter((a) => a.state === "active") : actions;
-      return { status: 200, body: pageOf(shown, query) };
+      return {
+        status: 200,
+        body: pageOf(
+          shown.map((a) => answered(a, request)),
+          query,
+        ),
+      };
     },
-    "POST /moderation/actions/{id}/appeal": ({ params, body }): Answer<"POST /moderation/actions/{id}/appeal"> => {
+    "POST /moderation/actions/{id}/appeal": ({
+      params,
+      body,
+      request,
+    }): Answer<"POST /moderation/actions/{id}/appeal"> | Promise<never> => {
+      if (settings.appealSave === "waits") return new Promise<never>(() => undefined);
       const at_ = actions.findIndex((a) => a.id === params.id);
       const old = actions[at_];
       if (old === undefined) return notFound();
+      if (settings.appealSave === "closed")
+        return refused("The time to appeal this action has passed.", "appeal-window-closed", 422);
       if (!old.appealable) return refused("The action cannot be appealed now", "not-appealable", 409);
       const text = body.text.trim();
       if (text === "") return problem(422, "Say why the action should be reconsidered");
@@ -832,7 +927,7 @@ export function createSettings(env: SettingsEnv): SettingsState {
         },
       };
       actions[at_] = saved;
-      return { status: 200, body: saved };
+      return { status: 200, body: answered(saved, request) };
     },
     "GET /hook_decisions/{id}/appeal": ({ params }) => {
       const found = hookAppeals.get(params.id);
@@ -856,5 +951,6 @@ export function createSettings(env: SettingsEnv): SettingsState {
   const shownBadges = () =>
     badges.filter((b) => b.displayed).map(({ role_id, label, color }) => ({ role_id, label, color }));
   const filterId = (index: number) => filters[index]?.id;
-  return { handlers, judged, featured: featuredBody, shownBadges, filterId };
+  const actionId = (index: number) => actions[index]?.id;
+  return { handlers, judged, featured: featuredBody, shownBadges, filterId, actionId };
 }

@@ -13,10 +13,12 @@
 import {
   DraftConflictError,
   DraftGoneError,
+  hookRefusalOf,
   useComposeSettings,
   useComposeWrites,
   useStatus,
   type ComposeSettings,
+  type HookRefusal,
   type SavedDraft,
   type Status,
 } from "@my/app-data";
@@ -40,13 +42,14 @@ import { rememberTags } from "./recent-tags";
 
 /**
  * Where the post is: being written, being sent, refused (with what the server said, if it said anything, and the input
- * it is about, if it named one: field-errors.ts), its draft refused for a newer one saved elsewhere since it was opened
+ * it is about, if it named one: field-errors.ts; and, for a post the server's automated review refused, the refusal
+ * as its author may appeal it: refused.tsx), its draft refused for a newer one saved elsewhere since it was opened
  * (ADR-0156 §9), or its draft gone from the server.
  */
 export type Phase =
   | { kind: "editing" }
   | { kind: "posting" }
-  | ({ kind: "failed" } & Refused<string>)
+  | ({ kind: "failed"; appeal?: HookRefusal | undefined } & Refused<string>)
   | { kind: "conflict" }
   | { kind: "gone" };
 
@@ -89,7 +92,8 @@ export type ComposerEvents = {
 export function failedPhase(e: unknown, members: FieldMembers<string>): Phase {
   if (e instanceof DraftConflictError) return { kind: "conflict" };
   if (e instanceof DraftGoneError) return { kind: "gone" };
-  return { kind: "failed", ...placeRefusal(e, members) };
+  const appeal = hookRefusalOf(e);
+  return { kind: "failed", ...placeRefusal(e, members), ...(appeal === undefined ? {} : { appeal }) };
 }
 
 let next = 0;

@@ -810,5 +810,33 @@
   "compose.audience_menu": {
     "defaultMessage": "Who can see and reply",
     "description": "The name of the audience menu of the composer and of the article editor, over its two items: who can see the post or the article, and who can reply to, boost and quote it. Reply stands for the three; the item says them all."
+  },
+  "compose.refused.appeal": {
+    "defaultMessage": "Appeal",
+    "description": "The action after the error of a post that this server's automated review refused, in the composer (the server's sentence ends with: If you think this is a mistake, you can appeal). It opens the confirmation compose.refused.appeal.title."
+  },
+  "compose.refused.appeal.title": {
+    "defaultMessage": "Appeal this refusal?",
+    "description": "The question of the confirmation before the reader appeals the refusal of their post by this server's automated review, in the composer."
+  },
+  "compose.refused.appeal.text": {
+    "defaultMessage": "The text of your post is sent to this server's moderators, who review it. You can appeal a refusal once, and an appeal cannot be taken back.",
+    "description": "The text of the confirmation compose.refused.appeal.title: what appealing sends and to whom, that a refusal is appealed once, and that it cannot be undone."
+  },
+  "compose.refused.appeal.confirm": {
+    "defaultMessage": "Send appeal",
+    "description": "The button of the confirmation compose.refused.appeal.title that sends the appeal of the refused post. The settings' page of a moderation action says the same (settings.account.appeal.submit)."
+  },
+  "compose.refused.appeal.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of the confirmation compose.refused.appeal.title that closes it without appealing."
+  },
+  "compose.refused.appeal.state": {
+    "defaultMessage": "{state, select, pending {This post was not published. Your appeal was sent: a moderator will review it, and you will be notified of the result.} upheld {This post was not published. A moderator reviewed your appeal and kept the refusal. Change the post and try again.} overturned {A moderator reviewed your appeal and lifted the refusal. Post again.} other {This post was not published. You appealed the refusal.}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, once the reader appealed the refusal: where the appeal stands. state is pending (sent, waiting for the moderators), upheld (the refusal stays), or overturned (the moderators cancelled the refusal; the refused post is not restored, so the reader posts it again with Post, right after this sentence)."
+  },
+  "compose.refused.appeal.failed": {
+    "defaultMessage": "{reason, select, appealed {You have already appealed this refusal, and a refusal can be appealed once. Wait for the notification of the result.} closed {The time to appeal this refusal has passed. Change the post and try again.} not_appealable {This refusal can no longer be appealed. Change the post and try again.} text {This post has no text to send to the moderators, so it cannot be appealed. Change the post and try again.} other {The appeal could not be sent. Check your connection and try again.}}",
+    "description": "In place of the error of a post that this server's automated review refused, in the composer, when the appeal the reader sent was not taken. reason is appealed (appealed already), closed (the last moment to appeal has passed), not_appealable (the refusal cannot be appealed, or is not kept any more), text (the post has no text, which an appeal must carry), or other (the server could not be reached)."
   }
 }

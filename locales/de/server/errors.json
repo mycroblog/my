@@ -195,10 +195,6 @@
     "defaultMessage": "Du kannst die Unterstützungspläne nicht abonnieren.",
     "description": "API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why."
   },
-  "errors.supporters.ineligible_detail": {
-    "defaultMessage": "{reason, select, not_local {Nur Personen dieses Servers können abonnieren.} email_unverified {Bestätige zuerst deine E-Mail-Adresse.} restricted {Dein Konto ist eingeschränkt.} other {Du kannst derzeit nicht abonnieren.}}",
-    "description": "API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted."
-  },
   "errors.supporters.subscribed": {
     "defaultMessage": "Du hast bereits ein Abo.",
     "description": "API error title for HTTP 409 when a user who has a subscription to a supporter plan starts another one (ADR-0072 §6: one plan at a time)."

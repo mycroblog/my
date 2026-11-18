@@ -195,10 +195,6 @@
     "defaultMessage": "你无法订阅支持者方案。",
     "description": "API error title for HTTP 422 when a user who may not subscribe starts a subscription to a supporter plan (ADR-0072 §6); the detail says why."
   },
-  "errors.supporters.ineligible_detail": {
-    "defaultMessage": "{reason, select, not_local {只有此服务器的用户可以订阅。} email_unverified {请先验证你的电子邮件地址。} restricted {你的账号受到限制。} other {你现在无法订阅。}}",
-    "description": "API error detail for HTTP 422 when a user may not subscribe to a supporter plan. {reason} is not_local, email_unverified, or restricted."
-  },
   "errors.supporters.subscribed": {
     "defaultMessage": "你已经有订阅了。",
     "description": "API error title for HTTP 409 when a user who has a subscription to a supporter plan starts another one (ADR-0072 §6: one plan at a time)."
