@@ -27,12 +27,16 @@
     "defaultMessage": "Your display name and avatar could not be saved. Try again, or skip for now.",
     "description": "Before the Continue button of the welcome step when saving failed and the server gave no reason (no connection). Skip for now is the button under Continue (welcome.skip)."
   },
-  "welcome.save.picture_failed": {
-    "defaultMessage": "Nothing was saved, because the image could not be used. See the note under the avatar.",
-    "description": "Before the Continue button of the welcome step when the avatar the reader picked could not be uploaded or was refused; what is wrong stands under the avatar (welcome.picture.failed, or the server's own words)."
+  "welcome.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked, or skip for now.",
+    "description": "Before the Continue button of the welcome step when the server refused the display name or the avatar: what is wrong stands under that field, and this says only that neither was saved and the two ways on. Skip for now is the button under Continue (welcome.skip)."
   },
   "welcome.picture.failed": {
-    "defaultMessage": "{reason, select, processing {The server could not process this image. Choose another one.} other {This image could not be uploaded. Try again, or choose another one.}}",
-    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
+    "defaultMessage": "{reason, select, processing {The server could not process this image. Replace it, or remove it and continue.} other {This image could not be uploaded. Try again, replace it, or remove it and continue.}}",
+    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through. Replace and Remove are the buttons beside the avatar (settings.profile.picture.replace, settings.profile.picture.remove)."
+  },
+  "welcome.picture.refused": {
+    "defaultMessage": "{said} Or remove the image and continue.",
+    "description": "Under the avatar on the welcome step when the server refused the image and said why. said is the server's own sentences, in the reader's language, which say what is wrong with the file and what to choose instead (The file is too large. Choose a smaller file.); this adds the other way on. Remove is the button beside the avatar (settings.profile.picture.remove)."
   }
 }

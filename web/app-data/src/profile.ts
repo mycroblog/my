@@ -3,7 +3,7 @@
 // avatar and a header image uploaded first; the role badges they show (ADR-0070 §12); the hashtags they feature; and the
 // hashtags they follow. A write puts what the server answered into the cache: the viewer's own account, and the copy
 // of it the profile shows, and marks the places that carry the account's name and picture.
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import {
   accountByIdQuery,
@@ -13,7 +13,7 @@ import {
   type FeaturedHashtag,
 } from "./accounts";
 import type { AppData } from "./app-data";
-import { refusedField, uploadAttachment } from "./compose";
+import { refusalDetail, refusedField, uploadAttachment } from "./compose";
 import { inOrder } from "./in-order";
 import { wholeList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
@@ -75,6 +75,28 @@ export function failedPicture(error: unknown): ProfilePicture | undefined {
   if (uploaded !== undefined) return uploaded;
   const member = refusedField(error)?.member;
   return member === "avatar_media_id" ? "avatar" : member === "header_media_id" ? "header" : undefined;
+}
+
+/**
+ * The types of the problems the server refuses a file with as it is uploaded, whose title says what is wrong with the
+ * file and what to choose instead, with no detail (internal/interface/clientapi/media.go).
+ */
+const refusedUploads: ReadonlySet<string> = new Set(
+  ["media-too-large", "unsupported-media-format", "media-dimensions", "media-corrupt", "media-too-long"].map(
+    (kind) => `/api/v1/problems/${kind}`,
+  ),
+);
+
+/**
+ * What the server said of the picture a rejection of `updateProfile` is about (`failedPicture`), in the reader's
+ * language: the problem's detail (an image the account cannot use), else, for a file it refused as it was uploaded
+ * (too large, a format it does not take, too many pixels, one it could not read), the problem's title. Undefined where
+ * the server gave no words about the picture (a bare status, the network, a file it could not process), which the
+ * caller words.
+ */
+export function pictureRefusal(error: unknown): string | undefined {
+  if (!(error instanceof ProblemError)) return undefined;
+  return refusalDetail(error) ?? (refusedUploads.has(error.type) ? error.title : undefined);
 }
 
 /**

@@ -5,8 +5,11 @@
 // address: a page of its own before the app, which asks for a display name and an avatar (FR-006), both optional, and
 // goes on to the home timeline (`onHome`). Continue saves what was given, as the form of the profile does (app-data's
 // `updateProfile`: the image uploaded first, then the one change), and goes on; with nothing given it just goes on, as
-// Skip for now does. What the server refused stays on the step: under the field it names, which takes the focus, the
-// alert before Continue saying the rest; a refusal that names no field leaves the focus on Continue, by the alert.
+// Skip for now does. What the server refused stays on the step, under the field it is about, which takes the focus:
+// under the name the rule a display name follows (the server says only that the value is not valid), under the avatar
+// the server's words about the image with the other way on, removing it, or the step's own where the server gave none.
+// The alert before Continue then says only what the field does not: that nothing was saved, and the two ways on. A
+// refusal that names no field stands in the alert, in the server's words, and leaves the focus on Continue.
 //
 // The step is for an account that is new: one with neither a display name nor an avatar that has not passed the step
 // on this device (device.ts). The server keeps no fact of the step, so that is all the client can tell: an account
@@ -18,7 +21,7 @@
 import {
   failedPicture,
   MediaFailedError,
-  refusalDetail,
+  pictureRefusal,
   useCredentials,
   useProfileRead,
   useUpdateProfile,
@@ -48,8 +51,11 @@ type Input = "name" | "avatar";
 /** Which input answers to which member of the request (`PATCH /accounts/update_credentials`). */
 const members: FieldMembers<Input> = { display_name: "name" };
 
-/** Where the step's save is, as a story's specimen opens it: on its way, or refused. */
-type WelcomePhase = { readonly kind: "sending" } | { readonly kind: "refused"; readonly refused: Refused<Input> };
+/**
+ * Where the step's save is, as a story's specimen opens it: on its way, or refused with `error`, what app-data's
+ * `updateProfile` rejected with.
+ */
+type WelcomePhase = { readonly kind: "sending" } | { readonly kind: "refused"; readonly error: unknown };
 
 /** What a story's specimen of the step opens with: what the reader wrote and picked, and where its save is. */
 export type WelcomeSpecimen = {
@@ -92,27 +98,33 @@ function useLeaveOnce(when: boolean, leave: () => void) {
 }
 
 /**
- * A failed save placed on the step: an image that could not be uploaded or used, under the avatar, in the server's
- * words when it gave some, the alert then saying in the step's own words that nothing was saved; anything else as
- * every form places it (field-errors.ts).
+ * What stands under the avatar of an image that could not be uploaded or used: the server's words about it, which say
+ * what to choose instead, and that the image can be removed; where the server gave none, the step's own, with every
+ * way on.
+ */
+function pictureNote(error: unknown, t: ReturnType<typeof stringsIn>["t"]): string {
+  if (error instanceof MediaFailedError) return t("welcome.picture.failed", { reason: "processing" });
+  const said = pictureRefusal(error);
+  return said === undefined
+    ? t("welcome.picture.failed", { reason: "upload" })
+    : t("welcome.picture.refused", { said });
+}
+
+/**
+ * A failed save placed on the step: an image that could not be uploaded or used, under the avatar; anything else as
+ * every form places it (field-errors.ts), the name's field wording what the server refused of it.
  */
 function placed(error: unknown, t: ReturnType<typeof stringsIn>["t"]): Refused<Input> {
   if (failedPicture(error) === "avatar")
-    return {
-      reason: undefined,
-      field: {
-        input: "avatar",
-        text:
-          error instanceof MediaFailedError
-            ? t("welcome.picture.failed", { reason: "processing" })
-            : (refusalDetail(error) ?? t("welcome.picture.failed", { reason: "upload" })),
-      },
-    };
+    return { reason: undefined, field: { input: "avatar", text: pictureNote(error, t) } };
   return placeRefusal(error, members);
 }
 
 /** Where the step's save is; `left` once the app goes on, after a save (`saved`) or with none. */
-type Sent = { readonly kind: "idle" } | WelcomePhase | { readonly kind: "left"; readonly saved: boolean };
+type Sent =
+  | { readonly kind: "idle" | "sending" }
+  | { readonly kind: "refused"; readonly refused: Refused<Input> }
+  | { readonly kind: "left"; readonly saved: boolean };
 
 /** The step itself, for the new account `account`. */
 function Step({
@@ -129,7 +141,13 @@ function Step({
   const { t } = stringsIn(useLocale().locale);
   const id = useId();
   const update = useUpdateProfile();
-  const [sent, setSent] = useState<Sent>(specimen.phase ?? { kind: "idle" });
+  const [sent, setSent] = useState<Sent>(() =>
+    specimen.phase === undefined
+      ? { kind: "idle" }
+      : specimen.phase.kind === "refused"
+        ? { kind: "refused", refused: placed(specimen.phase.error, t) }
+        : specimen.phase,
+  );
   /** A change of the step: what the last save said was about the step as it was. */
   const changed = () => {
     setSent((was) => (was.kind === "refused" ? { kind: "idle" } : was));
@@ -200,17 +218,21 @@ function Step({
         <ProfileNameField id={nameId} identity={identity} error={fieldError(refused, "name")} busy={busy} />
         <ProfileAvatarField id={avatarId} identity={identity} error={fieldError(refused, "avatar")} busy={busy} />
         <FormActions>
+          {/* Under a field that says what is wrong, the alert says what happened, in the text's own weight. */}
           {refused !== undefined && (
-            <FormAlert>
-              {refused.reason ??
-                t(refused.field?.input === "avatar" ? "welcome.save.picture_failed" : "welcome.save.failed")}
+            <FormAlert regular={refused.field !== undefined}>
+              {refused.field === undefined ? (refused.reason ?? t("welcome.save.failed")) : t("welcome.save.refused")}
             </FormAlert>
           )}
           <Button kind="primary" type="submit" busy={busy}>
             {t("welcome.continue")}
           </Button>
+        </FormActions>
+        {/* The way on that saves nothing stands apart from the one that saves, a finger's target of its own. */}
+        <FormActions>
           <Button
             kind="quiet"
+            touch
             isDisabled={sent.kind === "sending"}
             onPress={() => {
               if (!held) leave(false);

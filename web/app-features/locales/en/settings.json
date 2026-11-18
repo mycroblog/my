@@ -439,6 +439,10 @@
     "defaultMessage": "The display name must be at most {max, number} characters.",
     "description": "Under the display name when it is longer than the limit."
   },
+  "settings.profile.name.rule": {
+    "defaultMessage": "The display name must be at most {max, number} characters on one line, without tabs or other control characters.",
+    "description": "Under the display name, on the Edit profile page and on the welcome step of a new account, when the server refused it: the rule a display name follows, since the server says only that the value is not valid. max is 30."
+  },
   "settings.profile.note": {
     "defaultMessage": "Bio",
     "description": "The label of the field of the text about the reader that their profile shows under their name, on the Edit profile page of the settings."

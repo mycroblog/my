@@ -177,17 +177,25 @@ type FieldProps = {
   identity: ProfileIdentity;
   /** The field's id, for the form to put the focus on it; one of its own without it. */
   id?: string | undefined;
-  /** What the server refused of its value, right under it. */
+  /**
+   * What the server refused of its value: under the avatar, these words; under the name, the rule a display name
+   * follows in their place.
+   */
   error?: string | undefined;
   /** The form is being sent: the field cannot be changed now. */
   busy?: boolean | undefined;
 };
 
-/** The display name: a line of text, its count near the limit, and what is wrong with it under it. */
+/**
+ * The display name: a line of text, its count near the limit, and what is wrong with it under it. Over the limit, it
+ * says the limit. A name the server refused (`error`) is one it finds too long or not on one line of plain
+ * characters, of which it says only that the value is not valid: the field says the rule a display name follows.
+ */
 export function ProfileNameField({ identity, id, error, busy = false }: FieldProps) {
   const { t } = stringsIn(useLocale().locale);
   const own = useId();
   const fieldId = id ?? own;
+  const max = profileLimits.displayName;
   return (
     <TextField
       id={fieldId}
@@ -198,7 +206,13 @@ export function ProfileNameField({ identity, id, error, busy = false }: FieldPro
       autoComplete="nickname"
       readOnly={busy}
       {...limitCount(fieldId, identity.nameLeft, 10)}
-      error={identity.nameLeft < 0 ? t("settings.profile.name.over", { max: profileLimits.displayName }) : error}
+      error={
+        identity.nameLeft < 0
+          ? t("settings.profile.name.over", { max })
+          : error === undefined
+            ? undefined
+            : t("settings.profile.name.rule", { max })
+      }
     />
   );
 }

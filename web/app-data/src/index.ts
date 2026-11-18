@@ -530,6 +530,7 @@ export {
   failedPicture,
   followedHashtagsQuery,
   ownFeaturedHashtagsQuery,
+  pictureRefusal,
   profileLimits,
   setFeaturedHashtags,
   updateProfile,

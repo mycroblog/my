@@ -27,12 +27,16 @@
     "defaultMessage": "表示名とアバターを保存できませんでした。もう一度試すか、あとで設定してください。",
     "description": "Before the Continue button of the welcome step when saving failed and the server gave no reason (no connection). Skip for now is the button under Continue (welcome.skip)."
   },
-  "welcome.save.picture_failed": {
-    "defaultMessage": "画像を使えなかったため、何も保存されませんでした。アバターの下の説明を確認してください。",
-    "description": "Before the Continue button of the welcome step when the avatar the reader picked could not be uploaded or was refused; what is wrong stands under the avatar (welcome.picture.failed, or the server's own words)."
+  "welcome.save.refused": {
+    "defaultMessage": "何も保存されていません。示した箇所を直すか、あとで設定してください。",
+    "description": "Before the Continue button of the welcome step when the server refused the display name or the avatar: what is wrong stands under that field, and this says only that neither was saved and the two ways on. Skip for now is the button under Continue (welcome.skip)."
   },
   "welcome.picture.failed": {
-    "defaultMessage": "{reason, select, processing {サーバーがこの画像を処理できませんでした。別の画像を選んでください。} other {この画像をアップロードできませんでした。もう一度試すか、別の画像を選んでください。}}",
-    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through."
+    "defaultMessage": "{reason, select, processing {サーバーがこの画像を処理できませんでした。画像を変更するか、外してから続けてください。} other {この画像をアップロードできませんでした。もう一度試すか、画像を変更するか、外してから続けてください。}}",
+    "description": "Under the avatar on the welcome step when saving failed because of the image and the server gave no words of its own. reason is processing when the server took the file and then could not turn it into a picture it can show, anything else when the upload did not get through. Replace and Remove are the buttons beside the avatar (settings.profile.picture.replace, settings.profile.picture.remove)."
+  },
+  "welcome.picture.refused": {
+    "defaultMessage": "{said}画像を外して続けることもできます。",
+    "description": "Under the avatar on the welcome step when the server refused the image and said why. said is the server's own sentences, in the reader's language, which say what is wrong with the file and what to choose instead (The file is too large. Choose a smaller file.); this adds the other way on. Remove is the button beside the avatar (settings.profile.picture.remove)."
   }
 }

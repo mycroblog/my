@@ -5,7 +5,8 @@
 // preview's size, the initial of `name` standing in for none; `banner` is 3:1 across the field, a picture's glyph on
 // a tone of the raised surface standing in for none, so that the empty place does not read as a field to write in.
 // Its one button opens the system's picker for one image, and says so in the caller's words (choose one,
-// or replace the one shown); remove stands after it while there is a picture to remove. The picture itself is
+// or replace the one shown); remove stands after it while there is a picture to remove. Both are drawn a timeline
+// control's height, and their press targets reach the touch height on a touch screen. The picture itself is
 // decoration: what the field holds is told by its label and by the buttons it offers.
 //
 // For assistive technology the field is a group named by its label and described by its hint and its error, so that
@@ -79,6 +80,7 @@ export function PictureField({
       <Button
         id={id}
         size="timeline"
+        touch
         isDisabled={isDisabled}
         onPress={() => {
           input.current?.click();
@@ -87,7 +89,7 @@ export function PictureField({
         {choose}
       </Button>
       {remove !== undefined && (
-        <Button kind="quiet" size="timeline" isDisabled={isDisabled} onPress={remove.onPress}>
+        <Button kind="quiet" size="timeline" touch isDisabled={isDisabled} onPress={remove.onPress}>
           {remove.label}
         </Button>
       )}

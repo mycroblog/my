@@ -398,8 +398,8 @@ export type FakeOptions = {
   dismissFails?: boolean;
   /**
    * An upload is still processed when the server answers it, and ready when it is read again (GET /media/{id}), as on
-   * a server that processes it meanwhile; ready at once by default. `refused`: every upload is refused (a 422 with the
-   * server's words), as a file the server cannot use.
+   * a server that processes it meanwhile; ready at once by default. `refused`: every upload is refused as a
+   * file the server cannot read as an image (a 422 of the type `media-corrupt`, the server's words its title).
    */
   uploads?: "processing" | "refused";
   /**
@@ -3418,9 +3418,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "POST /media": async ({ request }) => {
       // An image the reader uploads, served from the reader's own copy of the file: ready at once, or still processed
-      // until it is read again (`uploads`); or refused, as a file the server cannot use.
+      // until it is read again (`uploads`); or refused, as the server refuses a file it cannot read as an image: the
+      // problem of that type, whose title says it, with no detail (internal/interface/clientapi/media.go).
       if (o.uploads === "refused")
-        return problem(422, "This could not be done.", { detail: "This file is not an image this server can use." });
+        return problem(422, "The file could not be read as an image. Choose another file.", {
+          type: "/api/v1/problems/media-corrupt",
+        });
       const form = await request.formData();
       const file = form.get("file");
       const description = form.get("description");
