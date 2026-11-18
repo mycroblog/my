@@ -91,6 +91,14 @@ export function useActionDate(time = true): (at: string) => string {
 }
 
 /**
+ * A sentence with each number joined to the word after it (a counter of ja, 「365 日」; "365 days"), so that a line never
+ * breaks between the two: the catalog writes a plain space there, and the screen that shows a count joins them.
+ */
+export function tied(text: string): string {
+  return text.replace(/(\p{Nd}) (?=\S)/gu, "$1 ");
+}
+
+/**
  * How many moderators' actions in effect on the reader's account they can still appeal (not appealed yet, the time to
  * appeal not passed), of those read: what waits for the reader on the entry's screen, the menu's count of it.
  */

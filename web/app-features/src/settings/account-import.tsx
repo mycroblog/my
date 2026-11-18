@@ -7,8 +7,8 @@
 // - What the file lists (follows, followed hashtags, blocked and muted accounts, muted servers, bookmarks), the file
 //   itself, and how it is imported: merged into what the reader has, or replacing it.
 // - What the import would do, as the server reads the file, asked again whenever one of the three changes: how many
-//   it adds, how many the reader has already, how many a replacement removes, and the lines it cannot read, the first
-//   few written out with why. Nothing changes until the form is sent.
+//   it adds, how many the reader has already, and the lines it cannot read, the first few written out with why; then,
+//   last and apart under its own name, what a replacement removes. Nothing changes until the form is sent.
 // - The imports of the last days, which the server carries out in the background: what each lists and how, when it
 //   started, and where it stands in the text's color (how far it is, or what came of it), read again while one runs.
 //
@@ -58,7 +58,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-import { useActionDate } from "./account";
+import { tied, useActionDate } from "./account";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -160,6 +160,7 @@ function Preview({
   const heading = t("settings.account.import.preview");
   const { preview } = previewed;
   const more = (preview?.skipped.length ?? 0) - skippedShown;
+  // What the import leaves the reader with or leaves out of the file: nothing of these is lost.
   const items =
     preview === undefined
       ? []
@@ -167,9 +168,6 @@ function Preview({
           { text: t("settings.account.import.preview.add", { kind, count: preview.entries - preview.present }) },
           ...(preview.present > 0
             ? [{ text: t("settings.account.import.preview.present", { kind, count: preview.present }) }]
-            : []),
-          ...(mode === "overwrite"
-            ? [{ text: t("settings.account.import.preview.remove", { kind, count: preview.removals }) }]
             : []),
           ...(preview.skipped.length > 0
             ? [
@@ -198,7 +196,17 @@ function Preview({
             {t("settings.account.import.preview.waiting", { state: previewed.status })}
           </Box>
         ) : (
-          <SettingsFacts label={heading} items={items} />
+          <Stack gap="form-page-form-gap">
+            <SettingsFacts label={heading} items={items} />
+            {/* What a replacement removes stands last and apart, under its own name: it is what cannot be put back. */}
+            {mode === "overwrite" && (
+              <SettingsFacts
+                label={t("settings.account.import.preview.removes")}
+                shown
+                items={[{ text: t("settings.account.import.preview.remove", { kind, count: preview.removals }) }]}
+              />
+            )}
+          </Stack>
         )}
       </Box>
     </SettingsSection>
@@ -207,7 +215,9 @@ function Preview({
 
 /** The screen: the form, what it would do, and the imports; `onBack` goes back to the entry. */
 export function AccountImportScreen({ onBack }: { onBack: () => void }) {
-  const { t } = stringsIn(useLocale().locale);
+  const strings = stringsIn(useLocale().locale);
+  // A number stays with the word after it (「7 件」), in every sentence of the screen.
+  const t: T = (key, values) => tied(strings.t(key, values));
   const id = useId();
   const imports = useDataImports();
   const [kind, setKind] = useState<ImportKind>("following");

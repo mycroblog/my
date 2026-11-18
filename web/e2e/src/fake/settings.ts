@@ -818,10 +818,17 @@ export function createSettings(env: SettingsEnv): SettingsState {
       const refusal_ = checkPolicy(body);
       if (refusal_ !== undefined) return refusal_;
       const count = estimate(body.min_age_days);
-      return {
-        status: 200,
-        body: { count: Math.min(count, 1000), more: count > 1000, examples: env.ownStatuses().slice(-3).toReversed() },
-      };
+      // The oldest of what would go, oldest first: the reader's posts, each read as written a few weeks past the
+      // policy's age, since nothing younger than it is deleted.
+      const examples = env
+        .ownStatuses()
+        .slice(-3)
+        .toReversed()
+        .map((status, i) => ({
+          ...status,
+          created_at: new Date(started - (body.min_age_days + (3 - i) * 20) * day - i * 5_400_000).toISOString(),
+        }));
+      return { status: 200, body: { count: Math.min(count, 1000), more: count > 1000, examples } };
     },
 
     "GET /imports": () => ({ status: 200, body: { items: imports.map(importNow) } }),

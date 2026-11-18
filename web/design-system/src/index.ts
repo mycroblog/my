@@ -283,6 +283,7 @@ export {
   type SettingRowProps,
   type SettingsFactLine,
   type SettingsRowResult,
+  type SettingsRowSaid,
 } from "./settings";
 export {
   ChannelCell,

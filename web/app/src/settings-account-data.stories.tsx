@@ -10,14 +10,17 @@
 //   whose time has passed; one that could not be prepared; while the requests load, and when they could not be read;
 //   and reached by the address the closure's emails carry.
 //   Request an archive and Download act at once (the fake takes a request, and gives an empty archive and the follows
-//   as a CSV file).
+//   as a CSV file); a row says what came of its own Download (its shot is taken by a script that presses).
 // - Import: the form, empty, over the fake's finished import of which three entries failed; an import in progress,
 //   where another is refused; one that finished whole; one that failed whole; none; while the imports load, and when
 //   they could not be read. The preview follows a file the reader chooses (its shot is taken by a script that gives
-//   the field a file): what would be added, what the reader has already, and the lines that cannot be read.
+//   the field a file): what would be added, what the reader has already, the lines that cannot be read, and, last and
+//   apart, what a replacement removes.
 // - Delete old posts automatically: off; on; under a maximum of the server that the saved policy is within; bound by
 //   the maximum, which starts to apply in two weeks; while it loads, and when it could not be read. Each counts what
-//   the form as it stands would delete.
+//   the form as it stands would delete, right under when it deletes, and says the count beside Save. Save asks
+//   before a save that deletes more than is deleted now (its shot is taken by a script that turns the deletion on and
+//   presses Save).
 // - Aliases: one; none; five, the most an account has, where adding gives way to a sentence; while they load, and
 //   when they could not be read. Adding an address the fake finds no account at (one with no domain) is refused under
 //   the field (its shot is taken by a script that types and presses).
@@ -125,7 +128,10 @@ export const EntryQuiet: Story = {
 export const Export: Story = { parameters: screen({ at: exportAt }) };
 /** An archive being prepared: its row says so and that another can be requested once it is done; no request button. */
 export const ExportPreparing: Story = { parameters: screen({ at: exportAt, server: { dataExport: "building" } }) };
-/** An archive ready: until when it can be downloaded, its size, and Download; Request an archive at the head. */
+/**
+ * An archive ready: until when it can be downloaded, its size, and Download, the screen's primary action; Request an
+ * archive at the head, neutral beside it.
+ */
 export const ExportReady: Story = { parameters: screen({ at: exportAt, server: { dataExport: "ready" } }) };
 /** An archive being prepared over an earlier one that can still be downloaded: both rows. */
 export const ExportRebuilding: Story = { parameters: screen({ at: exportAt, server: { dataExport: "rebuilding" } }) };
@@ -181,13 +187,18 @@ export const AutoDeleteOff: Story = {
     server: { settings: { autoDelete: { ...policy, enabled: false }, autoDeleteLimit: undefined } },
   }),
 };
-/** The deletion on, on a server without a maximum: every exception can be chosen, and the count of what would go. */
+/**
+ * The deletion on, on a server without a maximum: the count of what would go and the oldest of it, beside Save too,
+ * and every exception can be chosen.
+ */
 export const AutoDeleteOn: Story = {
   parameters: screen({ at: autoDeleteAt, server: { settings: { autoDelete: policy, autoDeleteLimit: undefined } } }),
 };
 /**
  * Under a maximum of half a year that the saved policy is within: the deletion cannot be turned off, the age goes up
- * to the maximum, only the three most recently pinned posts can be kept, and nothing else can be checked.
+ * to the maximum, and only the three most recently pinned posts can be kept. The other kinds are named in words
+ * under that checkbox, and the audiences and the thresholds each say in one sentence that the server does not allow
+ * them: nothing the server forbids is drawn as a control.
  */
 export const AutoDeleteLimited: Story = {
   parameters: screen({
@@ -207,8 +218,8 @@ export const AutoDeleteLimited: Story = {
   }),
 };
 /**
- * Bound by the fake's maximum of a year, which does not let posts with media be kept: the summary says from when it
- * applies, and the count is of what it then deletes.
+ * Bound by the fake's maximum of a year, which does not let posts with media be kept: the summary says the maximum
+ * and from when it applies, the count is of what it then deletes, and saving, which applies it at once, asks first.
  */
 export const AutoDeleteBound: Story = { parameters: screen({ at: autoDeleteAt }) };
 /** Delete old posts automatically while the policy is on its way. */

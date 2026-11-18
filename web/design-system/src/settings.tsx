@@ -671,6 +671,8 @@ const list = tv({
     state: "text-caption text-muted-text",
     chevron: "text-muted-text",
     empty: "text-muted-text [word-break:auto-phrase]",
+    // The name over a list of facts that stands apart from the ones before it.
+    lead: "font-label [word-break:auto-phrase]",
   },
   variants: {
     // What the row names does not work now: its title muted too, with no hue and no surface.
@@ -724,6 +726,12 @@ export type SettingsFactLine = string | readonly string[];
  */
 export type SettingsRowResult = { readonly id: string; readonly shown: string; readonly spoken: string };
 
+/**
+ * What came of an action of a row that leaves the row as it was (a download that started, or failed): its words, each
+ * a new element of the row's status (`n`, which counts what the row said), so that the same words are read again.
+ */
+export type SettingsRowSaid = { readonly text: string; readonly n: number };
+
 /** A row's result, a place the focus can be. */
 function RowResult({ result }: { result: SettingsRowResult }) {
   return (
@@ -760,10 +768,12 @@ function FactLine({ line }: { line: SettingsFactLine }) {
  * muted words with no surface: at the row's end, or on the title's line where the row has facts, so that every
  * row's facts keep one column), and what the reader may do with it (`end`: one or two buttons, a group named by the
  * row's title, so that one Remove is told from the next). With `result`, what came of the reader's action stands in
- * the caption's place and `end` is gone: the row keeps its place. With `href`, the whole row opens the screen under
- * the entry that holds it (changing the password, one filter), a chevron at its end in place of buttons.
- * `inactive`, a thing that does not work now (a revoked invite): its title in the muted color, so that the ones that
- * work stand out in a list of both.
+ * the caption's place and `end` is gone: the row keeps its place. With `said`, what came of an action that leaves the
+ * row as it was (a download) is its last line, in the text's color, and `end` stays: the place is a polite live
+ * region from the start (`null` while it has nothing to say), so that it is read where it happened, the focus staying
+ * on the button. With `href`, the whole row opens the screen under the entry that holds it (changing the password,
+ * one filter), a chevron at its end in place of buttons. `inactive`, a thing that does not work now (a revoked
+ * invite): its title in the muted color, so that the ones that work stand out in a list of both.
  */
 export function SettingsListRow({
   icon,
@@ -776,6 +786,7 @@ export function SettingsListRow({
   href,
   end,
   result,
+  said,
 }: {
   icon?: IconName | undefined;
   title: string;
@@ -796,6 +807,8 @@ export function SettingsListRow({
   href?: string | undefined;
   end?: ReactNode;
   result?: SettingsRowResult | undefined;
+  /** What came of an action that leaves the row as it was; `null` while it has nothing to say. */
+  said?: SettingsRowSaid | null | undefined;
 }) {
   const s = list({ inactive });
   const titleId = useId();
@@ -853,6 +866,14 @@ export function SettingsListRow({
           <>
             {" "}
             <span className={s.standing()}>{standing}</span>
+          </>
+        )}
+        {said !== undefined && (
+          <>
+            {" "}
+            <span role="status" className={s.result()}>
+              {said !== null && <span key={said.n}>{said.text}</span>}
+            </span>
           </>
         )}
       </Stack>
@@ -993,18 +1014,28 @@ export function SettingsEmpty({ action, children }: { action?: ReactNode; childr
 /**
  * What a section states and the reader cannot press (what an app was granted, where it comes from), named by `label`:
  * each fact a sentence over the muted lines about it, where it has some, the facts one under another at one distance
- * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall.
+ * whether or not they have such lines. A list of facts, not of rows: nothing in it is a finger's target tall. `shown`:
+ * its name stands over it, in a label's weight, for facts told from the ones before them by what they are (what an
+ * import removes, after what it adds).
  */
 export function SettingsFacts({
   label,
+  shown = false,
   items,
 }: {
   label: string;
+  shown?: boolean | undefined;
   items: readonly { text: string; about?: readonly string[] | undefined }[];
 }) {
   const s = list();
-  return (
-    <Stack as="ul" gap="screen-row-gap" aria-label={label} className={s.root()}>
+  const id = useId();
+  const facts = (
+    <Stack
+      as="ul"
+      gap="screen-row-gap"
+      {...(shown ? { "aria-labelledby": id } : { "aria-label": label })}
+      className={s.root()}
+    >
       {items.map((item) => (
         <Stack as="li" key={item.text}>
           <bdi className={s.title()}>{item.text}</bdi>
@@ -1016,6 +1047,15 @@ export function SettingsFacts({
           ))}
         </Stack>
       ))}
+    </Stack>
+  );
+  if (!shown) return facts;
+  return (
+    <Stack gap="screen-air">
+      <p id={id} className={s.lead()}>
+        {label}
+      </p>
+      {facts}
     </Stack>
   );
 }
@@ -1176,20 +1216,52 @@ export function QrFrame({ label, size, path }: { label: string; size: number; pa
   );
 }
 
+const bar = tv({
+  slots: {
+    // What sending does, read toward the button it stands before: its lines end where the button starts.
+    about: "text-end [word-break:auto-phrase]",
+  },
+});
+
 /**
  * The submit bar of a form saved as a whole: its button (`children`, the screen's primary action) at the end, and
  * what came of sending right before it, in the same place every time (`result`: a `SaveState` once saved, a
  * `FormAlert` when refused). It ends the screen and stays at the bottom of the viewport while the form is longer,
  * the page keeping what takes the focus clear of it. The result's place is a polite live region from the start, so
  * that assistive technology hears what came of sending (a `FormAlert` at once, as an alert).
+ *
+ * `about` is what sending does as the form stands, where that cannot be undone (how many posts a save deletes): one
+ * short sentence beside the button, on its line at every width (a sentence too long for the room wraps beside the
+ * button, which never drops under it), so that the reader decides with it in view. It comes and goes as the form
+ * changes, often between the press of the button and its release (a field that tells its value as it loses the
+ * focus): the button keeps its element and its place, at the foot of the bar, which grows upward. The button names
+ * the sentence as its description (the `id` given here, in the button's `aria-describedby`); it is no live region,
+ * since what it says is read where the form counts it.
  */
-export function SubmitBar({ result, children }: { result?: ReactNode; children: ReactNode }) {
+export function SubmitBar({
+  result,
+  about,
+  children,
+}: {
+  result?: ReactNode;
+  about?: { readonly id: string; readonly text: string } | undefined;
+  children: ReactNode;
+}) {
+  const said = result !== undefined && result !== null && result !== false;
   return (
     <FrameFoot>
-      <Row wrap align="center" justify="end" gap="screen-row-gap">
+      {/* With nothing to say, the result's place is no line of its own over a sentence and a button that fill the bar. */}
+      <Row wrap align="center" justify="end" gap="screen-row-gap" gapY={said ? undefined : "0"}>
         <Box role="status">{result}</Box>
-        <Row as="span" inline rigid>
-          {children}
+        <Row align="center" justify="end" gap="screen-row-gap">
+          {about !== undefined && (
+            <p id={about.id} className={bar().about()}>
+              {about.text}
+            </p>
+          )}
+          <Row as="span" inline rigid self="end">
+            {children}
+          </Row>
         </Row>
       </Row>
     </FrameFoot>

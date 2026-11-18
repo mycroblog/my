@@ -1373,15 +1373,15 @@
   },
   "settings.account.export.archive.download_failed": {
     "defaultMessage": "アーカイブをダウンロードできませんでした。もう一度試してください。",
-    "description": "The status of the section Archive on the settings page Export when the download of an archive failed."
+    "description": "In the row of an archive in the list Archive on the settings page Export, under where it stands, when the download of that archive failed."
   },
   "settings.account.export.archive.row": {
-    "defaultMessage": "{date} にリクエスト",
-    "description": "The name of a row of the list Archive on the settings page Export: one request for an archive, named by when the reader made it. date is a date and a time as the reader's locale writes them. No full stop."
+    "defaultMessage": "{date} のアーカイブ",
+    "description": "The name of a row of the list Archive on the settings page Export: one archive, named by when the reader requested it. date is a date and a time as the reader's locale writes them. It does not say that it was requested: the status over the list says so right after a request (settings.account.export.archive.requested). No full stop."
   },
   "settings.account.export.archive.state": {
-    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。準備ができるとここに表示されます。その間、このページを離れてもかまいません。完了すると、次をリクエストできます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しくリクエストしてください。} other {このアーカイブは準備できませんでした。新しくリクエストしてください。}}",
-    "description": "Under the name of a request for an archive in the list Archive on the settings page Export: where it stands. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
+    "defaultMessage": "{state, select, preparing {このアーカイブは準備中です。その間、このページを離れてもかまいません。準備ができると、次をリクエストできます。} ready {このアーカイブは {date} までダウンロードできます。} expired {このアーカイブは {date} に期限が切れました。新しくリクエストしてください。} other {このアーカイブは準備できませんでした。新しくリクエストしてください。}}",
+    "description": "Under the name of an archive in the list Archive on the settings page Export: where it stands, the row's one line about it. state is preparing (the server is building it), ready (it can be downloaded until date, when the server removes it), expired (date has passed), or anything else when the server could not build it. date is a day as the reader's locale writes it."
   },
   "settings.account.export.download": {
     "defaultMessage": "ダウンロード",
@@ -1389,7 +1389,7 @@
   },
   "settings.account.export.saved": {
     "defaultMessage": "{name} のダウンロードを開始しました。",
-    "description": "The status under a list of the settings page Export once the reader pressed Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
+    "description": "In a row of the settings page Export, under its name, once the reader pressed that row's Download and the browser was given the file. name is the file's name, such as following_accounts.csv."
   },
   "settings.account.export.csv": {
     "defaultMessage": "CSV ファイル",
@@ -1401,7 +1401,7 @@
   },
   "settings.account.export.csv.failed": {
     "defaultMessage": "ファイルをダウンロードできませんでした。もう一度試してください。",
-    "description": "The status under the list CSV files on the settings page Export when the download of the file whose Download the reader just pressed failed."
+    "description": "In a row of the list CSV files on the settings page Export, under its name, when the download of that row's file failed."
   },
   "settings.account.csv.kind": {
     "defaultMessage": "{kind, select, following {フォロー} followed_tags {フォロー中のハッシュタグ} blocks {ブロックしたアカウント} mutes {ミュートしたアカウント} domain_mutes {ミュートしたサーバー} other {ブックマーク}}",
@@ -1493,7 +1493,7 @@
   },
   "settings.account.import.preview.remove": {
     "defaultMessage": "{kind, select, following {{count, plural, =0 {フォローを解除するアカウントはありません} other {ファイルにない # 件のアカウントのフォローを解除します}}} followed_tags {{count, plural, =0 {フォローを解除するハッシュタグはありません} other {ファイルにない # 件のハッシュタグのフォローを解除します}}} blocks {{count, plural, =0 {ブロックを解除するアカウントはありません} other {ファイルにない # 件のアカウントのブロックを解除します}}} mutes {{count, plural, =0 {ミュートを解除するアカウントはありません} other {ファイルにない # 件のアカウントのミュートを解除します}}} domain_mutes {{count, plural, =0 {ミュートを解除するサーバーはありません} other {ファイルにない # 件のサーバーのミュートを解除します}}} other {{count, plural, =0 {削除するブックマークはありません} other {ファイルにない # 件のブックマークを削除します}}}}",
-    "description": "A fact of the Preview on the settings page Import when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
+    "description": "The one fact under What “Replace” removes (settings.account.import.preview.removes) in the Preview on the settings page Import, when the reader chose Replace: how many things the reader has now that the file does not list, which the import would remove. count is 0 or more. kind is what the file lists: following, followed_tags, blocks, mutes, domain_mutes, or bookmarks. No full stop."
   },
   "settings.account.import.preview.skipped": {
     "defaultMessage": "{count, plural, other {# 行をスキップします}}",
@@ -1506,6 +1506,10 @@
   "settings.account.import.preview.skipped.more": {
     "defaultMessage": "{count, plural, other {ほか # 行}}",
     "description": "The last line under settings.account.import.preview.skipped on the settings page Import when the file has more lines that cannot be read than the page writes out: how many more. No full stop."
+  },
+  "settings.account.import.preview.removes": {
+    "defaultMessage": "「置き換え」で削除されるもの",
+    "description": "In the section Preview of the settings page Import when the reader chose Replace: the name over what the import would remove (settings.account.import.preview.remove), which stands last and apart from what it adds and skips. Replace is the option settings.account.import.mode.choice. No full stop."
   },
   "settings.account.import.submit": {
     "defaultMessage": "インポート",
@@ -1596,8 +1600,8 @@
     "description": "The heading of the summary at the top of the settings page Delete old posts automatically for a reader whose saved settings keep posts longer than the server's maximum allows; also the line under the row Delete old posts automatically on the settings page Account and data for that reader. state is from (the maximum starts to apply on date, a day as the reader's locale writes it), now (it applies already), or anything else while the server has not yet said from when. A heading: no full stop."
   },
   "settings.account.auto_delete.bound.about": {
-    "defaultMessage": "{state, select, now {このサーバーが投稿を残すのは最長 {days, number} 日ですが、保存済みの設定では一部の投稿がそれより長く残ります。下の「削除される投稿」で、上限によって削除される投稿の数を確認できます。このページで保存すると、設定は上限の範囲内になります。} other {このサーバーが投稿を残すのは最長 {days, number} 日ですが、保存済みの設定では一部の投稿がそれより長く残ります。上限が適用されるまでは、保存済みの設定が有効です。下の「削除される投稿」で、適用後に削除される投稿の数を確認できます。このページで保存すると、設定はすぐに上限の範囲内になります。}}",
-    "description": "Under settings.account.auto_delete.bound: what the server's maximum is, that the reader's own settings stay in effect until it applies, where the page counts what it will delete (the section settings.account.auto_delete.section.count), and what saving does. state is as in settings.account.auto_delete.bound; days is the maximum."
+    "defaultMessage": "{state, select, now {このサーバーが投稿を残すのは最長 {days, number} 日で、保存済みの設定はこれを超えています。このページで保存すると、設定は上限の範囲内になります。} other {このサーバーが投稿を残すのは最長 {days, number} 日です。上限が適用されるまでは、保存済みの設定が有効です。このページで保存すると、すぐに適用されます。}}",
+    "description": "Under settings.account.auto_delete.bound, in a few short sentences: what the server's maximum is, that the reader's own settings stay in effect until it applies, and what saving does. It is the one place of the page that says the maximum. state is as in settings.account.auto_delete.bound; days is the maximum."
   },
   "settings.account.auto_delete.section.when": {
     "defaultMessage": "削除する時期",
@@ -1609,7 +1613,7 @@
   },
   "settings.account.auto_delete.when.about_limit": {
     "defaultMessage": "このサーバーが投稿を残すのは最長 {days, number} 日です。下の日数を過ぎた投稿は、このサーバーと送信先のサーバーから削除されます。元に戻せません。ほかの人の投稿のブーストは削除されません。",
-    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader: the maximum, and what a deletion is. days is the maximum."
+    "description": "Under the heading When posts are deleted on the settings page Delete old posts automatically, on a server whose maximum applies to the reader and that their saved settings are within: the maximum, and what a deletion is. days is the maximum. A reader the maximum binds reads it in the summary instead (settings.account.auto_delete.bound.about) and settings.account.auto_delete.when.about here."
   },
   "settings.account.auto_delete.enabled": {
     "defaultMessage": "自動削除",
@@ -1632,8 +1636,8 @@
     "description": "The unit after the number field Delete posts older than on the settings page Delete old posts automatically."
   },
   "settings.account.auto_delete.days.about": {
-    "defaultMessage": "{limited, select, yes {1〜{max, number} 日 (このサーバーが投稿を残す最長の日数まで)} other {1〜{max, number} 日}}",
-    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. limited is yes on a server whose maximum applies to the reader, max being that maximum; otherwise max is 3650. No full stop."
+    "defaultMessage": "1〜{max, number} 日",
+    "description": "The line under Delete posts older than on the settings page Delete old posts automatically: the ages the field takes. max is the most days: the server's maximum where it sets one for the reader, else 3650. No full stop."
   },
   "settings.account.auto_delete.days.rule": {
     "defaultMessage": "1〜{max, number} の整数で日数を入力してください。",
@@ -1644,16 +1648,24 @@
     "description": "A heading on the settings page Delete old posts automatically, over the checkboxes of the kinds of posts that are never deleted. A heading: no full stop."
   },
   "settings.account.auto_delete.kept.about": {
-    "defaultMessage": "{limited, select, yes {どれかに当てはまる投稿は、どれだけ古くても削除されません。このサーバーで残せないものはチェックできません。} other {どれかに当てはまる投稿は、どれだけ古くても削除されません。}}",
-    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically. limited is yes on a server whose maximum applies to the reader, where some checkboxes are disabled."
+    "defaultMessage": "どれかに当てはまる投稿は、どれだけ古くても削除されません。",
+    "description": "Under the heading Posts that are kept on the settings page Delete old posts automatically, over its checkboxes."
+  },
+  "settings.account.auto_delete.kept.fixed": {
+    "defaultMessage": "このサーバーでは、種類で投稿を残すことはできません。",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, in place of its checkboxes, on a server whose maximum allows none of the kinds (pinned, bookmarked, favourited, with media, with a poll, articles)."
   },
   "settings.account.auto_delete.kept.rule": {
     "defaultMessage": "このサーバーでは、チェックした種類の一部を残せません。ページを読み込み直すと、チェックできる種類を確認できます。",
-    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds."
+    "description": "Under the checkboxes of Posts that are kept, or of Posts kept by audience, on the settings page Delete old posts automatically when the server refused a save because it no longer allows one of the checked kinds; in the bar at the bottom where the section shows no checkbox."
   },
   "settings.account.auto_delete.keep": {
     "defaultMessage": "{kind, select, pinned {{pins, plural, =0 {ピン留めした投稿} other {最近ピン留めした # 件の投稿}}} bookmarked {ブックマークした投稿} favourited {お気に入りにした投稿} media {メディア付きの投稿} polls {投票付きの投稿} other {記事}}",
     "description": "A checkbox of Posts that are kept on the settings page Delete old posts automatically: a kind of post that is never deleted. kind is pinned, bookmarked, favourited, media, polls, or articles. pins is 0 where every pinned post is kept, else how many of the most recently pinned the server lets the reader keep (1 to 4). No full stop."
+  },
+  "settings.account.auto_delete.keep.fixed": {
+    "defaultMessage": "このサーバーでは残せない投稿",
+    "description": "In the section Posts that are kept of the settings page Delete old posts automatically, under its checkboxes: the name over the list of the kinds of post the server's maximum does not allow to be kept, each by the name of its checkbox (settings.account.auto_delete.keep), which are not offered as checkboxes. No full stop."
   },
   "settings.account.auto_delete.section.audiences": {
     "defaultMessage": "公開範囲ごとに残す投稿",
@@ -1661,7 +1673,7 @@
   },
   "settings.account.auto_delete.audiences.about": {
     "defaultMessage": "{allowed, select, yes {チェックした公開範囲の投稿は、すべて残します。} other {このサーバーでは、公開範囲で投稿を残すことはできません。}}",
-    "description": "Under the heading Posts kept by audience on the settings page Delete old posts automatically. allowed is no on a server whose maximum does not allow it, where the checkboxes are disabled."
+    "description": "In the section Posts kept by audience of the settings page Delete old posts automatically. allowed yes: the line under the heading, over the checkboxes. allowed no: all the section says, in place of its checkboxes, on a server whose maximum does not allow it."
   },
   "settings.account.auto_delete.section.thresholds": {
     "defaultMessage": "ブーストやお気に入りの数で残す投稿",
@@ -1669,7 +1681,7 @@
   },
   "settings.account.auto_delete.thresholds.fixed": {
     "defaultMessage": "このサーバーでは、ブーストやお気に入りの数で投稿を残すことはできません。",
-    "description": "Under the heading Posts kept by their boosts and favourites on the settings page Delete old posts automatically, on a server whose maximum does not allow it, where the two fields are disabled."
+    "description": "All the section Posts kept by their boosts and favourites of the settings page Delete old posts automatically says, in place of its two fields, on a server whose maximum does not allow it."
   },
   "settings.account.auto_delete.threshold": {
     "defaultMessage": "{of, select, boosts {この回数以上ブーストされた投稿を残す} other {この回数以上お気に入りにされた投稿を残す}}",
@@ -1689,11 +1701,11 @@
   },
   "settings.account.auto_delete.section.count": {
     "defaultMessage": "削除される投稿",
-    "description": "A heading on the settings page Delete old posts automatically, over the count of the reader's posts that the settings on the page would delete now, before they are saved. The summary of a reader the server's maximum binds quotes this name (settings.account.auto_delete.bound.about). A heading: no full stop."
+    "description": "A heading on the settings page Delete old posts automatically, right under When posts are deleted, over the count of the reader's posts that the settings on the page would delete now, before they are saved, and the oldest of them. A heading: no full stop."
   },
   "settings.account.auto_delete.count.about": {
-    "defaultMessage": "保存する前の、上の設定で今数えた結果です。サーバーが削除するのは毎時 100 件までのため、古い投稿が多いと時間がかかります。",
-    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically: what the count is of, and how fast the server deletes."
+    "defaultMessage": "保存する前の、このページの設定で今数えた結果です。サーバーが削除するのは毎時 100 件までのため、古い投稿が多いと時間がかかります。",
+    "description": "Under the heading Posts that would be deleted on the settings page Delete old posts automatically, the second section of the page, right under When posts are deleted: what the count is of (every setting of the page, those under it too), and how fast the server deletes."
   },
   "settings.account.auto_delete.count.off": {
     "defaultMessage": "自動削除がオフの間は、何も削除されません。",
@@ -1705,7 +1717,7 @@
   },
   "settings.account.auto_delete.count.loading": {
     "defaultMessage": "投稿を数えています…",
-    "description": "In the section Posts that would be deleted of the settings page Delete old posts automatically while the server counts."
+    "description": "On the settings page Delete old posts automatically while the server counts what the settings on the page would delete: in the section Posts that would be deleted, and in the bar at the bottom right before Save, in the place of settings.account.auto_delete.save.count."
   },
   "settings.account.auto_delete.count": {
     "defaultMessage": "{more, select, yes {{count, number} 件を超える投稿が削除されます。} other {{count, plural, =0 {削除される投稿はありません。} other {# 件の投稿が削除されます。}}}}",
@@ -1727,6 +1739,10 @@
     "defaultMessage": "保存",
     "description": "The button in the bar at the bottom of the settings page Delete old posts automatically that saves the whole page."
   },
+  "settings.account.auto_delete.save.count": {
+    "defaultMessage": "{changed, select, yes {{more, select, yes {保存すると {count, number} 件を超える投稿が削除されます。} other {保存すると {count, number} 件の投稿が削除されます。}}} other {{more, select, yes {この設定で {count, number} 件を超える投稿が削除されます。} other {この設定で {count, number} 件の投稿が削除されます。}}}}",
+    "description": "In the bar at the bottom of the settings page Delete old posts automatically, right before Save, while the settings on the page delete at least one of the reader's posts: how many. changed is yes when the page differs from the settings in effect, so that saving is what deletes them, and anything else when it shows the settings in effect as they are. more is yes when the server stopped counting at count (1000). count is 1 or more. One short sentence."
+  },
   "settings.account.auto_delete.save.failed": {
     "defaultMessage": "設定を保存できませんでした。もう一度試してください。",
     "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the server did not take the page and gave no reason of its own (the network)."
@@ -1734,6 +1750,22 @@
   "settings.account.auto_delete.save.refused": {
     "defaultMessage": "示した箇所を直してください。",
     "description": "In the bar at the bottom of the settings page Delete old posts automatically, beside Save, when the page or the server found something wrong with a setting, which says what under that setting."
+  },
+  "settings.account.auto_delete.ask.title": {
+    "defaultMessage": "古い投稿を削除しますか？",
+    "description": "The question of the confirmation that opens when the reader presses Save on the settings page Delete old posts automatically and the save turns the deletion on or deletes posts the settings in effect keep (a younger age, fewer kinds kept)."
+  },
+  "settings.account.auto_delete.ask.text": {
+    "defaultMessage": "{counted, select, yes {保存すると {count, number} 件の投稿が削除されます。元に戻せません。} more {保存すると {count, number} 件を超える投稿が削除されます。元に戻せません。} none {今は削除される投稿はありません。投稿は {days, number} 日を過ぎると削除され、元に戻せません。} other {保存すると、{days, number} 日を過ぎた投稿のうち、残す対象でないものが削除されます。元に戻せません。}}",
+    "description": "The text of the confirmation that asks whether to save the settings page Delete old posts automatically: what the save deletes, and that deleted posts cannot be restored. counted is yes when the server counted count posts (1 or more), more when it stopped counting at count (1000), none when it counted none, and anything else while the count is not known (still counting, or it failed). days is the age past which a post is deleted, 1 or more."
+  },
+  "settings.account.auto_delete.ask.confirm": {
+    "defaultMessage": "{deletes, select, yes {保存して削除} other {保存}}",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that saves the page. deletes is yes when the save deletes posts now, or may (the count is not known), and anything else when no post is old enough yet."
+  },
+  "settings.account.auto_delete.ask.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the confirmation on the settings page Delete old posts automatically that closes it without saving; the page stays as the reader made it."
   },
   "settings.account.auto_delete.leave.title": {
     "defaultMessage": "保存せずに移動しますか？",

@@ -4,13 +4,14 @@
 // reader's language (the toolbar's locale; ja, else en): the save state of a control that saves at once, in a
 // setting's row and in a switch; the status summary, with something to do and with all well; a list with its one add
 // action, and empty, where what stands in its place leads to adding; the submit bar of a form saved as a whole, at
-// rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
-// to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot be changed now,
-// with its reason; a number field given a number outside what it takes; what the reader copies and keeps (recovery
-// codes shown once, before and after copying; a secret of a server's length, which wraps in its box); the key of an
-// authenticator app as a QR code and as text; rows that say what is known of each thing, one fact a line, under what
-// came of a change in their section and over a sentence of the section with the links to where the reader acts on
-// it; and the facts a section states, which are not pressed.
+// rest, sending, saved and refused, and with what saving does beside its button; rows that say what came of their own
+// action, and facts apart under a name of their own; a choice from a long list and a number; the confirmation that
+// asks the reader to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot
+// be changed now, with its reason; a number field given a number outside what it takes; what the reader copies and
+// keeps (recovery codes shown once, before and after copying; a secret of a server's length, which wraps in its box);
+// the key of an authenticator app as a QR code and as text; rows that say what is known of each thing, one fact a
+// line, under what came of a change in their section and over a sentence of the section with the links to where the
+// reader acts on it; and the facts a section states, which are not pressed.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
@@ -19,6 +20,7 @@ import { Button, TextButton } from "./button";
 import { ReauthDialog } from "./dialog";
 import { NumberField, Select } from "./field";
 import { FormAlert, TextField } from "./form-page";
+import { Stack } from "./layout";
 import { SaveState } from "./save-state";
 import {
   CopyBlock,
@@ -144,6 +146,16 @@ const en = {
     ["k3np5b83mmmm4qws", false, ["Revoked", "Used 0 of 3 times"]],
     ["k4vlj2ysmmmm5m5v", false, ["Expired Nov 15, 4 PM", "Used 1 of 1 time"]],
   ] as [string, boolean, string[]][],
+  deletes: "Saving deletes 273 of your posts.",
+  files: "Files",
+  download: "Download",
+  fileRows: ["Follows", "Bookmarks", "Muted servers"],
+  started: "The download of following_accounts.csv started.",
+  failed: "The file could not be downloaded. Try again.",
+  preview: "Preview",
+  facts: ["7 new accounts to follow", "2 accounts you already follow"],
+  removes: "What “Replace” removes",
+  removed: "5 accounts to unfollow, which the file does not list",
 };
 
 const ja: typeof en = {
@@ -255,6 +267,16 @@ const ja: typeof en = {
     ["k3np5b83mmmm4qws", false, ["取り消し済み", "3 回のうち 0 回使用"]],
     ["k4vlj2ysmmmm5m5v", false, ["11月15日 16時 に期限切れ", "1 回のうち 1 回使用"]],
   ],
+  deletes: "保存すると 273 件の投稿が削除されます。",
+  files: "ファイル",
+  download: "ダウンロード",
+  fileRows: ["フォロー", "ブックマーク", "ミュートしたサーバー"],
+  started: "following_accounts.csv のダウンロードを開始しました。",
+  failed: "ファイルをダウンロードできませんでした。もう一度試してください。",
+  preview: "プレビュー",
+  facts: ["7 件のアカウントを新しくフォローします", "2 件のアカウントはすでにフォローしています"],
+  removes: "「置き換え」で削除されるもの",
+  removed: "ファイルにない 5 件のアカウントのフォローを解除します",
 };
 
 const useWords = () => (new Intl.Locale(useLocale().locale).language === "ja" ? ja : en);
@@ -443,7 +465,64 @@ function SubmitBars() {
           <Button kind="primary">{w.save}</Button>
         </SubmitBar>
       </Column>
+      {/* What saving does, where it cannot be undone: beside the button, which it describes; and with a result. */}
+      <Column>
+        {field(4)}
+        <SubmitBar about={{ id: "submit-about-4", text: w.deletes }}>
+          <Button kind="primary" aria-describedby="submit-about-4">
+            {w.save}
+          </Button>
+        </SubmitBar>
+      </Column>
+      <Column>
+        {field(5)}
+        <SubmitBar result={<SaveState state="saved" />} about={{ id: "submit-about-5", text: w.deletes }}>
+          <Button kind="primary" aria-describedby="submit-about-5">
+            {w.save}
+          </Button>
+        </SubmitBar>
+      </Column>
+      <Column>
+        {field(6)}
+        <SubmitBar result={<FormAlert>{w.refused}</FormAlert>} about={{ id: "submit-about-6", text: w.deletes }}>
+          <Button kind="primary" aria-describedby="submit-about-6">
+            {w.save}
+          </Button>
+        </SubmitBar>
+      </Column>
     </>
+  );
+}
+
+/**
+ * What came of an action that leaves its row as it was (a download): in the row, under its name, the button staying;
+ * a row that has said nothing keeps the place. And facts told from the ones before them, under their own name.
+ */
+function RowsThatSay() {
+  const w = useWords();
+  const said = [{ text: w.started, n: 1 }, null, { text: w.failed, n: 2 }];
+  return (
+    <Column>
+      <SettingsSection heading={w.files}>
+        <SettingsList label={w.files}>
+          {w.fileRows.map((title, i) => (
+            <SettingsListRow
+              key={title}
+              title={title}
+              said={said[i] ?? null}
+              end={<Button size="timeline">{w.download}</Button>}
+            />
+          ))}
+        </SettingsList>
+      </SettingsSection>
+      <SettingsSection heading={w.preview}>
+        {/* Further apart than the facts of one list are. */}
+        <Stack gap="form-page-form-gap">
+          <SettingsFacts label={w.preview} items={w.facts.map((text) => ({ text }))} />
+          <SettingsFacts label={w.removes} shown items={[{ text: w.removed }]} />
+        </Stack>
+      </SettingsSection>
+    </Column>
   );
 }
 
@@ -798,8 +877,13 @@ export const SaveStatesOfAControl: Story = { render: () => <SaveStates /> };
 export const StatusSummaries: Story = { render: () => <Summaries /> };
 /** A list with its add action, the list empty, and the one list of a screen, whose rows open. */
 export const ListAndAdd: Story = { render: () => <Lists /> };
-/** The submit bar at rest, sending, saved and refused: the result right before the button, every time. */
+/**
+ * The submit bar at rest, sending, saved and refused: the result right before the button, every time; and with what
+ * saving does beside the button, alone, saved and refused.
+ */
 export const SubmitBarStates: Story = { render: () => <SubmitBars /> };
+/** Rows that say what came of their own action and keep their button, and facts apart under a name of their own. */
+export const RowsThatSayAndFactsApart: Story = { render: () => <RowsThatSay /> };
 /** A choice from a list, plain and in groups, and a number with its unit, on a raised surface and on the page. */
 export const ChoiceAndNumber: Story = { render: () => <Fields /> };
 /** Authenticating again: by the password, a two-factor code, a passkey, an external provider, and refused. */

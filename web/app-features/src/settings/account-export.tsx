@@ -4,15 +4,21 @@
 // reader takes their data away. Everything on it acts at once, and says what came of it where it was pressed.
 //
 // - The archive of the account, which the server prepares in the background: the latest request, and under it the
-//   newest archive that can still be downloaded where that is an earlier one. A request says when it was made and
-//   where it stands, in the text's color: being prepared (the list is read again meanwhile, and another can be
-//   requested once it is done), ready until the day the server removes it, with its size and Download, expired, or
-//   failed. Request an archive stands at the section's head, or in the list's place while there is none, and not
-//   while one is being prepared. What came of a request is said in the section's status, a polite live region there
-//   from the start, which takes the focus: the button may be gone once it is pressed.
+//   newest archive that can still be downloaded where that is an earlier one. An archive is named by when it was
+//   requested and says where it stands in one line, in the text's color: being prepared (the list is read again
+//   meanwhile, and another can be requested once it is done), ready until the day the server removes it, with its
+//   size and Download, expired, or failed. Request an archive stands at the section's head, or in the list's place
+//   while there is none, and not while one is being prepared. What came of a request is said once, in the section's
+//   status, a polite live region there from the start, which takes the focus: the button may be gone once it is
+//   pressed.
 // - The lists as CSV files, in the format Mastodon uses, a row each with Download: follows, followed hashtags (a file
-//   of this software alone, which the section says), blocked and muted accounts, muted servers and bookmarks. What
-//   came of a download is said in the section's status, the focus staying on the button.
+//   of this software alone, which the section says), blocked and muted accounts, muted servers and bookmarks.
+//
+// The screen has one primary action: Download of the archive that is ready, while there is one, Request an archive
+// being neutral beside it; else Request an archive. What came of a download (it started, or failed) is said in the
+// row whose Download was pressed, the row's own status, a polite live region there from the start, the focus staying
+// on the button. The address the closure's emails carry leads here with nothing more known of why the reader came:
+// the screen reads as it does from the entry.
 //
 // The server says how long to wait when it refuses a request for being one too many: its words are shown.
 
@@ -38,6 +44,7 @@ import {
   SettingsSection,
   Stack,
   useLocale,
+  type SettingsRowSaid,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState } from "react";
 import { stringsIn } from "../locale";
@@ -78,13 +85,13 @@ function sizeOf(bytes: number, lang: string): string {
   return new Intl.NumberFormat(lang, { style: "unit", unit, maximumFractionDigits: size < 10 ? 1 : 0 }).format(size);
 }
 
-/** What a section's status says, each a new element of it. */
-type Said = { readonly text: string; readonly n: number };
+/** What a status says, the section's or a row's, each a new element of it. */
+type Said = SettingsRowSaid;
 
-/** The status of a section: a polite live region there from the start; with `id`, a place the focus can be. */
-function Status({ id, said }: { id?: string | undefined; said: Said | undefined }) {
+/** The status of the archive's section: a polite live region there from the start, and a place the focus can be. */
+function Status({ id, said }: { id: string; said: Said | undefined }) {
   return (
-    <Box as="p" id={id} role="status" tabIndex={id === undefined ? undefined : -1} breaks="phrase">
+    <Box as="p" id={id} role="status" tabIndex={-1} breaks="phrase">
       {said !== undefined && <span key={said.n}>{said.text}</span>}
     </Box>
   );
@@ -100,6 +107,8 @@ function Archive({ t }: { t: T }) {
   const [requesting, setRequesting] = useState(false);
   const [downloading, setDownloading] = useState<string | undefined>(undefined);
   const [said, setSaid] = useState<Said | undefined>(undefined);
+  // What came of each archive's download, in its row.
+  const [saved, setSaved] = useState<ReadonlyMap<string, Said>>(new Map());
   const count = useRef(0);
   // The status takes the focus once it is drawn with what a request came to: its button may be gone.
   const focusStatus = useRef(false);
@@ -109,10 +118,15 @@ function Archive({ t }: { t: T }) {
     focusStatus.current = false;
     document.getElementById(statusId)?.focus();
   });
-  const say = (text: string, focus: boolean) => {
+  const say = (text: string) => {
     count.current += 1;
     setSaid({ text, n: count.current });
-    focusStatus.current = focus;
+    focusStatus.current = true;
+  };
+  const sayIn = (row: string, text: string) => {
+    count.current += 1;
+    const next = { text, n: count.current };
+    setSaved((now) => new Map(now).set(row, next));
   };
   const heading = t("settings.account.export.archive");
   const about = t("settings.account.export.archive.about");
@@ -141,14 +155,14 @@ function Archive({ t }: { t: T }) {
     request()
       .then(
         () => {
-          say(t("settings.account.export.archive.requested"), true);
+          say(t("settings.account.export.archive.requested"));
         },
         (error: unknown) => {
           if (exportBuilding(error)) {
             // Requested from elsewhere meanwhile: the list says so once it is read again.
             retry();
-            say(t("settings.account.export.archive.building"), true);
-          } else say(refusalDetail(error) ?? t("settings.account.export.archive.request_failed"), true);
+            say(t("settings.account.export.archive.building"));
+          } else say(refusalDetail(error) ?? t("settings.account.export.archive.request_failed"));
         },
       )
       .finally(() => {
@@ -162,10 +176,10 @@ function Archive({ t }: { t: T }) {
       .then(
         ({ blob, name }) => {
           saveFile(blob, name);
-          say(t("settings.account.export.saved", { name }), false);
+          sayIn(e.id, t("settings.account.export.saved", { name }));
         },
         (error: unknown) => {
-          say(refusalDetail(error) ?? t("settings.account.export.archive.download_failed"), false);
+          sayIn(e.id, refusalDetail(error) ?? t("settings.account.export.archive.download_failed"));
         },
       )
       .finally(() => {
@@ -175,8 +189,10 @@ function Archive({ t }: { t: T }) {
 
   const shown = shownExports(exports);
   const building = exports[0]?.state === "pending";
+  // The screen's one primary action: Download while an archive is ready, else requesting one.
+  const ready = shown.some((e) => archiveStateOf(e) === "ready");
   const ask = (
-    <Button kind="primary" size="timeline" touch busy={requesting} onPress={requestArchive}>
+    <Button kind={ready ? "secondary" : "primary"} size="timeline" touch busy={requesting} onPress={requestArchive}>
       {t("settings.account.export.archive.request")}
     </Button>
   );
@@ -200,9 +216,11 @@ function Archive({ t }: { t: T }) {
                     state,
                     date: e.expires_at === undefined ? "" : day(e.expires_at),
                   })}
+                  said={state === "ready" ? (saved.get(e.id) ?? null) : undefined}
                   end={
                     state === "ready" && (
                       <Button
+                        kind="primary"
                         size="timeline"
                         touch
                         busy={downloading === e.id}
@@ -228,11 +246,13 @@ function Archive({ t }: { t: T }) {
 function CsvFiles({ t }: { t: T }) {
   const { csv } = useDataExports();
   const [busy, setBusy] = useState<CsvKind | undefined>(undefined);
-  const [said, setSaid] = useState<Said | undefined>(undefined);
+  // What came of each file's download, in its row.
+  const [said, setSaid] = useState<ReadonlyMap<CsvKind, Said>>(new Map());
   const count = useRef(0);
-  const say = (text: string) => {
+  const say = (kind: CsvKind, text: string) => {
     count.current += 1;
-    setSaid({ text, n: count.current });
+    const next = { text, n: count.current };
+    setSaid((now) => new Map(now).set(kind, next));
   };
   const save = (kind: CsvKind) => {
     if (busy !== undefined) return;
@@ -241,10 +261,10 @@ function CsvFiles({ t }: { t: T }) {
       .then(
         ({ blob, name }: SavedFile) => {
           saveFile(blob, name);
-          say(t("settings.account.export.saved", { name }));
+          say(kind, t("settings.account.export.saved", { name }));
         },
         (error: unknown) => {
-          say(refusalDetail(error) ?? t("settings.account.export.csv.failed"));
+          say(kind, refusalDetail(error) ?? t("settings.account.export.csv.failed"));
         },
       )
       .finally(() => {
@@ -254,29 +274,27 @@ function CsvFiles({ t }: { t: T }) {
   const heading = t("settings.account.export.csv");
   return (
     <SettingsSection heading={heading} about={t("settings.account.export.csv.about")}>
-      <Stack gap={said === undefined ? undefined : "screen-row-gap"}>
-        <SettingsList label={heading}>
-          {csvKinds.map((kind) => (
-            <SettingsListRow
-              key={kind}
-              title={t("settings.account.csv.kind", { kind })}
-              end={
-                <Button
-                  size="timeline"
-                  touch
-                  busy={busy === kind}
-                  onPress={() => {
-                    save(kind);
-                  }}
-                >
-                  {t("settings.account.export.download")}
-                </Button>
-              }
-            />
-          ))}
-        </SettingsList>
-        <Status said={said} />
-      </Stack>
+      <SettingsList label={heading}>
+        {csvKinds.map((kind) => (
+          <SettingsListRow
+            key={kind}
+            title={t("settings.account.csv.kind", { kind })}
+            said={said.get(kind) ?? null}
+            end={
+              <Button
+                size="timeline"
+                touch
+                busy={busy === kind}
+                onPress={() => {
+                  save(kind);
+                }}
+              >
+                {t("settings.account.export.download")}
+              </Button>
+            }
+          />
+        ))}
+      </SettingsList>
     </SettingsSection>
   );
 }
