@@ -10,7 +10,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/mycroblog/my/internal/adapter/db/sqlite"
+	sqliteidentity "github.com/mycroblog/my/internal/adapter/db/sqlite/identity"
 	"github.com/mycroblog/my/internal/app/identity"
+	"github.com/mycroblog/my/internal/app/uow"
 	domain "github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	"github.com/mycroblog/my/internal/interface/clientapi/apitest"
@@ -118,6 +121,23 @@ func (e *browserEnv) sessionWorks(token string) bool {
 	e.t.Helper()
 	_, err := e.app.Identity.Authenticate(e.t.Context(), token)
 	return err == nil
+}
+
+// endSession ends the session alone, as a password change does to the browser that asks: the
+// token families that started from it stay. Signing out would end them too (ADR-0090 §13).
+func (e *browserEnv) endSession(session identity.SignedIn) {
+	e.t.Helper()
+	ctx := e.t.Context()
+	db, err := sqlite.Open(ctx, e.app.Config.DatabaseURL, uow.Options{})
+	if err != nil {
+		e.t.Fatal(err)
+	}
+	defer func() { _ = db.Close() }()
+	rev := domain.SessionRevocation{SessionID: session.Session.ID, Reason: domain.RevokedPasswordChanged, RevokedAt: e.app.Clock.Now()}
+	err = db.Tx(ctx, func(tx uow.Tx) error { return sqliteidentity.NewRepository(db).InsertSessionRevocation(ctx, tx, rev) })
+	if err != nil {
+		e.t.Fatalf("end the session: %v", err)
+	}
 }
 
 func (e *browserEnv) createUser(username string) identity.Registration {
@@ -254,9 +274,7 @@ func TestBrowserSessionsRevokeOthers(t *testing.T) {
 
 	// This browser's session ends, as a password change does to the browser that asks, while its
 	// family stays: it is still listed and still this browser.
-	if err := e.app.Identity.SignOut(ctx, here.Token); err != nil {
-		t.Fatalf("SignOut: %v", err)
-	}
+	e.endSession(here)
 	items := e.list(hereTokens.AccessToken)
 	if len(items) != 3 || !items[0].Current || items[0].Id != here.Session.ID {
 		t.Fatalf("browsers = %+v, want this one first though its session ended", items)
