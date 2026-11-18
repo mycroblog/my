@@ -28,6 +28,10 @@
 // removed, and Passkeys is absent unless the account holds some, which it may still remove. Removing the last
 // passkey or link an account signs in with is the server's to refuse: the confirmation then says why, in the server's
 // words.
+//
+// A change that takes its own control with it (a passkey removed, an account unlinked, a browser signed out, the
+// password removed) is said at the top of its section, as a status, which takes the focus once the confirmation has
+// left: the button that opened it is gone, and the focus would fall to the page with nothing read.
 
 import {
   instanceQuery,
@@ -70,7 +74,7 @@ import { useState } from "react";
 import { stringsIn } from "../../locale";
 import { providerFailure, saidOf, useConfirmation, useProviderName, useProviderReturn } from "../confirmation";
 import type { SettingsAddress, SettingsEntryProps } from "../entries";
-import { Asking, securityPath, securityPaths, useDates, useReadingNotice } from "./parts";
+import { Asking, securityPath, securityPaths, useDates, useReadingNotice, useSectionResult } from "./parts";
 import { browserOf } from "./user-agent";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -110,7 +114,7 @@ function SignIn({
   const passkeys = usePasskeys() ?? [];
   const linked = useLinkedIdentities()?.items ?? [];
   const { remove } = usePasswordWrites();
-  const [result, setResult] = useState<{ done: boolean; said: string }>();
+  const result = useSectionResult();
   const removing = useConfirmation({
     operation: "password_removal",
     about: t("settings.security.password.remove.confirm"),
@@ -125,7 +129,7 @@ function SignIn({
   const removable = passkeys.length > 0 || linked.length > 0;
 
   const removePassword = () => {
-    setResult(undefined);
+    result.clear();
     removing.ask(
       (confirmed) =>
         // The dialog of a removal offers no password (`password: false`).
@@ -134,11 +138,13 @@ function SignIn({
           : remove(confirmed),
       {
         done: () => {
-          setResult({ done: true, said: t("settings.security.password.removed") });
+          result.say(t("settings.security.password.removed"));
         },
         failed: (error) => {
-          setResult({ done: false, said: saidOf(error, t) });
+          result.refuse(saidOf(error, t));
         },
+        // The row went with the password, and its button with it.
+        left: result.settle,
       },
     );
   };
@@ -147,8 +153,7 @@ function SignIn({
       <SettingsSection heading={t("settings.security.sign_in")}>
         {limited && <SettingsNote>{t("settings.security.providers_only")}</SettingsNote>}
         {removing.notice}
-        {result !== undefined &&
-          (result.done ? <SaveState state="saved">{result.said}</SaveState> : <FormAlert>{result.said}</FormAlert>)}
+        {result.line}
         {/* A password that cannot be set or changed has no door; one the account has can still be removed. */}
         {(!limited || hasPassword || on) && (
           <SettingsList label={t("settings.security.sign_in")}>
@@ -211,8 +216,9 @@ function Passkeys({ limited }: { limited: boolean }) {
   const passkeys = usePasskeys() ?? [];
   const { remove } = usePasskeyWrites();
   const [removing, setRemoving] = useState<Passkey>();
-  // Where none can be added and there is none to remove, there is nothing to show.
-  if (limited && passkeys.length === 0) return null;
+  const result = useSectionResult();
+  // Where none can be added and there is none to remove, there is nothing to show, but that the last one went.
+  if (limited && passkeys.length === 0 && result.line === null) return null;
   const add = (
     <LinkButton size="timeline" href={securityPaths.passkey}>
       {t("settings.security.passkeys.add")}
@@ -226,8 +232,9 @@ function Passkeys({ limited }: { limited: boolean }) {
         about={t(limited ? "settings.security.passkeys.unused" : "settings.security.passkeys.about")}
         action={limited || passkeys.length === 0 ? undefined : add}
       >
+        {result.line}
         {passkeys.length === 0 ? (
-          <SettingsEmpty action={add}>{t("settings.security.passkeys.none")}</SettingsEmpty>
+          <SettingsEmpty action={limited ? undefined : add}>{t("settings.security.passkeys.none")}</SettingsEmpty>
         ) : (
           <SettingsList label={t("settings.security.passkeys")}>
             {passkeys.map((passkey) => (
@@ -240,6 +247,7 @@ function Passkeys({ limited }: { limited: boolean }) {
                   <Button
                     size="timeline"
                     onPress={() => {
+                      result.clear();
                       setRemoving(passkey);
                     }}
                   >
@@ -251,12 +259,15 @@ function Passkeys({ limited }: { limited: boolean }) {
           </SettingsList>
         )}
       </SettingsSection>
-      <ModalPresence>
+      <ModalPresence onExited={result.settle}>
         {removing !== undefined && (
           <Asking
             title={t("settings.security.passkeys.remove.title", { name: removing.name })}
             confirm={t("settings.security.passkeys.remove")}
-            run={() => remove(removing.id)}
+            run={async () => {
+              await remove(removing.id);
+              result.say(t("settings.security.passkeys.removed", { name: removing.name }));
+            }}
             onClose={() => {
               setRemoving(undefined);
             }}
@@ -282,6 +293,7 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
   const nameOf = useProviderName();
   const [unlinking, setUnlinking] = useState<LinkedIdentity>();
   const [said, setSaid] = useState<string>();
+  const result = useSectionResult();
   const confirmation = useConfirmation({
     operation: "link",
     about: t("settings.security.linked.confirm"),
@@ -327,6 +339,7 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
         )}
         {confirmation.notice}
         {said !== undefined && <FormAlert>{said}</FormAlert>}
+        {result.line}
         <SettingsList label={t("settings.security.linked")}>
           {items.map((identity) => (
             <SettingsListRow
@@ -341,6 +354,7 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
                 <Button
                   size="timeline"
                   onPress={() => {
+                    result.clear();
                     setUnlinking(identity);
                   }}
                 >
@@ -371,12 +385,15 @@ function Linked({ returned, leave }: { returned: ExternalOutcome | null; leave: 
         </SettingsList>
       </SettingsSection>
       {confirmation.dialog}
-      <ModalPresence>
+      <ModalPresence onExited={result.settle}>
         {unlinking !== undefined && (
           <Asking
             title={t("settings.security.linked.unlink.title", { provider: unlinking.provider_name })}
             confirm={t("settings.security.linked.unlink")}
-            run={() => unlink(unlinking.id)}
+            run={async () => {
+              await unlink(unlinking.id);
+              result.say(t("settings.security.linked.unlinked", { provider: unlinking.provider_name }));
+            }}
             onClose={() => {
               setUnlinking(undefined);
             }}
@@ -411,6 +428,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
   const sessions = useBrowserSessions() ?? [];
   const { revoke, revokeOthers } = useBrowserSessionWrites();
   const [asking, setAsking] = useState<BrowserSession | "others">();
+  const result = useSectionResult();
   const others = sessions.some((session) => !session.current);
   // Each fact on a line of its own, short enough for a phone beside the row's button, the reader's own browser said
   // first. The address stands right under the sign-in it is of, not as where the browser is now (ADR-0090 §11); what
@@ -436,6 +454,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
             <Button
               size="timeline"
               onPress={() => {
+                result.clear();
                 setAsking("others");
               }}
             >
@@ -444,6 +463,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
           ) : undefined
         }
       >
+        {result.line}
         <SettingsList label={t("settings.security.browsers")}>
           {sessions.map((session) => (
             <SettingsListRow
@@ -456,6 +476,7 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
                   <Button
                     size="timeline"
                     onPress={() => {
+                      result.clear();
                       setAsking(session);
                     }}
                   >
@@ -477,13 +498,16 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
           {t(changesPassword ? "settings.security.browsers.advice" : "settings.security.browsers.advice.no_password")}
         </SettingsNote>
       </SettingsSection>
-      <ModalPresence>
+      <ModalPresence onExited={result.settle}>
         {asking === "others" ? (
           <Asking
             key="others"
             title={t("settings.security.browsers.sign_out_others.title")}
             confirm={t("settings.security.browsers.sign_out.confirm")}
-            run={revokeOthers}
+            run={async () => {
+              await revokeOthers();
+              result.say(t("settings.security.browsers.signed_out_others"));
+            }}
             onClose={() => {
               setAsking(undefined);
             }}
@@ -500,7 +524,14 @@ function Browsers({ changesPassword }: { changesPassword: boolean }) {
                   : t("settings.security.browsers.sign_out.title", { browser: browserName(asking, t) })
               }
               confirm={t("settings.security.browsers.sign_out.confirm")}
-              run={() => revoke(asking.id)}
+              run={async () => {
+                await revoke(asking.id);
+                result.say(
+                  unknownBrowser(asking)
+                    ? t("settings.security.browsers.signed_out.unknown")
+                    : t("settings.security.browsers.signed_out", { browser: browserName(asking, t) }),
+                );
+              }}
               onClose={() => {
                 setAsking(undefined);
               }}

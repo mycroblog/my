@@ -45,7 +45,7 @@ import {
   useLocale,
 } from "@my/design-system";
 import { PasskeyError, supportsPasskeys } from "@my/platform";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
 import type { SettingsAddress } from "./entries";
 
@@ -110,6 +110,7 @@ type Asked = {
   readonly run: (confirmation: Confirmation) => Promise<unknown>;
   readonly done: (() => void) | undefined;
   readonly failed: ((error: unknown) => void) | undefined;
+  readonly left: (() => void) | undefined;
   /** What the dialog says as it opens: the server's refusal of a provider's confirmation. */
   readonly said: string | undefined;
 };
@@ -121,10 +122,13 @@ type DialogProps = {
   leave: (href: string) => void;
   ways: readonly Way[];
   asked: Asked;
+  /** Cancel, close, Escape: nothing was written. */
   onClose: () => void;
+  /** The write ended, done or failed: the dialog leaves, and `asked.left` follows once it has. */
+  onEnded: () => void;
 };
 
-function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, onClose }: DialogProps) {
+function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, onClose, onEnded }: DialogProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
   const confirmWithPasskey = useConfirmWithPasskey();
@@ -141,17 +145,10 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
     cancel: t("settings.confirm.cancel"),
     onCancel: onClose,
   };
-  // An account that can prove nothing here (its passkeys alone, in a browser without them): the dialog says so.
+  // An account that can prove nothing here (its passkeys alone, in a browser without them): the dialog says so, and
+  // has nothing to confirm with: Cancel and close are its ways out.
   if (way === undefined)
-    return (
-      <ReauthDialog
-        {...cancel}
-        about={about}
-        confirm={t("settings.confirm.close")}
-        onConfirm={onClose}
-        error={<FormAlert>{t("settings.confirm.none")}</FormAlert>}
-      />
-    );
+    return <ReauthDialog {...cancel} about={about} error={<FormAlert>{t("settings.confirm.none")}</FormAlert>} />;
 
   const refuse = (words: string) => {
     setBusy(false);
@@ -187,7 +184,7 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
       if (confirmation === undefined) return;
       asked.run(confirmation).then(
         () => {
-          onClose();
+          onEnded();
           asked.done?.();
         },
         (error: unknown) => {
@@ -195,7 +192,7 @@ function ConfirmationDialog({ operation, about, returnTo, leave, ways, asked, on
             refuse(saidOf(error, t));
             return;
           }
-          onClose();
+          onEnded();
           asked.failed?.(error);
         },
       );
@@ -274,11 +271,13 @@ export type Confirmed = {
   /**
    * Runs `run` once the reader has confirmed, with their confirmation: after the dialog, or at once with the
    * confirmation a login provider gave. `done` follows a write that succeeded; `failed`, with the error, one that
-   * failed for anything but its confirmation. Cancelling the dialog runs neither.
+   * failed for anything but its confirmation; `left` follows either once the dialog is gone from the page (at once
+   * where none was shown), which is when the screen can move the focus: until then the dialog keeps it. Cancelling
+   * the dialog runs none of them.
    */
   ask: (
     run: (confirmation: Confirmation) => Promise<unknown>,
-    then?: { done?: () => void; failed?: (error: unknown) => void },
+    then?: { done?: () => void; failed?: (error: unknown) => void; left?: () => void },
   ) => void;
   /** A write runs on a login provider's confirmation, with no dialog: the control that asked spins. */
   busy: boolean;
@@ -318,9 +317,11 @@ export function useConfirmation({
   const [token, setToken] = useState(own?.kind === "confirmation" ? own.token : undefined);
   const [busy, setBusy] = useState(false);
   const [asked, setAsked] = useState<Asked>();
+  /** What follows the dialog's leaving, after a write that ended in it. */
+  const afterLeaving = useRef<(() => void) | undefined>(undefined);
 
   const ask: Confirmed["ask"] = (run, then) => {
-    const next = { run, done: then?.done, failed: then?.failed };
+    const next = { run, done: then?.done, failed: then?.failed, left: then?.left };
     if (token === undefined) {
       setAsked({ ...next, said: undefined });
       return;
@@ -332,11 +333,16 @@ export function useConfirmation({
       () => {
         setBusy(false);
         next.done?.();
+        next.left?.();
       },
       (error: unknown) => {
         setBusy(false);
-        if (confirmationRefused(error, "external")) setAsked({ ...next, said: saidOf(error, t) });
-        else next.failed?.(error);
+        if (confirmationRefused(error, "external")) {
+          setAsked({ ...next, said: saidOf(error, t) });
+          return;
+        }
+        next.failed?.(error);
+        next.left?.();
       },
     );
   };
@@ -356,7 +362,13 @@ export function useConfirmation({
     busy,
     notice,
     dialog: (
-      <ModalPresence>
+      <ModalPresence
+        onExited={() => {
+          const follows = afterLeaving.current;
+          afterLeaving.current = undefined;
+          follows?.();
+        }}
+      >
         {asked !== undefined && (
           <ConfirmationDialog
             operation={operation}
@@ -366,6 +378,10 @@ export function useConfirmation({
             ways={ways}
             asked={asked}
             onClose={() => {
+              setAsked(undefined);
+            }}
+            onEnded={() => {
+              afterLeaving.current = asked.left;
               setAsked(undefined);
             }}
           />

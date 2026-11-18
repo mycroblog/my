@@ -5,11 +5,12 @@
 // setting's row and in a switch; the status summary, with something to do and with all well; a list with its one add
 // action, and empty, where what stands in its place leads to adding; the submit bar of a form saved as a whole, at
 // rest, sending, saved and refused; a choice from a long list and a number; the confirmation that asks the reader
-// to authenticate again, by each proof and in flight; a setting that cannot be changed now, with its reason; a
-// number field given a number outside what it takes; what the reader copies and keeps (recovery codes shown once,
-// before and after copying; a secret of a server's length, which wraps in its box); the key of an authenticator app as
-// a QR code and as text; rows that say what is known of each thing, one fact a line, under which a sentence of the
-// section stands with the links to where the reader acts on it; and the facts a section states, which are not pressed.
+// to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot be changed now,
+// with its reason; a number field given a number outside what it takes; what the reader copies and keeps (recovery
+// codes shown once, before and after copying; a secret of a server's length, which wraps in its box); the key of an
+// authenticator app as a QR code and as text; rows that say what is known of each thing, one fact a line, under what
+// came of a change in their section and over a sentence of the section with the links to where the reader acts on
+// it; and the facts a section states, which are not pressed.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import type { ReactNode } from "react";
@@ -28,6 +29,7 @@ import {
   SettingsList,
   SettingsListRow,
   SettingsNote,
+  SettingsResult,
   SettingsSection,
   StatusSummary,
   SubmitBar,
@@ -98,6 +100,8 @@ const en = {
   useProvider: "Continue with GitHub",
   usePassword: "Use your password instead",
   wrong: "That password is not right.",
+  noWay: "This browser has no way to confirm it's you. Try a browser or device that can use one of your passkeys.",
+  signedOut: "Chrome on Windows is signed out.",
   recovery: "Recovery codes",
   recoveryAbout:
     "Each code signs you in once when you cannot use your authenticator app. Keep them somewhere safe: they are not shown again.",
@@ -195,6 +199,8 @@ const ja: typeof en = {
   useProvider: "GitHubで続ける",
   usePassword: "代わりにパスワードを使う",
   wrong: "パスワードが正しくありません。",
+  noWay: "このブラウザには本人確認の手段がありません。パスキーを使えるブラウザか端末で試してください。",
+  signedOut: "Windows の Chrome をログアウトしました。",
   recovery: "リカバリーコード",
   recoveryAbout:
     "認証アプリを使えないとき、それぞれのコードで1回ずつログインできます。安全な場所に保管してください。このコードは二度と表示されません。",
@@ -551,6 +557,8 @@ function Reauth() {
       >
         <TextField id="reauth-wrong" name="password" type="password" label={w.password} />
       </ReauthDialog>
+      {/* No way to prove it here: it says so, with nothing to confirm; Cancel and close are its ways out. */}
+      <ReauthDialog {...pair} title={w.confirmTitle} about={w.confirmAbout} error={<FormAlert>{w.noWay}</FormAlert>} />
     </div>
   );
 }
@@ -644,6 +652,10 @@ function Notes() {
   return (
     <Column>
       <SettingsSection heading={w.browsers}>
+        {/* What came of a change whose row went with its button: a status at the section's top. */}
+        <SettingsResult>
+          <SaveState state="saved">{w.signedOut}</SaveState>
+        </SettingsResult>
         <SettingsList label={w.browsers}>
           <SettingsListRow
             icon="public"

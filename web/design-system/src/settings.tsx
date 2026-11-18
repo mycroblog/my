@@ -32,7 +32,7 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import { createContext, Fragment, use, useId, type ReactElement, type ReactNode } from "react";
+import { createContext, Fragment, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface, TextLink } from "./button";
@@ -251,11 +251,13 @@ const screen = tv({ base: "text-body" });
  * what ends it (a `SubmitBar`). Its head is the entry's glyph and name under `back`, the way to the menu, where the
  * menu is not beside the screen. `sub`, a screen under an entry: its name under the way back to that entry, at every
  * width. While it has no section to show, `notice` stands in their place: that what it shows is being read, or could
- * not be, with the way to try again (a `FeedNotice`).
+ * not be, with the way to try again (a `FeedNotice`). A screen that takes another's place under the same address
+ * (the recovery codes, once two-factor authentication is on) moves the focus to its title, which `titleRef` reaches.
  */
 export function SettingsScreen({
   icon,
   title,
+  titleRef,
   back,
   sub = false,
   notice,
@@ -265,6 +267,8 @@ export function SettingsScreen({
   /** The entry's glyph; a screen under an entry has none. */
   icon?: IconName | undefined;
   title: string;
+  /** Reaches the title, which then can take the focus. */
+  titleRef?: Ref<HTMLHeadingElement> | undefined;
   /** The way back (a `BackButton`): to the menu, or to the entry of a screen under it. */
   back?: ReactNode;
   sub?: boolean;
@@ -275,7 +279,7 @@ export function SettingsScreen({
 }) {
   // The way back is the reader's only one where it shows: as the text reads, a finger's target tall.
   const head = (
-    <ScreenTitle glyph={icon} back={back === undefined ? undefined : <BackLead value>{back}</BackLead>}>
+    <ScreenTitle glyph={icon} back={back === undefined ? undefined : <BackLead value>{back}</BackLead>} ref={titleRef}>
       {title}
     </ScreenTitle>
   );
@@ -769,6 +773,8 @@ const note = tv({
     values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
     value: "wrap-anywhere tabular-nums",
     result: "text-caption text-muted-text",
+    // What a section says came of a change: where the screen moves the focus to it, the ring a keyboard's focus shows.
+    said: "rounded-control outline-hidden focus-visible:shadow-focus",
     // A QR code is dark on light whatever the scheme, or a camera does not read it.
     qr: "rounded-control bg-surface p-screen-air text-text [color-scheme:light]",
     code: "size-screen-qr fill-current",
@@ -801,6 +807,27 @@ export function SettingsNote({
           </span>
         </Fragment>
       ))}
+    </p>
+  );
+}
+
+/**
+ * What came of something the reader did in a section, in a line of it (a `SaveState`: a passkey removed, a browser
+ * signed out), read as it comes (`role="status"`). Given a `ref`, it takes the focus that the control which did it
+ * left behind when that control went with what it changed (the row's own button): the screen moves the focus there
+ * once the confirmation over the section has left, so that a keyboard stays in the section and a screen reader reads
+ * what happened.
+ */
+export function SettingsResult({
+  ref,
+  children,
+}: {
+  ref?: Ref<HTMLParagraphElement> | undefined;
+  children: ReactNode;
+}) {
+  return (
+    <p ref={ref} role="status" tabIndex={ref === undefined ? undefined : -1} className={note().said()}>
+      {children}
     </p>
   );
 }

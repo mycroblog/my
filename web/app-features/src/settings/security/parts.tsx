@@ -3,8 +3,9 @@
 // What the screens of the settings' Security share: their addresses; the notice in the sections' place until what
 // they show is read, or when it could not be; the dates of their rows, in the reader's time zone; the confirmation
 // before what a row's button ends (removing a passkey, unlinking an account, signing a browser out), which asks no
-// proof and says in the server's words why it did not happen (the last way to sign in cannot be removed); and the
-// dialog that asks for a two-factor code.
+// proof and says in the server's words why it did not happen (the last way to sign in cannot be removed); what a
+// section says came of such a change, which takes the focus the row's button left behind; what is wrong with a
+// field's value, under the field, which takes the focus; and the dialog that asks for a two-factor code.
 
 import {
   Box,
@@ -13,6 +14,8 @@ import {
   FeedNotice,
   FormAlert,
   ReauthDialog,
+  SaveState,
+  SettingsResult,
   TextButton,
   TextField,
   useLocale,
@@ -20,9 +23,10 @@ import {
   wallTime,
 } from "@my/design-system";
 import { oneTimeCodeField } from "@my/platform";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
+import type { SettingsSubProps } from "../entries";
 
 /** The address of the Security entry, and of the screens under it. */
 export const securityPath = "/settings/security";
@@ -31,6 +35,12 @@ export const securityPaths = {
   twoFactor: `${securityPath}/two-factor`,
   passkey: `${securityPath}/passkey`,
 } as const;
+
+/**
+ * What a screen under Security takes of what its route gives every screen under an entry: its address and the way
+ * back. None of them ends the browser's own session.
+ */
+export type SecuritySubProps = Omit<SettingsSubProps, "onSessionEnded">;
 
 /** The name of a screen under Security, the title of its page. */
 export function useSecurityTitle(screen: keyof typeof securityPaths): string {
@@ -80,6 +90,97 @@ export function useDates(): { day: (iso: string) => string; hour: (iso: string) 
       .replaceAll(" ", noBreak);
   };
   return { day: (iso) => format(iso, {}), hour: (iso) => format(iso, { hour: "numeric" }) };
+}
+
+/**
+ * What is wrong with a field's value, under the field of `fieldId` (its `words`, a `TextField`'s `error`): the
+ * screen's own check, or what the server refused of that member of the request. `say` puts the words there and, once
+ * they stand under the field, moves the focus into it, so that a screen reader reads the field with what is wrong and
+ * the reader corrects it at once. Under a dialog that still holds the focus, `say(words, false)` waits, and `focus`
+ * moves it once the dialog has left; with nothing wrong, `focus` does nothing.
+ */
+export function useFieldFault(fieldId: string): {
+  words: string | undefined;
+  say: (words: string, focus?: boolean) => void;
+  clear: () => void;
+  focus: () => void;
+} {
+  const [words, setWords] = useState<string>();
+  /** Each ask to move the focus, counted: the same words said again ask again. */
+  const [asked, setAsked] = useState(0);
+  useEffect(() => {
+    if (asked === 0) return;
+    // Only a field that says something is wrong takes the focus: the words stand under it by now.
+    const field = document.getElementById(fieldId);
+    if (field?.getAttribute("aria-invalid") === "true") field.focus();
+  }, [asked, fieldId]);
+  const focus = () => {
+    setAsked((n) => n + 1);
+  };
+  return {
+    words,
+    say: (said, move = true) => {
+      setWords(said);
+      if (move) focus();
+    },
+    clear: () => {
+      setWords(undefined);
+    },
+    focus,
+  };
+}
+
+/**
+ * What a section says came of a change whose control went with what it changed (a row removed with its own button):
+ * `line`, for the section's top, a status that holds the words of the last change done (`say`), or an alert for one
+ * the server did not take (`refuse`). `settle` moves the focus to what was just said, and is called once the dialog
+ * over the section has left (`onExited` of its `ModalPresence`, `left` of a confirmation): before, the dialog holds
+ * the focus, and after, the button that opened it is gone and the focus would fall to the page. A screen reader then
+ * reads what happened, and the keyboard stays in the section.
+ */
+export function useSectionResult(): {
+  line: ReactNode;
+  say: (words: string) => void;
+  refuse: (words: string) => void;
+  clear: () => void;
+  settle: () => void;
+} {
+  const said = useRef<HTMLParagraphElement>(null);
+  const [told, setTold] = useState<{ done: boolean; words: string }>();
+  /** Each leaving of a dialog over the section, counted. */
+  const [settled, setSettled] = useState(0);
+  /** A change was said and the focus has not been moved to it yet. */
+  const waits = useRef(false);
+  useEffect(() => {
+    if (settled === 0 || !waits.current) return;
+    waits.current = false;
+    said.current?.focus();
+  }, [settled]);
+  return {
+    line:
+      told === undefined ? null : told.done ? (
+        <SettingsResult ref={said}>
+          <SaveState state="saved">{told.words}</SaveState>
+        </SettingsResult>
+      ) : (
+        <FormAlert>{told.words}</FormAlert>
+      ),
+    say: (words) => {
+      waits.current = true;
+      setTold({ done: true, words });
+    },
+    refuse: (words) => {
+      waits.current = false;
+      setTold({ done: false, words });
+    },
+    clear: () => {
+      waits.current = false;
+      setTold(undefined);
+    },
+    settle: () => {
+      setSettled((n) => n + 1);
+    },
+  };
 }
 
 /**

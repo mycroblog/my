@@ -7,7 +7,7 @@
 // is asked), or the server's refusal in its own words (the 20 an account may hold). Where the server limits sign-in to
 // login providers (ADR-0106 §21), no passkey can be added, and the screen says so in the form's place.
 
-import { refusedField, useInstance, usePasskeyWrites } from "@my/app-data";
+import { refusedMember, useInstance, usePasskeyWrites } from "@my/app-data";
 import {
   BackButton,
   Button,
@@ -23,20 +23,19 @@ import { PasskeyError, supportsPasskeys } from "@my/platform";
 import { useId, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf, useConfirmation, useProviderReturn } from "../confirmation";
-import type { SettingsSubProps } from "../entries";
-import { securityPaths } from "./parts";
+import { securityPaths, useFieldFault, type SecuritySubProps } from "./parts";
 
 /** The most characters of a passkey's name (the API's `name`). */
 const nameLength = 64;
 
-export function SecurityPasskey({ onBack, fragment, onFragmentRead, leave }: SettingsSubProps) {
+export function SecurityPasskey({ onBack, fragment, onFragmentRead, leave }: SecuritySubProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
   const limited = useInstance()?.login_providers_only === true;
   const { add } = usePasskeyWrites();
   const returned = useProviderReturn({ fragment, onFragmentRead });
   const [typed, setTyped] = useState("");
-  const [fault, setFault] = useState<string>();
+  const fault = useFieldFault(fieldId);
   const [said, setSaid] = useState<string>();
   const confirmation = useConfirmation({
     operation: "passkey_registration",
@@ -49,10 +48,10 @@ export function SecurityPasskey({ onBack, fragment, onFragmentRead, leave }: Set
   const submit = () => {
     const name = typed.trim();
     if (name === "" || name.length > nameLength) {
-      setFault(t("settings.security.passkeys.name.invalid", { max: nameLength }));
+      fault.say(t("settings.security.passkeys.name.invalid", { max: nameLength }));
       return;
     }
-    setFault(undefined);
+    fault.clear();
     // Said before a proof is asked that would be for nothing.
     if (!supportsPasskeys()) {
       setSaid(t("settings.security.passkeys.add.failed", { reason: "unsupported" }));
@@ -67,10 +66,12 @@ export function SecurityPasskey({ onBack, fragment, onFragmentRead, leave }: Set
           if (error.reason !== "aborted") setSaid(t("settings.security.passkeys.add.failed", { reason: error.reason }));
           return;
         }
-        const field = refusedField(error);
-        if (field?.member === "name") setFault(field.detail);
+        // What the server refused of the name stands under its field, which takes the focus once the dialog left.
+        const refused = refusedMember(error);
+        if (refused?.member === "name") fault.say(refused.said, false);
         else setSaid(saidOf(error, t));
       },
+      left: fault.focus,
     });
   };
 
@@ -112,7 +113,7 @@ export function SecurityPasskey({ onBack, fragment, onFragmentRead, leave }: Set
                 name="name"
                 label={t("settings.security.passkeys.name")}
                 hint={t("settings.security.passkeys.name.hint")}
-                error={fault}
+                error={fault.words}
                 maxLength={nameLength}
                 onChange={setTyped}
               />

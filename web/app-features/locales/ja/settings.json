@@ -559,6 +559,10 @@
     "defaultMessage": "このパスキーではログインできなくなります。取り消せません。パスキーは、端末の設定で削除するまで端末に残ります。",
     "description": "Under settings.security.passkeys.remove.title in the confirmation: what removing a passkey does, and that it cannot be undone. The server forgets the passkey; the device still lists it until the reader deletes it in the device's own settings."
   },
+  "settings.security.passkeys.removed": {
+    "defaultMessage": "パスキー「{name}」を削除しました。",
+    "description": "At the top of the section Passkeys once a passkey was removed: its row is gone, and this line takes the keyboard's focus and is read by a screen reader. name is the name the reader gave the passkey."
+  },
   "settings.security.passkeys.new": {
     "defaultMessage": "新しいパスキー",
     "description": "The heading of the section with the field Name on the page Add a passkey."
@@ -622,6 +626,10 @@
   "settings.security.linked.unlink.text": {
     "defaultMessage": "このアカウントでのログインと本人確認ができなくなります。あとでもう一度連携できます。",
     "description": "Under settings.security.linked.unlink.title in the confirmation: what unlinking does, and that it can be undone by linking again."
+  },
+  "settings.security.linked.unlinked": {
+    "defaultMessage": "{provider} のアカウントの連携を解除しました。",
+    "description": "At the top of the section Linked accounts once a linked account was unlinked; it takes the keyboard's focus and is read by a screen reader. provider is the name of the other service as the administrators wrote it (GitHub); it is not translated."
   },
   "settings.security.linked.confirm": {
     "defaultMessage": "アカウントを連携するには、本人確認が必要です。確認のあと、ほかのサービスでログインして、ここに戻ります。",
@@ -691,6 +699,14 @@
     "defaultMessage": "ログアウトする",
     "description": "The button of the confirmations settings.security.browsers.sign_out.title and settings.security.browsers.sign_out_others.title that signs out."
   },
+  "settings.security.browsers.signed_out": {
+    "defaultMessage": "{browser} をログアウトしました。",
+    "description": "At the top of the section Signed-in browsers once one browser was signed out: its row is gone, and this line takes the keyboard's focus and is read by a screen reader. browser is the browser's name as the list showed it (settings.security.browsers.name: Firefox on macOS), or the text it sent of itself. A browser the list named Unknown browser gets settings.security.browsers.signed_out.unknown."
+  },
+  "settings.security.browsers.signed_out.unknown": {
+    "defaultMessage": "不明なブラウザをログアウトしました。",
+    "description": "As settings.security.browsers.signed_out, for a browser the list named Unknown browser (settings.security.browsers.unknown)."
+  },
   "settings.security.browsers.sign_out_others": {
     "defaultMessage": "ほかをすべてログアウト",
     "description": "The button at the end of the heading Signed-in browsers, shown when another browser is signed in. It asks before signing out every browser but the one the reader is using."
@@ -702,6 +718,10 @@
   "settings.security.browsers.sign_out_others.text": {
     "defaultMessage": "このブラウザ以外でアカウントを使うには、もう一度ログインが必要になります。パスワード、二要素認証、アプリはそのまま残ります。",
     "description": "Under settings.security.browsers.sign_out_others.title in the confirmation: what it does and what it leaves."
+  },
+  "settings.security.browsers.signed_out_others": {
+    "defaultMessage": "ほかのブラウザをすべてログアウトしました。",
+    "description": "At the top of the section Signed-in browsers once every browser but the reader's own was signed out; it takes the keyboard's focus and is read by a screen reader."
   },
   "settings.security.browsers.advice": {
     "defaultMessage": "心当たりのないログインがあるときは、そのブラウザをログアウトし、パスワードを変更して、アカウントを使えるアプリを確認してください。",

@@ -268,6 +268,7 @@ export {
   SettingsListRow,
   SettingsMenu,
   SettingsNote,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   StatusSummary,

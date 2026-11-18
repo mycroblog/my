@@ -10,7 +10,7 @@
 // Where the server limits sign-in to login providers (ADR-0106 §21), no password can be set or changed, and the
 // screen says so in the form's place.
 
-import { refusedField, useHasPassword, useInstance, usePasswordWrites, useSecurityRead } from "@my/app-data";
+import { refusedMember, useHasPassword, useInstance, usePasswordWrites, useSecurityRead } from "@my/app-data";
 import {
   BackButton,
   Button,
@@ -26,13 +26,12 @@ import {
 import { useId, useState } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf, useConfirmation, useProviderReturn } from "../confirmation";
-import type { SettingsSubProps } from "../entries";
-import { securityPaths, useReadingNotice } from "./parts";
+import { securityPaths, useFieldFault, useReadingNotice, type SecuritySubProps } from "./parts";
 
 /** The least and the most characters of a password (the API's `new_password`). */
 const passwordLength = { min: 8, max: 128 } as const;
 
-export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: SettingsSubProps) {
+export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: SecuritySubProps) {
   const { t } = stringsIn(useLocale().locale);
   const fieldId = useId();
   const { status, retry } = useSecurityRead();
@@ -44,7 +43,7 @@ export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: Se
   const [typed, setTyped] = useState("");
   /** A new field after each password taken, empty again. */
   const [round, setRound] = useState(0);
-  const [fault, setFault] = useState<string>();
+  const fault = useFieldFault(fieldId);
   const [result, setResult] = useState<{ done: boolean; said: string }>();
   const changing = useConfirmation({
     operation: "password_change",
@@ -56,10 +55,10 @@ export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: Se
 
   const submit = () => {
     if (typed.length < passwordLength.min || typed.length > passwordLength.max) {
-      setFault(t("settings.security.password.new.invalid", passwordLength));
+      fault.say(t("settings.security.password.new.invalid", passwordLength));
       return;
     }
-    setFault(undefined);
+    fault.clear();
     setResult(undefined);
     changing.ask((confirmed) => change(typed, confirmed), {
       done: () => {
@@ -71,10 +70,13 @@ export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: Se
         });
       },
       failed: (error) => {
-        const field = refusedField(error);
-        if (field?.member === "new_password") setFault(field.detail);
+        // What the server refused of the new password stands under its field, which takes the focus once the
+        // dialog left.
+        const refused = refusedMember(error);
+        if (refused?.member === "new_password") fault.say(refused.said, false);
         else setResult({ done: false, said: saidOf(error, t) });
       },
+      left: fault.focus,
     });
   };
 
@@ -127,7 +129,7 @@ export function SecurityPassword({ onBack, fragment, onFragmentRead, leave }: Se
                   type="password"
                   label={t("settings.security.password.new")}
                   hint={t("settings.security.password.new.hint", passwordLength)}
-                  error={fault}
+                  error={fault.words}
                   autoComplete="new-password"
                   onChange={setTyped}
                 />

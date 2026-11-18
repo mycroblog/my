@@ -655,6 +655,8 @@ const screenTitle = tv({
   slots: {
     // One run of text, so that a long name wraps under its glyph and the count follows its last line.
     title: "text-title font-normal [overflow-wrap:anywhere]",
+    // One the screen moves the focus to shows the ring a keyboard's focus shows, and no outline of the browser's.
+    focusable: "rounded-control outline-hidden focus-visible:shadow-focus",
     glyph: "text-muted-text",
     count: "text-body whitespace-nowrap text-muted-text tabular-nums",
   },
@@ -681,13 +683,18 @@ export type ScreenTitleProps = {
   back?: ReactNode;
   /** The name, as its author wrote it. */
   children: string;
+  /**
+   * Reaches the title, which can then take the focus: a view that takes another's place under the same address moves
+   * it there, as a change of screen moves it to the screen's heading.
+   */
+  ref?: Ref<HTMLHeadingElement> | undefined;
 };
 
 /**
  * The head of a screen of one thing a timeline is of (a hashtag, a list): its back button, then one row of its glyph
  * and name, how many, muted, at the start, and what the reader may do with it at the end.
  */
-export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTitleProps) {
+export function ScreenTitle({ glyph, count, actions, back, children, ref }: ScreenTitleProps) {
   const s = screenTitle();
   return (
     // The back button close over the row, so that it reads as part of the head.
@@ -695,7 +702,16 @@ export function ScreenTitle({ glyph, count, actions, back, children }: ScreenTit
       {back}
       {/* The title at the start, what the reader may do at the end, on the baseline of the title's first line. */}
       <Row align="baseline" gap="screen-head-room">
-        <Box as="h2" grow className={s.title()}>
+        <Box
+          grow
+          as={
+            ref === undefined ? (
+              <h2 className={s.title()} />
+            ) : (
+              <h2 ref={ref} tabIndex={-1} className={`${s.title()} ${s.focusable()}`} />
+            )
+          }
+        >
           {glyph !== undefined && (
             <Row as="span" inline baseline="glyph" spaceAfter="entry-caption" className={s.glyph()}>
               <Icon name={glyph} place="action" />

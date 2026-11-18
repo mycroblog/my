@@ -4,15 +4,18 @@
 //
 // - Off, it turns it on: the server's secret for an authenticator app, as a QR code and as a key to copy, asked for as
 //   the screen opens (nothing is kept until the code is taken), then the code the app makes from it, and Turn on. A
-//   wrong code says so under its field; a setup that expired is replaced by a new one, and the screen says so.
+//   code the server refuses says so under its field, in the server's words, and the field takes the focus; a setup
+//   that expired is replaced by a new one, and the screen says so beside the button, with the field empty again and
+//   the focus in it.
 // - Turned on, or the recovery codes made again: the recovery codes, shown this once, with Copy and the plain statement
-//   that they are not shown again; Finish goes back to Security.
+//   that they are not shown again; Finish goes back to Security. The view takes the place of the one before it, so
+//   its title takes the focus, and what made the codes is a status.
 // - On, it says since when and how many recovery codes are left (and to make new ones where few are), with the way to
 //   make them again; and last, in a section of its own, apart, the way to turn it off. Each asks first for a code of
 //   the app or an unused recovery code, in a dialog.
 
 import {
-  refusedField,
+  refusedMember,
   totpSetupExpired,
   useSecurityRead,
   useTotpSetup,
@@ -32,6 +35,7 @@ import {
   SettingsList,
   SettingsListRow,
   SettingsNote,
+  SettingsResult,
   SettingsScreen,
   SettingsSection,
   SubmitBar,
@@ -39,11 +43,10 @@ import {
   useLocale,
 } from "@my/design-system";
 import { copyText, oneTimeCodeField } from "@my/platform";
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../../locale";
 import { saidOf } from "../confirmation";
-import type { SettingsSubProps } from "../entries";
-import { CodeDialog, useDates, useReadingNotice } from "./parts";
+import { CodeDialog, useDates, useFieldFault, useReadingNotice, type SecuritySubProps } from "./parts";
 
 /** How few recovery codes are left before the screen asks to make new ones. */
 const fewCodes = 3;
@@ -88,8 +91,10 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
   const { setup, status, restart } = useTotpSetup();
   const { enable } = useTwoFactorWrites();
   const [typed, setTyped] = useState("");
+  /** A new field for each setup: one that expired takes its code with it. */
+  const [round, setRound] = useState(0);
   const [busy, setBusy] = useState(false);
-  const [fault, setFault] = useState<string>();
+  const fault = useFieldFault(fieldId);
   const [said, setSaid] = useState<string>();
   const reading = useReadingNotice(setup !== undefined ? "read" : status === "failed" ? "failed" : "loading", restart);
 
@@ -97,22 +102,26 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
     const code = typed.trim();
     if (setup === undefined || busy) return;
     if (code === "") {
-      setFault(t("settings.security.two_factor.code.missing"));
+      fault.say(t("settings.security.two_factor.code.missing"));
       return;
     }
     setBusy(true);
-    setFault(undefined);
+    fault.clear();
     setSaid(undefined);
     enable(setup.setup_token, code).then(onEnabled, (error: unknown) => {
       setBusy(false);
       if (totpSetupExpired(error)) {
-        // The secret is gone with its setup: the app needs the new one.
+        // The secret is gone with its setup: the app needs the new one, and the code of the old one is no use. The
+        // field is empty again and takes the focus, for the code of the new entry.
         restart();
+        setTyped("");
+        setRound((n) => n + 1);
         setSaid(t("settings.security.two_factor.setup.expired"));
         return;
       }
-      const field = refusedField(error);
-      if (field?.member === "code") setFault(field.detail);
+      // What the server refused of the code stands under its field, which takes the focus.
+      const refused = refusedMember(error);
+      if (refused?.member === "code") fault.say(refused.said);
       else setSaid(saidOf(error, t));
     });
   };
@@ -155,11 +164,13 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
             </SettingsSection>
             <SettingsSection heading={t("settings.security.two_factor.verify")}>
               <TextField
+                key={round}
                 id={fieldId}
                 name="code"
                 label={t("settings.security.two_factor.code")}
                 hint={t("settings.security.two_factor.code.hint")}
-                error={fault}
+                error={fault.words}
+                autoFocus={round > 0}
                 autoComplete={oneTimeCodeField.autoComplete}
                 inputMode="numeric"
                 onChange={setTyped}
@@ -175,10 +186,16 @@ function Setup({ back, onEnabled }: { back: ReactNode; onEnabled: (codes: readon
 /** The recovery codes, shown this once. */
 function Codes({ codes, said, onDone }: { codes: readonly string[]; said: string; onDone: () => void }) {
   const { t } = stringsIn(useLocale().locale);
+  // It took another view's place, whose focus went with it: its title takes the focus, as a screen's heading does.
+  const title = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    title.current?.focus();
+  }, []);
   return (
     <SettingsScreen
       sub
       title={t("settings.security.two_factor.recovery")}
+      titleRef={title}
       foot={
         <SubmitBar>
           <Button kind="primary" onPress={onDone}>
@@ -191,7 +208,9 @@ function Codes({ codes, said, onDone }: { codes: readonly string[]; said: string
         heading={t("settings.security.two_factor.recovery")}
         about={t("settings.security.two_factor.recovery.once")}
       >
-        <SaveState state="saved">{said}</SaveState>
+        <SettingsResult>
+          <SaveState state="saved">{said}</SaveState>
+        </SettingsResult>
         <Kept label={t("settings.security.two_factor.recovery")} values={codes} />
       </SettingsSection>
     </SettingsScreen>
@@ -290,7 +309,7 @@ function Manage({
   );
 }
 
-export function SecurityTwoFactor({ onBack }: SettingsSubProps) {
+export function SecurityTwoFactor({ onBack }: SecuritySubProps) {
   const { t } = stringsIn(useLocale().locale);
   const { status, retry } = useSecurityRead();
   const twoFactor = useTwoFactor();
