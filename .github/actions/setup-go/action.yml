@@ -1,12 +1,13 @@
 # SPDX-License-Identifier: AGPL-3.0-only
 name: Set up Go
 description: >-
-  Install the Go of .tool-versions and restore the Go module, build, and golangci-lint cache that main.yml builds
-  from scratch once a day (ADR-0079), without saving one. Run it after actions/checkout.
+  Install the Go of .tool-versions and restore the Go module, build, test result, and golangci-lint cache that
+  main.yml builds on every push to main, from empty once a week (ADR-0079 §7), without saving one. Run it after
+  actions/checkout.
 
 inputs:
   restore:
-    description: "`false` installs Go and computes the key without restoring the cache (main.yml, which builds it)."
+    description: "`false` installs Go and computes the key without restoring the cache: main.yml, which builds it, and a job that compiles nothing (gofmt)."
     default: "true"
 
 outputs:
@@ -41,8 +42,8 @@ runs:
     - name: Leave workspace mode
       shell: bash
       run: echo GOWORK=off >> "$GITHUB_ENV"
-    # A build cache only serves the same Go, and the module cache the same go.sum files. The date makes main.yml start
-    # a new cache each day, so a cache holds one build's worth of entries instead of growing with every push.
+    # A build cache only serves the same Go, and the module cache the same go.sum files: main.yml saves its cache under
+    # `sums` and the week, and this action restores the newest one by prefix.
     - name: Compute the Go cache key and read the golangci-lint version
       id: key
       shell: bash
@@ -58,8 +59,9 @@ runs:
           echo "key=${base}-${SUMS}-$(date -u +%Y%m%d)"
           echo "golangci-lint=$(awk '$1 == "golangci-lint" { print $2 }' .tool-versions)"
         } >> "$GITHUB_OUTPUT"
-    # Without today's cache, the newest one of the same go.sum files, then of the same Go, then any: the build cache
-    # entries of the packages that did not change since still hit, and the modules of another Go still serve.
+    # The newest cache of the same go.sum files, then of the same Go, then any: the build cache entries of the packages
+    # that did not change since still hit, and the modules of another Go still serve. The key itself never matches:
+    # main.yml's keys end in the week and the run.
     - name: Restore the Go cache
       if: inputs.restore == 'true'
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0

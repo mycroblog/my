@@ -14,16 +14,17 @@ tasks:
       - CGO_ENABLED=0 go build -o ../../bin/agentkit ./cmd/agentkit
 
   warm:
-    desc: Download the modules and build the packages and test binaries of tools/agentkit once, so that its checks a CI job runs in parallel read the build cache
+    desc: Download the modules and build the packages and test binaries of tools/agentkit once, for the Go cache that CI's jobs read
     dir: tools/agentkit
     cmds:
       - go mod download
       - go build ./...
       - go test -run '^$' ./...
 
+  # map-check and inventory are checks of the documents, which any change can break: docs:check runs them.
   check:
-    desc: Check tools/agentkit (tidy, vet, lint, tests, dependencies), that its context map covers every path, and that the documents mention every user-visible name
-    deps: [mod-check, vet, lint, test, deps-check, map-check, inventory]
+    desc: Check tools/agentkit (tidy, vet, lint, tests, dependencies)
+    deps: [mod-check, vet, lint, test, deps-check]
 
   mod-check:
     desc: Fail if tools/agentkit/go.mod and go.sum are not tidy
@@ -61,9 +62,9 @@ tasks:
     cmds:
       - bin/agentkit map check
 
-  # In agentkit:check, which every change selects: a change of the code alone can add a name that no document mentions.
+  # In docs:check, which every change selects: a change of the code alone can add a name that no document mentions.
   inventory:
-    desc: Fail when a command of my, a metric, a webhook event type, a build tag, or a listed task is in no document (agentkit docs inventory, docs/lint.yaml)
+    desc: Fail when a command of my, a metric, a webhook event type, a job type, or a periodic job is in no document (agentkit docs inventory, docs/lint.yaml)
     deps: [build]
     cmds:
       - bin/agentkit docs inventory

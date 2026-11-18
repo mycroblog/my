@@ -1,9 +1,12 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Fails when a check of `scripts/task.sh check` runs in no CI step (ADR-0079). The CI jobs are workflow steps that each
-# run one task, so a check added to a `<context>:check` task must also get a step, or an entry in EXCLUDED below with
-# the reason CI does not run it.
+# Fails when a check of `scripts/task.sh check` runs in no CI step (ADR-0079 §11). Each step of a CI job runs one task,
+# so a check added to a `<context>:check` task must also get a step, or an entry in EXCLUDED below with the reason CI
+# does not run it. Which job takes it, the header of .github/workflows/ci.yml says.
+#
+# It reads the workflows as text: a step counts wherever it is, in a workflow that gates nothing too, and so does the
+# task's name in a comment. It proves that a step exists, not that the gate runs it.
 #
 # The checks are the tasks with a command of their own that `check` reaches through tasks without one (the
 # `<context>:check` groups); their own dependencies (installs, generators) are not checks. A task that calls an

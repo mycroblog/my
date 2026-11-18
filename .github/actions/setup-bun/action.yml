@@ -4,6 +4,11 @@ description: >-
   Install the Bun of .tool-versions, which runs every tool of the workspace (ADR-0025 §10), and restore the Bun
   package cache that main.yml builds, without saving one (ADR-0079). Run it after actions/checkout.
 
+inputs:
+  restore:
+    description: "`false` installs Bun without restoring the package cache, for a job that installs no package (bun fmt)."
+    default: "true"
+
 runs:
   using: composite
   steps:
@@ -13,6 +18,7 @@ runs:
         bun-version-file: .tool-versions
     # The key must equal that of main.yml's bun-cache job.
     - name: Restore the Bun package cache
+      if: inputs.restore == 'true'
       uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.bun/install/cache

@@ -1,25 +1,46 @@
 name: Slow suite
 
-# A run by hand of the release jobs alone is titled `Slow suite (release)`, which release.yml's gate does not count as a
-# passed suite.
+# A run by hand of the release jobs alone is titled `Slow suite (release)`, which release.yml's find-suite does not
+# count as a passed suite.
 run-name: ${{ inputs.scope == 'release' && 'Slow suite (release)' || 'Slow suite' }}
 
-# The checks too slow for the merge queue (ADR-0079): the live interoperability test with Mastodon, GoToSocial, Misskey, and Akkoma, the PostgreSQL tests on a real postgres container
-# (ADR-0015), the stream.Bus contracts on broker containers (ADR-0050), the mail = smtp integration tests on Mailpit, the
-# LiveKit transport contract on livekit-server --dev (ADR-0101), the blob = s3 contract on Garage, the search.Index contracts on the
-# search engines (ADR-0149), the Docker Compose smoke test (linux/amd64)
-# with the linux/arm64 image builds, the upgrade from the previous minor version (ADR-0023 §7), the restore drill, golangci-lint over everything with the build tag sets,
-# the OpenTofu modules (tofu validate and the tofu tests), the tests of every web package, the check of every story of the web client's catalog, the E2E tests of the web client twice over, and CodeQL. nightly.yml calls it every night, and it runs by hand on any branch:
-# `gh workflow run slow-suite.yml --ref <branch>`. release.yml calls it as the release gate: the whole suite, or, when a
-# run of it already passed on the commit, `scope: release`, which runs only the jobs that check the commit's images
-# against a release (upgrade, restore-drill), or `scope: none`, which runs nothing, for a pre-release released without
-# the suite in an emergency (`skip_slow_suite`). Every job checks out the commit
-# of the run (github.sha), so a caller tests the commit it was started on.
+# The checks too slow for the merge queue (ADR-0079 §8), on one commit. A check belongs here when it takes minutes
+# whatever changed, needs what the merge queue has not (other servers, a release to upgrade from, tofu's providers), or
+# looks at everything where a pull request looks at what it changes. nightly.yml calls it every night, so that a
+# regression is found within a day and a red Nightly stops the line; release.yml calls it as the release gate; and it
+# runs by hand on any branch: `gh workflow run slow-suite.yml --ref <branch>`.
+#
+# The jobs, each named `<subject>-<kind>` as in ci.yml (ADR-0079 §11); a job with the name of a job of ci.yml checks
+# the same thing, on everything:
+#
+#   federation-live                          this server with Mastodon, GoToSocial, Misskey, Akkoma, and a relay
+#   server-contract                          every contract of the adapters on its real service (contract.yml)
+#   server-lint, agentkit-lint, mykit-lint   golangci-lint on every module, where a pull request lints after its change
+#   server-fakes-test                        go vet and the tests of the test build (the build tag e2e_fakes)
+#   deps-license                             the licenses of every dependency, where a pull request checks them when a
+#                                            manifest changes
+#   docker-smoke, docker-arm64-build         the image and the Compose files; the image for linux/arm64
+#   image-upgrade, image-restore             an upgrade from the previous release; a backup restored
+#   tofu-test                                the OpenTofu modules under tofu (validate and the tests)
+#   web-test                                 the tests of every web package, where ci.yml runs those a change reaches
+#   web-stories-scan                         every story of the catalog, for an error, sideways scrolling and axe
+#   web-e2e-build, web-e2e                   the E2E tests twice over, never run again when they fail
+#   code-scan                                CodeQL (codeql.yml)
+#   result                                   the one result of the suite, for the callers
+#
+# `scope` picks the jobs: `all`; `release`, only the jobs that check the commit's images against a release
+# (image-upgrade, image-restore), for a commit whose suite already passed; `none`, which runs nothing, for a
+# pre-release released without the suite in an emergency (`skip_slow_suite`). Every job checks out the commit of the
+# run (github.sha), so a caller tests the commit it was started on.
+#
+# To add a check: a job here with `if: inputs.scope == 'all'` (or `!= 'none'` when a release must run it on its own
+# commit's images), its name in `needs` of `result`, and a line in the list above. Its steps are named after the tasks
+# they run, one after another: what uses every core does not share a runner (ADR-0079 §11).
 #
 # No concurrency group: in a called workflow the group would be evaluated in the caller's context, and a release and
 # a nightly run on the same commit must not cancel each other. The callers set their own groups.
 
-# The inputs choose the release that the upgrade job upgrades from (scripts/previous-minor.sh, scripts/upgrade-test.sh):
+# The inputs choose the release that image-upgrade upgrades from (scripts/previous-minor.sh, scripts/upgrade-test.sh):
 # `version`, the candidate, upgrades from the latest patch of the previous minor version; with no `version` (nightly),
 # from the latest release. `previous` names the tag instead, for a pre-release tried from a branch:
 # `gh workflow run slow-suite.yml --ref <branch> -f previous=v0.0.0-test.1`. `allow_destructive` applies the schema
@@ -36,11 +57,11 @@ on:
         type: string
         default: ""
       scope:
-        description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (upgrade, restore-drill), for a commit whose suite already passed; `none` runs none, for a pre-release that skips the suite in an emergency."
+        description: "`all` runs every job; `release` runs only the jobs that check this commit's images for a release (image-upgrade, image-restore), for a commit whose suite already passed; `none` runs none, for a pre-release that skips the suite in an emergency."
         type: string
         default: all
       allow_destructive:
-        description: "The upgrade job applies the schema with -allow-destructive, for a pre-release whose notes call for it."
+        description: "image-upgrade applies the schema with -allow-destructive, for a pre-release whose notes call for it."
         type: boolean
         default: false
   workflow_dispatch:
@@ -54,54 +75,161 @@ on:
         type: string
         default: ""
       scope:
-        description: "`all` runs every job; `release` runs only upgrade and restore-drill."
+        description: "`all` runs every job; `release` runs only image-upgrade and image-restore."
         type: choice
         options: [all, release]
         default: all
       allow_destructive:
-        description: "The upgrade job applies the schema with -allow-destructive, for a pre-release whose notes call for it."
+        description: "image-upgrade applies the schema with -allow-destructive, for a pre-release whose notes call for it."
         type: boolean
         default: false
 
 permissions:
   contents: read
 
+env:
+  # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
+  GOTOOLCHAIN: local
+
+defaults:
+  run:
+    # Named, so that a step runs with `-o pipefail`: without it a check piped into another command cannot fail.
+    shell: bash
+
 jobs:
   federation-live:
     if: inputs.scope == 'all'
     uses: ./.github/workflows/federation-live.yml
 
-  postgres-contract:
+  server-contract:
+    # Every contract of the adapters on its real service, a runner each, where the merge queue runs those of the
+    # adapters a group changes (contract.yml, ADR-0079 §5): a dependency update breaks a contract without touching
+    # its adapter.
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/postgres-contract.yml
+    strategy:
+      fail-fast: false
+      matrix:
+        contract: [postgres, stream, mail, blob, voice, search, acme]
+    uses: ./.github/workflows/contract.yml
+    with:
+      contract: ${{ matrix.contract }}
 
-  stream-contract:
+  server-lint:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/stream-contract.yml
+    # golangci-lint over the whole server module, where a pull request lints after its own change (ADR-0079 §3): what
+    # two pull requests add together shows here. One runner: the cache of main.yml holds the analysis of the commit.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: go:lint
+        run: scripts/task.sh go:lint
 
-  mail-integration:
+  agentkit-lint:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/mail-integration.yml
+    # golangci-lint on tools/agentkit, as server-lint.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: agentkit:lint
+        run: scripts/task.sh agentkit:lint
 
-  voice-contract:
+  mykit-lint:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/voice-contract.yml
+    # golangci-lint on pkg/mykit and pkg/mybot, as server-lint.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: mykit:lint
+        run: scripts/task.sh mykit:lint
+      - name: mykit:mybot-lint
+        run: scripts/task.sh mykit:mybot-lint
 
-  blob-contract:
+  server-fakes-test:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/blob-contract.yml
+    # The test build of the server (the build tag e2e_fakes, ADR-0015 §6): go vet, and the tests that only it has. The
+    # merge queue builds it for the E2E tests and checks which fakes cmd/my links (go:fakes-check); it does not
+    # compile these tests.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: go:fakes-test
+        run: scripts/task.sh go:fakes-test
 
-  search-contract:
+  deps-license:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/search-contract.yml
+    # The licenses of every dependency, as ci.yml's deps-license, which runs when a manifest, a lockfile, or an
+    # allowlist changes: an import of a package under another license inside a module already required changes none
+    # of them, and a release ships what the licenses allow.
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: go:licenses
+        run: scripts/task.sh go:licenses
+      - name: mykit:licenses
+        run: scripts/task.sh mykit:licenses
+      - name: mykit:mybot-licenses
+        run: scripts/task.sh mykit:mybot-licenses
+      - name: web:licenses
+        run: scripts/task.sh web:licenses
+      - name: mykit:ts-licenses
+        run: scripts/task.sh mykit:ts-licenses
+      - name: mykit:mybot-ts-licenses
+        run: scripts/task.sh mykit:mybot-ts-licenses
 
-  acme-contract:
+  docker-smoke:
     if: inputs.scope == 'all'
-    uses: ./.github/workflows/acme-contract.yml
-
-  docker:
-    if: inputs.scope == 'all'
-    # The docker job of ci.yml, with the linux/arm64 image builds whatever changed.
+    # The Docker Compose smoke test, as ci.yml's docker-smoke, which runs when the Docker files change: a change of
+    # the code can break the image too (a directory the Dockerfile does not copy), and shows here.
     runs-on: ubuntu-latest
     steps:
       # The images take their version from `git describe`.
@@ -111,22 +239,31 @@ jobs:
           fetch-depth: 0
       - name: Set up go-task
         uses: ./.github/actions/setup-task
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
-        with:
-          platforms: arm64
-      - parallel:
-          - name: docker:smoke
-            run: scripts/task.sh docker:smoke
-          - name: docker:build-arm64
-            run: scripts/task.sh docker:build-arm64
+      - name: docker:smoke
+        run: scripts/task.sh docker:smoke
 
-  upgrade:
+  docker-arm64-build:
+    if: inputs.scope == 'all'
+    # The server image for linux/arm64 (ADR-0079 §4): that the server compiles for arm64 and that the base image has
+    # the platform. Every command of the Dockerfile runs on the build platform (the Go server cross-compiles, and the
+    # final stage only copies), so the build needs no emulation; the release runs the binary on an arm64 runner
+    # (release.yml's image-check).
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:build-arm64
+        run: scripts/task.sh docker:build-arm64
+
+  image-upgrade:
     if: inputs.scope != 'none'
     # A database made and filled by the previous release's images, upgraded with this commit's server image in the order
     # of deploy/docker/compose.yaml (my db upgrade -check, my schema apply, my db upgrade), on SQLite and PostgreSQL
     # (scripts/upgrade-test.sh). The previous release's image is the published one (MY_PREVIOUS_IMAGE), or is built from
-    # its tag when the registry has none. Without a previous minor version (the first one, v0.1.0) the test is skipped and the job passes.
+    # its tag when the registry has none. Without a previous minor version (the first one, v0.1.0) the test is skipped
+    # and the job passes: the summary says so.
     runs-on: ubuntu-latest
     steps:
       # Every tag, to pick the previous release and build its images; the images take their version from `git describe`.
@@ -170,7 +307,7 @@ jobs:
           fi
           scripts/task.sh docker:upgrade-test PREVIOUS="$PREVIOUS"
 
-  restore-drill:
+  image-restore:
     if: inputs.scope != 'none'
     # An instance filled through this commit's images, backed up while it runs (my db backup or pg_dump, then the
     # media), lost with every container and volume, and restored into new ones, on SQLite and PostgreSQL: the data, the
@@ -187,50 +324,13 @@ jobs:
       - name: docker:restore-drill
         run: scripts/task.sh docker:restore-drill
 
-  go-static:
-    if: inputs.scope == 'all'
-    # The Go checks the merge queue leaves out (ADR-0079): golangci-lint over everything, where pull requests only
-    # lint the modules they change, and the builds of the build tag sets that leave adapters out.
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-        id: go
-      # As in ci.yml: build the packages once before the parallel Go steps.
-      - name: Build the packages and the Go tools once
-        run: scripts/task.sh go:warm agentkit:warm mykit:warm
-      # One install of golangci-lint for every lint: four instances of the action each download it to the same path,
-      # and one overwriting the binary while another runs it fails with `Text file busy`.
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
-        with:
-          version: v${{ steps.go.outputs.golangci-lint }}
-          install-only: true
-          skip-cache: true
-      # The lint tasks pass --allow-serial-runners, so the instances wait for each other's lock.
-      - parallel:
-          - name: go:lint
-            run: scripts/task.sh go:lint
-          - name: agentkit:lint
-            run: scripts/task.sh agentkit:lint
-          - name: mykit:lint
-            run: scripts/task.sh mykit:lint
-          - name: mykit:mybot-lint
-            run: scripts/task.sh mykit:mybot-lint
-          - name: go:build-tags
-            run: scripts/task.sh go:build-tags
-
-  tofu:
+  tofu-test:
     if: inputs.scope == 'all'
     # The checks of deploy/opentofu (ADR-0010) that run tofu: the modules call each other and the examples call the
-    # modules. The steps are those of tofu:check after its formatting check and its script checks (both in ci.yml's
-    # pull request jobs), in its order and one after another: validate and the tests already run 4 modules at a time,
-    # and each init writes the plugin cache the others read. Nothing reaches a cloud: the tests mock the providers or
-    # call a local stub.
+    # modules. The steps are those of tofu:check after its formatting check (ci.yml's tofu-format) and its script
+    # checks (ci.yml's tofu-static), in its order and one after another: validate and the tests already run 4 modules
+    # at a time, and each init writes the plugin cache the others read. Nothing reaches a cloud: the tests mock the
+    # providers or call a local stub.
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -264,7 +364,7 @@ jobs:
     if: inputs.scope == 'all'
     # The tests of every web package, where ci.yml runs those of the packages a change reaches
     # (scripts/changed-web-packages.sh, ADR-0079 §18): a dependency between packages that no manifest declares fails
-    # here within a day.
+    # here within a day. web:test runs as many packages at once as the runner has cores.
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -278,7 +378,7 @@ jobs:
       - name: web:test
         run: scripts/task.sh web:test
 
-  stories-check:
+  web-stories-scan:
     if: inputs.scope == 'all'
     # The check of every story at once (ADR-0171 §6): each story of the built catalog at the minimum width, in both
     # directions and in the dark theme, for an error, sideways scrolling and axe, with the E2E tests' runner and no
@@ -297,14 +397,14 @@ jobs:
       - name: Install Chromium
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
-      - name: web:stories
+      - name: Build the catalog
         run: scripts/task.sh web:stories
       - name: web:stories-check-built
         run: scripts/task.sh web:stories-check-built
 
-  e2e-build:
+  web-e2e-build:
     if: inputs.scope == 'all'
-    # The test build of bin/my, built once for the jobs of e2e (ADR-0079 §9), as in ci.yml.
+    # The test build of bin/my, built once for the jobs of web-e2e (ADR-0079 §9), as in ci.yml.
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -317,7 +417,7 @@ jobs:
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
-      - name: go:bin
+      - name: Build bin/my for the tests
         run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
       - name: Keep bin/my for the E2E jobs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -326,13 +426,13 @@ jobs:
           path: bin/my
           retention-days: 1
 
-  e2e:
-    needs: e2e-build
+  web-e2e:
+    needs: web-e2e-build
     if: inputs.scope == 'all'
     # The E2E tests of the web client, each twice on one seeded server and never run again when they fail: a test
-    # that passes only sometimes, or only before its own writes are there, fails here, while ci.yml's e2e runs each
-    # once and retries it. Four jobs, each with a server of its own and the spec files of one of Playwright's shards.
-    # The files, not --shard itself: with --repeat-each it puts the two runs of a file in different jobs, on
+    # that passes only sometimes, or only before its own writes are there, fails here, while ci.yml's web-e2e runs
+    # each once and retries it. Four jobs, each with a server of its own and the spec files of one of Playwright's
+    # shards. The files, not --shard itself: with --repeat-each it puts the two runs of a file in different jobs, on
     # different servers.
     strategy:
       fail-fast: false
@@ -349,7 +449,7 @@ jobs:
       - name: Install the Bun packages
         run: scripts/task.sh web:install
       - name: Install Chromium
-        # The whole browser, as in ci.yml's e2e.
+        # The whole browser, as in ci.yml's web-e2e.
         working-directory: web/e2e
         run: bun --bun playwright install --with-deps chromium
       - name: Fetch bin/my
@@ -374,7 +474,7 @@ jobs:
           FILES: ${{ steps.specs.outputs.files }}
         run: scripts/task.sh web:e2e-built -- --repeat-each=2 $FILES
 
-  codeql:
+  code-scan:
     if: inputs.scope == 'all'
     uses: ./.github/workflows/codeql.yml
     # The analysis uploads its results to the Security tab. A caller grants the same permissions to the job that calls
@@ -385,10 +485,12 @@ jobs:
       security-events: write
 
   # The one result of the suite: fails when any job above failed or was cancelled, so that a caller can depend on it.
-  # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed.
+  # A job is skipped only by `scope: release` or `scope: none`, and a skipped job counts as passed. It is `result` and
+  # not `gate`: a required check is matched by its name alone, and ci.yml's `gate` is the only job of that name
+  # (ADR-0079 §11).
   result:
     if: always()
-    needs: [federation-live, postgres-contract, stream-contract, mail-integration, voice-contract, blob-contract, search-contract, acme-contract, docker, upgrade, restore-drill, go-static, tofu, web-test, stories-check, e2e-build, e2e, codeql]
+    needs: [federation-live, server-contract, server-lint, agentkit-lint, mykit-lint, server-fakes-test, deps-license, docker-smoke, docker-arm64-build, image-upgrade, image-restore, tofu-test, web-test, web-stories-scan, web-e2e-build, web-e2e, code-scan]
     runs-on: ubuntu-latest
     steps:
       - name: Summarise the results

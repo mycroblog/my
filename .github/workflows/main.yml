@@ -22,6 +22,11 @@ env:
   # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
   GOTOOLCHAIN: local
 
+defaults:
+  run:
+    # Named, so that a step runs with `-o pipefail`.
+    shell: bash
+
 jobs:
   go-cache:
     # The Go module, build, test result, and golangci-lint cache that .github/actions/setup-go restores in ci.yml and
@@ -31,7 +36,12 @@ jobs:
     # it replaces, so that one stays (the repository holds 10 GB of caches). A new week starts from empty, which keeps
     # it to a week of entries. The test run's failure does not fail the job: main is already merged, and the merge
     # queue checked it; the job warns instead. Everything runs with the settings of the jobs that restore it
-    # (setup-go sets CGO_ENABLED=0 and GOWORK=off; go:test runs as server-test runs it).
+    # (setup-go sets CGO_ENABLED=0 and GOWORK=off; go:test runs as server-test runs it, whose shards read the results
+    # of this one run: a package's result does not depend on the packages it runs beside).
+    #
+    # The rule (ADR-0079 §7): a job reads from this cache only what this job built with the same command and flags.
+    # A job that builds another way (another build tag, -trimpath) finds nothing and compiles everything, so when a
+    # job of ci.yml builds something new, build it here too, by the same task.
     runs-on: ubuntu-latest
     permissions:
       actions: write
@@ -77,21 +87,32 @@ jobs:
             echo "::warning::go test failed on main; the failed packages' results are not cached."
             echo "go test failed on main at $GITHUB_SHA: the merge queue passed this commit, so look for a flaky test." >> "$GITHUB_STEP_SUMMARY"
           fi
+      # skip-cache: the action would save a cache of its own, which nothing restores; golangci-lint's analysis is in
+      # the Go cache below.
       - name: Install golangci-lint
         uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
           version: v${{ steps.go.outputs.golangci-lint }}
           install-only: true
+          skip-cache: true
+      # As server-static, api-static and schema-static, agentkit-static and agentkit-test, mykit-static and mykit-test
+      # build.
       - name: Build the packages and the Go tools
-        run: scripts/task.sh go:warm agentkit:warm mykit:warm
+        run: scripts/task.sh go:build go:tools agentkit:warm mykit:warm
+      # As server-static, agentkit-static, and mykit-static vet.
       - name: Run go vet
-        run: |
-          go vet ./...
-          (cd tools/agentkit && go vet ./...)
+        run: scripts/task.sh go:vet agentkit:vet mykit:vet mykit:integration-vet mykit:mybot-vet mykit:mybot-integration-vet
+      # As web-e2e-build builds the server of the test build; the client it embeds is built there.
+      - name: Build the test build of the server
+        run: go build -tags e2e_fakes ./...
+      # As server-lint, agentkit-lint, and mykit-lint lint: the analysis of each package, which a pull request reads
+      # for the packages its change does not reach.
       - name: Run golangci-lint for its cache
         run: |
           golangci-lint run --issues-exit-code=0 ./...
           (cd tools/agentkit && golangci-lint run --issues-exit-code=0 ./...)
+          (cd pkg/mykit && golangci-lint run --issues-exit-code=0 ./...)
+          (cd pkg/mybot && golangci-lint run --issues-exit-code=0 ./...)
       - name: Save the Go cache
         uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

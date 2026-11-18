@@ -46,7 +46,7 @@ FROM go AS build
 ARG TARGETOS TARGETARCH
 # Version stamped into `my version` and NodeInfo.
 ARG VERSION=dev
-# Comma-separated build tags that leave adapters out of the server (docs/reference/build-tags.md); empty builds every adapter.
+# Comma-separated Go build tags; empty builds every adapter, which is the one image that is published (ADR-0010).
 ARG GO_TAGS=""
 ENV GOTOOLCHAIN=local CGO_ENABLED=0
 WORKDIR /src

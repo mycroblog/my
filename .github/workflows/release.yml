@@ -2,8 +2,8 @@ name: Release
 
 # The only way a release is made (ADR-0079): run by hand with a version on the commit to release
 # (`gh workflow run release.yml --ref main -f version=v0.1.0`). It promotes a commit that passed the slow suite
-# (slow-suite.yml, ADR-0079 §8): when a run of the suite already passed on that commit (github.sha), the gate job finds
-# it and the suite runs only its release jobs (upgrade, restore-drill); otherwise the whole suite runs. Only when every
+# (slow-suite.yml, ADR-0079 §8): when a run of the suite already passed on that commit (github.sha), find-suite finds
+# it and the suite runs only its release jobs (image-upgrade, image-restore); otherwise the whole suite runs. Only when every
 # job that ran passed does it tag the commit and create a draft GitHub Release.
 # The decider reads the draft and publishes it, as the /release skill (.claude/skills/release/SKILL.md) says.
 #
@@ -19,25 +19,25 @@ name: Release
 # exactly, as X.Y.Z with npm's trusted publishing (OIDC, with provenance; no npm token exists), a pre-release to the
 # dist-tag `next`. scripts/release-libraries.sh holds the steps that version them.
 #
-# The container image is built from the same commit (ADR-0010 §9). The image job pushes it to ghcr.io/mycroblog/my by
+# The container image is built from the same commit (ADR-0010 §9). image-build pushes it to ghcr.io/mycroblog/my by
 # digest, with no tag, so that nothing reaches an operator before the notes. image-check runs its binary on each
 # platform, image-attest signs the provenance of the digest and attaches the digest to the draft as image-digest.txt,
 # and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
 # publishes the release; nothing here tags an image.
 #
-# No release ever publishes a test build (docs/reference/build-tags.md): image-check runs scripts/check-release-build.sh
+# No release ever publishes a test build (ADR-0015 §6): image-check runs scripts/check-release-build.sh
 # on the binary of each platform, which fails on the test-only build tag e2e_fakes, before the digest is attested or
 # attached; the Dockerfile refuses that tag and runs the same check on the binary it builds.
 #
 # The version is vX.Y.Z or vX.Y.Z-<pre-release>. A ref other than main takes a pre-release version only, so that the
-# gate can be tried on a branch without making a release of it. The suite's upgrade job upgrades from the latest patch
+# gate can be tried on a branch without making a release of it. The suite's image-upgrade upgrades from the latest patch
 # of the previous minor version; a pre-release may name another tag in `previous`, so that the job runs before any
 # minor version exists (`-f version=v0.0.0-test.2 -f previous=v0.0.0-test.1`). A pre-release before v0.1.0 that drops
 # a column or a table on purpose passes `allow_destructive`, so that the upgrade applies the schema with
 # -allow-destructive as its operators will; its notes must say so.
 #
 # In an emergency, a pre-release may skip the slow suite (`skip_slow_suite`), when a failure that has nothing to do with
-# the release holds it up: the gate then calls the suite with `scope: none`, which runs no job, and the release is
+# the release holds it up: find-suite then gives the suite `scope: none`, which runs no job, and the release is
 # tagged without the gate. A version that is not a pre-release refuses it. The run's summary and the draft's notes say
 # that the suite was skipped.
 
@@ -57,11 +57,17 @@ on:
         type: boolean
         default: false
       skip_slow_suite:
-        description: "Pre-releases only, for an emergency: release without the slow suite (not even upgrade and restore-drill). The notes say so."
+        description: "Pre-releases only, for an emergency: release without the slow suite (not even image-upgrade and image-restore). The notes say so."
         type: boolean
         default: false
 
 permissions: {}
+
+defaults:
+  run:
+    # Named, so that a step runs with `-o pipefail`: without it a check piped into another command (image-check's
+    # into tee) cannot fail.
+    shell: bash
 
 # One release at a time; a second one waits instead of cancelling the first.
 concurrency:
@@ -125,7 +131,8 @@ jobs:
   # job or skipped them after a full run passed on the same commit), a Nightly of the suite alone (`Nightly
   # (slow-suite)`), or slow-suite.yml run by hand with scope all. A run on another commit or of other jobs never counts.
   # With skip_slow_suite (a pre-release, checked by validate), it looks for nothing and the suite runs no job.
-  gate:
+  # It is not named `gate`: ci.yml's `gate` is the required status check, matched by its name alone (ADR-0079 §11).
+  find-suite:
     needs: validate
     runs-on: ubuntu-latest
     permissions:
@@ -161,12 +168,12 @@ jobs:
           fi
 
   slow-suite:
-    needs: [validate, gate]
+    needs: [validate, find-suite]
     uses: ./.github/workflows/slow-suite.yml
     with:
       version: ${{ inputs.version }}
       previous: ${{ inputs.previous }}
-      scope: ${{ needs.gate.outputs.scope }}
+      scope: ${{ needs.find-suite.outputs.scope }}
       allow_destructive: ${{ inputs.allow_destructive }}
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
@@ -388,7 +395,7 @@ jobs:
           fi
           gh release edit "$VERSION" --notes-file "$RUNNER_TEMP/body/body.md"
 
-  image:
+  image-build:
     # Pushes the image of the tested commit by digest. No cache: a release is built from the pinned base images and the
     # lockfiles alone. Buildx's own provenance is off: it would be an unsigned copy of what image-attest signs. A failed
     # job can be rerun; a new digest leaves the old one unreferenced.
@@ -450,7 +457,7 @@ jobs:
 
   image-check:
     # On a runner of each platform, so that the binary really runs, and with no write permission.
-    needs: [validate, image]
+    needs: [validate, image-build]
     strategy:
       matrix:
         include:
@@ -482,7 +489,7 @@ jobs:
           password: ${{ github.token }}
       - name: Check the binary of the image
         env:
-          DIGEST: ${{ needs.image.outputs.digest }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
           PLATFORM: ${{ matrix.platform }}
           VERSION: ${{ inputs.version }}
         run: scripts/release-image.sh check "$DIGEST" "$PLATFORM" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
@@ -493,7 +500,7 @@ jobs:
     # The attestation stays in the repository's attestations, where `gh attestation verify` reads it, and is not pushed
     # to ghcr.io: the registry has no referrers API, so a pushed attestation becomes a tag sha256-<digest> next to the
     # version tags (ADR-0010 §8).
-    needs: [validate, image, image-check]
+    needs: [validate, image-build, image-check]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -505,7 +512,7 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: ghcr.io/mycroblog/my
-          subject-digest: ${{ needs.image.outputs.digest }}
+          subject-digest: ${{ needs.image-build.outputs.digest }}
           push-to-registry: false
           # A storage record needs one more permission (artifact-metadata: write) and nothing here reads it.
           create-storage-record: false
@@ -513,7 +520,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          DIGEST: ${{ needs.image.outputs.digest }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
           VERSION: ${{ inputs.version }}
         run: |
           echo "$DIGEST" > "$RUNNER_TEMP/image-digest.txt"
@@ -524,7 +531,7 @@ jobs:
     # Writes the image in the draft's notes, in the form operators pin, after a section that says the slow suite was
     # skipped when it was (skip_slow_suite). It runs after the prose, which replaces the body, and leaves a published
     # release alone. A failure stops nothing: the digest is still on the draft as image-digest.txt.
-    needs: [validate, image, image-attest, release-notes-edit]
+    needs: [validate, image-build, image-attest, release-notes-edit]
     if: ${{ !cancelled() && needs.image-attest.result == 'success' }}
     runs-on: ubuntu-latest
     continue-on-error: true
@@ -535,7 +542,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          DIGEST: ${{ needs.image.outputs.digest }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
           VERSION: ${{ inputs.version }}
           SKIP_SLOW_SUITE: ${{ inputs.skip_slow_suite }}
         run: |
@@ -556,7 +563,7 @@ jobs:
     # A report for the decider, in this job's summary. It stops nothing: the tags exist by now, and many findings have no
     # fix. Grype runs in its own container, pinned by digest, without any credentials (scripts/release-image.sh).
     # Nightly fails on the fixable findings of the versions already published.
-    needs: [validate, image]
+    needs: [validate, image-build]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -575,7 +582,7 @@ jobs:
           password: ${{ github.token }}
       - name: Scan the image
         env:
-          DIGEST: ${{ needs.image.outputs.digest }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
         run: scripts/release-image.sh scan "ghcr.io/mycroblog/my@$DIGEST"
 
   npm:

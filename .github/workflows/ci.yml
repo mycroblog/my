@@ -1,34 +1,69 @@
 name: CI
 
-# The pull request and merge queue checks (ADR-0079). One workflow and one required status check, `check`, whose jobs
-# depend on the event:
+# The checks of a pull request and of the merge queue (ADR-0079), and the one required status check, `gate`.
 #
-# - pull_request: `preflight`, the checks a pull request's own files decide; golangci-lint (`lint`) when Go changes;
-#   the Docker Compose smoke test (`docker-smoke`) when the docker context changes; the formatting of the OpenTofu
-#   modules (`tofu-fmt`) when the tofu context changes; the destructive changes of the schema against the base
-#   (`db-lint`) when the schema changes. The OpenTofu checks that need tofu itself run in the slow suite.
-# - merge_group: the full check of the contexts the group changes (scripts/changed-contexts.sh): server-static,
-#   server-test, and repo, and the container contracts of the adapters it changes (scripts/changed-contracts.sh);
-#   repo also checks the documentation site (web/docs), the catalog tools (tools/i18n), and the published packages
-#   when their contexts change; web runs the web client's static checks and its build, and web-test the tests of
-#   each web package the change reaches, a runner each; e2e
-#   runs the E2E tests of the web client when the e2e context changes, and layout the tests in a browser on the
-#   Storybook host's built catalog when the stories context changes.
-# - pull_request labelled `allow:full-ci`: both.
+# Two stages, and a check belongs to one of them (ADR-0079 §18):
 #
-# Each job sets up its tools and generates what its checks read, then runs the checks as parallel steps (ADR-0079),
-# each named after the one task it runs (`scripts/task.sh go:vet`), so that each check keeps its own log and time.
-# Locally `scripts/task.sh check` runs the same tasks; scripts/ci-coverage.sh (docs:ci-coverage, in the repo job) fails
-# when a check of `check` runs in no step. The workflow has no path filter, so it always runs and `check` always
-# reports. Pushes to main run main.yml instead.
+# - A pull request runs what its own files decide, so that stacking pull requests in the merge queue cannot change the
+#   result (ADR-0079 §2): formatting, the lints, the licenses of the dependencies, the image when the Docker files
+#   change (ADR-0079 §4), and what only a pull request has, its base and its labels. The queue does not run these again.
+# - The merge queue runs what the merged tree decides (ADR-0079 §1, §5): what compiles, runs tests, or compares files
+#   across the tree. Two pull requests can each pass these and fail them together. A pull request labelled
+#   `allow:full-ci` runs them too.
+#
+# The jobs, each named `<subject>-<kind>` (ADR-0079 §11):
+#
+#   select            which of the jobs below run (scripts/ci-jobs.sh)
+#   on a pull request
+#     go-format, ts-format, tofu-format        the formatters
+#     source-license, deps-license             the SPDX identifiers; the licenses of the dependencies
+#     docs-lint, shell-lint, go-tests-lint     markdownlint; shellcheck; time.Sleep in the Go tests
+#     server-lint, agentkit-lint, mykit-lint   golangci-lint, a module each (ADR-0079 §3)
+#     docs-change, i18n-change, schema-change  what the change adds, against its base, which a label of the decider admits
+#     schema-test                              the tests of the schema lint
+#     docker-static, docker-smoke              the image (ADR-0079 §4)
+#     monitoring-test                          the alerting rules
+#   in the merge queue
+#     server-static, server-test, server-contract   the server module
+#     schema-static, api-static, api-test           the schema; the client API and the plugin protocol
+#     docs-static, ci-static                        what the documents say of the tree; that every check has a step
+#     agentkit-static, agentkit-test                tools/agentkit
+#     mykit-static, mykit-test                      the client libraries
+#     i18n-static, i18n-test                        the catalogs and their tools
+#     site-static, site-test, site-build            the documentation site
+#     tofu-static, shell-test                       the OpenTofu modules; the tests of the scripts
+#     web-static, web-build, web-test               the web client
+#     web-stories-test, web-e2e-build, web-e2e      its catalog in a browser; its E2E tests
+#   gate              the required status check: every job above passed or was not needed
+#
+# How a job is built (ADR-0079 §11):
+#
+# - Each check is a step named after the one task it runs (`scripts/task.sh go:vet`), so that the failed step's name is
+#   the failed check's, with a log of its own. Locally `scripts/task.sh check` runs the same tasks.
+# - The steps of a job run one after another. A compiler, a type checker, a linter, and a test run each use every core
+#   of the runner: side by side they only wait for each other, and a test that waits passes its limit. `parallel:` is
+#   for checks that read files and take a second or two.
+# - What takes minutes and uses every core gets runners of its own, by layer (server-lint, server-test), by package
+#   (web-test), by contract (server-contract), or by shard (web-e2e).
+# - A job sets up only what its checks need. The Go and Bun caches come from main.yml (ADR-0079 §7), which builds them
+#   with the same tasks: a job that builds with other flags finds nothing there.
+#
+# To add a check: find the job whose subject and kind it has, in the stage that decides its result, and add a step
+# named after its task. When no job fits, add a job: its rule in scripts/ci-jobs.sh (which paths run it), its name in
+# `needs` of `gate`, and a line in the list above; scripts/ci-jobs-test.sh fails while one of them is missing. A check
+# of `scripts/task.sh check` that no step runs fails docs:ci-coverage (the ci-static job). A check too slow for the
+# merge queue goes to slow-suite.yml instead.
+#
+# The workflow has no path filter, so it always runs and `gate` always reports (ADR-0079 §6). Pushes to main run
+# main.yml instead.
 
 on:
-  # labeled / unlabeled rerun the checks when `allow:full-ci` is added or removed, and the concurrency group cancels the
-  # older run, so no result of the other set of jobs is left on the pull request. A draft runs nothing (an epic's draft
-  # gets a commit per issue); ready_for_review runs the checks once it leaves draft.
+  # labeled / unlabeled rerun the checks when `allow:full-ci` or a label that admits a change is added or removed, and
+  # the concurrency group cancels the older run. A draft runs nothing (an epic's draft gets a commit per issue);
+  # ready_for_review runs the checks once it leaves draft.
   pull_request:
     types: [opened, synchronize, reopened, labeled, unlabeled, ready_for_review]
-  # The merge queue of main runs the same required `check` on each merge group before it merges the group.
+  # The merge queue of main runs the same required `gate` on each merge group before it merges the group.
   merge_group:
     types: [checks_requested]
 
@@ -45,29 +80,22 @@ env:
   # Use exactly the Go version from .tool-versions; never auto-download another toolchain.
   GOTOOLCHAIN: local
 
+defaults:
+  run:
+    # Named, so that a step runs with `-o pipefail`: without it a check piped into another command cannot fail.
+    shell: bash
+
 jobs:
-  # Selects the jobs: whether the full check runs, and the contexts of scripts/changed-contexts.sh the change touches.
-  changes:
-    # Every other job needs this one, so skipping it on a draft skips them all.
+  # Picks the jobs: scripts/ci-jobs.sh holds the rules, by stage and by the paths a job's checks read. Every other job
+  # needs this one and asks it by name, so skipping it on a draft skips them all.
+  select:
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
     runs-on: ubuntu-latest
     outputs:
-      full: ${{ steps.select.outputs.full }}
-      server: ${{ steps.select.outputs.server }}
-      i18n: ${{ steps.select.outputs.i18n }}
-      docker: ${{ steps.select.outputs.docker }}
-      lint-go: ${{ steps.select.outputs.lint-go }}
-      lint-agentkit: ${{ steps.select.outputs.lint-agentkit }}
-      mykit: ${{ steps.select.outputs.mykit }}
-      schema: ${{ steps.select.outputs.schema }}
-      tofu: ${{ steps.select.outputs.tofu }}
-      site: ${{ steps.select.outputs.site }}
-      web: ${{ steps.select.outputs.web }}
+      jobs: ${{ steps.select.outputs.jobs }}
       web-packages: ${{ steps.select.outputs.web-packages }}
-      web-packages-json: ${{ steps.select.outputs.web-packages-json }}
-      e2e: ${{ steps.select.outputs.e2e }}
-      stories: ${{ steps.select.outputs.stories }}
       contracts: ${{ steps.select.outputs.contracts }}
+      go-shards: ${{ steps.select.outputs.go-shards }}
     steps:
       # A pull request checks out its merge commit, whose first parent is the base branch. A merge group checks out
       # its head commit and compares it with its base, the main commit the group is built on; that base is fetched by
@@ -91,190 +119,67 @@ jobs:
             git fetch --no-tags --depth=1 origin "$MERGE_GROUP_BASE_SHA"
             git diff --name-only "$MERGE_GROUP_BASE_SHA" "$MERGE_GROUP_HEAD_SHA" > "$RUNNER_TEMP/changed"
           fi
-          contexts=" $(scripts/changed-contexts.sh --files "$RUNNER_TEMP/changed" | tr '\n' ' ')"
-          echo "full: $FULL, contexts:$contexts"
-          # touches JOB CONTEXT... sets the output JOB to whether the change touches one of the contexts.
-          touches() {
-            local job="$1" c value=false
-            shift
-            for c in "$@"; do
-              case "$contexts" in *" $c "*) value=true ;; esac
-            done
-            echo "$job=$value" >> "$GITHUB_OUTPUT"
-          }
-          echo "full=$FULL" >> "$GITHUB_OUTPUT"
-          touches server go schema api i18n
-          touches i18n i18n
-          touches lint-go go
-          # tools/agentkit is a Go module of its own outside the go context.
-          if grep -qE '^tools/agentkit/(.*\.go|go\.(mod|sum)|\.golangci\.yml)$' "$RUNNER_TEMP/changed"; then
-            echo lint-agentkit=true
-          else
-            echo lint-agentkit=false
-          fi >> "$GITHUB_OUTPUT"
-          touches docker docker
-          touches mykit mykit
-          touches schema schema
-          touches tofu tofu
-          touches site site
-          touches web web
-          # The web packages whose tests the change reaches (ADR-0079 §18), separated by spaces: web:test runs these.
-          web_packages="$(scripts/changed-web-packages.sh --files "$RUNNER_TEMP/changed" | tr '\n' ' ')"
-          echo "web packages: $web_packages"
-          echo "web-packages=${web_packages% }" >> "$GITHUB_OUTPUT"
-          # The same as a JSON list, which the matrix of web-test reads.
-          echo "web-packages-json=$(printf '%s' "${web_packages% }" | jq -Rnc '[inputs] | join(" ") | split(" ") | map(select(. != ""))')" >> "$GITHUB_OUTPUT"
-          touches e2e e2e
-          touches stories stories
-          # The container contracts that the change can break (ADR-0079 §5), as ` postgres blob ` with a space on both
-          # sides, so that a job's `if` finds a name with contains().
-          contracts=" $(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | tr '\n' ' ')"
-          echo "contracts:$contracts"
-          if [ "$contracts" = " " ]; then contracts=""; fi
-          echo "contracts=$contracts" >> "$GITHUB_OUTPUT"
+          args=(--event "$EVENT" --files "$RUNNER_TEMP/changed")
+          if [ "$FULL" = true ]; then args+=(--full); fi
+          jobs="$(scripts/ci-jobs.sh "${args[@]}")"
+          echo "The jobs of this run:"
+          echo "$jobs"
+          # Lines to a JSON list, which a job's `if` and a matrix read.
+          list() { jq -Rnc '[inputs | select(. != "")]'; }
+          {
+            echo "jobs=$(list <<< "$jobs")"
+            # The web packages whose tests the change reaches (ADR-0079 §18), the contracts of the adapters it changes
+            # (ADR-0079 §5), and the shards of the server module: the matrices of web-test, server-contract, and
+            # server-lint and server-test.
+            echo "web-packages=$(scripts/changed-web-packages.sh --files "$RUNNER_TEMP/changed" | list)"
+            echo "contracts=$(scripts/changed-contracts.sh "$RUNNER_TEMP/changed" | list)"
+            echo "go-shards=$(scripts/go-shard.sh --list | list)"
+          } >> "$GITHUB_OUTPUT"
 
-  # --- Pull requests --------------------------------------------------------------------------------------------
+  # --- A pull request: what its own files, its base, and its labels decide ------------------------------------------
+  # None of these runs in the merge queue. A check belongs here only when no other pull request can change its result:
+  # one that reads a second file belongs to the merge queue's jobs below.
 
-  preflight:
-    # Markdown, shellcheck, gofmt, the Go and npm licenses, the Dockerfile's image versions, and the Documentation
-    # section of the description. A pull request's own files, lockfiles, or description decide each of them, so stacking pull
-    # requests in the merge queue cannot break them and the queue does not run them again.
-    # api:live-calls also runs here and in the merge queue's repo job: the spec and the live tests' calls can change in
-    # two pull requests, and the live tests themselves run on neither.
-    # The bun fmt check (web:fmt-check) runs here and again in the merge queue's web job, because two pull requests
-    # that each format their own lines can meet in one statement.
-    if: github.event_name == 'pull_request'
+  go-format:
+    # gofmt on the Go files outside tools/. Each file decides alone. It needs Go alone, and no cache.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'go-format')
     runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          # docs:growth compares with the base, the first parent of the merge commit.
-          fetch-depth: 2
       - name: Set up go-task
         uses: ./.github/actions/setup-task
       - name: Set up Go
         uses: ./.github/actions/setup-go
+        with:
+          restore: "false"
+      - name: go:fmt-check
+        run: scripts/task.sh go:fmt-check
+
+  ts-format:
+    # bun fmt on the TypeScript and JavaScript of the workspace. Each file decides alone. It needs Bun alone: bun fmt
+    # reads no node_modules.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'ts-format')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
-      - name: Install the Bun packages
-        run: scripts/task.sh web:install
-      - parallel:
-          - name: docs:lint
-            run: scripts/task.sh docs:lint
-          - name: shell:lint
-            run: scripts/task.sh shell:lint
-          - name: shell:test
-            run: scripts/task.sh shell:test
-          - name: go:fmt-check
-            run: scripts/task.sh go:fmt-check
-          # The OpenTofu checks that are scripts and need no tofu: the MY_ names, the backend fields, the
-          # classification of every setting (ADR-0164 §12, so that a pull request that adds a setting decides how the
-          # public modules take it), and the module sources.
-          - name: tofu:env-check
-            run: scripts/task.sh tofu:env-check
-          - name: tofu:backend-fields
-            run: scripts/task.sh tofu:backend-fields
-          - name: tofu:coverage
-            run: scripts/task.sh tofu:coverage
-          - name: tofu:sources
-            run: scripts/task.sh tofu:sources
-          - name: web:fmt-check
-            run: scripts/task.sh web:fmt-check
-          - name: api:live-calls
-            run: scripts/task.sh api:live-calls
-          - name: go:licenses
-            run: scripts/task.sh go:licenses
-          - name: web:licenses
-            run: scripts/task.sh web:licenses
-          - name: i18n:licenses
-            run: scripts/task.sh i18n:licenses
-          - name: mykit:licenses
-            run: scripts/task.sh mykit:licenses
-          - name: mykit:ts-licenses
-            run: scripts/task.sh mykit:ts-licenses
-          - name: mykit:mybot-licenses
-            run: scripts/task.sh mykit:mybot-licenses
-          - name: mykit:mybot-ts-licenses
-            run: scripts/task.sh mykit:mybot-ts-licenses
-          # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
-          # owner approved the growth with the allow:docs-growth label (labelling reruns the checks).
-          - name: docs:growth
-            env:
-              APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
-            run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
-          # At most three waivers of the copy lint in one change, against the same base.
-          - name: i18n:waivers
-            run: scripts/task.sh i18n:waivers BASE=HEAD^1
-          - name: docker:dockerfile-check
-            run: scripts/task.sh docker:dockerfile-check
-
-  lint:
-    # golangci-lint over the modules a pull request changes (ADR-0079), through the area tasks. The merge queue does not
-    # run it: stacking two pull requests rarely adds an issue, and never breaks the build; the slow suite lints
-    # everything. Its speed comes from the golangci-lint cache that main.yml builds.
-    needs: changes
-    if: >-
-      github.event_name == 'pull_request' &&
-      (needs.changes.outputs.lint-go == 'true' || needs.changes.outputs.lint-agentkit == 'true' || needs.changes.outputs.mykit == 'true')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-        id: go
-      # One install of golangci-lint for every lint, and no other use of the action: instances of it that run in
-      # parallel read the event payload while each other writes it (`Unexpected end of JSON input`), and each downloads
-      # the binary to the same path.
-      - name: Install golangci-lint
-        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
         with:
-          version: v${{ steps.go.outputs.golangci-lint }}
-          install-only: true
-          skip-cache: true
-      # The lint tasks pass --allow-serial-runners, so the instances wait for each other's lock.
-      - parallel:
-          - name: go:lint
-            if: needs.changes.outputs.lint-go == 'true'
-            run: scripts/task.sh go:lint
-          - name: agentkit:lint
-            if: needs.changes.outputs.lint-agentkit == 'true'
-            run: scripts/task.sh agentkit:lint
-          - name: mykit:lint
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:lint
-          - name: mykit:mybot-lint
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-lint
+          restore: "false"
+      - name: web:fmt-check
+        run: scripts/task.sh web:fmt-check
 
-  docker-smoke:
-    # The Docker Compose smoke test (linux/amd64, ADR-0079): what only the images show, beyond the Go tests that already
-    # assemble and start the server: that the Dockerfile builds, that .dockerignore keeps what the images need, the
-    # wiring of deploy/docker/compose.yaml, and the runtime image. A pull request's own docker files decide it, so the
-    # merge queue does not run it again; the slow suite runs it with the linux/arm64 builds. The promtool check of the
-    # alerting rules (deploy/monitoring) runs first, in the same job, since it also needs Docker.
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.docker == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      # The images take their version from `git describe`.
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: docker:alert-rules
-        run: scripts/task.sh docker:alert-rules
-      - name: docker:smoke
-        run: scripts/task.sh docker:smoke
-
-  tofu-fmt:
-    # The formatting of deploy/opentofu (ADR-0010), which each file decides alone, so the merge queue does not run it
-    # again. The checks that run tofu on several modules run in the slow suite.
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.tofu == 'true'
+  tofu-format:
+    # tofu fmt on deploy/opentofu (ADR-0010). Each file decides alone. The checks that compare the modules with the
+    # rest of the tree run in tofu-static, and the ones that run tofu on the modules in the slow suite.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'tofu-format')
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -292,13 +197,115 @@ jobs:
       - name: tofu:fmt-check
         run: scripts/task.sh tofu:fmt-check
 
-  db-lint:
-    # The schema change of a pull request against its base, the first parent of its merge commit (ADR-0023 §6): it
-    # fails on a change that can lose or rewrite data of an existing database, unless the decider approved it with the
-    # allow:db-destructive label (labelling reruns the checks). The merge queue cannot read labels and checks only that the
-    # change applies on top of its base (server-static). db:lint-test runs the lint on its fixtures.
-    needs: changes
-    if: github.event_name == 'pull_request' && needs.changes.outputs.schema == 'true'
+  source-license:
+    # The SPDX identifier at the head of each file: MIT in the client API and the libraries, AGPL-3.0-only elsewhere
+    # (ADR-0093 §2). Each file decides alone, and any file can carry the wrong one, so every pull request runs it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'source-license')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: api:license-scope
+        run: scripts/task.sh api:license-scope
+
+  deps-license:
+    # The licenses of the dependencies: compatible with AGPL-3.0 for the server and the workspace (ADR-0011), permissive
+    # for what the published libraries bring to their users (ADR-0093 §2). The manifests, the lockfiles, and the
+    # allowlists decide it, so it runs when one of them changes: on Dependabot's pull requests above all, which no one
+    # checks by hand. The slow suite runs it on everything before a release.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'deps-license')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml holds the modules and the build of go-licenses.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: go:licenses
+        run: scripts/task.sh go:licenses
+      - name: mykit:licenses
+        run: scripts/task.sh mykit:licenses
+      - name: mykit:mybot-licenses
+        run: scripts/task.sh mykit:mybot-licenses
+      - name: web:licenses
+        run: scripts/task.sh web:licenses
+      - name: mykit:ts-licenses
+        run: scripts/task.sh mykit:ts-licenses
+      - name: mykit:mybot-ts-licenses
+        run: scripts/task.sh mykit:mybot-ts-licenses
+
+  docs-lint:
+    # markdownlint. Each Markdown file decides alone. The rules that compare the documents with the tree (links,
+    # inventories, the context maps) run in docs-static.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'docs-lint')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # markdownlint-cli2 runs through bunx.
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: docs:lint
+        run: scripts/task.sh docs:lint
+
+  docs-change:
+    # The prose agents maintain is no larger than at the base, the first parent of the merge commit, unless the
+    # decider approved the growth with the allow:docs-growth label (ADR-0000 §6; labelling reruns the checks). Only a
+    # pull request has a base of its own and labels.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'docs-change')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docs:growth
+        env:
+          APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:docs-growth') }}
+        run: scripts/task.sh docs:growth BASE=HEAD^1 ALLOW_GROWTH="$APPROVED"
+
+  i18n-change:
+    # At most three waivers of the copy lint in one change, against the pull request's base (ADR-0009).
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'i18n-change')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: i18n:waivers
+        run: scripts/task.sh i18n:waivers BASE=HEAD^1
+
+  schema-change:
+    # The schema change of a pull request against its base (ADR-0023 §6): it fails on a change that can lose or
+    # rewrite data of an existing database, unless the decider approved it with the allow:db-destructive label
+    # (labelling reruns the checks). The merge queue cannot read labels: schema-static checks there only that the
+    # change applies on top of the base.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'schema-change')
     runs-on: ubuntu-latest
     env:
       APPROVED: ${{ contains(github.event.pull_request.labels.*.name, 'allow:db-destructive') }}
@@ -311,23 +318,266 @@ jobs:
         uses: ./.github/actions/setup-task
       - name: Install Atlas and start PostgreSQL
         run: scripts/task.sh db:atlas db:up
-      # db:lint (postgres) and db:lint-test (postgres) share the dev database my_lint, so they run one after the other.
-      - parallel:
-          - name: db:lint (sqlite)
-            run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
-          - name: db:lint (postgres)
-            run: scripts/task.sh db:lint DB_DIALECT=postgres BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
-          - name: db:lint-test (sqlite)
-            run: scripts/task.sh db:lint-test DB_DIALECT=sqlite
+      - name: db:lint (sqlite)
+        run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
+      - name: db:lint (postgres)
+        run: scripts/task.sh db:lint DB_DIALECT=postgres BASE=HEAD^1 ALLOW_DESTRUCTIVE="$APPROVED"
+
+  schema-test:
+    # The schema lint on its own fixtures (schema/testdata/lint): that db:lint still finds what it must. The script and
+    # the fixtures decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'schema-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Install Atlas and start PostgreSQL
+        run: scripts/task.sh db:atlas db:up
+      - name: db:lint-test (sqlite)
+        run: scripts/task.sh db:lint-test DB_DIALECT=sqlite
       - name: db:lint-test (postgres)
         run: scripts/task.sh db:lint-test DB_DIALECT=postgres
 
-  # --- The full check: merge groups, and pull requests labelled allow:full-ci -------------------------------------------
-  # A job whose `if` is false is skipped, and `check` counts a skipped job as passed.
+  shell-lint:
+    # shellcheck. Each script decides alone; the scripts are given together, so that one that sources another is
+    # followed. The tests of the scripts read the tree and run in shell-test.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'shell-lint')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: shell:lint
+        run: scripts/task.sh shell:lint
+
+  go-tests-lint:
+    # No time.Sleep in a Go test of any module beyond the baseline (ADR-0170 §7), and a baseline that only shrinks
+    # from the pull request's base, the first parent of the merge commit. Each test file decides against the baseline.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'go-tests-lint')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 2
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: go:test-sleep
+        run: scripts/task.sh go:test-sleep BASE=HEAD^1
+
+  server-lint:
+    # golangci-lint on the server module, on pull requests alone (ADR-0079 §3): stacking two pull requests rarely adds
+    # an issue and never breaks the build, and the slow suite lints everything. It is the longest job of a pull
+    # request: its cache, which main.yml builds, is by package, and a change invalidates every package above the one
+    # it touches. So each layer of the module (scripts/go-shard.sh) gets a runner; golangci-lint holds a lock, so two
+    # of them cannot share one.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'server-lint')
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.select.outputs.go-shards) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml holds golangci-lint's analysis of main.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: go:lint
+        env:
+          SHARD: ${{ matrix.shard }}
+        run: scripts/task.sh go:lint SHARD="$SHARD"
+
+  agentkit-lint:
+    # golangci-lint on tools/agentkit, a Go module of its own, as server-lint.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'agentkit-lint')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: agentkit:lint
+        run: scripts/task.sh agentkit:lint
+
+  mykit-lint:
+    # golangci-lint on pkg/mykit and pkg/mybot, Go modules of their own, as server-lint.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'mykit-lint')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+        id: go
+      - name: Install golangci-lint
+        uses: golangci/golangci-lint-action@ba0d7d2ec06a0ea1cb5fa41b2e4a3ab91d21278a # v9.3.0
+        with:
+          version: v${{ steps.go.outputs.golangci-lint }}
+          install-only: true
+          skip-cache: true
+      - name: mykit:lint
+        run: scripts/task.sh mykit:lint
+      - name: mykit:mybot-lint
+        run: scripts/task.sh mykit:mybot-lint
+
+  docker-static:
+    # The Go and Bun images of the Dockerfile are the versions of .tool-versions. The two files decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'docker-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:dockerfile-check
+        run: scripts/task.sh docker:dockerfile-check
+
+  docker-smoke:
+    # The Docker Compose smoke test (linux/amd64, ADR-0079 §4): what only the image and the Compose files show. That
+    # the Dockerfile builds, that .dockerignore keeps what the image needs, the wiring of deploy/docker/compose.yaml,
+    # and what the image embeds; the Go tests and the E2E tests own what the server does. No other job of a pull
+    # request or of the merge queue builds the image, so a pull request that changes the Docker files runs it, and
+    # the queue does not run it again; the slow suite runs it whatever changed, with the linux/arm64 build.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'docker-smoke')
+    runs-on: ubuntu-latest
+    steps:
+      # The images take their version from `git describe`.
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:smoke
+        run: scripts/task.sh docker:smoke
+
+  monitoring-test:
+    # promtool checks and unit-tests the Prometheus alerting rules of deploy/monitoring. The rules and their tests
+    # decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'monitoring-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docker:alert-rules
+        run: scripts/task.sh docker:alert-rules
+
+  # --- The merge queue, and a pull request labelled allow:full-ci: what the merged tree decides ---------------------
+  # A job whose rule does not hold is skipped, and `gate` counts a skipped job as passed.
 
   server-static:
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.server == 'true'
+    # The server module compiles without cgo (ADR-0010), go vet finds nothing, its go.mod files are tidy and go.work
+    # lists its modules, every package is in a shard of server-test, and cmd/my links the fakes of the test build with
+    # the tag e2e_fakes alone (ADR-0015 §6). The build comes first: vet reads what it compiled.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'server-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml: the build and vet's results of the packages that did not change.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: go:build
+        run: scripts/task.sh go:build
+      - name: go:vet
+        run: scripts/task.sh go:vet
+      - name: go:mod-check
+        run: scripts/task.sh go:mod-check
+      - name: go:shard-check
+        run: scripts/task.sh go:shard-check
+      - name: go:fakes-check
+        run: scripts/task.sh go:fakes-check
+
+  server-test:
+    # The Go tests of the server module, a runner per layer (scripts/go-shard.sh). cmd/my and internal/platform depend
+    # on every package, so they run on any change, and each takes as long as the rest together: on one runner they
+    # shared four cores with every other package. The PostgreSQL tests run on pgmem inside the test processes, without
+    # Docker (ADR-0015); server-contract runs them on a real postgres. The Valkey tests start valkey/valkey on the
+    # runner's Docker; TEST_VALKEY_REQUIRED makes a missing Docker fail the job instead of skipping them.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'server-test')
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJSON(needs.select.outputs.go-shards) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml holds the results of the tests whose packages and files did not change since.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      # Go keys a file that a test opens on its mtime, which the checkout sets to now: give each file an mtime from its
+      # content, as main.yml does when it builds the test result cache.
+      - name: Set the files' mtimes from their content
+        run: scripts/stable-mtime.py
+      - name: go:test
+        env:
+          SHARD: ${{ matrix.shard }}
+          TEST_VALKEY_REQUIRED: "1"
+        run: scripts/task.sh go:test SHARD="$SHARD"
+
+  server-contract:
+    # The contracts of the adapters the group changes, each on its real service (scripts/changed-contracts.sh,
+    # ADR-0079 §5), a runner per contract: their containers started at once on one runner left Elasticsearch unable to
+    # start in time, and one after another they were the longest job of the queue. The slow suite runs all of them
+    # with the same workflow.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'server-contract')
+    strategy:
+      fail-fast: false
+      matrix:
+        contract: ${{ fromJSON(needs.select.outputs.contracts) }}
+    uses: ./.github/workflows/contract.yml
+    with:
+      contract: ${{ matrix.contract }}
+
+  schema-static:
+    # The schema (ADR-0023): the sqlc code is what the schema and the queries generate, `my schema apply` of the tree
+    # leaves no diff on an empty database of each dialect, and in a merge group the change applies on top of the main
+    # commit the group is built on. The schema, the queries, and the code that applies the schema decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'schema-static')
     runs-on: ubuntu-latest
     env:
       MERGE_GROUP_BASE_SHA: ${{ github.event.merge_group.base_sha }}
@@ -336,335 +586,510 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      # The Go cache of main.yml: sqlc, and the packages of cmd/my, which db:check builds to apply the schema.
       - name: Set up Go
         uses: ./.github/actions/setup-go
-        id: go
-      # The api checks bundle the spec with Redocly on Bun. i18n:lint runs once, in repo, which every i18n change also
-      # selects.
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      # The db:check and db:lint steps use Atlas, and the PostgreSQL ones the container of db:up. Mostly waiting on the
-      # container, so it runs in the background while go:warm builds.
+      # Mostly waiting on the container, so it runs in the background while sqlc works.
       - name: Install Atlas and start PostgreSQL
         id: db
         run: scripts/task.sh db:atlas db:up
         background: true
-      # Parallel steps would each compile the same packages, since the build cache only holds a package once a
-      # compile of it has finished: build them once first.
-      - name: Build the packages and the Go tools once
-        run: scripts/task.sh go:warm
-      # api:lint and api:generate-check both run Redocly through bunx, which can fail when two processes install it at
-      # once: fetch it before them.
-      - name: Fetch the Redocly CLI once
-        run: scripts/task.sh api:warm
-      # api:generate-check runs the openapi-typescript of @mycroblog/mykit.
-      - name: Install the Bun workspace
-        run: scripts/task.sh web:install
+      - name: go:sqlc-check
+        run: scripts/task.sh go:sqlc-check
       - name: Wait for Atlas and PostgreSQL
         wait: db
+      - name: db:check (sqlite)
+        run: scripts/task.sh db:check DB_DIALECT=sqlite
+      - name: db:check (postgres)
+        run: scripts/task.sh db:check DB_DIALECT=postgres
       # db:lint compares the schema with the main commit the group is built on, which a group queued behind others is
-      # several commits ahead of.
+      # several commits ahead of. A merge group has no labels, and schema-change checked the approval on the pull
+      # request: here it reports destructive changes and fails only when the schema does not apply on top of the base.
       - name: Fetch the base of the merge group
-        if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
+        if: github.event_name == 'merge_group'
         run: git fetch --no-tags --depth=1 origin "$MERGE_GROUP_BASE_SHA"
-      # golangci-lint runs on pull requests and the build tags in the slow suite (ADR-0079).
-      - parallel:
-          - name: go:vet
-            run: scripts/task.sh go:vet
-          - name: go:build
-            run: scripts/task.sh go:build
-          - name: db:check (postgres)
-            run: scripts/task.sh db:check DB_DIALECT=postgres
-          - name: db:check (sqlite)
-            run: scripts/task.sh db:check DB_DIALECT=sqlite
-          # The merge queue does not check the approval again (the pull request's db-lint did, and a merge group has no
-          # labels): it reports destructive changes and fails only when the schema does not apply on top of the base.
-          - name: db:lint (postgres)
-            if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
-            run: scripts/task.sh db:lint DB_DIALECT=postgres BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
-          - name: db:lint (sqlite)
-            if: github.event_name == 'merge_group' && needs.changes.outputs.schema == 'true'
-            run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
-          - name: go:sqlc-check
-            run: scripts/task.sh go:sqlc-check
-          - name: api:generate-check
-            run: scripts/task.sh api:generate-check
-          - name: api:lint
-            run: scripts/task.sh api:lint
-          - name: api:plugin-generate-check
-            run: scripts/task.sh api:plugin-generate-check
-          - name: api:plugin-lint
-            run: scripts/task.sh api:plugin-lint
-          - name: api:plugin-breaking
-            run: scripts/task.sh api:plugin-breaking
-          - name: api:plugin-docs-test
-            run: scripts/task.sh api:plugin-docs-test
-          - name: go:mod-check
-            run: scripts/task.sh go:mod-check
-          - name: api:spec-check
-            run: scripts/task.sh api:spec-check
-          - name: api:license-scope
-            run: scripts/task.sh api:license-scope
+      - name: db:lint (sqlite)
+        if: github.event_name == 'merge_group'
+        run: scripts/task.sh db:lint DB_DIALECT=sqlite BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
+      - name: db:lint (postgres)
+        if: github.event_name == 'merge_group'
+        run: scripts/task.sh db:lint DB_DIALECT=postgres BASE="$MERGE_GROUP_BASE_SHA" ALLOW_DESTRUCTIVE=true
 
-  server-test:
-    # The PostgreSQL tests run on pgmem inside the test processes, without Docker (ADR-0015); the slow suite runs them
-    # on a real postgres container. The Valkey tests start valkey/valkey on the runner's Docker; TEST_VALKEY_REQUIRED
-    # makes a missing Docker fail the job instead of skipping them.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.server == 'true'
+  api-static:
+    # The client API (ADR-0016) and the plugin protocol (ADR-0146): the spec lists its files and passes its lint, the
+    # bundle and the code generated from it are current, the plugin protocol passes buf's lint and breaks no release,
+    # and the scenarios and scripts of the slow suite call only what the spec has. The spec, the generators, and
+    # those callers decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'api-static')
     runs-on: ubuntu-latest
     steps:
       - name: Check out
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Set up go-task
         uses: ./.github/actions/setup-task
+      # The Go cache of main.yml: oapi-codegen and buf.
       - name: Set up Go
         uses: ./.github/actions/setup-go
-      # Go keys a file that a test opens on its mtime, which the checkout sets to now: give each file an mtime from its
-      # content, as main.yml does when it builds the test result cache.
-      - name: Set the files' mtimes from their content
-        run: scripts/stable-mtime.py
-      - name: go:test
-        run: scripts/task.sh go:test
-        env:
-          TEST_VALKEY_REQUIRED: "1"
-
-  contracts:
-    # The container contracts of the adapters the group changes (scripts/changed-contracts.sh, ADR-0079 §5), in one job,
-    # one after another: a change to tasks/go.yml selects all seven, and their containers started at once on one runner
-    # left Elasticsearch unable to start in time. The Nightly runs all of them. Each starts its containers on the
-    # runner's Docker.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.contracts != ''
-    runs-on: ubuntu-latest
-    env:
-      CONTRACTS: ${{ needs.changes.outputs.contracts }}
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-      - name: go:test-postgres
-        if: contains(env.CONTRACTS, ' postgres ')
-        run: scripts/task.sh go:test-postgres
-      - name: go:test-stream
-        if: contains(env.CONTRACTS, ' stream ')
-        run: scripts/task.sh go:test-stream
-      - name: go:test-mail
-        if: contains(env.CONTRACTS, ' mail ')
-        run: scripts/task.sh go:test-mail
-      - name: go:test-blob
-        if: contains(env.CONTRACTS, ' blob ')
-        run: scripts/task.sh go:test-blob
-      - name: go:test-voice
-        if: contains(env.CONTRACTS, ' voice ')
-        run: scripts/task.sh go:test-voice
-      - name: go:test-search
-        if: contains(env.CONTRACTS, ' search ')
-        run: scripts/task.sh go:test-search
-      - name: go:test-acme
-        if: contains(env.CONTRACTS, ' acme ')
-        run: scripts/task.sh go:test-acme
-
-  repo:
-    # agentkit and its context map, which must cover every path, the documentation rules (links and anchors across
-    # files) and inventories (the names each document must mention), the ADR numbers, and that every check of `scripts/task.sh check` runs in a job: any change can break them. Also pkg/mykit and pkg/mybot, Go modules of their
-    # own, their integration tests, and the npm packages @mycroblog/mykit and @mycroblog/mybot in pkg/mykit/ts and
-    # pkg/mybot/ts when the mykit context changes (their licenses run in preflight). Also the build of the documentation
-    # site (web/docs, ADR-0150 §7) and its tsc, Oxlint, and knip when the site context changes: the build fails on a
-    # broken link or a page that does not render, which two pull requests can cause together (one removes a heading, the other links to it), so it runs on
-    # the merge group and not in preflight. Also the catalog lint and the tests of tools/i18n when the i18n context
-    # changes. The web client's checks run in web, and its packages' tests in web-test.
-    needs: changes
-    if: needs.changes.outputs.full == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Go
-        uses: ./.github/actions/setup-go
-        id: go
-      # As in server-static: build agentkit and its test binaries once before the parallel checks.
-      - name: Build agentkit once
-        run: scripts/task.sh agentkit:warm
-      - name: Build pkg/mykit and pkg/mybot once
-        if: needs.changes.outputs.mykit == 'true'
-        run: scripts/task.sh mykit:warm
-      # The TypeScript checks of the packages run with the workspace's packages, on Bun.
+      # Redocly bundles and lints the spec on Bun, and api:generate-check runs the openapi-typescript of
+      # @mycroblog/mykit.
       - name: Set up Bun
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
-        if: needs.changes.outputs.mykit == 'true' || needs.changes.outputs.site == 'true' || needs.changes.outputs.i18n == 'true'
         run: scripts/task.sh web:install
-      # agentkit:lint runs on pull requests and in the slow suite, like go:lint.
+      - name: Fetch the Redocly CLI and build the Go tools
+        run: scripts/task.sh api:warm go:tools
+      - name: api:spec-check
+        run: scripts/task.sh api:spec-check
+      - name: api:lint
+        run: scripts/task.sh api:lint
+      - name: api:generate-check
+        run: scripts/task.sh api:generate-check
+      - name: api:plugin-lint
+        run: scripts/task.sh api:plugin-lint
+      - name: api:plugin-generate-check
+        run: scripts/task.sh api:plugin-generate-check
+      - name: api:plugin-breaking
+        run: scripts/task.sh api:plugin-breaking
+      - name: api:live-calls
+        run: scripts/task.sh api:live-calls
+
+  api-test:
+    # The tests of tools/protodoc, which generates the reference pages of the plugin protocol.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'api-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: api:plugin-docs-test
+        run: scripts/task.sh api:plugin-docs-test
+
+  docs-static:
+    # What the documents say of the tree: every relative link and anchor resolves and the documents keep their rules,
+    # every path is under a context map, every command, metric, event, and job the code defines is in its document,
+    # and no two ADRs share a number. Any change can make one of them wrong (a file a document links to, a new
+    # directory, a new metric), and two pull requests can together (each adds an ADR), so every merge group runs it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'docs-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      # Three of the checks run bin/agentkit: build it once, before them.
+      - name: Build agentkit
+        run: scripts/task.sh agentkit:build
+      # They read files and take seconds.
       - parallel:
-          - name: agentkit:test
-            run: scripts/task.sh agentkit:test
-          - name: agentkit:vet
-            run: scripts/task.sh agentkit:vet
+          - name: docs:rules
+            run: scripts/task.sh docs:rules
           - name: agentkit:map-check
             run: scripts/task.sh agentkit:map-check
           - name: agentkit:inventory
             run: scripts/task.sh agentkit:inventory
-          - name: agentkit:mod-check
-            run: scripts/task.sh agentkit:mod-check
-          - name: agentkit:deps-check
-            run: scripts/task.sh agentkit:deps-check
-          - name: docs:rules
-            run: scripts/task.sh docs:rules
           - name: docs:adr-numbers
             run: scripts/task.sh docs:adr-numbers
-          - name: docs:ci-coverage
-            run: scripts/task.sh docs:ci-coverage
-          # Also in preflight; here it checks the merge group, where one pull request's spec meets another's live test.
-          - name: api:live-calls
-            run: scripts/task.sh api:live-calls
-          - name: i18n:lint
-            if: needs.changes.outputs.i18n == 'true'
-            run: scripts/task.sh i18n:lint
-          # The web tasks compile the catalogs first; a change to tools/i18n alone selects none of them.
-          - name: i18n:compile
-            if: needs.changes.outputs.i18n == 'true'
-            run: scripts/task.sh i18n:compile
-          - name: i18n:typecheck
-            if: needs.changes.outputs.i18n == 'true'
-            run: scripts/task.sh i18n:typecheck
-          - name: i18n:knip
-            if: needs.changes.outputs.i18n == 'true'
-            run: scripts/task.sh i18n:knip
-          # The check of the site context (site:check): copy the published documents in and build the site as the
-          # deploy combines it, checking what it tells search engines, and run its unit tests, tsc, Oxlint, and knip on
-          # web/docs (its bun fmt is web:fmt-check, in the web job), and the check of its translations.
-          - name: docs:site-index-check
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-index-check
-          - name: docs:site-typecheck
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-typecheck
-          - name: docs:site-test
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-test
-          - name: docs:site-lint
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-lint
-          - name: docs:site-knip
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-knip
-          - name: docs:site-translations-check
-            if: needs.changes.outputs.site == 'true'
-            run: scripts/task.sh docs:site-translations-check
-          - name: mykit:test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:test
-          # The Go client against a server in the test process (pkg/mykit/integration, ADR-0093 §8): seconds once
-          # mykit:warm has built the server's packages, so they run here rather than in the slow suite.
-          - name: mykit:integration-test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:integration-test
-          - name: mykit:integration-vet
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:integration-vet
-          - name: mykit:vet
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:vet
-          - name: mykit:build
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:build
-          - name: mykit:mod-check
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mod-check
-          - name: mykit:server-dep-check
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:server-dep-check
-          - name: mykit:mybot-test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-test
-          - name: mykit:mybot-vet
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-vet
-          - name: mykit:mybot-build
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-build
-          - name: mykit:mybot-mod-check
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-mod-check
-          - name: mykit:mybot-server-dep-check
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-server-dep-check
-          # An echo bot against a server in the test process, and the fake of mybottest against the spec
-          # (pkg/mybot/integration, ADR-0093 §18), as mykit's integration tests.
-          - name: mykit:mybot-integration-test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-integration-test
-          - name: mykit:mybot-integration-vet
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-integration-vet
-          - name: api:license-scope (mykit)
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh api:license-scope
-          - name: mykit:ts-typecheck
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:ts-typecheck
-          - name: mykit:ts-lint
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:ts-lint
-          - name: mykit:ts-knip
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:ts-knip
-          - name: mykit:ts-test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:ts-test
-          - name: mykit:ts-build
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:ts-build
-          - name: mykit:mybot-ts-typecheck
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-ts-typecheck
-          - name: mykit:mybot-ts-lint
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-ts-lint
-          - name: mykit:mybot-ts-knip
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-ts-knip
-          - name: mykit:mybot-ts-test
-            if: needs.changes.outputs.mykit == 'true'
-            run: scripts/task.sh mykit:mybot-ts-test
 
-      # After the parallel checks: its tests start the CLI as a process per case, and the checks above, sharing the
-      # runner, hold each case past bun test's 5 s.
-      - name: i18n:test
-        if: needs.changes.outputs.i18n == 'true'
-        run: scripts/task.sh i18n:test
+  ci-static:
+    # Every check of `scripts/task.sh check` runs in a step of a workflow (ADR-0079 §11). The tasks and the workflows
+    # decide it.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'ci-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: docs:ci-coverage
+        run: scripts/task.sh docs:ci-coverage
 
-      # After the parallel checks, whose mykit:ts-build would rewrite mykit's dist/ beside the build of mybot: the ESM
-      # build of @mycroblog/mybot on Node.js 22, the oldest Node.js it supports, and on Deno (ADR-0093 §9), a bot run on
-      # each (pkg/mybot/ts/test/runtimes.mjs). Bun runs the unit tests above.
+  agentkit-static:
+    # tools/agentkit, a Go module of its own: go vet, a tidy go.mod, and no module version the server's go.sum lacks.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'agentkit-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: agentkit:vet
+        run: scripts/task.sh agentkit:vet
+      - name: agentkit:mod-check
+        run: scripts/task.sh agentkit:mod-check
+      - name: agentkit:deps-check
+        run: scripts/task.sh agentkit:deps-check
+
+  agentkit-test:
+    # The tests of tools/agentkit.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'agentkit-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: agentkit:test
+        run: scripts/task.sh agentkit:test
+
+  mykit-static:
+    # pkg/mykit and pkg/mybot, the client libraries (ADR-0093), Go modules of their own with the npm packages
+    # @mycroblog/mykit and @mycroblog/mybot: their go.mod files are tidy and name no server module, go vet finds
+    # nothing in them or in their integration modules, and tsc, Oxlint, and knip pass on the TypeScript.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'mykit-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml: the integration modules compile the server's packages.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      # The build of the libraries without cgo, which the checks after it read.
+      - name: Build pkg/mykit and pkg/mybot
+        run: scripts/task.sh mykit:warm
+      - name: mykit:mod-check
+        run: scripts/task.sh mykit:mod-check
+      - name: mykit:server-dep-check
+        run: scripts/task.sh mykit:server-dep-check
+      - name: mykit:vet
+        run: scripts/task.sh mykit:vet
+      - name: mykit:integration-vet
+        run: scripts/task.sh mykit:integration-vet
+      - name: mykit:mybot-mod-check
+        run: scripts/task.sh mykit:mybot-mod-check
+      - name: mykit:mybot-server-dep-check
+        run: scripts/task.sh mykit:mybot-server-dep-check
+      - name: mykit:mybot-vet
+        run: scripts/task.sh mykit:mybot-vet
+      - name: mykit:mybot-integration-vet
+        run: scripts/task.sh mykit:mybot-integration-vet
+      - name: mykit:ts-typecheck
+        run: scripts/task.sh mykit:ts-typecheck
+      - name: mykit:ts-lint
+        run: scripts/task.sh mykit:ts-lint
+      - name: mykit:ts-knip
+        run: scripts/task.sh mykit:ts-knip
+      - name: mykit:mybot-ts-typecheck
+        run: scripts/task.sh mykit:mybot-ts-typecheck
+      - name: mykit:mybot-ts-lint
+        run: scripts/task.sh mykit:mybot-ts-lint
+      - name: mykit:mybot-ts-knip
+        run: scripts/task.sh mykit:mybot-ts-knip
+
+  mykit-test:
+    # The tests of the client libraries: the unit tests in Go and on Bun, the Go client and an echo bot against a
+    # server in the test process (ADR-0093 §8, §18), and the ESM build of @mycroblog/mybot loaded on Node.js 22, the
+    # oldest Node.js it supports, and on Deno, with a bot run on each (ADR-0093 §9).
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'mykit-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # The Go cache of main.yml: the integration tests link the server.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: mykit:test
+        run: scripts/task.sh mykit:test
+      - name: mykit:integration-test
+        run: scripts/task.sh mykit:integration-test
+      - name: mykit:mybot-test
+        run: scripts/task.sh mykit:mybot-test
+      - name: mykit:mybot-integration-test
+        run: scripts/task.sh mykit:mybot-integration-test
+      - name: mykit:ts-test
+        run: scripts/task.sh mykit:ts-test
+      - name: mykit:mybot-ts-test
+        run: scripts/task.sh mykit:mybot-ts-test
       - name: Set up Node.js 22
-        if: needs.changes.outputs.mykit == 'true'
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22.23.3"
       - name: Set up Deno
-        if: needs.changes.outputs.mykit == 'true'
         uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
         with:
           deno-version: "2.9.7"
+      # It builds @mycroblog/mykit first, which mybot reads as its users do.
       - name: mykit:mybot-ts-build
-        if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:mybot-ts-build
       - name: mykit:mybot-ts-runtimes
-        if: needs.changes.outputs.mykit == 'true'
         run: scripts/task.sh mykit:mybot-ts-runtimes
 
-  e2e-build:
-    # The test build of bin/my, with the web client embedded, built once for the jobs of e2e, so that every one of
-    # them tests the same build (ADR-0079 §9).
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+  i18n-static:
+    # The catalogs and their tools (ADR-0009): the catalog lint with the copy lint and the generated files, the
+    # catalogs of the web packages compile, and tsc and knip pass on tools/i18n and web/i18n.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'i18n-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: i18n:lint
+        run: scripts/task.sh i18n:lint
+      # The web tasks compile the catalogs first; a change to tools/i18n alone selects none of them.
+      - name: i18n:compile
+        run: scripts/task.sh i18n:compile
+      - name: i18n:typecheck
+        run: scripts/task.sh i18n:typecheck
+      - name: i18n:knip
+        run: scripts/task.sh i18n:knip
+
+  i18n-test:
+    # The tests of tools/i18n and web/i18n. They start the CLI as a process per case, and a case that waits for a core
+    # passes bun test's 5 s: nothing else runs beside them.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'i18n-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: i18n:test
+        run: scripts/task.sh i18n:test
+
+  site-static:
+    # The documentation site (web/docs, ADR-0150): tsc, Oxlint, and knip on its code, and its translations against the
+    # English text.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'site-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: docs:site-typecheck
+        run: scripts/task.sh docs:site-typecheck
+      - name: docs:site-lint
+        run: scripts/task.sh docs:site-lint
+      - name: docs:site-knip
+        run: scripts/task.sh docs:site-knip
+      - name: docs:site-translations-check
+        run: scripts/task.sh docs:site-translations-check
+
+  site-test:
+    # The unit tests of the documentation site.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'site-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: docs:site-test
+        run: scripts/task.sh docs:site-test
+
+  site-build:
+    # The documentation site builds as the deploy combines it (ADR-0150 §7): every page renders, every link and anchor
+    # between the pages resolves, and what it tells search engines is right. Two pull requests can break it together
+    # (one removes a heading, the other links to it), so it runs on the merge group; a pull request that changes the
+    # site gets its preview from docs-site-preview.yml.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'site-build')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: docs:site-index-check
+        run: scripts/task.sh docs:site-index-check
+
+  tofu-static:
+    # The OpenTofu modules against the rest of the tree, by scripts that need no tofu (ADR-0010, ADR-0164 §12): the
+    # MY_ names against the configuration reference, the modules against their contract and the server's job types,
+    # every setting classified once, and the module sources. They compare files a second pull request can change, so
+    # they run on the merge group.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'tofu-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # They read files and take seconds.
+      - parallel:
+          - name: tofu:env-check
+            run: scripts/task.sh tofu:env-check
+          - name: tofu:backend-fields
+            run: scripts/task.sh tofu:backend-fields
+          - name: tofu:coverage
+            run: scripts/task.sh tofu:coverage
+          - name: tofu:sources
+            run: scripts/task.sh tofu:sources
+
+  shell-test:
+    # The tests of the scripts (the release, the image, the selection of the jobs, the checks themselves). They read
+    # what the scripts work on (the Dockerfile, the manifests, the tasks, the OpenTofu modules, the workspace), which
+    # a second pull request can change, so they run on the merge group.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'shell-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      # Two of the tests build Go programs: the Go cache of main.yml holds agentkit's packages.
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: shell:test
+        run: scripts/task.sh shell:test
+
+  web-static:
+    # The web client's packages (ADR-0025): tsc, Oxlint with the rules of the layers and the styles (ADR-0171 §2),
+    # no physical side in a style (ADR-0009 §1), and knip.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-static')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:typecheck
+        run: scripts/task.sh web:typecheck
+      - name: web:lint
+        run: scripts/task.sh web:lint
+      - name: web:direction
+        run: scripts/task.sh web:direction
+      - name: web:knip
+        run: scripts/task.sh web:knip
+
+  web-build:
+    # The production build of the app, which the server embeds (ADR-0025 §9, ADR-0028), and what it holds: no
+    # @my/devtools (ADR-0168 §3), the license notice of each font, and the editor in a chunk of its own.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-build')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:build
+        run: scripts/task.sh web:build
+      - name: web:build-check
+        run: scripts/task.sh web:build-check
+
+  web-test:
+    # The tests of the web packages the change reaches (scripts/changed-web-packages.sh, ADR-0079 §18), which a change
+    # outside the web context can do (pkg/mykit/ts); the slow suite runs every package. A package a runner: a test
+    # process uses a core, and a test that waits for one passes its limit.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-test')
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.select.outputs.web-packages) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: web:test
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: scripts/task.sh web:test PACKAGES="$PACKAGE"
+
+  web-stories-test:
+    # The tests in a browser on the built catalog of the Storybook host (ADR-0171 §1, §4), with the E2E tests' runner
+    # and no server: the layout tests of the design system's layout parts and overlays, and the browser tests of the
+    # parts. Chromium comes from Playwright's CLI, run on Bun.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-stories-test')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      # The catalog, built once for the two tests that open it.
+      - name: Build the catalog
+        run: scripts/task.sh web:stories
+      - name: web:layout-test-built
+        run: scripts/task.sh web:layout-test-built
+      - name: web:browser-test-built
+        run: scripts/task.sh web:browser-test-built
+
+  web-e2e-build:
+    # The test build of bin/my, with the web client embedded, built once for the jobs of web-e2e, so that every one of
+    # them tests the same build (ADR-0079 §9). A test build keeps its paths (go:bin), so it reads the Go cache of
+    # main.yml as the checks do and compiles only what the tag e2e_fakes and the embedded client change.
+    needs: select
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-e2e-build')
     runs-on: ubuntu-latest
     steps:
       - name: Check out
@@ -677,7 +1102,7 @@ jobs:
         uses: ./.github/actions/setup-bun
       - name: Install the Bun packages
         run: scripts/task.sh web:install
-      - name: go:bin
+      - name: Build bin/my for the tests
         run: scripts/task.sh go:bin GO_TAGS=e2e_fakes
       - name: Keep bin/my for the E2E jobs
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
@@ -686,14 +1111,12 @@ jobs:
           path: bin/my
           retention-days: 1
 
-  e2e:
+  web-e2e:
     # The E2E tests of the web client (ADR-0015 §1) against the demo server, which their global setup starts from the
-    # test build of bin/my that e2e-build made, when the e2e context changes: a workspace package that @my/app or
-    # @my/e2e depends on, or the server code (scripts/changed-contexts.sh). Chromium comes from Playwright's CLI, run
-    # on Bun. Four jobs side by side, each with a server of its own and a quarter of the spec files (Playwright's
-    # --shard): the tests take most of the time, and a pull request waits for the slowest job.
-    needs: [changes, e2e-build]
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.e2e == 'true'
+    # build of web-e2e-build. Four jobs side by side, each with a server of its own and a quarter of the spec files
+    # (Playwright's --shard): the tests take most of the time, and the queue waits for the slowest job.
+    needs: [select, web-e2e-build]
+    if: contains(fromJSON(needs.select.outputs.jobs), 'web-e2e')
     strategy:
       fail-fast: false
       matrix:
@@ -723,117 +1146,29 @@ jobs:
         run: chmod +x bin/my
       - name: web:e2e-built
         # What the client does, once: a test that fails runs again, twice at most, so that a test that fails only
-        # sometimes does not hold a pull request. The slow suite finds those tests (slow-suite.yml's e2e).
-        run: scripts/task.sh web:e2e-built -- --retries=2 --shard=${{ matrix.shard }}/4
-
-  web:
-    # The web client's static checks and its build: the tokens of web/design-tokens (ADR-0059), the components of
-    # web/design-system and web/app-components (ADR-0025), the platform of web/platform and the server data of
-    # web/app-data (ADR-0028), the features and the app of web/app-features and web/app with the app's build
-    # (ADR-0025 §9), the development packages web/devtools (ADR-0168) and web/storybook (ADR-0165), and what the
-    # production build holds: no @my/devtools, the license notice of each font, and the editor in a chunk of its own.
-    # The steps run one after another: each check uses the runner's cores itself.
-    needs: changes
-    if: needs.changes.outputs.full == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      # Also in preflight; here it checks the merge group, where two pull requests' formatted lines meet. It needs
-      # only Bun, and any change can break it.
-      - name: web:fmt-check
-        run: scripts/task.sh web:fmt-check
-      - name: Install the Bun packages
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:install
-      - name: web:typecheck
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:typecheck
-      - name: web:lint
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:lint
-      - name: web:direction
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:direction
-      - name: web:knip
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:knip
-      - name: web:build
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:build
-      - name: web:build-check
-        if: needs.changes.outputs.web == 'true'
-        run: scripts/task.sh web:build-check
-
-  web-test:
-    # The tests of the web packages the change reaches (scripts/changed-web-packages.sh, ADR-0079 §18), which a change
-    # outside the web context can do (pkg/mykit/ts); the slow suite runs every package. A package a runner: a test
-    # process uses a core, and a test that waits for one passes its limit.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.web-packages != ''
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.changes.outputs.web-packages-json) }}
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      - name: Install the Bun packages
-        run: scripts/task.sh web:install
-      - name: web:test
+        # sometimes does not hold the queue. The slow suite finds those tests (slow-suite.yml's web-e2e).
         env:
-          PACKAGE: ${{ matrix.package }}
-        run: scripts/task.sh web:test PACKAGES="$PACKAGE"
+          SHARD: ${{ matrix.shard }}
+        run: scripts/task.sh web:e2e-built -- --retries=2 --shard="$SHARD/4"
 
-  layout:
-    # The tests in a browser on the built catalog (ADR-0171 §1, §4), with the E2E tests' runner and no server, when
-    # the stories context changes: the layout tests of the design system's layout parts and overlays, and the browser
-    # tests of the parts.
-    # Chromium comes from Playwright's CLI, run on Bun.
-    needs: changes
-    if: needs.changes.outputs.full == 'true' && needs.changes.outputs.stories == 'true'
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check out
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up go-task
-        uses: ./.github/actions/setup-task
-      - name: Set up Bun
-        uses: ./.github/actions/setup-bun
-      - name: Install the Bun packages
-        run: scripts/task.sh web:install
-      - name: Install Chromium
-        working-directory: web/e2e
-        run: bun --bun playwright install --with-deps chromium
-      - name: web:stories
-        run: scripts/task.sh web:stories
-      - name: web:layout-test-built
-        run: scripts/task.sh web:layout-test-built
-      - name: web:browser-test-built
-        run: scripts/task.sh web:browser-test-built
-
-  check:
-    # The required status check of the protect-main ruleset, on pull requests and merge groups: it passes only when
-    # every job above passed, or was skipped because the event or the change does not need it. A job that calls a
-    # `always()` makes it report
-    # a result even when every other job is skipped, so neither a pull request nor a merge group waits on it. A draft
-    # reports nothing, rather than a pass that checked nothing.
+  gate:
+    # The required status check of the protect-main ruleset (.github/rulesets/protect-main.json), on pull requests and
+    # merge groups: it passes only when every job above passed, or was skipped because the event or the change does
+    # not need it. `always()` makes it report a result even when every other job is skipped, so neither a pull request
+    # nor a merge group waits on it. A draft reports nothing, rather than a pass that checked nothing.
+    # A required check is matched by its name alone, whatever workflow reports it: no other workflow may have a job
+    # named `gate`, or a run of it on the same commit would answer for this one (ADR-0079 §11).
     if: always() && (github.event_name != 'pull_request' || !github.event.pull_request.draft)
-    needs: [changes, preflight, lint, docker-smoke, tofu-fmt, db-lint, server-static, server-test, contracts, repo, web, web-test, e2e-build, e2e, layout]
+    needs: [select, go-format, ts-format, tofu-format, source-license, deps-license, docs-lint, docs-change, i18n-change, schema-change, schema-test, shell-lint, go-tests-lint, server-lint, agentkit-lint, mykit-lint, docker-static, docker-smoke, monitoring-test, server-static, server-test, server-contract, schema-static, api-static, api-test, docs-static, ci-static, agentkit-static, agentkit-test, mykit-static, mykit-test, i18n-static, i18n-test, site-static, site-test, site-build, tofu-static, shell-test, web-static, web-build, web-test, web-stories-test, web-e2e-build, web-e2e]
     runs-on: ubuntu-latest
     steps:
-      - name: Fail if a check job failed or was cancelled
+      - name: Fail if a job failed or was cancelled
         env:
           RESULTS: ${{ toJSON(needs) }}
         run: |
           jq -r 'to_entries[] | "\(.key)\t\(.value.result)"' <<< "$RESULTS"
-          jq -e 'all(.[]; .result == "success" or .result == "skipped")' <<< "$RESULTS" > /dev/null
+          failed="$(jq -r 'to_entries[] | select(.value.result != "success" and .value.result != "skipped") | .key' <<< "$RESULTS")"
+          if [ -n "$failed" ]; then
+            echo "::error::These jobs did not pass: $(tr '\n' ' ' <<< "$failed"). Open the failed job on this page: its failed step is named after the check (scripts/task.sh <name> runs it locally)."
+            exit 1
+          fi

@@ -25,7 +25,7 @@ tasks:
         done
         exit "$status"
 
-  # Not part of `check`, which needs no Docker: CI runs it in the docker-smoke job.
+  # Not part of `check`, which needs no Docker: CI runs it in the monitoring-test job.
   alert-rules:
     desc: Check and unit-test the Prometheus alerting rules of deploy/monitoring/prometheus with promtool (needs docker)
     vars:
@@ -45,9 +45,11 @@ tasks:
       - docker build --build-arg VERSION={{.VERSION}} --build-arg GO_TAGS={{.GO_TAGS}} -t my:{{.VERSION}} .
 
   # The smoke test covers linux/amd64. The Go server cross-builds with CGO_ENABLED=0, so only a change to the Dockerfile
-  # or the deployments makes the arm64 images differ (ADR-0010): CI builds them in the slow suite alone (ADR-0079).
+  # or the deployments makes the arm64 images differ (ADR-0010): CI builds them in the slow suite alone (ADR-0079 §4).
+  # Every command of the Dockerfile runs on the build platform, so the build needs no arm64 host and no emulation: it
+  # proves that the server compiles for arm64 and that the base image has the platform, and runs nothing.
   build-arm64:
-    desc: Build the server image for linux/arm64 (needs an arm64 host or QEMU)
+    desc: Build the server image for linux/arm64, on any host
     cmds:
       - docker build --platform linux/arm64 --target app .
 
@@ -58,7 +60,7 @@ tasks:
     cmds:
       - scripts/docker-smoke.sh
 
-  # Not part of `check`: it builds the images of two releases and takes minutes (CI job upgrade, in the slow suite).
+  # Not part of `check`: it builds the images of two releases and takes minutes (CI job image-upgrade, in the slow suite).
   upgrade-test:
     desc: Upgrade databases made by the release PREVIOUS (a tag) with this tree's server image and check the data (DIALECTS, default both)
     requires:
@@ -67,7 +69,7 @@ tasks:
       - scripts/upgrade-test.sh {{shellQuote .PREVIOUS}} {{.DIALECTS}}
 
   # Not part of `check`: it builds the images and runs the stack twice per dialect, which takes minutes (CI job
-  # restore-drill, in the slow suite).
+  # image-restore, in the slow suite).
   restore-drill:
     desc: Fill an instance, back it up while it runs, restore it into new volumes, and check the data, the Actors' keys, and signed delivery (DIALECTS, default both)
     cmds:

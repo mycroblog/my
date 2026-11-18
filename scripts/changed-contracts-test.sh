@@ -38,7 +38,8 @@ expect "the valkey stream" "stream" internal/adapter/stream/valkey/bus.go
 expect "the smtp mailer" "mail" internal/adapter/mail/smtp/smtp.go
 expect "the livekit transport" "voice" internal/adapter/voice/livekit/transport.go
 expect "a search backend" "search" internal/adapter/search/meilisearch/index.go
-expect "a contract workflow" "voice" .github/workflows/voice-contract.yml
+expect "the workflow of the contracts" "postgres stream mail blob voice search acme" .github/workflows/contract.yml
+expect "the workflow of the checks, which starts them" "postgres stream mail blob voice search acme" .github/workflows/ci.yml
 expect "the acme adapter" "acme" internal/adapter/acme/acme.go
 expect "the TLS manager" "acme" internal/app/instance/tls_manager.go
 expect "the Pebble harness" "acme" pkg/testkit/pebbletest/pebbletest.go

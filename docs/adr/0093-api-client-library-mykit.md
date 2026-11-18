@@ -112,7 +112,7 @@ pkg/mykit/
 - **テスト**:
   - 単体テスト: 手書きの層（再試行・ページング・SSE の解析と再接続・トークンの更新）を Go は `httptest`、TS は `bun test` で試す。
   - 結合テスト: `pkg/mykit/integration/` の試験用モジュールで、`pkg/testkit` を使ってサーバーをプロセス内で起動し、Go のクライアントで主要な流れ（投稿・タイムラインのページング・ストリーミング・アップロード・429）を通す。TS の結合テストは Web クライアントの E2E が `mykit` を通るので、別には持たない。
-  - CI: go-task に `mykit` の文脈（`tasks/mykit.yml`。Go の vet・lint・test・build・licenses、TS の typecheck・lint・test・licenses、`go.mod` がサーバーのモジュールを require しない検査）を足し、`check:changed` と merge queue の `check` に入れる。agentkit の `context-map.yaml` に `pkg/mykit`・`pkg/mybot` の領域を足す。
+  - CI: go-task に `mykit` の文脈（`tasks/mykit.yml`。Go の vet・lint・test・build・licenses、TS の typecheck・lint・test・licenses、`go.mod` がサーバーのモジュールを require しない検査）を足し、`check:changed` と merge queue の `gate` に入れる。agentkit の `context-map.yaml` に `pkg/mykit`・`pkg/mybot` の領域を足す。
 - **文書**: 英語の README（インストール・認証・ページング・ストリーミング・エラー・再試行の例）を `pkg/mykit/README.md` に、Go の例は `example_test.go` に置く。#1031 の英語の文書の方針に従う。
 
 ### 9. mybot: 配置・ライセンス・公開

@@ -16,6 +16,7 @@ on:
       - "docs/reference/**"
       - "docs/guide/**"
       - "docs/developers/**"
+      - "docs/plugins/**"
       - "web/docs/**"
       - "api/openapi.yaml"
       - "scripts/docs-site.sh"

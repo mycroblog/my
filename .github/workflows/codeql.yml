@@ -2,8 +2,9 @@ name: CodeQL
 
 # CodeQL code scanning (advanced setup): follows untrusted values to SQL, HTML, paths, redirects, and the like, which
 # the pattern checks of gosec (golangci-lint) do not. It is part of the slow suite of ADR-0079: slow-suite.yml calls it
-# for the release gate and the nightly run (which makes it daily while main moves), and it runs by hand on any branch;
-# never on pull requests, merge groups, or pushes to main, and it is not part of the required `check`. A caller grants
+# as its job code-scan, for the release gate and the nightly run (which makes it daily while main moves), and it runs
+# by hand on any branch; never on pull requests, merge groups, or pushes to main, and it is not part of the required
+# `gate`. A caller grants
 # the job's permissions below, security-events: write included. It sets no concurrency: a workflow-level group would be
 # the caller's, and a release run and a nightly run would cancel each other's analysis.
 # The results go to the repository's Security tab, one category per language. It runs the default query suite: the

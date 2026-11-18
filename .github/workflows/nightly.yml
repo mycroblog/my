@@ -1,7 +1,7 @@
 name: Nightly
 
 # A run of some of the jobs is titled for them, as `Nightly (slow-suite)`. A run titled just `Nightly` is a full one: it ran every
-# job, or, on a schedule, skipped them because a full run had already passed on this commit. The `changes` job and the
+# job, or, on a schedule, skipped them because a full run had already passed on this commit. The `select` job and the
 # check before a release (.claude/skills/release/SKILL.md) read this title.
 run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inputs.jobs) || 'Nightly' }}
 
@@ -10,8 +10,20 @@ run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inp
 # successful full run; a run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=slow-suite` or
 # `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
 # The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh).
-# When the slow suite passes on main, the nightly-image jobs publish the image of that commit as
+# When the slow suite passes on main, the image jobs publish the image of that commit as
 # ghcr.io/mycroblog/my:nightly (ADR-0010 §5), with no git tag and no GitHub Release.
+#
+# The jobs:
+#
+#   select        whether tonight's run has anything to check
+#   slow-suite    slow-suite.yml, whose jobs show as `slow-suite / <job>`
+#   image-scan    the published images, for a fixable vulnerability
+#   image-build, image-check, image-attest, image-tag
+#                 the nightly image, as release.yml's jobs of the same names build, check, and attest a release's
+#   report        the issue of a failing Nightly
+#
+# To add a nightly check of the commit: a job of slow-suite.yml, which a release then runs too. A job here is for what
+# only the night has: the published images, and the image of a commit that passed.
 
 on:
   schedule:
@@ -31,8 +43,13 @@ concurrency:
   group: nightly
   cancel-in-progress: true
 
+defaults:
+  run:
+    # Named, so that a step runs with `-o pipefail`: without it a check piped into another command cannot fail.
+    shell: bash
+
 jobs:
-  changes:
+  select:
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -68,8 +85,8 @@ jobs:
           fi
 
   slow-suite:
-    needs: changes
-    if: needs.changes.outputs.run == 'true' && inputs.jobs != 'image-scan'
+    needs: select
+    if: needs.select.outputs.run == 'true' && inputs.jobs != 'image-scan'
     uses: ./.github/workflows/slow-suite.yml
     # The permissions of slow-suite.yml's CodeQL job.
     permissions:
@@ -82,8 +99,8 @@ jobs:
   # passes again (scripts/nightly-report.sh). A partial run by hand, a run on another branch, and a run that a newer
   # one cancelled report nothing.
   report:
-    needs: [changes, slow-suite, nightly-image, nightly-image-check, nightly-image-attest, nightly-image-tag]
-    if: ${{ always() && needs.changes.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all') && github.ref == 'refs/heads/main' }}
+    needs: [select, slow-suite, image-build, image-check, image-attest, image-tag]
+    if: ${{ always() && needs.select.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all') && github.ref == 'refs/heads/main' }}
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -101,10 +118,10 @@ jobs:
           RESULTS: ${{ toJSON(needs) }}
           RUN_ID: ${{ github.run_id }}
           SHA: ${{ github.sha }}
-          SINCE: ${{ needs.changes.outputs.since }}
+          SINCE: ${{ needs.select.outputs.since }}
         run: |
-          # The changes job itself is not a check of main.
-          RESULTS="$(jq 'del(.changes)' <<< "$RESULTS")" scripts/nightly-report.sh
+          # The select job itself is not a check of main.
+          RESULTS="$(jq 'del(.select)' <<< "$RESULTS")" scripts/nightly-report.sh
 
   # The published images of the two latest minor versions, which operators upgrade through: a failure means a fixable
   # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0010 §8). It runs
@@ -137,7 +154,7 @@ jobs:
   # pseudo-version after the latest release tag (scripts/release-image.sh nightly-version), which `my version` and
   # NodeInfo report. An older nightly image stays as an untagged version: nothing deletes it, as a deletion of
   # untagged versions by age would also take the per-platform manifests of the release images.
-  nightly-image:
+  image-build:
     needs: slow-suite
     if: needs.slow-suite.result == 'success' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
@@ -201,9 +218,9 @@ jobs:
           annotations: ${{ steps.metadata.outputs.annotations }}
           outputs: type=image,name=ghcr.io/mycroblog/my,push-by-digest=true,name-canonical=true,push=true
 
-  nightly-image-check:
+  image-check:
     # On a runner of each platform, so that the binary really runs, and with no write permission.
-    needs: nightly-image
+    needs: image-build
     strategy:
       matrix:
         include:
@@ -235,14 +252,14 @@ jobs:
           password: ${{ github.token }}
       - name: Check the binary of the image
         env:
-          DIGEST: ${{ needs.nightly-image.outputs.digest }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
           PLATFORM: ${{ matrix.platform }}
-          VERSION: ${{ needs.nightly-image.outputs.version }}
+          VERSION: ${{ needs.image-build.outputs.version }}
         run: scripts/release-image.sh check "$DIGEST" "$PLATFORM" "$VERSION" | tee -a "$GITHUB_STEP_SUMMARY"
 
-  nightly-image-attest:
+  image-attest:
     # As release.yml's image-attest: kept in the repository's attestations, not pushed to ghcr.io (ADR-0010 §8).
-    needs: [nightly-image, nightly-image-check]
+    needs: [image-build, image-check]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -254,15 +271,15 @@ jobs:
         uses: actions/attest@1e69f48acb82d1966a394da916b4c1698aa569d6 # v4.2.2
         with:
           subject-name: ghcr.io/mycroblog/my
-          subject-digest: ${{ needs.nightly-image.outputs.digest }}
+          subject-digest: ${{ needs.image-build.outputs.digest }}
           push-to-registry: false
           # A storage record needs one more permission (artifact-metadata: write) and nothing here reads it.
           create-storage-record: false
 
   # Moves `nightly` to the checked and attested digest, the last step, so that the tag never names an image that failed
   # a check.
-  nightly-image-tag:
-    needs: [nightly-image, nightly-image-attest]
+  image-tag:
+    needs: [image-build, image-attest]
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
@@ -281,8 +298,8 @@ jobs:
           password: ${{ github.token }}
       - name: Tag the image nightly
         env:
-          DIGEST: ${{ needs.nightly-image.outputs.digest }}
-          VERSION: ${{ needs.nightly-image.outputs.version }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
+          VERSION: ${{ needs.image-build.outputs.version }}
           SHA: ${{ github.sha }}
         run: |
           scripts/release-image.sh tag "$DIGEST" nightly | tee -a "$GITHUB_STEP_SUMMARY"

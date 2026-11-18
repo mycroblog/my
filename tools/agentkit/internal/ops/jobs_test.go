@@ -44,19 +44,19 @@ func TestJobs(t *testing.T) {
 	state := filepath.Dir(fakeGH(t, ghJobs))
 	// Run 1 of CI was replaced by run 2; the other workflow has run 3.
 	rollup := checkJSON("old", "CANCELLED", 70) + "," +
-		strings.ReplaceAll(checkJSON("check", "FAILURE", 82), "/runs/1/", "/runs/2/") + "," +
+		strings.ReplaceAll(checkJSON("gate", "FAILURE", 82), "/runs/1/", "/runs/2/") + "," +
 		strings.ReplaceAll(strings.ReplaceAll(checkJSON("links", "", 90), "/runs/1/", "/runs/3/"), `"CI"`, `"Docs"`)
 	write(t, filepath.Join(state, "pr"), prJSON("OPEN", "MERGEABLE", waitHead, rollup, false))
 	write(t, filepath.Join(state, "run2"), `{"name":"CI","status":"completed","conclusion":"failure","run_started_at":"`+
 		jobTime(0)+`","updated_at":"`+jobTime(700)+`"}`)
 	write(t, filepath.Join(state, "jobs2"),
-		jobJSON("lint", "success", 45)+
-			jobJSON("contracts", "skipped", 0)+
+		jobJSON("server-lint", "success", 45)+
+			jobJSON("server-contract (postgres)", "skipped", 0)+
 			jobJSON("server-test", "failure", 400, stepJSON("Set up job", 0, 5), stepJSON("go test", 100, 390),
 				stepJSON("Restore the cache", 5, 60), stepJSON("Install", 60, 100))+
-			jobJSON("tofu", "success", 180, stepJSON("tofu test", 0, 170))+
-			jobJSON("e2e", "skipped", 0)+
-			jobJSON("check", "failure", 3))
+			jobJSON("tofu-static", "success", 180, stepJSON("tofu test", 0, 170))+
+			jobJSON("web-e2e (1)", "skipped", 0)+
+			jobJSON("gate", "failure", 3))
 	write(t, filepath.Join(state, "run3"), `{"name":"Docs","status":"in_progress","conclusion":null,"run_started_at":"`+
 		jobTime(0)+`","updated_at":"`+jobTime(10)+`"}`)
 	write(t, filepath.Join(state, "jobs3"), jobJSON("links", "", 0)+
@@ -74,8 +74,8 @@ func TestJobs(t *testing.T) {
 		"             4m50s  go test",
 		"               55s  Restore the cache",
 		"               40s  Install",
-		"     3m0s  passed     tofu",
-		"      45s  passed     lint",
+		"     3m0s  passed     tofu-static",
+		"      45s  passed     server-lint",
 		"  … 1 faster jobs (-n 4)",
 		"Docs run 3 (running): 4m0s wall, 2 jobs ran, 0 skipped",
 		"     4m0s  running    links",

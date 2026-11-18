@@ -1,21 +1,22 @@
 #!/usr/bin/env bash
 # SPDX-License-Identifier: AGPL-3.0-only
 #
-# Tests the dependency check of scripts/go-build-tags.sh (check-deps) on made-up package lists: above all, that a
-# build without e2e_fakes that links the fake payment provider, push service, search index, or translation provider fails. It builds nothing and
-# changes no file.
+# Tests the dependency check of scripts/go-fakes.sh (check-deps) on made-up package lists: above all, that a build
+# without e2e_fakes that links the fake payment provider, push service, search index, or translation provider fails.
+# It builds nothing and changes no file.
 #
-#   scripts/go-build-tags-test.sh
+#   scripts/go-fakes-test.sh
 set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
-script="$root/scripts/go-build-tags.sh"
+script="$root/scripts/go-fakes.sh"
 fake=github.com/mycroblog/my/internal/adapter/payment/fake
 push=github.com/mycroblog/my/internal/adapter/pushservice/fake
 search=github.com/mycroblog/my/internal/adapter/search/fake
 translator=github.com/mycroblog/my/internal/adapter/translator/fake
 fakes="$fake"$'\n'"$push"$'\n'"$search"$'\n'"$translator"
 stripe=github.com/mycroblog/my/internal/adapter/payment/stripe
+fakeplugin=github.com/mycroblog/my/internal/adapter/plugin/fakeplugin
 plain="$(printf '%s\n' github.com/mycroblog/my/cmd/my github.com/mycroblog/my/internal/platform "$stripe")"
 
 failed=0
@@ -41,22 +42,18 @@ expect_error() {
 
 expect_ok "the default build without the fake" "" "$plain"
 expect_error "the default build linking the fake" "" "$plain"$'\n'"$fake" "depends on the test-only fake $fake"
-expect_ok "a set of no_* tags without the fake" "no_postgres,no_valkey" "$plain"
-expect_error "a set of no_* tags linking the fake" "no_postgres,no_valkey" "$plain"$'\n'"$fake" "only a build with e2e_fakes may link it"
+expect_error "another tag does not admit the fake" "no_valkey" "$plain"$'\n'"$fake" "only a build with e2e_fakes may link it"
 expect_error "the default build linking the fake push service" "" "$plain"$'\n'"$push" "depends on the test-only fake $push"
-expect_error "a set of no_* tags linking the fake push service" "no_postgres,no_valkey" "$plain"$'\n'"$push" "only a build with e2e_fakes may link it"
 expect_error "the default build linking the fake search index" "" "$plain"$'\n'"$search" "depends on the test-only fake $search"
-expect_error "a set of no_* tags linking the fake search index" "no_postgres,no_valkey" "$plain"$'\n'"$search" "only a build with e2e_fakes may link it"
 expect_error "the default build linking the fake translation provider" "" "$plain"$'\n'"$translator" "depends on the test-only fake $translator"
-expect_error "a set of no_* tags linking the fake translation provider" "no_postgres,no_valkey" "$plain"$'\n'"$translator" "only a build with e2e_fakes may link it"
 expect_ok "e2e_fakes with the fakes" "e2e_fakes" "$plain"$'\n'"$fakes"
-expect_ok "e2e_fakes with no_* tags and the fakes" "no_valkey,e2e_fakes" "$plain"$'\n'"$fakes"
+expect_ok "e2e_fakes among other tags, with the fakes" "no_valkey,e2e_fakes" "$plain"$'\n'"$fakes"
 expect_error "e2e_fakes without the fake payment provider" "e2e_fakes" "$plain"$'\n'"$push"$'\n'"$search"$'\n'"$translator" "does not depend on $fake"
 expect_error "e2e_fakes without the fake push service" "e2e_fakes" "$plain"$'\n'"$fake"$'\n'"$search"$'\n'"$translator" "does not depend on $push"
 expect_error "e2e_fakes without the fake search index" "e2e_fakes" "$plain"$'\n'"$fake"$'\n'"$push"$'\n'"$translator" "does not depend on $search"
 expect_error "e2e_fakes without the fake translation provider" "e2e_fakes" "$plain"$'\n'"$fake"$'\n'"$push"$'\n'"$search" "does not depend on $translator"
-expect_error "a tag that leaves out an adapter still linked" "no_payments_stripe" "$plain" "still depends on $stripe"
-expect_error "an unknown tag" "no_such_tag" "$plain" "unknown build tag"
+expect_error "the default build linking a package of the tests" "" "$plain"$'\n'"$fakeplugin" "which only tests may link"
+expect_error "the test build linking a package of the tests" "e2e_fakes" "$plain"$'\n'"$fakes"$'\n'"$fakeplugin" "which only tests may link"
 
 if [ "$failed" -ne 0 ]; then exit 1; fi
-echo "go-build-tags-test: ok"
+echo "go-fakes-test: ok"
