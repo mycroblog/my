@@ -121,7 +121,6 @@ export function useTwoFactor(): TwoFactor | undefined {
 }
 
 export type TwoFactorWrites = {
-  readonly setUp: () => Promise<TotpSetup>;
   readonly enable: (setupToken: string, code: string) => Promise<readonly string[]>;
   readonly disable: (code: string) => Promise<void>;
   readonly regenerateCodes: (code: string) => Promise<readonly string[]>;
@@ -131,7 +130,6 @@ export type TwoFactorWrites = {
 export function useTwoFactorWrites(): TwoFactorWrites {
   const data = useAppData();
   return {
-    setUp: () => setUpTotp(data),
     enable: (setupToken, code) => enableTotp(data, setupToken, code),
     disable: (code) => disableTotp(data, code),
     regenerateCodes: (code) => regenerateRecoveryCodes(data, code),

@@ -21,8 +21,8 @@ export type LinkableLoginProvider = components["schemas"]["LinkableLoginProvider
 /** The links of the account, oldest first, and the login providers; both empty on a server without providers. */
 export type LinkedIdentities = components["schemas"]["LinkedIdentityList"];
 
-/** Where the browser goes to sign in at a provider, and until when the address works. */
-export type ExternalStart = { readonly url: string; readonly expiresAt: string };
+/** Where the browser goes to sign in at a provider. */
+export type ExternalStart = { readonly url: string };
 
 /** The links of the account and the login providers. */
 export function linkedIdentitiesQuery({ queries }: AppData) {
@@ -48,7 +48,7 @@ export async function beginLinkIdentity(
     },
   });
   if (start === undefined) throw new Error("app-data: /linked_identities answered without an address");
-  return { url: start.start_url, expiresAt: start.expires_at };
+  return { url: start.start_url };
 }
 
 /**
@@ -65,7 +65,7 @@ export async function beginExternalConfirmation(
     body: { provider_id: providerId, operation, ...(returnTo === undefined ? {} : { return_to: returnTo }) },
   });
   if (start === undefined) throw new Error("app-data: /linked_identities/confirmation answered without an address");
-  return { url: start.start_url, expiresAt: start.expires_at };
+  return { url: start.start_url };
 }
 
 /**
