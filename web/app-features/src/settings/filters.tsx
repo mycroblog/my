@@ -2,7 +2,7 @@
 
 // Keyword filters, the entry of the settings at /settings/filters (FR-209, ADR-0157 §6, §9, §10): the reader's filters,
 // oldest first, as the server lists them, each a row that opens its editor (filter-edit.tsx, a screen under the entry)
-// and says, under its name, what it does to a post it matches (folds it behind a warning, or hides it) and how many
+// and says, under its name, what it does to a post it matches (folds it behind the filter's name, or hides it) and how many
 // words it has, then where it applies and when it ends. One that has ended is still listed, marked Expired, and its
 // last line says when it ended. Add a filter, the screen's primary action, leads to the editor of a new one,
 // from the section's head, or from what stands in the list's place while there is none; the reader who has the most

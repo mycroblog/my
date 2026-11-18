@@ -60,7 +60,7 @@
     "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
   },
   "settings.entry.filters.hint": {
-    "defaultMessage": "投稿を隠す言葉やフレーズ",
+    "defaultMessage": "投稿を畳むか隠す言葉やフレーズ",
     "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
   },
   "settings.entry.security": {
@@ -852,11 +852,11 @@
     "description": "The button at the end of a hashtag's row in Followed hashtags (settings, Relationships) that stops following it at once: its posts no longer join the home timeline."
   },
   "settings.relationships.done": {
-    "defaultMessage": "{action, select, unblock {{name} のブロックを解除しました。} unmute {{name} のミュートを解除しました。} unmute_server {{name} のミュートを解除しました。} other {{name} のフォローを解除しました。}}",
+    "defaultMessage": "{action, select, unblock {{name} のブロックを解除しました。} unmute {{name} のミュートを解除しました。} unmute_server {サーバー {name} のミュートを解除しました。} other {{name} のフォローを解除しました。}}",
     "description": "Under a list of the settings' page Relationships once the reader took a row out of it, where the focus goes, the row being gone. action is unblock, unmute (an account), unmute_server or unfollow (a hashtag); name is the account's handle (@user or @user@domain), the server's domain, or the hashtag with #."
   },
   "settings.relationships.failed": {
-    "defaultMessage": "{action, select, unblock {{name} のブロックの解除} unmute {{name} のミュートの解除} unmute_server {{name} のミュートの解除} other {{name} のフォローの解除}}を完了できませんでした。",
+    "defaultMessage": "{action, select, unblock {{name} のブロックの解除を完了できませんでした。もう一度試してください。} unmute {{name} のミュートの解除を完了できませんでした。もう一度試してください。} unmute_server {サーバー {name} のミュートの解除を完了できませんでした。もう一度試してください。} other {{name} のフォローの解除を完了できませんでした。もう一度試してください。}}",
     "description": "Under a list of the settings' page Relationships when taking a row out of it got no answer from the server (the network); the row and its button stay, to press again. action and name are as in settings.relationships.done."
   },
   "settings.relationships.muted.notifications": {
@@ -868,7 +868,7 @@
     "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
   },
   "settings.relationships.count": {
-    "defaultMessage": "{list, select, blocked {{more, select, yes {{count}件を超えるアカウント} other {{count, plural, other {#件のアカウント}}}}} muted {{more, select, yes {{count}件を超えるアカウント} other {{count, plural, other {#件のアカウント}}}}} servers {{more, select, yes {{count}件を超えるサーバー} other {{count, plural, other {#件のサーバー}}}}} other {{more, select, yes {{count}件を超えるハッシュタグ} other {{count, plural, other {#件のハッシュタグ}}}}}}",
+    "defaultMessage": "{list, select, blocked {{more, select, yes {{count, number} 件を超えるアカウント} other {{count, plural, other {# 件のアカウント}}}}} muted {{more, select, yes {{count, number} 件を超えるアカウント} other {{count, plural, other {# 件のアカウント}}}}} servers {{more, select, yes {{count, number} 件を超えるサーバー} other {{count, plural, other {# 件のサーバー}}}}} other {{more, select, yes {{count, number} 件を超えるハッシュタグ} other {{count, plural, other {# 件のハッシュタグ}}}}}}",
     "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): how many it holds, as a phrase (9 servers). more is yes while the server has more than it sent so far (count is then those read). list is as in settings.relationships.list."
   },
   "settings.relationships.result": {
@@ -884,7 +884,7 @@
     "description": "The line under the heading of the list of keyword filters (settings, Keyword filters), what a filter does."
   },
   "settings.filters.full": {
-    "defaultMessage": "フィルタは{max}個まで作れます。新しく追加するには、どれかを削除してください。",
+    "defaultMessage": "フィルタは上限の {max, number} 個に達しています。追加するには、どれかを削除してください。",
     "description": "The line under the heading of the list of keyword filters when the reader has as many as the server keeps, in place of settings.filters.about, and Add a filter is not offered; also the submit bar's sentence when the server refused a new filter for that reason. max is 100."
   },
   "settings.filters.add": {
@@ -936,11 +936,11 @@
     "description": "Under the field of a keyword filter's name when the reader pressed Add or Save with it empty."
   },
   "settings.filters.name.over": {
-    "defaultMessage": "名前は{max}文字までです。",
+    "defaultMessage": "名前は {max, number} 文字以内にしてください。",
     "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
   },
   "settings.filters.name.rule": {
-    "defaultMessage": "名前は1行で1〜{max}文字です。タブなどの制御文字は使えません。",
+    "defaultMessage": "名前は 1 行で 1〜{max, number} 文字にしてください。タブなどの制御文字は使えません。",
     "description": "Under the field of a keyword filter's name when the server refused it: the rule a name follows. max is 50."
   },
   "settings.filters.words": {
@@ -948,7 +948,7 @@
     "description": "The heading of the section of a keyword filter's form that lists its words and phrases; the count follows it."
   },
   "settings.filters.words.about": {
-    "defaultMessage": "どれか 1 つを含む投稿が一致します。「単語全体」にすると、長い語の一部には一致しません。",
+    "defaultMessage": "どれか 1 つを含む投稿が一致します。「単語全体」にすると、長い単語の一部には一致しません。",
     "description": "The line under the heading of a keyword filter's words: how they match, in one short sentence about Whole word (settings.filters.word.whole); the documentation explains the scripts that write words without spaces, where Whole word changes nothing."
   },
   "settings.filters.words.add": {
@@ -964,23 +964,23 @@
     "description": "Under a keyword filter's words when the reader pressed Add or Save with none written."
   },
   "settings.filters.words.left": {
-    "defaultMessage": "{count, plural, other {あと#語追加できます。}}",
+    "defaultMessage": "{count, plural, other {あと # 語追加できます。}}",
     "description": "Under a keyword filter's words when the filter or all the reader's filters come near the most words the server keeps: how many more can be added."
   },
   "settings.filters.words.filter_full": {
-    "defaultMessage": "このフィルタの言葉は上限の{max}語に達しています。",
+    "defaultMessage": "このフィルタの言葉は上限の {max, number} 語に達しています。追加するには、どれかを外してください。",
     "description": "Under a keyword filter's words when the filter has as many as it can, and Add a word is disabled. max is 100."
   },
   "settings.filters.words.all_full": {
-    "defaultMessage": "すべてのフィルタの言葉は合わせて{max}語までです。追加するには、このフィルタかほかのフィルタから削除してください。",
+    "defaultMessage": "すべてのフィルタの言葉は、合わせて上限の {max, number} 語に達しています。追加するには、このフィルタかほかのフィルタから言葉を外してください。",
     "description": "Under a keyword filter's words when all the reader's filters have as many words as they can, and Add a word is disabled. max is 1,000."
   },
   "settings.filters.words.too_many": {
-    "defaultMessage": "フィルタごとの言葉は{filter}語まで、すべてのフィルタで合わせて{max}語までです。先にいくつか削除してください。",
+    "defaultMessage": "フィルタごとの言葉は {filter, number} 語まで、すべてのフィルタで合わせて {max, number} 語までです。先にいくつか外してください。",
     "description": "Under a keyword filter's words when the server refused the form because the words would pass one of its limits. filter is 100, max is 1,000."
   },
   "settings.filters.word": {
-    "defaultMessage": "言葉・フレーズ {n}",
+    "defaultMessage": "言葉・フレーズ {n, number}",
     "description": "The label of the field of one word of a keyword filter. n is its place in the list, from 1."
   },
   "settings.filters.word.whole": {
@@ -992,15 +992,15 @@
     "description": "The button beside a word of a keyword filter that takes it out of the form."
   },
   "settings.filters.word.remove_named": {
-    "defaultMessage": "言葉 {n} を外す",
+    "defaultMessage": "言葉 {n, number} を外す",
     "description": "The name assistive technology reads of the button beside a word of a keyword filter (settings.filters.word.remove), which says which word it removes. n is the word's place, from 1."
   },
   "settings.filters.word.over": {
-    "defaultMessage": "言葉は{max}文字までです。",
+    "defaultMessage": "言葉は {max, number} 文字以内にしてください。",
     "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
   },
   "settings.filters.word.rule": {
-    "defaultMessage": "言葉は1〜{max}文字です。タブなどの制御文字は使えません。",
+    "defaultMessage": "言葉は 1〜{max, number} 文字にしてください。タブなどの制御文字は使えません。",
     "description": "Under the field of a word of a keyword filter when the server refused it: the rule a word follows. max is 100."
   },
   "settings.filters.contexts": {
@@ -1020,7 +1020,7 @@
     "description": "The label of the choice of what a keyword filter does to a post that holds one of its words (settings.filters.action.choice)."
   },
   "settings.filters.action.choice": {
-    "defaultMessage": "{action, select, warn {警告の後ろに畳む} other {完全に隠す}}",
+    "defaultMessage": "{action, select, warn {フィルタ名を残して畳む} other {完全に隠す}}",
     "description": "An option of what a keyword filter does to a matching post: warn shows only the filter's name with Show in its place, hide leaves it out of the list."
   },
   "settings.filters.ends": {
@@ -1028,7 +1028,7 @@
     "description": "The label of the choice of when a keyword filter stops applying (settings.filters.ends.choice)."
   },
   "settings.filters.ends.choice": {
-    "defaultMessage": "{choice, select, never {なし} m30 {30分後} h1 {1時間後} h6 {6時間後} h12 {12時間後} d1 {1日後} w1 {1週間後} other {日時を指定}}",
+    "defaultMessage": "{choice, select, never {なし} m30 {30 分後} h1 {1 時間後} h6 {6 時間後} h12 {12 時間後} d1 {1 日後} w1 {1 週間後} other {日時を指定}}",
     "description": "An option of when a keyword filter stops applying: never, after a duration counted from saving, or at a date and time the reader picks in a field that then shows (date)."
   },
   "settings.filters.ends.date": {
@@ -1068,7 +1068,7 @@
     "description": "The question of the confirmation before a keyword filter is deleted. name is the filter's name."
   },
   "settings.filters.delete.text": {
-    "defaultMessage": "言葉も一緒に削除され、元に戻せません。",
+    "defaultMessage": "言葉も一緒に削除されます。取り消せません。",
     "description": "The text of the confirmation before a keyword filter is deleted."
   },
   "settings.filters.delete.confirm": {
@@ -1088,7 +1088,7 @@
     "description": "The question of the confirmation that opens when the reader leaves a keyword filter's form with changes they have not saved."
   },
   "settings.filters.leave.text": {
-    "defaultMessage": "保存していない変更は失われ、元に戻せません。",
+    "defaultMessage": "保存していない変更は失われます。取り消せません。",
     "description": "The text of the confirmation that asks whether to leave a keyword filter's form without saving."
   },
   "settings.filters.leave.confirm": {
@@ -1108,11 +1108,11 @@
     "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
   },
   "settings.filters.fact.does": {
-    "defaultMessage": "{action, select, warn {一致した投稿を警告の後ろに畳む} other {一致した投稿を隠す}}",
+    "defaultMessage": "{action, select, warn {一致した投稿を畳む} other {一致した投稿を隠す}}",
     "description": "A fact under a filter's name in the list of keyword filters, first on its first line: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out). A phrase, without a full stop."
   },
   "settings.filters.fact.words": {
-    "defaultMessage": "{count, plural, other {#語}}",
+    "defaultMessage": "{count, plural, other {# 語}}",
     "description": "A fact under a filter's name in the list of keyword filters, after what it does on the same line: how many words or phrases it has. Without a full stop."
   },
   "settings.filters.fact.where": {

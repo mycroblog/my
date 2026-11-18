@@ -45,7 +45,7 @@ const profileHint = "Name, bio, images, badges, approving followers, appearing i
 const displayHint = "Language, time zone, link previews, defaults for new posts, timeline languages";
 const notificationsHint = "What you are notified of, push, email, sound, notifications from people you do not know";
 const relationshipsHint = "Blocked accounts, muted accounts, muted servers, followed hashtags";
-const filtersHint = "Words and phrases that hide posts";
+const filtersHint = "Words and phrases that fold or hide posts";
 const accountHint =
   "Export and import, automatic deletion of old posts, moving the account, moderation actions and appeals, deactivation and deletion";
 

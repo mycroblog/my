@@ -67,8 +67,8 @@ Replies come too; boosts do not, and neither do posts of people you block or mut
 the server keeps off its public timelines. Home shows only the posts this server already has: following a hashtag does
 not fetch posts from other servers.
 
-You can follow up to 100 hashtags. "Followed hashtags" in the settings lists them, the latest first, follows another
-one ("Follow a hashtag", with or without the `#`), and unfollows them.
+You can follow up to 100 hashtags. "Followed hashtags", under "Relationships" in the settings, lists them, the latest
+first, and lets you "Unfollow" them.
 
 ## Featured hashtags
 

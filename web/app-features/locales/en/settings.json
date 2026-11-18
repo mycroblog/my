@@ -60,7 +60,7 @@
     "description": "An entry of the settings menu, and the title of its page, which lists the reader's keyword filters; also the button at the top of one filter's page that goes back to the list."
   },
   "settings.entry.filters.hint": {
-    "defaultMessage": "Words and phrases that hide posts",
+    "defaultMessage": "Words and phrases that fold or hide posts",
     "description": "The line under Keyword filters in the settings menu at /settings: what a keyword filter is (posts with its words are folded behind the filter's name, or left out). Without a full stop."
   },
   "settings.entry.security": {
@@ -816,7 +816,7 @@
     "description": "The heading of a section of the settings' page Relationships, and the title of the page under it that holds the whole list. list is blocked (the accounts the reader blocks), muted (the accounts they mute), servers (the servers they mute) or hashtags (the hashtags they follow)."
   },
   "settings.relationships.empty": {
-    "defaultMessage": "{list, select, blocked {You have not blocked anyone. To block an account, choose Block… in the menu of its profile or of one of its posts.} muted {You have not muted anyone. To mute an account, choose Mute in the menu of its profile or of one of its posts.} servers {You have not muted any server. To mute one, choose Mute server in the menu of a profile or a post from it.} other {You do not follow any hashtag. To follow one, open it and choose Follow: its posts then join your home timeline.}}",
+    "defaultMessage": "{list, select, blocked {You have not blocked anyone. To block an account, choose “Block…” in the menu of its profile or of one of its posts.} muted {You have not muted anyone. To mute an account, choose “Mute” in the menu of its profile or of one of its posts.} servers {You have not muted any server. To mute one, choose “Mute server” in the menu of a profile or a post from it.} other {You do not follow any hashtag. To follow one, open it and choose “Follow”: its posts then join your home timeline.}}",
     "description": "In place of a list of the settings' page Relationships while it is empty: what it would hold, and how something comes to be in it, in the words of the menus of a profile and of a post (profile.block, profile.mute, profile.mute_server) and of a hashtag's page (timeline.tag_follow). list is as in settings.relationships.list."
   },
   "settings.relationships.loading": {
@@ -852,11 +852,11 @@
     "description": "The button at the end of a hashtag's row in Followed hashtags (settings, Relationships) that stops following it at once: its posts no longer join the home timeline."
   },
   "settings.relationships.done": {
-    "defaultMessage": "{action, select, unblock {You unblocked {name}.} unmute {You unmuted {name}.} unmute_server {You unmuted {name}.} other {You unfollowed {name}.}}",
+    "defaultMessage": "{action, select, unblock {You unblocked {name}.} unmute {You unmuted {name}.} unmute_server {You unmuted the server {name}.} other {You unfollowed {name}.}}",
     "description": "Under a list of the settings' page Relationships once the reader took a row out of it, where the focus goes, the row being gone. action is unblock, unmute (an account), unmute_server or unfollow (a hashtag); name is the account's handle (@user or @user@domain), the server's domain, or the hashtag with #."
   },
   "settings.relationships.failed": {
-    "defaultMessage": "{action, select, unblock {Unblocking {name} did not finish.} unmute {Unmuting {name} did not finish.} unmute_server {Unmuting {name} did not finish.} other {Unfollowing {name} did not finish.}}",
+    "defaultMessage": "{action, select, unblock {Unblocking {name} did not finish. Try again.} unmute {Unmuting {name} did not finish. Try again.} unmute_server {Unmuting the server {name} did not finish. Try again.} other {Unfollowing {name} did not finish. Try again.}}",
     "description": "Under a list of the settings' page Relationships when taking a row out of it got no answer from the server (the network); the row and its button stay, to press again. action and name are as in settings.relationships.done."
   },
   "settings.relationships.muted.notifications": {
@@ -868,7 +868,7 @@
     "description": "A line under a muted account's name in Muted accounts (settings, Relationships): when the mute ends by itself. date is a date and time (Nov 30, 2026, 9:00 PM). Without a full stop."
   },
   "settings.relationships.count": {
-    "defaultMessage": "{list, select, blocked {{more, select, yes {More than {count} accounts} other {{count, plural, one {# account} other {# accounts}}}}} muted {{more, select, yes {More than {count} accounts} other {{count, plural, one {# account} other {# accounts}}}}} servers {{more, select, yes {More than {count} servers} other {{count, plural, one {# server} other {# servers}}}}} other {{more, select, yes {More than {count} hashtags} other {{count, plural, one {# hashtag} other {# hashtags}}}}}}",
+    "defaultMessage": "{list, select, blocked {{more, select, yes {More than {count, number} accounts} other {{count, plural, one {# account} other {# accounts}}}}} muted {{more, select, yes {More than {count, number} accounts} other {{count, plural, one {# account} other {# accounts}}}}} servers {{more, select, yes {More than {count, number} servers} other {{count, plural, one {# server} other {# servers}}}}} other {{more, select, yes {More than {count, number} hashtags} other {{count, plural, one {# hashtag} other {# hashtags}}}}}}",
     "description": "The heading of the one section of the page that holds the whole of one list of Relationships, whose title already names the list (settings.relationships.list): how many it holds, as a phrase (9 servers). more is yes while the server has more than it sent so far (count is then those read). list is as in settings.relationships.list."
   },
   "settings.relationships.result": {
@@ -884,7 +884,7 @@
     "description": "The line under the heading of the list of keyword filters (settings, Keyword filters), what a filter does."
   },
   "settings.filters.full": {
-    "defaultMessage": "You have {max} filters, the most you can have. Delete one to add another.",
+    "defaultMessage": "You have {max, number} filters, the most you can have. Delete one to add another.",
     "description": "The line under the heading of the list of keyword filters when the reader has as many as the server keeps, in place of settings.filters.about, and Add a filter is not offered; also the submit bar's sentence when the server refused a new filter for that reason. max is 100."
   },
   "settings.filters.add": {
@@ -912,11 +912,11 @@
     "description": "The button at the bottom of a keyword filter's form that saves the whole form: adds a new filter (new), or saves the changes of one that is there (edit); the page then goes back to the list."
   },
   "settings.filters.save.failed": {
-    "defaultMessage": "The filter was not saved. Try again.",
+    "defaultMessage": "The filter could not be saved. Try again.",
     "description": "In the bar at the bottom of a keyword filter's form, beside Save, when the server did not take the form: what is wrong stands under the field it is about, when there is one."
   },
   "settings.filters.save.refused": {
-    "defaultMessage": "Fix what is marked to save.",
+    "defaultMessage": "To save, fix what is marked.",
     "description": "In the bar at the bottom of a keyword filter's form when the form or the server found something wrong with a field, which says what under that field."
   },
   "settings.filters.section.filter": {
@@ -936,11 +936,11 @@
     "description": "Under the field of a keyword filter's name when the reader pressed Add or Save with it empty."
   },
   "settings.filters.name.over": {
-    "defaultMessage": "A name is {max} characters at most.",
+    "defaultMessage": "The name must be at most {max, number} characters.",
     "description": "Under the field of a keyword filter's name when it is too long to save. max is 50."
   },
   "settings.filters.name.rule": {
-    "defaultMessage": "A name is 1 to {max} characters on one line, without tabs or other control characters.",
+    "defaultMessage": "The name must be 1 to {max, number} characters on one line, without tabs or other control characters.",
     "description": "Under the field of a keyword filter's name when the server refused it: the rule a name follows. max is 50."
   },
   "settings.filters.words": {
@@ -948,7 +948,7 @@
     "description": "The heading of the section of a keyword filter's form that lists its words and phrases; the count follows it."
   },
   "settings.filters.words.about": {
-    "defaultMessage": "A post that contains any of them matches. With Whole word, a word does not match inside a longer one.",
+    "defaultMessage": "A post that contains any of them matches. With “Whole word”, a word does not match inside a longer one.",
     "description": "The line under the heading of a keyword filter's words: how they match, in one short sentence about Whole word (settings.filters.word.whole); the documentation explains the scripts that write words without spaces, where Whole word changes nothing."
   },
   "settings.filters.words.add": {
@@ -968,19 +968,19 @@
     "description": "Under a keyword filter's words when the filter or all the reader's filters come near the most words the server keeps: how many more can be added."
   },
   "settings.filters.words.filter_full": {
-    "defaultMessage": "This filter has {max} words, the most a filter can have.",
+    "defaultMessage": "This filter has {max, number} words, the most a filter can have. Remove one to add another.",
     "description": "Under a keyword filter's words when the filter has as many as it can, and Add a word is disabled. max is 100."
   },
   "settings.filters.words.all_full": {
-    "defaultMessage": "Your filters have {max} words in all, the most they can have. Remove some here or from another filter to add more.",
+    "defaultMessage": "Your filters have {max, number} words in all, the most they can have. Remove some here or from another filter to add more.",
     "description": "Under a keyword filter's words when all the reader's filters have as many words as they can, and Add a word is disabled. max is 1,000."
   },
   "settings.filters.words.too_many": {
-    "defaultMessage": "A filter has at most {filter} words, and all your filters {max} in all. Remove some first.",
+    "defaultMessage": "A filter has at most {filter, number} words, and all your filters {max, number} in all. Remove some first.",
     "description": "Under a keyword filter's words when the server refused the form because the words would pass one of its limits. filter is 100, max is 1,000."
   },
   "settings.filters.word": {
-    "defaultMessage": "Word or phrase {n}",
+    "defaultMessage": "Word or phrase {n, number}",
     "description": "The label of the field of one word of a keyword filter. n is its place in the list, from 1."
   },
   "settings.filters.word.whole": {
@@ -992,15 +992,15 @@
     "description": "The button beside a word of a keyword filter that takes it out of the form."
   },
   "settings.filters.word.remove_named": {
-    "defaultMessage": "Remove word {n}",
+    "defaultMessage": "Remove word {n, number}",
     "description": "The name assistive technology reads of the button beside a word of a keyword filter (settings.filters.word.remove), which says which word it removes. n is the word's place, from 1."
   },
   "settings.filters.word.over": {
-    "defaultMessage": "A word is {max} characters at most.",
+    "defaultMessage": "A word must be at most {max, number} characters.",
     "description": "Under the field of a word of a keyword filter when it is too long to save. max is 100."
   },
   "settings.filters.word.rule": {
-    "defaultMessage": "A word is 1 to {max} characters, without tabs or other control characters.",
+    "defaultMessage": "A word must be 1 to {max, number} characters, without tabs or other control characters.",
     "description": "Under the field of a word of a keyword filter when the server refused it: the rule a word follows. max is 100."
   },
   "settings.filters.contexts": {
@@ -1020,7 +1020,7 @@
     "description": "The label of the choice of what a keyword filter does to a post that holds one of its words (settings.filters.action.choice)."
   },
   "settings.filters.action.choice": {
-    "defaultMessage": "{action, select, warn {Fold behind a warning} other {Hide completely}}",
+    "defaultMessage": "{action, select, warn {Fold behind the filter's name} other {Hide completely}}",
     "description": "An option of what a keyword filter does to a matching post: warn shows only the filter's name with Show in its place, hide leaves it out of the list."
   },
   "settings.filters.ends": {
@@ -1040,7 +1040,7 @@
     "description": "Under the end of a keyword filter when At a date and time is chosen and the field holds no date and time."
   },
   "settings.filters.ends.date_past": {
-    "defaultMessage": "Choose a time later than now.",
+    "defaultMessage": "Choose a date and time later than now.",
     "description": "Under the end of a keyword filter when the date and time chosen has passed."
   },
   "settings.filters.ends.keep": {
@@ -1056,7 +1056,7 @@
     "description": "The heading of the last section of a keyword filter's form, for a filter that is there."
   },
   "settings.filters.delete.about": {
-    "defaultMessage": "Its words are deleted with it, and the posts it held back show again.",
+    "defaultMessage": "Its words are deleted with it, and the posts it folded or hid show again.",
     "description": "The line under the heading Delete filter: what deleting a keyword filter does."
   },
   "settings.filters.delete.open": {
@@ -1080,7 +1080,7 @@
     "description": "The button of the confirmation that keeps the keyword filter."
   },
   "settings.filters.delete.failed": {
-    "defaultMessage": "The filter was not deleted. Try again.",
+    "defaultMessage": "The filter could not be deleted. Try again.",
     "description": "In the bar at the bottom of a keyword filter's form when deleting it got no answer from the server."
   },
   "settings.filters.leave.title": {
@@ -1108,7 +1108,7 @@
     "description": "The link after settings.filters.not_found that leads to the list of keyword filters."
   },
   "settings.filters.fact.does": {
-    "defaultMessage": "{action, select, warn {Folds matching posts behind a warning} other {Hides matching posts}}",
+    "defaultMessage": "{action, select, warn {Folds matching posts} other {Hides matching posts}}",
     "description": "A fact under a filter's name in the list of keyword filters, first on its first line: what it does to a post that holds one of its words (warn: the post shows only the filter's name and Show; hide: the post is left out). A phrase, without a full stop."
   },
   "settings.filters.fact.words": {

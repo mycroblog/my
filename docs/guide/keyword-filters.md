@@ -9,13 +9,13 @@ result. Only you see your filters, and nobody is told about them.
 Open "Keyword filters" under "People and filters" in the settings, and choose "Add a filter":
 
 1. **Name:** what a folded post shows in its place ("Matches filter “Season finale”"), up to 50 characters.
-2. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
+2. **Posts that match:** "Fold behind the filter's name" shows only that name in the post's place, with "Show" to read
+   it. "Hide completely" leaves the post out, and its notification too.
+3. **Ends:** "Never", after one of the durations offered, from 30 minutes to a week, or "At a date and time".
+4. **Words:** one or more words or phrases. "Add a word" adds another, up to 100 in a filter. "Whole word" beside a word
    makes it match only as a whole word (see [How words match](#how-words-match)).
-3. **Where it applies:** your home timeline and lists, your notifications, the local, federated, and hashtag
-   timelines, threads, and profiles. A new filter applies everywhere; clear the places you do not want.
-4. **What it does:** "Fold behind a warning" puts the post behind the filter's name, with "Show" to read it. "Hide
-   completely" leaves the post out, and its notification too.
-5. **Ends:** "Never", after one of the durations offered, from 30 minutes to a week, or "At a date and time".
+5. **Where it applies:** "Home and lists", "Notifications", "Public timelines" (the local, federated, and hashtag
+   timelines), "Threads", and "Profiles". A new filter applies everywhere; clear the places you do not want.
 
 Choose "Add". A filter of the list opens it to change any of these, and "Delete…" there removes it with its words after
 asking. A filter applies at once to every post, old ones too; the timelines open on screen load again to show the change.
