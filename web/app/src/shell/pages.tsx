@@ -2,8 +2,8 @@
 
 // The pages that take the place of every screen (ADR-0088 §2, §10): the maintenance, while the server answers with its
 // maintenance problem, with the operator's words, when it should end and the status page; and the closed server, for a
-// signed-in reader, who can only take their data away. Each is a page of its own outside the frame, with the server's
-// mark, and its title as the document's.
+// signed-in reader, who can only take their data away, or sign out, as from the settings (sign-out.tsx). Each is a page
+// of its own outside the frame, with the server's mark, and its title as the document's.
 
 import { useStatusPageUrl, type Closure, type Instance, type Maintenance } from "@my/app-data";
 import { ClosedScreen } from "@my/app-features";
@@ -19,10 +19,11 @@ import {
   useTimeZone,
   type FormPageServer,
 } from "@my/design-system";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import wordmarkDark from "../../../brand/Wordmark-DarkBg.svg";
 import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
 import { useStrings } from "../locale";
+import { SignOutConfirm } from "../sign-out";
 
 const wordmark = { light: wordmarkLight, dark: wordmarkDark };
 
@@ -105,12 +106,24 @@ export function MaintenancePage({ maintenance }: { maintenance: Maintenance }) {
 /** The page of the closed server, in place of every screen of a signed-in reader. */
 export function ClosedPage({ server, closure }: { server: FormPageServer; closure: Closure }) {
   const statusPage = useStatusPageUrl();
+  const [signingOut, setSigningOut] = useState(false);
   return (
-    <ClosedScreen
-      server={server}
-      wordmark={wordmark}
-      closure={closure}
-      footer={<PageFooter statusPage={statusPage} />}
-    />
+    <>
+      <ClosedScreen
+        server={server}
+        wordmark={wordmark}
+        closure={closure}
+        onSignOut={() => {
+          setSigningOut(true);
+        }}
+        footer={<PageFooter statusPage={statusPage} />}
+      />
+      <SignOutConfirm
+        asking={signingOut}
+        onCancel={() => {
+          setSigningOut(false);
+        }}
+      />
+    </>
   );
 }

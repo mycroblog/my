@@ -4,7 +4,7 @@
 // when the reader can still take their data, the operator's words, and the ways to take it: the archive of everything,
 // requested here, built in the background and downloaded here once ready (the latest export's state says which, and
 // the request waits while one is being built), and the CSV of whom they follow, which another server imports. Signing
-// out ends it.
+// out ends it: the app asks and signs out as its settings do (`onSignOut`).
 
 import { useDataExports, type Closure, type DataExport } from "@my/app-data";
 import {
@@ -12,19 +12,16 @@ import {
   dateFormat,
   FormActions,
   FormHead,
-  FormLink,
   FormLinks,
   FormPage,
   FormText,
+  TextButton,
   useLocale,
   useTimeZone,
   type FormPageServer,
 } from "@my/design-system";
 import { useEffect, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
-
-/** Where the server's sign-out page is, which ends the session. */
-const signOutPath = "/auth/sign_out";
 
 /** What last failed of what the reader pressed: the request of the archive, its download, or the CSV's. */
 type Failed = "request" | "download" | "csv" | null;
@@ -44,11 +41,13 @@ export type ClosedScreenProps = {
   /** The built-in wordmark, for light and dark. */
   wordmark: { light: string; dark: string };
   closure: Closure;
+  /** Sign out, pressed: the app asks before it signs the reader out. */
+  onSignOut: () => void;
   /** The page's footer (FormPageFooter). */
   footer?: ReactNode;
 };
 
-export function ClosedScreen({ server, wordmark, closure, footer }: ClosedScreenProps) {
+export function ClosedScreen({ server, wordmark, closure, onSignOut, footer }: ClosedScreenProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const { exports, request, download, csv } = useDataExports();
   const [sending, setSending] = useState(false);
@@ -120,7 +119,7 @@ export function ClosedScreen({ server, wordmark, closure, footer }: ClosedScreen
       {failed === "download" && <FormText role="status">{t("closure.export_download_failed")}</FormText>}
       {failed === "csv" && <FormText role="status">{t("closure.download_failed")}</FormText>}
       <FormLinks>
-        <FormLink href={signOutPath}>{t("closure.sign_out")}</FormLink>
+        <TextButton onPress={onSignOut}>{t("closure.sign_out")}</TextButton>
       </FormLinks>
     </FormPage>
   );

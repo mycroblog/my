@@ -30,7 +30,9 @@
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
-// `newNotification` make one. A test scripts an operation with `script` (script.ts).
+// `newNotification` make one. A test scripts an operation with `script` (script.ts). The token revocation the app
+// signs out through (POST /oauth/revoke) is no operation of the client API: the fake answers it itself, keeps it
+// (`revocations`), or fails it (`revocation`).
 
 import type { StreamEvent } from "@mycroblog/mykit";
 import { drawingBlurhash, drawingURL } from "../drawing";
@@ -322,6 +324,11 @@ export type FakeOptions = {
    */
   preferences?: Partial<Schema<"Preferences">>;
   /**
+   * The reader's preferences are not read (`read`: GET /preferences fails, a 500) or not saved (`save`: PATCH
+   * /preferences fails, a 500, and changes nothing).
+   */
+  preferencesFail?: "read" | "save";
+  /**
    * In place of the seed's notifications, one of each kind of a group the server sends: from people (`people`), the
    * server's notices to the reader (`notices`), or those to its moderators (`moderators`), each a page at most.
    */
@@ -351,6 +358,11 @@ export type FakeOptions = {
    * a server that processes it meanwhile; ready at once by default.
    */
   uploads?: "processing";
+  /**
+   * The token revocation, which the app signs out through (POST /oauth/revoke, no operation of the client API), fails
+   * (`fails`, a 503) and ends nothing; by default it answers 200 and the fake keeps it (`revocations`).
+   */
+  revocation?: "fails";
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -452,6 +464,11 @@ export type FakeApi = {
   send: (event: FakeStreamEvent) => void;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
+  /**
+   * The token revocations the server took (POST /oauth/revoke), each as the form it was sent with: the client
+   * (`client_id`) and the token it names. One it took ended the reader's session.
+   */
+  readonly revocations: readonly { readonly clientId: string; readonly token: string }[];
   /** Adds `count` posts to the home timeline, sends them on the stream, and returns them, newest first. */
   newPosts: (count: number) => Status[];
   /** Adds a notification (a favourite of the reader's post), sends it on the stream, and returns it. */
@@ -2531,8 +2548,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The shell --------------------------------------------------------------------------------------------------
 
     "GET /accounts/verify_credentials": () => ({ status: 200, body: credentialOf(viewer) }),
-    "GET /preferences": () => ({ status: 200, body: preferences }),
-    "PATCH /preferences": ({ body }) => changePreferences(body),
+    "GET /preferences": () =>
+      o.preferencesFail === "read" ? problem(500, "Internal Server Error") : { status: 200, body: preferences },
+    "PATCH /preferences": ({ body }) =>
+      o.preferencesFail === "save" ? problem(500, "Internal Server Error") : changePreferences(body),
     "GET /instance": () => ({ status: 200, body: instanceBody }),
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
@@ -3352,12 +3371,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     unimplemented.push(error.operation);
   });
 
+  const revocations: { clientId: string; token: string }[] = [];
+
+  /** The answer of the revocation endpoint (RFC 7009), outside the client API: 200 with no body, the form kept. */
+  async function revoked(request: Request): Promise<Response> {
+    if (o.revocation === "fails") return json(problem(503, "Service Unavailable").problem, 503);
+    const form = new URLSearchParams(await request.text());
+    revocations.push({ clientId: form.get("client_id") ?? "", token: form.get("token") ?? "" });
+    return new Response(null, { status: 200, headers: { "Cache-Control": "no-store" } });
+  }
+
   /** The answer of the server in the state of the options: down, under maintenance, or as it is. */
   async function served(request: Request): Promise<Response> {
-    const path = new URL(request.url).pathname.replace(/^\/api\/v1/, "");
+    const { pathname } = new URL(request.url);
+    const path = pathname.replace(/^\/api\/v1/, "");
     const down = o.down !== undefined && (path !== "/instance" || instanceRead);
     if (path === "/instance") instanceRead = true;
     if (down && o.down === "offline") throw new TypeError("Failed to fetch");
+    if (!down && o.maintenance !== true && request.method === "POST" && pathname === "/oauth/revoke")
+      return revoked(request);
     if (down && o.down === "outage")
       return path === "/instance/health"
         ? health({ status: "unavailable", checked_at: new Date().toISOString() })
@@ -3467,6 +3499,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     script: scripts.script,
     send,
     unimplemented,
+    revocations,
     newPosts,
     newNotification,
     newMessage,

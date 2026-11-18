@@ -127,6 +127,18 @@
     "defaultMessage": "この設定のページはありません。アドレスを確かめるか、設定に戻ってください。",
     "description": "In place of a settings page at an address under /settings that names none (/settings/nothing); the link to the settings menu follows it (settings.back)."
   },
+  "settings.loading": {
+    "defaultMessage": "設定を読み込んでいます…",
+    "description": "In place of the sections of a settings page while what it shows is being read from the server."
+  },
+  "settings.failed": {
+    "defaultMessage": "設定を読み込めませんでした。",
+    "description": "In place of the sections of a settings page when what it shows could not be read from the server (the network, the server); Try again follows it on the same line (settings.retry)."
+  },
+  "settings.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after settings.failed that reads the settings from the server again."
+  },
   "settings.display.section.region": {
     "defaultMessage": "言語と地域",
     "description": "The heading of the first section of the Display and posting page of the settings, over the display language and the time zone."
@@ -162,6 +174,14 @@
   "settings.display.time_zone": {
     "defaultMessage": "タイムゾーン",
     "description": "The label of the choice of the time zone the app shows dates and times in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the time zones."
+  },
+  "settings.display.time_zone.region": {
+    "defaultMessage": "{region, select, Africa {アフリカ} America {南北アメリカ} Antarctica {南極} Arctic {北極} Asia {アジア} Atlantic {大西洋} Australia {オーストラリア} Europe {ヨーロッパ} Indian {インド洋} Pacific {太平洋} other {その他}}",
+    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); other is for a zone of no such part."
+  },
+  "settings.display.time_zone.option": {
+    "defaultMessage": "{place} ({offset})",
+    "description": "A time zone in the choice of the time zone, under the name of its part of the world (settings.display.time_zone.region). place is the zone's place as the time zone database names it, in English (Tokyo, Buenos Aires); offset is how far its clocks are from UTC now, as the reader's language writes it (GMT+9)."
   },
   "settings.display.link_cards": {
     "defaultMessage": "投稿のリンクのプレビュー",
@@ -206,6 +226,18 @@
   "settings.display.timeline_languages.all": {
     "defaultMessage": "すべての言語",
     "description": "What the choice of Languages to show says while no language is chosen: the timelines show posts in every language."
+  },
+  "settings.display.timeline_languages.add": {
+    "defaultMessage": "言語を追加",
+    "description": "What the choice of Languages to show says once a language is chosen, in place of All languages (settings.display.timeline_languages.all): choosing a language there adds it to the list under it."
+  },
+  "settings.display.timeline_languages.remove": {
+    "defaultMessage": "削除",
+    "description": "The button at the end of a language in the list under Languages to show: the timelines stop showing posts in that language alone; once the list is empty they show every language again."
+  },
+  "settings.display.timeline_languages.remove.name": {
+    "defaultMessage": "削除: {language}",
+    "description": "The name of the Remove button of a language in the list under Languages to show, for assistive technology; it starts with the button's visible word (settings.display.timeline_languages.remove). language is the language's own name (日本語)."
   },
   "settings.display.auto_insert": {
     "defaultMessage": "新しい投稿が届いたらすぐに表示する",

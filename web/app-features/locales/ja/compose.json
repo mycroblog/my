@@ -173,11 +173,11 @@
   },
   "compose.audience.everyone": {
     "defaultMessage": "誰でも",
-    "description": "A choice of the permissions submenu: anyone who may see the post."
+    "description": "A choice of the permissions submenu: anyone who may see the post. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
   },
   "compose.audience.followers": {
     "defaultMessage": "フォロワー",
-    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions."
+    "description": "A choice of the permissions submenu: the author's followers and the accounts the post mentions. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
   },
   "compose.audience.mentioned": {
     "defaultMessage": "メンションした人",
@@ -185,7 +185,7 @@
   },
   "compose.audience.nobody": {
     "defaultMessage": "自分だけ",
-    "description": "A choice of the permissions submenu: the author alone."
+    "description": "A choice of the permissions submenu: the author alone. Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote)."
   },
   "compose.approval": {
     "defaultMessage": "ほかの人も、承認すればできるようにする",
@@ -193,47 +193,47 @@
   },
   "compose.permission.now": {
     "defaultMessage": "{audience}{approval, select, yes {、ほかの人は承認すれば} other {}}",
-    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval)."
+    "description": "Who may reply, boost or quote, as a value: audience is one of the audiences (Anyone, Followers, People you mention, Only you); approval is yes when others may do it once the author approves (compose.approval). Also an option of Who can quote on the Display and posting page of the settings (settings.display.quote), for a default that is none of Anyone, Followers and Only you alone (set from another app)."
   },
   "compose.visibility.public": {
     "defaultMessage": "公開",
-    "description": "A visibility in the audience menu; the same word as a post's visibility glyph."
+    "description": "A visibility in the audience menu; the same word as a post's visibility glyph. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.local": {
     "defaultMessage": "ローカル限定",
-    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere."
+    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.unlisted": {
     "defaultMessage": "ひかえめな公開",
-    "description": "A visibility in the audience menu: public, kept out of the public timelines."
+    "description": "A visibility in the audience menu: public, kept out of the public timelines. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.private": {
     "defaultMessage": "フォロワー限定",
-    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions."
+    "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.direct": {
     "defaultMessage": "ダイレクト",
-    "description": "A visibility in the audience menu: the accounts the post mentions alone."
+    "description": "A visibility in the audience menu: the accounts the post mentions alone. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), only while it is the visibility the account's new posts start with."
   },
   "compose.visibility.public.about": {
     "defaultMessage": "誰でも、どのサーバーからでも",
-    "description": "The line under Public in the audience menu: who sees the post."
+    "description": "The line under Public in the audience menu: who sees the post. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.local.about": {
     "defaultMessage": "{server} の全員と、ほかのサーバーのフォロワー",
-    "description": "The line under Local in the audience menu. server is this server's domain."
+    "description": "The line under Local in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.unlisted.about": {
     "defaultMessage": "誰でも。ローカルと連合のタイムラインには載せない",
-    "description": "The line under Quiet public in the audience menu."
+    "description": "The line under Quiet public in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.private.about": {
     "defaultMessage": "フォロワーと、メンションした人",
-    "description": "The line under Followers only in the audience menu."
+    "description": "The line under Followers only in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.direct.about": {
     "defaultMessage": "メンションした人だけ",
-    "description": "The line under Direct in the audience menu."
+    "description": "The line under Direct in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.interactions": {
     "defaultMessage": "返信・ブースト・引用できる人",

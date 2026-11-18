@@ -16,6 +16,14 @@ const stringsIn = catalogReader<MessageId>(messages satisfies Readonly<Record<st
 /** The app's strings in the reader's locale. */
 export const useStrings = () => stringsIn(useLocale().locale).t;
 
+/**
+ * The languages the app can be shown in, which the settings offer: the locales of the catalog, without the
+ * pseudo-locales made from en (ADR-0009 §1), which carry a private-use region.
+ */
+export const appLanguages: readonly string[] = Object.keys(messages)
+  .filter((tag) => !/-X[A-Z]$/.test(tag))
+  .toSorted();
+
 /** `tag` as a canonical BCP 47 tag when a catalog has it or its language, else undefined. */
 export function inCatalog(tag: string): string | undefined {
   let canonical: string | undefined;

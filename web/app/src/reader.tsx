@@ -11,12 +11,16 @@
 // Until the preferences are read, the app shows what the account had chosen when this device last read them, kept on
 // the device (ADR-0028 §18): the first paint is in the account's language, not in the browser's and then the
 // account's. A device that kept nothing starts as the browser says. What is kept is the choice, never the browser's
-// own language or zone, and it is forgotten once the app runs without a session.
+// own language or zone, and it is forgotten once the app runs without a session, and when the reader signs out.
+//
+// While the account follows the browser, the app keeps the account's `locale` and `time_zone` at what this browser
+// says, for what has no browser (the server's emails and pushes; the specification's Preferences): once the
+// preferences are read, a difference is sent, once and quietly.
 
-import { usePreferences, type Preferences } from "@my/app-data";
-import { I18nProvider, TimeZoneProvider, useLocale } from "@my/design-system";
+import { usePreferences, useUpdatePreferences, type Preferences, type PreferencesChange } from "@my/app-data";
+import { I18nProvider, TimeZoneProvider, timeZoneName, useLocale } from "@my/design-system";
 import { readDeviceValue, writeDeviceValue } from "@my/platform";
-import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { inCatalog } from "./locale";
 
 /** What an account chose in place of the browser's: a locale (a BCP 47 tag), a time zone (an IANA name). */
@@ -52,6 +56,37 @@ function keepChoice(choice: Choice | null): void {
   if (readDeviceValue(choiceKey) !== value) writeDeviceValue(choiceKey, value);
 }
 
+/** Forgets the choice kept on the device, as signing out does. */
+export const forgetChoice = (): void => {
+  keepChoice(null);
+};
+
+/**
+ * Sends the account the language (`browser`) and the time zone of this browser, where its preferences follow the
+ * browser and hold another: once for a difference, with no word to the reader, and not again on this page when the
+ * server does not take it. Nothing without preferences (not read yet, or no session).
+ */
+function useBrowserKept(preferences: Preferences | undefined, browser: string) {
+  const update = useUpdatePreferences();
+  const sent = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    if (preferences === undefined) return;
+    const zone = timeZoneName(undefined);
+    const change: PreferencesChange = {
+      ...(preferences.locale_follows_browser && preferences.locale !== browser
+        ? { locale: browser, locale_follows_browser: true }
+        : {}),
+      ...(preferences.time_zone_follows_browser && preferences.time_zone !== zone
+        ? { time_zone: zone, time_zone_follows_browser: true }
+        : {}),
+    };
+    const key = JSON.stringify(change);
+    if (key === "{}" || sent.current === key) return;
+    sent.current = key;
+    update(change).catch(() => undefined);
+  }, [preferences, browser, update]);
+}
+
 /**
  * The page's <html> in the locale and the direction of the I18nProvider above, before the paint; written again when
  * the locale the app is placed under (`under`) changes, since what places the app may write its own there (the
@@ -79,6 +114,7 @@ export function Reader({ signedIn, children }: { signedIn: boolean; children: Re
     if (!signedIn) keepChoice(null);
     else if (preferences !== undefined) keepChoice(choiceOf(preferences));
   }, [signedIn, preferences]);
+  useBrowserKept(preferences, browser);
   const chosen = choice.locale === undefined ? undefined : inCatalog(choice.locale);
   return (
     <I18nProvider locale={chosen ?? browser}>

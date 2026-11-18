@@ -248,6 +248,7 @@ export {
 } from "./shell";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { SaveState, type SaveStateProps } from "./save-state";
+export { useSaveState, type Saving } from "./saving";
 export {
   NumberField,
   Select,

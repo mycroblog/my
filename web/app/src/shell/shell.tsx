@@ -11,7 +11,8 @@
 // the unread direct messages and marked while something waits inside, with the call's bar above it. On a phone a new post
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
 // server's notices stand at the top of the main column, the update's toast in the dock; the column beside the main one
-// holds what is around the reader. Where the reader is comes from the router; the frame lays the regions out by the
+// holds what is around the reader, and beside a screen of the settings their menu (settings.tsx), the settings staying
+// the marked place. Where the reader is comes from the router; the frame lays the regions out by the
 // viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's
 // (viewport.ts).
 
@@ -54,7 +55,8 @@ import { editArticlePath, newArticlePath } from "./article";
 import { Around, ServerFooter } from "./around";
 import { useCompose } from "./compose";
 import { ServerBanners, UpdateToast } from "./notices";
-import { aroundPlacesFor, composesAt, listsPlace, placesFor, type Place } from "./places";
+import { aroundPlacesFor, composesAt, isPlaceAt, listsPlace, placesFor, type Place } from "./places";
+import { SettingsAside, settingsEntryAt } from "./settings";
 import { useNarrowViewport } from "./viewport";
 
 /** The article editor, first in the menu's sheet on a phone, where New post floats alone. */
@@ -154,7 +156,7 @@ function ModerationPlace({ place, current }: { place: Place; current: boolean })
 function Places({ items, pathname }: { items: readonly Place[]; pathname: string }) {
   const t = useStrings();
   return items.map((place) => {
-    const current = place.href === pathname;
+    const current = isPlaceAt(place, pathname);
     if (place.count === "notifications") return <NotificationsPlace key={place.href} place={place} current={current} />;
     if (place.count === "direct") return <DirectPlace key={place.href} place={place} current={current} />;
     if (place.count === "moderation") return <ModerationPlace key={place.href} place={place} current={current} />;
@@ -319,7 +321,11 @@ export function Shell({
             {children}
           </PostActions>
         </FrameMain>
-        <Around signedIn={signedIn} pathname={pathname} instance={instance} />
+        {signedIn && settingsEntryAt(pathname) !== undefined ? (
+          <SettingsAside pathname={pathname} instance={instance} />
+        ) : (
+          <Around signedIn={signedIn} pathname={pathname} instance={instance} />
+        )}
         <FrameDock
           label={t("app.navigation")}
           tabs={

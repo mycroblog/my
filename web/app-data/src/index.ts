@@ -102,7 +102,15 @@ export {
   type FundingMeter,
   type Instance,
 } from "./instance";
-export { moderationCountsQuery, rightsOf, useModerationCount, useRights, type Permission, type Rights } from "./rights";
+export {
+  moderationCountsQuery,
+  rightsOf,
+  useModerationCount,
+  usePermissions,
+  useRights,
+  type Permission,
+  type Rights,
+} from "./rights";
 export {
   watchServer,
   webClientEpoch,
@@ -266,6 +274,7 @@ export {
   preferencesQuery,
   updatePreferences,
   usePreferences,
+  usePreferencesRead,
   useUpdatePreferences,
   type LinkCardSize,
   type Preferences,
@@ -280,7 +289,7 @@ export {
   type PickerCustomEmoji,
   type StatusReactor,
 } from "./reactions";
-export { openSession, visitorData } from "./session";
+export { endSession, openSession, visitorData } from "./session";
 export {
   appPath,
   finishSignIn,

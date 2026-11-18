@@ -119,6 +119,20 @@ export function usePreferences(signedIn = true): Preferences | undefined {
   return useMemo(() => (said === undefined ? undefined : changes.reduce(changed, said)), [said, changes]);
 }
 
+/**
+ * Where the read of the reader's preferences is, for a screen that shows them all (the settings): `loading` until the
+ * server answered, `failed` when it did not, with `retry`, which reads them again.
+ */
+export function usePreferencesRead(): { status: "loading" | "failed" | "read"; retry: () => void } {
+  const { status, refetch } = useQuery(preferencesQuery(useAppData()));
+  return {
+    status: status === "success" ? "read" : status === "error" ? "failed" : "loading",
+    retry: () => {
+      void refetch();
+    },
+  };
+}
+
 /** Changes the reader's preferences from a screen (`updatePreferences`). */
 export function useUpdatePreferences(): (change: PreferencesChange) => Promise<Preferences> {
   const data = useAppData();
