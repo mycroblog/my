@@ -245,17 +245,13 @@ describe("signing out", () => {
     expect(app.left()).toEqual([]);
   });
 
-  // Defect: Cancel puts the menu's address, /settings, in place of the one that asked, whatever screen the
-  // confirmation was over: a reader who reloads Display and posting with the confirmation open and cancels is taken
-  // off the screen they were on.
-  test.failing(
-    "Cancel of a confirmation opened by its address leaves the reader on the screen it was over",
-    async () => {
-      const app = await cancelledAtAnEntry();
+  // A reader who reloads Display and posting with the confirmation open and cancels stays on that screen: the
+  // address that asked gives way to the screen's own, not to the menu's.
+  test("Cancel of a confirmation opened by its address leaves the reader on the screen it was over", async () => {
+    const app = await cancelledAtAnEntry();
 
-      expect(app.path()).toBe("/settings/display");
-    },
-  );
+    expect(app.path()).toBe("/settings/display");
+  });
 
   test("Sign out revokes the session's token, empties what the browser kept of the account, and leaves for the start by a load of the page", async () => {
     const caches = browserCaches("shell", "home-timeline");

@@ -18,7 +18,6 @@ export const Route = createFileRoute("/settings")({
 function Settings() {
   const { data } = Route.useRouteContext();
   const { sign_out: asking } = Route.useSearch();
-  const navigate = Route.useNavigate();
   const router = useRouter();
   const canGoBack = useCanGoBack();
   return (
@@ -27,9 +26,10 @@ function Settings() {
       <SignOutConfirm
         asking={data !== null && asking === true}
         onCancel={() => {
-          // Back to the screen the reader asked from; an address opened with the question has none before it.
+          // Back to the screen the reader asked from; an address opened with the question has none before it, and
+          // becomes the address of the screen it is over.
           if (canGoBack) router.history.back();
-          else void navigate({ to: ".", search: {}, replace: true });
+          else router.history.replace(router.state.location.pathname);
         }}
       />
     </>
