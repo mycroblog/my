@@ -135,8 +135,9 @@ type domainAccounts interface {
 // (federation.CanonicalHost), would end, for the confirmation before it is issued. It reads the
 // accounts of the domain and its subdomains and their follows, a page of accounts at a time, so
 // its cost grows with the domain rather than with the instance, and changes nothing; a domain
-// without accounts or follows, or a Service without the graph and account modules, counts zeros.
-// It fails with moderation.ErrOwnDomain for this instance's domain.
+// without accounts or follows counts zeros. It fails with moderation.ErrOwnDomain for this
+// instance's domain, and with ErrUnsupportedAction for a Service without the graph and account
+// modules, whose count is unknown rather than zero.
 func (s *Service) DomainSuspendImpact(ctx context.Context, domain string) (SuspendImpact, error) {
 	if s.ownDomain(domain) {
 		return SuspendImpact{}, fmt.Errorf("%w: %q", moderation.ErrOwnDomain, domain)
@@ -145,7 +146,7 @@ func (s *Service) DomainSuspendImpact(ctx context.Context, domain string) (Suspe
 	accounts, okAccounts := s.d.Directory.(domainAccounts)
 	domains, okDomains := s.d.Directory.(accountDomainsBatch)
 	if !okFollows || !okAccounts || !okDomains {
-		return SuspendImpact{}, nil
+		return SuspendImpact{}, fmt.Errorf("%w: counting follows without the graph and account modules", ErrUnsupportedAction)
 	}
 	var out SuspendImpact
 	locals := map[string]bool{}

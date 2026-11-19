@@ -113,6 +113,9 @@ func (f *fakeModeration) DomainSuspendImpact(_ context.Context, domain string) (
 	if domain == "self.example" {
 		return appmoderation.SuspendImpact{}, moderation.ErrOwnDomain
 	}
+	if domain == "uncounted.example" {
+		return appmoderation.SuspendImpact{}, appmoderation.ErrUnsupportedAction
+	}
 	f.impactAsked = append(f.impactAsked, domain)
 	return f.impacts[domain], nil
 }
@@ -355,6 +358,10 @@ func TestGetDomainSuspendImpact(t *testing.T) {
 		if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" || got != want {
 			t.Errorf("GET %s = %d (%s) %+v, want %+v", path, res.StatusCode, res.Header.Get("Cache-Control"), got, want)
 		}
+	}
+	// A count the server cannot make is an error, never zeros.
+	if res := e.sendJSON(t, http.MethodGet, "/admin/domain_actions/impact?domain=uncounted.example", "admin-read", ""); res.StatusCode != http.StatusInternalServerError {
+		t.Errorf("impact that cannot be counted = %d, want 500", res.StatusCode)
 	}
 	f.impactAsked = nil
 	for _, domain := range []string{"https%3A%2F%2Fbad.example%2F", "bad..example", "self.example"} {
