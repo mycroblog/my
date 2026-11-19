@@ -1,12 +1,4 @@
 {
-  "payments.checkout.price_month": {
-    "defaultMessage": "每月 {amount, number} 日元",
-    "description": "Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
-  "payments.checkout.price_year": {
-    "defaultMessage": "每年 {amount, number} 日元",
-    "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
   "payments.error.form": {
     "defaultMessage": "请检查电子邮件地址、持卡人姓名和银行卡信息。",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -19,29 +11,9 @@
     "defaultMessage": "付款",
     "description": "Title of the error page of the PAY.JP checkout and card pages."
   },
-  "payments.error.unavailable": {
-    "defaultMessage": "PAY.JP 没有响应。请稍后重试。",
-    "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
-  },
   "payments.fake.failed": {
     "defaultMessage": "已按要求让付款失败。请付款或取消。",
     "description": "Alert of the fake provider's checkout page after its fail button."
-  },
-  "payments.fake.price_month": {
-    "defaultMessage": "每月 {amount} {currency}",
-    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_once": {
-    "defaultMessage": "{amount} {currency}，一次性",
-    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_year": {
-    "defaultMessage": "每年 {amount} {currency}",
-    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.portal.amount_value": {
-    "defaultMessage": "{amount, number} 日元",
-    "description": "An amount in the payments table of the PAY.JP card page. {amount} is in yen."
   },
   "payments.portal.card_value": {
     "defaultMessage": "尾号 {last4} 的 {brand}，有效期至 {month}/{year}",

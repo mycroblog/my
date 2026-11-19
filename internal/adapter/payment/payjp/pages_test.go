@@ -110,7 +110,7 @@ func TestCheckoutPageData(t *testing.T) {
 		t.Fatal(err)
 	}
 	d := doc.Data
-	if doc.Lang != "ja" || d.Screen != supporters.PageScreenCheckout || !strings.Contains(d.Title, "Supporter") || d.Price != "月額 1,200 円" ||
+	if doc.Lang != "ja" || d.Screen != supporters.PageScreenCheckout || !strings.Contains(d.Title, "Supporter") || d.Price == nil || *d.Price != (supporters.PagePrice{Amount: 1200, Currency: "JPY", Interval: supporters.PageIntervalMonth}) ||
 		!d.TestMode || d.Back != "https://my.example/supporter" {
 		t.Errorf("checkout page = %+v", doc)
 	}
@@ -376,7 +376,7 @@ func TestCheckoutStartedAgainInTheHour(t *testing.T) {
 		t.Errorf("checkouts of one hour = %+v and %+v, want one ref and expiry", first, again)
 	}
 	newState := query(t, again.RedirectURL).Get("s")
-	for _, tc := range []struct{ state, plan, price string }{{oldState, "p", "1,200"}, {newState, "q", "2,400"}} {
+	for _, tc := range []struct{ state, plan, price string }{{oldState, "p", `"amount":1200`}, {newState, "q", `"amount":2400`}} {
 		st, err := e.p.verify(tc.state, pageCheckout, unitNow)
 		if err != nil || st.Plan != tc.plan {
 			t.Errorf("state = %+v, %v, want plan %s", st, err, tc.plan)
@@ -457,7 +457,8 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	e.srv.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", `"paused":true`, "1,200 円", "200 円", "2026-09-12", `"change":true`, `"email":"alice@example.com"`} {
+	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", `"paused":true`, `"plan":{"name":"Supporter","price":{"amount":1200,"currency":"JPY","interval":"month"}}`,
+		`{"date":"2026-09-12","amount":1200,"refunded":200,"currency":"JPY"}`, `"change":true`, `"email":"alice@example.com"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("portal page lacks %q", want)
 		}

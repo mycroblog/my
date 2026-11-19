@@ -28,7 +28,7 @@ func TestTipPage(t *testing.T) {
 		t.Fatalf("RedirectURL = %q, want a tip page on %s", c.RedirectURL, pagesHost)
 	}
 	page := e.get(u.Path)
-	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), "Tip for my.example") || !strings.Contains(page.Body.String(), "500 JPY") {
+	if page.Code != http.StatusOK || !strings.Contains(page.Body.String(), "Tip for my.example") || !strings.Contains(page.Body.String(), `"price":{"amount":500,"currency":"JPY","interval":"once"}`) {
 		t.Fatalf("GET the tip page = %d\n%s", page.Code, page.Body.String())
 	}
 	if res := e.post(u.Path, actionCancel, ""); res.Code != http.StatusSeeOther || !strings.Contains(res.Header().Get("Location"), "checkout=canceled") {

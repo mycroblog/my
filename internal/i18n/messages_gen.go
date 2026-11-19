@@ -3872,20 +3872,6 @@ func (l *Localizer) ServerModerationActionKind(kind string) string {
 	return l.format("server:moderation.action.kind", map[string]any{"kind": kind})
 }
 
-// ServerPaymentsCheckoutPriceMonth formats "server:payments.checkout.price_month". Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen.
-//
-//	en: {amount, number} yen a month
-func (l *Localizer) ServerPaymentsCheckoutPriceMonth(amount float64) string {
-	return l.format("server:payments.checkout.price_month", map[string]any{"amount": amount})
-}
-
-// ServerPaymentsCheckoutPriceYear formats "server:payments.checkout.price_year". Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen.
-//
-//	en: {amount, number} yen a year
-func (l *Localizer) ServerPaymentsCheckoutPriceYear(amount float64) string {
-	return l.format("server:payments.checkout.price_year", map[string]any{"amount": amount})
-}
-
 // ServerPaymentsCheckoutTitle formats "server:payments.checkout.title". Title of the PAY.JP checkout page. {plan} is the name of the plan.
 //
 //	en: Subscribe to the supporter plan “{plan}”
@@ -3930,7 +3916,7 @@ func (l *Localizer) ServerPaymentsErrorTitle() string {
 
 // ServerPaymentsErrorUnavailable formats "server:payments.error.unavailable". Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer.
 //
-//	en: PAY.JP is not answering. Try again in a while.
+//	en: PAY.JP is not answering. Try again in a while. If anything was charged, the subscription shows on the screen you came from.
 func (l *Localizer) ServerPaymentsErrorUnavailable() string {
 	return l.format("server:payments.error.unavailable", nil)
 }
@@ -3940,61 +3926,6 @@ func (l *Localizer) ServerPaymentsErrorUnavailable() string {
 //	en: The payment failed, as asked. Pay or cancel.
 func (l *Localizer) ServerPaymentsFakeFailed() string {
 	return l.format("server:payments.fake.failed", nil)
-}
-
-// ServerPaymentsFakePriceMonthArgs holds the arguments of ServerPaymentsFakePriceMonth, passed by name.
-//
-//exhaustruct:enforce
-type ServerPaymentsFakePriceMonthArgs struct {
-	_        struct{} // forces keyed fields
-	Amount   string
-	Currency string
-}
-
-// ServerPaymentsFakePriceMonth formats "server:payments.fake.price_month". Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
-//
-//	en: {amount} {currency} a month
-func (l *Localizer) ServerPaymentsFakePriceMonth(args ServerPaymentsFakePriceMonthArgs) string {
-	return l.format("server:payments.fake.price_month", map[string]any{"amount": args.Amount, "currency": args.Currency})
-}
-
-// ServerPaymentsFakePriceOnceArgs holds the arguments of ServerPaymentsFakePriceOnce, passed by name.
-//
-//exhaustruct:enforce
-type ServerPaymentsFakePriceOnceArgs struct {
-	_        struct{} // forces keyed fields
-	Amount   string
-	Currency string
-}
-
-// ServerPaymentsFakePriceOnce formats "server:payments.fake.price_once". Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
-//
-//	en: {amount} {currency}, once
-func (l *Localizer) ServerPaymentsFakePriceOnce(args ServerPaymentsFakePriceOnceArgs) string {
-	return l.format("server:payments.fake.price_once", map[string]any{"amount": args.Amount, "currency": args.Currency})
-}
-
-// ServerPaymentsFakePriceYearArgs holds the arguments of ServerPaymentsFakePriceYear, passed by name.
-//
-//exhaustruct:enforce
-type ServerPaymentsFakePriceYearArgs struct {
-	_        struct{} // forces keyed fields
-	Amount   string
-	Currency string
-}
-
-// ServerPaymentsFakePriceYear formats "server:payments.fake.price_year". Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code.
-//
-//	en: {amount} {currency} a year
-func (l *Localizer) ServerPaymentsFakePriceYear(args ServerPaymentsFakePriceYearArgs) string {
-	return l.format("server:payments.fake.price_year", map[string]any{"amount": args.Amount, "currency": args.Currency})
-}
-
-// ServerPaymentsPortalAmountValue formats "server:payments.portal.amount_value". An amount in the payments table of the PAY.JP card page. {amount} is in yen.
-//
-//	en: {amount, number} yen
-func (l *Localizer) ServerPaymentsPortalAmountValue(amount float64) string {
-	return l.format("server:payments.portal.amount_value", map[string]any{"amount": amount})
 }
 
 // ServerPaymentsPortalCardValueArgs holds the arguments of ServerPaymentsPortalCardValue, passed by name.

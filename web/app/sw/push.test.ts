@@ -2,7 +2,7 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-import { clickedURL, notificationFor, windowToOpen, type Shown } from "./push";
+import { clickedURL, notificationFor, windowToOpen, type OpenWindow, type Shown } from "./push";
 
 const origin = "https://my.example";
 
@@ -88,7 +88,7 @@ describe("the window a click opens its address in", () => {
     const focused = at("/notifications", true);
     expect(windowToOpen([home, focused])).toBe(focused);
     expect(windowToOpen([home])).toBe(home);
-    expect(windowToOpen([])).toBeUndefined();
+    expect(windowToOpen<OpenWindow>([])).toBeUndefined();
   });
 
   test("is never one on a payment page, focused or not", () => {

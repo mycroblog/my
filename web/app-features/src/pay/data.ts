@@ -2,11 +2,17 @@
 
 // The data of a payment page (ADR-0074 §11): the JSON data block <script type="application/json" id="pay"> that the
 // server's shell of the payment entry carries (internal/interface/payments, pages.go; its type is supporters.PageData).
-// The server decides which screen shows and words what it decides (the title, the price, a form's outcome, what it read
-// of the provider); the screens word the rest.
+// The server decides which screen shows and words what it decides (the title, a form's outcome, the card it read of
+// the provider), and gives the amounts as numbers, which the screens format as the app does; the screens word the rest.
 
 /** The screens of the payment entry, by the server's name for each. */
 export type PayScreenName = "checkout" | "portal" | "error";
+
+/** The server that is paid: its name, its own logo (the built-in wordmark without one), its short description. */
+type PayServer = { name: string; logo?: string; logoDark?: string; description?: string };
+
+/** An amount in the minor units of its currency (ISO 4217), paid once or every month or year. */
+export type PayPrice = { amount: number; currency: string; interval: "month" | "year" | "once" };
 
 /** The card form of payjp.js: it posts the token of the card that PAY.JP's iframe took, never the card. */
 export type PayCardForm = {
@@ -21,27 +27,34 @@ export type PayCardForm = {
   change?: boolean;
 };
 
-/** A payment of the portal, worded by the server: its date (YYYY-MM-DD), its amount and what of it was refunded. */
-type PayPayment = { date: string; amount: string; refunded?: string };
+/** A payment of the portal: its date (YYYY-MM-DD), its amount and what of it was refunded, in minor units. */
+type PayPayment = { date: string; amount: number; refunded?: number; currency: string };
 
 export type PayPage = {
   screen: PayScreenName;
+  server?: PayServer;
   title: string;
   /** PAY.JP's test keys are in use: no card is charged. */
   testMode?: boolean;
   /** The fake provider of a test build (ADR-0015 §6). */
   fake?: boolean;
-  price?: string;
+  price?: PayPrice;
   /** What went wrong, which takes the focus when the page opens; what went right. */
   error?: string;
   notice?: string;
-  /** Where the link back goes; none without it. */
+  /** Where the way back to the app goes. */
   back?: string;
   card?: PayCardForm;
   /** The fake checkout's form, which posts its action (pay, fail, cancel). */
   choices?: { action: string };
   /** What the portal shows of the customer; none on a portal with nothing to show (the fake's). */
-  portal?: { card?: string; paused?: boolean; payments: PayPayment[] };
+  portal?: {
+    /** The subscription: its plan, its price, and the date of its next payment, none while it is paused. */
+    plan?: { name: string; price: PayPrice; next?: string };
+    card?: string;
+    paused?: boolean;
+    payments: PayPayment[];
+  };
 };
 
 const screens = new Set<string>(["checkout", "portal", "error"]);

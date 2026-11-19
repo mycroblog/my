@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/supporters"
@@ -78,6 +79,15 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 				ViteClient: entry.ViteClient, DevOrigin: entry.DevOrigin,
 			},
 			ThemeStylesheet: a.themeStylesheet, Logger: a.Logger,
+			// The pages name the server that is paid, as the sign-in screens introduce it.
+			Server: func(ctx context.Context) supporters.PageInstance {
+				srv := supporters.PageInstance{Name: a.instanceName(ctx), Description: strings.TrimSpace(a.instanceSummary(ctx))}
+				if srv.Name == "" {
+					srv.Name = cfg.Host
+				}
+				srv.Logo, srv.LogoDark = a.brandLogos(ctx)
+				return srv
+			},
 		}.Render},
 		Logger: a.Logger,
 	})

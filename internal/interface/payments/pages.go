@@ -42,6 +42,9 @@ type Shell struct {
 	// ThemeStylesheet returns the URL of the instance theme's stylesheet (ADR-0059), "" for none;
 	// nil links none.
 	ThemeStylesheet func(context.Context) string
+	// Server returns the server that the pages say is paid: its name, its logos, and its short
+	// description; nil names none.
+	Server func(context.Context) supporters.PageInstance
 	// Logger logs a document that could not be written; nil means slog.Default().
 	Logger *slog.Logger
 }
@@ -110,6 +113,10 @@ func (s Shell) Render(w http.ResponseWriter, r *http.Request, status int, doc su
 	d := pageShellData{Lang: doc.Lang, Dir: doc.Dir, Title: doc.Title, Entry: s.Entry, Page: doc.Data}
 	if s.ThemeStylesheet != nil {
 		d.ThemeStylesheet = s.ThemeStylesheet(ctx)
+	}
+	if s.Server != nil {
+		server := s.Server(ctx)
+		d.Page.Server = &server
 	}
 	var body bytes.Buffer
 	if err := pageShell.Execute(&body, d); err != nil {

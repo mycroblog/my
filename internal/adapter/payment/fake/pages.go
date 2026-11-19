@@ -174,11 +174,9 @@ func (h *pages) checkoutView(r *http.Request, req supporters.CheckoutRequest) vi
 	v := h.newView(r, req.Locale, supporters.PageScreenCheckout)
 	v.Title, v.Back = v.L.ServerPaymentsCheckoutTitle(name), req.CancelURL
 	v.Choices = &supporters.PageChoices{Action: r.URL.Path}
-	amount := formatMinor(spec.AmountMinor, spec.Currency)
+	v.Price = &supporters.PagePrice{Amount: spec.AmountMinor, Currency: spec.Currency, Interval: supporters.PageIntervalMonth}
 	if spec.Interval == supporters.IntervalYear {
-		v.Price = v.L.ServerPaymentsFakePriceYear(i18n.ServerPaymentsFakePriceYearArgs{Amount: amount, Currency: spec.Currency})
-	} else {
-		v.Price = v.L.ServerPaymentsFakePriceMonth(i18n.ServerPaymentsFakePriceMonthArgs{Amount: amount, Currency: spec.Currency})
+		v.Price.Interval = supporters.PageIntervalYear
 	}
 	return v
 }

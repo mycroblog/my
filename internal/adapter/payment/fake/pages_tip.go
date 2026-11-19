@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/mycroblog/my/internal/app/supporters"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The checkout page of a tip (onetime.go) among the pages of a PageProvider: it shows the
@@ -41,9 +40,7 @@ func (h *pages) tipView(r *http.Request, req supporters.OneTimeRequest) view {
 	v := h.newView(r, req.Locale, supporters.PageScreenCheckout)
 	v.Title, v.Back = req.Description, req.CancelURL
 	v.Choices = &supporters.PageChoices{Action: r.URL.Path}
-	v.Price = v.L.ServerPaymentsFakePriceOnce(i18n.ServerPaymentsFakePriceOnceArgs{
-		Amount: formatMinor(req.AmountMinor, req.Currency), Currency: req.Currency,
-	})
+	v.Price = &supporters.PagePrice{Amount: req.AmountMinor, Currency: req.Currency, Interval: supporters.PageIntervalOnce}
 	return v
 }
 

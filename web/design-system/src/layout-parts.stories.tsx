@@ -30,6 +30,7 @@ import {
   FormList,
   FormPage,
   FormPageFooter,
+  FormRows,
   FormSection,
   FormText,
   TextField,
@@ -237,9 +238,11 @@ type FormPageArgs = {
   front: boolean;
   /** What is longer than a line of a phone: nothing, the app's name (one word), or the first action's label. */
   long: "none" | "word" | "label";
+  /** A band at the top says a state of the whole page. */
+  band: boolean;
 };
 
-function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageArgs) {
+function FormPageSpecimen({ server, banner: withBanner, front, long, band }: FormPageArgs) {
   const app = long === "word" ? longWord : "Tide Tables";
   return (
     <FormPage
@@ -254,6 +257,7 @@ function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageA
       }
       wordmark={{ light: wordmark, dark: wordmark }}
       front={front ? { more: <FormLink href="/about">About this server</FormLink> } : undefined}
+      band={band ? "Test mode: nothing is charged." : undefined}
       footer={
         <FormPageFooter
           label="This server"
@@ -287,6 +291,14 @@ function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageA
           ))}
         />
       </FormSection>
+      <FormSection id="layout-payments" heading="Recent payments">
+        <FormRows
+          rows={[
+            { key: "1", start: "2026-11-01", end: "¥1,200" },
+            { key: "2", start: "2026-10-01", end: "¥1,200", note: "¥200 refunded" },
+          ]}
+        />
+      </FormSection>
       <FormChoice>
         <Button>Deny</Button>
         <Button kind="primary">Allow</Button>
@@ -306,7 +318,7 @@ function FormPageSpecimen({ server, banner: withBanner, front, long }: FormPageA
  * names the app by a word no line holds, or gives the first action a label longer than a phone's line.
  */
 export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
-  args: { server: true, banner: true, front: false, long: "none" },
+  args: { server: true, banner: true, front: false, long: "none", band: false },
   parameters: { page: true },
   argTypes: {
     long: {
@@ -320,8 +332,15 @@ export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
     },
     banner: { control: "boolean", description: "The server has a banner" },
     front: { control: "boolean", description: "The server's front page" },
+    band: { control: "boolean", description: "A band at the top says a state of the whole page" },
   },
   render: (args) => <FormPageSpecimen {...args} />,
+};
+
+/** The page with a band at the top that says a state of the whole page (a payment page in test mode). */
+export const FormPageBand: StoryObj<Meta<FormPageArgs>> = {
+  ...FormPageScreen,
+  args: { server: true, banner: false, front: false, long: "none", band: true },
 };
 
 /** The versions of a post, newest first, each holding long text. */

@@ -1,12 +1,4 @@
 {
-  "payments.checkout.price_month": {
-    "defaultMessage": "月額 {amount, number} 円",
-    "description": "Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
-  "payments.checkout.price_year": {
-    "defaultMessage": "年額 {amount, number} 円",
-    "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
   "payments.checkout.title": {
     "defaultMessage": "サポーターのプラン「{plan}」に加入する",
     "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
@@ -32,28 +24,12 @@
     "description": "Title of the error page of the PAY.JP checkout and card pages."
   },
   "payments.error.unavailable": {
-    "defaultMessage": "PAY.JP が応答しません。しばらくしてからもう一度試してください。",
+    "defaultMessage": "PAY.JP が応答しません。しばらくしてからもう一度試してください。料金が請求されていれば、加入は元の画面に表示されます。",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
   },
   "payments.fake.failed": {
     "defaultMessage": "指示どおり支払いを失敗させました。支払うかキャンセルしてください。",
     "description": "Alert of the fake provider's checkout page after its fail button."
-  },
-  "payments.fake.price_month": {
-    "defaultMessage": "月額 {amount} {currency}",
-    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_once": {
-    "defaultMessage": "{amount} {currency} (1 回だけ)",
-    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_year": {
-    "defaultMessage": "年額 {amount} {currency}",
-    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.portal.amount_value": {
-    "defaultMessage": "{amount, number} 円",
-    "description": "An amount in the payments table of the PAY.JP card page. {amount} is in yen."
   },
   "payments.portal.card_value": {
     "defaultMessage": "{brand} (末尾 {last4}、有効期限 {month}/{year})",

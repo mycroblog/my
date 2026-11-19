@@ -39,9 +39,17 @@
     "defaultMessage": "The card form could not be loaded. Reload the page, or try again in a while.",
     "description": "Alert of the card form when PAY.JP's script (payjp.js) could not be loaded, so no card can be entered."
   },
+  "pay.card.name_invalid": {
+    "defaultMessage": "Enter the name in Latin letters, as printed on the card.",
+    "description": "Error under the card holder's name field when it is not 2 to 45 Latin letters, digits, spaces, periods or hyphens, the only names PAY.JP takes. Shown before the card is sent."
+  },
   "pay.checkout.submit": {
-    "defaultMessage": "Subscribe",
-    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
+    "defaultMessage": "Pay {amount} and subscribe",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure), pays the first period and starts the subscription. {amount} is what is charged now, formatted with its currency (¥1,200)."
+  },
+  "pay.checkout.then": {
+    "defaultMessage": "Then {price}.",
+    "description": "Line right above the button of the PAY.JP checkout page: what the subscription costs after the first payment. {price} is a price with its interval (pay.price.month or pay.price.year)."
   },
   "pay.fake.pay": {
     "defaultMessage": "Pay",
@@ -80,15 +88,39 @@
     "description": "Text of the PAY.JP card page without payments."
   },
   "pay.portal.paused": {
-    "defaultMessage": "The last payment failed, so the subscription is paused. Changing the card pays and resumes it.",
+    "defaultMessage": "The last payment failed, so the subscription is paused, and its benefits end when the grace period does. Changing the card pays and resumes it.",
     "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
   },
-  "pay.portal.payment": {
-    "defaultMessage": "{date}: {amount}",
-    "description": "A payment in the recent payments of the PAY.JP card page. {date} is its date (YYYY-MM-DD) and {amount} its amount, already formatted."
+  "pay.portal.plan": {
+    "defaultMessage": "{plan}: {price}",
+    "description": "The subscription at the top of the PAY.JP card page. {plan} is the plan's name, {price} a price with its interval (pay.price.month or pay.price.year)."
   },
-  "pay.portal.payment_refunded": {
-    "defaultMessage": "{date}: {amount} ({refunded} refunded)",
-    "description": "A payment in the recent payments of the PAY.JP card page that was refunded in part or in full. {date} is its date (YYYY-MM-DD), {amount} its amount and {refunded} what was refunded, both already formatted."
+  "pay.portal.next": {
+    "defaultMessage": "Next payment: {date}",
+    "description": "Line under the subscription at the top of the PAY.JP card page. {date} is the date of the next payment (YYYY-MM-DD)."
+  },
+  "pay.portal.add_card": {
+    "defaultMessage": "Add a card",
+    "description": "Heading and button of the card form on the PAY.JP card page of a customer without a card."
+  },
+  "pay.portal.refunded": {
+    "defaultMessage": "{amount} refunded",
+    "description": "The muted end of a row of the recent payments on the PAY.JP card page, for a payment refunded in part or in full. {amount} is formatted with its currency."
+  },
+  "pay.price.month": {
+    "defaultMessage": "{amount} a month",
+    "description": "A price paid every month on the payment pages. {amount} is formatted with its currency (¥1,200)."
+  },
+  "pay.price.year": {
+    "defaultMessage": "{amount} a year",
+    "description": "A price paid every year on the payment pages. {amount} is formatted with its currency (¥12,000)."
+  },
+  "pay.price.once": {
+    "defaultMessage": "{amount}, once",
+    "description": "An amount paid once (a tip) on the payment pages. {amount} is formatted with its currency (¥500)."
+  },
+  "pay.back_to_app": {
+    "defaultMessage": "Back to the app",
+    "description": "Action of a payment page that leads back to this server's app: under the error of an expired or unknown page, and at the end of the other pages."
   }
 }

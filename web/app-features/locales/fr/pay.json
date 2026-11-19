@@ -27,10 +27,6 @@
     "defaultMessage": "Les informations de la carte sont saisies dans le formulaire de PAY.JP et n’atteignent jamais ce serveur.",
     "description": "Note under PAY.JP's card element on the checkout and card pages."
   },
-  "pay.checkout.submit": {
-    "defaultMessage": "Souscrire",
-    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
-  },
   "pay.fake.pay": {
     "defaultMessage": "Payer",
     "description": "Button of the fake provider's checkout page that records the payment as paid."
@@ -66,9 +62,5 @@
   "pay.portal.history_empty": {
     "defaultMessage": "Aucun paiement pour le moment.",
     "description": "Text of the PAY.JP card page without payments."
-  },
-  "pay.portal.paused": {
-    "defaultMessage": "Le dernier paiement a échoué, la souscription est donc suspendue. Changer de carte effectue le paiement et la reprend.",
-    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
   }
 }

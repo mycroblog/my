@@ -5,7 +5,6 @@ package payments
 import (
 	"context"
 	"encoding/json"
-	"html"
 	"net/http"
 	"net/http/httptest"
 	"regexp"
@@ -32,11 +31,17 @@ var payEntry = PageEntry{
 // The document is the entry's shell with the page's data, under the pages' policy and headers.
 func TestShellRender(t *testing.T) {
 	data := supporters.PageData{
-		Screen: supporters.PageScreenCheckout, Title: "Supporter に加入する", TestMode: true, Price: "月額 1,200 円",
+		Screen: supporters.PageScreenCheckout, Title: "Supporter に加入する", TestMode: true,
+		Price: &supporters.PagePrice{Amount: 1200, Currency: "JPY", Interval: supporters.PageIntervalMonth},
 		Error: "</script><script>alert(1)</script>", Back: "https://my.example/supporter",
 		Card: &supporters.PageCardForm{Action: "/payments/pages/payjp/checkout", State: "s1", PublicKey: "pk_test", Email: "alice@example.com"},
 	}
-	s := Shell{Entry: payEntry, ThemeStylesheet: func(context.Context) string { return "/theme/r1.css" }}
+	s := Shell{
+		Entry: payEntry, ThemeStylesheet: func(context.Context) string { return "/theme/r1.css" },
+		Server: func(context.Context) supporters.PageInstance {
+			return supporters.PageInstance{Name: "Hanami Town", Logo: "/brand/r1/logo.svg"}
+		},
+	}
 	rec := render(t, s, data)
 	if rec.Code != http.StatusPaymentRequired {
 		t.Errorf("status = %d, want the page's", rec.Code)
@@ -69,10 +74,13 @@ func TestShellRender(t *testing.T) {
 		t.Fatalf("no data block:\n%s", body)
 	}
 	var got supporters.PageData
-	if err := json.Unmarshal([]byte(html.UnescapeString(block[1])), &got); err != nil {
+	// The browser reads the data block's text as it stands (a script element decodes no entity), and
+	// so does this test.
+	if err := json.Unmarshal([]byte(block[1]), &got); err != nil {
 		t.Fatalf("the data block %s: %v", block[1], err)
 	}
-	if got.Error != data.Error || got.Card == nil || *got.Card != *data.Card || got.Price != data.Price || !got.TestMode {
+	if got.Error != data.Error || got.Card == nil || *got.Card != *data.Card || *got.Price != *data.Price || !got.TestMode ||
+		got.Server == nil || *got.Server != (supporters.PageInstance{Name: "Hanami Town", Logo: "/brand/r1/logo.svg"}) {
 		t.Errorf("the data block = %+v, want %+v", got, data)
 	}
 }

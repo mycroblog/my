@@ -230,11 +230,7 @@ func (h *pages) checkoutView(ctx context.Context, r *http.Request, st pageState,
 	}
 	v := h.newView(r, &st, supporters.PageScreenCheckout)
 	v.Title, v.Back = v.L.ServerPaymentsCheckoutTitle(pl.Name), st.Cancel
-	if pl.Interval == string(supporters.IntervalYear) {
-		v.Price = v.L.ServerPaymentsCheckoutPriceYear(float64(pl.Amount))
-	} else {
-		v.Price = v.L.ServerPaymentsCheckoutPriceMonth(float64(pl.Amount))
-	}
+	v.Price = pagePrice(pl)
 	email := in.Email
 	if email == "" {
 		email = st.Email
@@ -418,6 +414,24 @@ func (h *pages) restoreCard(ctx context.Context, before customer, added card) {
 	}
 }
 
+// pagePrice is the price of a plan as a page shows it.
+func pagePrice(pl plan) *supporters.PagePrice {
+	p := &supporters.PagePrice{Amount: pl.Amount, Currency: pageCurrency(pl.Currency), Interval: supporters.PageIntervalMonth}
+	if pl.Interval == string(supporters.IntervalYear) {
+		p.Interval = supporters.PageIntervalYear
+	}
+	return p
+}
+
+// pageCurrency is the ISO 4217 code of a currency of PAY.JP, which writes it in lower case; the
+// yen when it names none.
+func pageCurrency(c string) string {
+	if c == "" {
+		return "JPY"
+	}
+	return strings.ToUpper(c)
+}
+
 // portalView returns the view of the portal of st.
 func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s string) (view, error) {
 	var cus customer
@@ -437,7 +451,16 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 		return view{}, err
 	}
 	for _, sub := range subs {
+		if sub.Status == subCanceled {
+			continue
+		}
 		portal.Paused = portal.Paused || sub.Status == subPaused
+		if portal.Plan == nil {
+			portal.Plan = &supporters.PagePlan{Name: sub.Plan.Name, Price: *pagePrice(sub.Plan)}
+			if sub.Status != subPaused && sub.CurrentPeriodEnd > 0 {
+				portal.Plan.Next = unixTime(sub.CurrentPeriodEnd).In(tokyo).Format(time.DateOnly)
+			}
+		}
 	}
 	var charges list[charge]
 	if err := h.p.get(ctx, "list the charges of a customer", "/charges", url.Values{"customer": {cus.ID}, "limit": {"20"}}, &charges); err != nil {
@@ -447,11 +470,9 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 		if !c.Captured {
 			continue
 		}
-		row := supporters.PagePayment{Date: unixTime(c.Created).In(tokyo).Format(time.DateOnly), Amount: v.L.ServerPaymentsPortalAmountValue(float64(c.Amount))}
-		if c.AmountRefunded > 0 {
-			row.Refunded = v.L.ServerPaymentsPortalAmountValue(float64(c.AmountRefunded))
-		}
-		portal.Payments = append(portal.Payments, row)
+		portal.Payments = append(portal.Payments, supporters.PagePayment{
+			Date: unixTime(c.Created).In(tokyo).Format(time.DateOnly), Amount: c.Amount, Refunded: c.AmountRefunded, Currency: pageCurrency(c.Currency),
+		})
 	}
 	v.Portal = portal
 	v.Card = &supporters.PageCardForm{Action: supporters.PagesPath(Name) + pagePortal, PublicKey: h.p.o.PublicKey, State: s, Email: cus.Email, Change: true}
