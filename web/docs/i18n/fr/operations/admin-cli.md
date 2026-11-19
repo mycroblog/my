@@ -174,6 +174,6 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 - Textes : les paramètres `maintenance_server_name`, `maintenance_message`, `maintenance_until` et `status_page_url`
   ([référence de configuration](../reference/configuration.md)).
 - Sans `-offline`, elle lit aussi le nom du serveur (lorsque `maintenance_server_name` n’est pas défini), sa locale par défaut (lorsque `-lang` n’est pas donné)
-  et les surcharges de jetons de son thème. Le CSS personnalisé du thème n’est jamais inclus. Lorsque la base de données ne peut pas être lue,
+  et les surcharges de jetons de son thème. Lorsque la base de données ne peut pas être lue,
   elle affiche un avertissement, écrit les pages à partir de la configuration et du thème par défaut, et se termine avec le code 0.
 - Relancez-la chaque fois que ces paramètres ou le thème changent, et avant chaque maintenance, afin que les pages du frontal restent à jour.

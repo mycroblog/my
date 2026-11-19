@@ -175,6 +175,6 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 - Worte: die Einstellungen `maintenance_server_name`, `maintenance_message`, `maintenance_until` und `status_page_url`
   ([Konfigurationsreferenz](../reference/configuration.md)).
 - Ohne `-offline` liest der Befehl außerdem den Namen des Servers (wenn `maintenance_server_name` nicht gesetzt ist), ihre Standard-Locale (wenn `-lang` nicht angegeben ist)
-  und die Token-Überschreibungen ihres Themes. Das benutzerdefinierte CSS des Themes wird nie eingebunden. Kann die Datenbank nicht gelesen werden,
+  und die Token-Überschreibungen ihres Themes. Kann die Datenbank nicht gelesen werden,
   gibt er eine Warnung aus, schreibt die Seiten aus der Konfiguration und dem Standard-Theme und endet mit 0.
 - Führe ihn erneut aus, wenn sich diese Einstellungen oder das Theme ändern, und vor jeder Wartung, damit die Seiten im Front-End aktuell bleiben.
