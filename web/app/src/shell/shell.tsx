@@ -403,7 +403,7 @@ export function Shell({
         {signedIn && settingsEntryAt(pathname) !== undefined ? (
           <SettingsAside pathname={pathname} instance={instance} />
         ) : signedIn && reportAt(pathname) !== undefined ? (
-          <ReportAside id={reportAt(pathname) ?? ""} instance={instance} />
+          <ReportAside id={reportAt(pathname) ?? ""} pathname={pathname} instance={instance} />
         ) : (
           <Around signedIn={signedIn} pathname={pathname} instance={instance} />
         )}

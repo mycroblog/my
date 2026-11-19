@@ -96,9 +96,9 @@ export type ReportQueuePage = {
   readonly refetch: () => void;
 };
 
-/** Whether `error` is the server's refusal of what needs a permission the reader lacks. */
-const refusedRight = (error: unknown) =>
-  typeof error === "object" && error !== null && "status" in error && error.status === 403;
+/** Whether `error` is the server's answer of `status` (403: a permission the reader lacks; 404: nothing there). */
+const refusedWith = (error: unknown, status: number) =>
+  typeof error === "object" && error !== null && "status" in error && error.status === status;
 
 /**
  * The page of the queue `q` asks for; while another page is on its way, the one shown before stays (`stale`), so that
@@ -112,7 +112,7 @@ export function useReportQueue(q: ReportQueueQuery): ReportQueuePage {
     next: cursor === undefined || cursor === "" ? undefined : cursor,
     status: query.status,
     stale: query.isPlaceholderData,
-    forbidden: refusedRight(query.error),
+    forbidden: refusedWith(query.error, 403),
     refetch: () => {
       void query.refetch();
     },
@@ -139,12 +139,11 @@ export type ReportRead = {
 /** The report of `id` as a moderator opens it. */
 export function useReport(id: string): ReportRead {
   const query = useQuery(reportQuery(useAppData(), id));
-  const status = (query.error as { status?: unknown } | null)?.status;
   return {
     report: query.data,
     status: query.status,
-    missing: status === 404,
-    forbidden: status === 403,
+    missing: refusedWith(query.error, 404),
+    forbidden: refusedWith(query.error, 403),
     refetch: () => {
       void query.refetch();
     },

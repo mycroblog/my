@@ -158,6 +158,12 @@ export type RecordTableProps<K extends string> = {
    * in one place from one filter or page to the next; the heads' captions wrap only at that share.
    */
   even?: boolean | undefined;
+  /**
+   * Its rows, and the surface of the one hovered or open, keep within its own width, for a place with no room past its
+   * edges (the column beside the main one), their words set in by a row's inset; by default they reach past it by that
+   * inset, so that their words line up with what stands above and below.
+   */
+  contained?: boolean | undefined;
 };
 
 // A column of words keeps its longest word and shares the room left; the heads' column takes what its heads need, up
@@ -179,14 +185,15 @@ function RecordRoom({ children }: { children: ReactNode }) {
  */
 function RecordFrame({
   tracks,
+  contained,
   className,
   ...rest
-}: HTMLAttributes<HTMLDivElement> & { tracks: string; className: string }) {
+}: HTMLAttributes<HTMLDivElement> & { tracks: string; contained: boolean; className: string }) {
   return (
     <div
       {...rest}
       style={{ "--record-tracks": tracks } as CSSProperties}
-      className={`${className} -mx-screen-row-inline grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-entry-avatar`}
+      className={`${className} ${contained ? "" : "-mx-screen-row-inline"} grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-entry-avatar`}
     />
   );
 }
@@ -509,6 +516,7 @@ export function RecordTable<K extends string>({
   busy = false,
   empty,
   even = false,
+  contained = false,
 }: RecordTableProps<K>) {
   const s = table();
   const { lang } = useReader(undefined);
@@ -595,6 +603,7 @@ export function RecordTable<K extends string>({
           aria-label={label}
           aria-busy={busy || undefined}
           tracks={tracks}
+          contained={contained}
           className={`${s.root()} ${busy ? s.busy() : ""}`}
         >
           <RecordLine role="row" head className={s.headLine()}>

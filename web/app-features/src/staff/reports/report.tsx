@@ -16,11 +16,8 @@ import {
   AccountLine,
   eventPath,
   languageName,
-  moderatedAccountPath,
   Post,
   sentenceHandleOf,
-  type PostAction,
-  type PostTranslation,
   type TranslationFailure,
 } from "@my/app-components";
 import {
@@ -72,16 +69,10 @@ import {
 } from "@my/design-system";
 import { Fragment, useId, useRef, useState, type ReactNode } from "react";
 import { charsOf } from "../../chars";
-import { inAnotherLanguage } from "../../post-translation";
+import { readerLanguage, usePostTranslation } from "../../post-translation";
 import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
-
-/** The language tag of the reader's locale that a translation goes into. */
-function readerLanguage(locale: string): string {
-  const l = new Intl.Locale(locale);
-  return l.script === undefined ? l.language : `${l.language}-${l.script}`;
-}
 
 /** What the reader is told of a refused translation, by why the server refused. */
 const failureOf = (e: unknown): TranslationFailure => {
@@ -283,22 +274,14 @@ function GoButton({ href, icon, children }: { href: string; icon: IconName; chil
   );
 }
 
-/** The reported account, with the way to its own moderation screen at its end. */
+/**
+ * The reported account. The way to act on it, its moderation screen (/moderation/accounts/{id}), comes at its line's
+ * end with that screen (#3260), for a reader with `manage_accounts` alone.
+ */
 function ReportedAccount({ report }: { report: ReportDetail }) {
   const { t } = useStaffStrings();
-  const go = (
-    <GoButton href={moderatedAccountPath(report.target_account_id)} icon="moderation">
-      {t("staff.report.moderate")}
-    </GoButton>
-  );
-  if (report.target_account === undefined)
-    return (
-      <Stack gap="entry-line">
-        <FeedNotice start>{t("staff.account_gone")}</FeedNotice>
-        <Row>{go}</Row>
-      </Stack>
-    );
-  return <AccountLine account={report.target_account} end={go} />;
+  if (report.target_account === undefined) return <FeedNotice start>{t("staff.account_gone")}</FeedNotice>;
+  return <AccountLine account={report.target_account} />;
 }
 
 /** The domain of a remote account's server; undefined for a local one. */
@@ -390,7 +373,8 @@ function useEventFacts(event: ReportedEvent | undefined): Fact[] {
 function ReportFacts({ report, me }: { report: ReportDetail; me: string | undefined }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
-  const rules = useInstance()?.rules ?? [];
+  // The rules are the instance's: none is said retired before it answered.
+  const rules = useInstance()?.rules;
   const assignee = useReportAccount(report.assignee_account_id);
   const room = useRoomFacts(report.voice_room);
   const event = useEventFacts(report.event);
@@ -415,7 +399,7 @@ function ReportFacts({ report, me }: { report: ReportDetail; me: string | undefi
       ? [{ term: t("staff.report.fact.resolved_at"), value: moment(report.state_changed_at) }]
       : []),
     { term: t("staff.report.fact.category"), value: categoryWords(t, report.category) },
-    ...(report.rule_ids.length === 0
+    ...(report.rule_ids.length === 0 || rules === undefined
       ? []
       : [
           {
@@ -432,7 +416,8 @@ function ReportFacts({ report, me }: { report: ReportDetail; me: string | undefi
           },
         ]),
     { term: t("staff.report.fact.filed"), value: moment(report.filed_at) },
-    { term: t("staff.report.fact.reporter"), value: reporter },
+    // Who reported a moderator is never shown to them (ADR-0058 §9).
+    ...(report.target_account_id === me ? [] : [{ term: t("staff.report.fact.reporter"), value: reporter }]),
     {
       term: t("staff.report.fact.assignee"),
       value:
@@ -478,6 +463,7 @@ function Comment({ report }: { report: ReportDetail }) {
   const translations = useReportTranslations(report.id);
   const [state, setState] = useState<Translated<ReportCommentTranslation>>({ kind: "none" });
   const target = readerLanguage(locale);
+  // The server alone: a comment names no language, which the browser's translator needs.
   const offered = report.comment !== "" && offer?.reports_to_server === true && serverTranslates(offer, "private");
   const translate = () => {
     if (state.kind === "hidden") {
@@ -544,44 +530,28 @@ function Comment({ report }: { report: ReportDetail }) {
   );
 }
 
-/** A post the report points at, translated on the reader's request where the server may send it. */
+/**
+ * A post the report points at, translated on the reader's request: through the report while the server may send a
+ * report's text, else, or after the server refused, by the browser's translator where the instance allows it
+ * (ADR-0148 §12, §13).
+ */
 function ReviewedPost({ reportId, reported }: { reportId: string; reported: ReportedStatus }) {
-  const { t, locale } = useStaffStrings();
+  const { t } = useStaffStrings();
   const offer = useInstance()?.translation;
   const translations = useReportTranslations(reportId);
   const { status } = reported;
-  const target = readerLanguage(locale);
-  const [state, setState] = useState<Translated<PostTranslation>>({ kind: "none" });
-  const translatable =
-    offer?.reports_to_server === true &&
-    inAnotherLanguage(status.language, target) &&
-    serverTranslates(offer, status.visibility);
-  const onAction = (action: PostAction) => {
-    if (action.type === "original" && state.kind === "shown") setState({ kind: "hidden", answer: state.answer });
-    if (action.type !== "translate" || state.kind === "translating") return;
-    if (state.kind === "hidden") {
-      setState({ kind: "shown", answer: state.answer });
-      return;
-    }
-    setState({ kind: "translating" });
-    translations.status(status.id, target).then(
-      (answer) => {
-        setState({ kind: "shown", answer });
-      },
-      (e: unknown) => {
-        setState({ kind: "failed", failure: failureOf(e) });
-      },
-    );
-  };
+  const { props, act } = usePostTranslation(status, false, {
+    allowed: offer?.reports_to_server === true,
+    translate: (id, language) => translations.status(id, language),
+  });
   return (
     <Post
       status={status}
       review
-      translatable={translatable}
-      translation={state.kind === "shown" ? state.answer : undefined}
-      translating={state.kind === "translating"}
-      translationFailure={state.kind === "failed" ? state.failure : undefined}
-      onAction={onAction}
+      {...props}
+      onAction={(action) => {
+        act(action.type);
+      }}
       // A deleted post says so in its own first line, with when, as its author's line says when it was posted.
       context={
         reported.deleted_at === undefined ? undefined : (

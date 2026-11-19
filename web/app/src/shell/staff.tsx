@@ -5,25 +5,25 @@
 // reader came from, compact, from the frame's `wide`; and which report a screen at an address is.
 
 import type { Instance } from "@my/app-data";
-import { ReportQueueBeside, StaffEntryScreen, useStaffTitle, type StaffArea, type StaffSearch } from "@my/app-features";
+import {
+  ReportQueueBeside,
+  StaffEntryScreen,
+  staffHref,
+  useStaffEntry,
+  useStaffTitle,
+  type StaffArea,
+  type StaffSearch,
+} from "@my/app-features";
 import { FrameAside } from "@my/design-system";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useStrings } from "../locale";
-import { ServerFooter } from "./around";
+import { Around, ServerFooter } from "./around";
 import { ScreenHeading } from "./heading";
 import { SignedOut } from "./signed-out";
 
 /** The query of an address as its members, each the last of its name. */
 export function searchOfQuery(query: string): StaffSearch {
   return Object.fromEntries(new URLSearchParams(query));
-}
-
-/** The address of `pathname` with `search` as its query. */
-export function withSearch(pathname: string, search: StaffSearch): string {
-  const query = new URLSearchParams(
-    Object.entries(search).flatMap(([k, v]) => (v === undefined ? [] : [[k, v] as [string, string]])),
-  ).toString();
-  return query === "" ? pathname : `${pathname}?${query}`;
 }
 
 /** The report the screen at `pathname` is (/moderation/reports/{id}); undefined elsewhere. */
@@ -46,7 +46,7 @@ function Entry({ area, entry }: { area: StaffArea; entry: string }) {
         entry={entry}
         search={searchOfQuery(query)}
         onSearch={(search) => {
-          void router.navigate({ href: withSearch(pathname, search) });
+          void router.navigate({ href: staffHref(pathname, search) });
         }}
       />
     </>
@@ -65,10 +65,23 @@ export function StaffEntryPage({ area, entry, signedIn }: { area: StaffArea; ent
   );
 }
 
-/** The column beside the report of `id`: the queue's page the reader came from, the report marked; the server's pages. */
-export function ReportAside({ id, instance }: { id: string; instance: Instance | undefined }) {
+/**
+ * The column beside the report of `id`: the queue's page the reader came from, the report marked, and the server's
+ * pages; what is around the reader, as elsewhere, for a reader the queue is not open to.
+ */
+export function ReportAside({
+  id,
+  pathname,
+  instance,
+}: {
+  id: string;
+  pathname: string;
+  instance: Instance | undefined;
+}) {
   const t = useStrings();
   const query = useLocation({ select: (l) => l.searchStr });
+  if (useStaffEntry("moderation", "reports") === undefined)
+    return <Around signedIn pathname={pathname} instance={instance} />;
   return (
     <FrameAside label={t("app.report_queue")}>
       <ReportQueueBeside search={searchOfQuery(query)} current={id} />

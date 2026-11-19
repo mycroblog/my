@@ -6,7 +6,7 @@
 // time by the server's cursor, Previous going back along the pages the reader came by. The column beside a report's
 // screen shows the same page, compact (`ReportQueueBeside`). Where the queue has nothing to show, it says why.
 
-import { reportPath, sentenceHandleOf } from "@my/app-components";
+import { reportPath, reportQueuePath, sentenceHandleOf } from "@my/app-components";
 import {
   reportCategories,
   useReportAccount,
@@ -33,7 +33,7 @@ import {
   type RecordState,
 } from "@my/design-system";
 import type { ReactNode } from "react";
-import type { StaffAddress, StaffSearch } from "../entries";
+import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings, type T } from "../parts";
 
 type Category = (typeof reportCategories)[number];
@@ -67,20 +67,10 @@ function searchOf(q: ReportQueueQuery, trail: readonly string[] = []): StaffSear
 }
 
 /** The address of the report of `id`, which keeps the queue's query, so that its screen goes back to the same page. */
-export function reportHref(id: string, search: StaffSearch): string {
-  const query = new URLSearchParams(
-    Object.entries(search).flatMap(([k, v]) => (v === undefined ? [] : [[k, v] as [string, string]])),
-  ).toString();
-  return query === "" ? reportPath(id) : `${reportPath(id)}?${query}`;
-}
+export const reportHref = (id: string, search: StaffSearch): string => staffHref(reportPath(id), search);
 
 /** The address of the queue at `search`. */
-export function queueHref(search: StaffSearch): string {
-  const query = new URLSearchParams(
-    Object.entries(search).flatMap(([k, v]) => (v === undefined ? [] : [[k, v] as [string, string]])),
-  ).toString();
-  return query === "" ? "/moderation/reports" : `/moderation/reports?${query}`;
-}
+export const queueHref = (search: StaffSearch): string => staffHref(reportQueuePath, search);
 
 /** Whether `q` filters anything the queue does not filter at first (the open reports, of every kind). */
 const filtered = (q: ReportQueueQuery) => q.state !== "open" || q.category !== undefined || q.assignee !== undefined;
@@ -142,6 +132,7 @@ function QueueTable({
   empty?: ReactNode;
 }) {
   const { t } = useStaffStrings();
+  const me = useViewer()?.id;
   const q = queueOf(search);
   const columns: RecordColumn<Column>[] = compact
     ? [{ key: "state", label: t("staff.reports.column.state"), kind: "fit", beside: true }]
@@ -154,7 +145,8 @@ function QueueTable({
     id: r.id,
     head: r.target_account === undefined ? t("staff.account_gone") : sentenceHandleOf(r.target_account),
     // Beside a report, two reports of one account are told apart by their categories.
-    caption: compact ? categoryWords(t, r.category) : filedBy(t, r),
+    // Who reported a moderator is never shown to them (ADR-0058 §9).
+    caption: compact ? categoryWords(t, r.category) : r.target_account_id === me ? undefined : filedBy(t, r),
     href: reportHref(r.id, search),
     cells: {
       category: categoryWords(t, r.category),
@@ -180,6 +172,7 @@ function QueueTable({
       busy={busy}
       empty={empty}
       even={!compact}
+      contained={compact}
     />
   );
 }

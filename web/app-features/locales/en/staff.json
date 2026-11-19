@@ -327,10 +327,6 @@
     "defaultMessage": "Reported account",
     "description": "The heading of the section of a report's screen that names the reported account."
   },
-  "staff.report.moderate": {
-    "defaultMessage": "Moderate this account",
-    "description": "The link of a report's screen to the reported account's moderation screen, where a moderator acts on it."
-  },
   "staff.report.comment": {
     "defaultMessage": "Comment",
     "description": "The heading of the reporter's comment on a report's screen."

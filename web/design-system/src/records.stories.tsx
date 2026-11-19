@@ -752,6 +752,7 @@ export const ReportOpen: Story = {
           rows={reports.map(reportRow)}
           current="1042"
           onOpen={() => undefined}
+          contained
         />
       </FrameAside>
       <FrameDock label="Main" tabs={places} />

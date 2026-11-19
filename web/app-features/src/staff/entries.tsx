@@ -131,6 +131,14 @@ export function useStaffEntry(area: StaffArea, path: string): StaffEntry | undef
   return useStaffEntries(area).find((e) => e.path === path);
 }
 
+/** The address of `pathname` with `search` as its query, the members it leaves out left out. */
+export function staffHref(pathname: string, search: StaffSearch): string {
+  const query = new URLSearchParams(
+    Object.entries(search).flatMap(([k, v]) => (v === undefined ? [] : [[k, v] as [string, string]])),
+  ).toString();
+  return query === "" ? pathname : `${pathname}?${query}`;
+}
+
 /** The address of the root of `area`. */
 export const staffRootPath = (area: StaffArea): string => `/${area}`;
 

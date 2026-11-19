@@ -6,13 +6,14 @@
 // own address says. Without a session it asks the reader to sign in.
 
 import { loadReport, viewerQuery } from "@my/app-data";
-import { ReportScreen, StaffMissing, useReportTitle, useStaffEntry, useStaffFacts } from "@my/app-features";
+import { reportQueuePath } from "@my/app-components";
+import { ReportScreen, StaffMissing, staffHref, useReportTitle, useStaffEntry, useStaffFacts } from "@my/app-features";
 import { createFileRoute, useLocation, useRouter } from "@tanstack/react-router";
 import { useStrings } from "../locale";
 import { screenLoad } from "../screen-load";
 import { ScreenHeading } from "../shell/heading";
 import { SignedOut } from "../shell/signed-out";
-import { searchOfQuery, withSearch } from "../shell/staff";
+import { searchOfQuery } from "../shell/staff";
 
 export const Route = createFileRoute("/moderation/reports/$id")({
   loader: ({ context, params }) =>
@@ -38,7 +39,7 @@ function Report({ id }: { id: string }) {
         id={id}
         search={search}
         onBack={() => {
-          void router.navigate({ href: withSearch("/moderation/reports", search) });
+          void router.navigate({ href: staffHref(reportQueuePath, search) });
         }}
       />
     </>

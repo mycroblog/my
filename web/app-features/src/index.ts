@@ -208,6 +208,7 @@ export {
   loadStaffFacts,
   staffEntries,
   staffEntryPath,
+  staffHref,
   staffRootPath,
   useStaffEntries,
   useStaffEntry,
