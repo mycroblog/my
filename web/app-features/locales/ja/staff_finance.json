@@ -1,10 +1,10 @@
 {
   "staff_finance.group": {
-    "defaultMessage": "運営の資金",
+    "defaultMessage": "運営資金",
     "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
   },
   "staff_finance.entry": {
-    "defaultMessage": "収支",
+    "defaultMessage": "会計",
     "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title."
   },
   "staff_finance.entry.hint": {
@@ -12,7 +12,7 @@
     "description": "Line under Finance in the list of administration screens at /admin."
   },
   "staff_finance.back.root": {
-    "defaultMessage": "収支",
+    "defaultMessage": "会計",
     "description": "The way back from a screen under Finance to its first page, at /admin/finance."
   },
   "staff_finance.back.costs": {
@@ -24,11 +24,11 @@
     "description": "The button of a question on a Finance screen that does nothing."
   },
   "staff_finance.forbidden": {
-    "defaultMessage": "このアカウントでは、サーバーの収支を管理できなくなりました。",
+    "defaultMessage": "このアカウントでは、サーバーの会計を管理できなくなりました。",
     "description": "On a Finance screen, when the server refuses the reader because their roles no longer allow it."
   },
   "staff_finance.doors": {
-    "defaultMessage": "収支の画面",
+    "defaultMessage": "会計の画面",
     "description": "Heading of the list of the screens under Finance (costs, income, billing imports, publication) on /admin/finance."
   },
   "staff_finance.costs": {
@@ -56,11 +56,11 @@
     "description": "On the list of cost items while it loads."
   },
   "staff_finance.costs.failed": {
-    "defaultMessage": "費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "費用を読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "On the list of cost items when it could not be loaded, before Try again."
   },
   "staff_finance.costs.failed_more": {
-    "defaultMessage": "続きの費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "続きの費用を読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "Under the list of cost items when its next page could not be loaded, before Try again."
   },
   "staff_finance.costs.empty": {
@@ -112,7 +112,7 @@
     "description": "Name, for assistive technology, of the table of the income per period."
   },
   "staff_finance.income.about": {
-    "defaultMessage": "総額は支払われた額、手数料は決済の事業者の取り分、純額は残る額です。収支は純額から費用を引いた額です。",
+    "defaultMessage": "収支は純額から費用を引いた額です。",
     "description": "The note under the table of the income per period."
   },
   "staff_finance.income.column.gross": {
@@ -148,7 +148,7 @@
     "description": "Heading of the net income of the latest period by where it came from. {period} is the period's name."
   },
   "staff_finance.income.source": {
-    "defaultMessage": "{source, select, subscription {サポーターのプラン} one_time {チップ} unknown {その他のお金} other {}}",
+    "defaultMessage": "{source, select, subscription {サポーターの加入} one_time {チップ} unknown {その他のお金} other {}}",
     "description": "Where income came from: the supporter plans' subscriptions, the tips, or other money of the payment provider's account."
   },
   "staff_finance.income.movements": {
@@ -168,11 +168,11 @@
     "description": "The filter of the money movements that shows every kind."
   },
   "staff_finance.income.kind": {
-    "defaultMessage": "{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {勝った異議} fee {手数料} other {}}",
+    "defaultMessage": "{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {チャージバックの取り消し} fee {手数料} other {}}",
     "description": "A kind of money movement, as a filter."
   },
   "staff_finance.income.what": {
-    "defaultMessage": "{source, select, subscription {プラン} one_time {チップ} unknown {その他のお金} other {}}の{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {勝った異議} fee {手数料} other {}}",
+    "defaultMessage": "{source, select, subscription {加入} one_time {チップ} unknown {その他のお金} other {}}の{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {チャージバックの取り消し} fee {手数料} other {}}",
     "description": "Line under a money movement's payer: what kind of movement it is, and of what."
   },
   "staff_finance.income.erased": {
@@ -188,11 +188,11 @@
     "description": "In the place of the money movements while they load."
   },
   "staff_finance.income.movements.failed": {
-    "defaultMessage": "お金の動きを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "お金の動きを読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "In the place of the money movements when they could not be loaded, before Try again."
   },
   "staff_finance.income.movements.failed_more": {
-    "defaultMessage": "続きのお金の動きを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "続きのお金の動きを読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "Under the money movements when their next page could not be loaded, before Try again."
   },
   "staff_finance.income.movements.empty": {
@@ -216,7 +216,7 @@
     "description": "On the billing imports' screen while it loads."
   },
   "staff_finance.imports.failed": {
-    "defaultMessage": "請求の取り込みを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "請求の取り込みを読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "On the billing imports' screen when it could not be loaded, before Try again."
   },
   "staff_finance.imports.facts": {
@@ -252,7 +252,7 @@
     "description": "Fact of a billing source whose last import failed: why, and what to do."
   },
   "staff_finance.imports.error": {
-    "defaultMessage": "{kind, select, permission {認証情報に請求データを読む権限がありません。運用ガイドにある権限を付けてください。} not_enabled {事業者の請求データが有効になっていません。事業者のコンソールで有効にしてください。} not_found {データセット・テーブル・サブスクリプションがありません。設定の名前を確かめてください。} throttled {事業者から速度を落とすよう求められました。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} request_cap {課金される要求の上限に達したため、何も呼び出していません。上限を上げるか、次の日か月を待ってください。} bytes_cap {問い合わせが上限より多く読み込むところでした。設定で上限を上げてください。} invalid_response {事業者の応答を読み取れませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} unavailable {事業者に接続できませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} other {サーバーのログを確かめてから、今すぐ取り込んでください。}}",
+    "defaultMessage": "{kind, select, permission {認証情報に請求データを読む権限がありません。運用ガイドにある権限を付けてください。} not_enabled {事業者の請求データが有効になっていません。事業者のコンソールで有効にしてください。} not_found {データセット・テーブル・サブスクリプションがありません。設定の名前を確認してください。} throttled {事業者から速度を落とすよう求められました。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} request_cap {課金される要求の上限に達したため、何も呼び出していません。上限を上げるか、次の日か月を待ってください。} bytes_cap {問い合わせが上限より多く読み込むところでした。設定で上限を上げてください。} invalid_response {事業者の応答を読み取れませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} unavailable {事業者に接続できませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} other {サーバーのログを確認してから、今すぐ取り込んでください。}}",
     "description": "Why a billing source's last import failed, and what to do. Read by administrators."
   },
   "staff_finance.imports.last_success": {
@@ -296,7 +296,7 @@
     "description": "Said after Import now: queued, refused because one ran in the last UTC hour, or refused because the source is no longer enabled. {provider} is the cloud provider's name."
   },
   "staff_finance.imports.run_failed": {
-    "defaultMessage": "取り込みを予約できませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "取り込みを予約できませんでした。接続を確認してから、もう一度試してください。",
     "description": "Said when Import now failed for another reason."
   },
   "staff_finance.imports.none": {
@@ -332,7 +332,7 @@
     "description": "On the publication screen while the settings load."
   },
   "staff_finance.publication.failed": {
-    "defaultMessage": "公開の範囲を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "公開の範囲を読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "On the publication screen when the settings could not be loaded, before Try again."
   },
   "staff_finance.publication.costs": {
@@ -360,7 +360,7 @@
     "description": "Under an option of what the server publishes of its income: what it publishes. Payments and who paid are never published."
   },
   "staff_finance.publication.meter": {
-    "defaultMessage": "資金のメーター",
+    "defaultMessage": "運営資金のメーター",
     "description": "Heading and name of the choice of the funding meter: how far this month's net income goes toward the monthly target."
   },
   "staff_finance.publication.meter.allowed": {
@@ -400,11 +400,11 @@
     "description": "Checkbox of the funding meter: whether the wide layout's side column shows it too."
   },
   "staff_finance.publication.viewer": {
-    "defaultMessage": "収支の画面",
+    "defaultMessage": "会計の画面",
     "description": "Heading of what people with the permission to read the finance see on /finance."
   },
   "staff_finance.publication.viewer.about": {
-    "defaultMessage": "収支を読めるロールを持つ人は、収支の画面で合計と内訳を見られます。ここで選んだものも見られます。",
+    "defaultMessage": "会計を読めるロールを持つ人は、会計の画面で合計と内訳を見られます。ここで選んだものも見られます。",
     "description": "Over the choices of what people with the permission to read the finance see. Read by administrators."
   },
   "staff_finance.publication.viewer.names": {
@@ -432,7 +432,7 @@
     "description": "The submit button of the publication screen."
   },
   "staff_finance.publication.saved": {
-    "defaultMessage": "保存しました。変更はすぐに公開されます。",
+    "defaultMessage": "保存しました。変更はすぐに反映されます。",
     "description": "Said once the publication settings are saved."
   },
   "staff_finance.publication.unchanged": {
@@ -452,7 +452,7 @@
     "description": "Line under Publication in the list of Finance screens: what the server publishes now of its costs and of its income."
   },
   "staff_finance.schedule": {
-    "defaultMessage": "{schedule, select, once {単発} weeks {{count, plural, other {# 週ごと}}} months {{count, plural, other {# か月ごと}}} years {{count, plural, other {# 年ごと}}} other {}}",
+    "defaultMessage": "{schedule, select, once {単発} weeks {{count, plural, =1 {毎週} other {# 週ごと}}} months {{count, plural, =1 {毎月} other {# か月ごと}}} years {{count, plural, =1 {毎年} other {# 年ごと}}} other {}}",
     "description": "How often a cost item is paid. {count} is its N of every N weeks, months or years."
   },
   "staff_finance.cost.name": {
@@ -460,7 +460,7 @@
     "description": "Field of a cost item: its name, such as VPS or Domain example.org."
   },
   "staff_finance.cost.name.hint": {
-    "defaultMessage": "支払いの対象。サーバーやドメインなど。管理者だけが見ます。",
+    "defaultMessage": "支払いの対象。サーバーやドメインなど。公開されません。",
     "description": "Under the name field of a cost item. Read by administrators."
   },
   "staff_finance.cost.name.blank": {
@@ -552,7 +552,7 @@
     "description": "On a cost item's screen while it loads."
   },
   "staff_finance.cost.failed": {
-    "defaultMessage": "費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "費用を読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "On a cost item's screen when it could not be loaded, before Try again."
   },
   "staff_finance.cost.missing": {
@@ -576,7 +576,7 @@
     "description": "Fact of a cost item: when it was recorded."
   },
   "staff_finance.cost.prices": {
-    "defaultMessage": "金額の改定",
+    "defaultMessage": "金額",
     "description": "Heading of a cost item's prices, each with the date it applies from, and of the form of a new price."
   },
   "staff_finance.cost.revise": {
@@ -660,7 +660,7 @@
     "description": "Button of the confirmation that deletes a cost item."
   },
   "staff_finance.cost.write_failed": {
-    "defaultMessage": "保存されていません。接続を確かめてから、もう一度試してください。",
+    "defaultMessage": "保存されていません。接続を確認してから、もう一度試してください。",
     "description": "Said when a change of a cost item failed for a reason that names no field."
   },
   "staff_finance.cost.amount.invalid": {

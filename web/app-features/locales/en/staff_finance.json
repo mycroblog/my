@@ -36,7 +36,7 @@
     "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
   },
   "staff_finance.costs.hint": {
-    "defaultMessage": "What the server pays, once or again and again",
+    "defaultMessage": "What the server pays, once or repeatedly",
     "description": "Line under Costs in the list of Finance screens."
   },
   "staff_finance.costs.record": {
@@ -112,7 +112,7 @@
     "description": "Name, for assistive technology, of the table of the income per period."
   },
   "staff_finance.income.about": {
-    "defaultMessage": "Gross is what was paid, fees are the payment provider's, net is what remains. The balance is net income less costs.",
+    "defaultMessage": "The balance is net income less costs.",
     "description": "The note under the table of the income per period."
   },
   "staff_finance.income.column.gross": {
@@ -432,7 +432,7 @@
     "description": "The submit button of the publication screen."
   },
   "staff_finance.publication.saved": {
-    "defaultMessage": "Saved. Everyone sees the change at once.",
+    "defaultMessage": "Saved. The change applies at once.",
     "description": "Said once the publication settings are saved."
   },
   "staff_finance.publication.unchanged": {
@@ -460,7 +460,7 @@
     "description": "Field of a cost item: its name, such as VPS or Domain example.org."
   },
   "staff_finance.cost.name.hint": {
-    "defaultMessage": "What is paid for, such as a server or a domain. Only administrators see it.",
+    "defaultMessage": "What is paid for, such as a server or a domain. Never published.",
     "description": "Under the name field of a cost item. Read by administrators."
   },
   "staff_finance.cost.name.blank": {

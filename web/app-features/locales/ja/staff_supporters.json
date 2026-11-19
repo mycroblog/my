@@ -76,7 +76,7 @@
     "description": "Header of the column of where each plan stands."
   },
   "staff_supporters.plans.monthly": {
-    "defaultMessage": "月 {price}",
+    "defaultMessage": "月額 {price}",
     "description": "A plan's monthly price."
   },
   "staff_supporters.plans.members": {
@@ -212,23 +212,23 @@
     "description": "How many subscriptions go on."
   },
   "staff_supporters.program.warning": {
-    "defaultMessage": "{warning, select, no_provider {設定に決済の事業者がありません。プランをオンにするには payments を設定してください。} no_email {サーバーはメールを送りません。プランをオンにするにはメールを設定してください。} provider_mismatch {設定の決済の事業者が、オンにしたときの事業者と違います。プランをオフにしてもう一度オンにするまで、新しい加入と変更を受け付けません。} no_commerce_disclosure {特定商取引法に基づく表記が空です。支払いを受ける前に書いてください。} other {プランの設定を確認してください。}}",
+    "defaultMessage": "{warning, select, no_provider {設定に決済の事業者がありません。サポーターのプランをオンにするには payments を設定してください。} no_email {サーバーはメールを送りません。サポーターのプランをオンにするにはメールを設定してください。} provider_mismatch {設定の決済の事業者が、オンにしたときの事業者と違います。サポーターのプランをオフにしてもう一度オンにするまで、新しい加入と変更を受け付けません。} no_commerce_disclosure {特定商取引法に基づく表記が空です。支払いを受ける前に書いてください。} other {サポーターのプランの設定を確認してください。}}",
     "description": "A warning about the supporter program, by what the server reports, with what to do."
   },
   "staff_supporters.program.turn_on": {
-    "defaultMessage": "プランをオンにする",
+    "defaultMessage": "サポーターのプランをオンにする",
     "description": "Button that turns the supporter program on."
   },
   "staff_supporters.program.turn_off": {
-    "defaultMessage": "プランをオフにする",
+    "defaultMessage": "サポーターのプランをオフにする",
     "description": "Button that turns the supporter program off, shown while no subscription goes on."
   },
   "staff_supporters.program.cannot_on": {
-    "defaultMessage": "上の警告に対処するまで、プランはオンにできません。",
+    "defaultMessage": "上の警告に対処するまで、サポーターのプランはオンにできません。",
     "description": "In the place of Turn the program on, while the server says the program cannot be turned on."
   },
   "staff_supporters.program.cannot_off": {
-    "defaultMessage": "加入が続いている間はプランをオフにできません。すべてのプランを廃止し、加入が終わってからオフにしてください。",
+    "defaultMessage": "加入が続いている間はサポーターのプランをオフにできません。すべてのプランを廃止し、加入が終わってからオフにしてください。",
     "description": "In the place of Turn the program off, while subscriptions go on."
   },
   "staff_supporters.program.done.on": {
@@ -240,11 +240,11 @@
     "description": "Said once the supporter program was turned off."
   },
   "staff_supporters.program.refused.unavailable": {
-    "defaultMessage": "プランをオンにできません。サーバーに決済の事業者かメールの設定がありません。",
+    "defaultMessage": "サポーターのプランをオンにできません。サーバーに決済の事業者かメールの設定がありません。",
     "description": "Said when the server refused to turn the program on because the deployment lacks what it needs."
   },
   "staff_supporters.program.refused.live": {
-    "defaultMessage": "加入が続いている間はプランをオフにできません。",
+    "defaultMessage": "加入が続いている間はサポーターのプランをオフにできません。",
     "description": "Said when the server refused to turn the program off because subscriptions go on."
   },
   "staff_supporters.disclosure": {
@@ -316,11 +316,11 @@
     "description": "Term of the fact that says whether users can tip now."
   },
   "staff_supporters.tips.accepting": {
-    "defaultMessage": "利用者はいまチップを送れます",
+    "defaultMessage": "利用者は今チップを贈れます",
     "description": "The tips are on and users can tip."
   },
   "staff_supporters.tips.not_accepting": {
-    "defaultMessage": "オンですが、利用者はいまチップを送れません",
+    "defaultMessage": "オンですが、利用者は今チップを贈れません",
     "description": "The tips are on, but the server takes none now (the program is off, or the provider takes no one-time payments)."
   },
   "staff_supporters.tips.off": {
@@ -336,11 +336,11 @@
     "description": "The smallest and largest amount of a tip allowed."
   },
   "staff_supporters.tips.no_one_time": {
-    "defaultMessage": "決済の事業者が一回払いを受け付けないため、利用者はチップを送れません。",
+    "defaultMessage": "決済の事業者が一回払いを受け付けないため、利用者はチップを贈れません。",
     "description": "Warning when the configured provider takes no one-time payments."
   },
   "staff_supporters.tips.limit_reached": {
-    "defaultMessage": "この 1 時間でサーバー全体のチップの開始数の上限に達しました。",
+    "defaultMessage": "利用者が始めたチップが、サーバー全体で 1 時間に許される数に達しました。時間がたつと、また贈れるようになります。",
     "description": "Warning when the server-wide rate limit of tips was reached in the last hour."
   },
   "staff_supporters.tips.take": {
@@ -436,11 +436,11 @@
     "description": "Term of the fact that says why the last reconciliation stopped."
   },
   "staff_supporters.payments.warning": {
-    "defaultMessage": "{warning, select, no_webhook {webhook の受信が記録されていません。事業者の webhook の宛先を確認してください。} reconciliation_corrected {最後の照合が、webhook で直るはずの加入を修正しました。事業者の webhook を確認してください。} duplicate_charge {1 回の支払いによる 2 つ目の加入が、まだ解約と返金をされていません。} other {決済の事業者の設定を確認してください。}}",
+    "defaultMessage": "{warning, select, no_webhook {webhook の受信が記録されていません。事業者の webhook の宛先を確認してください。} reconciliation_corrected {最後の照合が、webhook で直るはずの加入を修正しました。事業者の webhook を確認してください。} duplicate_charge {重複した加入が、まだ解約と返金をされていません。照合のたびに再試行します。すぐに試すには「今すぐ照合する」を選んでください。} other {決済の事業者の設定を確認してください。}}",
     "description": "A warning about the payment provider, by what the server reports, with what to do."
   },
   "staff_supporters.payments.reconcile": {
-    "defaultMessage": "いま照合する",
+    "defaultMessage": "今すぐ照合する",
     "description": "Button that asks for a reconciliation with the payment provider now."
   },
   "staff_supporters.payments.done": {
@@ -448,7 +448,7 @@
     "description": "Said once a reconciliation was queued."
   },
   "staff_supporters.payments.too_soon": {
-    "defaultMessage": "この 1 時間にすでに照合しました。次の時間にもう一度試してください。",
+    "defaultMessage": "今の時台にはすでに照合しています。次の正時を過ぎてから、もう一度試してください。",
     "description": "Said when the server refused a reconciliation because one ran in the last hour."
   },
   "staff_supporters.payments.mode.value": {
@@ -456,11 +456,11 @@
     "description": "Whether the payment provider's keys are test keys, with which nothing is charged, or live keys."
   },
   "staff_supporters.payments.error": {
-    "defaultMessage": "{kind, select, request_cap {要求数の上限に達しました。続きの実行を待つか、次の時間に「いま照合する」を選んでください。} permission {シークレットキーが間違っているか、権限が足りません。設定のキーを確認してください。} not_found {事業者が要求されたものを見つけられませんでした。設定の事業者のアカウントを確認してください。} invalid_request {事業者が要求を断りました。事業者の設定を確認してから、「いま照合する」を選んでください。} throttled {事業者が混み合っていました。次の照合を待つか、次の時間に「いま照合する」を選んでください。} unavailable {事業者が止まっていました。次の照合を待つか、次の時間に「いま照合する」を選んでください。} invalid_signature {署名が一致しませんでした。webhook のシークレットを確認してください。} stale_signature {署名が古すぎました。サーバーの時計を確認してください。} mode_mismatch {キーのモードがアカウントと違います。同じモードのキーを使ってください。} other {事業者の応答を読み取れませんでした。次の時間に「いま照合する」を選んでください。}}",
+    "defaultMessage": "{kind, select, request_cap {要求数の上限に達しました。続きの実行を待つか、次の正時を過ぎてから「今すぐ照合する」を選んでください。} permission {シークレットキーが間違っているか、権限が足りません。設定のキーを確認してください。} not_found {事業者が要求されたものを見つけられませんでした。設定の事業者のアカウントを確認してください。} invalid_request {事業者が要求を断りました。事業者の設定を確認してから、「今すぐ照合する」を選んでください。} throttled {事業者が混み合っていました。次の照合を待つか、次の正時を過ぎてから「今すぐ照合する」を選んでください。} unavailable {事業者が止まっていました。次の照合を待つか、次の正時を過ぎてから「今すぐ照合する」を選んでください。} invalid_signature {署名が一致しませんでした。webhook のシークレットを確認してください。} stale_signature {署名が古すぎました。サーバーの時計を確認してください。} mode_mismatch {キーのモードがアカウントと違います。同じモードのキーを使ってください。} other {事業者の応答を読み取れませんでした。次の正時を過ぎてから「今すぐ照合する」を選んでください。}}",
     "description": "Why the last reconciliation stopped, with what to do."
   },
   "staff_supporters.permission": {
-    "defaultMessage": "{permission, select, view_finance {サーバーの収支を見る} create_custom_emojis {カスタム絵文字を申請する} start_voice_rooms {ボイスチャットのルームを開く} create_invites {人を招待する} keep_posts_longer {削除の上限を超えて投稿を残す} create_articles {記事を書く} create_events {イベントを作る} other {ほかの権限}}",
+    "defaultMessage": "{permission, select, view_finance {サーバーの会計を見る} create_custom_emojis {カスタム絵文字を申請する} start_voice_rooms {ボイスチャットのルームを開く} create_invites {人を招待する} keep_posts_longer {削除の上限を超えて投稿を残す} create_articles {記事を書く} create_events {イベントを作る} other {ほかの権限}}",
     "description": "A permission a supporter plan's role may give, by its name."
   },
   "staff_supporters.plan.standing": {
@@ -480,7 +480,7 @@
     "description": "When a plan could not be read; Try again follows."
   },
   "staff_supporters.plan.missing": {
-    "defaultMessage": "このプランはありません。存在しないか、アドレスが間違っている可能性があります。",
+    "defaultMessage": "このプランはありません。アドレスが間違っている可能性があります。",
     "description": "At the address of a plan the server does not have; the link to the plans follows."
   },
   "staff_supporters.plan.prices": {
@@ -528,7 +528,7 @@
     "description": "Under a number field of a plan's form when it is empty."
   },
   "staff_supporters.plan.visibility": {
-    "defaultMessage": "公開",
+    "defaultMessage": "公開の設定",
     "description": "Label of whether a plan takes new subscriptions."
   },
   "staff_supporters.plan.permissions": {
@@ -540,7 +540,7 @@
     "description": "A plan's role has no permission."
   },
   "staff_supporters.plan.retired_at": {
-    "defaultMessage": "廃止",
+    "defaultMessage": "廃止日時",
     "description": "Term of the fact of when a plan was retired."
   },
   "staff_supporters.plan.create": {
@@ -592,7 +592,7 @@
     "description": "Confirmation button that retires a plan."
   },
   "staff_supporters.plan.prices.value": {
-    "defaultMessage": "月 {monthly}、年 {yearly} ({discount}% 割引)",
+    "defaultMessage": "月額 {monthly}、年額 {yearly} ({discount}% 割引)",
     "description": "A plan's prices."
   },
   "staff_supporters.plan.role": {
@@ -636,7 +636,7 @@
     "description": "In the place of a subscriber's handle when the account was erased."
   },
   "staff_supporters.subscription.terms": {
-    "defaultMessage": "{plan}・{interval, select, year {年払い} other {月払い}}",
+    "defaultMessage": "{plan} ({interval, select, year {年払い} other {月払い}})",
     "description": "A subscription's plan and how often it is paid."
   },
   "staff_supporters.subscription.until": {
@@ -676,7 +676,7 @@
     "description": "Term of the fact of a subscription's price."
   },
   "staff_supporters.subscription.price.value": {
-    "defaultMessage": "{interval, select, year {年} other {月}} {price}",
+    "defaultMessage": "{interval, select, year {年額} other {月額}} {price}",
     "description": "A subscription's price per period."
   },
   "staff_supporters.subscription.started": {

@@ -340,7 +340,7 @@
     "description": "Warning when the configured provider takes no one-time payments."
   },
   "staff_supporters.tips.limit_reached": {
-    "defaultMessage": "The server's limit of tip starts was reached in the last hour.",
+    "defaultMessage": "Users started as many tips as the server allows in one hour. They can tip again as the hour goes by.",
     "description": "Warning when the server-wide rate limit of tips was reached in the last hour."
   },
   "staff_supporters.tips.take": {
@@ -436,7 +436,7 @@
     "description": "Term of the fact that says why the last reconciliation stopped."
   },
   "staff_supporters.payments.warning": {
-    "defaultMessage": "{warning, select, no_webhook {No webhook delivery is recorded. Check the webhook endpoint at the provider.} reconciliation_corrected {The last reconciliation corrected subscriptions that webhooks should have. Check the webhook at the provider.} duplicate_charge {A second subscription of one payment is not canceled and refunded yet.} other {Look at the payment provider's settings.}}",
+    "defaultMessage": "{warning, select, no_webhook {No webhook delivery is recorded. Check the webhook endpoint at the provider.} reconciliation_corrected {The last reconciliation corrected subscriptions that webhooks should have. Check the webhook at the provider.} duplicate_charge {A duplicate subscription is not canceled and refunded yet. Each reconciliation tries again; choose Reconcile now to try at once.} other {Look at the payment provider's settings.}}",
     "description": "A warning about the payment provider, by what the server reports, with what to do."
   },
   "staff_supporters.payments.reconcile": {
@@ -480,7 +480,7 @@
     "description": "When a plan could not be read; Try again follows."
   },
   "staff_supporters.plan.missing": {
-    "defaultMessage": "This plan does not exist. It may never have existed, or the address may be wrong.",
+    "defaultMessage": "This plan does not exist. The address may be wrong.",
     "description": "At the address of a plan the server does not have; the link to the plans follows."
   },
   "staff_supporters.plan.prices": {
@@ -572,7 +572,7 @@
     "description": "Heading of the section that retires a plan."
   },
   "staff_supporters.plan.retire.about": {
-    "defaultMessage": "{count, plural, =0 {Retiring takes no new subscriptions, for good.} one {Retiring takes no new subscriptions, for good. Its # subscription is not renewed.} other {Retiring takes no new subscriptions, for good. Its # subscriptions are not renewed.}}",
+    "defaultMessage": "{count, plural, =0 {Once retired, the plan takes no new subscriptions, for good.} one {Once retired, the plan takes no new subscriptions, for good, and its # subscription is not renewed.} other {Once retired, the plan takes no new subscriptions, for good, and its # subscriptions are not renewed.}}",
     "description": "Above Retire the plan…, what retiring does."
   },
   "staff_supporters.plan.retire.ask": {
