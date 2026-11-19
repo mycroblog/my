@@ -12290,8 +12290,15 @@ export interface components {
             state_changed_at: string;
             /** @description The account of the moderator who handles the report; omitted when nobody does. */
             assignee_account_id?: components["schemas"]["Id"];
-            reporter_account_id: components["schemas"]["Id"];
-            /** @description The reporter, often the instance actor of a remote server; omitted when the account is gone. */
+            /**
+             * @description The account that filed the report; omitted when the reader is the account reported,
+             *     who never learns who reported them.
+             */
+            reporter_account_id?: components["schemas"]["Id"];
+            /**
+             * @description The reporter, often the instance actor of a remote server; omitted when the account is
+             *     gone, and when the reader is the account reported.
+             */
             reporter_account?: components["schemas"]["Account"];
             target_account_id: components["schemas"]["Id"];
             /**
