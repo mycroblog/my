@@ -11,6 +11,7 @@
 // its screen.
 
 import {
+  instanceQuery,
   loadReportQueue,
   moderationCountsQuery,
   useAccountCounts,
@@ -196,5 +197,20 @@ export async function loadStaffEntry(
   const viewer = await readViewer(data);
   const entry = staffEntries.find((e) => e.area === area && e.path === path);
   if (entry === undefined || viewer?.permissions.includes(entry.permission) !== true) return;
+  // An entry the server does not offer (registrations on a one-person server) asks it nothing: its screen says that
+  // the address names none, as the root lists none.
+  if (entry.shown !== undefined) {
+    const instance = await data.queryClient
+      .query({ ...instanceQuery(data), staleTime: Infinity })
+      .catch(() => undefined);
+    const facts: StaffFacts = {
+      permissions: viewer.permissions,
+      openReports: undefined,
+      pendingRegistrations: undefined,
+      pendingAppeals: undefined,
+      singleUser: instance?.single_user,
+    };
+    if (!entry.shown(facts)) return;
+  }
   await (load === undefined ? entry.load?.(data, search) : load(data));
 }

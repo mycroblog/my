@@ -1359,6 +1359,10 @@
     "defaultMessage": "How many may sign up (empty for no limit)",
     "description": "The label of the field of how many may sign up with a new invite. Read by moderators."
   },
+  "staff_accounts.invites.no_end": {
+    "defaultMessage": "No end",
+    "description": "In the form of a new invite, under Works for: the choice of an invite that works until it is revoked or used up. Read by moderators."
+  },
   "staff_accounts.hook": {
     "defaultMessage": "{hook, select, inbound_status {Posts from other servers} inbound_follow {Follows from other servers} signup_check {Sign-ups} media_check {Uploaded media} local_status {Posts here} inbound_actor {Profiles from other servers} local_profile {Profiles here} other {A review}}",
     "description": "What a decision hook reviews, as the name of the hook in the automated reviews' records. Read by moderators."

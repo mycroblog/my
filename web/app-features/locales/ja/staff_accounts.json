@@ -1359,6 +1359,10 @@
     "defaultMessage": "登録できる人数 (空欄で上限なし)",
     "description": "The label of the field of how many may sign up with a new invite. Read by moderators."
   },
+  "staff_accounts.invites.no_end": {
+    "defaultMessage": "無期限",
+    "description": "In the form of a new invite, under Works for: the choice of an invite that works until it is revoked or used up. Read by moderators."
+  },
   "staff_accounts.hook": {
     "defaultMessage": "{hook, select, inbound_status {ほかのサーバーからの投稿} inbound_follow {ほかのサーバーからのフォロー} signup_check {登録} media_check {アップロードしたメディア} local_status {このサーバーの投稿} inbound_actor {ほかのサーバーのプロフィール} local_profile {このサーバーのプロフィール} other {審査}}",
     "description": "What a decision hook reviews, as the name of the hook in the automated reviews' records. Read by moderators."

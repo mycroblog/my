@@ -297,7 +297,7 @@ export function NewInviteScreen({ onBack }: { onBack: () => void }): ReactNode {
         <LabelledSelect
           label={t("staff_accounts.invites.length")}
           options={lengthOptions(t).map((o) =>
-            o.value === "0" ? { ...o, label: t("staff_accounts.invites.never") } : o,
+            o.value === "0" ? { ...o, label: t("staff_accounts.invites.no_end") } : o,
           )}
           value={length}
           onChange={setLength}
