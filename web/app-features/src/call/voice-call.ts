@@ -23,6 +23,7 @@
 // - Once the stream gave a `state`, only the stream says how the room stands: the answer of a write may be older.
 // - Every end happens once: whatever ends the call first stops the stream, the timers and the audio, and says why.
 import {
+  endVoiceRoom,
   isVoiceLeaveRefused,
   isVoiceSessionGone,
   leaveVoiceRoom,
@@ -706,6 +707,25 @@ export class VoiceCall {
       await leaveVoiceRoom(this.#data, this.roomId, this.session, choice);
     } catch (error) {
       if (isVoiceLeaveRefused(error) && !this.#over()) {
+        this.#leaving = null;
+        throw error;
+      }
+    }
+    this.#finish(left, false);
+  }
+
+  /**
+   * Ends the room the reader hosts, for everyone in it, and with it the call, which ends as the reader's leaving. When
+   * the server refuses (a reader who no longer hosts it) it rejects and the call goes on.
+   */
+  async endRoom(): Promise<void> {
+    if (this.#over()) return;
+    const left: CallEnd = { kind: "left", reason: "" };
+    this.#leaving = left;
+    try {
+      await endVoiceRoom(this.#data, this.roomId);
+    } catch (error) {
+      if (!this.#over()) {
         this.#leaving = null;
         throw error;
       }

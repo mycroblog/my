@@ -80,8 +80,19 @@ describe("the menu", () => {
     await counted(menu);
     // Every group has an entry; a group without one is not drawn.
     expect(groups(menu)).toEqual(["General", "People and filters", "Sign-in and access", "Account"]);
-    const [profile, display, notifications, relationships, filters, security, apps, invites, account, ...others] =
-      rows(menu);
+    const [
+      profile,
+      display,
+      notifications,
+      voice,
+      relationships,
+      filters,
+      security,
+      apps,
+      invites,
+      account,
+      ...others
+    ] = rows(menu);
     // An entry's row says its name, then what it holds.
     expect(profile?.[0]).toMatch(new RegExp(`^Profile\\s*${profileHint}$`));
     expect(profile?.slice(1)).toEqual(["/settings/profile", null]);
@@ -89,6 +100,8 @@ describe("the menu", () => {
     expect(display?.slice(1)).toEqual(["/settings/display", null]);
     expect(notifications?.[0]).toMatch(new RegExp(`^Notifications\\s*${notificationsHint}$`));
     expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
+    expect(voice?.[0]).toMatch(/^Voice chat\s*The rooms you hosted$/);
+    expect(voice?.slice(1)).toEqual(["/settings/voice", null]);
     expect(relationships?.[0]).toMatch(new RegExp(`^Relationships\\s*${relationshipsHint}$`));
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
     expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
@@ -153,6 +166,7 @@ describe("an entry", () => {
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", "page"],
       ["Notifications", "/settings/notifications", null],
+      ["Voice chat", "/settings/voice", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
@@ -181,6 +195,7 @@ describe("an entry", () => {
       ["Profile", "/settings/profile", null],
       ["Display and posting", "/settings/display", null],
       ["Notifications", "/settings/notifications", null],
+      ["Voice chat", "/settings/voice", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
@@ -247,6 +262,7 @@ describe("the display language", () => {
       ["プロフィール", "/settings/profile", null],
       ["表示と投稿", "/settings/display", "page"],
       ["通知", "/settings/notifications", null],
+      ["通話", "/settings/voice", null],
       ["つながり", "/settings/relationships", null],
       ["キーワードフィルタ", "/settings/filters", null],
       ["セキュリティ", "/settings/security", null],

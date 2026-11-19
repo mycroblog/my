@@ -32,6 +32,7 @@ import { loadNotificationSettings, NotificationSettings } from "./notifications"
 import { loadProfileSettings, ProfileSettings } from "./profile";
 import { loadRelationshipSettings, RelationshipSettings } from "./relationships";
 import { loadSecuritySettings, SecuritySettings } from "./security/security";
+import { loadVoiceSettings, VoiceSettings } from "./voice";
 
 /** The groups of the menu, in its order, each under its heading. */
 export const settingsGroups = [
@@ -98,6 +99,8 @@ export type SettingsFacts = {
    * lets everyone, which only the list of their invites says; false until the server said so.
    */
   readonly mayInvite: boolean;
+  /** Whether the server has voice chat (ADR-0100 §2); false until the server said so. */
+  readonly voice: boolean;
 };
 
 /** An entry of the settings. */
@@ -153,6 +156,17 @@ export const settingsEntries: readonly SettingsEntry[] = [
     hint: "settings.entry.notifications.hint",
     Screen: NotificationSettings,
     load: loadNotificationSettings,
+  },
+  {
+    // The rooms the reader hosted (ADR-0100 §13), while the server has voice chat.
+    path: "voice",
+    group: "general",
+    icon: "room",
+    name: "settings.entry.voice",
+    hint: "settings.entry.voice.hint",
+    shown: (facts) => facts.voice,
+    Screen: VoiceSettings,
+    load: loadVoiceSettings,
   },
   {
     path: "relationships",
@@ -222,6 +236,7 @@ function useSettingsFacts(): SettingsFacts {
     appealable: useAppealableActions(),
     singleUser: useInstance()?.single_user === true,
     mayInvite: useMayInvite(),
+    voice: useInstance()?.voice_enabled === true,
   };
 }
 

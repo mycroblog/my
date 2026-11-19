@@ -3,7 +3,7 @@ description: |
   An open voice chat room: its settings, its host, and its participants in the order they
   joined. Everyone who sees the room sees its participants.
 type: object
-required: [id, name, description, hashtags, visibility, speakers, host, opened_at, participants_count, participants]
+required: [id, name, description, hashtags, visibility, speakers, host, opened_at, participants_count, participants, can_speak]
 properties:
   id:
     $ref: ./Id.yaml
@@ -37,3 +37,11 @@ properties:
     type: array
     items:
       $ref: ./VoiceRoomParticipant.yaml
+  can_speak:
+    description: |
+      Whether the user may become a speaker in the room now without raising a hand
+      (`POST /voice/rooms/{id}/speaker`): true for the host and the co-hosts, and for the
+      participants with a permission to speak (a granted raised hand, a grant, or an invitation
+      as a speaker) or whom the room's speakers setting covers, unless a moderator limited them
+      and they have no permission. False for any other user who is not in the room.
+    type: boolean

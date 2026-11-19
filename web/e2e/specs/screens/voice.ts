@@ -56,6 +56,39 @@ export function openPeers(page: Page): Promise<number> {
   );
 }
 
+/** A participant's tile's name: theirs first, then their role and marks after commas. */
+const named = (name: string) => new RegExp(`^${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(?:, .*)?$`);
+
+/** The form that opens a voice chat room, at /voice/new. */
+export class VoiceRoomOpen {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  async open(): Promise<void> {
+    await this.page.goto("/voice/new");
+  }
+
+  get name(): Locator {
+    return this.page.getByRole("textbox", { name: "Name", exact: true });
+  }
+
+  /** Whether the start post goes out with the room. */
+  get startPost(): Locator {
+    return this.page.getByRole("checkbox", { name: "Post to this server that the room is open", exact: true });
+  }
+
+  get postText(): Locator {
+    return this.page.getByRole("textbox", { name: "Text of the post", exact: true });
+  }
+
+  get submit(): Locator {
+    return this.page.getByRole("button", { name: "Open and join", exact: true });
+  }
+}
+
 export class VoiceRoom {
   readonly page: Page;
   readonly id: string;
@@ -95,6 +128,42 @@ export class VoiceRoom {
   /** The line that says the call is connecting. */
   get connecting(): Locator {
     return this.page.getByRole("main").getByText("Connecting…", { exact: true });
+  }
+
+  /** Raise hand, a listener's control in a room where they must ask to speak. */
+  get raiseHand(): Locator {
+    return this.controls.getByRole("button", { name: "Raise hand", exact: true });
+  }
+
+  /** The room's Leave. */
+  get leave(): Locator {
+    return this.controls.getByRole("button", { name: "Leave", exact: true });
+  }
+
+  /**
+   * The tile of the participant named `name`, a button for a host or co-host who may act on them, named by its name
+   * first, then their role and marks ("Fresh 1a2b, Co-host, Hand raised").
+   */
+  tile(name: string): Locator {
+    return this.page.getByRole("main").getByRole("button", { name: named(name) });
+  }
+
+  /** The participant's tile as anyone sees it: a button for a host, else an image, named alike. */
+  participant(name: string): Locator {
+    const main = this.page.getByRole("main");
+    return main.getByRole("button", { name: named(name) }).or(main.getByRole("img", { name: named(name) }));
+  }
+
+  /** The item `item` of the menu a host opens on the participant named `name`. */
+  menuItem(name: string, item: string): Locator {
+    return this.page
+      .getByRole("menu", { name: `Actions for ${name}`, exact: true })
+      .getByRole("menuitem", { name: item, exact: true });
+  }
+
+  /** The button `name` of the dialog open over the page. */
+  dialogButton(name: string): Locator {
+    return this.page.getByRole("alertdialog").getByRole("button", { name, exact: true });
   }
 
   /** The bar of the call, a group named by its room. */

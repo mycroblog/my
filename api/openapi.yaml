@@ -7192,9 +7192,9 @@ paths:
         alive: keep sending its heartbeats. Events:
 
         - `state`: the room and its participants changed. `data` is a `VoiceRoom`; each
-          participant has its `session` while it is alive, and `blocked` marks the participants in
-          a block relation with the user. At most one `state` arrives each second, with the newest
-          room.
+          participant has its `session` while it is alive, `blocked` marks the participants in a
+          block relation with the user, and `can_speak` is the user's. At most one `state` arrives
+          each second, with the newest room.
         - `mic`: a participant turned the microphone on or off. `data` is a `VoiceStreamMic`.
         - `reaction`: a participant reacted. `data` is a `VoiceStreamReaction`. The reactions of the
           participants in a block relation with the user do not arrive.
@@ -30288,6 +30288,7 @@ components:
         - opened_at
         - participants_count
         - participants
+        - can_speak
       properties:
         id:
           $ref: '#/components/schemas/Id'
@@ -30321,6 +30322,14 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VoiceRoomParticipant'
+        can_speak:
+          description: |
+            Whether the user may become a speaker in the room now without raising a hand
+            (`POST /voice/rooms/{id}/speaker`): true for the host and the co-hosts, and for the
+            participants with a permission to speak (a granted raised hand, a grant, or an invitation
+            as a speaker) or whom the room's speakers setting covers, unless a moderator limited them
+            and they have no permission. False for any other user who is not in the room.
+          type: boolean
     VoiceRoomInvitation:
       description: |
         An invitation to a voice chat room. The invited user sees the room until the invitation is

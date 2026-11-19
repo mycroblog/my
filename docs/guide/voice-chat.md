@@ -25,28 +25,32 @@ device, when a host removes you, or when you and the host or a co-host block eac
 
 ## Starting a room
 
-"Start a room" appears for the people the server's operators allow to host rooms. The form asks for:
+"Open a room", at the foot of the list of rooms, appears for the people the server's operators allow to host rooms.
+The form asks for:
 
 - **Name**, and an optional **Icon** and **Description**.
 - **Hashtags**: the room shows on the pages of its hashtags.
-- **Who can see and join**: "Everyone on this server", "Followers of the host", "People the host follows", "Mutual follows of the host", or "Only invited people".
-- **Who can speak without asking**: "Everyone who joins", "Followers of the host", "People the host follows", "Mutual follows of the host", or "Only people the hosts let speak".
-- **Post about the room**: a post with the link to the room, visible to everyone on this server or to your followers only.
+- **Who can see the room**: "Everyone on this server", "Your followers", "People you follow", "People you follow who follow you back", or "Only invited people".
+- **Who can speak without asking**: "Everyone in the room", "Your followers", "People you follow", "People you follow who follow you back", or "Only people allowed to speak".
+- **Start post**: a post with the link to the room, for everyone on this server or for your followers only, offered for
+  a room that one of them can see. Its text starts with the room's name, and you can change it.
   On a server of one person, the post about a room for everyone on this server is for your followers.
 
-"Start the room" opens it. "Change the room's settings" edits it later, and "Invite" lets you invite a person of your
-server as a listener or a speaker; they get a notification and can see the room from then on. "Share" copies the link.
+"Open and join" opens the room, and you are in it as its host. "Manage the room", at the top of the room, leads to
+"Room settings", which edits it later, and to "Invitations", where you invite a person of your server as a listener or
+a speaker; they get a notification and can see the room from then on, until you revoke the invitation.
 
 ## Hosting
 
-A host and the co-hosts manage the room. "Raised hands" lists the people who ask to speak ("Allow" or "Dismiss"). The
-menu of a participant offers "Let speak", "Stop from speaking", "Turn off microphone", "Remove from room", "Make
-co-host", and "Make host". A person you remove cannot see or join the room again.
+A host and the co-hosts manage the room. Selecting a participant opens what you can do with them: "Let them speak"
+(which also answers a raised hand) or "Decline the raised hand", "Make a listener", "Turn their microphone off", and
+"Remove from the room…"; the host also has "Make co-host", "Remove as co-host", and "Make host…". A person you remove
+cannot see or join the room again. Co-hosts invite people too; only the host changes the settings or ends the room.
 
-When the host leaves, they choose who hosts the room after them, or "End the room for everyone". A room also ends when
+When the host leaves while others are in the room, they choose who hosts it next, or "End the room for everyone". "End
+the room…" under "Manage the room", or at the end of "Room settings", ends it for everyone at once. A room also ends when
 everyone leaves, when the host is disconnected, when it reaches the time limit of the server, or when a moderator ends
-it. "Voice chat history" under "Display and notifications" in the settings lists the rooms you hosted and why each
-ended.
+it. "Voice chat" in the settings lists the rooms you hosted, when each opened and ended, and why.
 
 ## Notifications
 

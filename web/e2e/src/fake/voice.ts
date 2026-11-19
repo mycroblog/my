@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The fake's voice chat rooms (ADR-0100 §5, §6, §14; ADR-0101 §3, §5, §6): the open rooms, one room and the rooms the
-// reader hosted (none), joining with a new session and leaving, the session's heartbeat, its stream, the microphone, a
-// new grant, the signals of P2P (taken, and carried nowhere), reactions, speaking and the raised hand. The grant is
+// The fake's voice chat rooms (ADR-0100 §5, §6, §7, §13, §14; ADR-0101 §3, §5, §6): the open rooms, one room and the
+// rooms the reader hosted, joining with a new session and leaving, the session's heartbeat, its stream, the
+// microphone, a new grant, the signals of P2P (taken, and carried nowhere), reactions, speaking and the raised hand;
+// and the host's side: opening a room (its start post taken and posted nowhere), changing its settings, ending it,
+// what the host and the co-hosts do to a participant, handing it over, the invitations, and the host's leave, which
+// names the next host or ends the room. The grant is
 // P2P's with no ICE servers, so that a call in a story connects only within the machine, and the fake's rooms have no
 // other live session to connect to. The state is the fake's own, in memory; a test makes the stream say what the
 // server would (`FakeVoice.send`), or drops it (`FakeVoice.drop`).
@@ -11,6 +14,12 @@ import type { Handlers, Refusal, Schema } from "./spec";
 
 type Room = Schema<"VoiceRoom">;
 type Participant = Schema<"VoiceRoomParticipant">;
+
+/** The longest text of a start post the fake takes, the room's link aside. */
+const startPostLimit = 500;
+
+/** The most co-hosts a room has. */
+const cohostLimit = 3;
 
 /** How long the fake's grants last: as the server's TURN credentials by default. */
 const grantLifetime = 6 * 60 * 60_000;
@@ -44,9 +53,20 @@ export type FakeVoice = {
   readonly endedRoomId: () => string;
   /** The ID of the fake's open room the reader does not see: its summary says it is open, and the room answers 404. */
   readonly hiddenRoomId: () => string;
+  /** The participant of `accountId` leaves the reader's room: its stream says the room again. */
+  readonly participantLeaves: (accountId: string) => void;
+  /** A host lets the reader speak in the room they are in (an explicit grant): its stream says the room again. */
+  readonly grantReader: () => void;
+  /** The ID the next room the reader opens takes, known before it opens (a story's address). */
+  readonly nextRoomId: () => string;
+  /** The start posts of the rooms the reader opened, in order: the fake posts them nowhere. */
+  readonly startPosts: () => readonly { readonly room: string; readonly text: string }[];
   /** The open room where the account of `id` hosts or speaks, as its profile has it; undefined for none. */
   readonly entryOf: (id: string) => Schema<"VoiceRoomEntry"> | undefined;
 };
+
+/** Why the fake refuses to open a room, as the server's problem types name it. */
+export type FakeVoiceOpenRefusal = "not-eligible" | "too-many-rooms" | "hosting-elsewhere";
 
 /** What the voice handlers take from the fake. */
 export type VoiceContext = {
@@ -64,6 +84,18 @@ export type VoiceContext = {
   readonly ended: { readonly id: string; readonly name: string };
   /** An open room the reader does not see (its host blocks them, it is for the host's followers). */
   readonly hidden: { readonly id: string; readonly name: string };
+  /** The rooms the reader hosted, newest first; a room the reader opens comes first. */
+  readonly history: Schema<"VoiceRoomHistoryEntry">[];
+  /** Why the server refuses every opening of a room; none by default. */
+  readonly openRefusal?: FakeVoiceOpenRefusal | undefined;
+  /** A new ID, for a room or an invitation, newer than every one before. */
+  readonly newId: () => string;
+  /** The account of `id`, of this server or another; undefined for none. */
+  readonly accountById: (id: string) => Schema<"Account"> | undefined;
+  /** Whether the account of `follower` follows the account of `followee`, by their IDs. */
+  readonly follows: (follower: string, followee: string) => boolean;
+  /** Whether the reader blocks the account of `id`, or it blocks the reader. */
+  readonly blocked: (id: string) => boolean;
   readonly problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   readonly notFound: () => Refusal;
   readonly page: <T extends { id: string }>(
@@ -79,6 +111,16 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
   let joined: { room: string; session: string } | null = null;
   let stream: ReadableStreamDefaultController<Uint8Array> | null = null;
   let opened = 0;
+  /** The invitations of the rooms, revoked ones too: a revoked account is not invited again. */
+  const invitations: { room: string; invitation: Schema<"VoiceRoomInvitation">; revoked: boolean }[] = [];
+  /** The accounts removed from a room (`room>account`), which are not invited to it again. */
+  const removed = new Set<string>();
+  /** The start posts the rooms opened with, which the fake posts nowhere. */
+  const startPosts: { room: string; text: string }[] = [];
+  /** The rooms the reader was let speak in by a host (an explicit grant), by their IDs. */
+  const grants = new Set<string>();
+  /** The ID the next room opened takes, once a test asked for it. */
+  let reserved: string | undefined;
   /** The rooms that ended while the fake ran, by their IDs: their summary says so. */
   const endedRooms = new Map<string, string>([[c.ended.id, c.ended.name]]);
 
@@ -91,8 +133,33 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     expires_at: new Date(Date.now() + grantLifetime).toISOString(),
   });
   /** The room without the sessions, as the operations other than the stream show it. */
+  /**
+   * Whether the reader may speak in `room` without asking (the server's `can_speak`, per viewer): its host and
+   * co-hosts; one granted to (by a host, or invited as a speaker); and one the room's speakers cover; never one not in
+   * it.
+   */
+  const canSpeak = (room: Room): boolean => {
+    const self = viewerIn(room);
+    if (self === undefined) return false;
+    if (self.hosting || self.cohosting || grants.has(room.id)) return true;
+    switch (room.speakers) {
+      case "everyone":
+        return true;
+      case "followers":
+        return c.follows(c.viewer().id, room.host.id);
+      case "following":
+        return c.follows(room.host.id, c.viewer().id);
+      case "mutuals":
+        return c.follows(c.viewer().id, room.host.id) && c.follows(room.host.id, c.viewer().id);
+      case "manual":
+        return false;
+    }
+  };
+  /** The room as the reader's stream says it: its sessions, and whether the reader may speak. */
+  const streamed = (room: Room): Room => ({ ...room, can_speak: canSpeak(room) });
   const shown = (room: Room): Room => ({
     ...room,
+    can_speak: canSpeak(room),
     participants: room.participants.map((p) => {
       const copy = { ...p };
       delete copy.session;
@@ -140,10 +207,115 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     const self = room === undefined ? undefined : viewerIn(room);
     if (room === undefined || self === undefined) return c.notFound();
     Object.assign(self, change);
-    if (joined?.room === id) write("state", room);
+    if (joined?.room === id) write("state", streamed(room));
     return { status: 200 as const, body: shown(room) };
   };
   const sessionOf = (body: unknown) => (body as { session?: string } | undefined)?.session;
+
+  /** The reader joins `room` with a new session, as its host or as a listener; what the join answers. */
+  const enter = (room: Room, hosting: boolean): Schema<"VoiceRoomJoin"> => {
+    // Joining leaves the room the reader was in, and replaces the session of a reader in this one already.
+    if (joined !== null)
+      end(joined.room === room.id ? "replaced" : "removed", joined.room === room.id ? "replaced" : "moved");
+    sessions += 1;
+    const session = `fake-session-${String(sessions)}`;
+    room.participants.push({
+      account: c.viewer(),
+      role: hosting ? "speaker" : "listener",
+      hosting,
+      cohosting: false,
+      hand_raised: false,
+      blocked: false,
+      session,
+    });
+    room.participants_count += 1;
+    joined = { room: room.id, session };
+    opened = 0;
+    return { room: shown(room), session, grant: grant() };
+  };
+  /** The room ends: it is no longer open, and the reader's history says when and why. */
+  const closeRoom = (room: Room, reason: Schema<"VoiceEndReason">) => {
+    const at = c.rooms.indexOf(room);
+    if (at >= 0) c.rooms.splice(at, 1);
+    const kept = c.history.find((h) => h.id === room.id);
+    if (kept !== undefined && kept.ended_at === undefined)
+      Object.assign(kept, { ended_at: new Date().toISOString(), end_reason: reason });
+  };
+  /** The host ends `room` for everyone: the stream of the reader in it says so. */
+  const endRoom = (room: Room) => {
+    if (joined?.room === room.id) end("ended", "host");
+    closeRoom(room, "host");
+  };
+  /** `next` becomes the host of `room`; the host before stays in it as a participant. */
+  const handOver = (room: Room, next: Participant) => {
+    for (const p of room.participants) p.hosting = false;
+    next.hosting = true;
+    next.cohosting = false;
+    next.role = "speaker";
+    next.hand_raised = false;
+    room.host = next.account;
+    if (next.account.id === c.viewer().id && !c.history.some((h) => h.id === room.id))
+      c.history.unshift({ id: room.id, name: room.name, opened_at: room.opened_at });
+  };
+  /** Whether a participant may host rooms: every local account of the fake may. */
+  const eligible = (p: Participant) => !p.account.acct.includes("@");
+  /** Whether the reader is the host or a co-host of `room`. */
+  const moderates = (room: Room) => {
+    const self = viewerIn(room);
+    return self !== undefined && (self.hosting || self.cohosting);
+  };
+  const notHost = () => c.problem(403, "Only the host can do this", { type: "/api/v1/problems/voice-not-host" });
+  const notHostOrCohost = () =>
+    c.problem(403, "Only the host or a co-host can do this", { type: "/api/v1/problems/voice-not-host-or-cohost" });
+  const invalidParticipant = () =>
+    c.problem(422, "This participant cannot be operated on", { type: "/api/v1/problems/voice-invalid-participant" });
+  const openRefused = (why: FakeVoiceOpenRefusal) =>
+    why === "not-eligible"
+      ? c.problem(403, "You may not open rooms", { type: "/api/v1/problems/voice-not-eligible" })
+      : c.problem(409, why === "too-many-rooms" ? "Too many rooms are open" : "You host another room", {
+          type: `/api/v1/problems/voice-${why}`,
+        });
+  /** The room sent on the stream of the reader in it, and answered. */
+  const changed = (room: Room) => {
+    if (joined?.room === room.id) write("state", streamed(room));
+    return { status: 200 as const, body: shown(room) };
+  };
+  /**
+   * Runs `change` on the participant `accountId` of the room `id`, by the reader, its host or a co-host (`hostOnly`:
+   * its host), as the server's rules say: nobody acts on the host or on themselves. A refusal `change` returns is the
+   * answer; else the room after it.
+   */
+  const operate = (
+    id: string,
+    accountId: string,
+    hostOnly: boolean,
+    change: (room: Room, p: Participant) => Refusal | undefined,
+  ) => {
+    const room = c.off ? undefined : roomOf(id);
+    if (room === undefined) return c.notFound();
+    const self = viewerIn(room);
+    if (hostOnly ? self?.hosting !== true : !moderates(room)) return hostOnly ? notHost() : notHostOrCohost();
+    const p = room.participants.find((q) => q.account.id === accountId);
+    if (p === undefined || p.hosting || p.account.id === c.viewer().id) return invalidParticipant();
+    const refused = change(room, p);
+    return refused ?? changed(room);
+  };
+  /** The icon of the settings, as the room holds it. */
+  const iconOf = (icon: string | undefined): Pick<Room, "icon"> => {
+    const name = icon?.replace(/^:|:$/g, "") ?? "";
+    return name === "" ? {} : { icon: { name } };
+  };
+  const tagsOf = (tags: readonly string[] | undefined) => (tags ?? []).map((tag) => tag.replace(/^#/, ""));
+  /** What the server refuses of a room's settings: a name with nothing in it or too long, more than 5 hashtags. */
+  const settingsFault = (body: { name: string; hashtags?: readonly string[] | undefined }): Refusal | null => {
+    const name = body.name.trim();
+    // The server counts a name's characters as a reader sees them (graphemes).
+    const length = [...new Intl.Segmenter("en", { granularity: "grapheme" }).segment(name)].length;
+    if (name === "" || length > 100 || name.includes("\n"))
+      return c.problem(422, "This value is not valid", { field: "name" });
+    if ((body.hashtags?.length ?? 0) > 5) return c.problem(422, "This value is not valid", { field: "hashtags" });
+    return null;
+  };
 
   const handlers: Handlers = {
     "GET /voice/rooms": ({ query }) => {
@@ -180,35 +352,207 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
         };
       return c.notFound();
     },
-    "GET /voice/history": () => (c.off ? c.notFound() : { status: 200, body: { items: [] } }),
+    "GET /voice/history": ({ query }) => (c.off ? c.notFound() : { status: 200, body: c.page(c.history, query).body }),
+    "POST /voice/rooms": ({ body }) => {
+      if (c.off) return c.notFound();
+      if (c.openRefusal !== undefined) return openRefused(c.openRefusal);
+      // A host in an open room with others in it leaves it first (a room that waits for its host holds no one of theirs).
+      const hostsElsewhere = c.rooms.some((r) => {
+        const self = viewerIn(r);
+        return self?.hosting === true && r.participants.some((p) => p.account.id !== c.viewer().id);
+      });
+      if (hostsElsewhere) return openRefused("hosting-elsewhere");
+      const fault = settingsFault(body);
+      if (fault !== null) return fault;
+      const visibility = body.visibility ?? "local";
+      if (body.post !== undefined && visibility !== "local" && visibility !== "followers")
+        return c.problem(422, "This room has no start post", { field: "post" });
+      // The start post is refused as a post is, under the post's own members.
+      if (body.post !== undefined && (body.post.text ?? "").length > startPostLimit)
+        return c.problem(422, "This value is not valid", {
+          field: "text",
+          detail: `Text must be at most ${String(startPostLimit)} characters.`,
+        });
+      const at = new Date().toISOString();
+      const room: Room = {
+        id: reserved ?? c.newId(),
+        name: body.name.trim(),
+        ...iconOf(body.icon),
+        description: body.description ?? "",
+        hashtags: tagsOf(body.hashtags),
+        visibility,
+        speakers: body.speakers ?? "manual",
+        host: c.viewer(),
+        opened_at: at,
+        participants_count: 0,
+        participants: [],
+        can_speak: false,
+      };
+      reserved = undefined;
+      c.rooms.push(room);
+      c.history.unshift({ id: room.id, name: room.name, opened_at: at });
+      if (body.post !== undefined) startPosts.push({ room: room.id, text: body.post.text ?? "" });
+      return { status: 201, body: enter(room, true) };
+    },
+    "PATCH /voice/rooms/{id}": ({ params, body }) => {
+      const room = c.off ? undefined : roomOf(params.id);
+      if (room === undefined) return c.notFound();
+      if (room.host.id !== c.viewer().id) return notHost();
+      const fault = settingsFault({ name: room.name, ...body });
+      if (fault !== null) return fault;
+      if (body.name !== undefined) room.name = body.name.trim();
+      if (body.icon !== undefined) {
+        delete room.icon;
+        Object.assign(room, iconOf(body.icon));
+      }
+      if (body.description !== undefined) room.description = body.description;
+      if (body.hashtags !== undefined) room.hashtags = tagsOf(body.hashtags);
+      if (body.visibility !== undefined) room.visibility = body.visibility;
+      if (body.speakers !== undefined) room.speakers = body.speakers;
+      const kept = c.history.find((h) => h.id === room.id);
+      if (kept !== undefined) kept.name = room.name;
+      return changed(room);
+    },
+    "DELETE /voice/rooms/{id}": ({ params }) => {
+      const room = c.off ? undefined : roomOf(params.id);
+      if (room === undefined) return c.notFound();
+      if (room.host.id !== c.viewer().id) return notHost();
+      endRoom(room);
+      return { status: 204 };
+    },
+    "POST /voice/rooms/{id}/participants/{account_id}/speaking_permission": ({ params }) =>
+      operate(params.id, params.account_id, false, (_, p) => {
+        // A raised hand is granted; the participant becomes a speaker on their own.
+        p.hand_raised = false;
+      }),
+    "DELETE /voice/rooms/{id}/participants/{account_id}/speaking_permission": ({ params }) =>
+      operate(params.id, params.account_id, false, (_, p) => {
+        p.role = "listener";
+      }),
+    "DELETE /voice/rooms/{id}/participants/{account_id}/hand": ({ params }) =>
+      operate(params.id, params.account_id, false, (_, p) => {
+        p.hand_raised = false;
+      }),
+    "POST /voice/rooms/{id}/participants/{account_id}/mute": ({ params }) => {
+      const done = operate(params.id, params.account_id, false, () => undefined);
+      if ("problem" in done) return done;
+      write("mic", { participant: params.account_id, on: false });
+      return { status: 204 };
+    },
+    "DELETE /voice/rooms/{id}/participants/{account_id}": ({ params }) =>
+      operate(params.id, params.account_id, false, (room, p) => {
+        // The host and the co-hosts do not remove each other.
+        if (p.cohosting) return invalidParticipant();
+        room.participants = room.participants.filter((q) => q !== p);
+        room.participants_count -= 1;
+        removed.add(`${room.id}>${p.account.id}`);
+        return undefined;
+      }),
+    "POST /voice/rooms/{id}/participants/{account_id}/cohost": ({ params }) =>
+      operate(params.id, params.account_id, true, (room, p) => {
+        if (!p.cohosting && room.participants.filter((q) => q.cohosting).length >= cohostLimit)
+          return c.problem(409, "The room has as many co-hosts as it can", {
+            type: "/api/v1/problems/voice-too-many-cohosts",
+          });
+        p.cohosting = true;
+        return undefined;
+      }),
+    "DELETE /voice/rooms/{id}/participants/{account_id}/cohost": ({ params }) =>
+      operate(params.id, params.account_id, true, (_, p) => {
+        p.cohosting = false;
+      }),
+    "POST /voice/rooms/{id}/host": ({ params, body }) =>
+      operate(params.id, body.account_id, true, (room, p) => {
+        if (!eligible(p))
+          return c.problem(422, "This participant may not host rooms", {
+            type: "/api/v1/problems/voice-invalid-next-host",
+          });
+        handOver(room, p);
+        return undefined;
+      }),
+    "GET /voice/rooms/{id}/invitations": ({ params, query }) => {
+      const room = c.off ? undefined : roomOf(params.id);
+      if (room === undefined) return c.notFound();
+      if (!moderates(room)) return notHostOrCohost();
+      const items = invitations.filter((i) => i.room === room.id && !i.revoked).map((i) => i.invitation);
+      return { status: 200, body: c.page(items, query).body };
+    },
+    "POST /voice/rooms/{id}/invitations": ({ params, body }) => {
+      const room = c.off ? undefined : roomOf(params.id);
+      if (room === undefined) return c.notFound();
+      if (!moderates(room)) return notHostOrCohost();
+      const account = c.accountById(body.account_id);
+      // An account is invited to a room once, also after a revocation.
+      if (invitations.some((i) => i.room === room.id && i.invitation.account.id === body.account_id))
+        return c.problem(409, "This account was invited to the room before", {
+          type: "/api/v1/problems/voice-already-invited",
+        });
+      if (
+        account === undefined ||
+        account.acct.includes("@") ||
+        account.id === c.viewer().id ||
+        account.id === room.host.id ||
+        c.blocked(account.id) ||
+        removed.has(`${room.id}>${account.id}`)
+      )
+        return c.problem(422, "This account cannot be invited to the room", {
+          type: "/api/v1/problems/voice-invalid-invitee",
+        });
+      const invitation: Schema<"VoiceRoomInvitation"> = {
+        id: c.newId(),
+        account,
+        role: body.role ?? "listener",
+        invited_by_id: c.viewer().id,
+        invited_at: new Date().toISOString(),
+      };
+      invitations.push({ room: room.id, invitation, revoked: false });
+      return { status: 201, body: invitation };
+    },
+    "DELETE /voice/rooms/{id}/invitations/{account_id}": ({ params }) => {
+      const room = c.off ? undefined : roomOf(params.id);
+      if (room === undefined) return c.notFound();
+      if (!moderates(room)) return notHostOrCohost();
+      const kept = invitations.find(
+        (i) => i.room === room.id && i.invitation.account.id === params.account_id && !i.revoked,
+      );
+      if (kept === undefined) return c.notFound();
+      kept.revoked = true;
+      return { status: 204 };
+    },
     "POST /voice/rooms/{id}/participation": ({ params }) => {
       const room = c.off ? undefined : roomOf(params.id);
       if (room === undefined) return c.notFound();
-      // Joining leaves the room the reader was in, and replaces the session of a reader in this one already.
-      if (joined !== null)
-        end(joined.room === room.id ? "replaced" : "removed", joined.room === room.id ? "replaced" : "moved");
-      sessions += 1;
-      const session = `fake-session-${String(sessions)}`;
-      room.participants.push({
-        account: c.viewer(),
-        role: "listener",
-        hosting: false,
-        cohosting: false,
-        hand_raised: false,
-        blocked: false,
-        session,
-      });
-      room.participants_count += 1;
-      joined = { room: room.id, session };
-      opened = 0;
-      return { status: 200, body: { room: shown(room), session, grant: grant() } };
+      // The host of a room joins it as its host, on the stage (a room opened for a scheduled time waits for them).
+      return { status: 200, body: enter(room, room.host.id === c.viewer().id) };
     },
     "DELETE /voice/rooms/{id}/participation": ({ params, query }) => {
       if (c.off || joined?.room !== params.id) return c.notFound();
       // A session that no longer holds the reader's place leaves nothing.
       const session = query.get("session");
       if (session !== null && session !== joined.session) return { status: 204 };
+      const room = roomOf(params.id);
+      const self = room === undefined ? undefined : viewerIn(room);
+      const others = room?.participants.filter((p) => p.account.id !== c.viewer().id) ?? [];
+      if (room !== undefined && self?.hosting === true && others.length > 0) {
+        // The host of a room with others in it names the next host, or ends it.
+        if (query.get("end") === "true") {
+          endRoom(room);
+          return { status: 204 };
+        }
+        const nextId = query.get("next_host_id");
+        if (nextId === null)
+          return c.problem(409, "Choose the next host or end the room", {
+            type: "/api/v1/problems/voice-host-must-choose",
+          });
+        const next = others.find((p) => p.account.id === nextId);
+        if (next === undefined || !eligible(next))
+          return c.problem(422, "The next host may not host rooms", {
+            type: "/api/v1/problems/voice-invalid-next-host",
+          });
+        handOver(room, next);
+      }
       end("removed", "left");
+      if (room !== undefined && room.participants.length === 0) closeRoom(room, "empty");
       return { status: 204 };
     },
     "POST /voice/rooms/{id}/heartbeat": ({ params, body }) =>
@@ -226,7 +570,7 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
           own = controller;
           stream = controller;
           controller.enqueue(encoder.encode(": connected\n\n"));
-          write("state", room);
+          write("state", streamed(room));
           request.signal.addEventListener(
             "abort",
             () => {
@@ -275,7 +619,7 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
       }
       if (event.event === "state") {
         const room = joined === null ? undefined : roomOf(joined.room);
-        if (room !== undefined) write("state", room);
+        if (room !== undefined) write("state", streamed(room));
         return;
       }
       write(event.event, event.data);
@@ -284,6 +628,24 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     opened: () => opened,
     endedRoomId: () => c.ended.id,
     hiddenRoomId: () => c.hidden.id,
+    startPosts: () => startPosts,
+    nextRoomId: () => (reserved ??= c.newId()),
+    participantLeaves: (accountId) => {
+      const room = joined === null ? undefined : roomOf(joined.room);
+      if (room === undefined) return;
+      const before = room.participants.length;
+      room.participants = room.participants.filter((p) => p.account.id !== accountId);
+      room.participants_count -= before - room.participants.length;
+      write("state", streamed(room));
+    },
+    grantReader: () => {
+      const room = joined === null ? undefined : roomOf(joined.room);
+      if (room === undefined) return;
+      grants.add(room.id);
+      const self = viewerIn(room);
+      if (self !== undefined) self.hand_raised = false;
+      write("state", streamed(room));
+    },
     entryOf: (id) => {
       if (c.off) return undefined;
       for (const room of c.listed()) {

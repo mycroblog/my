@@ -34,6 +34,9 @@ type fakeVoiceRooms struct {
 	// icon is the icon of the room; customEmoji is the custom emoji that can be shown as one.
 	icon        voice.Icon
 	customEmoji *appcontent.CustomEmojiView
+	// canSpeak is what CanSpeak answers for every viewer; canSpeakOf records whom it was asked of.
+	canSpeak   bool
+	canSpeakOf []string
 }
 
 func (f *fakeVoiceRooms) room() appvoice.RoomView {
@@ -167,6 +170,45 @@ func TestVoiceRooms(t *testing.T) {
 	}
 	if res := e.send(t, http.MethodPost, "/voice/rooms/"+voiceRoomID+"/participation", "read-voice", ""); res.StatusCode != http.StatusForbidden {
 		t.Errorf("join with read:voice = %d, want 403", res.StatusCode)
+	}
+}
+
+// TestVoiceRoomCanSpeak checks that can_speak is the use case's answer for the user, on GET, the
+// join, and the answer of a participant operation (VoiceRoom.yaml).
+func TestVoiceRoomCanSpeak(t *testing.T) {
+	for _, want := range []bool{true, false} {
+		f := &fakeVoiceRooms{canSpeak: want}
+		e := newVoiceEnv(t, f)
+		room := "/voice/rooms/" + voiceRoomID
+		res := e.send(t, http.MethodGet, room, "read-voice", "")
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("get = %d", res.StatusCode)
+		}
+		if got := decode[clientapi.VoiceRoom](t, res); got.CanSpeak != want {
+			t.Errorf("get: can_speak = %v, want %v", got.CanSpeak, want)
+		}
+		res = e.send(t, http.MethodPost, room+"/participation", "voice", "")
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("join = %d", res.StatusCode)
+		}
+		if got := decode[clientapi.VoiceRoomJoin](t, res); got.Room.CanSpeak != want {
+			t.Errorf("join: can_speak = %v, want %v", got.Room.CanSpeak, want)
+		}
+		res = e.send(t, http.MethodPost, room+"/hand", "voice", "")
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("raise a hand = %d", res.StatusCode)
+		}
+		if got := decode[clientapi.VoiceRoom](t, res); got.CanSpeak != want {
+			t.Errorf("raise a hand: can_speak = %v, want %v", got.CanSpeak, want)
+		}
+		for _, of := range f.canSpeakOf {
+			if of != aliceAccountID {
+				t.Errorf("CanSpeak asked of %s, want the user %s", of, aliceAccountID)
+			}
+		}
+		if len(f.canSpeakOf) < 3 {
+			t.Errorf("CanSpeak asked %d times for 3 answers, want at least 3", len(f.canSpeakOf))
+		}
 	}
 }
 

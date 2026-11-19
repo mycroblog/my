@@ -5,17 +5,21 @@
 // blocks, a name too long for its tile); the listeners' compact tiles (a hand raised, a co-host who listens, one the
 // reader blocks); reactions rising over the stage, Unicode and custom emoji, which stand still with reduced motion; a
 // room as a line of a list (with its icon emoji, a custom one, none, a name that wraps, no speaker yet); the room's bar
-// of controls for a speaker and for a listener, on and off; and the whole room at a phone's, a tablet's and a PC's
-// width. The names are samples in English.
+// of controls for a speaker and for a listener, on and off; a host's tile opening its menu, the room's own menu open,
+// and the confirmation of ending it; and the whole room at a phone's, a tablet's and a PC's width. The names are
+// samples in English.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CustomEmoji } from "./content";
 import { sampleCustomEmoji } from "./emoji.samples";
-import { Box, Stack } from "./layout";
+import { Button } from "./button";
+import { ConfirmDialog } from "./dialog";
+import { Box, Row, Stack } from "./layout";
 import { PreviewStill } from "./preview";
 import { GroupHeading, RowItem, RowList } from "./list";
+import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { images } from "./samples";
 import {
   ParticipantGrid,
@@ -356,6 +360,110 @@ export const TilesWithoutActions: Story = {
         <ParticipantTile name="Ren" src={images.snow} size="stage" muted="Microphone off" blocked="Blocked" />
         <ParticipantTile name="Aoi Tanaka" size="stage" hand="Hand raised" />
       </ParticipantGrid>
+    </Column>
+  ),
+};
+
+/**
+ * A host's tile of a participant with a raised hand, the trigger of the menu of what the host may do with them, open
+ * as a popover: let speak and dismiss the hand, the co-host and the hand-over, then removing them, last and apart.
+ */
+export const TileWithHostMenu: Story = {
+  render: () => (
+    <Column>
+      <div style={{ minHeight: rem(420) }}>
+        <ParticipantGrid label="Listeners" size="listener">
+          <MenuSurface
+            trigger={<ParticipantTile name="Ren" src={images.snow} size="listener" hand="Hand raised" onPress={none} />}
+            label="Actions for Ren"
+            placement="bottom start"
+            open
+          >
+            <MenuGroup>
+              <MenuItem id="grant" icon="microphone">
+                Let speak
+              </MenuItem>
+              <MenuItem id="dismiss" icon="hand">
+                Dismiss the raised hand
+              </MenuItem>
+              <MenuItem id="cohost" icon="members">
+                Make co-host
+              </MenuItem>
+              <MenuItem id="hand-over" icon="room">
+                Make host…
+              </MenuItem>
+            </MenuGroup>
+            <MenuGroup>
+              <MenuItem id="remove" icon="leave">
+                Remove from the room…
+              </MenuItem>
+            </MenuGroup>
+          </MenuSurface>
+          <ParticipantTile name="Kai" size="listener" onPress={none} />
+        </ParticipantGrid>
+      </div>
+    </Column>
+  ),
+};
+
+/**
+ * The head of a room for its host: the title, and Manage the room, open as a popover (a sheet on a phone): its
+ * settings and invitations, then End the room…, last and apart.
+ */
+export const RoomMenuOpen: Story = {
+  render: () => (
+    <Column>
+      <div style={{ minHeight: rem(320) }}>
+        <Row align="start" gap="entry-caption">
+          <Box grow>
+            <RoomTitle icon="☕" name="Morning coffee chat" count={{ shown: "12", label: "12 people" }} />
+          </Box>
+          <Box rigid>
+            <MenuSurface
+              trigger={
+                <Button size="timeline" touch>
+                  Manage the room
+                </Button>
+              }
+              label="Manage the room"
+              placement="bottom end"
+              open
+            >
+              <MenuGroup>
+                <MenuItem id="settings" icon="settings">
+                  Room settings
+                </MenuItem>
+                <MenuItem id="invitations" icon="invite">
+                  Invitations
+                </MenuItem>
+              </MenuGroup>
+              <MenuGroup>
+                <MenuItem id="end" icon="leave">
+                  End the room…
+                </MenuItem>
+              </MenuGroup>
+            </MenuSurface>
+          </Box>
+        </Row>
+      </div>
+    </Column>
+  ),
+};
+
+/** The confirmation of ending a room, in the flow of the page as the modal would place it. */
+export const EndRoomConfirmation: Story = {
+  render: () => (
+    <Column>
+      <ConfirmDialog
+        layer={false}
+        title="End the room?"
+        cancel="Cancel"
+        confirm="End the room"
+        onCancel={none}
+        onConfirm={none}
+      >
+        Everyone in it leaves. This cannot be undone.
+      </ConfirmDialog>
     </Column>
   ),
 };

@@ -5,10 +5,12 @@
 // story shows stays as it was put (a reaction does not fade, no heartbeat goes). The story joins a room of the fake as
 // the app's join does, then puts the call in its state: the reader a speaker or with a hand raised, muted by a host,
 // with reactions, with people talking, the sound held back, the microphone refused, the connection lost, or the call
-// ended by the server (removed, replaced, the room ended).
+// ended by the server (removed, replaced, the room ended). A host's story opens a room of their own as the form does,
+// or joins the room the fake has them host, and puts it in its state by the host's own operations: a raised hand let
+// speak, a co-host named, an invitation sent, the room handed over.
 
-import type { AppData } from "@my/app-data";
-import { currentCall, joinRoom, runCallsOn, type CallRuntime } from "@my/app-features";
+import { inviteToVoiceRoom, type AppData } from "@my/app-data";
+import { currentCall, hostsOthers, joinRoom, openRoom, runCallsOn, type CallRuntime } from "@my/app-features";
 import type { FakeApi } from "@my/e2e/fake";
 
 type RoomSession = ReturnType<CallRuntime["createSession"]>;
@@ -26,10 +28,17 @@ type StoryCallStep =
   | "reconnecting"
   | "removed"
   | "replaced"
-  | "ended";
+  | "ended"
+  | "granted"
+  | "cohost"
+  | "invited"
+  | "handed-over";
 
-/** The room a story's reader joined (the fake's room at `room` of its list), and what the call went through. */
-export type StoryCall = { readonly room: number; readonly steps?: readonly StoryCallStep[] };
+/**
+ * The room a story's reader joined (the fake's room at `room` of its list, or `opened`: one they opened, alone in
+ * it), and what the call went through.
+ */
+export type StoryCall = { readonly room: number | "opened"; readonly steps?: readonly StoryCallStep[] };
 
 /** A session of the sound that connects to nobody, and says what the story makes it say. */
 type StorySession = RoomSession & {
@@ -120,13 +129,19 @@ export function joinStoryCall(data: AppData, fake: FakeApi, call: StoryCall): ()
   let stopped = false;
   const steps = call.steps ?? [];
   const run = async () => {
-    const joined = await joinRoom(data, fake.voice.roomId(call.room));
+    const joined =
+      call.room === "opened"
+        ? await openRoom(data, { name: "Evening sketch session", icon: "🎨", hashtags: ["sketch"], speakers: "manual" })
+        : await joinRoom(data, fake.voice.roomId(call.room));
     await settle();
     session?.emit("connection", { state: "connected", participants: [] });
     for (const step of steps) {
       if (stopped) return;
       const room = joined.getState().room;
       const stage = room.participants.filter((p) => p.role === "speaker" && p.session !== undefined);
+      // The participants a host's step acts on: the first raised hand, and the first listener without one.
+      const raised = room.participants.find((p) => p.hand_raised);
+      const listener = room.participants.find((p) => p.role === "listener" && !p.hand_raised);
       switch (step) {
         case "speaker":
           await joined.act("speak");
@@ -172,6 +187,21 @@ export function joinStoryCall(data: AppData, fake: FakeApi, call: StoryCall): ()
         case "ended":
           fake.voice.send({ event: "ended", data: { reason: "host" } });
           break;
+        case "granted":
+          if (raised !== undefined) await joined.host(raised.account.id, "grant");
+          break;
+        case "cohost":
+          if (listener !== undefined) await joined.host(listener.account.id, "cohost");
+          break;
+        case "invited":
+          await inviteToVoiceRoom(data, joined.roomId, fake.accountId("sam"), "speaker");
+          await inviteToVoiceRoom(data, joined.roomId, fake.accountId("layla"), "listener");
+          break;
+        case "handed-over": {
+          const next = stage.find((p) => !p.hosting);
+          if (next !== undefined) await joined.host(next.account.id, "hand-over");
+          break;
+        }
       }
       await settle();
     }
@@ -179,8 +209,11 @@ export function joinStoryCall(data: AppData, fake: FakeApi, call: StoryCall): ()
   void run().catch(() => undefined);
   return () => {
     stopped = true;
-    void currentCall()
-      ?.leave()
+    // A host with others in the room ends it: the next story starts with no call.
+    const left = currentCall();
+    const state = left?.getState();
+    void left
+      ?.leave(state !== undefined && hostsOthers(state.room, state.self) ? { end: true } : undefined)
       .catch(() => undefined);
     restore();
   };

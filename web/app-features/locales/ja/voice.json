@@ -27,10 +27,6 @@
     "defaultMessage": "通話のルーム",
     "description": "The back button at the top of a voice chat room's page, which leads to the list of rooms."
   },
-  "voice.room_untitled": {
-    "defaultMessage": "通話のルーム",
-    "description": "The title of a voice chat room's page while its name is not known or not shown (a visitor of a room whose summary the server does not show)."
-  },
   "voice.loading": {
     "defaultMessage": "ルームを読み込んでいます…",
     "description": "In place of a voice chat room while it loads."
@@ -176,12 +172,8 @@
     "description": "The control of a voice chat room that leaves it."
   },
   "voice.act_failed": {
-    "defaultMessage": "{action, select, speak {話し始める操作} listen {話すのをやめる操作} raise {挙手} lower {挙手の取り下げ} leave {退出} other {リアクション}}を完了できませんでした。もう一度試してください。",
-    "description": "In a voice chat room, when the server refused or did not answer what the reader pressed: action is which of them (speak, listen to stop speaking, raise or lower the hand, leave, or other: sending a reaction)."
-  },
-  "voice.host_must_choose": {
-    "defaultMessage": "このルームのホストです。退出するには、ルームを終了するか、参加者のだれかにホストを渡してください。",
-    "description": "In a voice chat room, when its host pressed Leave while others are in it: the server keeps them in until they choose."
+    "defaultMessage": "{action, select, speak {話し始める操作} listen {話すのをやめる操作} raise {挙手} lower {挙手の取り下げ} leave {退出} end {ルームの終了} other {リアクション}}を完了できませんでした。もう一度試してください。",
+    "description": "In a voice chat room, when the server refused or did not answer what the reader pressed: action is which of them (speak, listen to stop speaking, raise or lower the hand, leave, end: the host ending the room, or other: sending a reaction)."
   },
   "voice.end_room": {
     "defaultMessage": "ルームを終了",
@@ -246,5 +238,333 @@
   "voice.sign_in_join": {
     "defaultMessage": "ログインして参加",
     "description": "The button on a voice chat room's page for a visitor who is not signed in: the sign-in, which comes back to the room, where they can join it."
+  },
+  "voice.open": {
+    "defaultMessage": "ルームを開く",
+    "description": "Over the list of voice chat rooms, the button that leads to the form that opens one; and the title of that form."
+  },
+  "voice.open.submit": {
+    "defaultMessage": "開いて参加する",
+    "description": "The button at the foot of the form that opens a voice chat room: it opens the room and joins the reader to it as its host."
+  },
+  "voice.open.not_allowed": {
+    "defaultMessage": "このサーバーではルームを開けません。誰が開けるかはサーバーの管理者が決めます。",
+    "description": "In place of the form that opens a voice chat room, for a reader who may not open rooms."
+  },
+  "voice.form.name": {
+    "defaultMessage": "名前",
+    "description": "The label of the field of a voice chat room's name, in the form that opens a room or changes its settings."
+  },
+  "voice.form.name_empty": {
+    "defaultMessage": "ルームの名前を入れてください。",
+    "description": "Under the name field of a voice chat room's form, when the reader sends it with no name."
+  },
+  "voice.form.name_rule": {
+    "defaultMessage": "名前は 1 行で 1〜100 文字です。",
+    "description": "Under the name field of a voice chat room's form, when the server refused the name without saying why."
+  },
+  "voice.form.icon": {
+    "defaultMessage": "アイコン",
+    "description": "The heading of the choice of the emoji shown before a voice chat room's name, in the room's form; also the name of that group for assistive technology."
+  },
+  "voice.form.icon_choose": {
+    "defaultMessage": "絵文字を選ぶ",
+    "description": "The button that opens the emoji picker to choose a voice chat room's icon, while it has none; also the picker's name."
+  },
+  "voice.form.icon_change": {
+    "defaultMessage": "絵文字を変える",
+    "description": "The button that opens the emoji picker to choose another icon for a voice chat room, beside the one chosen; also the picker's name."
+  },
+  "voice.form.icon_remove": {
+    "defaultMessage": "アイコンを外す",
+    "description": "Beside the icon chosen for a voice chat room, the button that leaves the room without one."
+  },
+  "voice.form.icon_rule": {
+    "defaultMessage": "アイコンは絵文字 1 つか、このサーバーのカスタム絵文字です。",
+    "description": "Under the icon of a voice chat room's form, when the server refused the icon without saying why."
+  },
+  "voice.form.description": {
+    "defaultMessage": "説明",
+    "description": "The label of the field of a voice chat room's description, in the room's form."
+  },
+  "voice.form.description_rule": {
+    "defaultMessage": "説明は 500 文字までです。",
+    "description": "Under the description field of a voice chat room's form, when the server refused it without saying why."
+  },
+  "voice.form.hashtags": {
+    "defaultMessage": "ハッシュタグ",
+    "description": "The label of the field of a voice chat room's hashtags, in the room's form."
+  },
+  "voice.form.hashtags_hint": {
+    "defaultMessage": "5 つまで、スペースで区切ります。",
+    "description": "Under the label of the hashtags field of a voice chat room's form: how many and how to write them."
+  },
+  "voice.form.hashtags_rule": {
+    "defaultMessage": "ハッシュタグは 5 つまで、スペースで区切ります。",
+    "description": "Under the hashtags field of a voice chat room's form, when it holds more than 5 or the server refused them."
+  },
+  "voice.form.visibility": {
+    "defaultMessage": "ルームを見られる人",
+    "description": "The heading of the choice of who sees a voice chat room, in the room's form; also the choice's name."
+  },
+  "voice.form.visibility_choice": {
+    "defaultMessage": "{visibility, select, local {このサーバーの全員} followers {あなたのフォロワー} following {あなたがフォローしている人} mutuals {相互フォローの人} other {招待された人だけ}}",
+    "description": "An option of who sees a voice chat room: visibility is local, followers, following, mutuals, or other (invited: only the people the host or a co-host invites)."
+  },
+  "voice.form.speakers": {
+    "defaultMessage": "許可なしで話せる人",
+    "description": "The heading of the choice of who may speak in a voice chat room without raising a hand, in the room's form; also the choice's name."
+  },
+  "voice.form.speakers_choice": {
+    "defaultMessage": "{speakers, select, everyone {参加した全員} followers {あなたのフォロワー} following {あなたがフォローしている人} mutuals {相互フォローの人} other {許可された人だけ}}",
+    "description": "An option of who speaks in a voice chat room without asking: speakers is everyone, followers, following, mutuals, or other (manual: only the people the host or a co-host lets speak)."
+  },
+  "voice.form.post": {
+    "defaultMessage": "開始の投稿",
+    "description": "The heading of the post that tells that a voice chat room opened, in the form that opens a room."
+  },
+  "voice.form.post_check": {
+    "defaultMessage": "{visibility, select, local {ルームを開いたことをこのサーバーに投稿する} other {ルームを開いたことをフォロワーに投稿する}}",
+    "description": "The checkbox of the start post in the form that opens a voice chat room: visibility is local (a post for this server) or other (followers: a post for the reader's followers)."
+  },
+  "voice.form.post_text": {
+    "defaultMessage": "投稿の本文",
+    "description": "The label of the text of the start post in the form that opens a voice chat room."
+  },
+  "voice.form.post_draft": {
+    "defaultMessage": "通話のルーム「{name}」を開きました。",
+    "description": "The text the start post of a voice chat room starts with, which the reader may change: name is the room's name as written."
+  },
+  "voice.form.post_link": {
+    "defaultMessage": "投稿の末尾にルームへのリンクが付きます。",
+    "description": "Under the text of the start post of a voice chat room."
+  },
+  "voice.form.post_refused": {
+    "defaultMessage": "投稿できなかったため、ルームは開きませんでした。本文を変えるか、投稿せずに開いてください。",
+    "description": "Under the text of the start post when the server refused the post without saying why."
+  },
+  "voice.form.not_sent": {
+    "defaultMessage": "印の付いた項目を直して、もう一度試してください。",
+    "description": "Before the button of a voice chat room's form, when the form or the server found something wrong with a field."
+  },
+  "voice.form.open_refused": {
+    "defaultMessage": "{kind, select, not_eligible {このサーバーではルームを開けません。} too_many_rooms {このサーバーで開けるルームの数に達しています。しばらくしてからもう一度試してください。} other {別のルームのホストです。そのルームを終了するか、ホストを渡してから開いてください。}}",
+    "description": "Before the button of the form that opens a voice chat room, when the server refused it: kind is not_eligible (the reader may not open rooms), too_many_rooms (the server's limit), or other (the reader hosts another open room)."
+  },
+  "voice.form.failed": {
+    "defaultMessage": "送信できませんでした。接続を確認して、もう一度試してください。",
+    "description": "Before the button of a voice chat room's form, when the server could not be reached or failed."
+  },
+  "voice.form.post_without": {
+    "defaultMessage": "投稿せずに開くには、開始の投稿のチェックを外してください。",
+    "description": "Under the text of the start post of a voice chat room, after what the server said of a post it refused: the way to open the room anyway."
+  },
+  "voice.settings.title": {
+    "defaultMessage": "ルームの設定",
+    "description": "The title of the form that changes an open voice chat room's settings, and the item of the room's menu that leads to it."
+  },
+  "voice.settings.submit": {
+    "defaultMessage": "保存",
+    "description": "The button at the foot of the form that changes an open voice chat room's settings."
+  },
+  "voice.settings.host_only": {
+    "defaultMessage": "ルームの設定を変えられるのはホストの {host} だけです。",
+    "description": "In place of a voice chat room's settings, for a reader who is not its host: host is the host's name."
+  },
+  "voice.settings.ended": {
+    "defaultMessage": "このルームは終わったため、設定と招待もなくなりました。",
+    "description": "In place of a voice chat room's settings or invitations, when the room ended."
+  },
+  "voice.settings.end_heading": {
+    "defaultMessage": "ルームを終える",
+    "description": "The heading of the last part of a voice chat room's settings, which ends the room for everyone."
+  },
+  "voice.room_back": {
+    "defaultMessage": "ルームに戻る",
+    "description": "The back button of a screen under a voice chat room (its settings, its invitations), which leads to the room."
+  },
+  "voice.host.op": {
+    "defaultMessage": "{op, select, grant {話せるようにする} dismiss {挙手を断る} revoke {聞き手にする} mute {マイクをオフにする} remove {ルームから退出させる…} cohost {共同ホストにする} uncohost {共同ホストから外す} other {ホストにする…}}",
+    "description": "An item of the menu a host or co-host opens on a participant of a voice chat room: op is grant (lets them speak, also the answer to a raised hand), dismiss (turns the raised hand down), revoke (makes a speaker a listener), mute (turns their microphone off), remove (takes them out for good, asked first), cohost, uncohost, or other (hand_over: makes them the host, asked first)."
+  },
+  "voice.host.menu": {
+    "defaultMessage": "{name} への操作",
+    "description": "The name of the menu a host or co-host opens on a participant of a voice chat room: name is the participant's."
+  },
+  "voice.host.cohosts_full": {
+    "defaultMessage": "共同ホストは {count, plural, other {# 人}}までです。",
+    "description": "Under Make co-host in a participant's menu, when the room has as many co-hosts as it can: count is that number."
+  },
+  "voice.host.failed": {
+    "defaultMessage": "{cause, select, cohosts {共同ホストはこれ以上増やせません。先に誰かを外してください。} next_host {{name} はルームのホストになれません。別の人を選んでください。} other {{op, select, grant {{name} を話せるようにする操作} dismiss {{name} の挙手の却下} revoke {{name} を聞き手にする操作} mute {{name} のマイクをオフにする操作} remove {{name} の退出} cohost {{name} を共同ホストにする操作} uncohost {{name} を共同ホストから外す操作} other {{name} をホストにする操作}}を完了できませんでした。もう一度試してください。}}",
+    "description": "In a voice chat room, when what a host or co-host did to a participant was refused or did not finish: cause is cohosts (too many co-hosts), next_host (the participant may not host rooms), or other, which names the operation op (grant, dismiss, revoke, mute, remove, cohost, uncohost, or other: hand_over); name is the participant's."
+  },
+  "voice.host.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button that closes a dialog of a voice chat room's host (removing someone, handing over, ending, leaving) without doing it."
+  },
+  "voice.host.ask_title": {
+    "defaultMessage": "{op, select, remove {{name} をルームから退出させますか？} other {{name} をホストにしますか？}}",
+    "description": "The question of the dialog before removing a participant of a voice chat room (op remove) or handing the room over to them (other): name is the participant's."
+  },
+  "voice.host.ask_text": {
+    "defaultMessage": "{op, select, remove {退出させた人はこのルームに再び参加できません。} other {あなたはルームに残ります。この後は {name} がルームを運営し、終えることもできます。}}",
+    "description": "What follows removing a participant (op remove) or handing the room over to them (other), in its dialog: name is the participant's."
+  },
+  "voice.host.ask_confirm": {
+    "defaultMessage": "{op, select, remove {退出させる} other {ホストにする}}",
+    "description": "The button that confirms removing a participant of a voice chat room (op remove) or handing the room over to them (other)."
+  },
+  "voice.host.room_menu": {
+    "defaultMessage": "ルームの管理",
+    "description": "The name of the menu at the top of a voice chat room's page, for its host and co-hosts: its settings, its invitations, ending it."
+  },
+  "voice.host.end": {
+    "defaultMessage": "ルームを終了…",
+    "description": "An item of a voice chat room's menu, for its host: ends the room for everyone, asked first."
+  },
+  "voice.host.end_title": {
+    "defaultMessage": "ルームを終了しますか？",
+    "description": "The question of the dialog before the host ends a voice chat room."
+  },
+  "voice.host.end_text": {
+    "defaultMessage": "参加している全員が退出します。取り消せません。",
+    "description": "What follows ending a voice chat room, in its dialog."
+  },
+  "voice.host.done": {
+    "defaultMessage": "{op, select, remove {{name} をルームから退出させました。} other {{name} がルームのホストになりました。}}",
+    "description": "Said in a voice chat room once the host removed a participant (op remove) or handed the room over to them (other: hand_over): name is the participant's."
+  },
+  "voice.leave_dialog.title": {
+    "defaultMessage": "次は誰がホストをしますか？",
+    "description": "The title of the dialog that opens when the host of a voice chat room leaves it while others are in it; also the name of its choice."
+  },
+  "voice.leave_dialog.text": {
+    "defaultMessage": "ルームにはまだ人がいます。誰かにホストを渡すか、ルームを終了してください。",
+    "description": "Under the title of the dialog of a host who leaves a voice chat room while others are in it."
+  },
+  "voice.leave_dialog.next": {
+    "defaultMessage": "{cohost, select, yes {共同ホストの {name} に渡す} other {{name} に渡す}}",
+    "description": "An option of the dialog of a host who leaves a voice chat room: makes the participant name the host; cohost is yes for a co-host, else other."
+  },
+  "voice.leave_dialog.end": {
+    "defaultMessage": "ルームを終了する",
+    "description": "The last option of the dialog of a host who leaves a voice chat room: ends the room instead of handing it over."
+  },
+  "voice.leave_dialog.confirm": {
+    "defaultMessage": "渡して退出する",
+    "description": "The button of the dialog of a host who leaves a voice chat room, while a next host is chosen."
+  },
+  "voice.leave_dialog.end_confirm": {
+    "defaultMessage": "終了して退出する",
+    "description": "The button of the dialog of a host who leaves a voice chat room, while ending the room is chosen."
+  },
+  "voice.leave_dialog.refused": {
+    "defaultMessage": "{name} はルームのホストになれません。別の人を選ぶか、ルームを終えてください。",
+    "description": "In the dialog of a host who leaves a voice chat room, when the server refused the next host chosen: name is theirs."
+  },
+  "voice.leave_dialog.failed": {
+    "defaultMessage": "退出できませんでした。もう一度試してください。",
+    "description": "In the dialog of a host who leaves a voice chat room, when the leave did not finish."
+  },
+  "voice.leave_dialog.gone": {
+    "defaultMessage": "{name} はルームから退出しました。別の人を選ぶか、ルームを終えてください。",
+    "description": "In the dialog of a host who leaves a voice chat room, when the participant they chose as the next host left meanwhile: name is theirs."
+  },
+  "voice.invitations.title": {
+    "defaultMessage": "招待",
+    "description": "The title of the screen of a voice chat room's invitations, the heading of their list, its name, and the item of the room's menu that leads to it."
+  },
+  "voice.invitations.loading": {
+    "defaultMessage": "招待を読み込んでいます…",
+    "description": "In place of the invitations of a voice chat room while they load."
+  },
+  "voice.invitations.failed": {
+    "defaultMessage": "招待を読み込めませんでした。",
+    "description": "In place of the invitations of a voice chat room when they could not be loaded, beside a button to try again."
+  },
+  "voice.invitations.failed_more": {
+    "defaultMessage": "続きの招待を読み込めませんでした。",
+    "description": "Under the invitations of a voice chat room when more could not be loaded, beside a button to try again."
+  },
+  "voice.invitations.none": {
+    "defaultMessage": "まだ誰も招待していません。招待された人がここに表示されます。",
+    "description": "In place of the invitations of a voice chat room while there are none."
+  },
+  "voice.invitations.as": {
+    "defaultMessage": "{role, select, speaker {話者として招待} other {聞き手として招待}}",
+    "description": "Beside an account in the invitations of a voice chat room: role is speaker or other (listener)."
+  },
+  "voice.invitations.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "The button that revokes an invitation to a voice chat room, beside the account invited."
+  },
+  "voice.invitations.revoked": {
+    "defaultMessage": "{name} への招待を取り消しました。",
+    "description": "Said on the invitations screen of a voice chat room after the reader revoked one: name is the account's."
+  },
+  "voice.invitations.revoke_failed": {
+    "defaultMessage": "{name} への招待を取り消せませんでした。もう一度試してください。",
+    "description": "Said on the invitations screen of a voice chat room when a revocation did not finish: name is the account's."
+  },
+  "voice.invitations.hosts_only": {
+    "defaultMessage": "ルームに招待できるのはホストと共同ホストだけです。",
+    "description": "In place of a voice chat room's invitations, for a reader who is neither its host nor a co-host."
+  },
+  "voice.invite.heading": {
+    "defaultMessage": "招待する",
+    "description": "The heading of the part of a voice chat room's invitations screen that finds people and invites them."
+  },
+  "voice.invite.search": {
+    "defaultMessage": "名前かハンドル",
+    "description": "The label of the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.search_hint": {
+    "defaultMessage": "招待できるのはこのサーバーの人だけです。",
+    "description": "Under the label of the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.clear": {
+    "defaultMessage": "消去",
+    "description": "The button that empties the field that finds people to invite to a voice chat room."
+  },
+  "voice.invite.role": {
+    "defaultMessage": "招待する立場",
+    "description": "The name of the choice of as what people are invited to a voice chat room, for assistive technology."
+  },
+  "voice.invite.role_choice": {
+    "defaultMessage": "{role, select, speaker {話者として (許可なしで話せます)} other {聞き手として}}",
+    "description": "An option of as what people are invited to a voice chat room: role is speaker or other (listener)."
+  },
+  "voice.invite.searching": {
+    "defaultMessage": "検索しています…",
+    "description": "In place of the people found to invite to a voice chat room while the search runs."
+  },
+  "voice.invite.search_failed": {
+    "defaultMessage": "検索を完了できませんでした。もう一度試してください。",
+    "description": "In place of the people found to invite to a voice chat room when the search failed."
+  },
+  "voice.invite.none_found": {
+    "defaultMessage": "このサーバーに一致する人はいません。",
+    "description": "In place of the people found to invite to a voice chat room when the search found none."
+  },
+  "voice.invite.found": {
+    "defaultMessage": "見つかった人",
+    "description": "The name of the list of people found to invite to a voice chat room, for assistive technology."
+  },
+  "voice.invite.invite": {
+    "defaultMessage": "招待する",
+    "description": "The button beside an account found that invites it to a voice chat room."
+  },
+  "voice.invite.invited": {
+    "defaultMessage": "招待済み",
+    "description": "In place of Invite beside an account found that is invited to the voice chat room already."
+  },
+  "voice.invite.done": {
+    "defaultMessage": "{role, select, speaker {{name} を話者として招待しました。} other {{name} を聞き手として招待しました。}}",
+    "description": "Said on the invitations screen of a voice chat room after an invitation: name is the account's, role speaker or other (listener)."
+  },
+  "voice.invite.refused": {
+    "defaultMessage": "{kind, select, already_invited {{name} はこのルームに招待されたことがあります。同じルームに招待できるのは 1 回だけです。} invalid_invitee {{name} はこのルームに招待できません。} rate_limited {このルームから今送れる招待の数に達しました。しばらくしてからもう一度試してください。} other {{name} を招待できませんでした。もう一度試してください。}}",
+    "description": "Said on the invitations screen of a voice chat room when an invitation was refused: kind is already_invited (once per room, also after a revocation), invalid_invitee (a block between them and a host, removed from the room, not an active local account), rate_limited, or other; name is the account's."
   }
 }

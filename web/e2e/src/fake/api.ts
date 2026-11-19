@@ -71,7 +71,7 @@ import {
 import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } from "./common";
 import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
-import { voiceHandlers, type FakeVoice } from "./voice";
+import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -283,6 +283,13 @@ export type FakeOptions = {
    * page then names it, and while it is open its description and host.
    */
   voiceSummaries?: boolean;
+  /**
+   * Who may open voice chat rooms (the instance setting `voice_room_starters`): every local account by default, or
+   * only those whose roles have `start_voice_rooms` (`permitted`), which no person of the scenario has.
+   */
+  voiceStarters?: "everyone" | "permitted";
+  /** Why the server refuses every opening of a room: the reader may not, too many are open, or they host another. */
+  voiceOpen?: FakeVoiceOpenRefusal;
   /**
    * The reader's exports of their data: none by default; one being built (`building`), one ready to download
    * (`ready`), one being built over an earlier one that is ready (`rebuilding`), one that could not be built
@@ -2047,7 +2054,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     tips_enabled: false,
     supporter_list_visibility: "off",
     voice_enabled: o.voiceOff !== true,
-    voice_room_starters: "everyone",
+    voice_room_starters: o.voiceStarters ?? "everyone",
     full_text_search:
       o.search?.posts === true
         ? { available: true, visibilities: ["public", "local"] }
@@ -2165,8 +2172,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     {
       name: "Photo walk planning: which trail this weekend, and who brings the long lens",
       host: "yuki",
+      speakers: "manual",
+      co: ["hana"],
       speak: ["mio"],
-      listen: ["kai"],
+      listen: ["kai", "ren", "marco"],
+      hand: ["ren"],
     },
     { name: "Arabic and English, slowly", host: "layla", hashtags: ["coffee"], listen: ["ren"] },
   ];
@@ -2208,10 +2218,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
         participants_count: participants.length,
         participants,
+        can_speak: false,
       },
     ];
   });
 
+  let voiceIds = 0;
   const voiceRooms = voiceHandlers({
     rooms,
     viewer: () => accountOf(viewer),
@@ -2225,6 +2237,37 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     hidden: {
       id: idAt(started - 2 * 60 * minute, 30_101),
       name: "Book club, members only",
+    },
+    history: [
+      {
+        id: idAt(started - 26 * 60 * minute, 30_102),
+        name: "Sunday photo review",
+        opened_at: new Date(started - 26 * 60 * minute).toISOString(),
+        ended_at: new Date(started - 24 * 60 * minute).toISOString(),
+        end_reason: "host",
+      },
+      {
+        id: idAt(started - 8 * 24 * 60 * minute, 30_103),
+        name: "Trail report",
+        opened_at: new Date(started - 8 * 24 * 60 * minute).toISOString(),
+        ended_at: new Date(started - 8 * 24 * 60 * minute + 40 * minute).toISOString(),
+        end_reason: "empty",
+      },
+    ],
+    openRefusal: o.voiceOpen,
+    newId: () => idAt(Date.now(), 31_000 + (voiceIds += 1)),
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    follows: (follower, followee) => {
+      const a = usernameOf.get(follower);
+      const b = usernameOf.get(followee);
+      return a !== undefined && b !== undefined && follows_(a, b);
+    },
+    blocked: (id) => {
+      const username = usernameOf.get(id);
+      return username !== undefined && blocksEither(username);
     },
     problem,
     notFound,

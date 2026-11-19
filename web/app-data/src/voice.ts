@@ -9,8 +9,10 @@ import { EventStreamParser, ProblemError, type components, type ServerSentEvent 
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import type { VoiceRoom } from "./around";
+import { useInstance } from "./instance";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
+import { usePermissions } from "./rights";
 
 type Schemas = components["schemas"];
 
@@ -118,6 +120,14 @@ export function useVoiceRoomSummary(
 }
 
 /**
+ * Whether the cache holds the room `id` as ended (`voiceRoomEnded`: the reader ended it here); nothing is read for it.
+ */
+export function useVoiceRoomEndedHere(id: string): boolean {
+  const query = useQuery({ ...voiceRoomSummaryQuery(useAppData(), id), enabled: false });
+  return query.data?.state === "ended";
+}
+
+/**
  * The open room where the account of `id` hosts or speaks, which the reader sees: null for none, undefined until the
  * server answered and while `enabled` is false. Only the account's own read carries it (GET /accounts/{id}): it is
  * kept under a key of its own, since the cache's copies of the account, which other reads and writes put there, do not
@@ -140,17 +150,183 @@ export function useVoiceHistory(enabled = true): PagedList<VoiceRoomHistoryEntry
   return usePagedList(voiceHistoryQuery(useAppData()), enabled);
 }
 
+/**
+ * Whether the reader may open a room (FR-922, ADR-0100 §2): the voice chat is on, and the server lets every local
+ * account open one (`voice_room_starters` is `everyone`) or the reader's roles have `start_voice_rooms`; false until
+ * the server said so. The server checks the rest (an account it limited, an eligible host) as the room opens.
+ */
+export function useMayOpenVoiceRooms(): boolean {
+  const instance = useInstance();
+  const permissions = usePermissions();
+  if (instance?.voice_enabled !== true) return false;
+  return instance.voice_room_starters === "everyone" || permissions.includes("start_voice_rooms");
+}
+
+/** The settings of a new room, its start post among them (ADR-0100 §3, §9). */
+export type VoiceRoomSettings = Schemas["VoiceRoomSettings"];
+/** A change of an open room's settings: what it leaves out keeps its value. */
+export type VoiceRoomUpdate = Schemas["VoiceRoomUpdate"];
+/** An invitation to a room. */
+export type VoiceRoomInvitation = Schemas["VoiceRoomInvitation"];
+/** Who sees a room. */
+export type VoiceRoomVisibility = Schemas["VoiceRoomVisibility"];
+/** Who may speak in a room without asking. */
+export type VoiceRoomSpeakers = Schemas["VoiceRoomSpeakers"];
+/** As what a reader is invited: a listener, or a speaker who may speak without asking. */
+export type VoiceRole = Schemas["VoiceRole"];
+
+/** Why the server refused to open a room, by the problem's type; null for any other failure. */
+export type VoiceOpenRefusal = "not-eligible" | "too-many-rooms" | "hosting-elsewhere";
+
+const openRefusals: Readonly<Record<string, VoiceOpenRefusal>> = {
+  "/api/v1/problems/voice-not-eligible": "not-eligible",
+  "/api/v1/problems/voice-too-many-rooms": "too-many-rooms",
+  "/api/v1/problems/voice-hosting-elsewhere": "hosting-elsewhere",
+};
+
+/** What the server's refusal of opening a room was, by its problem type; null for another failure. */
+export function voiceOpenRefusal(error: unknown): VoiceOpenRefusal | null {
+  return error instanceof ProblemError ? (openRefusals[error.problem.type] ?? null) : null;
+}
+
+/**
+ * Opens a room with `settings`, which the reader hosts, and joins the reader to it as a speaker with a new session,
+ * which leaves the room they were in; with `post`, their start post goes with it. It rejects with the server's
+ * refusal (`voiceOpenRefusal` tells the kinds; a 422 for settings or a post it does not take).
+ */
+export async function openVoiceRoom(data: AppData, settings: VoiceRoomSettings): Promise<VoiceJoin & ServerTime> {
+  const answer = await data.api.POST("/voice/rooms", { body: settings });
+  voiceHistoryChanged(data);
+  return { ...answered(answer, "the opening"), serverTime: serverTimeOf(answer.response) };
+}
+
+/** Changes the settings of the room `id` the reader hosts, and returns the room after it. */
+export async function updateVoiceRoom(data: AppData, id: string, update: VoiceRoomUpdate): Promise<VoiceRoom> {
+  const room = answered(
+    await data.api.PATCH("/voice/rooms/{id}", { params: { path: { id } }, body: update }),
+    "the change of the room",
+  );
+  receiveVoiceRoom(data, room);
+  return room;
+}
+
+/**
+ * Ends the room `id` the reader hosts, for everyone in it: the cache holds it as ended at once (`voiceRoomEnded`), so
+ * that no screen shows it open meanwhile.
+ */
+export async function endVoiceRoom(data: AppData, id: string): Promise<void> {
+  const name = data.queryClient.getQueryData<VoiceRoom>(voiceRoomQuery(data, id).queryKey)?.name;
+  const summary = voiceRoomSummaryQuery(data, id).queryKey;
+  const before = data.queryClient.getQueryData(summary);
+  // Ended from the press on: the stream's `ended` may come before the answer, and the room must not show open between.
+  data.queryClient.setQueryData(summary, { id, state: "ended" as const, ...(name === undefined ? {} : { name }) });
+  try {
+    await data.api.DELETE("/voice/rooms/{id}", { params: { path: { id } } });
+  } catch (error) {
+    if (before === undefined) data.queryClient.removeQueries({ queryKey: summary });
+    else data.queryClient.setQueryData(summary, before);
+    throw error;
+  }
+  voiceRoomEnded(data, id, name);
+}
+
+/**
+ * The room `id` ended: its query goes (a screen of it shows it ended, not open), its summary says it ended under its
+ * name when it is known, and the lists and the history are read again.
+ */
+export function voiceRoomEnded(data: AppData, id: string, name: string | undefined): void {
+  data.queryClient.removeQueries({ queryKey: voiceRoomQuery(data, id).queryKey });
+  data.queryClient.setQueryData(voiceRoomSummaryQuery(data, id).queryKey, {
+    id,
+    state: "ended" as const,
+    ...(name === undefined ? {} : { name }),
+  });
+  voiceRoomLeft(data, id);
+}
+
+/** The rooms the reader hosted changed (one opened, ended or was left): the history is read again. */
+function voiceHistoryChanged(data: AppData): void {
+  void data.queryClient.invalidateQueries({ queryKey: voiceHistoryQuery(data).queryKey });
+}
+
+/** The invitations of the room `id` that were not revoked, oldest first, a page at a time (the host's and co-hosts'). */
+export function voiceInvitationsQuery({ api, queries }: AppData, id: string) {
+  return pagedQuery<VoiceRoomInvitation>(
+    queries.queryOptions("get", "/voice/rooms/{id}/invitations", { params: { path: { id } } }).queryKey,
+    async (cursor, signal) =>
+      (
+        await api.GET("/voice/rooms/{id}/invitations", {
+          params: { path: { id }, query: cursor === undefined ? {} : { cursor } },
+          signal,
+        })
+      ).data,
+  );
+}
+
+/** The invitations of the room `id`, for the host and the co-hosts; nothing is read while `enabled` is false. */
+export function useVoiceInvitations(id: string, enabled = true): PagedList<VoiceRoomInvitation> {
+  return usePagedList(voiceInvitationsQuery(useAppData(), id), enabled);
+}
+
+/** Why the server refused an invitation: invited before, an account it may not invite, too many this hour. */
+export type VoiceInviteRefusal = "already-invited" | "invalid-invitee" | "rate-limited";
+
+/** What the server's refusal of an invitation was; null for another failure. */
+export function voiceInviteRefusal(error: unknown): VoiceInviteRefusal | null {
+  if (!(error instanceof ProblemError)) return null;
+  if (error.problem.type === "/api/v1/problems/voice-already-invited") return "already-invited";
+  if (error.problem.type === "/api/v1/problems/voice-invalid-invitee") return "invalid-invitee";
+  return error.status === 429 ? "rate-limited" : null;
+}
+
+/** Invites the local account `accountId` to the room `id` as `role`; the list of invitations is read again. */
+export async function inviteToVoiceRoom(
+  data: AppData,
+  id: string,
+  accountId: string,
+  role: VoiceRole,
+): Promise<VoiceRoomInvitation> {
+  const invitation = answered(
+    await data.api.POST("/voice/rooms/{id}/invitations", {
+      params: { path: { id } },
+      body: { account_id: accountId, role },
+    }),
+    "the invitation",
+  );
+  await data.queryClient.invalidateQueries({ queryKey: voiceInvitationsQuery(data, id).queryKey });
+  return invitation;
+}
+
+/**
+ * Revokes the invitation of `accountId` to the room `id`; one the server no longer holds (a 404) is revoked too. The
+ * list of invitations is read again.
+ */
+export async function revokeVoiceInvitation(data: AppData, id: string, accountId: string): Promise<void> {
+  try {
+    await data.api.DELETE("/voice/rooms/{id}/invitations/{account_id}", {
+      params: { path: { id, account_id: accountId } },
+    });
+  } catch (error) {
+    if (!(error instanceof ProblemError && error.status === 404)) throw error;
+  }
+  await data.queryClient.invalidateQueries({ queryKey: voiceInvitationsQuery(data, id).queryKey });
+}
+
 /** Puts the room as the stream or a write has it into its query. */
 export function receiveVoiceRoom(data: AppData, room: VoiceRoom): void {
   data.queryClient.setQueryData(voiceRoomQuery(data, room.id).queryKey, room);
 }
 
-/** The reader is no longer in the room `id` (left, removed, or it ended): the room and the lists are read again. */
+/**
+ * The reader is no longer in the room `id` (left, removed, or it ended): the room, the lists and the history are read
+ * again.
+ */
 export function voiceRoomLeft(data: AppData, id: string): void {
   void data.queryClient.invalidateQueries({ queryKey: voiceRoomQuery(data, id).queryKey });
   void data.queryClient.invalidateQueries({
     predicate: (query) => query.queryKey[0] === "get" && query.queryKey[1] === "/voice/rooms",
   });
+  voiceHistoryChanged(data);
 }
 
 /** The body of an answer, which the client sets whenever the request resolves. */

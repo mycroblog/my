@@ -378,5 +378,17 @@
   "app.call_muted_by_host": {
     "defaultMessage": "A host muted you",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, after a host or co-host turned the reader's microphone off, until they turn it on again."
+  },
+  "app.voice_open": {
+    "defaultMessage": "Open a room",
+    "description": "The heading and the document's title of the form that opens a voice chat room."
+  },
+  "app.voice_room_settings": {
+    "defaultMessage": "Room settings",
+    "description": "The heading and the document's title of the form that changes an open voice chat room's settings."
+  },
+  "app.voice_invitations": {
+    "defaultMessage": "Invitations",
+    "description": "The heading and the document's title of the screen of a voice chat room's invitations."
   }
 }

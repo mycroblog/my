@@ -273,7 +273,7 @@ describe("the voice rooms", () => {
     // No session of anyone is shown outside the stream.
     expect(list.body.items.flatMap((r) => r.participants).filter((p) => p.session !== undefined)).toEqual([]);
     const history = await ask(fake, "GET", "/voice/history");
-    expect([history.status, history.body]).toEqual([200, { items: [] }]);
+    expect([history.status, (history.body as { items: unknown[] }).items.length]).toEqual([200, 2]);
     expect(fake.voice.joined()).toBeNull();
     const nowhere = await ask(fake, "GET", "/voice/rooms/nowhere");
     expect(nowhere.status).toBe(404);

@@ -48,6 +48,7 @@ type VoiceRooms interface {
 	Heartbeat(ctx context.Context, accountID, roomID, session string) error
 	HandOver(ctx context.Context, byAccountID, roomID, accountID string) (appvoice.RoomView, error)
 	BlockedAmong(ctx context.Context, accountID string, ids []string) (map[string]bool, error)
+	CanSpeak(ctx context.Context, accountID string, v appvoice.RoomView) (bool, error)
 	VoiceParticipants
 	VoiceSurfaces
 	VoiceConnections
@@ -118,9 +119,20 @@ func (s *Server) newVoiceRooms(ctx context.Context, views []appvoice.RoomView) (
 	return s.newVoiceRoomsMarked(ctx, views, nil)
 }
 
-// newVoiceRoomsMarked presents rooms with the block marks blocked, or the marks of the viewer
-// read now when blocked is nil.
-func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomView, blocked map[string]bool) ([]VoiceRoom, error) {
+// voiceMarks are the marks of the viewer on a room that a stream state read already: the
+// participants in a block relation with the viewer, and whether the viewer may speak freely.
+type voiceMarks struct {
+	blocked  map[string]bool
+	canSpeak bool
+}
+
+// newVoiceRoomsMarked presents rooms with the marks of the viewer, given or, when marks is nil,
+// read now.
+func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomView, marks *voiceMarks) ([]VoiceRoom, error) {
+	var blocked map[string]bool
+	if marks != nil {
+		blocked = marks.blocked
+	}
 	// The hosts and participants of the rooms, in order, each once, read together.
 	var ids []string
 	add := func(id string) {
@@ -148,8 +160,11 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 	if err != nil {
 		return nil, err
 	}
-	// The participants in a block relation with the viewer carry a mark (ADR-0100 §10).
-	if v, ok := ViewerFrom(ctx); ok && s.o.Voice != nil && blocked == nil {
+	// The participants in a block relation with the viewer carry a mark (ADR-0100 §10), and each
+	// room whether the viewer may become a speaker in it without asking (§4); CanSpeak reads
+	// nothing for a room the viewer is not in.
+	canSpeak := make([]bool, len(views))
+	if v, ok := ViewerFrom(ctx); ok && s.o.Voice != nil && marks == nil {
 		var participants []string
 		for _, view := range views {
 			for _, p := range view.Participants {
@@ -158,6 +173,15 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 		}
 		if blocked, err = s.o.Voice.BlockedAmong(ctx, v.AccountID, participants); err != nil {
 			return nil, err
+		}
+		for i, view := range views {
+			if canSpeak[i], err = s.o.Voice.CanSpeak(ctx, v.AccountID, view); err != nil {
+				return nil, err
+			}
+		}
+	} else if marks != nil {
+		for i := range canSpeak {
+			canSpeak[i] = marks.canSpeak
 		}
 	}
 	byID := make(map[string]Account, len(accounts))
@@ -169,13 +193,14 @@ func (s *Server) newVoiceRoomsMarked(ctx context.Context, views []appvoice.RoomV
 		return nil, err
 	}
 	out := make([]VoiceRoom, 0, len(views))
-	for _, v := range views {
+	for i, v := range views {
 		st := v.Revision.Settings
 		r := VoiceRoom{
 			Id: v.ID, Name: st.Name, Description: st.Description, Hashtags: make([]string, 0, len(st.Hashtags)),
 			Visibility: VoiceRoomVisibility(st.Visibility), Speakers: VoiceRoomSpeakers(st.Speakers),
 			Host: byID[v.Head.HostAccountID], OpenedAt: v.OpenedAt.UTC(), ParticipantsCount: len(v.Participants),
 			Participants: make([]VoiceRoomParticipant, 0, len(v.Participants)), Icon: icons[st.Icon],
+			CanSpeak: canSpeak[i],
 		}
 		for _, t := range st.Hashtags {
 			r.Hashtags = append(r.Hashtags, t.Name)

@@ -17527,6 +17527,13 @@ type VoiceRole string
 // VoiceRoom An open voice chat room: its settings, its host, and its participants in the order they
 // joined. Everyone who sees the room sees its participants.
 type VoiceRoom struct {
+	// CanSpeak Whether the user may become a speaker in the room now without raising a hand
+	// (`POST /voice/rooms/{id}/speaker`): true for the host and the co-hosts, and for the
+	// participants with a permission to speak (a granted raised hand, a grant, or an invitation
+	// as a speaker) or whom the room's speakers setting covers, unless a moderator limited them
+	// and they have no permission. False for any other user who is not in the room.
+	CanSpeak bool `json:"can_speak"`
+
 	// Description The description of the room, up to 500 characters; empty for none.
 	Description string `json:"description"`
 

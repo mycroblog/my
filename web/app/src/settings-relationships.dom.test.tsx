@@ -51,6 +51,7 @@ const besideRelationships = (at: string) => [
   ["Profile", "/settings/profile", null],
   ["Display and posting", "/settings/display", null],
   ["Notifications", "/settings/notifications", null],
+  ["Voice chat", "/settings/voice", null],
   ["Relationships", entry, "page"],
   ["Keyword filters", "/settings/filters", null],
   ["Security", "/settings/security", null],
