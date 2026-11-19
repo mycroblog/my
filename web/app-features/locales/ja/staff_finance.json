@@ -1,0 +1,670 @@
+{
+  "staff_finance.group": {
+    "defaultMessage": "運営の資金",
+    "description": "Heading of the group of administration screens about the server's running costs, income and supporter plans, at /admin."
+  },
+  "staff_finance.entry": {
+    "defaultMessage": "収支",
+    "description": "Name of the administration screen of the server's running costs and income, at /admin/finance, and its title."
+  },
+  "staff_finance.entry.hint": {
+    "defaultMessage": "費用・収入・請求の取り込み・公開の範囲",
+    "description": "Line under Finance in the list of administration screens at /admin."
+  },
+  "staff_finance.back.root": {
+    "defaultMessage": "収支",
+    "description": "The way back from a screen under Finance to its first page, at /admin/finance."
+  },
+  "staff_finance.back.costs": {
+    "defaultMessage": "費用",
+    "description": "The way back from a cost item's screen, or the form of a new one, to the list of cost items."
+  },
+  "staff_finance.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of a question on a Finance screen that does nothing."
+  },
+  "staff_finance.forbidden": {
+    "defaultMessage": "このアカウントでは、サーバーの収支を管理できなくなりました。",
+    "description": "On a Finance screen, when the server refuses the reader because their roles no longer allow it."
+  },
+  "staff_finance.doors": {
+    "defaultMessage": "収支の画面",
+    "description": "Heading of the list of the screens under Finance (costs, income, billing imports, publication) on /admin/finance."
+  },
+  "staff_finance.costs": {
+    "defaultMessage": "費用",
+    "description": "Name of the screen of the cost items, at /admin/finance/costs, and its title."
+  },
+  "staff_finance.costs.hint": {
+    "defaultMessage": "サーバーが払う費用。単発と繰り返し",
+    "description": "Line under Costs in the list of Finance screens."
+  },
+  "staff_finance.costs.record": {
+    "defaultMessage": "費用を記録",
+    "description": "Button at the head of the list of cost items that opens the form of a new one."
+  },
+  "staff_finance.costs.record_it": {
+    "defaultMessage": "費用を記録する",
+    "description": "The submit button of the form of a new cost item."
+  },
+  "staff_finance.costs.new": {
+    "defaultMessage": "費用の記録",
+    "description": "Title of the form of a new cost item, at /admin/finance/costs/new."
+  },
+  "staff_finance.costs.loading": {
+    "defaultMessage": "費用を読み込んでいます…",
+    "description": "On the list of cost items while it loads."
+  },
+  "staff_finance.costs.failed": {
+    "defaultMessage": "費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "On the list of cost items when it could not be loaded, before Try again."
+  },
+  "staff_finance.costs.failed_more": {
+    "defaultMessage": "続きの費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "Under the list of cost items when its next page could not be loaded, before Try again."
+  },
+  "staff_finance.costs.empty": {
+    "defaultMessage": "記録された費用はまだありません。サーバーが払うものを記録すると、集計に入ります。",
+    "description": "In the place of the list of cost items while there is none."
+  },
+  "staff_finance.costs.column.item": {
+    "defaultMessage": "項目",
+    "description": "Column of the list of cost items: the item's name, its provider under it."
+  },
+  "staff_finance.costs.column.schedule": {
+    "defaultMessage": "周期",
+    "description": "Column of the list of cost items: how often it is paid."
+  },
+  "staff_finance.costs.column.price": {
+    "defaultMessage": "金額",
+    "description": "Column of the list of cost items: its price today."
+  },
+  "staff_finance.costs.column.end": {
+    "defaultMessage": "状態",
+    "description": "Column of the list of cost items: whether it goes on, ends, or ended."
+  },
+  "staff_finance.costs.going_on": {
+    "defaultMessage": "継続中",
+    "description": "State of a repeating cost item without an end."
+  },
+  "staff_finance.costs.ends": {
+    "defaultMessage": "{date} まで",
+    "description": "State of a repeating cost item whose last payment date is today or later. {date} is that date."
+  },
+  "staff_finance.costs.ended": {
+    "defaultMessage": "{date} に終了",
+    "description": "State of a repeating cost item whose last payment date has passed. {date} is that date."
+  },
+  "staff_finance.costs.once_on": {
+    "defaultMessage": "{date} に単発で支払い",
+    "description": "State of a cost item paid once. {date} is its payment date."
+  },
+  "staff_finance.income": {
+    "defaultMessage": "収入",
+    "description": "Name of the screen of the income and its money movements, at /admin/finance/income, and its title."
+  },
+  "staff_finance.income.hint": {
+    "defaultMessage": "支払い・返金・手数料と、支払った人",
+    "description": "Line under Income in the list of Finance screens."
+  },
+  "staff_finance.income.totals": {
+    "defaultMessage": "期間ごとの収入",
+    "description": "Name, for assistive technology, of the table of the income per period."
+  },
+  "staff_finance.income.about": {
+    "defaultMessage": "総額は支払われた額、手数料は決済の事業者の取り分、純額は残る額です。収支は純額から費用を引いた額です。",
+    "description": "The note under the table of the income per period."
+  },
+  "staff_finance.income.column.gross": {
+    "defaultMessage": "総額",
+    "description": "Column of the income: the amount paid, before fees."
+  },
+  "staff_finance.income.column.fee": {
+    "defaultMessage": "手数料",
+    "description": "Column of the income: the payment provider's fees."
+  },
+  "staff_finance.income.column.net": {
+    "defaultMessage": "純額",
+    "description": "Column of the income: what remains after the fees."
+  },
+  "staff_finance.income.column.balance": {
+    "defaultMessage": "収支",
+    "description": "Column of the income per period: the net income less the costs."
+  },
+  "staff_finance.income.column.source": {
+    "defaultMessage": "出どころ",
+    "description": "Column of the net income of a period by where it came from."
+  },
+  "staff_finance.income.column.on": {
+    "defaultMessage": "日付",
+    "description": "Column of the money movements: the date it falls on."
+  },
+  "staff_finance.income.column.payer": {
+    "defaultMessage": "支払った人",
+    "description": "Column of the money movements: the account that paid, or none."
+  },
+  "staff_finance.income.by_source": {
+    "defaultMessage": "{period} の出どころごとの純額",
+    "description": "Heading of the net income of the latest period by where it came from. {period} is the period's name."
+  },
+  "staff_finance.income.source": {
+    "defaultMessage": "{source, select, subscription {サポーターのプラン} one_time {チップ} unknown {その他のお金} other {}}",
+    "description": "Where income came from: the supporter plans' subscriptions, the tips, or other money of the payment provider's account."
+  },
+  "staff_finance.income.movements": {
+    "defaultMessage": "お金の動き",
+    "description": "Heading of the list of the payment provider's money movements, newest first."
+  },
+  "staff_finance.income.filters": {
+    "defaultMessage": "お金の動きを絞り込む",
+    "description": "Name, for assistive technology, of the filters over the money movements."
+  },
+  "staff_finance.income.kind.label": {
+    "defaultMessage": "種類",
+    "description": "Name of the filter of the money movements by kind."
+  },
+  "staff_finance.income.kind.any": {
+    "defaultMessage": "すべての種類",
+    "description": "The filter of the money movements that shows every kind."
+  },
+  "staff_finance.income.kind": {
+    "defaultMessage": "{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {勝った異議} fee {手数料} other {}}",
+    "description": "A kind of money movement, as a filter."
+  },
+  "staff_finance.income.what": {
+    "defaultMessage": "{source, select, subscription {プラン} one_time {チップ} unknown {その他のお金} other {}}の{kind, select, payment {支払い} refund {返金} chargeback {チャージバック} chargeback_reversal {勝った異議} fee {手数料} other {}}",
+    "description": "Line under a money movement's payer: what kind of movement it is, and of what."
+  },
+  "staff_finance.income.erased": {
+    "defaultMessage": "消去されたアカウント",
+    "description": "In the place of the payer of a money movement whose account was erased."
+  },
+  "staff_finance.income.none": {
+    "defaultMessage": "アカウントなし",
+    "description": "In the place of the payer of a money movement that no account made (a fee)."
+  },
+  "staff_finance.income.movements.loading": {
+    "defaultMessage": "お金の動きを読み込んでいます…",
+    "description": "In the place of the money movements while they load."
+  },
+  "staff_finance.income.movements.failed": {
+    "defaultMessage": "お金の動きを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "In the place of the money movements when they could not be loaded, before Try again."
+  },
+  "staff_finance.income.movements.failed_more": {
+    "defaultMessage": "続きのお金の動きを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "Under the money movements when their next page could not be loaded, before Try again."
+  },
+  "staff_finance.income.movements.empty": {
+    "defaultMessage": "お金の動きはまだありません。決済の事業者が知らせた支払いと返金がここに出ます。",
+    "description": "In the place of the money movements while there is none."
+  },
+  "staff_finance.income.movements.none": {
+    "defaultMessage": "この種類のお金の動きはありません。絞り込みを解除すると、すべての種類が出ます。",
+    "description": "In the place of the money movements filtered by a kind that has none."
+  },
+  "staff_finance.imports": {
+    "defaultMessage": "請求の取り込み",
+    "description": "Name of the screen of the imports of cloud providers' usage charges, at /admin/finance/imports, and its title."
+  },
+  "staff_finance.imports.hint": {
+    "defaultMessage": "クラウドの事業者から読み込む利用料金",
+    "description": "Line under Billing imports in the list of Finance screens."
+  },
+  "staff_finance.imports.loading": {
+    "defaultMessage": "請求の取り込みを読み込んでいます…",
+    "description": "On the billing imports' screen while it loads."
+  },
+  "staff_finance.imports.failed": {
+    "defaultMessage": "請求の取り込みを読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "On the billing imports' screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.imports.facts": {
+    "defaultMessage": "{provider} の取り込み",
+    "description": "Name, for assistive technology, of the facts of a billing source. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.method": {
+    "defaultMessage": "読み込むもの",
+    "description": "Fact of a billing source: how it reads the provider's data."
+  },
+  "staff_finance.imports.zone": {
+    "defaultMessage": "請求月の基準",
+    "description": "Fact of a billing source: the time zone of its billing months."
+  },
+  "staff_finance.imports.last_run": {
+    "defaultMessage": "最後の取り込み",
+    "description": "Fact of a billing source: its last import and what came of it."
+  },
+  "staff_finance.imports.never": {
+    "defaultMessage": "まだありません",
+    "description": "Fact of a billing source that has never imported, or never succeeded."
+  },
+  "staff_finance.imports.succeeded": {
+    "defaultMessage": "{at} に成功",
+    "description": "Fact of a billing source's last import that succeeded. {at} is when."
+  },
+  "staff_finance.imports.failed_at": {
+    "defaultMessage": "{at} に失敗",
+    "description": "Fact of a billing source's last import that failed. {at} is when."
+  },
+  "staff_finance.imports.why": {
+    "defaultMessage": "失敗の理由",
+    "description": "Fact of a billing source whose last import failed: why, and what to do."
+  },
+  "staff_finance.imports.error": {
+    "defaultMessage": "{kind, select, permission {認証情報に請求データを読む権限がありません。運用ガイドにある権限を付けてください。} not_enabled {事業者の請求データが有効になっていません。事業者のコンソールで有効にしてください。} not_found {データセット・テーブル・サブスクリプションがありません。設定の名前を確かめてください。} throttled {事業者から速度を落とすよう求められました。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} request_cap {課金される要求の上限に達したため、何も呼び出していません。上限を上げるか、次の日か月を待ってください。} bytes_cap {問い合わせが上限より多く読み込むところでした。設定で上限を上げてください。} invalid_response {事業者の応答を読み取れませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} unavailable {事業者に接続できませんでした。次の取り込みを待つか、時間をおいて今すぐ取り込んでください。} other {サーバーのログを確かめてから、今すぐ取り込んでください。}}",
+    "description": "Why a billing source's last import failed, and what to do. Read by administrators."
+  },
+  "staff_finance.imports.last_success": {
+    "defaultMessage": "最後の成功",
+    "description": "Fact of a billing source: when its last successful import ran."
+  },
+  "staff_finance.imports.requests_of": {
+    "defaultMessage": "{cap, number} 回中 {count, number} 回",
+    "description": "A count of billed requests against its cap."
+  },
+  "staff_finance.imports.months": {
+    "defaultMessage": "{provider} の請求月",
+    "description": "Name, for assistive technology, of the table of a billing source's months. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.no_months": {
+    "defaultMessage": "取り込んだ利用料金はまだありません。",
+    "description": "In the place of a billing source's months while none is imported."
+  },
+  "staff_finance.imports.column.month": {
+    "defaultMessage": "請求月",
+    "description": "Column of a billing source's months: the month."
+  },
+  "staff_finance.imports.column.kind": {
+    "defaultMessage": "数字",
+    "description": "Column of a billing source's months: whether its figures are an estimate, final, or corrected."
+  },
+  "staff_finance.imports.column.total": {
+    "defaultMessage": "合計",
+    "description": "Column of a billing source's months: its total, a figure a currency."
+  },
+  "staff_finance.imports.kind": {
+    "defaultMessage": "{kind, select, estimate {見込み} final {確定} correction {修正済み} other {}}",
+    "description": "Whether the figures of a billing month are an estimate, final, or corrected after they were final."
+  },
+  "staff_finance.imports.now": {
+    "defaultMessage": "今すぐ取り込む",
+    "description": "Button that asks for an import of a billing source now, besides the daily one."
+  },
+  "staff_finance.imports.run": {
+    "defaultMessage": "{answer, select, queued {{provider} の取り込みを予約しました。終わると結果がここに出ます。} too_soon {{provider} は 1 時間以内に取り込み済みです。時間をおいてもう一度試してください。} unknown {設定では {provider} を取り込まなくなりました。} other {}}",
+    "description": "Said after Import now: queued, refused because one ran in the last UTC hour, or refused because the source is no longer enabled. {provider} is the cloud provider's name."
+  },
+  "staff_finance.imports.run_failed": {
+    "defaultMessage": "取り込みを予約できませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "Said when Import now failed for another reason."
+  },
+  "staff_finance.imports.none": {
+    "defaultMessage": "利用料金を取り込んでいません。クラウドの事業者は、サーバーの設定 (billing_sources) で設定します。",
+    "description": "On the billing imports' screen while the configuration enables no billing source. Read by administrators."
+  },
+  "staff_finance.imports.method.value": {
+    "defaultMessage": "{method, select, cost_explorer {AWS Cost Explorer (サービスごと)} bigquery {BigQuery への Cloud Billing のエクスポート (サービスごと)} budget {Cloud Billing の予算 (月に 1 つの見込みの合計)} billable_usage {Cloudflare の利用料金 (製品ごと)} plugin {プラグインが知らせるもの} other {}}",
+    "description": "How a billing source reads the provider's data."
+  },
+  "staff_finance.imports.requests_today": {
+    "defaultMessage": "今日 (UTC) の課金される要求",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC day."
+  },
+  "staff_finance.imports.requests_month": {
+    "defaultMessage": "今月 (UTC) の課金される要求",
+    "description": "Fact of a billing source: the billed requests of its imports this UTC month."
+  },
+  "staff_finance.imports.bytes": {
+    "defaultMessage": "今月 (UTC) の課金されたバイト数",
+    "description": "Fact of a billing source that reads BigQuery or a plugin: the bytes billed this UTC month. Read by administrators."
+  },
+  "staff_finance.publication": {
+    "defaultMessage": "公開の範囲",
+    "description": "Name of the screen of what the server publishes of its finance, at /admin/finance/publication, and its title."
+  },
+  "staff_finance.publication.hint": {
+    "defaultMessage": "費用と収入のうち、誰でも見られるもの",
+    "description": "Line under Publication in the list of Finance screens, until the server says what is published now."
+  },
+  "staff_finance.publication.loading": {
+    "defaultMessage": "公開の範囲を読み込んでいます…",
+    "description": "On the publication screen while the settings load."
+  },
+  "staff_finance.publication.failed": {
+    "defaultMessage": "公開の範囲を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "On the publication screen when the settings could not be loaded, before Try again."
+  },
+  "staff_finance.publication.costs": {
+    "defaultMessage": "費用",
+    "description": "Heading and name of the choice of what the server publishes of its costs."
+  },
+  "staff_finance.publication.costs.option": {
+    "defaultMessage": "{value, select, private {公開しない} totals {合計} breakdown {合計と内訳} other {}}",
+    "description": "An option of what the server publishes of its costs, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.costs.about": {
+    "defaultMessage": "{value, select, private {管理者のほかは誰も費用を見られません。} totals {期間ごと・通貨ごとの合計を、情報ページで誰でも見られます。} breakdown {事業者ごと・区分ごとの費用も誰でも見られます。サーバーがどのクラウドで動いているかが分かります。} other {}}",
+    "description": "Under an option of what the server publishes of its costs: what it publishes. Item names, memos and payments are never published."
+  },
+  "staff_finance.publication.income": {
+    "defaultMessage": "収入",
+    "description": "Heading and name of the choice of what the server publishes of its income."
+  },
+  "staff_finance.publication.income.option": {
+    "defaultMessage": "{value, select, private {公開しない} totals {合計} plans {合計とプランごとの人数} other {}}",
+    "description": "An option of what the server publishes of its income, and the fact of what it publishes now."
+  },
+  "staff_finance.publication.income.about": {
+    "defaultMessage": "{value, select, private {管理者のほかは誰も収入を見られません。} totals {期間ごとの純額を誰でも見られます。費用も公開していれば、収支も出ます。} plans {プランごとの人数も誰でも見られます。人数が少ないと、誰かを推測されることがあります。} other {}}",
+    "description": "Under an option of what the server publishes of its income: what it publishes. Payments and who paid are never published."
+  },
+  "staff_finance.publication.meter": {
+    "defaultMessage": "資金のメーター",
+    "description": "Heading and name of the choice of the funding meter: how far this month's net income goes toward the monthly target."
+  },
+  "staff_finance.publication.meter.allowed": {
+    "defaultMessage": "{case, select, both_private {費用と収入をどちらも公開しない間は、割合だけを出せます。} both_published {費用と収入をどちらも公開している間は、額も出せます。} one_side {費用と収入の片方だけを公開している間は、もう片方が分かってしまうため、メーターを出せません。} other {}}",
+    "description": "Over the choice of the funding meter: which choices the costs' and the income's publication allow, and why."
+  },
+  "staff_finance.publication.meter.option": {
+    "defaultMessage": "{value, select, off {出さない} percent {割合} amounts {割合と額} other {}}",
+    "description": "An option of the funding meter, and the fact of what it shows now."
+  },
+  "staff_finance.publication.meter.about": {
+    "defaultMessage": "{value, select, off {どこにもメーターを出しません。} percent {今月の収入が目標の何 % かを、1 % 単位の切り捨てで誰でも見られます。} amounts {今月の純額と目標の額も誰でも見られます。} other {}}",
+    "description": "Under an option of the funding meter: what it shows."
+  },
+  "staff_finance.publication.target": {
+    "defaultMessage": "月の目標",
+    "description": "Field of the funding meter's monthly target, an amount."
+  },
+  "staff_finance.publication.target.hint": {
+    "defaultMessage": "空にすると、今月の費用が 1 つの通貨ならその合計を目標にします。",
+    "description": "Under the funding meter's target."
+  },
+  "staff_finance.publication.target.currency": {
+    "defaultMessage": "目標の通貨",
+    "description": "Field of the currency of the funding meter's target."
+  },
+  "staff_finance.publication.target.costs_currency": {
+    "defaultMessage": "今月の費用の通貨",
+    "description": "Option of the currency of the funding meter's target: the currency of this month's costs."
+  },
+  "staff_finance.publication.target.invalid": {
+    "defaultMessage": "金額を数字で書いてください。小数は通貨の桁まで (20000、150.50)。",
+    "description": "Under the funding meter's target when it is not an amount of its currency."
+  },
+  "staff_finance.publication.rail": {
+    "defaultMessage": "広い画面では、横の列にもメーターを出す",
+    "description": "Checkbox of the funding meter: whether the wide layout's side column shows it too."
+  },
+  "staff_finance.publication.viewer": {
+    "defaultMessage": "収支の画面",
+    "description": "Heading of what people with the permission to read the finance see on /finance."
+  },
+  "staff_finance.publication.viewer.about": {
+    "defaultMessage": "収支を読めるロールを持つ人は、収支の画面で合計と内訳を見られます。ここで選んだものも見られます。",
+    "description": "Over the choices of what people with the permission to read the finance see. Read by administrators."
+  },
+  "staff_finance.publication.viewer.names": {
+    "defaultMessage": "費用の項目の名前を出す",
+    "description": "Checkbox: whether people who read the finance see the cost items' names."
+  },
+  "staff_finance.publication.viewer.memos": {
+    "defaultMessage": "費用の項目のメモを出す",
+    "description": "Checkbox: whether people who read the finance see the cost items' memos."
+  },
+  "staff_finance.publication.viewer.income": {
+    "defaultMessage": "見られる収入",
+    "description": "Name of the choice of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.option": {
+    "defaultMessage": "{value, select, totals {合計} plans {合計とプランごとの人数} other {}}",
+    "description": "An option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.viewer_income.about": {
+    "defaultMessage": "{value, select, totals {期間ごとの純額と収支。} plans {プランごとの人数も。誰がいくら払ったかは出ません。} other {}}",
+    "description": "Under an option of what people who read the finance see of the income."
+  },
+  "staff_finance.publication.save": {
+    "defaultMessage": "保存",
+    "description": "The submit button of the publication screen."
+  },
+  "staff_finance.publication.saved": {
+    "defaultMessage": "保存しました。変更はすぐに公開されます。",
+    "description": "Said once the publication settings are saved."
+  },
+  "staff_finance.publication.unchanged": {
+    "defaultMessage": "変更はありません。",
+    "description": "Said when Save is pressed on the publication screen without a change."
+  },
+  "staff_finance.publication.not_saved": {
+    "defaultMessage": "保存されていません。示された箇所を直してから、もう一度保存してください。",
+    "description": "Before the submit button of the publication screen when a choice or the target was refused."
+  },
+  "staff_finance.publication.not_yours": {
+    "defaultMessage": "公開の範囲は、サーバーの設定を変えられる管理者だけが変えられます。",
+    "description": "On the publication screen, to a reader who may not change the server's settings, under what is published now."
+  },
+  "staff_finance.publication.now": {
+    "defaultMessage": "費用は{costs, select, private {公開せず} totals {合計を公開し} breakdown {合計と内訳を公開し} other {}}、収入は{income, select, private {公開していません} totals {合計を公開しています} plans {合計とプランごとの人数を公開しています} other {}}",
+    "description": "Line under Publication in the list of Finance screens: what the server publishes now of its costs and of its income."
+  },
+  "staff_finance.schedule": {
+    "defaultMessage": "{schedule, select, once {単発} weeks {{count, plural, other {# 週ごと}}} months {{count, plural, other {# か月ごと}}} years {{count, plural, other {# 年ごと}}} other {}}",
+    "description": "How often a cost item is paid. {count} is its N of every N weeks, months or years."
+  },
+  "staff_finance.cost.name": {
+    "defaultMessage": "名前",
+    "description": "Field of a cost item: its name, such as VPS or Domain example.org."
+  },
+  "staff_finance.cost.name.hint": {
+    "defaultMessage": "支払いの対象。サーバーやドメインなど。管理者だけが見ます。",
+    "description": "Under the name field of a cost item. Read by administrators."
+  },
+  "staff_finance.cost.name.blank": {
+    "defaultMessage": "支払いの対象を書いてください。",
+    "description": "Under the name field of a cost item when it is empty."
+  },
+  "staff_finance.cost.provider": {
+    "defaultMessage": "事業者",
+    "description": "Field of a cost item: who is paid, such as Sakura Cloud or AWS."
+  },
+  "staff_finance.cost.provider.hint": {
+    "defaultMessage": "支払い先。内訳はこの名前でまとめます。",
+    "description": "Under the provider field of a cost item."
+  },
+  "staff_finance.cost.provider.blank": {
+    "defaultMessage": "支払い先を書いてください。",
+    "description": "Under the provider field of a cost item when it is empty."
+  },
+  "staff_finance.cost.category": {
+    "defaultMessage": "区分",
+    "description": "Field of a cost item: its category (servers, storage, domain…)."
+  },
+  "staff_finance.cost.schedule": {
+    "defaultMessage": "周期",
+    "description": "Field of a cost item: how often it is paid, a choice of once, weeks, months or years, and the N beside it."
+  },
+  "staff_finance.cost.schedule.option": {
+    "defaultMessage": "{schedule, select, once {単発} weeks {週ごと} months {月ごと} years {年ごと} other {}}",
+    "description": "Option of how often a cost item is paid; the number of weeks, months or years stands beside it."
+  },
+  "staff_finance.cost.interval": {
+    "defaultMessage": "間隔",
+    "description": "Name, for assistive technology, of the number of weeks, months or years between two payments of a cost item."
+  },
+  "staff_finance.cost.interval.unit": {
+    "defaultMessage": "{schedule, select, weeks {週ごと} months {か月ごと} years {年ごと} other {}}",
+    "description": "The unit after the number of weeks, months or years between two payments of a cost item."
+  },
+  "staff_finance.cost.interval.blank": {
+    "defaultMessage": "1 から {max} の数を書いてください。",
+    "description": "Under the number of weeks, months or years of a cost item when it is empty or out of range."
+  },
+  "staff_finance.cost.paid_on": {
+    "defaultMessage": "支払日",
+    "description": "Field and fact of a cost item paid once: its payment date."
+  },
+  "staff_finance.cost.starts": {
+    "defaultMessage": "最初の支払日",
+    "description": "Field and fact of a repeating cost item: its first payment date."
+  },
+  "staff_finance.cost.starts.blank": {
+    "defaultMessage": "支払日を選んでください。",
+    "description": "Under the first payment date of a cost item when it is empty."
+  },
+  "staff_finance.cost.ends": {
+    "defaultMessage": "最後の支払日",
+    "description": "Field and fact of a repeating cost item: its last payment date, which may be left empty."
+  },
+  "staff_finance.cost.ends.before": {
+    "defaultMessage": "最初の支払日以降の日付を選んでください。",
+    "description": "Under the last payment date of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.no_end": {
+    "defaultMessage": "終わりなし",
+    "description": "Fact of a repeating cost item without a last payment date."
+  },
+  "staff_finance.cost.amount": {
+    "defaultMessage": "金額",
+    "description": "Field of the price of a new cost item, in its currency."
+  },
+  "staff_finance.cost.currency": {
+    "defaultMessage": "通貨",
+    "description": "Field of the currency of a new cost item's price."
+  },
+  "staff_finance.cost.memo": {
+    "defaultMessage": "メモ",
+    "description": "Field and fact of a cost item: a note of the administrators'."
+  },
+  "staff_finance.cost.memo.hint": {
+    "defaultMessage": "公開されません。",
+    "description": "Under the memo field of a cost item."
+  },
+  "staff_finance.cost.not_recorded": {
+    "defaultMessage": "記録されていません。示された箇所を直してから、もう一度記録してください。",
+    "description": "Before the submit button of a new cost item when a field is wrong."
+  },
+  "staff_finance.cost.loading": {
+    "defaultMessage": "費用を読み込んでいます…",
+    "description": "On a cost item's screen while it loads."
+  },
+  "staff_finance.cost.failed": {
+    "defaultMessage": "費用を読み込めませんでした。接続を確かめてから、もう一度試してください。",
+    "description": "On a cost item's screen when it could not be loaded, before Try again."
+  },
+  "staff_finance.cost.missing": {
+    "defaultMessage": "この費用は記録されていません。削除された可能性があります。",
+    "description": "At the address of a cost item the server does not have."
+  },
+  "staff_finance.cost.missing.all": {
+    "defaultMessage": "すべての費用",
+    "description": "Link from a cost item that is not recorded to the list of cost items."
+  },
+  "staff_finance.cost.facts": {
+    "defaultMessage": "この費用について",
+    "description": "Name, for assistive technology, of the facts of a cost item."
+  },
+  "staff_finance.cost.price_from": {
+    "defaultMessage": "{date} から {price}",
+    "description": "A price of a cost item and the date it applies from, to the payments on or after it. {price} is an amount, {date} a date."
+  },
+  "staff_finance.cost.recorded": {
+    "defaultMessage": "記録日時",
+    "description": "Fact of a cost item: when it was recorded."
+  },
+  "staff_finance.cost.prices": {
+    "defaultMessage": "金額の改定",
+    "description": "Heading of a cost item's prices, each with the date it applies from, and of the form of a new price."
+  },
+  "staff_finance.cost.revise": {
+    "defaultMessage": "金額を改定する",
+    "description": "Button that records a new price of a cost item from a date."
+  },
+  "staff_finance.cost.revise.date": {
+    "defaultMessage": "適用する日",
+    "description": "Field of a new price of a cost item: the date from which the payments take it."
+  },
+  "staff_finance.cost.revise.date_before": {
+    "defaultMessage": "最初の支払日以降の日付を選んでください。",
+    "description": "Under the date of a new price of a cost item when it is before the first payment."
+  },
+  "staff_finance.cost.revise.done": {
+    "defaultMessage": "{date} から {price} になりました。",
+    "description": "Said once a new price of a cost item is recorded."
+  },
+  "staff_finance.cost.revise.amount": {
+    "defaultMessage": "新しい金額 ({currency})",
+    "description": "Field of a new price of a cost item. {currency} is its currency's code."
+  },
+  "staff_finance.cost.label": {
+    "defaultMessage": "名前とメモ",
+    "description": "Heading of the form that changes a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves a cost item's name, provider, category and memo."
+  },
+  "staff_finance.cost.label.done": {
+    "defaultMessage": "保存しました。",
+    "description": "Said once a cost item's name, provider, category and memo are saved."
+  },
+  "staff_finance.cost.end": {
+    "defaultMessage": "終わり",
+    "description": "Heading of the form of a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.date": {
+    "defaultMessage": "最後の支払日",
+    "description": "Field of a repeating cost item's last payment date, on its screen."
+  },
+  "staff_finance.cost.end.set": {
+    "defaultMessage": "この日で終える",
+    "description": "Button that sets a repeating cost item's last payment date. Its payments after that date go away; past ones stay."
+  },
+  "staff_finance.cost.end.move": {
+    "defaultMessage": "終わりを変える",
+    "description": "Button that moves a repeating cost item's last payment date."
+  },
+  "staff_finance.cost.end.remove": {
+    "defaultMessage": "終わりをなくす",
+    "description": "Button that makes a repeating cost item go on with no end."
+  },
+  "staff_finance.cost.end.done": {
+    "defaultMessage": "最後の支払日を {date} にしました。",
+    "description": "Said once a repeating cost item's last payment date is set."
+  },
+  "staff_finance.cost.end.removed": {
+    "defaultMessage": "終わりのない費用にしました。",
+    "description": "Said once a repeating cost item's end is removed."
+  },
+  "staff_finance.cost.delete": {
+    "defaultMessage": "削除",
+    "description": "Heading of the last section of a cost item's screen, which deletes it."
+  },
+  "staff_finance.cost.delete.about": {
+    "defaultMessage": "削除すると、過去の期間も含めてすべての期間からこの費用を除きます。取り消せません。",
+    "description": "Under Delete on a cost item's screen, and in its confirmation."
+  },
+  "staff_finance.cost.delete.ask": {
+    "defaultMessage": "費用を削除…",
+    "description": "Button that asks before deleting a cost item."
+  },
+  "staff_finance.cost.delete.confirm": {
+    "defaultMessage": "{name} を削除しますか？",
+    "description": "Title of the confirmation of deleting a cost item. {name} is its name."
+  },
+  "staff_finance.cost.delete.do": {
+    "defaultMessage": "削除",
+    "description": "Button of the confirmation that deletes a cost item."
+  },
+  "staff_finance.cost.write_failed": {
+    "defaultMessage": "保存されていません。接続を確かめてから、もう一度試してください。",
+    "description": "Said when a change of a cost item failed for a reason that names no field."
+  },
+  "staff_finance.cost.amount.invalid": {
+    "defaultMessage": "金額を数字で書いてください。小数は通貨の桁まで (1650、12.50)。",
+    "description": "Under an amount of a cost item when it is not a number, or has more decimals than its currency."
+  }
+}

@@ -37,9 +37,9 @@ The states of a subscription, as the administration and `my admin supporters sub
 4. In "Roles" in the administration, create the role to tie to the plan. It must have no holders, only member permissions (group `member`), and a `position` lower than that of every staff role, `moderator` included.
    The member permissions are the benefits a plan can give: `create_custom_emojis` (requesting custom emoji), `view_finance` (reading the server's finances), `start_voice_rooms` (opening voice chat rooms while only permitted users may), `create_invites` (inviting people while only permitted users may, within the limits of [member invites](registration.md#member-invites)), `keep_posts_longer` (keeping posts past the [maximum of the automatic deletion](instance-settings.md#automatic-deletion-of-old-posts), and turning the automatic deletion off while the maximum is on), `create_articles` (writing articles while only permitted users may; see [articles](instance-settings.md#articles)), and `create_events` (creating [events](instance-settings.md#events) while only permitted users may).
    When the subscription ends, the role goes, and so do the benefits: the invites the supporter made stop working until they subscribe again, and the maximum of the automatic deletion applies to their posts again after its grace period.
-5. In "Supporters" in the administration (permission `manage_supporters`), open the "Plans" page (`/admin/supporters/plans`) and choose "Create a plan". Set the name, description, monthly price, discount for yearly payment, monthly limit on custom emoji creation (it resets on the first day of each month, UTC; see [custom emoji](instance-settings.md#custom-emoji)), order, and visibility, and choose the role.
+5. In "Supporters" in the administration (permission `manage_supporters`), open the "Plans" page (`/admin/supporters/plans`) and choose "Create a plan". Set the name, description, monthly price, discount for yearly payment, monthly limit on custom emoji creation (it resets on the first day of each month, UTC; see [custom emoji](instance-settings.md#custom-emoji)), order, and visibility, and choose the role: the form lists the roles that can take a plan, or, without the permission `manage_roles`, asks for the role's key.
    The server creates the monthly and yearly prices at the provider (do not create prices in the provider's dashboard). Until the prices exist, the plan is "preparing" and accepts no subscriptions.
-6. On the "Program" page of "Supporters" (`/admin/supporters`), check "Enable the supporter program" and choose "Save". The same form sets who may read the supporter list.
+6. On the first page of "Supporters" (`/admin/supporters`), choose "Turn the program on". The page says what is missing while the program cannot be turned on, and shows the payment provider of the configuration, which only the configuration changes.
 
 Once a plan exists, its role can no longer be granted or revoked by hand, and you change its permissions and position on the plan's page (choose the plan on the "Plans" page). A higher plan (a larger order) sits above the roles of the lower plans, has all of their permissions, and has an emoji limit at least as high as theirs.
 
@@ -47,6 +47,7 @@ Once a plan exists, its role can no longer be granted or revoked by hand, and yo
 
 - **Deactivation**: A subscriber cannot deactivate their account while the subscription is live, including one set to end at the end of its period. The settings screen leads them to the subscription, so that no one is charged while hidden.
 - **Retries (dunning)**: Seven days after a payment fails, the server removes the role (independently of the provider's retries). Set the provider's retry period to at least 7 days and make the final action "cancel". When the payment succeeds after the grace period, the role comes back.
+- **Checking the provider**: the "Payment provider" section of the first page of "Supporters" shows the provider's mode (test or live), the last webhook delivery and the last reconciliation with why it stopped, and warns when the webhook looks unset. "Reconcile now" runs a reconciliation at once, at most once an hour.
 - **Customer portal**: The portal is opened for payment methods and invoices. Turn off plan changes in the portal and allow only cancellation at the end of the period. Plan changes and cancellations are made on the server's own screens.
 - **Refunds**: The server refunds only a payment that bought nothing: a second subscription of one payment, and a payment for a pending subscription that closed. The provider's guide ([Stripe](payments-stripe.md), [PAY.JP](payments-payjp.md)) describes both. Every other refund is the operator's, in the provider's dashboard. A full refund and a chargeback remove the role at once and cancel the provider's subscription at once. A partial refund does not remove the role. Winning a chargeback does not restore the role; the user subscribes again.
 
@@ -82,7 +83,7 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 ## The list of members
 
-- The instance setting `supporter_list_visibility` (on the "Supporters" screen; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
+- The instance setting `supporter_list_visibility` (the "Supporter list" section of the first page of "Supporters", for an administrator with `manage_settings`; see [instance-settings.md](instance-settings.md)) chooses who can see the list of current subscribers (`/about/supporters`). With the default `off`, neither the list nor the link from `/about` appears.
 - The list shows only the subscribers who chose to be listed on the "Badges and supporter list" page of their settings (nobody is listed by default). It shows the plan name and each person's avatar, display name, and handle, and never amounts, whether the payment is monthly or yearly, dates, or counts.
 - A choice to be listed stays when the subscriber changes plans, and disappears when the subscription ends (the role is removed). Someone who subscribes again starts unlisted.
 - The list page and its API always send `noindex, noarchive`, whatever the search-engine setting (`search_indexing`) says.
@@ -91,13 +92,13 @@ Enabling, disabling, and cancelling are written to the audit log as CLI operatio
 
 - When you change the monthly price or the discount, the new price applies to new subscriptions and plan changes. Existing subscribers renew at their original price. There is no operation to move existing subscribers to a new price. To move them, create a new plan and retire the old one.
 - Hiding a plan stops new subscriptions and changes to that plan. Existing subscriptions continue.
-- Retiring a plan cannot be undone. Its subscriptions are cancelled at the end of their period (pending ones close at once and their payment page stops taking payments, with any payment that still arrives refunded; and ones whose payment is late beyond the grace period are cancelled at once). When the last subscription ends, the role goes back to an ordinary role.
+- Retiring a plan ("Retire the plan…" on its page, after typing its name) cannot be undone. Its subscriptions are cancelled at the end of their period (pending ones close at once and their payment page stops taking payments, with any payment that still arrives refunded; and ones whose payment is late beyond the grace period are cancelled at once). When the last subscription ends, the role goes back to an ordinary role.
 
 ## Accounts and subscriptions
 
 - Deleting an account and banning it (which schedules deletion) cancel its subscriptions at once, without a refund (a payment for a subscription still pending bought nothing, and is refunded). Reversing a ban does not restore the subscriptions.
 - Suspending an account schedules cancellation at the end of the period. Lifting the suspension does not restore it automatically; the user cancels the cancellation before the end of the period or subscribes again.
-- On the "Subscriptions" page of "Supporters" (`/admin/supporters/subscriptions`), an administrator can open one subscription and end it at once with "End now" (no refund, except a payment for a pending subscription, which bought nothing; it is written to the audit log).
+- On the "Subscriptions" page of "Supporters" (`/admin/supporters/subscriptions`, filtered by plan and state), an administrator can open one subscription and end it at once with "End now…", after typing the subscriber's handle (no refund, except a payment for a pending subscription, which bought nothing; it is written to the audit log).
 
 ## Disabling the program and changing providers
 

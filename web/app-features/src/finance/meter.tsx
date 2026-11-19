@@ -9,7 +9,7 @@
 
 import type { FundingMeter } from "@my/app-data";
 import { Box, dateFormat, Meter, Stack } from "@my/design-system";
-import { moneyText, useFinanceStrings } from "./parts";
+import { moneyText, useFinanceStrings } from "../finance-totals";
 
 /** A line under the meter. */
 function Line({ children }: { children: string }) {

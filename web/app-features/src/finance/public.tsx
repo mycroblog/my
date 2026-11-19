@@ -28,7 +28,7 @@ import {
   TotalsTable,
   useFinanceStrings,
   useFinanceView,
-} from "./parts";
+} from "../finance-totals";
 
 /** The page of the server's published costs and income. */
 export function PublicFinanceScreen(): ReactNode {

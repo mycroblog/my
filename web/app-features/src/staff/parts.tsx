@@ -1,12 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // What the staff's screens share: their strings in the reader's locale, how a moment is written (the reader's zone, a
-// date and its time held together), a heading over what it heads, and a notice that a screen's read loads or failed.
+// date and its time held together), a heading over what it heads, a notice that a screen's read loads or failed, the
+// status that says what a press did and takes the focus, and a field with its label and the error under it.
 
 import { sentenceHandleOf } from "@my/app-components";
 import type { Account } from "@my/app-data";
-import { dateFormat, FeedNotice, GroupHeading, Stack, TextButton, useLocale, useTimeZone } from "@my/design-system";
-import type { ReactNode } from "react";
+import {
+  Box,
+  CaptionLine,
+  dateFormat,
+  FeedNotice,
+  FieldError,
+  FieldLabel,
+  FormAlert,
+  GroupHeading,
+  Stack,
+  TextButton,
+  useLocale,
+  useTimeZone,
+} from "@my/design-system";
+import { useState, type ReactNode, type RefObject } from "react";
 import { stringsIn } from "../locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
@@ -60,3 +74,77 @@ export function ReadNotice({
     </FeedNotice>
   );
 }
+
+/** What a press said, in the screen's status. */
+type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
+
+/**
+ * The status of a screen, a polite live region there from the start (`StatusRegion`, whose element is `region`, made
+ * by the component), which says what a press did, or that it failed, each time a new element, and takes the focus as
+ * it does.
+ */
+export function useStatus(region: RefObject<HTMLDivElement | null>): {
+  readonly said: Said | undefined;
+  readonly say: (words: string, alert?: boolean) => void;
+} {
+  const [said, setSaid] = useState<Said | undefined>(undefined);
+  return {
+    said,
+    say: (words, alert = false) => {
+      setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
+      requestAnimationFrame(() => region.current?.focus());
+    },
+  };
+}
+
+/** The region of `useStatus`, where it stands on the screen. */
+export function StatusRegion({
+  said,
+  region,
+}: {
+  said: Said | undefined;
+  region: RefObject<HTMLDivElement | null>;
+}): ReactNode {
+  return (
+    <Box as={<div ref={region} role="status" tabIndex={-1} />}>
+      {said !== undefined &&
+        (said.alert ? (
+          <FormAlert key={said.n} regular>
+            {said.words}
+          </FormAlert>
+        ) : (
+          <CaptionLine key={said.n} icon="accepted">
+            {said.words}
+          </CaptionLine>
+        ))}
+    </Box>
+  );
+}
+
+/**
+ * A control that has no label of its own (a choice from a list, a number) under its label, and what is wrong with its
+ * value right under it, at `<id>-error`, which the control names among what describes it.
+ */
+export function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string | undefined;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <Stack gap="entry-line">
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {children}
+      {error !== undefined && <FieldError id={`${id}-error`}>{error}</FieldError>}
+    </Stack>
+  );
+}
+
+/** The ids that describe the control of `id`: its error, while it has one. */
+export const errorOf = (id: string, error: string | undefined): string | undefined =>
+  error === undefined ? undefined : `${id}-error`;

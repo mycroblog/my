@@ -6,7 +6,7 @@
 
 import { expect, test } from "bun:test";
 import { financePeriodAfter } from "@my/app-data";
-import { answeredPeriods, barOf, importedProvider, incomeBeside, todayIn, type FinanceView } from "./parts";
+import { answeredPeriods, barOf, importedProvider, incomeBeside, todayIn, type FinanceView } from "./finance-totals";
 
 test("today is the date of the reader's zone, ahead of UTC's east of it", () => {
   const at = new Date("2026-11-30T16:00:00Z");

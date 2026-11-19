@@ -23,7 +23,9 @@ import {
 import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
+import { FinanceAdminScreen } from "./finance/overview";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { loadSupportersAdmin, SupportersAdminScreen } from "./supporters/program";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
 const staffAreas = ["moderation", "admin"] as const;
@@ -32,6 +34,7 @@ export type StaffArea = (typeof staffAreas)[number];
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
+  { id: "funding", area: "admin", heading: "staff_finance.group" },
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -48,6 +51,15 @@ export type StaffAddress = {
 
 /** What an entry's screen is given by the route that places it. */
 export type StaffEntryProps = StaffAddress;
+
+/**
+ * What a screen under an entry is given by its route (/admin/finance/costs/{id}): its address, and the way to another
+ * address, where a write takes the reader on (a cost item recorded, to its screen).
+ */
+export type StaffUnderProps = StaffAddress & {
+  /** Shows the screen at `href`, as a new entry of the history. */
+  readonly go: (href: string) => void;
+};
 
 /** What the root reads of the reader, for the entries it lists and their counts: one hook reads it (`useStaffFacts`). */
 export type StaffFacts = {
@@ -91,6 +103,31 @@ export const staffEntries: readonly StaffEntry[] = [
     count: { of: (facts) => facts.openReports, words: "staff.entry.reports.count" },
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
+  },
+  {
+    // The server's running costs and income (FR-901–FR-905, FR-917): the totals, the cost items, the money movements,
+    // the billing imports, and what the server publishes of them.
+    path: "finance",
+    area: "admin",
+    group: "funding",
+    permission: "manage_finance",
+    icon: "finance",
+    name: "staff_finance.entry",
+    hint: "staff_finance.entry.hint",
+    Screen: FinanceAdminScreen,
+  },
+  {
+    // The supporter program (FR-910, FR-912, FR-914, FR-918, FR-919): the program, the tips, the payment provider's
+    // state, the plans and the subscriptions.
+    path: "supporters",
+    area: "admin",
+    group: "funding",
+    permission: "manage_supporters",
+    icon: "funding",
+    name: "staff_supporters.entry",
+    hint: "staff_supporters.entry.hint",
+    Screen: SupportersAdminScreen,
+    load: loadSupportersAdmin,
   },
 ];
 

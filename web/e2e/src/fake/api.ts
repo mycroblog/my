@@ -71,7 +71,9 @@ import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { eventHandlers, fakeEventPlans, type FakeEventPlan, type FakeEvents } from "./events";
 import { financeHandlers, type FakeFinanceOptions } from "./finance";
+import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptions } from "./finance-admin";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
+import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { createScripts, type Script, type Scripted } from "./script";
@@ -462,6 +464,10 @@ export type FakeOptions = {
    * the funding meter, and the reader as a holder of `view_finance`.
    */
   finance?: FakeFinanceOptions;
+  /** The administrators' finance (finance-admin.ts): the cost items, the totals, the income, the billing imports. */
+  financeAdmin?: FakeFinanceAdminOptions;
+  /** The administrators' supporter program (supporters-admin.ts): the program, the tips, the plans, the subscriptions. */
+  supportersAdmin?: FakeSupportersAdminOptions;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -569,6 +575,10 @@ export type FakeApi = {
   readonly supporters: FakeSupporters;
   /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
   readonly reports: FakeReports;
+  /** The IDs of the cost items by the fake's keys (finance-admin.ts). */
+  readonly financeAdmin: FakeFinanceAdmin;
+  /** The IDs of the plans and the subscriptions by the fake's keys (supporters-admin.ts). */
+  readonly supportersAdmin: FakeSupportersAdmin;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1922,7 +1932,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     return [
       ...moderation,
       ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
-      ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance"] as const),
+      ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance", "manage_supporters"] as const),
       "manage_service_closure",
     ];
   };
@@ -2079,8 +2089,30 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     tips: supporting.instance.tips_enabled,
     problem,
     notFound,
+    accountId: idOf,
   });
   const fundingMeter = o.finance === undefined ? undefined : finance.meter(month);
+  // What the administrators keep of the finance and the supporter program (finance-admin.ts, supporters-admin.ts).
+  const financeAdmin = financeAdminHandlers({
+    options: o.financeAdmin,
+    started,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    published: {
+      costs: finance.instance.finance_visibility,
+      income: finance.instance.income_visibility,
+      meter: fundingMeter?.visibility ?? "off",
+      list: supporting.instance.supporter_list_visibility,
+    },
+    problem,
+    notFound,
+  });
+  const supportersAdmin = supportersAdminHandlers({
+    options: o.supportersAdmin,
+    started,
+    accountId: idOf,
+    problem,
+    notFound,
+  });
 
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
@@ -3747,6 +3779,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...supporting.handlers,
     ...finance.handlers,
+    ...financeAdmin.handlers,
+    ...supportersAdmin.handlers,
 
     // ---- The moderators' reports ------------------------------------------------------------------------------------
 
@@ -3972,6 +4006,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     events: events.events,
     supporters: supporting.supporters,
     reports: moderated.reports,
+    financeAdmin: financeAdmin.admin,
+    supportersAdmin: supportersAdmin.admin,
     unimplemented,
     revocations,
     newPosts,

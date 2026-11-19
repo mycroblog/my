@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The fields with no label of their own: a date and a time, and a box of a few lines that grows with its text, each
+// The fields with no label of their own: a date and a time, a date alone, and a box of a few lines that grows with its text, each
 // named for assistive technology; a label of the page for one, and the fields of a checked choice set in under it.
 // The words are samples in English.
 
@@ -35,6 +35,18 @@ export const DateTime: Story = {
           min="2026-11-16T00:00"
           max="2027-11-16T00:00"
         />
+      </Column>
+    );
+  },
+};
+
+/** A date alone, of the calendar (a payment's date). */
+export const DateOnly: Story = {
+  render: () => {
+    const [value, setValue] = useState("2026-11-16");
+    return (
+      <Column>
+        <DateTimeField date label="Date" value={value} onChange={setValue} min="2026-01-01" />
       </Column>
     );
   },

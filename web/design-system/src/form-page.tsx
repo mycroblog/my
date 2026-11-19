@@ -389,7 +389,7 @@ export type TextFieldProps = {
   error?: string | undefined;
   defaultValue?: string | undefined;
   autoComplete?: string | undefined;
-  inputMode?: "text" | "email" | "numeric" | undefined;
+  inputMode?: "text" | "email" | "numeric" | "decimal" | undefined;
   autoCapitalize?: "none" | "characters" | undefined;
   required?: boolean | undefined;
   minLength?: number | undefined;
@@ -909,13 +909,15 @@ const bare = tv({
 });
 
 /**
- * A field of a date and a time (`datetime-local`) with no label of its own: `label` names it for assistive technology,
+ * A field of a date and a time (`datetime-local`), or of a date alone (`date`: a calendar date, 2026-11-16), with no
+ * label of its own: `label` names it for assistive technology,
  * `value`, `min` and `max` are as the browser holds them (2026-11-16T09:00), `invalid` draws the line of a refusal,
  * and `describedBy` names the ids that describe it. With `id`, what holds it gives it the focus when its value is
  * refused (`focusRefusedField`, its error at `<id>-error`), and a label of the page can be for it.
  */
 export function DateTimeField({
   id,
+  date = false,
   label,
   value,
   onChange,
@@ -926,6 +928,8 @@ export function DateTimeField({
   disabled,
 }: {
   id?: string | undefined;
+  /** A date alone, which no time zone cuts (a payment's date). */
+  date?: boolean | undefined;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -943,7 +947,7 @@ export function DateTimeField({
       as={
         <input
           id={id}
-          type="datetime-local"
+          type={date ? "date" : "datetime-local"}
           className={bare().dateTime()}
           aria-label={label}
           aria-invalid={invalid ? true : undefined}

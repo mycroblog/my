@@ -3,7 +3,7 @@
 The server imports the usage charges of the providers listed in the setting [`billing_sources`](../reference/configuration.md#billing_sources), or of [a plugin](#a-plugin-billing_sources--plugin) for a provider it has no adapter of, every 24 hours and adds them to the instance's costs. The default is empty, which imports nothing.
 It imports the charges of the current and the previous billing month (through the 15th of the month, or until the previous month is final), as one line per service and charge type (usage, credit, refund, tax, support, fee, other).
 Until the provider closes a month, the values are recorded as estimates; after it closes, as final; and when a value changes after it is final, as a correction. Records of the past are never rewritten.
-The state of the imports (the last success, the kind of the last failure, and the number of requests this month) is shown on the costs page of the administration and by `GET /api/v1/admin/billing_imports`.
+The state of the imports (the last success, the kind of the last failure, and the number of requests this month) is shown on the "Billing imports" page of "Finance" in the administration (`/admin/finance/imports`), which also lists each billing month as an estimate, final, or corrected, with "Import now", and by `GET /api/v1/admin/billing_imports`.
 The metrics count every attempt by source, outcome, and kind of failure (`my.billing.imports`) and report the sources whose newest attempt failed (`my.billing.import.failing`);
 [Alerts and runbook](alerts.md#mybillingimportfailing) has the alert on them.
 
@@ -291,7 +291,7 @@ Only an account billed pay-as-you-go has this data; an Enterprise contract accou
 ### What it does not import
 
 Cloudflare's billable usage holds usage charges alone. Plans and add-ons with a fixed fee (Pro, Business, Workers Paid, and the like), taxes, and credits are not in it, so the costs show only the usage part of the invoice.
-Add the fixed fees as costs of your own on the costs page, or import them from [a plugin](#a-plugin-billing_sources--plugin).
+Add the fixed fees as costs of your own on the "Costs" page of "Finance" (`/admin/finance/costs`), or import them from [a plugin](#a-plugin-billing_sources--plugin).
 
 ### Billing cycles and final months
 
@@ -339,7 +339,7 @@ plugin_billing_provider = "Hetzner"
 The three settings are required with this source, and the server starts without calling the plugin, even when it is down.
 
 - `plugin_billing_location` is the time zone that cuts the plugin's billing months.
-- `plugin_billing_provider` is the name of the provider in the totals, on the costs page, and in the audit log.
+- `plugin_billing_provider` is the name of the provider in the totals, on the billing imports page, and in the audit log.
 
 The server asks the plugin for the current month and, as with the other sources, for the previous one through the 15th or until it is final. The caps of the other sources do not apply: `max_requests` is `2147483647`, which means no cap, and the plugin decides what it may spend. It reports the requests and the bytes it was billed for, which the server records and shows.
 

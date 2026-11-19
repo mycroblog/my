@@ -527,6 +527,18 @@ export class Fresh {
     throw new Error("fresh: the plans never took subscriptions");
   }
 
+  /**
+   * A new role of `staff`, a fresh person made with `admin: true`, that a supporter plan can be on: no holders, no
+   * permission, below the moderators. It returns the role's key, unique to the test and the run.
+   */
+  async planRole(staff: FreshPerson): Promise<string> {
+    const key = `plan_${unique()}`;
+    const api = await this.#api(staff);
+    const { error } = await api.POST("/admin/roles", { body: { key, position: 10, permissions: [] } });
+    if (error !== undefined) throw new Error(`fresh: the role ${key} was refused`);
+    return key;
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);

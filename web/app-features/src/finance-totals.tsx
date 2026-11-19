@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the two finance screens share (ADR-0067 §4, §5, §10, §17, §20; FR-902, FR-917): the reader's window over the
+// What the finance screens share, /finance and /about/costs of the finance feature and the administrators'
+// /admin/finance of the staff's (ADR-0067 §4, §5, §10, §17, §20; FR-902, FR-917): the reader's window over the
 // periods (its length, how a payment longer than a month counts, and how far back it is), the choices and the way to
 // earlier and later periods, the table of the totals (costs, income and the balance, each a figure a currency on its
 // own line, never converted, an estimate marked on its currency's figure, the rules that cut the periods as its note),
@@ -44,7 +45,7 @@ import {
   type FinanceFigure,
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { stringsIn } from "../locale";
+import { stringsIn } from "./locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
 

@@ -1,0 +1,730 @@
+{
+  "staff_supporters.entry": {
+    "defaultMessage": "サポーター",
+    "description": "Name of the administration screen of the supporter plans, tips and subscriptions, at /admin/supporters, and its title."
+  },
+  "staff_supporters.entry.hint": {
+    "defaultMessage": "プラン・チップ・加入・決済の事業者",
+    "description": "Line under Supporters in the list of administration screens at /admin."
+  },
+  "staff_supporters.back.program": {
+    "defaultMessage": "サポーター",
+    "description": "The way back, over a screen under Supporters, to the first page of Supporters in the administration."
+  },
+  "staff_supporters.back.plans": {
+    "defaultMessage": "プラン",
+    "description": "The way back, over a plan's screen or the new plan's form, to the list of the supporter plans in the administration."
+  },
+  "staff_supporters.back.subscriptions": {
+    "defaultMessage": "加入",
+    "description": "The way back, over a subscription's screen, to the list of subscriptions in the administration."
+  },
+  "staff_supporters.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button that closes a confirmation on a screen of Supporters in the administration without doing anything."
+  },
+  "staff_supporters.write_failed": {
+    "defaultMessage": "実行できませんでした。ページを再読み込みしてから、もう一度試してください。",
+    "description": "On a screen of Supporters in the administration, when a change failed for a reason the server did not name."
+  },
+  "staff_supporters.forbidden": {
+    "defaultMessage": "アカウントにサポーターを管理する権限がなくなったため、この画面は開けません。",
+    "description": "In the place of a screen of Supporters when the server refuses the reader the permission manage_supporters."
+  },
+  "staff_supporters.doors": {
+    "defaultMessage": "プランと加入",
+    "description": "Heading, and name for assistive technology, of the two links to the plans and to the subscriptions on the first page of Supporters."
+  },
+  "staff_supporters.plans": {
+    "defaultMessage": "プラン",
+    "description": "Name of the list of supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.plans.count": {
+    "defaultMessage": "{count, plural, other {使用中のプラン # 件}}",
+    "description": "Line under Plans on the first page of Supporters: how many plans are not retired."
+  },
+  "staff_supporters.plans.loading": {
+    "defaultMessage": "プランを読み込んでいます…",
+    "description": "While the supporter plans are read."
+  },
+  "staff_supporters.plans.failed": {
+    "defaultMessage": "プランを読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When the supporter plans could not be read; Try again follows."
+  },
+  "staff_supporters.plans.create": {
+    "defaultMessage": "プランを作成",
+    "description": "Button that opens the form of a new supporter plan, and that form's title."
+  },
+  "staff_supporters.plans.empty": {
+    "defaultMessage": "まだプランはありません。加入を受け付けるにはプランを作成してください。",
+    "description": "In the place of the list of plans while there is none."
+  },
+  "staff_supporters.plans.column.plan": {
+    "defaultMessage": "プラン",
+    "description": "Header of the column of the plans' names."
+  },
+  "staff_supporters.plans.column.price": {
+    "defaultMessage": "料金",
+    "description": "Header of the column of the plans' monthly prices."
+  },
+  "staff_supporters.plans.column.members": {
+    "defaultMessage": "加入者",
+    "description": "Header of the column of the plans' member counts."
+  },
+  "staff_supporters.plans.column.standing": {
+    "defaultMessage": "状態",
+    "description": "Header of the column of where each plan stands."
+  },
+  "staff_supporters.plans.monthly": {
+    "defaultMessage": "月 {price}",
+    "description": "A plan's monthly price."
+  },
+  "staff_supporters.plans.members": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "How many subscriptions hold a plan's role."
+  },
+  "staff_supporters.subscriptions": {
+    "defaultMessage": "加入",
+    "description": "Name of the list of subscriptions to the supporter plans in the administration, the link to it, and its screen's title."
+  },
+  "staff_supporters.subscriptions.hint": {
+    "defaultMessage": "加入者と加入の解約",
+    "description": "Line under Subscriptions on the first page of Supporters."
+  },
+  "staff_supporters.subscriptions.loading": {
+    "defaultMessage": "加入を読み込んでいます…",
+    "description": "While the subscriptions are read."
+  },
+  "staff_supporters.subscriptions.failed": {
+    "defaultMessage": "加入を読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When the subscriptions could not be read; Try again follows."
+  },
+  "staff_supporters.subscriptions.filters": {
+    "defaultMessage": "絞り込み",
+    "description": "Name of the filters over the subscriptions."
+  },
+  "staff_supporters.subscriptions.plan": {
+    "defaultMessage": "プラン",
+    "description": "Name of the filter of the subscriptions by plan."
+  },
+  "staff_supporters.subscriptions.plan.any": {
+    "defaultMessage": "すべてのプラン",
+    "description": "The option of the plan filter that shows every plan."
+  },
+  "staff_supporters.subscriptions.state": {
+    "defaultMessage": "状態",
+    "description": "Name of the filter of the subscriptions by state."
+  },
+  "staff_supporters.subscriptions.state.any": {
+    "defaultMessage": "すべての状態",
+    "description": "The option of the state filter that shows every state."
+  },
+  "staff_supporters.subscriptions.empty": {
+    "defaultMessage": "まだ加入はありません。プランに加入した人がここに表示されます。",
+    "description": "In the place of the subscriptions while there is none."
+  },
+  "staff_supporters.subscriptions.empty.filtered": {
+    "defaultMessage": "この条件に合う加入はありません。",
+    "description": "In the place of the subscriptions when the filters match none; Clear filters is above."
+  },
+  "staff_supporters.subscriptions.more_failed": {
+    "defaultMessage": "続きの加入を読み込めませんでした。もう一度試してください。",
+    "description": "When the next page of subscriptions failed; Show more follows."
+  },
+  "staff_supporters.subscriptions.column.subscriber": {
+    "defaultMessage": "加入者",
+    "description": "Header of the column of the subscribers' handles."
+  },
+  "staff_supporters.subscriptions.column.plan": {
+    "defaultMessage": "プラン",
+    "description": "Header of the column of each subscription's plan and period."
+  },
+  "staff_supporters.subscriptions.column.ends": {
+    "defaultMessage": "期間",
+    "description": "Header of the column of when each subscription's period ends."
+  },
+  "staff_supporters.subscriptions.column.state": {
+    "defaultMessage": "状態",
+    "description": "Header of the column of each subscription's state."
+  },
+  "staff_supporters.program": {
+    "defaultMessage": "サポーターのプラン",
+    "description": "Heading of the section of the first page of Supporters that says whether the supporter program is on, and turns it on or off."
+  },
+  "staff_supporters.program.loading": {
+    "defaultMessage": "サポーターのプランを読み込んでいます…",
+    "description": "On the first page of Supporters while the program is read."
+  },
+  "staff_supporters.program.failed": {
+    "defaultMessage": "サポーターのプランを読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "On the first page of Supporters when the program could not be read; Try again follows."
+  },
+  "staff_supporters.program.state": {
+    "defaultMessage": "状態",
+    "description": "Term of the fact that says whether the supporter program is on."
+  },
+  "staff_supporters.program.on": {
+    "defaultMessage": "オン",
+    "description": "The supporter program is on."
+  },
+  "staff_supporters.program.off": {
+    "defaultMessage": "オフ",
+    "description": "The supporter program is off."
+  },
+  "staff_supporters.program.on_since": {
+    "defaultMessage": "{at} からオン",
+    "description": "The supporter program is on, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.off_since": {
+    "defaultMessage": "{at} からオフ",
+    "description": "The supporter program is off, and since when ({at}: a date and time)."
+  },
+  "staff_supporters.program.configured": {
+    "defaultMessage": "設定の決済の事業者",
+    "description": "Term of the fact that names the payment provider of the deployment's configuration, which only the configuration changes."
+  },
+  "staff_supporters.program.no_provider": {
+    "defaultMessage": "なし",
+    "description": "The deployment's configuration names no payment provider."
+  },
+  "staff_supporters.program.enabled_with": {
+    "defaultMessage": "オンにしたときの事業者",
+    "description": "Term of the fact that names the payment provider the supporter program was turned on with."
+  },
+  "staff_supporters.program.email": {
+    "defaultMessage": "メール",
+    "description": "Term of the fact that says whether the server sends email, which the supporter program needs."
+  },
+  "staff_supporters.program.email.yes": {
+    "defaultMessage": "サーバーはメールを送ります",
+    "description": "The server sends email."
+  },
+  "staff_supporters.program.email.no": {
+    "defaultMessage": "サーバーはメールを送りません",
+    "description": "The server sends no email, so the supporter program cannot be turned on."
+  },
+  "staff_supporters.program.live": {
+    "defaultMessage": "続いている加入",
+    "description": "Term of the fact that counts the subscriptions that go on."
+  },
+  "staff_supporters.program.live.count": {
+    "defaultMessage": "{count, plural, other {# 件}}",
+    "description": "How many subscriptions go on."
+  },
+  "staff_supporters.program.warning": {
+    "defaultMessage": "{warning, select, no_provider {設定に決済の事業者がありません。プランをオンにするには payments を設定してください。} no_email {サーバーはメールを送りません。プランをオンにするにはメールを設定してください。} provider_mismatch {設定の決済の事業者が、オンにしたときの事業者と違います。プランをオフにしてもう一度オンにするまで、新しい加入と変更を受け付けません。} no_commerce_disclosure {特定商取引法に基づく表記が空です。支払いを受ける前に書いてください。} other {プランの設定を確認してください。}}",
+    "description": "A warning about the supporter program, by what the server reports, with what to do."
+  },
+  "staff_supporters.program.turn_on": {
+    "defaultMessage": "プランをオンにする",
+    "description": "Button that turns the supporter program on."
+  },
+  "staff_supporters.program.turn_off": {
+    "defaultMessage": "プランをオフにする",
+    "description": "Button that turns the supporter program off, shown while no subscription goes on."
+  },
+  "staff_supporters.program.cannot_on": {
+    "defaultMessage": "上の警告に対処するまで、プランはオンにできません。",
+    "description": "In the place of Turn the program on, while the server says the program cannot be turned on."
+  },
+  "staff_supporters.program.cannot_off": {
+    "defaultMessage": "加入が続いている間はプランをオフにできません。すべてのプランを廃止し、加入が終わってからオフにしてください。",
+    "description": "In the place of Turn the program off, while subscriptions go on."
+  },
+  "staff_supporters.program.done.on": {
+    "defaultMessage": "サポーターのプランをオンにしました。",
+    "description": "Said once the supporter program was turned on."
+  },
+  "staff_supporters.program.done.off": {
+    "defaultMessage": "サポーターのプランをオフにしました。",
+    "description": "Said once the supporter program was turned off."
+  },
+  "staff_supporters.program.refused.unavailable": {
+    "defaultMessage": "プランをオンにできません。サーバーに決済の事業者かメールの設定がありません。",
+    "description": "Said when the server refused to turn the program on because the deployment lacks what it needs."
+  },
+  "staff_supporters.program.refused.live": {
+    "defaultMessage": "加入が続いている間はプランをオフにできません。",
+    "description": "Said when the server refused to turn the program off because subscriptions go on."
+  },
+  "staff_supporters.disclosure": {
+    "defaultMessage": "特定商取引法に基づく表記",
+    "description": "Heading of the section of the first page of Supporters about the commerce disclosure (the notice of the Act on Specified Commercial Transactions)."
+  },
+  "staff_supporters.disclosure.published": {
+    "defaultMessage": "特定商取引法に基づく表記を公開しています。",
+    "description": "The commerce disclosure has text and is published at /about/commerce."
+  },
+  "staff_supporters.disclosure.none": {
+    "defaultMessage": "特定商取引法に基づく表記が空のため、何も公開していません。",
+    "description": "The commerce disclosure has no text."
+  },
+  "staff_supporters.disclosure.read": {
+    "defaultMessage": "表記を見る",
+    "description": "Link to the published commerce disclosure, after the sentence that says it is published."
+  },
+  "staff_supporters.disclosure.edit": {
+    "defaultMessage": "特定商取引法に基づく表記を編集する",
+    "description": "Link to the screen where the commerce disclosure is written, for a reader who may change the server's texts."
+  },
+  "staff_supporters.list": {
+    "defaultMessage": "サポーターの一覧",
+    "description": "Heading of the section of the first page of Supporters about who may read the list of supporters."
+  },
+  "staff_supporters.list.loading": {
+    "defaultMessage": "一覧を見られる範囲を読み込んでいます…",
+    "description": "While the setting of who may read the supporter list is read."
+  },
+  "staff_supporters.list.failed": {
+    "defaultMessage": "一覧を見られる範囲を読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When the setting of who may read the supporter list could not be read; Try again follows."
+  },
+  "staff_supporters.list.now": {
+    "defaultMessage": "{audience, select, off {サポーターの一覧は誰も見られません。} signed_in {サポーターの一覧はこのサーバーにログインした人だけが見られます。} other {サポーターの一覧は誰でも見られます。}}サーバーの設定を変える権限を持つ管理者が変更します。",
+    "description": "For a reader who may not change the server's settings: who may read the supporter list now, and who changes it."
+  },
+  "staff_supporters.list.field": {
+    "defaultMessage": "一覧を見られる人",
+    "description": "Label of the choice of who may read the supporter list."
+  },
+  "staff_supporters.list.audience": {
+    "defaultMessage": "{audience, select, off {誰も見られない} signed_in {このサーバーにログインした人} other {誰でも}}",
+    "description": "An option of who may read the supporter list."
+  },
+  "staff_supporters.list.save": {
+    "defaultMessage": "保存",
+    "description": "Button that saves who may read the supporter list."
+  },
+  "staff_supporters.list.done": {
+    "defaultMessage": "{audience, select, off {サポーターの一覧は誰も見られなくなりました。} signed_in {サポーターの一覧はログインした人だけが見られるようになりました。} other {サポーターの一覧は誰でも見られるようになりました。}}",
+    "description": "Said once who may read the supporter list was saved."
+  },
+  "staff_supporters.tips": {
+    "defaultMessage": "チップ",
+    "description": "Heading of the section of the first page of Supporters about tips, one-time payments to the server with nothing in return."
+  },
+  "staff_supporters.tips.loading": {
+    "defaultMessage": "チップを読み込んでいます…",
+    "description": "While the state of the tips is read."
+  },
+  "staff_supporters.tips.failed": {
+    "defaultMessage": "チップを読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When the state of the tips could not be read; Try again follows."
+  },
+  "staff_supporters.tips.state": {
+    "defaultMessage": "状態",
+    "description": "Term of the fact that says whether users can tip now."
+  },
+  "staff_supporters.tips.accepting": {
+    "defaultMessage": "利用者はいまチップを送れます",
+    "description": "The tips are on and users can tip."
+  },
+  "staff_supporters.tips.not_accepting": {
+    "defaultMessage": "オンですが、利用者はいまチップを送れません",
+    "description": "The tips are on, but the server takes none now (the program is off, or the provider takes no one-time payments)."
+  },
+  "staff_supporters.tips.off": {
+    "defaultMessage": "オフ",
+    "description": "The tips are off."
+  },
+  "staff_supporters.tips.limits": {
+    "defaultMessage": "{currency} で設定できる金額",
+    "description": "Term of the fact that gives the smallest and largest amount of a tip the provider allows in a currency ({currency}: a code such as JPY)."
+  },
+  "staff_supporters.tips.range": {
+    "defaultMessage": "{min}〜{max}",
+    "description": "The smallest and largest amount of a tip allowed."
+  },
+  "staff_supporters.tips.no_one_time": {
+    "defaultMessage": "決済の事業者が一回払いを受け付けないため、利用者はチップを送れません。",
+    "description": "Warning when the configured provider takes no one-time payments."
+  },
+  "staff_supporters.tips.limit_reached": {
+    "defaultMessage": "この 1 時間でサーバー全体のチップの開始数の上限に達しました。",
+    "description": "Warning when the server-wide rate limit of tips was reached in the last hour."
+  },
+  "staff_supporters.tips.take": {
+    "defaultMessage": "チップを受け付ける",
+    "description": "Checkbox that turns the tips on."
+  },
+  "staff_supporters.tips.currency": {
+    "defaultMessage": "通貨",
+    "description": "Label of the choice of the tips' currency."
+  },
+  "staff_supporters.tips.amounts": {
+    "defaultMessage": "金額",
+    "description": "Label of the field of the tips' amounts."
+  },
+  "staff_supporters.tips.amounts.hint": {
+    "defaultMessage": "1〜6 個の金額をカンマで区切って",
+    "description": "Line under the field of the tips' amounts."
+  },
+  "staff_supporters.tips.amounts.invalid": {
+    "defaultMessage": "{currency} の金額を 1〜6 個、数字だけでカンマで区切って書いてください。",
+    "description": "Under the field of the tips' amounts when it holds no amount or one that is not a number of the currency."
+  },
+  "staff_supporters.tips.unavailable": {
+    "defaultMessage": "チップをオンにできません。サポーターのプランがオンで、決済の事業者が一回払いを受け付ける必要があります。",
+    "description": "Beside Save the tips when the server refused to turn the tips on."
+  },
+  "staff_supporters.tips.save": {
+    "defaultMessage": "チップを保存",
+    "description": "Button that saves the tips."
+  },
+  "staff_supporters.tips.done.on": {
+    "defaultMessage": "チップを保存しました。",
+    "description": "Said once the tips were turned on or their amounts changed."
+  },
+  "staff_supporters.tips.done.off": {
+    "defaultMessage": "チップをオフにしました。",
+    "description": "Said once the tips were turned off."
+  },
+  "staff_supporters.tips.refused": {
+    "defaultMessage": "{reason, select, count {異なる金額を 1〜6 個にしてください。} currency {すべての金額を 1 つの通貨 (円か米ドル) にしてください。} other {金額はそれぞれ 100 円〜10 万円か 1〜1000 米ドルで、事業者の 1 回の支払いの最低額以上にしてください。}}",
+    "description": "Under the field of the tips' amounts when the server refused them, by the rule they break."
+  },
+  "staff_supporters.payments": {
+    "defaultMessage": "決済の事業者",
+    "description": "Heading of the section of the first page of Supporters about the state of the payment provider of the configuration."
+  },
+  "staff_supporters.payments.loading": {
+    "defaultMessage": "決済の事業者の状態を読み込んでいます…",
+    "description": "While the payment provider's state is read."
+  },
+  "staff_supporters.payments.failed": {
+    "defaultMessage": "決済の事業者の状態を読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When the payment provider's state could not be read; Try again follows."
+  },
+  "staff_supporters.payments.none": {
+    "defaultMessage": "設定に決済の事業者がありません。",
+    "description": "In the payment provider's section when the deployment configures none."
+  },
+  "staff_supporters.payments.provider": {
+    "defaultMessage": "事業者",
+    "description": "Term of the fact that names the payment provider (stripe, payjp)."
+  },
+  "staff_supporters.payments.mode": {
+    "defaultMessage": "モード",
+    "description": "Term of the fact that says whether the provider's keys are test or live keys."
+  },
+  "staff_supporters.payments.zone": {
+    "defaultMessage": "報告のタイムゾーン",
+    "description": "Term of the fact that names the time zone in which the provider's reports date the income."
+  },
+  "staff_supporters.payments.webhook": {
+    "defaultMessage": "最後の webhook の受信",
+    "description": "Term of the fact that says when the provider's last webhook delivery was received."
+  },
+  "staff_supporters.payments.webhook.none": {
+    "defaultMessage": "記録なし",
+    "description": "No webhook delivery is recorded (they are kept 45 days)."
+  },
+  "staff_supporters.payments.reconciliation": {
+    "defaultMessage": "最後の照合",
+    "description": "Term of the fact about the last reconciliation with the payment provider."
+  },
+  "staff_supporters.payments.reconciliation.none": {
+    "defaultMessage": "まだありません",
+    "description": "No reconciliation has run yet."
+  },
+  "staff_supporters.payments.reconciliation.run": {
+    "defaultMessage": "{outcome, select, succeeded {成功} partial {一部完了 (続きを実行中)} other {失敗}} {at}: {checked} 件を確認、{corrected} 件を修正",
+    "description": "The last reconciliation: how it ended, when, and how many subscriptions it read again and corrected."
+  },
+  "staff_supporters.payments.why": {
+    "defaultMessage": "止まった理由",
+    "description": "Term of the fact that says why the last reconciliation stopped."
+  },
+  "staff_supporters.payments.warning": {
+    "defaultMessage": "{warning, select, no_webhook {webhook の受信が記録されていません。事業者の webhook の宛先を確認してください。} reconciliation_corrected {最後の照合が、webhook で直るはずの加入を修正しました。事業者の webhook を確認してください。} duplicate_charge {1 回の支払いによる 2 つ目の加入が、まだ解約と返金をされていません。} other {決済の事業者の設定を確認してください。}}",
+    "description": "A warning about the payment provider, by what the server reports, with what to do."
+  },
+  "staff_supporters.payments.reconcile": {
+    "defaultMessage": "いま照合する",
+    "description": "Button that asks for a reconciliation with the payment provider now."
+  },
+  "staff_supporters.payments.done": {
+    "defaultMessage": "照合を予約しました。",
+    "description": "Said once a reconciliation was queued."
+  },
+  "staff_supporters.payments.too_soon": {
+    "defaultMessage": "この 1 時間にすでに照合しました。次の時間にもう一度試してください。",
+    "description": "Said when the server refused a reconciliation because one ran in the last hour."
+  },
+  "staff_supporters.payments.mode.value": {
+    "defaultMessage": "{mode, select, test {テスト (請求されません)} other {本番}}",
+    "description": "Whether the payment provider's keys are test keys, with which nothing is charged, or live keys."
+  },
+  "staff_supporters.payments.error": {
+    "defaultMessage": "{kind, select, request_cap {要求数の上限に達しました。続きの実行を待つか、次の時間に「いま照合する」を選んでください。} permission {シークレットキーが間違っているか、権限が足りません。設定のキーを確認してください。} not_found {事業者が要求されたものを見つけられませんでした。設定の事業者のアカウントを確認してください。} invalid_request {事業者が要求を断りました。事業者の設定を確認してから、「いま照合する」を選んでください。} throttled {事業者が混み合っていました。次の照合を待つか、次の時間に「いま照合する」を選んでください。} unavailable {事業者が止まっていました。次の照合を待つか、次の時間に「いま照合する」を選んでください。} invalid_signature {署名が一致しませんでした。webhook のシークレットを確認してください。} stale_signature {署名が古すぎました。サーバーの時計を確認してください。} mode_mismatch {キーのモードがアカウントと違います。同じモードのキーを使ってください。} other {事業者の応答を読み取れませんでした。次の時間に「いま照合する」を選んでください。}}",
+    "description": "Why the last reconciliation stopped, with what to do."
+  },
+  "staff_supporters.permission": {
+    "defaultMessage": "{permission, select, view_finance {サーバーの収支を見る} create_custom_emojis {カスタム絵文字を申請する} start_voice_rooms {ボイスチャットのルームを開く} create_invites {人を招待する} keep_posts_longer {削除の上限を超えて投稿を残す} create_articles {記事を書く} create_events {イベントを作る} other {ほかの権限}}",
+    "description": "A permission a supporter plan's role may give, by its name."
+  },
+  "staff_supporters.plan.standing": {
+    "defaultMessage": "{standing, select, retired {廃止} preparing {準備中} hidden {非公開} other {受付中}}",
+    "description": "Where a plan stands: retired; preparing its prices at the provider; hidden from new subscriptions; or taking them."
+  },
+  "staff_supporters.plan.standing_term": {
+    "defaultMessage": "状態",
+    "description": "Term of the fact of where a plan stands."
+  },
+  "staff_supporters.plan.loading": {
+    "defaultMessage": "プランを読み込んでいます…",
+    "description": "While a plan is read."
+  },
+  "staff_supporters.plan.failed": {
+    "defaultMessage": "プランを読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When a plan could not be read; Try again follows."
+  },
+  "staff_supporters.plan.missing": {
+    "defaultMessage": "このプランはありません。存在しないか、アドレスが間違っている可能性があります。",
+    "description": "At the address of a plan the server does not have; the link to the plans follows."
+  },
+  "staff_supporters.plan.prices": {
+    "defaultMessage": "料金",
+    "description": "Term of the fact of a plan's monthly and yearly prices."
+  },
+  "staff_supporters.plan.members_term": {
+    "defaultMessage": "加入者",
+    "description": "Term of the fact of how many subscriptions hold a plan's role."
+  },
+  "staff_supporters.plan.name": {
+    "defaultMessage": "名前",
+    "description": "Label of a plan's name."
+  },
+  "staff_supporters.plan.name.blank": {
+    "defaultMessage": "プランの名前を書いてください。",
+    "description": "Under the name's field when it is empty."
+  },
+  "staff_supporters.plan.description": {
+    "defaultMessage": "説明",
+    "description": "Label of a plan's description."
+  },
+  "staff_supporters.plan.price": {
+    "defaultMessage": "月額",
+    "description": "Label of a plan's monthly price."
+  },
+  "staff_supporters.plan.price.invalid": {
+    "defaultMessage": "{currency} の金額を数字だけで書いてください。",
+    "description": "Under the monthly price when it is no amount of the currency."
+  },
+  "staff_supporters.plan.currency": {
+    "defaultMessage": "通貨",
+    "description": "Label of the choice of a plan's currency."
+  },
+  "staff_supporters.plan.emoji": {
+    "defaultMessage": "毎月のカスタム絵文字の数",
+    "description": "Label of how many custom emoji a plan's members may create each month."
+  },
+  "staff_supporters.plan.rank": {
+    "defaultMessage": "順位",
+    "description": "Label of a plan's order: a higher one is a higher plan."
+  },
+  "staff_supporters.plan.number.blank": {
+    "defaultMessage": "数を書いてください。",
+    "description": "Under a number field of a plan's form when it is empty."
+  },
+  "staff_supporters.plan.visibility": {
+    "defaultMessage": "公開",
+    "description": "Label of whether a plan takes new subscriptions."
+  },
+  "staff_supporters.plan.permissions": {
+    "defaultMessage": "権限",
+    "description": "Label of the permissions of a plan's role, and its fact."
+  },
+  "staff_supporters.plan.permissions.none": {
+    "defaultMessage": "なし",
+    "description": "A plan's role has no permission."
+  },
+  "staff_supporters.plan.retired_at": {
+    "defaultMessage": "廃止",
+    "description": "Term of the fact of when a plan was retired."
+  },
+  "staff_supporters.plan.create": {
+    "defaultMessage": "プランを作成する",
+    "description": "Submit button of a new plan's form."
+  },
+  "staff_supporters.plan.save": {
+    "defaultMessage": "保存",
+    "description": "Submit button of the change of a plan."
+  },
+  "staff_supporters.plan.change": {
+    "defaultMessage": "プランの変更",
+    "description": "Heading of the form that changes a plan."
+  },
+  "staff_supporters.plan.refused.retired": {
+    "defaultMessage": "プランはその間に廃止されたため、変更できません。",
+    "description": "Beside Save when the server refused to change a plan that was retired."
+  },
+  "staff_supporters.plan.done.saved": {
+    "defaultMessage": "プランを保存しました。新しい料金は新しい加入とプランの変更から適用されます。",
+    "description": "Said once a plan was saved."
+  },
+  "staff_supporters.plan.done.retired": {
+    "defaultMessage": "プランを廃止しました。",
+    "description": "Said once a plan was retired."
+  },
+  "staff_supporters.plan.retire": {
+    "defaultMessage": "プランの廃止",
+    "description": "Heading of the section that retires a plan."
+  },
+  "staff_supporters.plan.retire.about": {
+    "defaultMessage": "{count, plural, =0 {廃止すると、新しい加入を受け付けなくなります。} other {廃止すると、新しい加入を受け付けなくなり、# 件の加入は更新されません。}}",
+    "description": "Above Retire the plan…, what retiring does."
+  },
+  "staff_supporters.plan.retire.ask": {
+    "defaultMessage": "プランを廃止…",
+    "description": "Button that asks to retire a plan."
+  },
+  "staff_supporters.plan.retire.confirm": {
+    "defaultMessage": "{name} を廃止しますか？",
+    "description": "Title of the confirmation that retires a plan ({name}: its name)."
+  },
+  "staff_supporters.plan.retire.confirm.about": {
+    "defaultMessage": "{count, plural, =0 {このプランは今後、加入を受け付けません。取り消せません。} other {このプランは今後、加入を受け付けません。# 人の加入者は期間の終わりまで特典が残り、更新はされません。まだ支払われていない加入はすぐに閉じます。加入者には通知が届きます。取り消せません。}}",
+    "description": "Body of the confirmation that retires a plan: what happens to its subscribers."
+  },
+  "staff_supporters.plan.retire.do": {
+    "defaultMessage": "廃止",
+    "description": "Confirmation button that retires a plan."
+  },
+  "staff_supporters.plan.prices.value": {
+    "defaultMessage": "月 {monthly}、年 {yearly} ({discount}% 割引)",
+    "description": "A plan's prices."
+  },
+  "staff_supporters.plan.role": {
+    "defaultMessage": "ロール",
+    "description": "Label of the role a plan is on, its fact and its field. Read by administrators."
+  },
+  "staff_supporters.plan.role.hint": {
+    "defaultMessage": "保持者がなく、利用者の権限だけを持つ、モデレーターより下のロールのキー",
+    "description": "Line under the field of the role's key, for a reader who cannot list the roles. Read by administrators."
+  },
+  "staff_supporters.plan.role.choose": {
+    "defaultMessage": "ロールを選ぶ",
+    "description": "The first option of the choice of a plan's role, while none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.role.none": {
+    "defaultMessage": "プランに使えるロールがありません。先に、利用者の権限だけを持つモデレーターより下のロールを作成してください。",
+    "description": "In the place of the choice of a plan's role when no role qualifies. Read by administrators."
+  },
+  "staff_supporters.plan.role.blank": {
+    "defaultMessage": "プランが与えるロールを選んでください。",
+    "description": "Under the role's field when none is chosen. Read by administrators."
+  },
+  "staff_supporters.plan.discount": {
+    "defaultMessage": "年払いの割引率 (%)",
+    "description": "Label of a plan's discount for paying yearly, in percent."
+  },
+  "staff_supporters.plan.visibility.value": {
+    "defaultMessage": "{visibility, select, hidden {非公開 (新しい加入を受け付けない)} other {公開}}",
+    "description": "An option of a plan's visibility."
+  },
+  "staff_supporters.plan.position": {
+    "defaultMessage": "ロールの位置",
+    "description": "Label of the position of a plan's role, below the moderators. Read by administrators."
+  },
+  "staff_supporters.state": {
+    "defaultMessage": "{state, select, active {有効} canceling {期間の終わりに終了} past_due {支払いの失敗} pending {未払い} lapsed {失効} expired {終了} revoked {返金済み} other {未払いで終了}}",
+    "description": "The state of a subscription to a supporter plan."
+  },
+  "staff_supporters.subscriber_gone": {
+    "defaultMessage": "消去されたアカウント",
+    "description": "In the place of a subscriber's handle when the account was erased."
+  },
+  "staff_supporters.subscription.terms": {
+    "defaultMessage": "{plan}・{interval, select, year {年払い} other {月払い}}",
+    "description": "A subscription's plan and how often it is paid."
+  },
+  "staff_supporters.subscription.until": {
+    "defaultMessage": "{at} まで",
+    "description": "When a subscription's current period ends."
+  },
+  "staff_supporters.subscription.no_period": {
+    "defaultMessage": "期間なし",
+    "description": "A subscription with no period (not paid yet, or closed unpaid)."
+  },
+  "staff_supporters.subscription.title": {
+    "defaultMessage": "{subscriber} の加入",
+    "description": "Title of a subscription's screen."
+  },
+  "staff_supporters.subscription.loading": {
+    "defaultMessage": "加入を読み込んでいます…",
+    "description": "While a subscription is read."
+  },
+  "staff_supporters.subscription.failed": {
+    "defaultMessage": "加入を読み込めませんでした。接続を確認してから、もう一度試してください。",
+    "description": "When a subscription could not be read; Try again follows."
+  },
+  "staff_supporters.subscription.missing": {
+    "defaultMessage": "この加入はありません。アドレスが間違っている可能性があります。",
+    "description": "At the address of a subscription the server does not have; the link to the subscriptions follows."
+  },
+  "staff_supporters.subscription.state": {
+    "defaultMessage": "状態",
+    "description": "Term of the fact of a subscription's state."
+  },
+  "staff_supporters.subscription.plan": {
+    "defaultMessage": "プラン",
+    "description": "Term of the fact of a subscription's plan and period."
+  },
+  "staff_supporters.subscription.price": {
+    "defaultMessage": "料金",
+    "description": "Term of the fact of a subscription's price."
+  },
+  "staff_supporters.subscription.price.value": {
+    "defaultMessage": "{interval, select, year {年} other {月}} {price}",
+    "description": "A subscription's price per period."
+  },
+  "staff_supporters.subscription.started": {
+    "defaultMessage": "開始",
+    "description": "Term of the fact of when a subscription started."
+  },
+  "staff_supporters.subscription.period_ends": {
+    "defaultMessage": "期間の終わり",
+    "description": "Term of the fact of when a subscription's period ends."
+  },
+  "staff_supporters.subscription.grace_ends": {
+    "defaultMessage": "猶予の終わり",
+    "description": "Term of the fact of when a subscription whose payment failed loses its role."
+  },
+  "staff_supporters.subscription.scheduled": {
+    "defaultMessage": "予約された変更",
+    "description": "Term of the fact that a change of plan or period waits for the period's end."
+  },
+  "staff_supporters.subscription.scheduled.value": {
+    "defaultMessage": "期間の終わりに",
+    "description": "When a scheduled change applies."
+  },
+  "staff_supporters.subscription.end": {
+    "defaultMessage": "加入の解約",
+    "description": "Heading of the section that ends a subscription at once."
+  },
+  "staff_supporters.subscription.end.ask": {
+    "defaultMessage": "すぐに解約…",
+    "description": "Button that asks to end a subscription at once."
+  },
+  "staff_supporters.subscription.end.confirm": {
+    "defaultMessage": "{subscriber} の加入をすぐに解約しますか？",
+    "description": "Title of the confirmation that ends a subscription."
+  },
+  "staff_supporters.subscription.end.do": {
+    "defaultMessage": "すぐに解約",
+    "description": "Confirmation button that ends a subscription."
+  },
+  "staff_supporters.subscription.end.about": {
+    "defaultMessage": "解約するとプランのロールはすぐに外れ、請求が止まります。返金はしません。必要なら事業者で返金してください。",
+    "description": "Above End now…, what ending a subscription does. Read by administrators."
+  },
+  "staff_supporters.subscription.end.confirm.about": {
+    "defaultMessage": "ロールはすぐに外れ、返金なしで請求が止まります。取り消せません。",
+    "description": "Body of the confirmation that ends a subscription. Read by administrators."
+  },
+  "staff_supporters.subscription.done.ended": {
+    "defaultMessage": "加入を解約しました。",
+    "description": "Said once a subscription was ended."
+  }
+}
