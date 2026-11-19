@@ -125,79 +125,96 @@ type SuspendImpact struct {
 	Follows, LocalAccounts int
 }
 
+// domainAccounts lists the accounts of a domain, for DomainSuspendImpact. *appaccount.Service
+// implements it.
+type domainAccounts interface {
+	AccountIDsOnDomain(ctx context.Context, domain, after string, limit int) ([]string, error)
+}
+
 // DomainSuspendImpact counts what a suspension of domain, a canonical host
-// (federation.CanonicalHost), would end, for the confirmation before it is issued. It reads every
-// local account and its follows, a page at a time, as SeverDomain does, and changes nothing; a
-// domain with no follows, or a Service without the graph and account modules, counts zeros. It
-// fails with moderation.ErrOwnDomain for this instance's domain.
+// (federation.CanonicalHost), would end, for the confirmation before it is issued. It reads the
+// accounts of the domain and its subdomains and their follows, a page of accounts at a time, so
+// its cost grows with the domain rather than with the instance, and changes nothing; a domain
+// without accounts or follows, or a Service without the graph and account modules, counts zeros.
+// It fails with moderation.ErrOwnDomain for this instance's domain.
 func (s *Service) DomainSuspendImpact(ctx context.Context, domain string) (SuspendImpact, error) {
 	if s.ownDomain(domain) {
 		return SuspendImpact{}, fmt.Errorf("%w: %q", moderation.ErrOwnDomain, domain)
 	}
-	var out SuspendImpact
-	follows, ok := s.d.Follows.(ActiveFollows)
-	if !ok || s.d.Directory == nil {
-		return out, nil
+	follows, okFollows := s.d.Follows.(ActiveFollows)
+	accounts, okAccounts := s.d.Directory.(domainAccounts)
+	domains, okDomains := s.d.Directory.(accountDomainsBatch)
+	if !okFollows || !okAccounts || !okDomains {
+		return SuspendImpact{}, nil
 	}
+	var out SuspendImpact
+	locals := map[string]bool{}
 	after := ""
 	for {
-		locals, err := s.d.Directory.LocalAccountIDs(ctx, after, scopeImpactPage)
+		remotes, err := accounts.AccountIDsOnDomain(ctx, domain, after, scopeImpactPage)
 		if err != nil {
 			return SuspendImpact{}, err
 		}
-		if len(locals) == 0 {
+		if len(remotes) == 0 {
 			break
 		}
 		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
-			return s.countSuspendImpact(ctx, tx, follows, domain, locals, &out)
+			return countSuspendImpact(ctx, tx, follows, domains, remotes, &out, locals)
 		})
 		if err != nil {
 			return SuspendImpact{}, err
 		}
-		if len(locals) < scopeImpactPage {
+		if len(remotes) < scopeImpactPage {
 			break
 		}
-		after = locals[len(locals)-1]
+		after = remotes[len(remotes)-1]
 	}
+	out.LocalAccounts = len(locals)
 	return out, nil
 }
 
-// countSuspendImpact adds to out the accepted follows of locals that a suspension of domain would end.
-func (s *Service) countSuspendImpact(ctx context.Context, tx uow.Tx, follows ActiveFollows, domain string, locals []string, out *SuspendImpact) error {
-	fs, err := follows.ActiveFollowsOf(ctx, tx, locals)
+// countSuspendImpact adds to out the accepted follows between remotes, accounts of the suspended
+// domain, and local accounts, and to locals those local accounts. A follow between an account of
+// the domain and another account of it, or of another server, is not counted.
+func countSuspendImpact(ctx context.Context, tx uow.Tx, follows ActiveFollows, domains accountDomainsBatch, remotes []string, out *SuspendImpact, locals map[string]bool) error {
+	fs, err := follows.ActiveFollowsOf(ctx, tx, remotes)
 	if err != nil || len(fs) == 0 {
 		return err
 	}
+	onDomain := make(map[string]bool, len(remotes))
+	for _, id := range remotes {
+		onDomain[id] = true
+	}
 	var others []string
 	for _, f := range fs {
-		others = append(others, f.FollowerAccountID, f.FolloweeAccountID)
+		for _, id := range []string{f.FollowerAccountID, f.FolloweeAccountID} {
+			if !onDomain[id] {
+				others = append(others, id)
+			}
+		}
+	}
+	if len(others) == 0 {
+		return nil
 	}
 	slices.Sort(others)
-	onDomain, err := s.d.Directory.AccountsOnDomain(ctx, tx, domain, slices.Compact(others))
-	if err != nil || len(onDomain) == 0 {
+	domainOf, err := domains.AccountDomainsTx(ctx, tx, slices.Compact(others))
+	if err != nil {
 		return err
 	}
-	isLocal := make(map[string]bool, len(locals))
-	for _, l := range locals {
-		isLocal[l] = true
-	}
-	covered := make(map[string]bool, len(onDomain))
-	for _, id := range onDomain {
-		covered[id] = true
-	}
-	affected := map[string]bool{}
+	isLocal := func(id string) bool { d, ok := domainOf[id]; return ok && d == "" }
 	for _, f := range fs {
+		var local string
 		switch {
-		case isLocal[f.FollowerAccountID] && covered[f.FolloweeAccountID]:
-			affected[f.FollowerAccountID] = true
-		case isLocal[f.FolloweeAccountID] && covered[f.FollowerAccountID]:
-			affected[f.FolloweeAccountID] = true
+		case onDomain[f.FollowerAccountID] && isLocal(f.FolloweeAccountID):
+			local = f.FolloweeAccountID
+		case onDomain[f.FolloweeAccountID] && isLocal(f.FollowerAccountID):
+			local = f.FollowerAccountID
 		default:
 			continue
 		}
 		out.Follows++
+		locals[local] = true
 	}
-	out.LocalAccounts += len(affected)
 	return nil
 }
 
