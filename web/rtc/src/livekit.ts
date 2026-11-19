@@ -296,7 +296,16 @@ class LiveKitSession implements RoomSession {
   setMicrophone(on: boolean): Promise<void> {
     this.#micOn = on;
     this.#reportTalking();
-    const change = this.#microphoneChanges.then(() => this.#applyMicrophone());
+    const change = this.#microphoneChanges
+      .then(() => this.#applyMicrophone())
+      .catch((error: unknown) => {
+        // Refused (by the browser or LiveKit): the microphone is off, unless a later call asked again.
+        if (on && this.#micOn) {
+          this.#micOn = false;
+          this.#reportTalking();
+        }
+        throw error;
+      });
     this.#microphoneChanges = change.catch(() => undefined);
     return change;
   }
