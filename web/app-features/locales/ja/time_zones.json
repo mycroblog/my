@@ -1,0 +1,10 @@
+{
+  "time_zones.option": {
+    "defaultMessage": "{place} ({offset})",
+    "description": "A time zone in a choice of the time zone (the settings' zone of the app, an event's zone), under the name of its part of the world (time_zones.region). place is the zone's place as the time zone database names it, in English (Tokyo, Buenos Aires); offset is how far its clocks are from UTC now, as the reader's language writes it (GMT+9)."
+  },
+  "time_zones.region": {
+    "defaultMessage": "{region, select, Africa {アフリカ} America {南北アメリカ} Antarctica {南極} Arctic {北極} Asia {アジア} Atlantic {大西洋} Australia {オーストラリア} Europe {ヨーロッパ} Indian {インド洋} Pacific {太平洋} other {その他}}",
+    "description": "The name of a group of time zones in a choice of the time zone (the settings' zone of the app, an event's zone): the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); the three oceans are named as oceans (Atlantic Ocean, Indian Ocean, Pacific Ocean). The choice offers no zone of another part, so other shows nowhere today."
+  }
+}

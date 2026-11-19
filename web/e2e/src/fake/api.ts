@@ -2062,6 +2062,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     supporter_list_visibility: "off",
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: o.voiceStarters ?? "everyone",
+    event_creators: o.eventCreators ?? "everyone",
     full_text_search:
       o.search?.posts === true
         ? { available: true, visibilities: ["public", "local"] }

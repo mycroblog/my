@@ -391,6 +391,22 @@
     "defaultMessage": "イベント",
     "description": "The heading of an event's page until its title is known, or when it is not shown to the reader."
   },
+  "app.event_new": {
+    "defaultMessage": "イベントを作成",
+    "description": "The heading and the document's title of the form that creates an event."
+  },
+  "app.event_edit": {
+    "defaultMessage": "イベントを変更",
+    "description": "The heading and the document's title of the form that changes an event."
+  },
+  "app.event_invitations": {
+    "defaultMessage": "招待",
+    "description": "The heading and the document's title of the screen of an event's invitations."
+  },
+  "app.event_coorganizers": {
+    "defaultMessage": "共同主催者",
+    "description": "The heading and the document's title of the screen of an event's co-organizers."
+  },
   "app.event_date_polled": {
     "defaultMessage": "日程を調整中",
     "description": "In place of an event's time in the column beside the timeline, while its organizers poll its date."

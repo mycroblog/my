@@ -9,7 +9,7 @@ import { useId, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
-import { Box, Layers, Row, Stack } from "./layout";
+import { Box, Layers, Pin, Row, Stack } from "./layout";
 
 const choice = tv({
   slots: {
@@ -21,7 +21,8 @@ const choice = tv({
       "cursor-pointer has-[input:enabled]:hover:bg-surface-hover has-[input:focus-visible]:shadow-focus",
       "has-[input:disabled]:cursor-default",
     ],
-    input: "sr-only",
+    // Over the whole of its row and not drawn: a press or a click anywhere on the option lands on the control itself.
+    input: "cursor-pointer opacity-0 disabled:cursor-default",
     label: "[overflow-wrap:anywhere]",
     // An option as it is written: its text on the surface it stands on, the ring around it on focus.
     field: [
@@ -91,7 +92,8 @@ export type ChoiceItem = { key: string; label: ReactNode };
 
 /**
  * The options open to a choice, named `label`: a radio or a checkbox each, as a pressable row headed by its mark;
- * `chosen` are the indexes chosen so far, and `disabled` holds them (an answer in flight).
+ * `chosen` are the indexes chosen so far, and `disabled` holds them (an answer in flight). With `id`, the choice as a
+ * whole takes the focus when what holds it says it is refused (`focusRefusedField`), its error among `describedBy`.
  */
 export function ChoiceList({
   label,
@@ -100,6 +102,8 @@ export function ChoiceList({
   chosen,
   onChange,
   disabled = false,
+  id,
+  describedBy,
 }: {
   label: string;
   multiple: boolean;
@@ -107,25 +111,40 @@ export function ChoiceList({
   chosen: readonly number[];
   onChange: (chosen: number[]) => void;
   disabled?: boolean;
+  id?: string | undefined;
+  describedBy?: string | undefined;
 }) {
   const s = choice();
   const name = useId();
   return (
-    <Stack role={multiple ? "group" : "radiogroup"} aria-label={label} className={s.options()}>
+    <Stack
+      id={id}
+      tabIndex={id === undefined ? undefined : -1}
+      role={multiple ? "group" : "radiogroup"}
+      aria-label={label}
+      aria-describedby={describedBy}
+      className={s.options()}
+    >
       {items.map((item, i) => {
         const on = chosen.includes(i);
         return (
           <Row key={item.key} as="label" anchor="isolate" align="start" gap="entry-caption" className={s.row()}>
-            <input
-              className={s.input()}
-              type={multiple ? "checkbox" : "radio"}
-              name={name}
-              checked={on}
-              disabled={disabled}
-              onChange={() => {
-                if (!multiple) onChange([i]);
-                else onChange(on ? chosen.filter((c) => c !== i) : [...chosen, i].sort((a, b) => a - b));
-              }}
+            <Pin
+              cover
+              full="both"
+              as={
+                <input
+                  className={s.input()}
+                  type={multiple ? "checkbox" : "radio"}
+                  name={name}
+                  checked={on}
+                  disabled={disabled}
+                  onChange={() => {
+                    if (!multiple) onChange([i]);
+                    else onChange(on ? chosen.filter((c) => c !== i) : [...chosen, i].sort((a, b) => a - b));
+                  }}
+                />
+              }
             />
             <MarkPlace>
               <ChoiceMark multiple={multiple} on={on} />

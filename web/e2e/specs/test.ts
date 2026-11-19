@@ -29,6 +29,7 @@
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
 //   - `fresh.event(organizer, { title, inDays?, candidates? })` a new event for every local user, two hours long,
 //     `inDays` from now or a date poll of the days given; it returns `{ id, title }`.
+//   - `fresh.evenings(inDays)` the evenings (18:00 of the test's zone) that many days from now, for a form of dates.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
 //   - `fresh.moderate(staff, target, { kind, publicReason, expiresIn? })` a moderation action of `staff`, a fresh person

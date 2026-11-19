@@ -3,8 +3,76 @@
 // An event's page: the reader's answer to it and to the dates of its poll, each saved at once (the action returns once
 // the server answered), who is going, and the calendar file it downloads.
 
-import type { Download, Locator, Page } from "@playwright/test";
+import { expect, type Download, type Locator, type Page } from "@playwright/test";
 import { answered } from "./write";
+
+/** The form that creates an event, reached from the list's Create an event. */
+export class EventForm {
+  readonly page: Page;
+
+  constructor(page: Page) {
+    this.page = page;
+  }
+
+  /** Opens the list of events and follows its Create an event. */
+  async openFromList(): Promise<void> {
+    await this.page.goto("/events");
+    await this.page.getByRole("link", { name: "Create an event", exact: true }).click();
+    await expect(this.title).toBeVisible();
+  }
+
+  get title(): Locator {
+    return this.page.getByRole("main").getByRole("textbox", { name: "Title", exact: true });
+  }
+
+  /** The choice of polling the date in place of a fixed one. */
+  get pollDates(): Locator {
+    return this.page.getByRole("main").getByRole("radio", { name: /^Poll for a date: .+$/ });
+  }
+
+  /** Chooses to poll the date. */
+  async choosePoll(): Promise<void> {
+    await this.pollDates.click();
+    await expect(this.pollDates).toBeChecked();
+  }
+
+  get voice(): Locator {
+    return this.page
+      .getByRole("main")
+      .getByRole("checkbox", { name: "In a voice chat room that opens when the event starts", exact: true });
+  }
+
+  get inPerson(): Locator {
+    return this.page.getByRole("main").getByRole("checkbox", { name: "In person", exact: true });
+  }
+
+  get placeName(): Locator {
+    return this.page.getByRole("main").getByRole("textbox", { name: "Name", exact: true });
+  }
+
+  get address(): Locator {
+    return this.page.getByRole("main").getByRole("textbox", { name: "Address", exact: true });
+  }
+
+  get submit(): Locator {
+    return this.page.getByRole("main").getByRole("button", { name: "Create the event", exact: true });
+  }
+
+  /**
+   * Sets the poll's first dates the form offers to start at `starts`, two hours long each, as the browser's zone reads
+   * them (the specs and the browser share a zone).
+   */
+  async pollDatesAt(starts: readonly Date[]): Promise<void> {
+    const p = (v: number) => String(v).padStart(2, "0");
+    const local = (d: Date) =>
+      `${String(d.getFullYear())}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    for (const [i, start] of starts.entries()) {
+      const group = this.page.getByRole("main").getByRole("group", { name: `Date ${String(i + 1)}`, exact: true });
+      await group.getByLabel("Starts", { exact: true }).fill(local(start));
+      await group.getByLabel("Ends", { exact: true }).fill(local(new Date(start.getTime() + 2 * 3_600_000)));
+    }
+  }
+}
 
 export class EventPage {
   readonly page: Page;
@@ -61,6 +129,43 @@ export class EventPage {
   dateAnswers(start: Date): Locator {
     const day = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(start);
     return this.poll.getByRole("radiogroup", { name: new RegExp(`^\\w+, ${day}, .* Your answer$`) });
+  }
+
+  /**
+   * Confirms the poll's date that starts at `start` from the menu at the end of its row, asked first, once the server
+   * confirmed it.
+   */
+  async confirmDate(start: Date): Promise<void> {
+    // Its menu is named by its date, as the browser's zone shows it ("Options for Mon, Nov 23, 6:00 – 8:00 PM").
+    const day = new Intl.DateTimeFormat("en", { month: "short", day: "numeric" }).format(start);
+    await this.poll.getByRole("button", { name: new RegExp(`^Options for \\w+, ${day}, .+$`) }).click();
+    await this.page.getByRole("menuitem", { name: "Confirm this date…", exact: true }).click();
+    await answered(
+      this.page,
+      { methods: ["POST"], path: /\/api\/v1\/events\/[^/]+\/candidates\/[^/]+\/confirm$/ },
+      () => this.page.getByRole("alertdialog").getByRole("button", { name: "Confirm", exact: true }).click(),
+    );
+  }
+
+  /** Approves the attendee of `name`, waiting for approval, by the Approve of their row, once the server approved them. */
+  async approve(name: string): Promise<void> {
+    await answered(this.page, { methods: ["PUT"], path: /\/api\/v1\/events\/[^/]+\/attendees\/[^/]+\/approval$/ }, () =>
+      this.page
+        .getByRole("main")
+        .getByRole("button", { name: `Approve ${name}`, exact: true })
+        .click(),
+    );
+  }
+
+  /** Cancels the event from its menu with `note`, asked first, once the server cancelled it. */
+  async cancel(note: string): Promise<void> {
+    await this.page.getByRole("main").getByRole("button", { name: "Manage the event", exact: true }).click();
+    await this.page.getByRole("menuitem", { name: "Cancel the event…", exact: true }).click();
+    const dialog = this.page.getByRole("dialog", { name: "Cancel the event?", exact: true });
+    await dialog.getByRole("textbox").fill(note);
+    await answered(this.page, { methods: ["POST"], path: /\/api\/v1\/events\/[^/]+\/cancel$/ }, () =>
+      dialog.getByRole("button", { name: "Cancel the event", exact: true }).click(),
+    );
   }
 
   /** Answers the poll's date that starts at `start` `vote` (Can go, Maybe, Cannot go), once the server saved it. */

@@ -47,7 +47,7 @@ import type { SettingsEntryProps } from "./entries";
 import { languageOptions, ownName, withLanguage } from "./languages";
 import { ReadingNotice } from "./parts";
 import { useSaving } from "./saving";
-import { timeZoneOptions, withTimeZone } from "./time-zones";
+import { timeZoneOptions, withTimeZone } from "../time-zones";
 
 type T = ReturnType<typeof stringsIn>["t"];
 

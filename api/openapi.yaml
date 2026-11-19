@@ -24188,6 +24188,7 @@ components:
         - supporter_list_visibility
         - voice_enabled
         - voice_room_starters
+        - event_creators
         - full_text_search
         - translation
         - single_user
@@ -24308,6 +24309,14 @@ components:
             Who may open voice chat rooms: `everyone` (every local user who is not limited) or
             `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the
             voice chat is off.
+          type: string
+          enum:
+            - everyone
+            - permitted
+        event_creators:
+          description: |
+            Who may create events: `everyone` (every local user who is not limited) or `permitted`
+            (only the users whose roles have `create_events`).
           type: string
           enum:
             - everyone

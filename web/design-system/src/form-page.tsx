@@ -526,6 +526,33 @@ export function focusRefusedField(id: string): void {
   });
 }
 
+/**
+ * The label of a field that has none of its own (a date and a time, a choice from a list, a number), in a field's
+ * label style, the same as a `TextField`'s: `htmlFor` names the control it labels.
+ */
+export function FieldLabel({ htmlFor, id, children }: { htmlFor: string; id?: string | undefined; children: string }) {
+  return (
+    <label id={id} htmlFor={htmlFor} className={form().label()}>
+      {children}
+    </label>
+  );
+}
+
+/**
+ * The fields that belong to the choice right above them (the name and the address of a place in person, under its
+ * checkbox): set in from the choice's start behind a line, so that they read as its own, one field's gap apart.
+ */
+export function NestedFields({ children }: { children: ReactNode }) {
+  return (
+    <Stack
+      gap="form-page-field-gap"
+      className="border-s-[length:var(--content-quote-bar)] border-s-quote-bar ps-form-page-indent"
+    >
+      {children}
+    </Stack>
+  );
+}
+
 /** A field's error, right under what it is about. */
 export function FieldError({ id, children }: { id?: string | undefined; children: string }) {
   return (

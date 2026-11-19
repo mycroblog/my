@@ -11,10 +11,12 @@
 // fetched and handed on as a file to save, never linked. The refusals the server names are told apart by kind.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { viewerQuery } from "./accounts";
 import { whileOpen, type AppData } from "./app-data";
 import type { ServerEvent } from "./around";
 import type { SavedFile } from "./exports";
 import { inOrder } from "./in-order";
+import { instanceQuery } from "./instance";
 import { pagedQuery, usePagedList, wholeList, type Page, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
 
@@ -1006,6 +1008,11 @@ export type EventWrites = {
   readonly addCandidate: (candidate: EventCandidateCreate) => Promise<EventCandidate>;
   readonly withdrawCandidate: (candidateId: string) => Promise<void>;
   readonly confirmCandidate: (candidateId: string) => Promise<ServerEvent>;
+  /**
+   * Reads the event, its dates and its attendees again: after a refusal that says they changed under the reader (a
+   * date confirmed, the event cancelled, an attendee who answered otherwise).
+   */
+  readonly reread: () => void;
 };
 
 /** The writes of the event `id`, from a screen. */
@@ -1024,7 +1031,58 @@ export function useEventWrites(id: string): EventWrites {
     addCandidate: (candidate) => addEventCandidate(data, id, candidate),
     withdrawCandidate: (candidateId) => withdrawEventCandidate(data, id, candidateId),
     confirmCandidate: (candidateId) => confirmEventCandidate(data, id, candidateId),
+    reread: () => {
+      for (const { queryKey } of [
+        eventQuery(data, id),
+        eventCandidatesQuery(data, id),
+        { queryKey: eventAttendeesQuery(data, id).queryKey },
+      ])
+        void data.queryClient.invalidateQueries({ queryKey });
+    },
   };
+}
+
+/**
+ * Whether the reader may create events (FR-940, ADR-0161 §3): the server lets every local account create one
+ * (`event_creators` is `everyone`) or the reader's roles have `create_events`, and no moderator limited the reader's
+ * account (a limit makes every post of theirs followers-only, which their posting limits say). The server checks the
+ * rest as the event is created.
+ */
+export type MayCreateEvents = {
+  /** Whether the reader may; undefined until the server said what it is from (the instance and the reader's account). */
+  readonly may: boolean | undefined;
+  /** What it is from could not be read: `retry` reads it again. */
+  readonly failed: boolean;
+  readonly retry: () => void;
+};
+
+/** Whether the reader may create events, for a screen (`MayCreateEvents`). */
+export function useMayCreateEvents(): MayCreateEvents {
+  const data = useAppData();
+  const instance = useQuery(instanceQuery(data));
+  const viewer = useQuery(viewerQuery(data));
+  const retry = () => {
+    if (instance.data === undefined) void instance.refetch();
+    if (viewer.data === undefined) void viewer.refetch();
+  };
+  if (instance.data === undefined || viewer.data === undefined)
+    return {
+      may: undefined,
+      failed: (instance.data === undefined && instance.isError) || (viewer.data === undefined && viewer.isError),
+      retry,
+    };
+  const may =
+    viewer.data.posting.visibility_ceiling === "public" &&
+    (instance.data.event_creators === "everyone" || viewer.data.permissions.includes("create_events"));
+  return { may, failed: false, retry };
+}
+
+/** What the form that creates an event waits for: the instance and the reader's account, which say whether they may. */
+export async function loadMayCreateEvents(data: AppData): Promise<void> {
+  await Promise.all([
+    data.queryClient.query({ ...instanceQuery(data), staleTime: Infinity }).catch(() => undefined),
+    data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined),
+  ]);
 }
 
 /** Creates an event from a screen (`createEvent`). */

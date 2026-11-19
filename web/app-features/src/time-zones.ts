@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The time zones the settings offer (FR-007, ADR-0009 §3): the platform's, by their names in the time zone database
-// (Asia/Tokyo), under the part of the world each is in, each as its place and how far its clocks are from UTC now;
-// UTC itself first, apart. The database names its places in English alone, so a place reads the same in every
-// language.
+// The time zones a choice offers (the settings' zone of the app, FR-007, ADR-0009 §3; an event's zone, ADR-0161 §5):
+// the platform's, by their names in the time zone database (Asia/Tokyo), under the part of the world each is in, each
+// as its place and how far its clocks are from UTC now; UTC itself first, apart. The database names its places in
+// English alone, so a place reads the same in every language.
 
 import { dateFormat, type SelectGroup, type SelectOption } from "@my/design-system";
-import type { stringsIn } from "../locale";
+import type { stringsIn } from "./locale";
 
 type T = ReturnType<typeof stringsIn>["t"];
 
@@ -46,7 +46,7 @@ function optionOf(zone: string, locale: string, t: T, now: Date): SelectOption {
   const offset = offsetOf(zone, locale, now);
   return {
     value: zone,
-    label: offset === undefined ? place : t("settings.display.time_zone.option", { place, offset }),
+    label: offset === undefined ? place : t("time_zones.option", { place, offset }),
   };
 }
 
@@ -73,7 +73,7 @@ export function timeZoneOptions(locale: string, t: T): readonly (SelectOption | 
     options = [
       { value: utc, label: utc },
       ...[...groups].map(([region, zones]) => ({
-        label: t("settings.display.time_zone.region", { region }),
+        label: t("time_zones.region", { region }),
         options: zones,
       })),
     ];

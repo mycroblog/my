@@ -2993,6 +2993,24 @@ func (e InstanceArticleAuthoring) Valid() bool {
 	}
 }
 
+// Defines values for InstanceEventCreators.
+const (
+	InstanceEventCreatorsEveryone  InstanceEventCreators = "everyone"
+	InstanceEventCreatorsPermitted InstanceEventCreators = "permitted"
+)
+
+// Valid indicates whether the value is a known member of the InstanceEventCreators enum.
+func (e InstanceEventCreators) Valid() bool {
+	switch e {
+	case InstanceEventCreatorsEveryone:
+		return true
+	case InstanceEventCreatorsPermitted:
+		return true
+	default:
+		return false
+	}
+}
+
 // Defines values for InstanceVoiceRoomStarters.
 const (
 	InstanceVoiceRoomStartersEveryone  InstanceVoiceRoomStarters = "everyone"
@@ -12581,6 +12599,10 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
+	// EventCreators Who may create events: `everyone` (every local user who is not limited) or `permitted`
+	// (only the users whose roles have `create_events`).
+	EventCreators InstanceEventCreators `json:"event_creators"`
+
 	// ExternalReviewScope The settings that narrow what the decision hooks in use send to the external review, which the
 	// information page states. Each field is present only while its hook is in use.
 	ExternalReviewScope *InstanceExternalReviewScope `json:"external_review_scope,omitempty"`
@@ -12772,6 +12794,10 @@ type Instance struct {
 // InstanceArticleAuthoring Who may write new articles (`createArticle`): `everyone` (every local user who is not
 // limited) or `permission` (only the users whose roles have `create_articles`). Always given.
 type InstanceArticleAuthoring string
+
+// InstanceEventCreators Who may create events: `everyone` (every local user who is not limited) or `permitted`
+// (only the users whose roles have `create_events`).
+type InstanceEventCreators string
 
 // InstanceVoiceRoomStarters Who may open voice chat rooms: `everyone` (every local user who is not limited) or
 // `permitted` (only the users whose roles have `start_voice_rooms`). `permitted` while the

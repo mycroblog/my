@@ -15,7 +15,11 @@ import { Box, Pin, Row, type Gap, type RowProps } from "./layout";
 import { usePreviewState } from "./preview";
 
 export type ButtonKind = "primary" | "secondary" | "quiet";
-export type ButtonSize = "timeline" | "form";
+/**
+ * Compact in a timeline, roomier in a form, or a timeline's words in a finger's target at every pointer (`target`: an
+ * action of a row or of a screen's head that a mouse presses too, Manage the event, a list's Revoke).
+ */
+export type ButtonSize = "timeline" | "form" | "target";
 
 export type ButtonProps = Omit<AriaButtonProps, "className" | "style" | "render" | "isPending" | "children"> & {
   /** The primary action of a view (one at most), a secondary one, or a quiet one such as Cancel. */
@@ -111,6 +115,7 @@ const button = tv({
     size: {
       timeline: { base: "min-h-control-timeline px-control-timeline-inline py-control-timeline-block" },
       form: { base: "min-h-control-form px-control-form-inline py-control-form-block" },
+      target: { base: "min-h-icon-button-touch px-control-timeline-inline py-control-timeline-block" },
       icon: { base: "h-control-timeline px-icon-button-inline py-0 whitespace-nowrap" },
       // A glyph alone that is a finger's target at every pointer: the action of a row of a table.
       square: { base: "size-icon-button-touch px-0 py-0 whitespace-nowrap" },

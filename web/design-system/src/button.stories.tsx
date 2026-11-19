@@ -133,6 +133,8 @@ function VariantSheet({ scheme }: { scheme: Scheme }) {
       <h4 style={heading}>Timeline size</h4>
       <Row size="timeline" lang="en" />
       <Row size="timeline" lang="ja" />
+      <h4 style={heading}>Target size: a finger's target at every pointer</h4>
+      <Row size="target" lang="en" />
       <h4 style={heading}>Form size, next to a text field</h4>
       <Row size="form" lang="en" field />
       <Row size="form" lang="ja" field />

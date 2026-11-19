@@ -215,14 +215,6 @@
     "defaultMessage": "タイムゾーン",
     "description": "The label of the choice of the time zone the app shows dates and times in, on the Display and posting page of the settings: first Same as the browser (settings.display.browser), then the time zones."
   },
-  "settings.display.time_zone.region": {
-    "defaultMessage": "{region, select, Africa {アフリカ} America {南北アメリカ} Antarctica {南極} Arctic {北極} Asia {アジア} Atlantic {大西洋} Australia {オーストラリア} Europe {ヨーロッパ} Indian {インド洋} Pacific {太平洋} other {その他}}",
-    "description": "The name of a group of time zones in the choice of the time zone, on the Display and posting page of the settings: the part of the world its places are in. region is the first part of the zones' names in the time zone database (Asia of Asia/Tokyo); the three oceans are named as oceans (Atlantic Ocean, Indian Ocean, Pacific Ocean). The choice offers no zone of another part, so other shows nowhere today; the format needs the branch."
-  },
-  "settings.display.time_zone.option": {
-    "defaultMessage": "{place} ({offset})",
-    "description": "A time zone in the choice of the time zone, under the name of its part of the world (settings.display.time_zone.region). place is the zone's place as the time zone database names it, in English (Tokyo, Buenos Aires); offset is how far its clocks are from UTC now, as the reader's language writes it (GMT+9)."
-  },
   "settings.display.link_cards": {
     "defaultMessage": "投稿のリンクのプレビュー",
     "description": "The label of the choice of how large the card of a link in a post is (the page's picture, title and description), on the Display and posting page of the settings: Large or Small."

@@ -15488,6 +15488,12 @@ export interface components {
              * @enum {string}
              */
             voice_room_starters: "everyone" | "permitted";
+            /**
+             * @description Who may create events: `everyone` (every local user who is not limited) or `permitted`
+             *     (only the users whose roles have `create_events`).
+             * @enum {string}
+             */
+            event_creators: "everyone" | "permitted";
             full_text_search: components["schemas"]["InstanceFullTextSearch"];
             theme?: components["schemas"]["InstanceTheme"];
             icon?: components["schemas"]["InstanceBrandImage"];
