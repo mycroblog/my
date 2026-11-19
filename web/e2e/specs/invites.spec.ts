@@ -26,7 +26,8 @@ test("an administrator creates an invite in the settings, a person signs up with
   await invites.menuRow.click();
   await expect(invites.heading).toBeVisible();
 
-  const made = await invites.createOne();
+  // The number of people is typed, which reaches the field's live announcer under the served policy's Trusted Types.
+  const made = await invites.createOne(1);
   await expect(invites.created).toBeVisible();
   await expect(invites.link).toHaveText(made.url);
   await invites.finish();

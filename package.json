@@ -10,5 +10,8 @@
     "oxlint": "1.92.0",
     "oxlint-tsgolint": "7.0.2006",
     "typescript": "7.0.2"
+  },
+  "patchedDependencies": {
+    "react-aria@3.53.1": "patches/react-aria@3.53.1.patch"
   }
 }
