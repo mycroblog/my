@@ -367,29 +367,39 @@ func TestListDomainActions(t *testing.T) {
 	}
 }
 
+// newReportReaderEnv is newModerationEnv where bob, who no report is about, also holds every
+// permission and reads the reports with the bob-admin token.
+func newReportReaderEnv(t *testing.T) (*authEnv, *fakeModeration) {
+	t.Helper()
+	return newModerationEnvWith(t, func(o *clientapi.Options) {
+		o.Permissions = fakePermissions{userOf(aliceAccountID): identity.AllPermissions(), userOf(bobAccountID): identity.AllPermissions()}
+	})
+}
+
 func TestListAndGetReports(t *testing.T) {
-	e, f := newModerationEnv(t)
-	res := e.sendJSON(t, http.MethodGet, "/admin/reports?limit=2", "admin-read", "")
+	e, f := newReportReaderEnv(t)
+	res := e.sendJSON(t, http.MethodGet, "/admin/reports?limit=2", "bob-admin", "")
 	page := decodeJSON[clientapi.AdminReportPage](t, res)
 	if res.StatusCode != http.StatusOK || len(page.Items) != 2 || page.Items[0].Id != reportThree || page.Items[1].Id != reportTwo || page.NextCursor == nil {
 		t.Fatalf("first page = %d %+v", res.StatusCode, page)
 	}
 	two := page.Items[1]
 	if two.State != clientapi.AdminReportStateOpen || two.Outcome != nil || two.AssigneeAccountId != nil || two.Uri == nil ||
-		two.ReporterAccount == nil || two.ReporterAccount.Acct != "remote.example@remote.example" ||
+		two.ReporterAccountId == nil || *two.ReporterAccountId != reporterAccountID || two.ReporterAccount == nil || two.ReporterAccount.Acct != "remote.example@remote.example" ||
 		two.TargetAccount == nil || two.TargetAccount.Username != "alice" || len(two.StatusIds) != 1 ||
 		two.Category != clientapi.ReportCategoryOther || !two.StateChangedAt.Equal(two.FiledAt) {
 		t.Errorf("report = %+v", two)
 	}
-	res = e.sendJSON(t, http.MethodGet, "/admin/reports?limit=2&cursor="+*page.NextCursor, "admin-read", "")
+	res = e.sendJSON(t, http.MethodGet, "/admin/reports?limit=2&cursor="+*page.NextCursor, "bob-admin", "")
 	if rest := decodeJSON[clientapi.AdminReportPage](t, res); len(rest.Items) != 1 || rest.Items[0].Id != reportOne || rest.NextCursor != nil {
 		t.Errorf("second page = %+v", rest)
 	}
 
 	// A report whose reporter is gone presents it by ID alone.
 	f.reports[0].Report.ReporterAccountID = "01890a5d-ac96-774b-bcce-b302099a5999"
-	res = e.sendJSON(t, http.MethodGet, "/admin/reports/"+reportOne, "admin-read", "")
-	if one := decodeJSON[clientapi.AdminReport](t, res); res.StatusCode != http.StatusOK || one.ReporterAccount != nil || one.TargetAccount == nil {
+	res = e.sendJSON(t, http.MethodGet, "/admin/reports/"+reportOne, "bob-admin", "")
+	if one := decodeJSON[clientapi.AdminReport](t, res); res.StatusCode != http.StatusOK || one.ReporterAccount != nil ||
+		one.ReporterAccountId == nil || one.TargetAccount == nil {
 		t.Errorf("report without its reporter = %d %+v", res.StatusCode, one)
 	}
 	res = e.sendJSON(t, http.MethodGet, "/admin/reports/01890a5d-ac96-774b-bcce-b302099a4999", "admin-read", "")
@@ -399,6 +409,45 @@ func TestListAndGetReports(t *testing.T) {
 	res = e.send(t, http.MethodGet, "/admin/reports?state=closed", "admin-read", "")
 	if res.StatusCode != http.StatusBadRequest {
 		t.Errorf("?state=closed = %d, want 400", res.StatusCode)
+	}
+}
+
+// TestReportsHideTheReporterFromTheTarget checks that a moderator whom a report is about reads it
+// without its reporter in every admin answer that carries it (FR-701), and that another
+// moderator reads the reporter.
+func TestReportsHideTheReporterFromTheTarget(t *testing.T) {
+	e, _ := newReportReaderEnv(t)
+	hidden := func(what string, r clientapi.AdminReport) {
+		t.Helper()
+		if r.ReporterAccountId != nil || r.ReporterAccount != nil || r.TargetAccountId != aliceAccountID || r.TargetAccount == nil {
+			t.Errorf("%s read by its target = %+v, want no reporter", what, r)
+		}
+	}
+	res := e.sendJSON(t, http.MethodGet, "/admin/reports", "admin", "")
+	page := decodeJSON[clientapi.AdminReportPage](t, res)
+	if res.StatusCode != http.StatusOK || len(page.Items) != 3 {
+		t.Fatalf("list = %d %+v", res.StatusCode, page)
+	}
+	for _, r := range page.Items {
+		hidden("listed report "+r.Id, r)
+	}
+	for _, op := range []struct{ method, path, body string }{
+		{http.MethodGet, "/admin/reports/" + reportOne, ""},
+		{http.MethodPost, "/admin/reports/" + reportOne + "/assign_to_self", ""},
+		{http.MethodPost, "/admin/reports/" + reportOne + "/notes", `{"body":"look"}`},
+		{http.MethodPost, "/admin/reports/" + reportOne + "/unassign", ""},
+		{http.MethodPost, "/admin/reports/" + reportOne + "/resolve", `{"outcome":"dismissed"}`},
+		{http.MethodPost, "/admin/reports/" + reportOne + "/reopen", ""},
+	} {
+		res := e.sendJSON(t, op.method, op.path, "admin", op.body)
+		if res.StatusCode != http.StatusOK {
+			t.Fatalf("%s %s = %d", op.method, op.path, res.StatusCode)
+		}
+		hidden(op.method+" "+op.path, decodeJSON[clientapi.AdminReport](t, res))
+	}
+	res = e.sendJSON(t, http.MethodGet, "/admin/reports/"+reportOne, "bob-admin", "")
+	if r := decodeJSON[clientapi.AdminReportDetail](t, res); r.ReporterAccountId == nil || *r.ReporterAccountId != reporterAccountID || r.ReporterAccount == nil {
+		t.Errorf("report read by another moderator = %+v, want its reporter", r)
 	}
 }
 
