@@ -116,7 +116,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 - Was es schreibt:
   - `<dir>/<locale>.html` und `<dir>/index.html`, die alle Locales der Reihe nach auflistet. Sie verwenden dieselbe Vorlage und dasselbe CSS wie die Wartungsseite (`my maintenance export`) und zeigen
     den Servernamen (`maintenance_server_name`, sonst den Servernamen, sonst den Hostnamen), das Abschlussdatum, die Nachricht des Betreibers aus der Ankündigung und einen Link zur Statusseite (`status_page_url`).
-    Das CSS ist nur inline, es gibt keine Skripte oder externen Ressourcen, und die CSP steht in einem `<meta>`-Tag. Überschreibungen der Themenfarben sind eingebaut; eigenes CSS ist nicht enthalten.
+    Das CSS ist nur inline, es gibt keine Skripte oder externen Ressourcen, und die CSP steht in einem `<meta>`-Tag. Überschreibungen der Themenfarben sind eingebaut.
   - Beispiele für die Front-End-Konfiguration `nginx.conf`, `Caddyfile` und `cloudfront-function.js`. Jedes gibt `410` ohne Body für die Pfade der Föderation und der Discovery (`/ap/*`, `/inbox`, `/.well-known/webfinger`,
     `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) und für Profile (`/@*`) zurück,
     und liefert für jeden anderen Pfad die Seite der ersten Sprache in `Accept-Language` (oder `index.html`, wenn es keine gibt).

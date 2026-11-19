@@ -115,7 +115,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 - 書き出すもの:
   - `<dir>/<locale>.html` と、すべてのロケールを順に並べた `<dir>/index.html`。メンテナンスページ（`my maintenance export`）と同じテンプレートと CSS を使い、
     サーバー名（`maintenance_server_name`、なければインスタンス名、それもなければホスト名）、終了日、告知時の運営者のメッセージ、ステータスページ（`status_page_url`）へのリンクを表示します。
-    CSS はインラインだけで、スクリプトや外部のリソースはなく、CSP は `<meta>` タグにあります。テーマの色の上書きは埋め込まれますが、カスタム CSS は含まれません。
+    CSS はインラインだけで、スクリプトや外部のリソースはなく、CSP は `<meta>` タグにあります。テーマの色の上書きは埋め込まれます。
   - フロントエンドの設定例 `nginx.conf`、`Caddyfile`、`cloudfront-function.js`。どれも、連合と探索のパス（`/ap/*`、`/inbox`、`/.well-known/webfinger`、
     `/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）とプロフィール（`/@*`）には本文なしの `410` を返し、
     それ以外のパスには `Accept-Language` の最初の言語のページ（なければ `index.html`）を返します。

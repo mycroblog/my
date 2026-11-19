@@ -175,6 +175,6 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 - Textos: la configuración `maintenance_server_name`, `maintenance_message`, `maintenance_until` y `status_page_url`
   ([referencia de configuración](../reference/configuration.md)).
 - Sin `-offline`, también lee el nombre de la instancia (cuando `maintenance_server_name` no está definido), su idioma por defecto (cuando no se indica `-lang`)
-  y las sustituciones de tokens de su tema. El CSS personalizado del tema nunca se incluye. Cuando no se puede leer la base de datos,
+  y las sustituciones de tokens de su tema. Cuando no se puede leer la base de datos,
   imprime un aviso, escribe las páginas a partir de la configuración y el tema por defecto, y termina con 0.
 - Ejecútalo de nuevo cada vez que cambien esa configuración o el tema, y antes de cada mantenimiento, para que las páginas del front end estén al día.

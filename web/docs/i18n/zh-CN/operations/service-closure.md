@@ -99,7 +99,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 ```
 
 - 它会写出：
-  - `<dir>/<locale>.html` 和 `<dir>/index.html`，后者按顺序列出所有语言。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，并显示服务器名称（`maintenance_server_name`，否则是实例名称，再否则是主机名）、关闭日期、公告中运营者的消息，以及指向状态页面的链接（`status_page_url`）。CSS 仅为内联，没有脚本或外部资源，CSP 位于一个 `<meta>` 标签中。主题颜色的覆盖会被一并写入；自定义 CSS 不包含在内。
+  - `<dir>/<locale>.html` 和 `<dir>/index.html`，后者按顺序列出所有语言。它们使用与维护页面（`my maintenance export`）相同的模板和 CSS，并显示服务器名称（`maintenance_server_name`，否则是实例名称，再否则是主机名）、关闭日期、公告中运营者的消息，以及指向状态页面的链接（`status_page_url`）。CSS 仅为内联，没有脚本或外部资源，CSP 位于一个 `<meta>` 标签中。主题颜色的覆盖会被一并写入。
   - 前端配置示例 `nginx.conf`、`Caddyfile` 和 `cloudfront-function.js`。对于联邦和发现路径（`/ap/*`、`/inbox`、`/.well-known/webfinger`、`/.well-known/host-meta`、`/.well-known/host-meta.json`、`/.well-known/nodeinfo`、`/nodeinfo/*`）以及个人资料（`/@*`），它们各自返回不带正文的 `410`；对于其他每个路径，则返回 `Accept-Language` 中第一种语言的页面（如果没有，则返回 `index.html`）。某种语言会到达应用会为它显示的语言环境的页面：`zh`、`zh-SG` 和 `zh-Hans` 得到 `zh-CN.html`，而 `zh-Hant`、`zh-HK` 和 `zh-MO` 得到 `zh-TW.html`。
 - 如果服务器尚未关闭，该命令会拒绝执行（退出码 1）。在 `delivery_completed` 之前，它会警告投递仍在继续（并且仍会写出这些文件）。
 
