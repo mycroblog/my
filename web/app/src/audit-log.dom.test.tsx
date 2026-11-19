@@ -43,7 +43,7 @@ const kinds: Record<Action, readonly [says: string, leads: Leads | null]> = {
   registration_approved: ["approved the registration of @newcomer", { to: "/moderation/registrations" }],
   registration_rejected: ["rejected the registration of @newcomer", { to: "/moderation/registrations" }],
   setting_changed: ["changed the setting Who can sign up", null],
-  text_changed: ["changed the server text Registration mode", null],
+  text_changed: ["changed the server text Short description", null],
   rule_added: ["added the rule Be kind to each other.", null],
   rule_revised: ["revised the rule Be kind to each other.", null],
   rule_moved: ["moved the rule Be kind to each other.", null],

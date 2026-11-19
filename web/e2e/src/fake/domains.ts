@@ -258,7 +258,8 @@ export function domainHandlers(c: DomainContext): { handlers: Handlers; domains:
             : (actors[i % actors.length] ?? "viewer");
       const username = by === "viewer" ? c.viewer : by;
       const person = by === "viewer" || (by === "hana" && c.known("hana")) ? c.accountOf(username) : undefined;
-      const target = targets[kind];
+      // An instance text is named by its key, as a setting is by its own.
+      const target = action === "text_changed" ? { label: "short_description", exists: true } : targets[kind];
       const id = kind === "account" && c.known("quickdeals") ? c.accountId("quickdeals") : idAt(c.started, 48_000 + i);
       audit.push({
         id: idAt(ago(60 * (i + 1)), 49_000 + i),
