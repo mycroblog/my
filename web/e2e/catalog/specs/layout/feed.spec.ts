@@ -9,7 +9,7 @@ import { expect, test } from "../test";
 
 const story = "design-system-layout-parts--long-feed";
 
-test("a feed's entries stand one under another, and the new entries' button stays over its top as the page scrolls", async ({
+test("a feed's entries stand one under another, and the new entries' button stays over its top as the page scrolls; a tight feed holds them closer together", async ({
   page,
   open,
 }) => {
@@ -49,18 +49,16 @@ test("a feed's entries stand one under another, and the new entries' button stay
   await open(story, { locale: "ar-XB" });
   await expectNoSidewaysScroll(page);
   await expectMirrored(page, ltr, parts);
-});
 
-test("a tight feed holds its entries closer together", async ({ page, open }) => {
-  const feed = page.getByRole("feed", { name: "Home", exact: true });
-  const entry = (n: number) => feed.getByRole("article", { name: `Entry ${String(n)}`, exact: true });
-  const pitch = async () => {
-    const at = await boxesAtRest({ first: entry(1), second: entry(2) });
-    return at.second.top - at.first.top;
-  };
-  await open(story, { args: { newItems: false } });
-  await expect(page.getByRole("button", { name: "12 new posts", exact: true })).toHaveCount(0);
-  const apart = await pitch();
-  await open(story, { args: { newItems: false, tight: true } });
-  await expect.poll(pitch).toBeLessThan(apart);
+  await test.step("a tight feed holds its entries closer together", async () => {
+    const pitch = async () => {
+      const at = await boxesAtRest({ first: entry(1), second: entry(2) });
+      return at.second.top - at.first.top;
+    };
+    await open(story, { args: { newItems: false } });
+    await expect(page.getByRole("button", { name: "12 new posts", exact: true })).toHaveCount(0);
+    const apart = await pitch();
+    await open(story, { args: { newItems: false, tight: true } });
+    await expect.poll(pitch).toBeLessThan(apart);
+  });
 });

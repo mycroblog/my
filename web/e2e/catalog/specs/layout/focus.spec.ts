@@ -9,7 +9,10 @@ import { expect, test } from "../test";
 
 const story = "design-system-layout-parts--folded-disclosure";
 
-test("what a disclosure folds takes no room and no Tab stop until it is shown", async ({ page, open }) => {
+test("what a disclosure folds takes no room and no Tab stop until it is shown, and the focus ring shows on a button the keyboard focused alone", async ({
+  page,
+  open,
+}) => {
   await open(story);
   const before = page.getByRole("button", { name: "Before the fold", exact: true });
   const after = page.getByRole("button", { name: "After the fold", exact: true });
@@ -33,30 +36,26 @@ test("what a disclosure folds takes no room and no Tab stop until it is shown", 
   await expect(inside).toBeFocused();
   await page.keyboard.press("Tab");
   await expect(after).toBeFocused();
-});
 
-test("the focus ring shows on a button the keyboard focused, and not on one the pointer pressed", async ({
-  page,
-  open,
-}) => {
-  await open(story);
-  const before = page.getByRole("button", { name: "Before the fold", exact: true });
-  const after = page.getByRole("button", { name: "After the fold", exact: true });
-  /** What draws a ring around the button: its outline and its shadow. */
-  const ring = (button: typeof after) =>
-    button.evaluate((element) => {
-      const { outlineStyle, outlineWidth, boxShadow } = getComputedStyle(element);
-      return `${outlineStyle === "none" ? "no outline" : outlineWidth} / ${boxShadow}`;
-    });
-  const atRest = await ring(after);
+  // The same page opens the story again, with nothing focused and the part folded.
+  await test.step("the focus ring shows on a button the keyboard focused, and not on one the pointer pressed", async () => {
+    await open(story);
+    /** What draws a ring around the button: its outline and its shadow. */
+    const ring = (button: typeof after) =>
+      button.evaluate((element) => {
+        const { outlineStyle, outlineWidth, boxShadow } = getComputedStyle(element);
+        return `${outlineStyle === "none" ? "no outline" : outlineWidth} / ${boxShadow}`;
+      });
+    const atRest = await ring(after);
 
-  await after.click();
-  await expect(after).toBeFocused();
-  await expect.poll(() => ring(after)).toBe(atRest);
+    await after.click();
+    await expect(after).toBeFocused();
+    await expect.poll(() => ring(after)).toBe(atRest);
 
-  await before.focus();
-  await page.keyboard.press("Tab");
-  await page.keyboard.press("Tab");
-  await expect(after).toBeFocused();
-  await expect.poll(() => ring(after)).not.toBe(atRest);
+    await before.focus();
+    await page.keyboard.press("Tab");
+    await page.keyboard.press("Tab");
+    await expect(after).toBeFocused();
+    await expect.poll(() => ring(after)).not.toBe(atRest);
+  });
 });

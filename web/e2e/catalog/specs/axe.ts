@@ -22,19 +22,37 @@ const computed = [
 const tags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 /**
- * A script that runs an axe of the test's own on the page and answers its violations, one line per element. Each axe
- * puts itself on `window.axe` as its code loads, and so would the catalog's accessibility addon if a person started
- * its check: an axe taken from there may be another's, in the middle of its run, which refuses a second one. So one
- * script loads the test's axe, keeps it, puts back what the page had, and runs it: nothing of the page runs between
- * those steps. `context` and `options` are axe's own, as the source of an expression.
+ * Where a page keeps the test's own axe once it loaded it: a key no code of the page knows. Each axe puts itself on
+ * `window.axe` as its code loads, and so would the catalog's accessibility addon if a person started its check: an
+ * axe taken from there may be another's, in the middle of its run, which refuses a second one.
  */
-const script = (context: string, options: string) => `(async () => {
+const own = `window[Symbol.for("my e2e: the test's axe")]`;
+
+/**
+ * A script that loads the test's axe on the page and keeps it, and puts back what the page had: nothing of the page
+ * runs between those steps. A page loads it once, the first time a test asks it for violations: its source is half a
+ * megabyte to send and to parse.
+ */
+const load = `(() => {
   const had = Object.getOwnPropertyDescriptor(window, "axe");
   ${axe.source};
-  const own = window.axe;
+  Object.defineProperty(window, Symbol.for("my e2e: the test's axe"), { value: window.axe });
   if (had === undefined) delete window.axe;
   else Object.defineProperty(window, "axe", had);
-  const result = await own.run(${context}, { ...${options}, resultTypes: ["violations"] });
+})()`;
+
+/** Loads the test's axe on the page, unless the page holds it already. */
+async function loaded(page: Page): Promise<void> {
+  if (await page.evaluate<boolean>(`${own} !== undefined`)) return;
+  await page.evaluate(load);
+}
+
+/**
+ * A script that runs the test's axe, which `loaded` put on the page, and answers its violations, one line per
+ * element. `context` and `options` are axe's own, as the source of an expression.
+ */
+const script = (context: string, options: string) => `(async () => {
+  const result = await ${own}.run(${context}, { ...${options}, resultTypes: ["violations"] });
   return result.violations.flatMap((violation) =>
     violation.nodes.map(
       (node) =>
@@ -56,13 +74,19 @@ const taggedRules = script(
 );
 
 /** The violations of the computed rules on the page as it is, one line per element. */
-const violations = (page: Page): Promise<string[]> => page.evaluate<string[]>(computedRules);
+const violations = async (page: Page): Promise<string[]> => {
+  await loaded(page);
+  return page.evaluate<string[]>(computedRules);
+};
 
 /**
  * The violations of every rule of the tags of ADR-0110 §9 on the page as it is, one line per element. Axe waits on
  * timers of its own, so a page whose clock a test holds answers only while the test moves it.
  */
-export const violationsOfTags = (page: Page): Promise<string[]> => page.evaluate<string[]>(taggedRules);
+export const violationsOfTags = async (page: Page): Promise<string[]> => {
+  await loaded(page);
+  return page.evaluate<string[]>(taggedRules);
+};
 
 /** Sets the page's color scheme as the server's shell does, on <html>. */
 export async function setTheme(page: Page, theme: "light" | "dark"): Promise<void> {

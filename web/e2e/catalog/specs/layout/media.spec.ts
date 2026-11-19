@@ -19,56 +19,57 @@ const around = (boxes: Box[]) => ({
   bottom: Math.max(...boxes.map((b) => b.bottom)),
 });
 
-for (const count of [1, 2, 3, 4] as const)
-  test(`${String(count)} ${count === 1 ? "picture fills" : "pictures share"} a box 16:9 of the column's width`, async ({
-    page,
-    open,
-  }) => {
-    // The pictures by their descriptions; the second has none, and is found by what it does, in English.
-    const described = {
-      dawn: page.getByRole("img", { name: "Low hills at dawn under a peach sky", exact: true }),
-      forest: page.getByRole("img", { name: "Green hills under a pale sky", exact: true }),
-      night: page.getByRole("img", { name: "A night sky over dark hills", exact: true }),
-    };
-    const sea = page.getByRole("button", { name: "Open image", exact: true });
-    const shown: Record<string, Locator> = { dawn: described.dawn };
-    if (count > 2) shown["forest"] = described.forest;
-    if (count > 3) shown["night"] = described.night;
+// One page opens the story with each count, a step each.
+test("1 picture fills a box 16:9 of the column's width, and 2, 3 and 4 pictures share one", async ({ page, open }) => {
+  // The pictures by their descriptions; the second has none, and is found by what it does, in English.
+  const described = {
+    dawn: page.getByRole("img", { name: "Low hills at dawn under a peach sky", exact: true }),
+    forest: page.getByRole("img", { name: "Green hills under a pale sky", exact: true }),
+    night: page.getByRole("img", { name: "A night sky over dark hills", exact: true }),
+  };
+  const sea = page.getByRole("button", { name: "Open image", exact: true });
 
-    await open(story, { args: { count } });
-    await expectNoSidewaysScroll(page);
-    const ltr = await boxesAtRest(count > 1 ? { ...shown, sea } : shown);
-    const { dawn: a, sea: b, forest: c, night: d } = ltr;
-    if (a === undefined) throw new Error("the first picture is always there");
-    const grid = around(Object.values(ltr));
-    expect(Math.abs((grid.right - grid.left) * (9 / 16) - (grid.bottom - grid.top))).toBeLessThan(1.5);
-    expect(grid.right - grid.left).toBeGreaterThan(280);
-    if (b !== undefined) {
-      // From two: the second beside the first, as wide.
-      expect(b.top).toBe(a.top);
-      expect(b.left).toBeGreaterThanOrEqual(a.right);
-      expect(Math.abs(b.width - a.width)).toBeLessThan(1);
-    }
-    if (b !== undefined && c !== undefined && d === undefined) {
-      // Three: the first as tall as the box, the third under the second.
-      expect(a.height).toBeGreaterThan(b.height * 2);
-      expect(c.top).toBeGreaterThanOrEqual(b.bottom);
-      expect(c.left).toBe(b.left);
-    }
-    if (b !== undefined && c !== undefined && d !== undefined) {
-      // Four: two rows of two.
-      expect(c.top).toBeGreaterThanOrEqual(a.bottom);
-      expect(c.left).toBe(a.left);
-      expect(d.top).toBe(c.top);
-      expect(d.left).toBe(b.left);
-    }
-    if (count === 4) await expectNoComputedViolations(page);
-    if (count % 2 === 0) {
-      await open(story, { locale: "ar-XB", args: { count } });
+  for (const count of [1, 2, 3, 4] as const)
+    await test.step(`${String(count)} ${count === 1 ? "picture" : "pictures"}`, async () => {
+      const shown: Record<string, Locator> = { dawn: described.dawn };
+      if (count > 2) shown["forest"] = described.forest;
+      if (count > 3) shown["night"] = described.night;
+
+      await open(story, { args: { count } });
       await expectNoSidewaysScroll(page);
-      await expectMirrored(page, ltr, shown);
-    }
-  });
+      const ltr = await boxesAtRest(count > 1 ? { ...shown, sea } : shown);
+      const { dawn: a, sea: b, forest: c, night: d } = ltr;
+      if (a === undefined) throw new Error("the first picture is always there");
+      const grid = around(Object.values(ltr));
+      expect(Math.abs((grid.right - grid.left) * (9 / 16) - (grid.bottom - grid.top))).toBeLessThan(1.5);
+      expect(grid.right - grid.left).toBeGreaterThan(280);
+      if (b !== undefined) {
+        // From two: the second beside the first, as wide.
+        expect(b.top).toBe(a.top);
+        expect(b.left).toBeGreaterThanOrEqual(a.right);
+        expect(Math.abs(b.width - a.width)).toBeLessThan(1);
+      }
+      if (b !== undefined && c !== undefined && d === undefined) {
+        // Three: the first as tall as the box, the third under the second.
+        expect(a.height).toBeGreaterThan(b.height * 2);
+        expect(c.top).toBeGreaterThanOrEqual(b.bottom);
+        expect(c.left).toBe(b.left);
+      }
+      if (b !== undefined && c !== undefined && d !== undefined) {
+        // Four: two rows of two.
+        expect(c.top).toBeGreaterThanOrEqual(a.bottom);
+        expect(c.left).toBe(a.left);
+        expect(d.top).toBe(c.top);
+        expect(d.left).toBe(b.left);
+      }
+      if (count === 4) await expectNoComputedViolations(page);
+      if (count % 2 === 0) {
+        await open(story, { locale: "ar-XB", args: { count } });
+        await expectNoSidewaysScroll(page);
+        await expectMirrored(page, ltr, shown);
+      }
+    });
+});
 
 /** The value of a string of blurhash's base 83. */
 function base83(text: string): number {

@@ -21,7 +21,7 @@ const story = "design-system-layout-parts--entry-parts";
 const name = "Bartholomew-Maximilian-Featherstonehaugh-Cholmondeley-Warner";
 const booster = "Wilhelmina-Alexandrina-Marjoribanks-Featherstonehaugh-Cholmondeley";
 
-test("an entry's parts at the minimum width: a stack, the byline, a one-line caption and the row of actions", async ({
+test("an entry's parts at the minimum width: a stack, the byline, a one-line caption and the row of actions, which keeps inside the entry right to left with large counts", async ({
   page,
   open,
 }) => {
@@ -96,16 +96,12 @@ test("an entry's parts at the minimum width: a stack, the byline, a one-line cap
     line: parts.line,
     next: parts.next,
   });
-});
 
-test("the row of actions keeps inside the entry right to left, where large counts read longer", async ({
-  page,
-  open,
-}) => {
-  await open(story, { locale: "ar-XB", args: { counts: "large" } });
-  const entry = page.getByRole("article", { name, exact: true });
-  const at = await boxesAtRest({ entry, more: entry.getByRole("button", { name: "More", exact: true }) });
-  expect(outside(at.more, at.entry)).toEqual([]);
-  const overflow = await atRest(() => sidewaysScroll(page));
-  expect(overflow).toEqual([]);
+  await test.step("the row of actions keeps inside the entry right to left, where large counts read longer", async () => {
+    await open(story, { locale: "ar-XB", args: { counts: "large" } });
+    const at = await boxesAtRest({ entry, more: entry.getByRole("button", { name: "More", exact: true }) });
+    expect(outside(at.more, at.entry)).toEqual([]);
+    const overflow = await atRest(() => sidewaysScroll(page));
+    expect(overflow).toEqual([]);
+  });
 });
