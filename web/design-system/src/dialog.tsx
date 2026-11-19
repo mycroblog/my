@@ -83,7 +83,7 @@ function PhraseLabel({ lang, phrase, className }: { lang: string; phrase: string
 
 /**
  * A title with a chance to break before each handle's server (@name@server.example), so that a handle too long for a
- * line wraps at its second @, never inside a word; its text is unchanged for assistive technology.
+ * line wraps at its second @, never inside a word; the title itself where it has no handle to break.
  */
 function titleBreaks(title: string): ReactNode {
   const parts = title.split(/(?<=\S)(?=@)/u);
@@ -111,15 +111,19 @@ function DialogHead({
   onClose: () => void;
   busy: boolean;
 }) {
+  // A title broken before a handle's server still names the dialog by its text as written: a name computed from the
+  // breaks may read them as spaces.
+  const broken = titleBreaks(title);
+  const named = broken === title ? undefined : title;
   return (
     <Row align="start" justify="between" gap="entry-caption">
       {titleId === undefined ? (
-        <Heading slot="title" className={className}>
-          {titleBreaks(title)}
+        <Heading slot="title" className={className} aria-label={named}>
+          {broken}
         </Heading>
       ) : (
-        <h2 id={titleId} className={className}>
-          {titleBreaks(title)}
+        <h2 id={titleId} className={className} aria-label={named}>
+          {broken}
         </h2>
       )}
       <Row as="span" inline rigid bleedEnd="icon-button-inline">
