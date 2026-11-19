@@ -424,10 +424,55 @@ test("a confirmation with a text to type keeps its confirmation disabled until t
   expect(answers).toEqual(["confirm"]);
 });
 
+test("a confirmation with a text to type answers a press only once the text is there, and locks again once it is not", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ phrase: "Moderator", confirm: "Delete role" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const field = within(dialog).getByRole("textbox");
+  const remove = within(dialog).getByRole("button", { name: "Delete role" });
+  // Still described by what follows its question.
+  expect(screen.getByRole("alertdialog", { description: (said) => said.includes("It cannot be undone.") })).toBe(
+    dialog,
+  );
+
+  await user.click(remove);
+  expect(answers).toEqual([]);
+
+  await user.type(field, "Moderator");
+  await user.type(field, "{Backspace}");
+  expect(remove.hasAttribute("disabled")).toBe(true);
+  await user.type(field, "{Enter}");
+  await user.click(remove);
+  expect(answers).toEqual([]);
+
+  await user.type(field, "r");
+  await user.click(remove);
+  expect(answers).toEqual(["confirm"]);
+  // Cancel answers whatever the field holds.
+  await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  expect(answers).toEqual(["confirm", "cancel"]);
+});
+
+test("a confirmation with a text to type cancels by its Cancel before anything is typed", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ phrase: "Moderator" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  await user.click(within(dialog).getByRole("button", { name: "Cancel" }));
+  expect(answers).toEqual(["cancel"]);
+});
+
 test("a confirmation with a text to type in flight confirms no more", async () => {
   const user = userEvent.setup();
   const answers = confirmation({ phrase: "Moderator", busy: true });
   const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
   await user.type(within(dialog).getByRole("textbox"), "Moderator{Enter}");
   expect(answers).toEqual([]);
+});
+
+test("a confirmation with a text to type takes the text in any case, as handles and domains are", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ phrase: "Spam_Bot@Social.example", confirm: "Ban account" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  await user.type(within(dialog).getByRole("textbox"), "spam_bot@SOCIAL.EXAMPLE{Enter}");
+  expect(answers).toEqual(["confirm"]);
 });
