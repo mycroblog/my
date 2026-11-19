@@ -4,12 +4,12 @@
 // and PAY.JP's card form, which checks the card holder's name before PAY.JP sees it and posts the signed state and the
 // token that payjp.js gave, never a field of the card.
 
-import { expect, test } from "bun:test";
+import { expect, onTestFinished, test } from "bun:test";
 import { I18nProvider } from "@my/design-system";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import { userEvent } from "@testing-library/user-event";
 import type { PayPage } from "./data";
-import type { PayjpFactory } from "./payjp";
+import { loadPayjp, payjpScript, type PayjpFactory } from "./payjp";
 import { PayScreen } from "./screen";
 import { moneyIn } from "./strings";
 
@@ -202,4 +202,244 @@ test("the error page says what the server could not do, takes the focus to it, a
   expect(alert.textContent).toBe("This page has expired.");
   expect(alert.hasAttribute("data-focus-on-load")).toBe(true);
   expect(main.getByRole("link", { name: "Back to the app" }).getAttribute("href")).toBe("/");
+});
+
+/** Whether `first` stands before `second` in the document. */
+const before = (first: Node, second: Node) =>
+  (first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+
+const yearly = { amount: 12000, currency: "JPY", interval: "year" } as const;
+
+test("PAY.JP's checkout names the server, the plan and its period, and says what follows right above the button", async () => {
+  const main = await shown({ screen: "checkout", server, title: "Subscribe to Supporter", price: yearly, card });
+  expect(screen.getByRole("complementary", { name: "Hanami Town" })).toBeTruthy();
+  expect(within(screen.getByRole("banner")).getByText("Hanami Town")).toBeTruthy();
+  expect(main.getByRole("heading", { level: 1 }).textContent).toBe("Subscribe to Supporter");
+  expect(main.getByText("¥12,000 a year")).toBeTruthy();
+  const then = main.getByText("Then ¥12,000 a year.");
+  const submit = main.getByRole("button", { name: "Pay ¥12,000 and subscribe" });
+  expect(before(then, submit)).toBe(true);
+  // Nothing a reader meets stands between the line and the button.
+  expect(then.nextElementSibling).toBe(submit);
+});
+
+test("the fake's checkout of a tip says it is paid once, and nothing follows it", async () => {
+  const main = await shown({
+    screen: "checkout",
+    server,
+    title: "Tip Hanami Town",
+    price: { amount: 500, currency: "JPY", interval: "once" },
+    fake: true,
+    choices: { action: "/payments/pages/fake/checkout/cs_2" },
+  });
+  expect(main.getByRole("heading", { level: 1 }).textContent).toBe("Tip Hanami Town");
+  expect(main.getByText("¥500, once")).toBeTruthy();
+  expect(main.queryAllByText(/^Then /)).toHaveLength(0);
+  expect(main.queryAllByText(/subscribe/i)).toHaveLength(0);
+  expect(main.getByRole("button", { name: "Pay" })).toBeTruthy();
+});
+
+test("test mode and the fake build are said once, ahead of the page's header and main; a live page says neither", async () => {
+  for (const [page, says] of [
+    [
+      { screen: "checkout", server, title: "Subscribe", price: monthly, testMode: true, card },
+      "Test mode: nothing is charged.",
+    ],
+    [
+      { screen: "checkout", server, title: "Subscribe", price: monthly, fake: true, choices: { action: "/f" } },
+      "Test build: this page stands in for a payment provider, and no money moves.",
+    ],
+    [
+      { screen: "portal", server, title: "Payments", fake: true, portal: { payments: [] } },
+      "Test build: this page stands in for a payment provider, and no money moves.",
+    ],
+  ] as const satisfies readonly (readonly [PayPage, string])[]) {
+    await shown(page);
+    const notes = screen.getAllByRole("note");
+    expect([page.screen, notes.map((note) => note.textContent)]).toEqual([page.screen, [says]]);
+    const [note] = notes;
+    if (note === undefined) throw new Error("test: no note");
+    expect([before(note, screen.getByRole("banner")), before(note, screen.getByRole("main"))]).toEqual([true, true]);
+  }
+  await shown({ screen: "checkout", server, title: "Subscribe", price: monthly, card });
+  expect(screen.queryAllByRole("note")).toHaveLength(0);
+});
+
+test("a payment the server refused is said before the button, and takes the focus when the page loads", async () => {
+  for (const [page, button] of [
+    [
+      { screen: "checkout", server, title: "Subscribe", price: yearly, card, error: "The card was declined." },
+      "Pay ¥12,000 and subscribe",
+    ],
+    [
+      {
+        screen: "checkout",
+        server,
+        title: "Subscribe",
+        price: monthly,
+        fake: true,
+        error: "The card was declined.",
+        choices: { action: "/f" },
+      },
+      "Pay",
+    ],
+  ] as const satisfies readonly (readonly [PayPage, string])[]) {
+    const main = await shown(page);
+    const alert = main.getByRole("alert");
+    expect([button, alert.textContent, alert.hasAttribute("data-focus-on-load")]).toEqual([
+      button,
+      "The card was declined.",
+      true,
+    ]);
+    expect([button, before(alert, main.getByRole("button", { name: button }))]).toEqual([button, true]);
+  }
+});
+
+test("only a page with a card form asks for payjp.js", async () => {
+  for (const [page, asks] of [
+    [{ screen: "checkout", title: "Subscribe", price: monthly, card }, 1],
+    [
+      {
+        screen: "portal",
+        title: "Payments",
+        card: { ...card, action: "/payments/pages/payjp/portal", change: true },
+        portal: { payments: [] },
+      },
+      1,
+    ],
+    [{ screen: "checkout", title: "Subscribe", price: monthly, fake: true, choices: { action: "/f" } }, 0],
+    [{ screen: "portal", title: "Payments", fake: true, portal: { payments: [] } }, 0],
+    [{ screen: "error", title: "Payment", error: "This page has expired." }, 0],
+  ] as const satisfies readonly (readonly [PayPage, number])[]) {
+    let asked = 0;
+    const payjp = fakePayjp({ id: "tok_1" });
+    await shown(page, {
+      load: () => {
+        asked += 1;
+        return payjp.load();
+      },
+    });
+    expect([page.screen, page.card === undefined ? "no card form" : "card form", asked]).toEqual([
+      page.screen,
+      page.card === undefined ? "no card form" : "card form",
+      asks,
+    ]);
+  }
+});
+
+test("payjp.js is loaded from PAY.JP's address and no other, once for the page, and gives PAY.JP's factory", async () => {
+  // The head keeps the scripts it is given instead of connecting them, so the simulation fetches nothing; the test
+  // then says the script loaded, as a browser would once PAY.JP's file ran.
+  const head = document.head;
+  const asked: HTMLScriptElement[] = [];
+  const keep = (...nodes: (Node | string)[]) => {
+    for (const node of nodes) if (node instanceof HTMLScriptElement) asked.push(node);
+  };
+  Object.assign(head, {
+    append: keep,
+    appendChild: <T extends Node>(node: T) => {
+      keep(node);
+      return node;
+    },
+  });
+  const factory: PayjpFactory = () => {
+    throw new Error("test: not called");
+  };
+  onTestFinished(() => {
+    Reflect.deleteProperty(head, "append");
+    Reflect.deleteProperty(head, "appendChild");
+    Reflect.deleteProperty(window, "Payjp");
+  });
+  const first = loadPayjp();
+  const second = loadPayjp();
+  expect(payjpScript).toBe("https://js.pay.jp/v2/pay.js");
+  expect(asked.map((script) => script.src)).toEqual(["https://js.pay.jp/v2/pay.js"]);
+  expect(second).toBe(first);
+  Reflect.set(window, "Payjp", factory);
+  for (const script of asked) script.dispatchEvent(new Event("load"));
+  expect(await first).toBe(factory);
+});
+
+/** The card form of a checkout given `name`: what was asked of PAY.JP, what was posted, and the field. */
+async function submitted(name: string) {
+  const payjp = fakePayjp({ id: "tok_1" });
+  const main = await shown({ screen: "checkout", title: "Subscribe", price: monthly, card }, payjp);
+  const submit = main.getByRole<HTMLButtonElement>("button", { name: "Pay ¥1,200 and subscribe" });
+  const form = submit.form;
+  if (form === null) throw new Error("test: the button submits no form");
+  let sent: string | undefined;
+  form.submit = () => {
+    const value = new FormData(form).get("name");
+    sent = typeof value === "string" ? value : "a file";
+  };
+  const field = main.getByLabelText<HTMLInputElement>("Name on the card");
+  await userEvent.type(field, name);
+  await userEvent.click(submit);
+  const said = (field.getAttribute("aria-describedby") ?? "")
+    .split(" ")
+    .map((id) => document.getElementById(id)?.textContent ?? "");
+  return { tokens: payjp.calls.tokens.length, sent, said, focused: document.activeElement === field };
+}
+
+test("a name of 2 to 45 Latin letters, digits, spaces, dots and hyphens goes to PAY.JP as typed", async () => {
+  for (const name of ["AB", "ab1", "Mary-Jane O.", "A".repeat(45)]) {
+    const { tokens, sent, said } = await submitted(name);
+    expect([name, tokens, sent, said]).toEqual([name, 1, name, ["As printed on the card, in Latin letters."]]);
+  }
+});
+
+test("any other name is said under its field, which takes the focus, and no token is asked for", async () => {
+  for (const name of ["AB_C", "ÉLISE", "O'Brien", "Ann, Lee"]) {
+    const result = await submitted(name);
+    expect([name, result]).toEqual([
+      name,
+      { tokens: 0, sent: undefined, said: ["Enter the name in Latin letters, as printed on the card."], focused: true },
+    ]);
+  }
+});
+
+test("PAY.JP's own words for a refused card never reach the page", async () => {
+  const main = await shown(
+    { screen: "checkout", title: "Subscribe", price: monthly, card: { ...card, name: "ALICE EXAMPLE" } },
+    fakePayjp({ error: { message: "Your card was declined by PAY.JP." } }),
+  );
+  await userEvent.click(main.getByRole("button", { name: "Pay ¥1,200 and subscribe" }));
+  expect(main.getByRole("alert").textContent).toBe(
+    "The card could not be checked, and nothing was charged. Check the email address, the name on the card, and the card details, then try again.",
+  );
+  expect(document.body.textContent).not.toContain("declined by PAY.JP");
+});
+
+test("the portal's card change posts the state, the token, the email and the name, and nothing else", async () => {
+  const main = await shown({
+    screen: "portal",
+    title: "Payment method and history",
+    card: { ...card, action: "/payments/pages/payjp/portal", change: true },
+    portal: { card: "Visa ending in 4242, expires 12/2030", payments: [] },
+  });
+  const submit = main.getByRole<HTMLButtonElement>("button", { name: "Change the card" });
+  const form = submit.form;
+  if (form === null) throw new Error("test: the button submits no form");
+  let sent: Record<string, FormDataEntryValue> | undefined;
+  form.submit = () => {
+    sent = Object.fromEntries(new FormData(form));
+  };
+  await userEvent.type(main.getByLabelText("Name on the card"), "ALICE EXAMPLE");
+  await userEvent.click(submit);
+  expect([form.getAttribute("action"), sent]).toEqual([
+    "/payments/pages/payjp/portal",
+    { s: "signed", token: "tok_1", email: "alice@example.com", name: "ALICE EXAMPLE" },
+  ]);
+});
+
+test("the error page leads back to the screen the server names", async () => {
+  const main = await shown({
+    screen: "error",
+    title: "Payment",
+    error: "This page has expired.",
+    back: "/settings/supporter",
+  });
+  expect(main.getAllByRole("link").map((link) => [link.textContent, link.getAttribute("href")])).toEqual([
+    ["Back to the app", "/settings/supporter"],
+  ]);
 });
