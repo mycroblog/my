@@ -33,7 +33,8 @@ import { ProblemError } from "@mycroblog/mykit";
 import { useEffect, useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { useStaffStrings, type T } from "../parts";
 import { permissionName } from "./roles";
-import { CopyValue, useUnsavedReport, type AdminSubProps } from "./parts";
+import { CopyValue, type AdminSubProps } from "../settings/parts";
+import { useUnsavedReport } from "./parts";
 
 /** An event's name, in the reader's language. */
 export const eventName = (t: T, event: string): string =>

@@ -45,7 +45,8 @@ import {
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import { coded, EmojiImage, EmojiTabs } from "./emoji-parts";
-import { useStillThere, type AdminSubProps } from "./parts";
+import { type AdminSubProps } from "../settings/parts";
+import { useStillThere } from "./parts";
 
 /** How a request's state looks: what waits, what was made, what is over. */
 const stateLook: Record<CustomEmojiRequestState, RecordState> = {

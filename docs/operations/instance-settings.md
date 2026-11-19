@@ -302,9 +302,9 @@ and visitors who are not signed in see none of them.
   `dir="auto"` and `lang=""` (the HTML value for an unknown language) instead of inheriting the language of the screen.
 - Setting an empty text deletes it.
 - Besides the CLI, texts can be changed on the admin screens of the web client (name, short description, and description on
-  the General page of "Server settings", `/admin/settings`; the terms on the first page of "Terms and policies",
-  `/admin/documents`, the privacy policy on `/admin/documents/privacy-policy`, and the commerce disclosure and the like on
-  `/admin/documents/commerce-disclosure`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
+  the General page of "Server settings", `/admin/settings/general`; the terms on `/admin/documents/terms`, the privacy
+  policy on `/admin/documents/privacy-policy`, and the commerce disclosure on `/admin/documents/commerce-disclosure`, each
+  a page of "Terms and policies", `/admin/documents`) and with the client API (`GET /api/v1/admin/instance_texts`, `PUT /api/v1/admin/instance_texts/{key}`).
   Both need the role permission `manage_settings`, and changes are recorded in the audit log (`text_changed`).
 
 ### Terms and privacy policy
@@ -350,12 +350,12 @@ and the text `thumbnail_alt`) appear in the places below. Whatever is unset does
   the contact account), `thumbnail` (`url` and `alt`), and `nodeDescription` from the short description `short_description`.
 
 When the contact account is suspended or deleted, the account is not shown and only the email address is.
-Change them on the General page of the admin screen of the web client ("Server settings", `/admin/settings`), or with the CLI or the client API.
+Change them on the General page of the admin screen of the web client ("Server settings", `/admin/settings/general`), or with the CLI or the client API.
 
 ### One-person server
 
 A server of its operator alone, the operator's own home in the fediverse, is a one-person server: turn on `single_user`. In the web client,
-an administrator turns it on and off with **Make this a one-person server** on the **Registration** page of **Server settings**,
+an administrator turns it on and off with **One-person server** on the **Registration** page of **Server settings**,
 which says why the server refused when it has more than one local account.
 
 ```sh
@@ -459,26 +459,27 @@ the role permission `manage_settings` (only the built-in `admin` role has it). A
 and recorded per key in the audit log (`setting_changed`, the target is the setting and the actor is that user). Look at the
 audit log on the moderation screen ("Audit log", `/moderation/audit-log`).
 
-- **Web client** ("Server settings", `/admin/settings`): the screen has one page per topic, linked under its heading. Each
-  page has one form and one save button, and saving sends only what you changed on that page; settings on the other pages
-  stay as they are.
+- **Web client** ("Server settings", `/admin/settings`): the screen lists one page per topic, in groups. Each page has one
+  form and one save button, and saving sends only what you changed on that page; settings on the other pages stay as they
+  are. A choice whose options each change much says what each one does under it, before you save, and a number says its
+  bounds when it is refused.
 
   | Page | Sections and settings |
   | --- | --- |
-  | General (`/admin/settings`) | Name, Descriptions (`name`, `short_description`, `description`); Contact and thumbnail (`contact_account`, `contact_email`, `thumbnail`, and the text `thumbnail_alt`) |
-  | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds, each saved with its own button ([Logo and icon](#logo-and-icon)) |
-  | Registration (`/admin/settings/registration`) | Registration (`registration_mode`, `login_providers_only`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds`); Apps (`user_app_registration`, `oauth_metadata_document_clients`, `dynamic_client_registration`) |
-  | Content (`/admin/settings/content`) | Language (`default_locale`, chosen from the languages the app has); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Posts (`require_media_description`); Landing page (`public_counts`); Suggested accounts (`featured_accounts`) |
-  | Post deletion (`/admin/settings/auto-delete`) | Default for new accounts (the `auto_delete_default_*` settings); Maximum (`auto_delete_max_age_days`, the `auto_delete_max_allow_*` settings, `auto_delete_max_kept_pins`, `auto_delete_grace_days`). Saving a maximum that is turned on or made stricter (fewer days, fewer exceptions or pins) asks first, since it notifies the accounts it newly holds ([A maximum for keeping posts](#a-maximum-for-keeping-posts)) |
-  | Federation (`/admin/settings/federation`) | Federation (`federation_mode`, `federation_scope` (saving `allowlist` first shows the follows the switch would end and asks, see [federating only with allowed servers](moderation.md#federating-only-with-allowed-servers)), `authorized_fetch`, `remote_media_policy`, `remote_media_cache_ttl_seconds` (choose from 1 hour, 1 day, 7 days, 30 days, or 365 days), `link_cards`, `link_cards_ignore_robots_txt`); Limited and suspended servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`); External review (the `hook_*` settings, see [Decision hooks](decision-hooks.md)) |
-  | Search and crawlers (`/admin/settings/discovery`) | Search engines and AI (`search_indexing`, `indexable_default`, `ai_usage`, `security_contact`); Post search (`search_visibilities`, only while the server has full-text search) |
-  | Voice chat (`/admin/settings/voice`) | `voice_room_starters`, `voice_public_summary`, `voice_participants_retention_days`; the page is listed only while the server offers voice chat |
+  | General (`/admin/settings/general`) | Name and descriptions (`name`, `short_description`, `description`); Language (`default_locale`, chosen from the languages the app has); Contact (`contact_account`, `contact_email`); Images (`thumbnail` and the text `thumbnail_alt`, `preview_image` and the text `preview_image_alt`) |
+  | Icon and logo (`/admin/settings/branding`) | The icon, the logo, and the logo for dark backgrounds ([Logo and icon](#logo-and-icon)) |
+  | Registration (`/admin/settings/registration`) | Who can sign up (`registration_mode`, each mode with what it does); One-person server (`single_user`); Member invites (`invite_creators`, `member_invite_max_active`, `member_invite_max_uses`, `member_invite_max_lifetime_seconds` in hours); Login providers only (`login_providers_only`, which asks first, with how many active users could no longer sign in and whether you are one of them); Apps (`user_app_registration`, `dynamic_client_registration`, `oauth_metadata_document_clients`, `oauth_client_rate_limits`). On a one-person server, the sections of signing up and of member invites say that nobody else signs up |
+  | Posts and features (`/admin/settings/content`) | Posts (`max_status_length`, `require_media_description`); Timelines (`local_timeline_visibility`, `federated_timeline_visibility`); Link cards (`link_cards`, `link_cards_ignore_robots_txt`); Drafts and scheduled posts (`max_drafts`, `max_scheduled_posts`, `max_scheduled_posts_per_day`, `scheduled_post_min_lead_minutes`, `scheduled_post_max_lead_days`); Articles (`article_authoring`, `max_article_bytes`, `max_article_images`); Events (`event_creators`, `event_records_retention_days`); Front page and suggestions (`public_counts`, `featured_accounts`) |
+  | Voice chat (`/admin/settings/voice`) | Who can open rooms (`voice_room_starters`); Rooms (`voice_public_summary`, `voice_participants_retention_days`) |
+  | Post deletion (`/admin/settings/auto-delete`) | Default for new accounts (the `auto_delete_default_*` settings); Maximum for everyone (`auto_delete_max_age_days`, `auto_delete_grace_days`, the `auto_delete_max_allow_*` settings, `auto_delete_max_kept_pins`). Saving a maximum that is turned on or made shorter asks first ([A maximum for keeping posts](#a-maximum-for-keeping-posts)) |
+  | Federation (`/admin/settings/federation`) | Direction (`federation_mode`); Servers (`federation_scope`: saving `allowlist` first shows the follows the switch would end and asks, see [federating only with allowed servers](moderation.md#federating-only-with-allowed-servers)); Signed fetches (`authorized_fetch`); Media from other servers (`remote_media_policy`, `remote_media_cache_ttl_seconds` in minutes, `remote_media_cache_max_bytes` in MiB); Posts from other servers (`remote_status_retention_days`, `remote_status_max_retention_days`, `relay_status_retention_days`); Moderated servers (`domain_actions_visibility`, `domain_actions_rationale_visibility`) |
+  | Search and crawlers (`/admin/settings/discovery`) | Search engines (`search_indexing`, `indexable_default`); Security contact (`security_contact`); AI (`ai_usage`); Full-text search (`search_visibilities`) |
+  | External review (`/admin/settings/hooks`) | A section for each decision hook: its mode (`enforce` is offered only once it is not `off`), what it does when its plugin fails, and its other settings; Records of decisions (`hook_decisions_retention_days`). See [Decision hooks](decision-hooks.md) |
+  | Appeals and records (`/admin/settings/records`) | Appeals (`appeal_window_days`); Keeping records (`session_origins_retention_days`, `registration_origins_retention_days`, `reports_retention_days`, `moderation_actions_retention_days`, `audit_log_retention_days`) |
 
-  On the General page, an image is uploaded when you choose it and becomes the thumbnail when you save. Who may see the
-  running costs, the income, and the supporter list is set on the "Finance" and "Supporters" screens.
-
-  `max_status_length`, `preview_image`, `appeal_window_days`, and the retention periods (`*_retention_days`), `remote_media_cache_max_bytes`, and `oauth_client_rate_limits` do not appear on the screen;
-  change them with the CLI or the client API. The settings of translation have a screen of their own, below.
+  On the General page, an image is uploaded when you save, and becomes the thumbnail or the link preview image then. Who
+  may see the running costs, the income, and the supporter list is set on the "Finance" and "Supporters" screens. The
+  settings of translation have a screen of their own, below.
 - **Web client** ("Translation", `/admin/translation`): the providers this server has, their order and what each may
   receive, the browser's translation, the monthly limits, and how long translations are kept, with the characters sent
   this month and the cache hit rate. Each server process adds its count of cache hits to the rate at most once a minute,
@@ -651,12 +652,11 @@ Until one is set, the built-in mycroblog images are used, and clearing one bring
 - `GET /api/v1/instance` returns `icon`, `logo`, and `logo_dark` with the URL of the SVG, the URL and size of each PNG version,
   and the revision; each is left out while the built-in image is in use.
 - Set them in the web client under **Server settings** > **Icon and logo** (`/admin/settings/branding`, role permission `manage_settings`). Choose an SVG
-  file for the icon, the logo, or the logo for dark backgrounds: the server checks it, the browser draws the PNG versions, and the
-  form previews them (a browser tab, the home screen, the app icon, an email on a light and a dark background, and the link
-  preview) with the list of what the server removed. If the server refuses the file, the reason shows under the button with how
-  to fix it. For the icon, set the background color of its opaque versions there too. **Save** sends the SVG with every PNG
-  version; **Use the built-in icon**, **Use the built-in logo**, and **Remove the logo for dark backgrounds** clear them. The
-  web client keeps the images it has shown for offline use.
+  file for the icon, the logo, or the logo for dark backgrounds: the server checks it at once, and the form shows it as the
+  server would keep it, with the list of what the server removed. If the server refuses the file, the reason shows under it
+  with how to fix it. For the icon, set the background color of its opaque versions there too. **Save** draws the PNG
+  versions in the browser and sends each image chosen with them; **Use the built-in image** brings an image back to the
+  built-in one when you save. The web client keeps the images it has shown for offline use.
 - The client API does the same, with the role permission `manage_settings`:
   `POST /api/v1/admin/instance/brand/sanitize` checks an SVG and returns the sanitized SVG with the PNG versions to draw (it
   saves nothing), `PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` saves the SVG with every PNG version

@@ -6,9 +6,11 @@ You set providers up with the `my login-provider` command on a host that has the
 admin API (`/api/v1/admin/login_providers`) with the `manage_login_providers` permission, which only the built-in
 `admin` role has. The command works before any administrator can sign in, so you can use it for the first setup.
 In the web client, administrators with that permission use "Login providers" in the administration menu. The list
-shows each provider's kind, state and whether sign-up is allowed; "Add a provider" opens the form that creates one.
-Choosing a provider opens its page, which shows its callback URL with a button that copies it and how many users are
-linked, and where you change its settings, give it a new client secret, enable, disable, and delete it.
+shows each provider's kind, state, how many users are linked and whether sign-up is allowed, under a summary of the
+[limit to login providers](#limit-sign-in-to-login-providers) while it is on; "Add a login provider" opens the form that
+creates one. Choosing a provider opens its page, which shows its callback URL with a button that copies it, and where you
+change its settings, enable or disable it and give it a new client secret, all saved with one button, and delete it, which
+asks you to type its name.
 
 ## What external sign-in does
 

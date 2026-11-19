@@ -45,15 +45,8 @@ import type { EditorHandle, PlainTextEditorProps } from "@my/design-system/edito
 import { Component, lazy, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { adminAnnouncementPath, adminAnnouncementsPath, StandingMark, useWindowWords } from "./announcements";
-import {
-  BackTo,
-  Irreversible,
-  LeaveDialog,
-  ScreenNotice,
-  useStillThere,
-  useUnsavedReport,
-  type AdminSubProps,
-} from "./parts";
+import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { BackTo, useStillThere, useUnsavedReport } from "./parts";
 
 /** The text's editor, a chunk of its own with Lexical, fetched as the form first shows. */
 const LazyEditor = lazy(() => import("@my/design-system/editor").then((m) => ({ default: m.PlainTextEditor })));

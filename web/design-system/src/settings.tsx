@@ -856,7 +856,9 @@ export function SettingsListRow({
           caption !== undefined && (
             <>
               {" "}
-              <span className={s.caption()}>{caption}</span>
+              <span className={s.caption()} dir="auto">
+                {caption}
+              </span>
             </>
           )
         )}

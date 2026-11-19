@@ -7,7 +7,7 @@
 import { loadAdminRoles } from "@my/app-data";
 import { RoleScreen } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
-import { adminSubLoad, AdminSubPage } from "../shell/staff-server";
+import { adminSubLoad, AdminSubPage } from "../shell/staff";
 
 export const Route = createFileRoute("/admin/roles/$key")({
   loader: ({ context }) => adminSubLoad(context, "manage_roles", loadAdminRoles),

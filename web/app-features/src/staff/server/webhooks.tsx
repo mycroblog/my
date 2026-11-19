@@ -28,7 +28,8 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
-import { BackTo, LeaveDialog, ScreenNotice, useStillThere, type AdminSubProps } from "./parts";
+import { LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { BackTo, useStillThere } from "./parts";
 import {
   hostOf,
   useFocusOnArrival,

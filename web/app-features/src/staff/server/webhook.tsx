@@ -37,7 +37,8 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
-import { Irreversible, LeaveDialog, ScreenNotice, useStillThere, type AdminSubProps } from "./parts";
+import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { useStillThere } from "./parts";
 import {
   eventName,
   formOf,

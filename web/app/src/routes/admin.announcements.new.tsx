@@ -6,7 +6,7 @@
 
 import { NewAnnouncementScreen } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
-import { adminSubLoad, AdminSubPage } from "../shell/staff-server";
+import { adminSubLoad, AdminSubPage } from "../shell/staff";
 
 export const Route = createFileRoute("/admin/announcements/new")({
   loader: ({ context }) => adminSubLoad(context, "manage_announcements", () => Promise.resolve()),

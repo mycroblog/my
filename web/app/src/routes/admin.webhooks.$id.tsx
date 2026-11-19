@@ -7,7 +7,7 @@
 import { loadAdminWebhook } from "@my/app-data";
 import { WebhookScreen } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
-import { adminSubLoad, AdminSubPage } from "../shell/staff-server";
+import { adminSubLoad, AdminSubPage } from "../shell/staff";
 
 export const Route = createFileRoute("/admin/webhooks/$id")({
   loader: ({ context, params }) =>

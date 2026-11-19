@@ -6,7 +6,7 @@
 
 import { NewWebhookScreen } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
-import { adminSubLoad, AdminSubPage } from "../shell/staff-server";
+import { adminSubLoad, AdminSubPage } from "../shell/staff";
 
 export const Route = createFileRoute("/admin/webhooks/new")({
   loader: ({ context }) => adminSubLoad(context, "manage_webhooks", () => Promise.resolve()),

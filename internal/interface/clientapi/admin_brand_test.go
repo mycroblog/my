@@ -150,7 +150,7 @@ func TestSanitizeBrand(t *testing.T) {
 		t.Fatalf("sanitize = %d %s", res.StatusCode, res.Header.Get("Cache-Control"))
 	}
 	got := decodeJSON[clientapi.BrandSanitized](t, res)
-	if strings.Contains(got.Svg, "script") || !strings.HasPrefix(got.Svg, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">`) ||
+	if strings.Contains(got.Svg, "script") || !strings.HasPrefix(got.Svg, `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="400" height="100">`) ||
 		got.ViewBoxWidth != 400 || got.ViewBoxHeight != 100 {
 		t.Errorf("sanitized = %+v", got)
 	}

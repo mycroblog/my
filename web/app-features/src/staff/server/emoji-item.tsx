@@ -43,15 +43,8 @@ import {
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { adminEmojiPath, adminEmojisPath, coded, EmojiImage, originOf } from "./emoji-parts";
-import {
-  BackTo,
-  Irreversible,
-  LeaveDialog,
-  ScreenNotice,
-  useStillThere,
-  useUnsavedReport,
-  type AdminSubProps,
-} from "./parts";
+import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { BackTo, useStillThere, useUnsavedReport } from "./parts";
 
 /** The fields a refusal is said under. */
 type Field = "shortcode" | "image" | "category" | "aliases";

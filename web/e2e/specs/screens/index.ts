@@ -17,6 +17,7 @@ export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { EmojiRequests, OwnEmoji } from "./custom-emoji";
 export { conversationRead, Conversations } from "./conversations";
+export { Administration } from "./administration";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export { EventForm, EventPage } from "./events";

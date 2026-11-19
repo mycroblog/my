@@ -225,7 +225,6 @@ export { queueHref, queueOf, ReportQueueBeside, ReportQueueScreen, reportHref } 
 export { ReportScreen, useReportTitle, type ReportScreenProps } from "./staff/reports/report";
 export { StaffMissing, StaffRoot } from "./staff/root";
 export { StaffEntryScreen, useStaffTitle, type StaffEntryScreenProps } from "./staff/screen";
-export { type AdminSubProps } from "./staff/server/parts";
 export { adminRolePath, adminRolesPath, NewRoleScreen, RoleScreen } from "./staff/server/roles";
 export { AnnouncementScreen, NewAnnouncementScreen } from "./staff/server/announcement";
 export { WebhookScreen } from "./staff/server/webhook";
@@ -241,6 +240,19 @@ export {
   useEmojiRequestTitle,
   useOwnEmojiTitle,
 } from "./settings/custom-emojis";
+export { AdminDocumentScreen, loadAdminDocument, useAdminDocumentTitle } from "./staff/documents";
+export {
+  LoginProviderScreen,
+  loadLoginProviders,
+  NewLoginProviderScreen,
+  useLoginProviderTitle,
+} from "./staff/login-providers";
+export { loadOAuthHosts, OAuthHostsScreen } from "./staff/oauth-apps";
+export { loadRelays, NewRelayScreen, RelayScreen, useRelayTitle } from "./staff/relays";
+export { loadRules, NewRuleScreen, RuleScreen } from "./staff/rules";
+export type { AdminSubProps } from "./staff/settings/parts";
+export { AdminSettingsTopicScreen, loadAdminSettingsTopic, useAdminSettingsTopicTitle } from "./staff/settings/screen";
+export { loadTranslationSettings, TranslationSettingsScreen } from "./staff/settings/translation";
 export {
   accountPagePath,
   AccountScreen,

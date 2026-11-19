@@ -59,15 +59,8 @@ import {
 import { ProblemError } from "@mycroblog/mykit";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useStaffStrings, type T } from "../parts";
-import {
-  BackTo,
-  Irreversible,
-  LeaveDialog,
-  ScreenNotice,
-  useStillThere,
-  useUnsavedReport,
-  type AdminSubProps,
-} from "./parts";
+import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { BackTo, useStillThere, useUnsavedReport } from "./parts";
 
 /** The address of the roles. */
 export const adminRolesPath = "/admin/roles";
