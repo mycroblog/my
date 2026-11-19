@@ -30,7 +30,7 @@ import {
   type ReactNode,
   type RefObject,
 } from "react";
-import { Button as AriaButton, Link, ToggleButton, Tooltip, TooltipTrigger } from "react-aria-components";
+import { Button as AriaButton, Link, Tooltip, TooltipTrigger } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { ButtonBase } from "./button";
 import { Icon, type IconName } from "./icons";
@@ -1324,8 +1324,8 @@ const call = tv({
   ],
 });
 
-// What the parts of the call's bar look like wherever it is. The microphone muted is knocked out, as a toggle on is,
-// with its crossed glyph: it reads at rest, without a hue.
+// What the parts of the call's bar look like wherever it is. The microphone muted is knocked out, with its crossed
+// glyph: it reads at rest, without a hue, as the room's own microphone control does (voice.tsx).
 const callLook = tv({
   slots: {
     room: "rounded-control text-text no-underline outline-hidden data-focus-visible:shadow-focus",
@@ -1334,8 +1334,7 @@ const callLook = tv({
     button: [
       "cursor-pointer rounded-control",
       "border-0 p-0 font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
-      "data-selected:bg-text data-selected:text-surface data-selected:data-hovered:bg-text",
-      "data-selected:data-pressed:bg-text",
+      "data-on:bg-text data-on:text-surface data-on:data-hovered:bg-text data-on:data-pressed:bg-text",
     ],
     // Knocked out of the text's color, as a toggle on is: it is what the reader must do to hear the room.
     hear: [
@@ -1394,8 +1393,9 @@ function CallPart({
 /**
  * The bar of the call the reader is in, kept while they move between screens: above the tab bar on a phone, ending the
  * navigation from `tablet`. The room's glyph, name and detail (who hosts it, how many listen) lead to its screen (in the
- * rail, its name in a tooltip); then the microphone, on while muted, and leaving last, each named, and labelled from
- * `desktop`. How many are in the room follows its name, never cut. While the call connects or connects again, a
+ * rail, its name in a tooltip); then the microphone, a button named by what a press does now (Mute, Unmute while
+ * muted, knocked out and crossed out then, as the room's own control is), and leaving last, each named, and labelled
+ * from `desktop`. How many are in the room follows its name, never cut. While the call connects or connects again, a
  * spinner stands in the room's glyph and the detail says so; while the browser holds the room's sound back until a
  * press, `hear` is the bar's strongest part, knocked out, with its words: above the tab bar a line of its own over the
  * room, at the rail's end a tile before the microphone, and from `desktop` a line of its own over the two buttons.
@@ -1408,8 +1408,8 @@ export function CallBar({
   busy = false,
   hear,
   muted,
-  muteLabel,
-  onMute,
+  micLabel,
+  onMic,
   leaveLabel,
   onLeave,
 }: {
@@ -1424,9 +1424,10 @@ export function CallBar({
   /** The browser holds the room's sound back until the reader presses this ("Tap to hear"). */
   hear?: { label: string; onPress: () => void } | undefined;
   muted: boolean;
-  /** The microphone's toggle, pressed while muted ("Mute"). */
-  muteLabel: string;
-  onMute: () => void;
+  /** The microphone's name: what a press does now ("Mute", and "Unmute" while muted). */
+  micLabel: string;
+  /** The microphone was pressed: the owner turns it off, or on while muted. */
+  onMic: () => void;
   leaveLabel: string;
   onLeave: () => void;
 }) {
@@ -1493,10 +1494,13 @@ export function CallBar({
       )}
       <CallPart part="actions" as={<span />}>
         {place !== "dock" && hearing}
-        <CallPart part="button" as={<ToggleButton className={look.button()} isSelected={muted} onChange={onMute} />}>
+        <CallPart
+          part="button"
+          as={<AriaButton className={look.button()} onPress={onMic} data-on={muted || undefined} />}
+        >
           <Icon name="microphone" place="action" on={muted} />
           <CallPart part="buttonLabel" as={<span />}>
-            {muteLabel}
+            {micLabel}
           </CallPart>
         </CallPart>
         <CallPart part="button" as={<AriaButton className={look.button()} onPress={onLeave} />}>

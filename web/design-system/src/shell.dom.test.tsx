@@ -305,8 +305,8 @@ function callBar(muted: boolean) {
       room="Coffee"
       detail="Hosted by Mika · 12 in the room"
       muted={muted}
-      muteLabel="Mute"
-      onMute={() => did.push("mute")}
+      micLabel={muted ? "Unmute" : "Mute"}
+      onMic={() => did.push(muted ? "unmute" : "mute")}
       leaveLabel="Leave"
       onLeave={() => did.push("leave")}
     />,
@@ -322,11 +322,14 @@ test("the call's bar is a group named by its room, whose name and detail lead to
   expect(room.getAttribute("href")).toBe("/voice/1");
 });
 
-test("the call's microphone is a toggle named by its label, on while muted, and leaving comes last", async () => {
+test("the call's microphone is a button named Unmute while muted, with no pressed state, and leaving comes last", async () => {
   const user = userEvent.setup();
   const did = callBar(true);
   const bar = screen.getByRole("group", { name: "Coffee" });
-  const mute = within(bar).getByRole("button", { name: "Mute", pressed: true });
+  const mute = within(bar).getByRole("button", { name: "Unmute" });
+  // One name for what is shown and heard, as the room's own control: no pressed state beside it.
+  expect(mute.hasAttribute("aria-pressed")).toBe(false);
+  expect(mute.hasAttribute("data-on")).toBe(true);
   const leave = within(bar).getByRole("button", { name: "Leave" });
 
   await user.tab();
@@ -338,14 +341,17 @@ test("the call's microphone is a toggle named by its label, on while muted, and 
   expect(document.activeElement).toBe(leave);
   await user.keyboard("{Enter}");
 
-  expect(did).toEqual(["mute", "leave"]);
+  expect(did).toEqual(["unmute", "leave"]);
 });
 
-test("the call's microphone is off while the reader is not muted, and a click asks to mute", async () => {
+test("the call's microphone is named Mute while the reader is not muted, and a click asks to mute", async () => {
   const user = userEvent.setup();
   const did = callBar(false);
+  const mute = screen.getByRole("button", { name: "Mute" });
+  expect(mute.hasAttribute("aria-pressed")).toBe(false);
+  expect(mute.hasAttribute("data-on")).toBe(false);
 
-  await user.click(screen.getByRole("button", { name: "Mute", pressed: false }));
+  await user.click(mute);
   await user.click(screen.getByRole("button", { name: "Leave" }));
 
   expect(did).toEqual(["mute", "leave"]);
@@ -362,8 +368,8 @@ test("while the call connects again its bar is busy, and while its sound is held
       busy
       hear={{ label: "Tap to hear", onPress: () => did.push("hear") }}
       muted={false}
-      muteLabel="Mute"
-      onMute={() => did.push("mute")}
+      micLabel="Mute"
+      onMic={() => did.push("mute")}
       leaveLabel="Leave"
       onLeave={() => did.push("leave")}
     />,
@@ -582,8 +588,8 @@ test("the dock holds the tab bar under its name, the call's bar, the primary act
             room="Coffee"
             detail="12 in the room"
             muted={false}
-            muteLabel="Mute"
-            onMute={() => undefined}
+            micLabel="Mute"
+            onMic={() => undefined}
             leaveLabel="Leave"
             onLeave={() => undefined}
           />

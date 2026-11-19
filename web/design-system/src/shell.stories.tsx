@@ -522,8 +522,8 @@ function Shell(state: ShellState) {
           : undefined
       }
       muted={muted}
-      muteLabel="Mute"
-      onMute={() => {
+      micLabel={muted ? "Unmute" : "Mute"}
+      onMic={() => {
         setMuted(!muted);
       }}
       leaveLabel="Leave"
