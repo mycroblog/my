@@ -238,6 +238,11 @@ export { loadRules, NewRuleScreen, RuleScreen } from "./staff/rules";
 export type { AdminSubProps } from "./staff/settings/parts";
 export { AdminSettingsTopicScreen, loadAdminSettingsTopic, useAdminSettingsTopicTitle } from "./staff/settings/screen";
 export { loadTranslationSettings, TranslationSettingsScreen } from "./staff/settings/translation";
+export { ThemeDraftScreen, useThemeDraftTitle } from "./staff/theme/draft";
+export { ClosureAnnouncementScreen, useClosureAnnouncementTitle } from "./staff/closure/announce";
+export { ClosureCloseScreen, loadClosureClose, useClosureCloseTitle } from "./staff/closure/close";
+export { loadClosure } from "./staff/closure/screen";
+export { loadTheme } from "./staff/theme/screen";
 export {
   accountPagePath,
   AccountScreen,

@@ -414,5 +414,13 @@
   "app.report_queue": {
     "defaultMessage": "通報",
     "description": "For assistive technology, the name of the column beside a report's screen, which lists the moderators' queue of reports."
+  },
+  "app.theme_preview": {
+    "defaultMessage": "このタブでは下書きのテーマを表示しています。",
+    "description": "The notice on every screen while an administrator previews the draft of the server's theme in this tab; its link leads to the theme's screen, where the preview stops. Read by administrators."
+  },
+  "app.theme_preview_back": {
+    "defaultMessage": "テーマ",
+    "description": "The link of the notice of the draft theme's preview, to the theme's screen of the administration. Read by administrators."
   }
 }

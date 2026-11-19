@@ -1,0 +1,250 @@
+{
+  "staff_closure.loading": {
+    "defaultMessage": "Loading the closure…",
+    "description": "In place of the closure's screens while the closure is read. Read by administrators."
+  },
+  "staff_closure.failed": {
+    "defaultMessage": "The closure could not be loaded.",
+    "description": "In place of the closure's screens when the closure could not be read, before Try again. Read by administrators."
+  },
+  "staff_closure.announcement": {
+    "defaultMessage": "Announcement",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of the announcement of the closure. Read by administrators."
+  },
+  "staff_closure.none": {
+    "defaultMessage": "No closure is announced.",
+    "description": "On the closure's screen of the administration (/admin/closure), while no closure is announced. Read by administrators."
+  },
+  "staff_closure.announce": {
+    "defaultMessage": "Announce the closure",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that announces the closure, and that form's title. Read by administrators."
+  },
+  "staff_closure.announce.press": {
+    "defaultMessage": "Announce",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the button that sends the announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.change": {
+    "defaultMessage": "Change the dates",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the form that changes the dates of the announcement, and that form's title. Read by administrators."
+  },
+  "staff_closure.withdraw": {
+    "defaultMessage": "Withdraw",
+    "description": "On the closure's screen of the administration (/admin/closure), the button that withdraws the announcement (asked first), and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.withdraw.title": {
+    "defaultMessage": "Withdraw the closure?",
+    "description": "On the closure's screen of the administration (/admin/closure), the question before withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.withdraw.text": {
+    "defaultMessage": "The server runs on as before, and every user gets a notification. The sign-ups rejected and the supporter subscriptions ended stay so.",
+    "description": "On the closure's screen of the administration (/admin/closure), what follows withdrawing the announcement. Read by administrators."
+  },
+  "staff_closure.short_notice": {
+    "defaultMessage": "Less than 30 days' notice: some users may not have the time to export their data and move.",
+    "description": "On the closure's screen of the administration (/admin/closure), under the announcement's facts when it gives less than 30 days' notice. Read by administrators."
+  },
+  "staff_closure.close": {
+    "defaultMessage": "Close the server",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section that leads to closing the server, and the title of the check before it. Read by administrators."
+  },
+  "staff_closure.check": {
+    "defaultMessage": "Check and close",
+    "description": "On the closure's screen of the administration (/admin/closure), the button to the check before closing the server, once the closing date has passed. Read by administrators."
+  },
+  "staff_closure.close.wait": {
+    "defaultMessage": "You can close the server once {date} has passed.",
+    "description": "On the closure's screen of the administration (/admin/closure), in place of the way to close the server before the closing date ({date}, a date and time). Read by administrators."
+  },
+  "staff_closure.close.press": {
+    "defaultMessage": "Close the server",
+    "description": "On the check before closing the server (/admin/closure/close), the button that asks before closing the server, and the confirmation of its question. Read by administrators."
+  },
+  "staff_closure.close.refused": {
+    "defaultMessage": "The server cannot be closed now. Go back to the closure and check its state.",
+    "description": "On the check before closing the server (/admin/closure/close), when the server refused the closure in the state it is in. Read by administrators."
+  },
+  "staff_closure.close.not_yet": {
+    "defaultMessage": "{why, select, none {Announce the closure first.} early {You can close the server once {date} has passed.} other {The server is closed.}}",
+    "description": "On the check before closing the server (/admin/closure/close), in place of Close the server while it cannot be closed ({date}, the closing date and time). Read by administrators."
+  },
+  "staff_closure.close.title": {
+    "defaultMessage": "Close {domain}?",
+    "description": "On the check before closing the server (/admin/closure/close), the question before closing the server ({domain}, the server's domain, typed to confirm). Read by administrators."
+  },
+  "staff_closure.close.text": {
+    "defaultMessage": "Users can only sign in and export their data until {date}. About {deletes, number} deliveries delete every account on the other servers. This cannot be undone.",
+    "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
+  },
+  "staff_closure.closed": {
+    "defaultMessage": "Closed",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of a closed server. Read by administrators."
+  },
+  "staff_closure.closed.remains": {
+    "defaultMessage": "Users can only sign in and export their data, until the export deadline.",
+    "description": "On the closure's screen of the administration (/admin/closure), what remains of the service once the server is closed. Read by administrators."
+  },
+  "staff_closure.progress": {
+    "defaultMessage": "Deleting the accounts on other servers",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading of the progress of the delivery of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.progress.accounts": {
+    "defaultMessage": "Accounts deleted",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of local accounts whose deletion was recorded. Read by administrators."
+  },
+  "staff_closure.progress.fanouts": {
+    "defaultMessage": "Finding their servers",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deletions whose receiving servers are still being found. Read by administrators."
+  },
+  "staff_closure.progress.succeeded": {
+    "defaultMessage": "Delivered",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries the other servers accepted. Read by administrators."
+  },
+  "staff_closure.progress.pending": {
+    "defaultMessage": "Waiting",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not attempted yet or to be attempted again. Read by administrators."
+  },
+  "staff_closure.progress.refused": {
+    "defaultMessage": "Refused",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries refused for good. Read by administrators."
+  },
+  "staff_closure.progress.skipped": {
+    "defaultMessage": "Skipped",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries not sent, to a suspended or unavailable server. Read by administrators."
+  },
+  "staff_closure.progress.dead": {
+    "defaultMessage": "Out of attempts",
+    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries that used up their attempts. Read by administrators."
+  },
+  "staff_closure.progress.going": {
+    "defaultMessage": "Deliveries go on. Keep the server and its workers running until they end.",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress while deliveries go on. Read by administrators."
+  },
+  "staff_closure.progress.done": {
+    "defaultMessage": "Every delivery has ended.",
+    "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
+  },
+  "staff_closure.state": {
+    "defaultMessage": "{state, select, none {Not announced} announced {Announced} closed {Closed, deliveries going on} other {Closed, deliveries ended}}",
+    "description": "On the closure's screen of the administration (/admin/closure), where the closure stands. Read by administrators."
+  },
+  "staff_closure.fact.state": {
+    "defaultMessage": "State",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of where the closure stands. Read by administrators."
+  },
+  "staff_closure.fact.closes": {
+    "defaultMessage": "Closes",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the closing date and time. Read by administrators."
+  },
+  "staff_closure.fact.closed": {
+    "defaultMessage": "Closed",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the server was closed. Read by administrators."
+  },
+  "staff_closure.fact.export_until": {
+    "defaultMessage": "Export until",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.fact.announced": {
+    "defaultMessage": "Announced",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of when the announcement or its last change of dates was made. Read by administrators."
+  },
+  "staff_closure.fact.message": {
+    "defaultMessage": "Message",
+    "description": "On the closure's screen of the administration (/admin/closure), the term of the operator's message to the users. Read by administrators."
+  },
+  "staff_closure.irreversible": {
+    "defaultMessage": "Closing ends the service for good. This cannot be undone.",
+    "description": "On the check before closing the server (/admin/closure/close), the mark beside Close the server. Read by administrators."
+  },
+  "staff_closure.form.dates": {
+    "defaultMessage": "Dates",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the closing date and the export deadline. Read by administrators."
+  },
+  "staff_closure.form.closes": {
+    "defaultMessage": "Closing date",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the closing date and time's field. Read by administrators."
+  },
+  "staff_closure.form.closes.missing": {
+    "defaultMessage": "Choose the closing date and time.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the closing date when it is empty or no whole date and time. Read by administrators."
+  },
+  "staff_closure.form.until": {
+    "defaultMessage": "Export deadline",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the field of the last moment the users can export their data. Read by administrators."
+  },
+  "staff_closure.form.until.about": {
+    "defaultMessage": "Empty for 30 days after the closing date.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline: its default. Read by administrators."
+  },
+  "staff_closure.form.until.before": {
+    "defaultMessage": "Choose a moment on or after the closing date.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline when it is before the closing date. Read by administrators."
+  },
+  "staff_closure.form.message": {
+    "defaultMessage": "Message to the users",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the heading of the section of the operator's message, shown in the notices and on the closed server's page. Read by administrators."
+  },
+  "staff_closure.form.closed": {
+    "defaultMessage": "The server is closed, so no closure can be announced.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), when the server is closed already. Read by administrators."
+  },
+  "staff_closure.form.short": {
+    "defaultMessage": "Less than 30 days' notice.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), beside the button when the closing date is less than 30 days away. Read by administrators."
+  },
+  "staff_closure.form.refused": {
+    "defaultMessage": "{field, select, closes_at {Choose another closing date.} export_until {Choose a moment on or after the closing date.} other {Shorten the message to 5,000 characters.}}",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the field the server refused. Read by administrators."
+  },
+  "staff_closure.ask.announce.title": {
+    "defaultMessage": "Announce the closure?",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.announce.text": {
+    "defaultMessage": "Every user gets a notification and an email. Sign-ups and invites stop, waiting sign-ups are rejected, and supporter subscriptions end at the end of their period. Withdrawing the closure does not undo these.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows announcing the closure. Read by administrators."
+  },
+  "staff_closure.ask.change.title": {
+    "defaultMessage": "Change the dates?",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the question before changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.ask.change.text": {
+    "defaultMessage": "Every user gets a notification and an email with the new dates.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), what follows changing the dates of the announcement. Read by administrators."
+  },
+  "staff_closure.check.heading": {
+    "defaultMessage": "What closing does",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of what closing would end. Read by administrators."
+  },
+  "staff_closure.check.deletes": {
+    "defaultMessage": "Deletions to deliver",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the estimate of the deliveries of the deletion of every local account. Read by administrators."
+  },
+  "staff_closure.check.migrations": {
+    "defaultMessage": "Account moves not ended",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the account migrations not ended. Read by administrators."
+  },
+  "staff_closure.check.holds": {
+    "defaultMessage": "Accounts under a retention hold",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the accounts whose records are held. Read by administrators."
+  },
+  "staff_closure.check.count": {
+    "defaultMessage": "{count, number}",
+    "description": "On the check before closing the server (/admin/closure/close), a count of the check, as a number. Read by administrators."
+  },
+  "staff_closure.check.migrations.warning": {
+    "defaultMessage": "Wait for the moves to end: nobody can start one after the closure.",
+    "description": "On the check before closing the server (/admin/closure/close), while account moves have not ended. Read by administrators."
+  },
+  "staff_closure.check.holds.warning": {
+    "defaultMessage": "Export the records under a hold with the command line, and keep them outside the server.",
+    "description": "On the check before closing the server (/admin/closure/close), while accounts are under a retention hold. Read by administrators."
+  },
+  "staff_closure.check.deletes.value": {
+    "defaultMessage": "About {deletes, number} ({accounts, number} accounts to {inboxes, number} servers)",
+    "description": "On the check before closing the server (/admin/closure/close), the estimate of the deliveries ({deletes}), the local accounts ({accounts}) and the known inboxes ({inboxes}), numbers. Read by administrators."
+  },
+  "staff_closure.check.subscriptions": {
+    "defaultMessage": "Supporter subscriptions ended at once, without a refund",
+    "description": "On the check before closing the server (/admin/closure/close), the term of the supporter subscriptions that the closure cancels. Read by administrators."
+  }
+}

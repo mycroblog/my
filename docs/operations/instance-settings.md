@@ -564,7 +564,7 @@ There is no custom CSS.
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | color | `#rrggbb` for light and for dark |
   | `font-sans-override`, `font-mono-override` | font family | Family names, comma-separated (at most 30), with no generic family such as `sans-serif`; quote a name with a word that starts with a digit, such as `"M PLUS 1p"` |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | length | `0` or rem / px, 0.625rem to 3rem |
   | `text-*--line-height` of the same four | number | 1 to 2.5 |
   | `radius-control`, `radius-overlay` | length | 0 to 2rem |
   | `duration-spin` | duration | ms / s, 0 to 1000ms |
@@ -576,6 +576,10 @@ There is no custom CSS.
 - You save a set as a draft, preview it, and then publish it; the theme in effect does not change until you publish. Each save
   replaces the whole draft, and each publication is a new revision. Restoring publishes again the set that was in effect
   before the current one, and leaves the draft as it is.
+- In the web client, **Administration > Theme** shows the draft and the theme in effect. Edit the draft shows each color
+  for light and dark with the contrast of every pair it makes, and does not save a pair below its minimum. Preview shows
+  the draft on every screen of your browser tab until you press it again; nobody else sees it. Publish and Restore the
+  previous theme are on the same screen. The icon and the logo are on **Server settings > Icon and logo**.
 - When you save and when you publish, the server checks the shape and range of the values and the contrast of every pair of
   color tokens (tokens you do not override use their defaults; WCAG 2.2 AA in both light and dark). If any check fails, nothing
   is saved or published.

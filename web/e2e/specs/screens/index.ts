@@ -17,6 +17,7 @@ export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { conversationRead, Conversations } from "./conversations";
 export { Administration } from "./administration";
+export { ClosureAdmin, ThemeAdmin } from "./theme-closure";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export { EventForm, EventPage } from "./events";

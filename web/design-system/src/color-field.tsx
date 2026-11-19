@@ -40,6 +40,11 @@ export type ColorPair = {
 };
 
 export type ColorFieldProps = {
+  /**
+   * The ids of its colors' fields, `<id>-light` and `<id>-dark`, by which what holds it gives the focus to the scheme
+   * whose pair is under its minimum (`focusRefusedField`).
+   */
+  id?: string | undefined;
   /** The token's name (Accent text). */
   label: string;
   /** What it colors, in a line under its name. */
@@ -133,12 +138,15 @@ function PairSample({ fg, bg, className }: { fg: string; bg: string; className: 
 
 /** A scheme's color: its swatch and its #rrggbb, and the verdicts of its pairs. */
 function SchemeColor({
+  id,
   scheme,
   nameId,
   value,
   pairs,
   onChange,
 }: {
+  /** The id of its color's field; one of its own without it. */
+  id: string | undefined;
   scheme: Scheme;
   /** The id of the token's name, which names its controls with the scheme's. */
   nameId: string;
@@ -150,7 +158,8 @@ function SchemeColor({
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   const titleId = useId();
-  const fieldId = useId();
+  const ownId = useId();
+  const fieldId = id ?? ownId;
   const pairsId = useId();
   const formatId = useId();
   const pickId = useId();
@@ -256,7 +265,7 @@ function SchemeColor({
  * A color token of the server's theme: its name and what it colors, then its color in light and in dark, each with
  * the contrast of its pairs against WCAG AA; a pair under its minimum makes that scheme's field invalid.
  */
-export function ColorField({ label, about, value, onChange, pairs }: ColorFieldProps): ReactNode {
+export function ColorField({ id, label, about, value, onChange, pairs }: ColorFieldProps): ReactNode {
   const s = field();
   const nameId = useId();
   const aboutId = useId();
@@ -282,6 +291,7 @@ export function ColorField({ label, about, value, onChange, pairs }: ColorFieldP
         {SCHEMES.map((scheme) => (
           <SchemeColor
             key={scheme}
+            id={id === undefined ? undefined : `${id}-${scheme}`}
             scheme={scheme}
             nameId={nameId}
             value={value}

@@ -74,6 +74,8 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
+import { closureHandlers, type FakeClosureOptions } from "./closure";
+import { themeHandlers, type FakeThemeOptions } from "./theme";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { moderationHandlers, type FakeModeration, type FakeModerationOptions } from "./accounts";
 import { createScripts, type Script, type Scripted } from "./script";
@@ -269,6 +271,10 @@ export type FakeOptions = {
   longSummary?: boolean;
   /** The closure of the service: announced, or the server closed. */
   closure?: "announced" | "closed";
+  /** The closure as its administrators run it (closure.ts): its date passed, a short notice, delivered, warnings. */
+  closureAdmin?: FakeClosureOptions;
+  /** The instance theme as its administrators edit it (theme.ts): nothing by default, a draft, or it published. */
+  theme?: FakeThemeOptions;
   /** The server is under maintenance: every operation answers its problem. */
   maintenance?: boolean;
   /**
@@ -2441,6 +2447,23 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     host: fakeHost,
   });
 
+  // The instance theme (theme.ts) and the closure of the service as its administrators run it (closure.ts), whose state
+  // the instance says.
+  const theming = themeHandlers({
+    started,
+    options: o.theme,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    origin: fakeOrigin,
+  });
+  const closing = closureHandlers({
+    started,
+    state: o.closure,
+    options: o.closureAdmin,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    domain: fakeHost,
+    message: instanceBody.closure?.message ?? "",
+  });
+
   // The administration's settings, texts, rules, relays, login providers and OAuth apps (admin-settings.ts), as the
   // instance says them.
   const administered = adminHandlers({
@@ -2957,7 +2980,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       o.preferencesFail === "read" ? problem(500, "Internal Server Error") : { status: 200, body: preferences },
     "PATCH /preferences": ({ body }) =>
       o.preferencesFail === "save" ? problem(500, "Internal Server Error") : changePreferences(body),
-    "GET /instance": () => ({ status: 200, body: instanceBody }),
+    "GET /instance": () => ({ status: 200, body: closing.instanceOf(instanceBody) }),
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
       return { status: 200, body: health };
@@ -3843,6 +3866,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The administration's settings, texts, rules, relays, login providers and OAuth apps -------------------------
 
     ...administered.handlers,
+
+    // ---- The instance theme and the closure of the service --------------------------------------------------------
+
+    ...theming.handlers,
+    ...closing.handlers,
 
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 

@@ -40,6 +40,7 @@ export {
 export { copyText, shareLink, type ShareOutcome } from "./share";
 export { drawSvgPictures, type SvgPictureSpec } from "./svg-picture";
 export { inNativeShell } from "./shell";
+export { adoptStyleSheet } from "./style-sheet";
 export { playSound, trySound } from "./sound";
 export { joinTabGroup, type TabGroup } from "./tabs";
 export {
