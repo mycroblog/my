@@ -77,7 +77,15 @@ test("with reduced motion a reaction fades in place, and leaves once done", asyn
   const taken = await samples(reaction, 30);
   expect(travel(taken)).toBeLessThan(0.5);
   expect(fading(taken)).toBeGreaterThan(0.05);
-  // The story drops a reaction once the flow says it is done.
+  // The story drops a reaction once the flow says it is done: its fade, which the test ends at once, on the reaction
+  // or on what holds it.
+  await reaction.evaluate((element) => {
+    for (const motion of document.getAnimations()) {
+      const target = motion.effect instanceof KeyframeEffect ? motion.effect.target : null;
+      const ends = motion.effect?.getComputedTiming().endTime !== Infinity;
+      if (ends && target !== null && (target.contains(element) || element.contains(target))) motion.finish();
+    }
+  });
   await expect.poll(() => first.evaluate((element) => element.isConnected)).toBe(false);
 });
 

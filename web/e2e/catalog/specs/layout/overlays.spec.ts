@@ -35,7 +35,7 @@ async function expectAlongBottomEdge(page: Page, sheet: Locator): Promise<void> 
     .toBe(true);
 }
 
-test("on a phone a menu and a small form are sheets along the bottom edge, headed, over their backdrop", async ({
+test("on a phone a menu and a small form are sheets along the bottom edge, headed, over their backdrop, and a press on the dimmed page above a menu's sheet closes it", async ({
   page,
   open,
 }) => {
@@ -84,22 +84,18 @@ test("on a phone a menu and a small form are sheets along the bottom edge, heade
     await expect(form).toBeHidden();
     await expect(trigger(page, "Open the form")).toBeFocused();
   });
-});
 
-test("on a phone a press on the dimmed page above a menu's sheet closes it and gives the focus back to the trigger", async ({
-  page,
-  open,
-}) => {
-  await open(story);
-  await trigger(page, "Menu at the end").click();
-  const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
-  await expect(menu).toBeVisible();
-  // The top corner of the page, away from the trigger and from the sheet along the bottom edge.
-  expect((await boxOf(menu)).top).toBeGreaterThan(8);
-  await page.mouse.click(8, 8);
+  await test.step("a press on the dimmed page above a menu's sheet closes it and gives the focus back to the trigger", async () => {
+    await trigger(page, "Menu at the end").click();
+    const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
+    await expect(menu).toBeVisible();
+    // The top corner of the page, away from the trigger and from the sheet along the bottom edge.
+    expect((await boxOf(menu)).top).toBeGreaterThan(8);
+    await page.mouse.click(8, 8);
 
-  await expect(menu).toBeHidden();
-  await expect(trigger(page, "Menu at the end")).toBeFocused();
+    await expect(menu).toBeHidden();
+    await expect(trigger(page, "Menu at the end")).toBeFocused();
+  });
 });
 
 test("on a phone a question stands in the middle of the view, and a panel is a screen of its own that scrolls inside", async ({
@@ -158,51 +154,53 @@ test("on a phone a question stands in the middle of the view, and a panel is a s
   });
 });
 
-for (const locale of ["en", "ar-XB"] as const)
-  test(`from \`tablet\` a menu and a small form are popovers by their triggers, with no head (${locale === "en" ? "left to right" : "right to left"})`, async ({
-    page,
-    open,
-  }) => {
-    await open(story, { width: pc, height: 800, locale });
-    /** How far the popover's edges are from its trigger's: its start, its end, and the gap under the trigger. */
-    const by = async (popover: Locator, button: Locator) => {
-      const [box, of] = [await boxOf(popover), await boxOf(button)];
-      const [start, end] = [Math.abs(box.left - of.left), Math.abs(box.right - of.right)];
-      return { start: locale === "en" ? start : end, end: locale === "en" ? end : start, under: box.top - of.bottom };
-    };
-    // Within a step of the trigger's edge: the popover's own edge and the menu's inside it.
-    const step = 16;
+test("from `tablet` a menu and a small form are popovers by their triggers, with no head, left to right and right to left", async ({
+  page,
+  open,
+}) => {
+  for (const locale of ["en", "ar-XB"] as const)
+    await test.step(locale === "en" ? "left to right" : "right to left", async () => {
+      await open(story, { width: pc, height: 800, locale });
+      /** How far the popover's edges are from its trigger's: its start, its end, and the gap under the trigger. */
+      const by = async (popover: Locator, button: Locator) => {
+        const [box, of] = [await boxOf(popover), await boxOf(button)];
+        const [start, end] = [Math.abs(box.left - of.left), Math.abs(box.right - of.right)];
+        return { start: locale === "en" ? start : end, end: locale === "en" ? end : start, under: box.top - of.bottom };
+      };
+      // Within a step of the trigger's edge: the popover's own edge and the menu's inside it.
+      const step = 16;
 
-    for (const side of ["start", "end"] as const) {
-      const button = trigger(page, `Menu at the ${side}`);
+      for (const side of ["start", "end"] as const) {
+        const button = trigger(page, `Menu at the ${side}`);
+        await button.click();
+        const menu = page.getByRole("menu", { name: `Menu at the ${side}`, exact: true });
+        await expect(menu).toBeVisible();
+        await expect.poll(async () => (await boxOf(menu)).width).toBeLessThan(pc / 2);
+        await expect.poll(async () => (await by(menu, button))[side]).toBeLessThan(step);
+        await expect.poll(async () => (await by(menu, button)).under).toBeGreaterThanOrEqual(0);
+        await expect.poll(async () => (await by(menu, button)).under).toBeLessThan(step);
+        await expectInViewport(page, menu);
+        await expect.poll(() => covered(menu.getByRole("menuitem"))).toEqual([]);
+        await expect(page.getByRole("heading", { name: `Menu at the ${side}`, exact: true })).toBeHidden();
+        await page.keyboard.press("Escape");
+        await expect(menu).toBeHidden();
+        await expect(button).toBeFocused();
+      }
+
+      const button = trigger(page, "Open the form");
       await button.click();
-      const menu = page.getByRole("menu", { name: `Menu at the ${side}`, exact: true });
-      await expect(menu).toBeVisible();
-      await expect.poll(async () => (await boxOf(menu)).width).toBeLessThan(pc / 2);
-      await expect.poll(async () => (await by(menu, button))[side]).toBeLessThan(step);
-      await expect.poll(async () => (await by(menu, button)).under).toBeGreaterThanOrEqual(0);
-      await expect.poll(async () => (await by(menu, button)).under).toBeLessThan(step);
-      await expectInViewport(page, menu);
-      await expect.poll(() => covered(menu.getByRole("menuitem"))).toEqual([]);
-      await expect(page.getByRole("heading", { name: `Menu at the ${side}`, exact: true })).toBeHidden();
+      const form = page.getByRole("dialog", { name: "Schedule", exact: true });
+      await expect(form).toBeVisible();
+      await expect(form.getByRole("heading", { name: "Schedule", exact: true })).toBeHidden();
+      await expect.poll(async () => (await boxOf(form)).width).toBeLessThan(pc / 2);
+      await expect.poll(async () => (await by(form, button)).start).toBeLessThan(step);
+      await expect.poll(async () => (await by(form, button)).under).toBeGreaterThanOrEqual(0);
+      await expect.poll(async () => (await by(form, button)).under).toBeLessThan(step);
       await page.keyboard.press("Escape");
-      await expect(menu).toBeHidden();
+      await expect(form).toBeHidden();
       await expect(button).toBeFocused();
-    }
-
-    const button = trigger(page, "Open the form");
-    await button.click();
-    const form = page.getByRole("dialog", { name: "Schedule", exact: true });
-    await expect(form).toBeVisible();
-    await expect(form.getByRole("heading", { name: "Schedule", exact: true })).toBeHidden();
-    await expect.poll(async () => (await boxOf(form)).width).toBeLessThan(pc / 2);
-    await expect.poll(async () => (await by(form, button)).start).toBeLessThan(step);
-    await expect.poll(async () => (await by(form, button)).under).toBeGreaterThanOrEqual(0);
-    await expect.poll(async () => (await by(form, button)).under).toBeLessThan(step);
-    await page.keyboard.press("Escape");
-    await expect(form).toBeHidden();
-    await expect(button).toBeFocused();
-  });
+    });
+});
 
 test("from `tablet` a question and a panel stand in the middle of the view, over the dimmed page", async ({
   page,
@@ -238,26 +236,28 @@ test("from `tablet` a question and a panel stand in the middle of the view, over
   await expect.poll(() => page.evaluate(() => window.scrollY)).toBe(0);
 });
 
-test("a question keeps its words and its buttons inside it when its title holds a word no line holds", async ({
+test("a question keeps its words and its buttons inside it when its title holds a word no line holds, and a menu's sheet an item whose label holds one", async ({
   page,
   open,
 }) => {
-  await open(story, { args: { long: true } });
-  await trigger(page, "Open the question").click();
-  const question = page.getByRole("alertdialog", { name: /^Delete .+\?$/ });
-  const at = await boxesAtRest({
-    question,
-    heading: question.getByRole("heading"),
-    confirm: question.getByRole("button", { name: "Delete", exact: true }),
+  await test.step("a question", async () => {
+    await open(story, { args: { long: true } });
+    await trigger(page, "Open the question").click();
+    const question = page.getByRole("alertdialog", { name: /^Delete .+\?$/ });
+    const at = await boxesAtRest({
+      question,
+      heading: question.getByRole("heading"),
+      confirm: question.getByRole("button", { name: "Delete", exact: true }),
+    });
+    expect(outside(at.heading, await viewportBox(page))).toEqual([]);
+    expect(outside(at.confirm, at.question)).toEqual([]);
   });
-  expect(outside(at.heading, await viewportBox(page))).toEqual([]);
-  expect(outside(at.confirm, at.question)).toEqual([]);
-});
 
-test("a menu's sheet keeps an item inside it when its label holds a word no line holds", async ({ page, open }) => {
-  await open(story, { args: { long: true } });
-  await trigger(page, "Menu at the end").click();
-  const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
-  const at = await boxesAtRest({ label: menu.getByText(/^Bookmark .+$/) });
-  expect(outside(at.label, await viewportBox(page))).toEqual([]);
+  await test.step("a menu's sheet", async () => {
+    await open(story, { args: { long: true } });
+    await trigger(page, "Menu at the end").click();
+    const menu = page.getByRole("menu", { name: "Menu at the end", exact: true });
+    const at = await boxesAtRest({ label: menu.getByText(/^Bookmark .+$/) });
+    expect(outside(at.label, await viewportBox(page))).toEqual([]);
+  });
 });

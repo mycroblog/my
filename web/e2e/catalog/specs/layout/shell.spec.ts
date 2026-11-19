@@ -213,43 +213,44 @@ test("a toast is over the tab bar on a phone, and in the middle of the bottom ed
     .toBe(true);
 });
 
-test("on a phone the Menu's sheet holds New article, which the tab bar has no room for, over the page", async ({
+// One page opens the story for each step, with the sheet closed.
+test("on a phone the Menu's sheet holds New article, which the tab bar has no room for, over the page, and the press that opens it does not follow the place it raises under the pointer", async ({
   page,
   open,
 }) => {
-  await open("design-system-shell--home");
   const tabs = page.getByRole("navigation", { name: "Main", exact: true });
-  await expect(page.getByRole("button", { name: "New article", exact: true })).toBeHidden();
-  await tabs.getByRole("button", { name: /^Menu .+$/ }).click();
   const menu = page.getByRole("menu", { name: "Menu", exact: true });
-  const write = menu.getByRole("menuitem", { name: "New article", exact: true });
-  await expect(write).toBeVisible();
-  await expectInViewport(page, menu);
-  await expect.poll(() => covered(write)).toEqual([]);
-  // The sheet rises over the tab bar it opened from.
-  await expect.poll(async () => (await covered(tabs.getByRole("link", { name: "Home", exact: true }))).length).toBe(1);
-  await expectNoSidewaysScroll(page);
-});
 
-test("on a phone the press that opens the Menu's sheet does not follow the place the sheet raises under the pointer", async ({
-  page,
-  open,
-}) => {
-  await open("design-system-shell--home");
-  const at = page.url();
-  const button = await boxOf(
-    page.getByRole("navigation", { name: "Main", exact: true }).getByRole("button", { name: /^Menu .+$/ }),
-  );
-  await page.mouse.move((button.left + button.right) / 2, (button.top + button.bottom) / 2);
-  await page.mouse.down();
-  const menu = page.getByRole("menu", { name: "Menu", exact: true });
-  await expect(menu).toBeVisible();
-  // The sheet has put a place where the pointer went down; the pointer goes up over one.
-  const place = (await boxesAtRest({ profile: menu.getByRole("menuitem", { name: "Profile", exact: true }) })).profile;
-  await page.mouse.move((place.left + place.right) / 2, (place.top + place.bottom) / 2);
-  await page.mouse.up();
-  await expect(menu).toBeVisible();
-  await expect(page).toHaveURL(at);
+  await test.step("the sheet holds New article, over the page", async () => {
+    await open("design-system-shell--home");
+    await expect(page.getByRole("button", { name: "New article", exact: true })).toBeHidden();
+    await tabs.getByRole("button", { name: /^Menu .+$/ }).click();
+    const write = menu.getByRole("menuitem", { name: "New article", exact: true });
+    await expect(write).toBeVisible();
+    await expectInViewport(page, menu);
+    await expect.poll(() => covered(write)).toEqual([]);
+    // The sheet rises over the tab bar it opened from.
+    await expect
+      .poll(async () => (await covered(tabs.getByRole("link", { name: "Home", exact: true }))).length)
+      .toBe(1);
+    await expectNoSidewaysScroll(page);
+  });
+
+  await test.step("the press that opens it does not follow the place it raises under the pointer", async () => {
+    await open("design-system-shell--home");
+    const at = page.url();
+    const button = await boxOf(tabs.getByRole("button", { name: /^Menu .+$/ }));
+    await page.mouse.move((button.left + button.right) / 2, (button.top + button.bottom) / 2);
+    await page.mouse.down();
+    await expect(menu).toBeVisible();
+    // The sheet has put a place where the pointer went down; the pointer goes up over one.
+    const place = (await boxesAtRest({ profile: menu.getByRole("menuitem", { name: "Profile", exact: true }) }))
+      .profile;
+    await page.mouse.move((place.left + place.right) / 2, (place.top + place.bottom) / 2);
+    await page.mouse.up();
+    await expect(menu).toBeVisible();
+    await expect(page).toHaveURL(at);
+  });
 });
 
 // The places of a phone's tab bar in two stories, in the order of the page, by their accessible names, each with what
@@ -274,48 +275,52 @@ const tabBars = [
   },
 ] as const;
 
-for (const { story: id, places, mirrored } of tabBars)
-  test(`on a phone the tab bar's ${String(places.length)} places are glyphs alone, targets of one width side by side inside the bar`, async ({
-    page,
-    open,
-  }) => {
-    const tabs = page.getByRole("navigation", { name: "Main", exact: true });
-    // Menu, the last place, is a button; the others are links.
-    const place = (name: string) => tabs.getByRole(name.startsWith("Menu") ? "button" : "link", { name, exact: true });
-    const items: Record<string, Locator> = Object.fromEntries(places.map(([name]) => [name, place(name)]));
+test("on a phone the tab bar's 6 places, and its 4, are glyphs alone, targets of one width side by side inside the bar", async ({
+  page,
+  open,
+}) => {
+  const tabs = page.getByRole("navigation", { name: "Main", exact: true });
+  // Menu, the last place, is a button; the others are links.
+  const place = (name: string) => tabs.getByRole(name.startsWith("Menu") ? "button" : "link", { name, exact: true });
 
-    await open(id);
-    await expectNoSidewaysScroll(page);
-    await expect(tabs.getByRole("link")).toHaveCount(places.length - 1);
-    await expect(tabs.getByRole("button")).toHaveCount(1);
-    const least = await lengthOf(page, "--icon-button-touch");
-    expect(least).toBeGreaterThan(0);
-    const { tabs: bar } = await boxesAtRest({ tabs });
-    const ltr = await boxesAtRest(items);
-    const boxes = places.map(([name]) => {
-      const box = ltr[name];
-      if (box === undefined) throw new Error(`test: no box of ${name}`);
-      return box;
-    });
-    for (const [i, [name, badge]] of places.entries()) {
-      const [box, first, before] = [boxes[i] ?? bar, boxes[0] ?? bar, boxes[i - 1]];
-      expect({ name, out: outside(box, bar) }).toEqual({ name, out: [] });
-      // One row, each after the one before it, none over another.
-      expect({ name, top: box.top, bottom: box.bottom }).toEqual({ name, top: first.top, bottom: first.bottom });
-      if (before !== undefined) expect({ name, after: box.left >= before.right - 0.75 }).toEqual({ name, after: true });
-      // A target of the least size a finger needs on both axes, as wide as every other.
-      expect({ name, wide: box.width >= least, tall: box.height >= least }).toEqual({ name, wide: true, tall: true });
-      expect({ name, alike: Math.abs(box.width - first.width) < 1 }).toEqual({ name, alike: true });
-      // No name shows, only a badge's count; the name is the place's still.
-      expect({ name, shown: await shownTexts(place(name)) }).toEqual({
-        name,
-        shown: badge === undefined ? [] : [badge],
+  for (const { story: id, places, mirrored } of tabBars)
+    await test.step(`${String(places.length)} places`, async () => {
+      const items: Record<string, Locator> = Object.fromEntries(places.map(([name]) => [name, place(name)]));
+
+      await open(id);
+      await expectNoSidewaysScroll(page);
+      await expect(tabs.getByRole("link")).toHaveCount(places.length - 1);
+      await expect(tabs.getByRole("button")).toHaveCount(1);
+      const least = await lengthOf(page, "--icon-button-touch");
+      expect(least).toBeGreaterThan(0);
+      const { tabs: bar } = await boxesAtRest({ tabs });
+      const ltr = await boxesAtRest(items);
+      const boxes = places.map(([name]) => {
+        const box = ltr[name];
+        if (box === undefined) throw new Error(`test: no box of ${name}`);
+        return box;
       });
-      await expect(place(name)).toHaveAccessibleName(name);
-    }
+      for (const [i, [name, badge]] of places.entries()) {
+        const [box, first, before] = [boxes[i] ?? bar, boxes[0] ?? bar, boxes[i - 1]];
+        expect({ name, out: outside(box, bar) }).toEqual({ name, out: [] });
+        // One row, each after the one before it, none over another.
+        expect({ name, top: box.top, bottom: box.bottom }).toEqual({ name, top: first.top, bottom: first.bottom });
+        if (before !== undefined)
+          expect({ name, after: box.left >= before.right - 0.75 }).toEqual({ name, after: true });
+        // A target of the least size a finger needs on both axes, as wide as every other.
+        expect({ name, wide: box.width >= least, tall: box.height >= least }).toEqual({ name, wide: true, tall: true });
+        expect({ name, alike: Math.abs(box.width - first.width) < 1 }).toEqual({ name, alike: true });
+        // No name shows, only a badge's count; the name is the place's still.
+        expect({ name, shown: await shownTexts(place(name)) }).toEqual({
+          name,
+          shown: badge === undefined ? [] : [badge],
+        });
+        await expect(place(name)).toHaveAccessibleName(name);
+      }
 
-    if (!mirrored) return;
-    await open(id, { locale: "ar-XB" });
-    await expectNoSidewaysScroll(page);
-    await expectMirrored(page, ltr, items);
-  });
+      if (!mirrored) return;
+      await open(id, { locale: "ar-XB" });
+      await expectNoSidewaysScroll(page);
+      await expectMirrored(page, ltr, items);
+    });
+});

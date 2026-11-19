@@ -6,7 +6,7 @@
 
 import type { Page } from "@playwright/test";
 import { boxesAtRest, expectNoSidewaysScroll } from "../boxes";
-import { expect, pc, test } from "../test";
+import { expect, minimum, pc, test } from "../test";
 
 test("the people suggested to a reader who follows no one stand over the reader's posts", async ({ page, open }) => {
   await open("screens-search--new-account-home");
@@ -40,33 +40,43 @@ function linkCard(page: Page) {
 // The edges of two boxes a layout rounded to device pixels may differ by less than a pixel.
 const slack = 0.75;
 
-for (const width of [320, pc])
-  test(`at ${String(width)} px, a reader who chose no size gets a link card with its picture over its text, as wide as the card`, async ({
-    page,
-    open,
-  }) => {
-    await open("screens-timeline--normal", { width });
-    const at = await boxesAtRest(linkCard(page));
+/** The widths a card is read at, on one load of its screen: a phone's and a desktop's. */
+const widths = [minimum, pc];
 
-    expect(at.picture.bottom).toBeLessThanOrEqual(at.title.top + slack);
-    expect(Math.abs(at.picture.width - at.card.width)).toBeLessThanOrEqual(slack);
-    await expectNoSidewaysScroll(page);
-  });
+test("a reader who chose no size gets a link card with its picture over its text, as wide as the card, at 320 px and 1440 px", async ({
+  page,
+  open,
+}) => {
+  await open("screens-timeline--normal", { width: minimum });
+  for (const width of widths)
+    await test.step(`at ${String(width)} px`, async () => {
+      await page.setViewportSize({ width, height: 640 });
+      const at = await boxesAtRest(linkCard(page));
 
-for (const width of [320, pc])
-  test(`at ${String(width)} px, a reader who chose small cards gets the picture as a square beside the text, at the card's start`, async ({
-    page,
-    open,
-  }) => {
-    await open("screens-timeline--small-cards", { width });
-    const at = await boxesAtRest(linkCard(page));
+      expect(at.picture.bottom).toBeLessThanOrEqual(at.title.top + slack);
+      expect(Math.abs(at.picture.width - at.card.width)).toBeLessThanOrEqual(slack);
+      await expectNoSidewaysScroll(page);
+    });
+});
 
-    // Beside: the text begins where the picture ends, and stands within the picture's height or beyond it, not under.
-    expect(at.picture.right).toBeLessThanOrEqual(at.title.left + slack);
-    expect(at.title.top).toBeLessThan(at.picture.bottom);
-    expect(Math.abs(at.picture.left - at.card.left)).toBeLessThanOrEqual(slack);
-    expect(Math.abs(at.picture.width - at.picture.height)).toBeLessThanOrEqual(slack);
-    // A thumbnail, not the picture of a large card laid on its side.
-    expect(at.picture.width).toBeLessThan(at.card.width / 2);
-    await expectNoSidewaysScroll(page);
-  });
+test("a reader who chose small cards gets the picture as a square beside the text, at the card's start, at 320 px and 1440 px", async ({
+  page,
+  open,
+}) => {
+  await open("screens-timeline--small-cards", { width: minimum });
+  for (const width of widths)
+    await test.step(`at ${String(width)} px`, async () => {
+      await page.setViewportSize({ width, height: 640 });
+      const at = await boxesAtRest(linkCard(page));
+
+      // Beside: the text begins where the picture ends, and stands within the picture's height or beyond it, not
+      // under.
+      expect(at.picture.right).toBeLessThanOrEqual(at.title.left + slack);
+      expect(at.title.top).toBeLessThan(at.picture.bottom);
+      expect(Math.abs(at.picture.left - at.card.left)).toBeLessThanOrEqual(slack);
+      expect(Math.abs(at.picture.width - at.picture.height)).toBeLessThanOrEqual(slack);
+      // A thumbnail, not the picture of a large card laid on its side.
+      expect(at.picture.width).toBeLessThan(at.card.width / 2);
+      await expectNoSidewaysScroll(page);
+    });
+});
