@@ -10,6 +10,7 @@
 // which the screens write with `Intl.NumberFormat`; the funding meter of the month is the instance's.
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import type { AppData } from "./app-data";
 import { instanceQuery, type FundingMeter, type Instance } from "./instance";
 import { useAppData } from "./provider";
@@ -314,17 +315,43 @@ function totalsRead<T>(
   return { totals: query.data, status: query.status, error: query.error as Error | null, refetch };
 }
 
-/**
- * The public totals of the costs of `q`; nothing is read, and nothing given, while `enabled` is false (where the
- * instance publishes no costs, `financePublished`).
- */
-export function usePublicCostTotals(q: FinanceQuery, enabled = true): TotalsRead<CostTotals> {
-  return totalsRead(useQuery({ ...publicCostTotalsQuery(useAppData(), q), enabled }), enabled);
+/** What a screen reads of a set of public totals: also whether the server says they are no longer published. */
+export type PublicTotalsRead<T> = TotalsRead<T> & {
+  /**
+   * The server answered that the instance publishes them no more (a 404): nothing is given then, neither what an
+   * earlier read kept nor a failure to try again, and the instance is read again, so that what it publishes follows.
+   */
+  readonly unpublished: boolean;
+};
+
+type QueryRead<T> = Parameters<typeof totalsRead<T>>[0];
+
+/** What `query` gives of public totals, read while `enabled`; the instance read again once they are no more. */
+function usePublished<T>(query: QueryRead<T>, enabled: boolean): PublicTotalsRead<T> {
+  const data = useAppData();
+  const unpublished = enabled && financeRefusal(query.error) === "private";
+  const { queryClient } = data;
+  const instanceKey = instanceQuery(data).queryKey;
+  useEffect(() => {
+    if (unpublished) void queryClient.invalidateQueries({ queryKey: instanceKey });
+  }, [unpublished, queryClient, instanceKey]);
+  return { ...totalsRead(query, enabled && !unpublished), unpublished };
 }
 
-/** The public totals of the income of `q`; nothing is read, and nothing given, while `enabled` is false. */
-export function usePublicIncomeTotals(q: FinanceQuery, enabled = true): TotalsRead<IncomeTotals> {
-  return totalsRead(useQuery({ ...publicIncomeTotalsQuery(useAppData(), q), enabled }), enabled);
+/**
+ * The public totals of the costs of `q`; nothing is read, and nothing given, while `enabled` is false (where the
+ * instance publishes no costs, `financePublished`), nor once the server says it publishes them no more.
+ */
+export function usePublicCostTotals(q: FinanceQuery, enabled = true): PublicTotalsRead<CostTotals> {
+  return usePublished(useQuery({ ...publicCostTotalsQuery(useAppData(), q), enabled }), enabled);
+}
+
+/**
+ * The public totals of the income of `q`; nothing is read, and nothing given, while `enabled` is false, nor once the
+ * server says it publishes them no more.
+ */
+export function usePublicIncomeTotals(q: FinanceQuery, enabled = true): PublicTotalsRead<IncomeTotals> {
+  return usePublished(useQuery({ ...publicIncomeTotalsQuery(useAppData(), q), enabled }), enabled);
 }
 
 /**

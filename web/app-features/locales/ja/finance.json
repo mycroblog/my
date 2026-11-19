@@ -1,0 +1,226 @@
+{
+  "finance.loading": {
+    "defaultMessage": "集計を読み込んでいます…",
+    "description": "In place of the finance totals while they load."
+  },
+  "finance.failed": {
+    "defaultMessage": "集計を読み込めませんでした。",
+    "description": "In place of the finance totals when they could not be loaded, beside a button to try again."
+  },
+  "finance.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after the sentence that says the finance totals could not be loaded."
+  },
+  "finance.period": {
+    "defaultMessage": "期間",
+    "description": "The name of the choice of how long a period of the finance totals is: a week, a month or a year."
+  },
+  "finance.period.week": {
+    "defaultMessage": "週",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the weeks in the totals' table."
+  },
+  "finance.period.month": {
+    "defaultMessage": "月",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the months in the totals' table."
+  },
+  "finance.period.year": {
+    "defaultMessage": "年",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the years in the totals' table."
+  },
+  "finance.basis": {
+    "defaultMessage": "支払いの数え方",
+    "description": "The name of the choice of how a payment that covers more than a month counts in the finance totals: spread over what it covers, or on the day it was paid."
+  },
+  "finance.basis.amortized": {
+    "defaultMessage": "周期で按分",
+    "description": "An option of how the finance totals count a payment that covers more than a month: a share on each day it covers (the default)."
+  },
+  "finance.basis.cash": {
+    "defaultMessage": "支払った期間に計上",
+    "description": "An option of how the finance totals count a payment: all of it on the day it was paid."
+  },
+  "finance.basis.amortized_about": {
+    "defaultMessage": "ひと月より長い期間の支払いを、その期間に日割りして数えます。月にいくらかかるかが分かります。",
+    "description": "Under the choice of how payments count, while Spread over their cycle is chosen: what it means."
+  },
+  "finance.basis.cash_about": {
+    "defaultMessage": "支払いをそれぞれ支払った日に数えます。明細と照らし合わせられます。",
+    "description": "Under the choice of how payments count, while In the period paid is chosen: what it means."
+  },
+  "finance.totals": {
+    "defaultMessage": "{granularity, select, week {週ごとの集計} month {月ごとの集計} other {年ごとの集計}}",
+    "description": "The name of the table of the finance totals, for assistive technology, by the period chosen ({granularity}: week, month or year)."
+  },
+  "finance.column.costs": {
+    "defaultMessage": "費用",
+    "description": "The name of the column of a period's costs in the finance totals' table."
+  },
+  "finance.column.income": {
+    "defaultMessage": "収入",
+    "description": "The name of the column of a period's income (after the payment provider's fees) in the finance totals' table."
+  },
+  "finance.column.balance": {
+    "defaultMessage": "収支",
+    "description": "The name of the column of a period's income less its costs in the finance totals' table."
+  },
+  "finance.column.provider": {
+    "defaultMessage": "事業者",
+    "description": "The name of the column of the providers (a cloud, a registrar) that a server's costs are paid to, in a table of a period's costs."
+  },
+  "finance.column.category": {
+    "defaultMessage": "区分",
+    "description": "The name of the column of what a cost is for (servers, storage, email…), in a table of a period's costs."
+  },
+  "finance.column.amount": {
+    "defaultMessage": "金額",
+    "description": "The name of the column of the amounts, in a table of a period's costs."
+  },
+  "finance.column.item": {
+    "defaultMessage": "項目",
+    "description": "The name of the column of the cost items' names (as the operators wrote them), in the table of a period's cost items."
+  },
+  "finance.column.plan": {
+    "defaultMessage": "プラン",
+    "description": "The name of the column of the supporter plans, in the table of how many members each plan has."
+  },
+  "finance.column.members": {
+    "defaultMessage": "加入者",
+    "description": "The name of the column of how many members a supporter plan has now."
+  },
+  "finance.total": {
+    "defaultMessage": "合計",
+    "description": "The head of the last row of a period's costs by provider, which sums them, a figure a currency."
+  },
+  "finance.estimate": {
+    "defaultMessage": "見込み",
+    "description": "Read with a figure of the finance totals that comes from a bill its provider has not closed yet."
+  },
+  "finance.none": {
+    "defaultMessage": "なし",
+    "description": "In a cell of the finance totals' table for a period with no costs, or no income."
+  },
+  "finance.so_far": {
+    "defaultMessage": "今日まで",
+    "description": "Under the period of today in the finance totals' table: its figures are up to today."
+  },
+  "finance.week_label": {
+    "defaultMessage": "{year}年 第{week}週",
+    "description": "The head of a week's row in the finance totals: its ISO 8601 week number ({week}) and the year that week belongs to ({year})."
+  },
+  "finance.week_dates_so_far": {
+    "defaultMessage": "{dates} (今日まで)",
+    "description": "Under this week in the finance totals' table: its dates ({dates}, a range such as Nov 16 – 22) and that its figures are up to today."
+  },
+  "finance.earlier": {
+    "defaultMessage": "{granularity, select, week {前の週} month {前の月} other {前の年}}",
+    "description": "The button under the finance totals that shows the periods before those shown ({granularity}: week, month or year)."
+  },
+  "finance.later": {
+    "defaultMessage": "{granularity, select, week {次の週} month {次の月} other {次の年}}",
+    "description": "The button under the finance totals that shows the periods after those shown, up to today's ({granularity}: week, month or year)."
+  },
+  "finance.showing": {
+    "defaultMessage": "{from}から{to}までを表示しています。",
+    "description": "Said to assistive technology after the reader changed the period, how payments count, or moved to earlier or later periods: the first and last periods shown ({from}, {to}: a week, a month or a year as the table heads them)."
+  },
+  "finance.breakdown": {
+    "defaultMessage": "{period}の事業者ごとの内訳",
+    "description": "The heading and the table name of a period's costs by provider, category and currency ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.items": {
+    "defaultMessage": "{period}の項目ごとの内訳",
+    "description": "The heading and the table name of a period's cost items, with their names or notes where the server shows them ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.category": {
+    "defaultMessage": "{category, select, compute {サーバー} database {データベース} storage {ストレージ} network {ネットワーク} domain {ドメイン} email {メール} software {ソフトウェア} other {その他}}",
+    "description": "What a cost is for, in a cell of the Category column ({category}: compute, database, storage, network, domain, email, software or other)."
+  },
+  "finance.rules.dates": {
+    "defaultMessage": "期間はタイムゾーンによらない暦の日付で区切り、週は月曜に始まります。",
+    "description": "Under the finance totals: how their periods are cut."
+  },
+  "finance.rules.currencies": {
+    "defaultMessage": "通貨ごとに数え、換算しません。",
+    "description": "Under the finance totals: amounts in different currencies are never added together."
+  },
+  "finance.rules.billing": {
+    "defaultMessage": "{provider} の請求は {zone} の暦月で区切られ、そのまま数えます。",
+    "description": "Under the finance totals, one a provider whose bills are imported: the time zone of its billing months ({provider}: a name such as AWS; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.income_zone": {
+    "defaultMessage": "{provider} を通した収入は、{zone} での日付で数えます。",
+    "description": "Under the finance totals, one a payment provider: the time zone in which its payments fall on their dates ({provider}: a name such as Stripe; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.net": {
+    "defaultMessage": "収入は支払いから決済の事業者の手数料を引いた額で、返金は返金した期間に差し引きます。",
+    "description": "Under the finance totals while income is shown: what the income figures are."
+  },
+  "finance.rules.payers": {
+    "defaultMessage": "誰がいくら払ったかは表示しません。",
+    "description": "Under the finance totals while income is shown: nobody's own payments are shown, only totals."
+  },
+  "finance.unpublished": {
+    "defaultMessage": "このサーバーは費用と収入を公開していません。",
+    "description": "On the page of the server's costs and income when it publishes neither."
+  },
+  "finance.unpublished_costs": {
+    "defaultMessage": "このサーバーは費用を公開していません。",
+    "description": "On the page of the server's costs and income when it publishes its income but not its costs."
+  },
+  "finance.unpublished_income": {
+    "defaultMessage": "このサーバーは収入を公開していません。",
+    "description": "On the page of the server's costs and income when it publishes its costs but not its income."
+  },
+  "finance.forbidden": {
+    "defaultMessage": "このページは、サーバーの会計の閲覧を許された人だけが見られます。閲覧するには、サーバーの管理者に相談してください。",
+    "description": "On the finance page for a signed-in reader who may not read the server's finances."
+  },
+  "finance.plans": {
+    "defaultMessage": "プランごとの加入者",
+    "description": "The heading and the table name of how many members each supporter plan has now."
+  },
+  "finance.members": {
+    "defaultMessage": "{count, plural, other {# 人}}",
+    "description": "In the Members column: how many members a supporter plan has now."
+  },
+  "finance.tips": {
+    "defaultMessage": "収入にはチップを含みます。",
+    "description": "Under the members by plan while the server takes tips, which its income totals include."
+  },
+  "finance.meter": {
+    "defaultMessage": "今月の運営資金",
+    "description": "The heading of the section of the funding meter on the page of the server's costs and income."
+  },
+  "finance.meter.label": {
+    "defaultMessage": "今月の費用をまかなえた割合",
+    "description": "The name of the funding meter, for assistive technology: how much of the server's costs this month its income covers."
+  },
+  "finance.meter.caption": {
+    "defaultMessage": "{covered, select, yes {{month}の費用はまかなえています} other {{month}の費用をまかなえた割合}}",
+    "description": "Under the share of the funding meter: the month it is about ({month}, a month name in the reader's language), and whether its costs are covered."
+  },
+  "finance.meter.estimated": {
+    "defaultMessage": "今月の費用には見込みが含まれるため、変わることがあります。",
+    "description": "Under the funding meter while this month's costs include a bill the provider has not closed yet."
+  },
+  "finance.meter.amounts": {
+    "defaultMessage": "{target}のうち{income}",
+    "description": "Under the funding meter where the server publishes its amounts: this month's income ({income}) and the target ({target}), each an amount in its currency."
+  },
+  "finance.meter.target_costs": {
+    "defaultMessage": "目標は今月の費用です。",
+    "description": "Under the funding meter's amounts when the target is this month's costs rather than an amount the operators set."
+  },
+  "finance.meter.caption_in": {
+    "defaultMessage": "{covered, select, yes {{month}の費用はまかなえています ({currency}で計算)} other {{month}の費用をまかなえた割合 ({currency}で計算)}}",
+    "description": "Under the share of the funding meter where the server publishes its amounts: the month it is about ({month}, a month name in the reader's language), whether its costs are covered, and the currency the share is counted in ({currency}, an ISO 4217 code such as JPY), since income in other currencies does not count."
+  },
+  "finance.plans_none": {
+    "defaultMessage": "まだどのプランにも加入者がいません。",
+    "description": "In place of the table of members by plan when no plan has members now."
+  },
+  "finance.unpublished_totals": {
+    "defaultMessage": "このサーバーは集計を公開していません。",
+    "description": "On the page of the server's costs and income, under the funding meter, when the server publishes the meter but neither its costs nor its income."
+  }
+}

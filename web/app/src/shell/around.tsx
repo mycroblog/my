@@ -8,8 +8,8 @@
 // The server's pages end it, as they end the menu's sheet. Under `wide`, a line above the home timeline counts the
 // unread announcements instead.
 
-import { eventPath, RoomCaption, roomIcon, costsPagePath, useEventTime, voiceRoomPath } from "@my/app-components";
-import { LatestNotifications } from "@my/app-features";
+import { costsPagePath, eventPath, RoomCaption, roomIcon, useEventTime, voiceRoomPath } from "@my/app-components";
+import { FundingMeterView, LatestNotifications } from "@my/app-features";
 import {
   useAnnouncements,
   useOpenVoiceRooms,
@@ -21,16 +21,13 @@ import {
   type VoiceRoom,
 } from "@my/app-data";
 import {
-  dateFormat,
   FrameAside,
   FrameFold,
   FrameFooter,
   FrameSection,
-  Meter,
   RelativeTime,
   SectionLine,
   SectionList,
-  useLocale,
 } from "@my/design-system";
 import { useStrings } from "../locale";
 
@@ -114,33 +111,14 @@ function RoomLine({ room }: { room: VoiceRoom }) {
 }
 
 /**
- * The funding meter of this month: the share of its costs covered, the month, and whether its costs may change; it
- * leads to the costs page, whose month's costs it is of (FR-905).
+ * The funding meter of this month, as the costs page shows it; it leads to the costs page, whose month's costs it is
+ * of (FR-905).
  */
 function Funding({ meter }: { meter: FundingMeter }) {
   const t = useStrings();
-  const { locale } = useLocale();
-  // The month of a date of the calendar, which is no moment: read where it is written, in UTC.
-  const month = dateFormat(locale, "UTC", { month: "long" }).format(new Date(meter.starts_on));
-  const caption = t("app.funding_caption", { covered: meter.covered ? "yes" : "no", month });
   return (
     <FrameSection id="around-funding" icon="funding" href={costsPagePath} heading={t("app.funding")}>
-      <Meter
-        value={meter.percent / 100}
-        label={t("app.funding_label")}
-        caption={
-          meter.estimated ? (
-            // The estimate is a sentence of its own, on its own line under the caption.
-            <>
-              {caption}
-              <br />
-              {t("app.funding_estimated")}
-            </>
-          ) : (
-            caption
-          )
-        }
-      />
+      <FundingMeterView meter={meter} />
     </FrameSection>
   );
 }

@@ -124,12 +124,12 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       await expect(page.getByRole("table", { name: "Totals by month", exact: true })).toBeVisible();
       await expect(page.getByRole("table", { name: "Costs of November 2026 by provider", exact: true })).toBeVisible();
-      await page.getByRole("radio", { name: "When paid", exact: true }).click();
+      await page.getByRole("radio", { name: "In the period paid", exact: true }).click();
       await expect(
         page.getByRole("radiogroup", {
-          name: "Count costs",
+          name: "How payments count",
           exact: true,
-          description: /^Each cost counts on the day it is paid/,
+          description: /^Each payment counts on the day it was paid, as on a statement\.$/,
         }),
       ).toBeVisible();
     },
@@ -178,7 +178,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   [
     finance("choices"),
     async (page) => {
-      await expect(page.getByRole("radio", { name: "When paid", exact: true })).toBeChecked();
+      await expect(page.getByRole("radio", { name: "In the period paid", exact: true })).toBeChecked();
       await expect(page.getByRole("radio", { name: "Week", exact: true })).toBeChecked();
     },
   ],
