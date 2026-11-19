@@ -73,6 +73,7 @@ import { readerLanguage, usePostTranslation } from "../../post-translation";
 import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
+import { ActOnAccount, CancelEvent, EndRoom } from "../accounts/places";
 
 /** What the reader is told of a refused translation, by why the server refused. */
 const failureOf = (e: unknown): TranslationFailure => {
@@ -275,13 +276,18 @@ function GoButton({ href, icon, children }: { href: string; icon: IconName; chil
 }
 
 /**
- * The reported account. The way to act on it, its moderation screen (/moderation/accounts/{id}), comes at its line's
- * end with that screen (#3260), for a reader with `manage_accounts` alone.
+ * The reported account, with the way to act on it at its line's end, its moderation screen
+ * (/moderation/accounts/{id}), for a reader with `manage_accounts` alone.
  */
 function ReportedAccount({ report }: { report: ReportDetail }) {
   const { t } = useStaffStrings();
   if (report.target_account === undefined) return <FeedNotice start>{t("staff.account_gone")}</FeedNotice>;
-  return <AccountLine account={report.target_account} />;
+  return (
+    <AccountLine
+      account={report.target_account}
+      end={<ActOnAccount account={report.target_account_id} report={report.id} />}
+    />
+  );
 }
 
 /** The domain of a remote account's server; undefined for a local one. */
@@ -674,6 +680,7 @@ function VoiceRoom({ room }: { room: ReportedVoiceRoom }) {
   ].toSorted((a, b) => b.at.localeCompare(a.at));
   return (
     <Titled title={t("staff.report.room.log")}>
+      {room.ended_at === undefined && <EndRoom id={room.id} />}
       <LogList label={t("staff.report.room.log")}>
         {entries.map((e) => (
           <Fragment key={e.key}>{e.node}</Fragment>
@@ -689,10 +696,11 @@ function EventTarget({ event }: { event: ReportedEvent }) {
   return (
     <Titled title={t("staff.report.event.log")}>
       <Stack gap="entry-room">
-        <Row>
+        <Row wrap gap="screen-tab-gap">
           <GoButton href={eventPath(event.id)} icon="events">
             {t("staff.report.event.open")}
           </GoButton>
+          {event.cancellation === undefined && <CancelEvent id={event.id} />}
         </Row>
         <LogList label={t("staff.report.event.log")}>
           {[...event.revisions].reverse().map((r) => (

@@ -22,13 +22,22 @@
 // Every word, figure and date is the app's but the few the parts say themselves (select all, how many are picked, the
 // pages, clear filters), which are the design system's catalog's.
 
-import { createContext, use, useId, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { Button as AriaButton, CheckboxButton, CheckboxField, Link } from "react-aria-components";
+import {
+  createContext,
+  use,
+  useEffect,
+  useId,
+  useRef,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
+import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button, ButtonBase, LinkButton, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
-import { Box, Row, Spoken, Stack } from "./layout";
+import { Box, Pin, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { SearchField } from "./search-field";
@@ -340,12 +349,18 @@ const table = tv({
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
     ],
     sorted: "font-label text-text",
-    pick: "cursor-pointer rounded-control outline-hidden data-focus-visible:shadow-focus",
+    pick: "cursor-pointer rounded-control has-[:focus-visible]:shadow-focus",
+    // Not drawn: the mark beside it shows its state, the target its focus.
+    pickInput: "cursor-pointer opacity-0",
     pickWords: "text-caption text-muted-text",
   },
 });
 
-/** A checkbox of the table: its mark, knocked out while checked, a dash while some of the rows are. */
+/**
+ * A checkbox of the table: its mark, knocked out while checked, a dash while some of the rows are. The native checkbox
+ * takes the press over the whole of its target, not drawn, the mark under it showing its state and its focus, so that
+ * a press, a screen reader's pointer and a click by role all land on the control itself.
+ */
 function Pick({
   label,
   checked,
@@ -361,28 +376,34 @@ function Pick({
   words?: string | undefined;
 }) {
   const s = table();
+  const input = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (input.current !== null) input.current.indeterminate = mixed;
+  }, [mixed]);
   return (
-    <CheckboxField aria-label={label} isSelected={checked} isIndeterminate={mixed} onChange={onChange}>
-      <Row
-        inline
-        align="center"
-        gap="entry-caption"
+    <Row as="label" inline anchor align="center" gap="entry-caption" className={s.pick()}>
+      <Pin
+        cover
         as={
-          <CheckboxButton className={s.pick()}>
-            {({ isSelected, isIndeterminate }) => (
-              <>
-                <ChoiceMark multiple on={isSelected} mixed={isIndeterminate} />
-                {words !== undefined && (
-                  <NarrowOnly>
-                    <span className={s.pickWords()}>{words}</span>
-                  </NarrowOnly>
-                )}
-              </>
-            )}
-          </CheckboxButton>
+          <input
+            ref={input}
+            type="checkbox"
+            className={s.pickInput()}
+            aria-label={label}
+            checked={checked}
+            onChange={(event) => {
+              onChange(event.target.checked);
+            }}
+          />
         }
       />
-    </CheckboxField>
+      <ChoiceMark multiple on={checked} mixed={mixed} />
+      {words !== undefined && (
+        <NarrowOnly>
+          <span className={s.pickWords()}>{words}</span>
+        </NarrowOnly>
+      )}
+    </Row>
   );
 }
 

@@ -1,0 +1,1638 @@
+{
+  "staff_accounts.group.accounts": {
+    "defaultMessage": "アカウント",
+    "description": "The heading of the group of moderation screens about accounts at /moderation: the search of accounts, the sign-up blocks and the invites. Read by moderators."
+  },
+  "staff_accounts.entry.appeals": {
+    "defaultMessage": "異議申し立て",
+    "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.appeals.hint": {
+    "defaultMessage": "処分への異議申し立てを維持または撤回します",
+    "description": "The line under Appeals in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.entry.appeals.count": {
+    "defaultMessage": "{count, plural, other {# 件の異議申し立てが待っています}}",
+    "description": "For assistive technology, the badge at the end of Appeals at /moderation: how many appeals wait for a decision. Read by moderators."
+  },
+  "staff_accounts.entry.registrations": {
+    "defaultMessage": "登録の審査",
+    "description": "The name of the screen of registrations that wait for approval, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.registrations.hint": {
+    "defaultMessage": "承認を待っている登録",
+    "description": "The line under Registrations in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.entry.registrations.count": {
+    "defaultMessage": "{count, plural, other {# 件の登録が待っています}}",
+    "description": "For assistive technology, the badge at the end of Registrations at /moderation: how many registrations wait for approval. Read by moderators."
+  },
+  "staff_accounts.entry.hook_decisions": {
+    "defaultMessage": "自動審査の記録",
+    "description": "The name of the screen of the decision hooks' decisions, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.hook_decisions.hint": {
+    "defaultMessage": "外部の審査が止めたもの・指摘したもの・確かめられなかったもの",
+    "description": "The line under Automated reviews in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.entry.accounts": {
+    "defaultMessage": "アカウント",
+    "description": "The name of the search of accounts, in the list at /moderation and as the title of its screen. Read by moderators."
+  },
+  "staff_accounts.entry.accounts.hint": {
+    "defaultMessage": "アカウントを探して確認し、処分します",
+    "description": "The line under Accounts in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.entry.signup_blocks": {
+    "defaultMessage": "登録の制限",
+    "description": "The name of the screen of blocks on sign-ups by email domain, email address or IP range, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.signup_blocks.hint": {
+    "defaultMessage": "メールアドレスや IP アドレスによる登録の拒否・承認制",
+    "description": "The line under Sign-up blocks in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.entry.invites": {
+    "defaultMessage": "招待",
+    "description": "The name of the screen of every invite of the server, in the list at /moderation and as its title. Read by moderators."
+  },
+  "staff_accounts.entry.invites.hint": {
+    "defaultMessage": "すべての招待と、作った人、使われた数",
+    "description": "The line under Invites in the list at /moderation. Read by moderators."
+  },
+  "staff_accounts.forbidden": {
+    "defaultMessage": "あなたのアカウントの権限では、もうこの画面を開けません。",
+    "description": "In a moderation screen's place when the server refused the reader its list or its item: their permissions changed. Read by moderators."
+  },
+  "staff_accounts.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button that closes a moderator's confirmation without doing anything. Read by moderators."
+  },
+  "staff_accounts.none": {
+    "defaultMessage": "なし",
+    "description": "In an action's or an appeal's facts, in the place of a reason that was not given. Read by moderators."
+  },
+  "staff_accounts.until_lifted": {
+    "defaultMessage": "解除するまで",
+    "description": "How long an action or a sign-up block lasts when it has no end: in a list, its facts, and the choice of its length. Read by moderators."
+  },
+  "staff_accounts.length.days": {
+    "defaultMessage": "{count, plural, other {# 日}}",
+    "description": "A choice of how long an action, a sign-up block or an invite lasts, in days. Read by moderators."
+  },
+  "staff_accounts.ends.never": {
+    "defaultMessage": "終わりません",
+    "description": "When a ban ends, in a list of actions and its facts: it never does. Read by moderators."
+  },
+  "staff_accounts.copied": {
+    "defaultMessage": "コピーしました",
+    "description": "Said after a moderator copied a link to pass on (a password reset link, an invite's link). Read by moderators."
+  },
+  "staff_accounts.copy_failed": {
+    "defaultMessage": "コピーできませんでした。リンクを選んでコピーしてください。",
+    "description": "Said when the browser refused to copy a link to pass on. Read by moderators."
+  },
+  "staff_accounts.refused": {
+    "defaultMessage": "{why, select, outranks {あなたのロールと同等以上のアカウントには、この操作はできません。} last_admin {ただ一人の管理者がログインできなくなります。先に別のアカウントに管理者のロールを付けてください。} decided {その間に別の人が決めました。再読み込みして結果を確かめてください。} not_appealable {アカウントが削除されたため、BAN を撤回できません。異議申し立ての維持はできます。} not_overridable {この判定はここでは取り消せません。} not_suppressed {このアカウントへのメールは、もう止まっていません。} no_two_factor {このアカウントは、もう二要素認証を使っていません。} registration_closed {登録が閉じているため、招待を作れません。先にサーバーの設定で登録を開いてください。} closing {サービスの閉鎖を予告したため、もう登録を承認できません。} event_closed {このイベントはすでに中止されています。} forbidden {あなたのアカウントの権限では、もうこの操作はできません。} missing {その間に削除されたため、見つかりません。} other {実行できませんでした。アプリを再読み込みして、もう一度試してください。}}",
+    "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
+  },
+  "staff_accounts.kind": {
+    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {投稿のセンシティブ化} delete_statuses {投稿の削除} force_sensitive {メディアの強制センシティブ} limit {サイレンス} restrict_posting {投稿禁止} restrict_interaction {交流の禁止} disable_login {ログイン停止} suspend {凍結} ban {BAN} other {処分}}",
+    "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.account_state": {
+    "defaultMessage": "{state, select, active {有効} pending {承認待ち} rejected {登録を却下} limited {サイレンス中} disabled {ログイン停止中} deactivated {無効化} suspended {凍結中} deleted {削除済み} other {有効}}",
+    "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts. Read by moderators."
+  },
+  "staff_accounts.action_state": {
+    "defaultMessage": "{state, select, active {有効} expired {期限切れ} lifted {解除済み} other {有効}}",
+    "description": "The state of a moderation action or a sign-up block: in effect, ended by itself, or lifted. Read by moderators."
+  },
+  "staff_accounts.restriction": {
+    "defaultMessage": "{restriction, select, login {ログイン} post {投稿} interact {フォローやお気に入り} visibility_ceiling_private {公開の投稿} public_discovery {公開タイムラインと検索} unsolicited_reach {フォロワー以外への通知} media_sensitive {メディアをそのまま表示} profile_view {プロフィールと投稿} federation {ほかのサーバーとの配送} other {その他}}",
+    "description": "One thing an account's actions take away from it, in a list joined as the language joins one, the value of What is taken away. Read by moderators."
+  },
+  "staff_accounts.restrictions.none": {
+    "defaultMessage": "なし",
+    "description": "The value of What is taken away in an account's facts, when its actions take away nothing. Read by moderators."
+  },
+  "staff_accounts.registration_state": {
+    "defaultMessage": "{state, select, pending {承認待ち} approved {承認済み} rejected {却下} other {承認待ち}}",
+    "description": "Where a registration stands, in the registrations' list and an account's facts. Read by moderators."
+  },
+  "staff_accounts.appeal_state": {
+    "defaultMessage": "{state, select, pending {審査待ち} upheld {維持} overturned {撤回} other {審査待ち}}",
+    "description": "Where an appeal stands, in the appeals' list, its filter and its page. Read by moderators."
+  },
+  "staff_accounts.report_state": {
+    "defaultMessage": "{state, select, open {未対応} resolved {解決済み} other {未対応}}",
+    "description": "Where a report stands, in an account's list of its reports. Read by moderators."
+  },
+  "staff_accounts.origin.local": {
+    "defaultMessage": "このサーバー",
+    "description": "Where an account is, when it is on this server: in the search of accounts, its filter, and the account's facts. Read by moderators."
+  },
+  "staff_accounts.origin.remote": {
+    "defaultMessage": "ほかのサーバー",
+    "description": "The filter of the search of accounts that keeps the accounts of other servers. Read by moderators."
+  },
+  "staff_accounts.email.verified": {
+    "defaultMessage": "確認済み",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.email.unverified": {
+    "defaultMessage": "未確認",
+    "description": "The value of Email confirmation in an account's facts. Read by moderators."
+  },
+  "staff_accounts.invited_by": {
+    "defaultMessage": "{handle} の招待",
+    "description": "The value of Invite in an account's facts: who created the invite it signed up with. Read by moderators."
+  },
+  "staff_accounts.invited_by.cli": {
+    "defaultMessage": "サーバーのコマンドで作った招待",
+    "description": "The value of Invite in an account's facts when the invite was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invited_by.gone": {
+    "defaultMessage": "削除されたアカウントの招待",
+    "description": "The value of Invite in an account's facts when the invite's creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.search.filters": {
+    "defaultMessage": "アカウントを絞り込む",
+    "description": "For assistive technology, the name of the search and filters over the accounts at /moderation/accounts. Read by moderators."
+  },
+  "staff_accounts.search.field": {
+    "defaultMessage": "{key, select, domain {ドメインで検索} email {メールアドレスで検索} email_domain {メールのドメインで検索} ip {IP アドレスで検索} other {ユーザー名で検索}}",
+    "description": "The label and placeholder of the search field of accounts, by what the search matches. Read by moderators."
+  },
+  "staff_accounts.search.clear": {
+    "defaultMessage": "検索を消す",
+    "description": "The button in the search field of accounts that empties it. Read by moderators."
+  },
+  "staff_accounts.search.by_facet": {
+    "defaultMessage": "検索の対象",
+    "description": "The filter of the search of accounts that chooses what its words are matched against. Read by moderators."
+  },
+  "staff_accounts.search.by": {
+    "defaultMessage": "{key, select, domain {ドメイン} email {メールアドレス} email_domain {メールのドメイン} ip {IP アドレス} other {ユーザー名}}",
+    "description": "A value of Search by: what the words of the search of accounts are matched against. Read by moderators."
+  },
+  "staff_accounts.search.origin": {
+    "defaultMessage": "サーバー",
+    "description": "The filter of the search of accounts by where the account is. Read by moderators."
+  },
+  "staff_accounts.search.origin.any": {
+    "defaultMessage": "すべてのサーバー",
+    "description": "The value of the Server filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.state": {
+    "defaultMessage": "状態",
+    "description": "The filter of the search of accounts by its state. Read by moderators."
+  },
+  "staff_accounts.search.state.any": {
+    "defaultMessage": "すべての状態",
+    "description": "The value of the State filter that keeps every account. Read by moderators."
+  },
+  "staff_accounts.search.table": {
+    "defaultMessage": "アカウント",
+    "description": "For assistive technology, the name of the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.account": {
+    "defaultMessage": "アカウント",
+    "description": "The column of accounts' handles in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.column.origin": {
+    "defaultMessage": "サーバー",
+    "description": "The column of where an account is, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.created": {
+    "defaultMessage": "作成",
+    "description": "The column of when an account was created, in the table of accounts found. Read by moderators."
+  },
+  "staff_accounts.search.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of an account's state in a table of accounts. Read by moderators."
+  },
+  "staff_accounts.search.loading": {
+    "defaultMessage": "アカウントを読み込んでいます…",
+    "description": "At /moderation/accounts while the accounts are read. Read by moderators."
+  },
+  "staff_accounts.search.failed": {
+    "defaultMessage": "アカウントを読み込めませんでした。",
+    "description": "At /moderation/accounts when the accounts could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.search.empty": {
+    "defaultMessage": "一致するアカウントはありません。検索や絞り込みを変えてください。",
+    "description": "At /moderation/accounts when no account matches the search and the filters. Read by moderators."
+  },
+  "staff_accounts.search.empty_more": {
+    "defaultMessage": "このページにはありません。検索は続いています。次のページを開いてください。",
+    "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
+  },
+  "staff_accounts.account.missing": {
+    "defaultMessage": "このアドレスのアカウントはありません。",
+    "description": "At an account's moderation screen whose account the server does not have. Read by moderators."
+  },
+  "staff_accounts.account.all": {
+    "defaultMessage": "すべてのアカウント",
+    "description": "The link after the notice that an address names no account, to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.back": {
+    "defaultMessage": "アカウント",
+    "description": "The way back from an account's moderation screen to the search of accounts. Read by moderators."
+  },
+  "staff_accounts.account.loading": {
+    "defaultMessage": "アカウントを読み込んでいます…",
+    "description": "At an account's moderation screen while it is read. Read by moderators."
+  },
+  "staff_accounts.account.failed": {
+    "defaultMessage": "アカウントを読み込めませんでした。",
+    "description": "At an account's moderation screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.account.facts": {
+    "defaultMessage": "アカウントの情報",
+    "description": "For assistive technology, the name of the list of an account's facts on its moderation screen. Read by moderators."
+  },
+  "staff_accounts.account.actions": {
+    "defaultMessage": "最近の処分",
+    "description": "The heading of an account's newest actions on its Review page. Read by moderators."
+  },
+  "staff_accounts.account.reports": {
+    "defaultMessage": "最近の通報",
+    "description": "The heading of an account's newest reports on its Review page. Read by moderators."
+  },
+  "staff_accounts.page.tabs": {
+    "defaultMessage": "アカウントのページ",
+    "description": "For assistive technology, the name of the tabs of an account's moderation screens. Read by moderators."
+  },
+  "staff_accounts.page.review": {
+    "defaultMessage": "審査",
+    "description": "The tab of an account's Review page: its facts, a new action, its actions and reports. Read by moderators."
+  },
+  "staff_accounts.page.actions": {
+    "defaultMessage": "処分の履歴",
+    "description": "The tab of an account's Actions page: every action on it. Read by moderators."
+  },
+  "staff_accounts.page.manage": {
+    "defaultMessage": "管理",
+    "description": "The tab of an account's Management page: its email and IP addresses, email delivery and sign-in recovery. Read by moderators."
+  },
+  "staff_accounts.fact.state": {
+    "defaultMessage": "状態",
+    "description": "A term of an account's facts on its Review page. Read by moderators."
+  },
+  "staff_accounts.fact.restrictions": {
+    "defaultMessage": "制限されていること",
+    "description": "A term of an account's facts: what its actions take away from it now. Read by moderators."
+  },
+  "staff_accounts.fact.origin": {
+    "defaultMessage": "サーバー",
+    "description": "A term of an account's facts: where it is. Read by moderators."
+  },
+  "staff_accounts.fact.created": {
+    "defaultMessage": "作成",
+    "description": "A term of an account's facts: when it was created. Read by moderators."
+  },
+  "staff_accounts.fact.signed_up": {
+    "defaultMessage": "登録",
+    "description": "A term of an account's facts: when its user signed up. Read by moderators."
+  },
+  "staff_accounts.fact.registration": {
+    "defaultMessage": "登録の審査",
+    "description": "A term of an account's facts: where its registration stands. Read by moderators."
+  },
+  "staff_accounts.fact.reason": {
+    "defaultMessage": "参加の理由",
+    "description": "A term of an account's facts: why the user wanted to join, as they wrote it. Read by moderators."
+  },
+  "staff_accounts.fact.invite": {
+    "defaultMessage": "招待",
+    "description": "A term of an account's facts: the invite its user signed up with, and who made it. Read by moderators."
+  },
+  "staff_accounts.fact.decision_note": {
+    "defaultMessage": "登録の審査のメモ",
+    "description": "A term of an account's facts: the moderators' note on approving or rejecting its registration. Read by moderators."
+  },
+  "staff_accounts.fact.email_verified": {
+    "defaultMessage": "メールの確認",
+    "description": "A term of an account's facts: whether the user confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.fact.roles": {
+    "defaultMessage": "ロール",
+    "description": "A term of an account's facts: the roles of its user. Read by moderators."
+  },
+  "staff_accounts.act.title": {
+    "defaultMessage": "処分する",
+    "description": "The heading of the form of a new action on an account's Review page. Read by moderators."
+  },
+  "staff_accounts.act.kind": {
+    "defaultMessage": "処分",
+    "description": "The label of the choice of an action's kind in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.category": {
+    "defaultMessage": "理由の種類",
+    "description": "The label of the choice of an action's kind of reason in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.length": {
+    "defaultMessage": "期間",
+    "description": "The label of the choice of how long an action lasts in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.posts": {
+    "defaultMessage": "対象の投稿",
+    "description": "The label of the posts of the report that an action on posts acts on, in the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.post": {
+    "defaultMessage": "投稿 {n}: {excerpt}",
+    "description": "One of the posts an action on posts may act on, its number in the report and its start. Read by moderators."
+  },
+  "staff_accounts.act.posts.none": {
+    "defaultMessage": "投稿を 1 つ以上選んでください。",
+    "description": "Under the posts of a new action on posts when none is chosen. Read by moderators."
+  },
+  "staff_accounts.act.public_reason": {
+    "defaultMessage": "本人に伝える理由",
+    "description": "The label of the field of the reason a new action tells its account. Read by moderators."
+  },
+  "staff_accounts.act.public_reason.hint": {
+    "defaultMessage": "本人に処分の種類・理由・期限を伝え、本人は異議を申し立てられます。",
+    "description": "Under the field of the reason of a new action on a local account. Read by moderators."
+  },
+  "staff_accounts.act.private_note": {
+    "defaultMessage": "モデレーター向けのメモ",
+    "description": "The label of the field of the moderators' note of a new action. Read by moderators."
+  },
+  "staff_accounts.act.notify": {
+    "defaultMessage": "本人に知らせる",
+    "description": "The checkbox of whether a new action on a local account is told to it. Read by moderators."
+  },
+  "staff_accounts.act.block_email": {
+    "defaultMessage": "このアカウントのメールアドレスでの登録も断る",
+    "description": "The checkbox of a ban of a local account that also blocks its email address from signing up again. Read by moderators."
+  },
+  "staff_accounts.act.submit": {
+    "defaultMessage": "処分する",
+    "description": "The button of the form of a new action. Read by moderators."
+  },
+  "staff_accounts.act.ban": {
+    "defaultMessage": "BAN する",
+    "description": "The button of the form of a new action when it is a ban, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.act.ban.confirm": {
+    "defaultMessage": "{handle} を BAN しますか？",
+    "description": "The question before a ban is taken. Read by moderators."
+  },
+  "staff_accounts.act.ban.about": {
+    "defaultMessage": "アカウントはすぐに凍結され、30 日後に削除されます。BAN は解除できず、異議申し立てを撤回したときだけ取り消されます。確かめるためにアカウントのハンドルを入力してください。",
+    "description": "Under the question before a ban: what follows, and that only overturning its appeal undoes it. Read by moderators."
+  },
+  "staff_accounts.act.delete": {
+    "defaultMessage": "投稿を削除",
+    "description": "The confirmation's button before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.delete.confirm": {
+    "defaultMessage": "{count, plural, other {投稿 # 件を削除しますか？}}",
+    "description": "The question before an action deletes the posts chosen. Read by moderators."
+  },
+  "staff_accounts.act.delete.about": {
+    "defaultMessage": "投稿はこのサーバーでもほかのサーバーでも、すべての人から削除されます。取り消せません。",
+    "description": "Under the question before an action deletes posts. Read by moderators."
+  },
+  "staff_accounts.act.done": {
+    "defaultMessage": "{kind}が有効になりました。",
+    "description": "Said after a new action was taken, naming its kind. Read by moderators."
+  },
+  "staff_accounts.act.not_taken": {
+    "defaultMessage": "処分しませんでした。示された項目を直してください。",
+    "description": "Before the button of a new action when the server refused one of its fields. Read by moderators."
+  },
+  "staff_accounts.actions.filters": {
+    "defaultMessage": "処分を絞り込む",
+    "description": "For assistive technology, the name of the filters over an account's actions. Read by moderators."
+  },
+  "staff_accounts.actions.active": {
+    "defaultMessage": "有効なもの",
+    "description": "The filter of an account's actions that keeps those in effect now. Read by moderators."
+  },
+  "staff_accounts.actions.table": {
+    "defaultMessage": "処分",
+    "description": "For assistive technology, the name of a table of actions on an account. Read by moderators."
+  },
+  "staff_accounts.actions.column.kind": {
+    "defaultMessage": "処分",
+    "description": "The column of an action's kind in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.category": {
+    "defaultMessage": "理由の種類",
+    "description": "The column of an action's kind of reason in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.issued": {
+    "defaultMessage": "日時",
+    "description": "The column of when an action was taken in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.ends": {
+    "defaultMessage": "期限",
+    "description": "The column of when an action ends in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of an action's state in a table of actions. Read by moderators."
+  },
+  "staff_accounts.actions.none": {
+    "defaultMessage": "このアカウントへの処分はありません。",
+    "description": "In place of the table of an account's actions when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.none_active": {
+    "defaultMessage": "有効な処分はありません。絞り込みを外すと、すべての処分を表示します。",
+    "description": "In place of the table of an account's actions in effect when there is none. Read by moderators."
+  },
+  "staff_accounts.actions.loading": {
+    "defaultMessage": "処分を読み込んでいます…",
+    "description": "On an account's Actions page while its actions are read. Read by moderators."
+  },
+  "staff_accounts.actions.failed": {
+    "defaultMessage": "処分を読み込めませんでした。",
+    "description": "On an account's Actions page when its actions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.title": {
+    "defaultMessage": "{handle} への{kind}",
+    "description": "The title of an action's page: its kind and the account it is on. Read by moderators."
+  },
+  "staff_accounts.action.back": {
+    "defaultMessage": "処分の履歴",
+    "description": "The way back from an action's page to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.missing": {
+    "defaultMessage": "このアドレスの処分は、このアカウントにありません。",
+    "description": "At an action's page whose action the server does not have, or that is on another account. Read by moderators."
+  },
+  "staff_accounts.action.all": {
+    "defaultMessage": "このアカウントの処分",
+    "description": "The link after the notice that an address names no action, to the account's actions. Read by moderators."
+  },
+  "staff_accounts.action.loading": {
+    "defaultMessage": "処分を読み込んでいます…",
+    "description": "At an action's page while it is read. Read by moderators."
+  },
+  "staff_accounts.action.failed": {
+    "defaultMessage": "処分を読み込めませんでした。",
+    "description": "At an action's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.action.facts": {
+    "defaultMessage": "処分の情報",
+    "description": "For assistive technology, the name of the list of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.state": {
+    "defaultMessage": "状態",
+    "description": "A term of an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.fact.category": {
+    "defaultMessage": "理由の種類",
+    "description": "A term of an action's facts: its kind of reason. Read by moderators."
+  },
+  "staff_accounts.action.fact.public_reason": {
+    "defaultMessage": "伝えた理由",
+    "description": "A term of an action's facts: the reason the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.private_note": {
+    "defaultMessage": "モデレーター向けのメモ",
+    "description": "A term of an action's facts: the moderators' note. Read by moderators."
+  },
+  "staff_accounts.action.fact.issued": {
+    "defaultMessage": "日時",
+    "description": "A term of an action's facts: when it was taken. Read by moderators."
+  },
+  "staff_accounts.action.fact.issuer": {
+    "defaultMessage": "処分した人",
+    "description": "A term of an action's facts: who took it. Read by moderators."
+  },
+  "staff_accounts.action.fact.notified": {
+    "defaultMessage": "本人への通知",
+    "description": "A term of an action's facts: whether the account was told. Read by moderators."
+  },
+  "staff_accounts.action.fact.ends": {
+    "defaultMessage": "期限",
+    "description": "A term of an action's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.action.fact.lifted": {
+    "defaultMessage": "解除",
+    "description": "A term of an action's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.lift_reason": {
+    "defaultMessage": "解除の理由",
+    "description": "A term of an action's facts: the reason it was lifted. Read by moderators."
+  },
+  "staff_accounts.action.fact.report": {
+    "defaultMessage": "通報",
+    "description": "A term of an action's facts: the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.fact.posts": {
+    "defaultMessage": "投稿",
+    "description": "A term of an action's facts: the posts an action on posts acts on. Read by moderators."
+  },
+  "staff_accounts.action.issuer.cli": {
+    "defaultMessage": "サーバーのコマンド",
+    "description": "Who took an action or decided an appeal when it was done on the command line. Read by moderators."
+  },
+  "staff_accounts.action.issuer.someone": {
+    "defaultMessage": "モデレーター",
+    "description": "Who took an action or decided an appeal while their account is not read, or gone. Read by moderators."
+  },
+  "staff_accounts.action.notified.yes": {
+    "defaultMessage": "通知した",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.notified.no": {
+    "defaultMessage": "通知していない",
+    "description": "The value of Account told in an action's facts. Read by moderators."
+  },
+  "staff_accounts.action.report_open": {
+    "defaultMessage": "通報を開く",
+    "description": "The value of Report in an action's facts: the link to the report it follows from. Read by moderators."
+  },
+  "staff_accounts.action.posts": {
+    "defaultMessage": "{count, plural, other {# 件}}",
+    "description": "The value of Posts in an action's facts: how many posts it acts on. Read by moderators."
+  },
+  "staff_accounts.action.ban_lifted_by_appeal": {
+    "defaultMessage": "BAN は解除できません。アカウントが削除されるまでの間、異議申し立てを撤回したときだけ取り消されます。",
+    "description": "On a ban's page, in the place of Lift. Read by moderators."
+  },
+  "staff_accounts.action.lift": {
+    "defaultMessage": "処分を解除する",
+    "description": "The heading of the form that lifts an action, on its page. Read by moderators."
+  },
+  "staff_accounts.action.lift.submit": {
+    "defaultMessage": "解除する",
+    "description": "The button that lifts an action. Read by moderators."
+  },
+  "staff_accounts.action.lift.reason": {
+    "defaultMessage": "解除の理由 (モデレーター向け)",
+    "description": "The label of the field of the reason for lifting an action. Read by moderators."
+  },
+  "staff_accounts.action.lifted": {
+    "defaultMessage": "{kind}を解除しました。",
+    "description": "Said after an action was lifted, naming its kind. Read by moderators."
+  },
+  "staff_accounts.reports.table": {
+    "defaultMessage": "通報",
+    "description": "For assistive technology, the name of the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.category": {
+    "defaultMessage": "通報",
+    "description": "The column of the reports' categories in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.filed": {
+    "defaultMessage": "日時",
+    "description": "The column of when a report was filed, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of a report's state, in the table of an account's newest reports. Read by moderators."
+  },
+  "staff_accounts.reports.none": {
+    "defaultMessage": "このアカウントへの通報はありません。",
+    "description": "In place of the table of an account's reports when there is none. Read by moderators."
+  },
+  "staff_accounts.private.title": {
+    "defaultMessage": "メールアドレスと IP アドレス",
+    "description": "The heading of an account's email and IP addresses on its Management page, shown on demand alone. Read by moderators."
+  },
+  "staff_accounts.private.email": {
+    "defaultMessage": "メールアドレス",
+    "description": "A term of an account's private facts, shown on demand. Read by moderators."
+  },
+  "staff_accounts.private.registration_ip": {
+    "defaultMessage": "登録元の IP アドレス",
+    "description": "A term of an account's private facts: the IP address its user signed up from. Read by moderators."
+  },
+  "staff_accounts.private.registered_at": {
+    "defaultMessage": "登録日時",
+    "description": "A term of an account's private facts: when its user signed up from that IP address. Read by moderators."
+  },
+  "staff_accounts.private.no_email": {
+    "defaultMessage": "メールアドレスなし",
+    "description": "The value of Email address when the account has none. Read by moderators."
+  },
+  "staff_accounts.private.unknown": {
+    "defaultMessage": "不明",
+    "description": "The value of an IP address or a browser that the server does not know any more. Read by moderators."
+  },
+  "staff_accounts.private.same_domain": {
+    "defaultMessage": "{domain} のメールアドレスのアカウント",
+    "description": "The link from an account's revealed email address to the search of the accounts of the same email domain. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins": {
+    "defaultMessage": "最近のログイン",
+    "description": "The heading of the table of an account's newest sign-ins. Read by moderators."
+  },
+  "staff_accounts.private.sign_ins.none": {
+    "defaultMessage": "保存期間内のログインの記録はありません。",
+    "description": "In place of the table of an account's sign-ins when there is none. Read by moderators."
+  },
+  "staff_accounts.private.column.ip": {
+    "defaultMessage": "IP アドレス",
+    "description": "The column of IP addresses in the tables of an account's sign-ins and of accounts that share an address. Read by moderators."
+  },
+  "staff_accounts.private.column.agent": {
+    "defaultMessage": "ブラウザー",
+    "description": "The column of the browser (the user agent) of a sign-in. Read by moderators."
+  },
+  "staff_accounts.private.column.when": {
+    "defaultMessage": "日時",
+    "description": "The column of when a sign-in happened. Read by moderators."
+  },
+  "staff_accounts.private.same_ip": {
+    "defaultMessage": "同じ IP アドレスを使ったアカウント",
+    "description": "The heading of the table of other accounts that signed up or signed in from an IP address of this one. Read by moderators."
+  },
+  "staff_accounts.private.same_ip.none": {
+    "defaultMessage": "ほかに同じアドレスを使ったアカウントはありません。",
+    "description": "In place of the table of accounts that share an address, when there is none. Read by moderators."
+  },
+  "staff_accounts.suppression.title": {
+    "defaultMessage": "メールの配信",
+    "description": "The heading of the section of an account's email suppression on its Management page. Read by moderators."
+  },
+  "staff_accounts.suppression.kind": {
+    "defaultMessage": "止めた理由",
+    "description": "A term of the email suppression's facts: why the server stopped sending. Read by moderators."
+  },
+  "staff_accounts.suppression.why": {
+    "defaultMessage": "{kind, select, hard_bounce {アドレスが存在しないか受信を拒否しています。確認のメール以外は送りません。} complaint {本人がメールを迷惑メールとして報告しました。通知とお知らせのメールは送りません。} other {メールを止めています。}}",
+    "description": "The value of Stopped because: why the server stopped sending email to the account's address, and what it stops. Read by moderators."
+  },
+  "staff_accounts.suppression.since": {
+    "defaultMessage": "開始",
+    "description": "A term of the email suppression's facts: when the failure that started it happened. Read by moderators."
+  },
+  "staff_accounts.suppression.lift": {
+    "defaultMessage": "メールの配信を再開する",
+    "description": "The button that lifts an account's email suppression. Read by moderators."
+  },
+  "staff_accounts.suppression.done": {
+    "defaultMessage": "このアカウントへのメールの配信を再開しました。",
+    "description": "Said after an account's email suppression was lifted. Read by moderators."
+  },
+  "staff_accounts.recovery.title": {
+    "defaultMessage": "ログインの回復",
+    "description": "The heading of the section of a password reset link and removing two-factor authentication, on an account's Management page. Read by moderators."
+  },
+  "staff_accounts.recovery.link": {
+    "defaultMessage": "パスワード再設定のリンクを発行…",
+    "description": "The button that asks to issue a password reset link for an account. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm": {
+    "defaultMessage": "{handle} のパスワード再設定のリンクを発行しますか？",
+    "description": "The question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.confirm.about": {
+    "defaultMessage": "リンクを持つ人は誰でもパスワードを設定できます。先に別の方法で本人と確かめ、本人にだけ渡してください。",
+    "description": "Under the question before a password reset link is issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.issue": {
+    "defaultMessage": "発行する",
+    "description": "The confirmation's button that issues a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.value": {
+    "defaultMessage": "パスワード再設定のリンク",
+    "description": "The name of the password reset link shown once, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.recovery.link.copy": {
+    "defaultMessage": "リンクをコピー",
+    "description": "The button that copies a password reset link. Read by moderators."
+  },
+  "staff_accounts.recovery.link.done": {
+    "defaultMessage": "リンクを発行しました。表示されるのは今だけです。",
+    "description": "Said after a password reset link was issued. Read by moderators."
+  },
+  "staff_accounts.recovery.link.once": {
+    "defaultMessage": "{until} まで 1 回だけ使えます。ほかの方法でパスワードが変わると使えなくなります。",
+    "description": "Under a password reset link: until when it works. Read by moderators."
+  },
+  "staff_accounts.recovery.link.providers": {
+    "defaultMessage": "今はログインがログインプロバイダーに限られているため、このリンクではパスワードを設定できません。{until} までに制限が終われば使えます。",
+    "description": "Under a password reset link while sign-in is limited to login providers. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor": {
+    "defaultMessage": "二要素認証を解除…",
+    "description": "The button that asks to remove an account's two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm": {
+    "defaultMessage": "{handle} の二要素認証を解除しますか？",
+    "description": "The question before an account's two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.confirm.about": {
+    "defaultMessage": "本人はパスワードだけでログインするようになります。先に別の方法で本人と確かめてください。",
+    "description": "Under the question before two-factor authentication is removed. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.remove": {
+    "defaultMessage": "解除する",
+    "description": "The confirmation's button that removes two-factor authentication. Read by moderators."
+  },
+  "staff_accounts.recovery.two_factor.done": {
+    "defaultMessage": "{handle} は二要素認証なしでログインするようになりました。",
+    "description": "Said after an account's two-factor authentication was removed. Read by moderators."
+  },
+  "staff_accounts.refetch.title": {
+    "defaultMessage": "サーバーからの投稿",
+    "description": "The heading of the section that refetches a remote account's posts, on its Management page. Read by moderators."
+  },
+  "staff_accounts.refetch.submit": {
+    "defaultMessage": "投稿を取り直す",
+    "description": "The button that queues the refetch of a remote account's newest posts from its server. Read by moderators."
+  },
+  "staff_accounts.refetch.done": {
+    "defaultMessage": "投稿を裏で取り直しています。毎分 100 件ずつです。",
+    "description": "Said after the refetch of a remote account's posts was queued. Read by moderators."
+  },
+  "staff_accounts.appeals.filters": {
+    "defaultMessage": "異議申し立てを絞り込む",
+    "description": "For assistive technology, the name of the filters over a list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.state": {
+    "defaultMessage": "状態",
+    "description": "The filter of a list of appeals by where they stand. Read by moderators."
+  },
+  "staff_accounts.appeals.state.any": {
+    "defaultMessage": "すべての状態",
+    "description": "The value of the State filter of appeals that keeps every one. Read by moderators."
+  },
+  "staff_accounts.appeals.table": {
+    "defaultMessage": "異議申し立て",
+    "description": "For assistive technology, the name of the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.account": {
+    "defaultMessage": "アカウント",
+    "description": "The column of who appealed, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.action": {
+    "defaultMessage": "処分",
+    "description": "The column of the action appealed, in the table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.submitted": {
+    "defaultMessage": "日時",
+    "description": "The column of when an appeal was sent, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of an appeal's state, in a table of appeals. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.pending": {
+    "defaultMessage": "審査を待っている異議申し立てはありません。利用者が処分に異議を申し立てると、ここに表示されます。",
+    "description": "In place of the table of appeals when none waits. Read by moderators."
+  },
+  "staff_accounts.appeals.empty.filtered": {
+    "defaultMessage": "一致する異議申し立てはありません。絞り込みを外すと、すべて表示します。",
+    "description": "In place of a table of appeals when none matches the filter. Read by moderators."
+  },
+  "staff_accounts.appeals.loading": {
+    "defaultMessage": "異議申し立てを読み込んでいます…",
+    "description": "At /moderation/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.appeals.failed": {
+    "defaultMessage": "異議申し立てを読み込めませんでした。",
+    "description": "At /moderation/appeals when the appeals could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.title": {
+    "defaultMessage": "{handle} の異議申し立て",
+    "description": "The title of an appeal's screen, naming who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.back": {
+    "defaultMessage": "異議申し立て",
+    "description": "The way back from an appeal to the list of appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.missing": {
+    "defaultMessage": "このアドレスの異議申し立てはありません。",
+    "description": "At an appeal's screen whose appeal the server does not have. Read by moderators."
+  },
+  "staff_accounts.appeal.all": {
+    "defaultMessage": "すべての異議申し立て",
+    "description": "The link after the notice that an address names no appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.loading": {
+    "defaultMessage": "異議申し立てを読み込んでいます…",
+    "description": "At an appeal's screen while it is read. Read by moderators."
+  },
+  "staff_accounts.appeal.failed": {
+    "defaultMessage": "異議申し立てを読み込めませんでした。",
+    "description": "At an appeal's screen when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.appeal.facts": {
+    "defaultMessage": "異議申し立ての情報",
+    "description": "For assistive technology, the name of the list of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.state": {
+    "defaultMessage": "状態",
+    "description": "A term of an appeal's facts. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.submitted": {
+    "defaultMessage": "日時",
+    "description": "A term of an appeal's facts: when it was sent. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.action": {
+    "defaultMessage": "対象の処分",
+    "description": "A term of an appeal's facts: the action it appeals. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.category": {
+    "defaultMessage": "理由の種類",
+    "description": "A term of an appeal's facts: the action's kind of reason. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.public_reason": {
+    "defaultMessage": "伝えた理由",
+    "description": "A term of an appeal's facts: the reason the action told the account. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.issued": {
+    "defaultMessage": "処分の日時",
+    "description": "A term of an appeal's facts: when the action was taken. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decided": {
+    "defaultMessage": "審査の日時",
+    "description": "A term of an appeal's facts: when it was decided. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decider": {
+    "defaultMessage": "審査した人",
+    "description": "A term of an appeal's facts: who decided it. Read by moderators."
+  },
+  "staff_accounts.appeal.fact.decision_reason": {
+    "defaultMessage": "伝えた理由",
+    "description": "A term of an appeal's facts: the explanation the user was told of the decision. Read by moderators."
+  },
+  "staff_accounts.appeal.action": {
+    "defaultMessage": "{handle} への{kind}",
+    "description": "The value of Action appealed: the action's kind and its account, a link to its page. Read by moderators."
+  },
+  "staff_accounts.appeal.text": {
+    "defaultMessage": "本人の申し立て",
+    "description": "The heading of the text of an appeal, as its user wrote it. Read by moderators."
+  },
+  "staff_accounts.appeal.decide": {
+    "defaultMessage": "審査する",
+    "description": "The heading of the decision of a pending appeal. Read by moderators."
+  },
+  "staff_accounts.appeal.reason": {
+    "defaultMessage": "本人に伝える理由",
+    "description": "The label of the field of the explanation a decision tells the user who appealed. Read by moderators."
+  },
+  "staff_accounts.appeal.reason.hint": {
+    "defaultMessage": "本人に結果とこの理由を伝えます。異議申し立ての審査は 1 回だけです。",
+    "description": "Under the field of the reason of an appeal's decision. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold": {
+    "defaultMessage": "維持する",
+    "description": "The button that upholds an appeal, keeping its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn": {
+    "defaultMessage": "撤回する",
+    "description": "The button that overturns an appeal, lifting its action, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.confirm": {
+    "defaultMessage": "異議申し立てを維持しますか？",
+    "description": "The question before an appeal is upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.about": {
+    "defaultMessage": "処分はそのまま残り、本人に伝えます。取り消せません。",
+    "description": "Under the question before an appeal is upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.confirm": {
+    "defaultMessage": "異議申し立てを撤回しますか？",
+    "description": "The question before an appeal is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.about": {
+    "defaultMessage": "処分はすぐに解除され、本人に伝えます。削除した投稿は戻りません。取り消せません。",
+    "description": "Under the question before an appeal of an action other than a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.overturn.ban_about": {
+    "defaultMessage": "BAN を解除し、アカウントの削除を取り消して、本人に伝えます。本人はもう一度ログインします。取り消せません。",
+    "description": "Under the question before an appeal of a ban is overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.upheld": {
+    "defaultMessage": "異議申し立てを維持しました。処分はそのままです。",
+    "description": "Said after an appeal was upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.overturned": {
+    "defaultMessage": "異議申し立てを撤回しました。処分を解除しました。",
+    "description": "Said after an appeal was overturned. Read by moderators."
+  },
+  "staff_accounts.registrations.table": {
+    "defaultMessage": "登録",
+    "description": "For assistive technology, the name of the table of registrations that wait for approval. Read by moderators."
+  },
+  "staff_accounts.registrations.column.account": {
+    "defaultMessage": "アカウント",
+    "description": "The column of the accounts' handles in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.email": {
+    "defaultMessage": "メールアドレス",
+    "description": "The column of the email addresses in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.reason": {
+    "defaultMessage": "参加の理由",
+    "description": "The column of why each person wants to join, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.submitted": {
+    "defaultMessage": "登録日時",
+    "description": "The column of when each person signed up, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of a registration's state, in the table of registrations. Read by moderators."
+  },
+  "staff_accounts.registrations.unconfirmed": {
+    "defaultMessage": "メール未確認",
+    "description": "Under a registration's handle when its person has not confirmed their email address. Read by moderators."
+  },
+  "staff_accounts.registrations.no_email": {
+    "defaultMessage": "メールアドレスなし",
+    "description": "In the email column of a registration that has none, or once it is decided. Read by moderators."
+  },
+  "staff_accounts.registrations.no_reason": {
+    "defaultMessage": "理由なし",
+    "description": "In the reason column of a registration whose person gave none. Read by moderators."
+  },
+  "staff_accounts.registrations.empty": {
+    "defaultMessage": "承認を待っている登録はありません。承認制のときや登録の制限に当てはまったとき、登録がここに表示されます。",
+    "description": "In place of the table of registrations when none waits. Read by moderators."
+  },
+  "staff_accounts.registrations.loading": {
+    "defaultMessage": "登録を読み込んでいます…",
+    "description": "At /moderation/registrations while the registrations are read. Read by moderators."
+  },
+  "staff_accounts.registrations.failed": {
+    "defaultMessage": "登録を読み込めませんでした。",
+    "description": "At /moderation/registrations when the registrations could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.registrations.approve": {
+    "defaultMessage": "承認する",
+    "description": "The action on the registrations picked that approves them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.reject": {
+    "defaultMessage": "却下する",
+    "description": "The action on the registrations picked that rejects them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.confirm": {
+    "defaultMessage": "{count, plural, other {登録 # 件を承認しますか？}}",
+    "description": "The question before the registrations picked are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.approve.about": {
+    "defaultMessage": "すぐにログインできるようになります。登録の審査は 1 回だけです。",
+    "description": "The line under the note's field before registrations are approved. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.confirm": {
+    "defaultMessage": "{count, plural, other {登録 # 件を却下しますか？}}",
+    "description": "The question before the registrations picked are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.reject.about": {
+    "defaultMessage": "ログインできなくなります。登録の審査は 1 回だけです。",
+    "description": "The line under the note's field before registrations are rejected. Read by moderators."
+  },
+  "staff_accounts.registrations.note": {
+    "defaultMessage": "モデレーター向けのメモ",
+    "description": "The label of the field of a note on a decision of registrations, which only the moderators read. Read by moderators."
+  },
+  "staff_accounts.registrations.approved": {
+    "defaultMessage": "{count, plural, other {登録 # 件を承認しました。}}",
+    "description": "Said after registrations were approved. Read by moderators."
+  },
+  "staff_accounts.registrations.rejected": {
+    "defaultMessage": "{count, plural, other {登録 # 件を却下しました。}}",
+    "description": "Said after registrations were rejected. Read by moderators."
+  },
+  "staff_accounts.block_kind": {
+    "defaultMessage": "{kind, select, email_domain {メールのドメイン} email_hash {メールアドレス} ip_range {IP アドレスの範囲} other {メールのドメイン}}",
+    "description": "What a sign-up block matches, in its list, its filter, its page and the form of a new one. Read by moderators."
+  },
+  "staff_accounts.block_severity": {
+    "defaultMessage": "{severity, select, reject {登録を断る} require_approval {承認制にする} other {登録を断る}}",
+    "description": "What a sign-up block does to a sign-up it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.add": {
+    "defaultMessage": "制限を追加",
+    "description": "The button to the form of a new sign-up block, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.import": {
+    "defaultMessage": "リストから追加",
+    "description": "The button to the form that adds sign-up blocks from a list, and that form's title. Read by moderators."
+  },
+  "staff_accounts.blocks.filters": {
+    "defaultMessage": "登録の制限を絞り込む",
+    "description": "For assistive technology, the name of the filters over the sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.kind": {
+    "defaultMessage": "対象",
+    "description": "The filter of sign-up blocks by what they match, and the label of that choice in the form of a new block. Read by moderators."
+  },
+  "staff_accounts.blocks.kind.any": {
+    "defaultMessage": "すべて",
+    "description": "The value of the Matches filter that keeps every block. Read by moderators."
+  },
+  "staff_accounts.blocks.all": {
+    "defaultMessage": "終わったものも表示",
+    "description": "The filter of sign-up blocks that also shows those lifted or expired. Read by moderators."
+  },
+  "staff_accounts.blocks.table": {
+    "defaultMessage": "登録の制限",
+    "description": "For assistive technology, the name of the table of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.column.value": {
+    "defaultMessage": "値",
+    "description": "The column of what a sign-up block matches, and of a skipped line's value. Read by moderators."
+  },
+  "staff_accounts.blocks.column.kind": {
+    "defaultMessage": "対象",
+    "description": "The column of what kind of value a sign-up block matches. Read by moderators."
+  },
+  "staff_accounts.blocks.column.severity": {
+    "defaultMessage": "動作",
+    "description": "The column of what a sign-up block does to a sign-up. Read by moderators."
+  },
+  "staff_accounts.blocks.column.ends": {
+    "defaultMessage": "期限",
+    "description": "The column of when a sign-up block ends. Read by moderators."
+  },
+  "staff_accounts.blocks.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of a sign-up block's state. Read by moderators."
+  },
+  "staff_accounts.blocks.column.line": {
+    "defaultMessage": "行",
+    "description": "The column of a skipped line's number. Read by moderators."
+  },
+  "staff_accounts.blocks.column.reason": {
+    "defaultMessage": "理由",
+    "description": "The column of why a line was skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.hash": {
+    "defaultMessage": "ハッシュ {hash}…",
+    "description": "The value of a block of one email address, of which only a hash is kept: its start. Read by moderators."
+  },
+  "staff_accounts.blocks.empty": {
+    "defaultMessage": "有効な登録の制限はありません。追加すると、登録を断ったり承認制にしたりできます。",
+    "description": "In place of the table of sign-up blocks when none is in effect. Read by moderators."
+  },
+  "staff_accounts.blocks.empty.filtered": {
+    "defaultMessage": "一致する登録の制限はありません。絞り込みを外すと、有効なものを表示します。",
+    "description": "In place of the table of sign-up blocks when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.blocks.loading": {
+    "defaultMessage": "登録の制限を読み込んでいます…",
+    "description": "At /moderation/signup-blocks while the blocks are read. Read by moderators."
+  },
+  "staff_accounts.blocks.failed": {
+    "defaultMessage": "登録の制限を読み込めませんでした。",
+    "description": "At /moderation/signup-blocks when the blocks could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.blocks.back": {
+    "defaultMessage": "登録の制限",
+    "description": "The way back from a sign-up block's page or form to the list of blocks. Read by moderators."
+  },
+  "staff_accounts.blocks.severity": {
+    "defaultMessage": "動作",
+    "description": "The label of the choice of what a new sign-up block does. Read by moderators."
+  },
+  "staff_accounts.blocks.length": {
+    "defaultMessage": "期間",
+    "description": "The label of the choice of how long a new sign-up block lasts. Read by moderators."
+  },
+  "staff_accounts.blocks.comment": {
+    "defaultMessage": "モデレーター向けのコメント",
+    "description": "The label of the field of a sign-up block's comment. Read by moderators."
+  },
+  "staff_accounts.blocks.value": {
+    "defaultMessage": "{kind, select, email_hash {メールアドレス} ip_range {IP アドレスの範囲} other {メールのドメイン}}",
+    "description": "The label of the field of a new sign-up block's value, by what it matches. Read by moderators."
+  },
+  "staff_accounts.blocks.value.hint": {
+    "defaultMessage": "{kind, select, email_hash {アドレスはハッシュだけを保存します。+ 以降が違うアドレスも当てはまります。} ip_range {192.0.2.0/24 のような範囲か、1 つのアドレスです。} other {spam.example のようなドメインです。サブドメインも当てはまります。}}",
+    "description": "Under the field of a new sign-up block's value: what to write. Read by moderators."
+  },
+  "staff_accounts.blocks.value.blank": {
+    "defaultMessage": "{kind, select, email_hash {メールアドレスを入力してください。} ip_range {IP アドレスの範囲かアドレスを入力してください。} other {ドメインを入力してください。}}",
+    "description": "Under the field of a new sign-up block's value when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.value.invalid": {
+    "defaultMessage": "{kind, select, email_hash {メールアドレスではありません。name@example.com のように入力してください。} ip_range {IP アドレスの範囲ではありません。192.0.2.0/24 のように入力してください。} other {ドメインではありません。spam.example のように入力してください。}}",
+    "description": "Under the field of a new sign-up block's value when the server refused it for its kind. Read by moderators."
+  },
+  "staff_accounts.blocks.add.submit": {
+    "defaultMessage": "制限を追加する",
+    "description": "The button of the form of a new sign-up block. Read by moderators."
+  },
+  "staff_accounts.blocks.list": {
+    "defaultMessage": "リスト",
+    "description": "The label of the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.list.blank": {
+    "defaultMessage": "リストを貼り付けるか入力してください。",
+    "description": "Under the field of the list of sign-up blocks when it is empty. Read by moderators."
+  },
+  "staff_accounts.blocks.list.hint": {
+    "defaultMessage": "1 行に 1 つの値か、最初の列が値の CSV です。空行と # で始まる行は飛ばします。最大 1 万件です。",
+    "description": "Under the field of the list of values to block sign-ups by. Read by moderators."
+  },
+  "staff_accounts.blocks.import.submit": {
+    "defaultMessage": "制限を追加する",
+    "description": "The button of the form that adds sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.imported": {
+    "defaultMessage": "{count, plural, other {制限を # 件追加しました}}",
+    "description": "The title of the result of adding sign-up blocks from a list. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped": {
+    "defaultMessage": "{count, plural, other {飛ばした行 # 件}}",
+    "description": "The heading of the table of the lines a list's import skipped. Read by moderators."
+  },
+  "staff_accounts.blocks.skipped.none": {
+    "defaultMessage": "すべての行を追加しました。",
+    "description": "In place of the table of skipped lines when the import skipped none. Read by moderators."
+  },
+  "staff_accounts.blocks.line": {
+    "defaultMessage": "{line} 行目",
+    "description": "A skipped line's number, in the table of skipped lines. Read by moderators."
+  },
+  "staff_accounts.blocks.skip_reason": {
+    "defaultMessage": "{reason, select, invalid {種類に合わない値} duplicate {前の行と同じ} already_blocked {すでに制限済み} other {飛ばした}}",
+    "description": "Why an import of sign-up blocks skipped a line. Read by moderators."
+  },
+  "staff_accounts.blocks.to_list": {
+    "defaultMessage": "登録の制限に戻る",
+    "description": "The button after an import's result, to the list of sign-up blocks. Read by moderators."
+  },
+  "staff_accounts.block.missing": {
+    "defaultMessage": "このアドレスの登録の制限はありません。",
+    "description": "At a sign-up block's page whose block the server does not have. Read by moderators."
+  },
+  "staff_accounts.block.all": {
+    "defaultMessage": "すべての登録の制限",
+    "description": "The link after the notice that an address names no sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.loading": {
+    "defaultMessage": "登録の制限を読み込んでいます…",
+    "description": "At a sign-up block's page while it is read. Read by moderators."
+  },
+  "staff_accounts.block.failed": {
+    "defaultMessage": "登録の制限を読み込めませんでした。",
+    "description": "At a sign-up block's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.block.facts": {
+    "defaultMessage": "登録の制限の情報",
+    "description": "For assistive technology, the name of the list of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.state": {
+    "defaultMessage": "状態",
+    "description": "A term of a sign-up block's facts. Read by moderators."
+  },
+  "staff_accounts.block.fact.kind": {
+    "defaultMessage": "対象",
+    "description": "A term of a sign-up block's facts: what kind of value it matches. Read by moderators."
+  },
+  "staff_accounts.block.fact.value": {
+    "defaultMessage": "値",
+    "description": "A term of a sign-up block's facts: its value as the server keeps it. Read by moderators."
+  },
+  "staff_accounts.block.fact.severity": {
+    "defaultMessage": "動作",
+    "description": "A term of a sign-up block's facts: what it does. Read by moderators."
+  },
+  "staff_accounts.block.fact.created": {
+    "defaultMessage": "追加",
+    "description": "A term of a sign-up block's facts: when it was added. Read by moderators."
+  },
+  "staff_accounts.block.fact.ends": {
+    "defaultMessage": "期限",
+    "description": "A term of a sign-up block's facts: when it ends. Read by moderators."
+  },
+  "staff_accounts.block.fact.lifted": {
+    "defaultMessage": "解除",
+    "description": "A term of a sign-up block's facts: when it was lifted. Read by moderators."
+  },
+  "staff_accounts.block.fact.comment": {
+    "defaultMessage": "コメント",
+    "description": "A term of a sign-up block's facts: the moderators' comment. Read by moderators."
+  },
+  "staff_accounts.block.fact.ban": {
+    "defaultMessage": "作成元",
+    "description": "A term of a sign-up block's facts: the ban it was made from. Read by moderators."
+  },
+  "staff_accounts.block.from_ban": {
+    "defaultMessage": "BAN",
+    "description": "The value of Made from in a sign-up block's facts, a link to the ban's page. Read by moderators."
+  },
+  "staff_accounts.block.lift": {
+    "defaultMessage": "解除する",
+    "description": "The button that lifts a sign-up block. Read by moderators."
+  },
+  "staff_accounts.block.lifted": {
+    "defaultMessage": "登録の制限を解除しました。",
+    "description": "Said after a sign-up block was lifted. Read by moderators."
+  },
+  "staff_accounts.invite_state": {
+    "defaultMessage": "{state, select, usable {使える} revoked {取り消し済み} expired {期限切れ} exhausted {使い切った} creator_ineligible {作った人が今は招待できません} other {使える}}",
+    "description": "Where an invite stands, in the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.table": {
+    "defaultMessage": "招待",
+    "description": "For assistive technology, the name of the table of invites. Read by moderators."
+  },
+  "staff_accounts.invites.column.code": {
+    "defaultMessage": "コード",
+    "description": "The column of the invites' codes. Read by moderators."
+  },
+  "staff_accounts.invites.column.uses": {
+    "defaultMessage": "登録した人数",
+    "description": "The column of how many signed up with an invite, of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.column.ends": {
+    "defaultMessage": "期限",
+    "description": "The column of when an invite stops working. Read by moderators."
+  },
+  "staff_accounts.invites.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of an invite's state. Read by moderators."
+  },
+  "staff_accounts.invites.by": {
+    "defaultMessage": "{kind, select, member {メンバーの招待: {handle}} other {スタッフの招待: {handle}}}",
+    "description": "Under an invite's code: who created it, and whether as a member or as the staff. Read by moderators."
+  },
+  "staff_accounts.invites.by_cli": {
+    "defaultMessage": "サーバーのコマンドで作成",
+    "description": "Under an invite's code when it was made on the command line. Read by moderators."
+  },
+  "staff_accounts.invites.by_gone": {
+    "defaultMessage": "削除されたアカウントが作成",
+    "description": "Under an invite's code when its creator deleted their account. Read by moderators."
+  },
+  "staff_accounts.invites.uses": {
+    "defaultMessage": "{uses, plural, other {# 人}}",
+    "description": "How many signed up with an invite without a limit. Read by moderators."
+  },
+  "staff_accounts.invites.uses_of": {
+    "defaultMessage": "{max} 人中 {uses} 人",
+    "description": "How many signed up with an invite of how many it allows. Read by moderators."
+  },
+  "staff_accounts.invites.never": {
+    "defaultMessage": "なし",
+    "description": "When an invite with no end stops working, and the choice of no end in the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.unlimited": {
+    "defaultMessage": "上限なし",
+    "description": "How many may sign up with a new invite that has no limit. Read by moderators."
+  },
+  "staff_accounts.invites.create": {
+    "defaultMessage": "招待を作成",
+    "description": "The button to the form of a new invite, and that form's title. Read by moderators."
+  },
+  "staff_accounts.invites.create.submit": {
+    "defaultMessage": "作成する",
+    "description": "The button of the form of a new invite. Read by moderators."
+  },
+  "staff_accounts.invites.length": {
+    "defaultMessage": "有効期間",
+    "description": "The label of the choice of how long a new invite works. Read by moderators."
+  },
+  "staff_accounts.invites.back": {
+    "defaultMessage": "招待",
+    "description": "The way back from the form of a new invite to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.made": {
+    "defaultMessage": "招待を作成しました",
+    "description": "The title of what takes the form's place once an invite is created. Read by moderators."
+  },
+  "staff_accounts.invites.link": {
+    "defaultMessage": "登録用のリンク",
+    "description": "The name of a new invite's link, to copy and pass on. Read by moderators."
+  },
+  "staff_accounts.invites.copy": {
+    "defaultMessage": "リンクをコピー",
+    "description": "The button that copies a new invite's link. Read by moderators."
+  },
+  "staff_accounts.invites.code": {
+    "defaultMessage": "コード",
+    "description": "A term of a new invite's facts: its code, which people may type instead. Read by moderators."
+  },
+  "staff_accounts.invites.to_list": {
+    "defaultMessage": "招待に戻る",
+    "description": "The button after a new invite, to the list of invites. Read by moderators."
+  },
+  "staff_accounts.invites.revoke": {
+    "defaultMessage": "取り消す",
+    "description": "The action on the invites picked that revokes them, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.confirm": {
+    "defaultMessage": "{count, plural, other {招待 # 件を取り消しますか？}}",
+    "description": "The question before the invites picked are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoke.about": {
+    "defaultMessage": "もう誰も登録できなくなります。登録した人のアカウントはそのままです。取り消せません。",
+    "description": "Under the question before invites are revoked. Read by moderators."
+  },
+  "staff_accounts.invites.revoked": {
+    "defaultMessage": "{count, plural, other {招待 # 件を取り消しました。}}",
+    "description": "Said after invites were revoked. Read by moderators."
+  },
+  "staff_accounts.invites.empty": {
+    "defaultMessage": "まだ招待はありません。作成すると、そのリンクから登録できます。",
+    "description": "In place of the table of invites when there is none. Read by moderators."
+  },
+  "staff_accounts.invites.loading": {
+    "defaultMessage": "招待を読み込んでいます…",
+    "description": "At /moderation/invites while the invites are read. Read by moderators."
+  },
+  "staff_accounts.invites.failed": {
+    "defaultMessage": "招待を読み込めませんでした。",
+    "description": "At /moderation/invites when the invites could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.invites.max_uses": {
+    "defaultMessage": "登録できる人数 (空欄で上限なし)",
+    "description": "The label of the field of how many may sign up with a new invite. Read by moderators."
+  },
+  "staff_accounts.hook": {
+    "defaultMessage": "{hook, select, inbound_status {ほかのサーバーからの投稿} inbound_follow {ほかのサーバーからのフォロー} signup_check {登録} media_check {アップロードしたメディア} local_status {このサーバーの投稿} inbound_actor {ほかのサーバーのプロフィール} local_profile {このサーバーのプロフィール} other {審査}}",
+    "description": "What a decision hook reviews, as the name of the hook in the automated reviews' records. Read by moderators."
+  },
+  "staff_accounts.hook_outcome": {
+    "defaultMessage": "{outcome, select, allow {許可} drop {破棄} flag {通報} mark_sensitive {センシティブ化} require_approval {承認制} reject {拒否} timeout {時間切れ} error {失敗} invalid {不明な返答} breaker_open {失敗が続いたため省略} other {判定}}",
+    "description": "What a decision of a decision hook records: a verdict, or a kind of failure. Read by moderators."
+  },
+  "staff_accounts.hook_mode": {
+    "defaultMessage": "{mode, select, observe {観察} enforce {適用} other {観察}}",
+    "description": "The mode a decision hook was in when it decided: recording only, or acting on its verdict. Read by moderators."
+  },
+  "staff_accounts.hook_reason": {
+    "defaultMessage": "{reason, select, spam {スパム} harassment {嫌がらせ} sexual {性的な内容} violence {暴力} illegal {違法な内容} malware {マルウェア} other {その他}}",
+    "description": "The coded reason of a decision hook's verdict. Read by moderators."
+  },
+  "staff_accounts.decisions.summary": {
+    "defaultMessage": "直近 7 日間",
+    "description": "For assistive technology, the name of the counts of each hook's decisions of the last 7 days. Read by moderators."
+  },
+  "staff_accounts.decisions.no_hooks": {
+    "defaultMessage": "プラグインのある自動審査はありません。プラグインを設定すると、その判定がここに表示されます。",
+    "description": "At /moderation/hook-decisions when no decision hook has a plugin. Read by moderators."
+  },
+  "staff_accounts.decisions.filters": {
+    "defaultMessage": "判定を絞り込む",
+    "description": "For assistive technology, the name of the filters over the decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.hook": {
+    "defaultMessage": "審査",
+    "description": "The filter of decisions by their hook. Read by moderators."
+  },
+  "staff_accounts.decisions.hook.any": {
+    "defaultMessage": "すべての審査",
+    "description": "The value of the Review filter that keeps every hook. Read by moderators."
+  },
+  "staff_accounts.decisions.mode": {
+    "defaultMessage": "モード",
+    "description": "The filter of decisions by the mode they were made in. Read by moderators."
+  },
+  "staff_accounts.decisions.mode.any": {
+    "defaultMessage": "すべてのモード",
+    "description": "The value of the Mode filter that keeps every mode. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome": {
+    "defaultMessage": "結果",
+    "description": "The filter of decisions by their outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.outcome.any": {
+    "defaultMessage": "許可以外すべて",
+    "description": "The value of the Outcome filter that keeps every outcome but Allowed, which the list leaves out by default. Read by moderators."
+  },
+  "staff_accounts.decisions.table": {
+    "defaultMessage": "判定",
+    "description": "For assistive technology, the name of the table of decisions. Read by moderators."
+  },
+  "staff_accounts.decisions.column.hook": {
+    "defaultMessage": "審査",
+    "description": "The column of what a decision's hook reviews. Read by moderators."
+  },
+  "staff_accounts.decisions.column.outcome": {
+    "defaultMessage": "結果",
+    "description": "The column of a decision's outcome. Read by moderators."
+  },
+  "staff_accounts.decisions.column.mode": {
+    "defaultMessage": "モード",
+    "description": "The column of a decision's mode. Read by moderators."
+  },
+  "staff_accounts.decisions.column.decided": {
+    "defaultMessage": "日時",
+    "description": "The column of when a decision was made. Read by moderators."
+  },
+  "staff_accounts.decisions.column.state": {
+    "defaultMessage": "状態",
+    "description": "The column of whether a decision stands or was cancelled. Read by moderators."
+  },
+  "staff_accounts.decisions.empty": {
+    "defaultMessage": "審査が止めたもの・指摘したもの・失敗したものはありません。",
+    "description": "In place of the table of decisions when there is none. Read by moderators."
+  },
+  "staff_accounts.decisions.empty.filtered": {
+    "defaultMessage": "一致する判定はありません。絞り込みを外すと、すべて表示します。",
+    "description": "In place of the table of decisions when none matches the filters. Read by moderators."
+  },
+  "staff_accounts.decisions.loading": {
+    "defaultMessage": "判定を読み込んでいます…",
+    "description": "At /moderation/hook-decisions while the decisions are read. Read by moderators."
+  },
+  "staff_accounts.decisions.failed": {
+    "defaultMessage": "判定を読み込めませんでした。",
+    "description": "At /moderation/hook-decisions when the decisions could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decisions.summary.hook": {
+    "defaultMessage": "{hook} ({mode, select, observe {観察} enforce {適用} other {オフ}})",
+    "description": "Under the count of a hook's decisions of the last 7 days: the hook and its mode now. Read by moderators."
+  },
+  "staff_accounts.decision.stands": {
+    "defaultMessage": "有効",
+    "description": "The state of a decision of a hook that no moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled": {
+    "defaultMessage": "取り消し済み",
+    "description": "The state of a decision of a hook that a moderator cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.title": {
+    "defaultMessage": "{hook}: {outcome}",
+    "description": "The title of a decision's page: what its hook reviews and its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.back": {
+    "defaultMessage": "自動審査の記録",
+    "description": "The way back from a decision, or the appeals of refused posts, to the decisions. Read by moderators."
+  },
+  "staff_accounts.decision.missing": {
+    "defaultMessage": "このアドレスの判定はありません。",
+    "description": "At a decision's page whose decision the server does not have. Read by moderators."
+  },
+  "staff_accounts.decision.all": {
+    "defaultMessage": "すべての判定",
+    "description": "The link after the notice that an address names no decision. Read by moderators."
+  },
+  "staff_accounts.decision.loading": {
+    "defaultMessage": "判定を読み込んでいます…",
+    "description": "At a decision's page while it is read. Read by moderators."
+  },
+  "staff_accounts.decision.failed": {
+    "defaultMessage": "判定を読み込めませんでした。",
+    "description": "At a decision's page when it could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.decision.facts": {
+    "defaultMessage": "判定の情報",
+    "description": "For assistive technology, the name of the list of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.state": {
+    "defaultMessage": "状態",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.hook": {
+    "defaultMessage": "審査",
+    "description": "A term of a decision's facts: what its hook reviews. Read by moderators."
+  },
+  "staff_accounts.decision.fact.outcome": {
+    "defaultMessage": "結果",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.mode": {
+    "defaultMessage": "モード",
+    "description": "A term of a decision's facts. Read by moderators."
+  },
+  "staff_accounts.decision.fact.reason": {
+    "defaultMessage": "理由",
+    "description": "A term of a decision's facts: the coded reason of its verdict. Read by moderators."
+  },
+  "staff_accounts.decision.fact.note": {
+    "defaultMessage": "審査のメモ",
+    "description": "A term of a decision's facts: the plugin's note for the moderators. Read by moderators."
+  },
+  "staff_accounts.decision.fact.account": {
+    "defaultMessage": "アカウント",
+    "description": "A term of a decision's facts: the account its subject belongs to. Read by moderators."
+  },
+  "staff_accounts.decision.fact.subject": {
+    "defaultMessage": "対象",
+    "description": "A term of a decision's facts: what identifies its subject for the hook (a URI). Read by moderators."
+  },
+  "staff_accounts.decision.fact.decided": {
+    "defaultMessage": "日時",
+    "description": "A term of a decision's facts: when it was made. Read by moderators."
+  },
+  "staff_accounts.decision.fact.latency": {
+    "defaultMessage": "所要時間",
+    "description": "A term of a decision's facts: how long the call took. Read by moderators."
+  },
+  "staff_accounts.decision.fact.restorable": {
+    "defaultMessage": "復元できる期限",
+    "description": "A term of a decision's facts: until when cancelling a drop processes the activity again. Read by moderators."
+  },
+  "staff_accounts.decision.fact.cancelled": {
+    "defaultMessage": "取り消し",
+    "description": "A term of a decision's facts: when a moderator cancelled it. Read by moderators."
+  },
+  "staff_accounts.decision.latency": {
+    "defaultMessage": "{ms} ミリ秒",
+    "description": "The value of Took in a decision's facts, in milliseconds. Read by moderators."
+  },
+  "staff_accounts.decision.cancel": {
+    "defaultMessage": "判定を取り消す",
+    "description": "The button that asks to cancel a decision, and its confirmation's button. Read by moderators."
+  },
+  "staff_accounts.decision.keep": {
+    "defaultMessage": "取り消さない",
+    "description": "The button of the confirmation of a decision's cancellation that keeps the decision. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.confirm": {
+    "defaultMessage": "この判定を取り消しますか？",
+    "description": "The question before a decision of a hook is cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.cancel.about": {
+    "defaultMessage": "{outcome, select, mark_sensitive {センシティブの印を外します。処分による印はそのままです。} flag {判定を取り消します。通報はそのまま残り、いつも通り対応します。} drop {サーバーが受け取ったものを持っている間は、もう一度処理します。その後は取り消しを記録するだけです。} require_approval {判定を取り消して記録します。登録の状態はそのままです。} other {判定を取り消して、監査ログに記録します。}}取り消せません。",
+    "description": "Under the question before a decision is cancelled: what cancelling does for its outcome. Read by moderators."
+  },
+  "staff_accounts.decision.cancelled_now": {
+    "defaultMessage": "判定を取り消しました。",
+    "description": "Said after a decision of a hook was cancelled. Read by moderators."
+  },
+  "staff_accounts.decision.by_appeal": {
+    "defaultMessage": "拒否された投稿は、作者の異議申し立てで見直します",
+    "description": "On the page of a post refused by the review of posts here, the link to the appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.title": {
+    "defaultMessage": "拒否された投稿への異議申し立て",
+    "description": "The title of the screen of the authors' appeals of posts the review of posts refused, and the button to it. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.table": {
+    "defaultMessage": "拒否された投稿への異議申し立て",
+    "description": "For assistive technology, the name of the table of appeals of refused posts. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.empty.pending": {
+    "defaultMessage": "審査を待っている、拒否された投稿への異議申し立てはありません。",
+    "description": "In place of the table of appeals of refused posts when none waits. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.loading": {
+    "defaultMessage": "異議申し立てを読み込んでいます…",
+    "description": "At /moderation/hook-decisions/appeals while the appeals are read. Read by moderators."
+  },
+  "staff_accounts.hook_appeals.failed": {
+    "defaultMessage": "異議申し立てを読み込めませんでした。",
+    "description": "At /moderation/hook-decisions/appeals when they could not be read, before Try again. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.title": {
+    "defaultMessage": "{handle} の拒否された投稿",
+    "description": "The title of an appeal of a refused post, naming its author. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.back": {
+    "defaultMessage": "拒否された投稿への異議申し立て",
+    "description": "The way back from an appeal of a refused post to their list. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.all": {
+    "defaultMessage": "拒否された投稿へのすべての異議申し立て",
+    "description": "The link after the notice that an address names no appeal of a refused post. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.fact.decision": {
+    "defaultMessage": "判定",
+    "description": "A term of an appeal of a refused post: the decision appealed, a link to its page. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.post": {
+    "defaultMessage": "送ろうとした投稿",
+    "description": "The heading of the text of a refused post, as its author wrote it. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.comment": {
+    "defaultMessage": "本人のコメント",
+    "description": "The heading of the comment the author of a refused post added to their appeal. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.uphold.about": {
+    "defaultMessage": "拒否はそのままで、投稿はこれまで通り審査されます。取り消せません。",
+    "description": "Under the question before an appeal of a refused post is upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturn.about": {
+    "defaultMessage": "拒否を取り消し、投稿の審査をやめます。投稿は戻らないため、本人がもう一度投稿します。取り消せません。",
+    "description": "Under the question before an appeal of a refused post is overturned. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.upheld": {
+    "defaultMessage": "異議申し立てを維持しました。拒否はそのままです。",
+    "description": "Said after an appeal of a refused post was upheld. Read by moderators."
+  },
+  "staff_accounts.hook_appeal.overturned": {
+    "defaultMessage": "異議申し立てを撤回しました。投稿の審査をやめました。",
+    "description": "Said after an appeal of a refused post was overturned. Read by moderators."
+  },
+  "staff_accounts.report.act": {
+    "defaultMessage": "このアカウントを処分",
+    "description": "On a report's screen, at the end of the reported account's line: the way to its moderation screen. Read by moderators."
+  },
+  "staff_accounts.place.end": {
+    "defaultMessage": "{kind, select, event {イベントを中止} other {ルームを終了}}",
+    "description": "On a report's screen, the button that asks to end the voice chat room or cancel the event it points at, and the confirmation's button. Read by moderators."
+  },
+  "staff_accounts.place.confirm": {
+    "defaultMessage": "{kind, select, event {このイベントを全員に対して中止しますか？} other {このルームを全員に対して終了しますか？}}",
+    "description": "The question before a moderator ends a voice chat room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.place.reason.hint": {
+    "defaultMessage": "{kind, select, event {イベントを見る人全員が、中止と一緒に読みます。取り消せません。} other {モデレーターだけが読みます。参加者にはルームが終了したことだけが表示されます。取り消せません。}}",
+    "description": "Under the field of the reason a moderator ends a room or cancels an event: who reads it. Read by moderators."
+  },
+  "staff_accounts.place.done": {
+    "defaultMessage": "{kind, select, event {イベントを中止しました。} other {ルームを終了しました。}}",
+    "description": "Said after a moderator ended a room or cancelled an event. Read by moderators."
+  },
+  "staff_accounts.place.reason": {
+    "defaultMessage": "理由 (任意)",
+    "description": "The label of the field of why a moderator ends a room or cancels an event. Read by moderators."
+  }
+}
