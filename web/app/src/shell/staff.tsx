@@ -48,6 +48,9 @@ function Entry({ area, entry }: { area: StaffArea; entry: string }) {
         onSearch={(search) => {
           void router.navigate({ href: staffHref(pathname, search) });
         }}
+        go={(href) => {
+          void router.navigate({ href });
+        }}
       />
     </>
   );

@@ -73,7 +73,12 @@ test("Moderation lists Reports to a holder of manage_reports, with how many are 
     "link",
     { name: new RegExp(`^Reports .*\\b${String(open)} open reports$`) },
   );
-  expect(listed()).toEqual(["/moderation/reports"]);
+  expect(listed()).toEqual([
+    "/moderation/reports",
+    "/moderation/domain-actions",
+    "/moderation/instances",
+    "/moderation/audit-log",
+  ]);
   await app.user.click(reports);
   await app.arrived("/moderation/reports");
   expect(await main().findByRole("table", { name: "Reports" })).toBeDefined();
@@ -89,8 +94,8 @@ test("a reader with other moderation permissions but not manage_reports is not s
   });
   await renderApp("/moderation", { on });
 
-  expect(await main().findByText("None of the screens here is open to your permissions yet.")).toBeDefined();
-  expect(listed()).toEqual([]);
+  await main().findByRole("navigation", { name: "Moderation screens" });
+  expect(listed()).toEqual(["/moderation/domain-actions", "/moderation/instances", "/moderation/audit-log"]);
   expect(main().queryAllByRole("link", { name: /^Reports/ })).toHaveLength(0);
 });
 

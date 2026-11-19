@@ -247,8 +247,9 @@ In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `k
 `GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, `POST .../{id}/lift`,
 and `GET .../impact?domain=`, which counts the follows that a `suspend` of the domain would end.
 
-In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, kind, state and end, in effect or all;
-"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its comments and dates, where "Lift" ends it.
+In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, public reason, kind, end and state, in effect or all, of every domain or of the one you search for;
+"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its reasons and dates, where "Lift" ends it.
+A `suspend` asks first: the confirmation says how many follows between local users and the domain's accounts it ends for good, and asks you to type the domain.
 The "Domain actions" link on a remote server's page lists only that domain's actions, and "New action" there starts the form with the domain filled in.
 
 - Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
@@ -271,7 +272,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
 A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
-In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Export CSV" saves the file, and the import previews a pasted or chosen file before it imports the rows you keep.
+In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Save as CSV" saves the file, and the import previews a chosen file before it imports the rows you keep; a `suspend` among them asks first.
 
 | CSV row | Action on this server |
 | --- | --- |
@@ -310,7 +311,7 @@ In the admin API: `GET` and `POST /api/v1/admin/domain_list_subscriptions`, `GET
 and `POST .../{id}/drafts/accept` and `.../drafts/reject` (the body has `keys`, or nothing for every draft). All of them
 need `manage_domains`.
 
-In the web client, open Moderation → Domain actions and choose "Blocklist subscriptions"
+In the web client, open Moderation → Domain actions and choose "Block list subscriptions"
 (`/moderation/domain-actions/subscriptions`). The list shows each subscription's mode and last fetch, with the failures in a
 row; "Add subscription" opens the form of the name, the URL, the format and the settings below, and subscribing opens the
 subscription's page. That page has four sections: the drafts, which you accept or reject one by one or all together (accepting
@@ -453,9 +454,9 @@ In the web client, use "Refetch posts" on the account's Review page (`/moderatio
 When a user asks whether a post, a follow, or an accept reached another server, list the deliveries to that server with the admin API.
 It shows each delivery of an activity to an inbox of the server, newest first, with every attempt and what the server answered, the deliveries that succeeded included.
 It needs the `manage_domains` permission.
-In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show masked fields** on each masked delivery; the screen says which of them are recorded in the audit log before they run.
+In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show** for each hidden field under **Details** of a masked delivery; the screen says which of them are recorded in the audit log before they run.
 The Remote servers list shows only the servers that deliveries failed to reach. To open any other server, enter its domain, a handle on it, or a URL on it in **Open a server** above the list,
-or use **Open the account's server** on a remote account's Review page or on a report about a remote account, or **Open the server's page** on an audit log entry about a domain.
+or use **Open the account's server** on a remote account's Review page or on a report about a remote account, or the domain in an audit log entry about a domain.
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
@@ -632,6 +633,8 @@ my admin audit list -target-kind domain -target-id spam.example
 ```
 
 In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`, `action`, `target_kind` and `target_id`). It needs the `view_audit` permission.
+In the web client, open Moderation → Audit log (`/moderation/audit-log`): each entry reads as a sentence of who did what to what, newest first, the person and the target linked to their screens.
+Filter it by who did it (you, or the person of an entry's "Their other operations"), by the kind of target and then of operation, and by one target (an entry's "Other operations on this").
 
 - A row is the actor (the user for `user`, or `cli` for the CLI), the operation, the target kind and ID, the target's display name, the ID of the original record, and the time.
   The target ID is the ID of the account, report, appeal, user, rule, role or sign-up block; for a domain action it is the domain; for settings and texts it is the key.

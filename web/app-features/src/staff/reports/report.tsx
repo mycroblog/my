@@ -71,6 +71,7 @@ import { Fragment, useId, useRef, useState, type ReactNode } from "react";
 import { charsOf } from "../../chars";
 import { readerLanguage, usePostTranslation } from "../../post-translation";
 import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { AccountServerButton } from "../domains/servers";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
 
@@ -275,13 +276,19 @@ function GoButton({ href, icon, children }: { href: string; icon: IconName; chil
 }
 
 /**
- * The reported account. The way to act on it, its moderation screen (/moderation/accounts/{id}), comes at its line's
- * end with that screen (#3260), for a reader with `manage_accounts` alone.
+ * The reported account, and for a remote one Open the account's server, for a reader with `manage_domains` alone. The
+ * way to act on it, its moderation screen (/moderation/accounts/{id}), comes at its line's end with that screen
+ * (#3260), for a reader with `manage_accounts` alone.
  */
 function ReportedAccount({ report }: { report: ReportDetail }) {
   const { t } = useStaffStrings();
   if (report.target_account === undefined) return <FeedNotice start>{t("staff.account_gone")}</FeedNotice>;
-  return <AccountLine account={report.target_account} />;
+  return (
+    <Stack gap="entry-line">
+      <AccountLine account={report.target_account} />
+      <AccountServerButton acct={report.target_account.acct} />
+    </Stack>
+  );
 }
 
 /** The domain of a remote account's server; undefined for a local one. */

@@ -24,6 +24,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { domainEntries, domainGroups } from "./domains/entries";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
 const staffAreas = ["moderation", "admin"] as const;
@@ -32,6 +33,7 @@ export type StaffArea = (typeof staffAreas)[number];
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
+  ...domainGroups,
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -44,6 +46,8 @@ export type StaffAddress = {
   readonly search: StaffSearch;
   /** Shows the screen with `search` in place of the query, as a new entry of the history. */
   readonly onSearch: (search: StaffSearch) => void;
+  /** Shows another address of the app, as a new entry of the history (a server the reader names, a thing made). */
+  readonly go: (href: string) => void;
 };
 
 /** What an entry's screen is given by the route that places it. */
@@ -92,6 +96,7 @@ export const staffEntries: readonly StaffEntry[] = [
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
   },
+  ...domainEntries,
 ];
 
 /**
@@ -157,9 +162,16 @@ const readViewer = (data: AppData) =>
   data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined);
 
 /** Reads what the screen of the entry of `area` at `path` shows at `search`, once the reader's permissions open it. */
-export async function loadStaffEntry(data: AppData, area: StaffArea, path: string, search: StaffSearch): Promise<void> {
+export async function loadStaffEntry(
+  data: AppData,
+  area: StaffArea,
+  path: string,
+  search: StaffSearch,
+  /** What to read in place of the entry's own screen (a screen under it); the entry's `load` where left out. */
+  load?: (data: AppData) => Promise<void>,
+): Promise<void> {
   const viewer = await readViewer(data);
   const entry = staffEntries.find((e) => e.area === area && e.path === path);
   if (entry === undefined || viewer?.permissions.includes(entry.permission) !== true) return;
-  await entry.load?.(data, search);
+  await (load === undefined ? entry.load?.(data, search) : load(data));
 }

@@ -74,6 +74,7 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
+import { domainHandlers, type FakeDomainOptions, type FakeDomains } from "./domains";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -322,6 +323,8 @@ export type FakeOptions = {
   };
   /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
   reports?: FakeReportOptions;
+  /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
+  domains?: FakeDomainOptions;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
@@ -569,6 +572,8 @@ export type FakeApi = {
   readonly supporters: FakeSupporters;
   /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
   readonly reports: FakeReports;
+  /** The domain actions' and the subscriptions' IDs by the fake's keys, and the audit log (domains.ts). */
+  readonly domains: FakeDomains;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -2426,6 +2431,23 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     host: fakeHost,
   });
 
+  // The domains, the remote servers and the audit log (domains.ts), the fake's own.
+  const federated = domainHandlers({
+    started,
+    options: o.domains,
+    viewer,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    known: (username) => people.some((p) => p.username === username),
+    accountId: idOf,
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    follows: () => following,
+    host: fakeHost,
+  });
+
   // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
   // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
   // target read.
@@ -3752,6 +3774,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...moderated.handlers,
 
+    // ---- The domains, the remote servers and the audit log ------------------------------------------------------------
+
+    ...federated.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3972,6 +3998,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     events: events.events,
     supporters: supporting.supporters,
     reports: moderated.reports,
+    domains: federated.domains,
     unimplemented,
     revocations,
     newPosts,
