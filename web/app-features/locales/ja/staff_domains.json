@@ -720,7 +720,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that accepts the drafts picked, and the confirmation's button. Read by moderators."
   },
   "staff_domains.drafts.reject": {
-    "defaultMessage": "却下する",
+    "defaultMessage": "断る",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that rejects the drafts picked. Read by moderators."
   },
   "staff_domains.drafts.accepted": {
@@ -728,7 +728,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were accepted. Read by moderators."
   },
   "staff_domains.drafts.rejected": {
-    "defaultMessage": "{count, plural, other {# 件の下書きを却下しました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
+    "defaultMessage": "{count, plural, other {# 件の下書きを断りました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were rejected. Read by moderators."
   },
   "staff_domains.drafts.confirm.title": {

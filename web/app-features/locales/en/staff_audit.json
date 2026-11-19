@@ -176,7 +176,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.signup_block_lifted": {
-    "defaultMessage": "{actor} lifted the sign-up block {target}",
+    "defaultMessage": "{actor} lifted the sign-up block on {target}",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.hook_decision_applied": {
@@ -356,7 +356,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_enabled`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.supporter_tips_revised": {
-    "defaultMessage": "{actor} changed the tips to {target}",
+    "defaultMessage": "{actor} changed the amounts of the tips ({target})",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_tips_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.supporter_tips_disabled": {
@@ -559,8 +559,8 @@
     "defaultMessage": "{key, select, admin {Administrator} moderator {Moderator} other {{key}}}",
     "description": "On the audit log of the moderators (/moderation/audit-log), a role named in an entry's sentence by its key; the built-in ones by their names. Read by moderators."
   },
-  "staff_audit.event": {
-    "defaultMessage": "an event",
-    "description": "On the audit log of the moderators (/moderation/audit-log), in the place of a cancelled event's title when the reader cannot read it. Read by moderators."
+  "staff_audit.provider": {
+    "defaultMessage": "{key, select, stripe {Stripe} payjp {PAY.JP} other {{key}}}",
+    "description": "On the audit log of the moderators (/moderation/audit-log), a payment provider named in an entry's sentence by its key (`stripe`, `payjp`). Read by moderators."
   }
 }

@@ -138,6 +138,7 @@ func SanitizeBrandSVG(kind BrandKind, src []byte) (BrandSVG, error) {
 	if err := checkAspectRatio(kind, w, h); err != nil {
 		return BrandSVG{}, err
 	}
+	sizeRoot(root, w, h)
 	if s.uses > MaxBrandSVGUses {
 		return BrandSVG{}, brandError(BrandTooManyUses, RenditionSVG, "the SVG has %d use elements; at most %d", s.uses, MaxBrandSVGUses)
 	}
@@ -457,6 +458,21 @@ func parseViewBox(root *svgNode) (float64, float64, error) {
 		return 0, 0, brandError(BrandNoViewBox, RenditionSVG, "the viewBox must have a positive width and height")
 	}
 	return nums[2], nums[3], nil
+}
+
+// sizeRoot gives the root the viewBox's width and height as its own, in place of any it had, so
+// that the SVG has a size of its own wherever it is drawn: a browser may refuse to draw on a canvas
+// an SVG without one, which the admin screen does to make the PNG renditions (ADR-0059 §10).
+func sizeRoot(root *svgNode, w, h float64) {
+	attrs := make([]svgAttr, 0, len(root.attrs)+2)
+	for _, a := range root.attrs {
+		if a.name != "width" && a.name != "height" {
+			attrs = append(attrs, a)
+		}
+	}
+	format := func(n float64) string { return strconv.FormatFloat(n, 'f', -1, 64) }
+	attrs = append(attrs, svgAttr{name: "width", value: format(w)}, svgAttr{name: "height", value: format(h)})
+	root.attrs = attrs
 }
 
 // checkAspectRatio checks the viewBox of kind: square for an icon, 1:1 to 8:1 for a logo.

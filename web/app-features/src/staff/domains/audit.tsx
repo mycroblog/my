@@ -15,7 +15,6 @@ import {
   auditTargetKinds,
   useAuditLog,
   useDeliveryAccount,
-  useEvent,
   useInstance,
   useViewer,
   type AuditEntry,
@@ -40,6 +39,7 @@ import {
 import type { ReactNode } from "react";
 import type { MessageId } from "../../messages.gen";
 import { formatParts } from "../../slots";
+import { settingNames, textLabels } from "../settings/words";
 import { staffHref, useStaffEntries, type StaffAddress, type StaffArea, type StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings, type T } from "../parts";
 import { auditLogPath, cursorOf, domainAllowsPath, domainListPath, filtered, Pages, remoteServerPath } from "./parts";
@@ -198,19 +198,22 @@ const keyWords = (key: string): string => {
 
 /**
  * What an entry names its target by: its name when it happened, as the server kept it, in the reader's words where
- * the server kept a system's value (a sign-up block's kind and value, a setting's key, a role's key and a handle); an
- * event's title, which its ID stands for.
+ * the server kept a system's value (a sign-up block's kind and value, a setting's or a text's key, which the settings'
+ * pages name, a role's key and a handle, a payment provider's key).
  */
 function useTargetWords(e: AuditEntry): { readonly target: string; readonly person?: string } {
   const { t } = useStaffStrings();
-  const event = useEvent(e.target_id, e.target_kind === "event" && e.target_exists).event;
   switch (e.target_kind) {
     case "signup_block": {
       const [kind = "", ...value] = e.target_label.split(" ");
       return { target: t("staff_audit.signup_block", { kind, value: value.join(" ") }) };
     }
-    case "setting":
-      return { target: keyWords(e.target_label) };
+    case "setting": {
+      // A setting by its name on the settings' pages, a text by its label there; a key they do not name, in words.
+      const table: Readonly<Record<string, MessageId>> = e.action === "text_changed" ? textLabels : settingNames;
+      const id = table[e.target_label];
+      return { target: id === undefined ? keyWords(e.target_label) : t(id) };
+    }
     case "role": {
       // A role granted or revoked is its key and the handle of whom; the others are its key.
       const at = e.target_label.lastIndexOf(" @");
@@ -220,8 +223,8 @@ function useTargetWords(e: AuditEntry): { readonly target: string; readonly pers
         ...(at < 0 ? {} : { person: e.target_label.slice(at + 1) }),
       };
     }
-    case "event":
-      return { target: event?.title ?? t("staff_audit.event") };
+    case "payment_provider":
+      return { target: t("staff_audit.provider", { key: e.target_label }) };
     default:
       return { target: e.target_label };
   }
