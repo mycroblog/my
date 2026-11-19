@@ -235,10 +235,6 @@
     "defaultMessage": "ロール",
     "description": "The heading of the section of an account's Management screen that lists the roles it holds, with Grant and Revoke. Read by administrators."
   },
-  "staff_roles.account.about": {
-    "defaultMessage": "この人ができること。付け外しできるのは、あなたのロール以下で、あなたが持たない権限を含まないロールだけです。",
-    "description": "Under the heading of an account's roles. Read by administrators."
-  },
   "staff_roles.account.none": {
     "defaultMessage": "この人はロールを持っていません。",
     "description": "In the section of an account's roles while it holds none. Read by administrators."
@@ -294,5 +290,13 @@
   "staff_roles.account.own.cancel": {
     "defaultMessage": "外さない",
     "description": "The button that closes the question before the reader revokes a role from themselves, keeping it. Read by administrators."
+  },
+  "staff_roles.account.role": {
+    "defaultMessage": "ロール",
+    "description": "The heading of the column of role names in the table of the roles an account holds, on its Management page. Read by administrators."
+  },
+  "staff_roles.account.act": {
+    "defaultMessage": "外す",
+    "description": "The heading of the column of Revoke buttons (or why a role cannot be revoked) in the table of an account's roles. Read by administrators."
   }
 }

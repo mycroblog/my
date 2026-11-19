@@ -8,16 +8,9 @@
 // built-in `admin` for the administrator (its badge alone) and for the lead (what it is, nothing to change), one with
 // no permission that nobody holds (`helper`, with Delete last); loading, failing, and an address that names none. A
 // new role's form, for the lead: the permissions they hold alone, and a place no higher than theirs. The roles of an
-// account, as its Management screen shows them (route-less until that screen is built): mio's, granted by the
-// administrator and by the lead.
+// account on its Management page: mio's, for the administrator and for the lead.
 
-import { AppDataProvider, createAppData } from "@my/app-data";
-import { AccountRoles } from "@my/app-features";
-import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
-import { createClient } from "@mycroblog/mykit";
-import { FrameMain } from "@my/design-system";
 import type { Meta, StoryObj } from "@storybook/react-vite";
-import { useState } from "react";
 import { screen, screenMeta, type Fake } from "./app.samples";
 
 const meta = {
@@ -68,26 +61,10 @@ export const NewRole: Story = { parameters: asAdmin("/admin/roles/new") };
 /** A new role for the lead: only the permissions they hold, a place no higher than theirs. */
 export const NewRoleForALead: Story = { parameters: asLead("/admin/roles/new") };
 
-/** The roles of mio's account, as a section of its Management screen, on a fake server of its own as hana reads it. */
-function AccountRolesSpecimen({ lead }: { lead: boolean }) {
-  const [{ data, accountId }] = useState(() => {
-    const fake = createFakeApi({ viewer: "hana", ...(lead ? { staffServer: { roles: { viewer: ["lead"] } } } : {}) });
-    const data = createAppData(createClient({ server: fakeOrigin, retry: { disabled: true }, fetch: fake.serve }));
-    return { data, accountId: fake.accountId("mio") };
-  });
-  return (
-    <AppDataProvider data={data}>
-      <FrameMain>
-        <AccountRoles accountId={accountId} handle="@mio" />
-      </FrameMain>
-    </AppDataProvider>
-  );
-}
-
 /**
- * The roles of mio's account for the administrator: `artist`, which they may revoke, and Grant, a choice of every role
- * mio lacks.
+ * The Management page of mio's account for the administrator: the roles section, `artist` with Revoke, and Grant, a
+ * choice of every role mio lacks.
  */
-export const AccountRolesForTheAdmin: Story = { render: () => <AccountRolesSpecimen lead={false} /> };
+export const AccountRolesForTheAdmin: Story = { parameters: asAdmin("/moderation/accounts/{account:mio}/manage") };
 /** The same for the lead: Grant offers only the roles at or below theirs whose permissions they hold. */
-export const AccountRolesForALead: Story = { render: () => <AccountRolesSpecimen lead /> };
+export const AccountRolesForALead: Story = { parameters: asLead("/moderation/accounts/{account:mio}/manage") };

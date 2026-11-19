@@ -219,8 +219,13 @@ export function useAccountRoles(accountId: string): ScreenRead & {
   return { ...readOf([query]), held: query.data?.items, missing };
 }
 
-/** Reads the roles of the account of `accountId`, the roles and the reader's rights, for a route's loader. */
+/**
+ * Reads the roles of the account of `accountId`, the roles and the reader's rights, for a route's loader; nothing for a
+ * reader without `manage_roles`.
+ */
 export async function loadAccountRoles(data: AppData, accountId: string): Promise<void> {
+  const viewer = await data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined);
+  if (viewer?.permissions.includes("manage_roles") !== true) return;
   await Promise.all([
     loadAdminRoles(data),
     data.queryClient.query(accountRolesQuery(data, accountId)).catch(() => undefined),
