@@ -251,6 +251,19 @@ export {
   SectionNote,
   Toast,
 } from "./shell";
+export {
+  ParticipantGrid,
+  ParticipantTile,
+  ReactionFlow,
+  RoomControl,
+  RoomControls,
+  RoomLine,
+  type ParticipantSize,
+  type ParticipantTileProps,
+  type Reaction,
+  type RoomControlProps,
+  type RoomLineProps,
+} from "./voice";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { SaveState, type SaveStateProps } from "./save-state";
 export {

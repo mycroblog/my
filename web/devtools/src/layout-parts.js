@@ -84,6 +84,7 @@ export const LAYOUT_PARTS = {
     "PickerProbe",
   ],
   "web/design-system/src/article-editor.tsx": ["EditorFrame", "ArticlePane", "ModeRow", "PreviewBody"],
+  "web/design-system/src/voice.tsx": ["ParticipantGrid", "ReactionPlace", "ReactionLane"],
   // The fixtures that prove the rules (restrictions.test.js).
   "web/design-system/fixtures/layout.tsx": ["Row", "Shelf", "Gone"],
   "web/design-system/fixtures/viewport.tsx": ["Page", "Column"],
