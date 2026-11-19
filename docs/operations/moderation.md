@@ -311,7 +311,7 @@ In the admin API: `GET` and `POST /api/v1/admin/domain_list_subscriptions`, `GET
 and `POST .../{id}/drafts/accept` and `.../drafts/reject` (the body has `keys`, or nothing for every draft). All of them
 need `manage_domains`.
 
-In the web client, open Moderation → Domain actions and choose "Block list subscriptions"
+In the web client, open Moderation → Domain actions and choose "Blocklist subscriptions"
 (`/moderation/domain-actions/subscriptions`). The list shows each subscription's mode and last fetch, with the failures in a
 row; "Add subscription" opens the form of the name, the URL, the format and the settings below, and subscribing opens the
 subscription's page. That page has four sections: the drafts, which you accept or reject one by one or all together (accepting

@@ -44,7 +44,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the choice of anyone in the filter of who. Read by moderators."
   },
   "staff_audit.filter.actor.me": {
-    "defaultMessage": "あなた",
+    "defaultMessage": "自分",
     "description": "On the audit log of the moderators (/moderation/audit-log), the choice of the reader in the filter of who. Read by moderators."
   },
   "staff_audit.filter.target_kind": {
@@ -100,28 +100,28 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_action_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.report_assigned": {
-    "defaultMessage": "{actor} が通報 {target} の担当になりました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_assigned`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報に担当者を割り当てました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_assigned` (Assign to me on a report, or an assignment from the command line, which may name another moderator): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.report_unassigned": {
-    "defaultMessage": "{actor} が通報 {target} の担当を外しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_unassigned`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報の担当を外しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_unassigned` (Unassign on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.report_resolved": {
-    "defaultMessage": "{actor} が通報 {target} を解決しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_resolved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報を対応済みにしました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_resolved` (Resolve on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.report_reopened": {
-    "defaultMessage": "{actor} が通報 {target} を再開しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_reopened`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報を未対応に戻しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_reopened` (Reopen on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.report_note_added": {
-    "defaultMessage": "{actor} が通報 {target} にメモを書きました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_note_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報にメモを追加しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_note_added` (Add note on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.report_forwarded": {
-    "defaultMessage": "{actor} が通報 {target} をアカウントのサーバーに送りました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_forwarded`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への通報をアカウントのサーバーに送りました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `report_forwarded` (Send to their server on a report): `target` the handle of the reported account, linked to the report. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.registration_approved": {
     "defaultMessage": "{actor} が {target} の登録を承認しました",
@@ -156,12 +156,12 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `rule_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.appeal_upheld": {
-    "defaultMessage": "{actor} が異議申し立て {target} を退け、処分を維持しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_upheld`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} の異議申し立てを審査し、処分を維持しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_upheld` (Uphold on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.appeal_overturned": {
-    "defaultMessage": "{actor} が異議申し立て {target} を認め、処分を取り消しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_overturned`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} の異議申し立てを審査し、処分を撤回しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `appeal_overturned` (Overturn on an appeal): `target` the handle of the account that appealed, linked to the appeal. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.account_deletion_canceled": {
     "defaultMessage": "{actor} が {target} の削除を取り消しました",
@@ -172,24 +172,24 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `revealed_private_data`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.signup_block_added": {
-    "defaultMessage": "{actor} が {target} からの登録をブロックしました",
+    "defaultMessage": "{actor} が {target} からの登録を制限しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_added`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.signup_block_lifted": {
-    "defaultMessage": "{actor} が登録のブロック {target} を解除しました",
+    "defaultMessage": "{actor} が登録の制限 {target} を解除しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `signup_block_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.hook_decision_applied": {
-    "defaultMessage": "{actor} が外部の審査の判定 {target} を適用しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_applied`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への自動審査の判定を適用しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_applied`: `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.hook_decision_overridden": {
-    "defaultMessage": "{actor} が外部の審査の判定 {target} を取り消しました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_overridden`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} への自動審査の判定を取り消しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_decision_overridden` (Cancel the decision): `target` the handle of the account the decision is about, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.hook_appeal_upheld": {
-    "defaultMessage": "{actor} が外部の審査の判定 {target} への異議を退けました",
-    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_appeal_upheld`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
+    "defaultMessage": "{actor} が {target} の拒否された投稿への異議申し立てを審査し、拒否を維持しました",
+    "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `hook_appeal_upheld` (Uphold on an appeal of a refused post): `target` the handle of the account that appealed, linked to the decision. `actor` is who did it (an account's handle, linked, or the command line, the server, another server). Read by moderators."
   },
   "staff_audit.action.two_factor_disabled": {
     "defaultMessage": "{actor} が {target} の二要素認証を解除しました",
@@ -200,11 +200,11 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `password_reset_link_issued`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.email_suppression_lifted": {
-    "defaultMessage": "{actor} が {target} へのメールの送信を再開しました",
+    "defaultMessage": "{actor} が {target} へのメールの配信を再開しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `email_suppression_lifted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.account_moved": {
-    "defaultMessage": "{actor} が制限中のアカウント {target} を移行しました",
+    "defaultMessage": "{actor} が制限中のアカウント {target} をこのサーバーの別のアカウントに移転しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_moved`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.custom_emoji_created": {
@@ -280,7 +280,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_created`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.invite_revoked": {
-    "defaultMessage": "{actor} が招待 {target} を失効させました",
+    "defaultMessage": "{actor} が招待 {target} を取り消しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `invite_revoked`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.relay_added": {
@@ -304,7 +304,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.relay_rejected": {
-    "defaultMessage": "{actor} が {target} のフォローを拒否しました",
+    "defaultMessage": "{actor} が {target} のフォローを却下しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `relay_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.status_refetch_queued": {
@@ -372,7 +372,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_revised`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.supporter_plan_retired": {
-    "defaultMessage": "{actor} がプラン {target} を終了しました",
+    "defaultMessage": "{actor} がプラン {target} を廃止しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `supporter_plan_retired`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.supporter_subscription_ended": {
@@ -432,7 +432,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `service_closure_delivery_completed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.voice_room_ended": {
-    "defaultMessage": "{actor} がボイスチャットのルーム {target} を終了しました",
+    "defaultMessage": "{actor} が通話のルーム {target} を終了しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `voice_room_ended`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.login_provider_created": {
@@ -480,7 +480,7 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `delivery_revealed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.account_deliveries_viewed": {
-    "defaultMessage": "{actor} が {target} の配送を一覧しました",
+    "defaultMessage": "{actor} が {target} の配送の一覧を表示しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `account_deliveries_viewed`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.domain_allow_added": {
@@ -504,11 +504,11 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_subscription_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.domain_list_draft_accepted": {
-    "defaultMessage": "{actor} がブロックリスト {target} の下書きを受け入れました",
+    "defaultMessage": "{actor} がブロックリスト {target} の下書きを承認しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_accepted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.domain_list_draft_rejected": {
-    "defaultMessage": "{actor} がブロックリスト {target} の下書きを退けました",
+    "defaultMessage": "{actor} がブロックリスト {target} の下書きを却下しました",
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `domain_list_draft_rejected`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.action.domain_list_fetch_queued": {
@@ -540,11 +540,11 @@
     "description": "On the audit log of the moderators (/moderation/audit-log), the sentence of an entry of `role_deleted`: `actor` is who did it (an account's handle, linked, or the command line, the server, another server), `target` the name of what it acted on when it happened, linked while it is there. Read by moderators."
   },
   "staff_audit.target_kind": {
-    "defaultMessage": "{kind, select, account {アカウント} status {投稿} domain {ドメイン} report {通報} appeal {異議申し立て} user {登録} role {ロール} setting {設定} rule {ルール} signup_block {登録のブロック} custom_emoji {カスタム絵文字} webhook {webhook} announcement {お知らせ} invite {招待} relay {リレー} billing_source {請求の取り込み} cost_item {費用} supporter_program {サポーターとチップ} supporter_plan {プラン} supporter_subscription {加入} custom_emoji_request {絵文字の申請} payment_provider {決済サービス} oauth_client {アプリ} oauth_client_host {アプリのホスト} instance {サービス} voice_room {ボイスチャットのルーム} login_provider {ログインプロバイダー} link_card_domain {リンクのカードのドメイン} hook_decision {外部の審査} domain_allow {連合を許可したドメイン} domain_list_subscription {ブロックリストの購読} event {イベント} other {そのほか}}",
+    "defaultMessage": "{kind, select, account {アカウント} status {投稿} domain {ドメイン} report {通報} appeal {異議申し立て} user {登録} role {ロール} setting {設定} rule {ルール} signup_block {登録の制限} custom_emoji {カスタム絵文字} webhook {webhook} announcement {お知らせ} invite {招待} relay {リレー} billing_source {請求の取り込み} cost_item {費用} supporter_program {サポーターのプランとチップ} supporter_plan {プラン} supporter_subscription {加入} custom_emoji_request {絵文字の申請} payment_provider {決済サービス} oauth_client {アプリ} oauth_client_host {アプリのホスト} instance {サービス} voice_room {通話のルーム} login_provider {ログインプロバイダー} link_card_domain {リンクのカードのドメイン} hook_decision {自動審査} domain_allow {連合を許可したドメイン} domain_list_subscription {ブロックリストの購読} event {イベント} other {そのほか}}",
     "description": "On the audit log of the moderators (/moderation/audit-log), a kind of target in the filter of what the operations acted on. Read by moderators."
   },
   "staff_audit.action_kind": {
-    "defaultMessage": "{action, select, account_action_issued {処分} account_action_lifted {処分の解除} domain_action_issued {ドメインの処分} domain_action_lifted {ドメインの処分の解除} report_assigned {通報の担当} report_unassigned {通報の担当の解除} report_resolved {通報の解決} report_reopened {通報の再開} report_note_added {通報のメモ} report_forwarded {通報の転送} registration_approved {登録の承認} registration_rejected {登録の却下} setting_changed {設定の変更} text_changed {サーバーの文章の変更} rule_added {ルールの追加} rule_revised {ルールの改訂} rule_moved {ルールの移動} rule_retired {ルールの廃止} role_granted {ロールの付与} role_revoked {ロールの剥奪} role_created {ロールの作成} role_updated {ロールの変更} role_deleted {ロールの削除} appeal_upheld {異議申し立ての却下} appeal_overturned {異議申し立ての承認} account_deletion_canceled {削除の取り消し} revealed_private_data {個人データの表示} signup_block_added {登録のブロックの追加} signup_block_lifted {登録のブロックの解除} hook_decision_applied {審査の判定の適用} hook_decision_overridden {審査の判定の取り消し} hook_appeal_upheld {審査への異議の却下} two_factor_disabled {二要素認証の解除} password_reset_link_issued {パスワード再設定のリンク} email_suppression_lifted {メールの再開} account_moved {アカウントの移行} custom_emoji_created {カスタム絵文字の追加} custom_emoji_image_replaced {カスタム絵文字の画像の差し替え} custom_emoji_copied {カスタム絵文字のコピー} custom_emoji_updated {カスタム絵文字の変更} custom_emoji_enabled {カスタム絵文字の有効化} custom_emoji_disabled {カスタム絵文字の無効化} custom_emoji_deleted {カスタム絵文字の削除} webhook_created {webhook の追加} webhook_updated {webhook の変更} webhook_deleted {webhook の削除} webhook_enabled {webhook の有効化} webhook_disabled {webhook の無効化} webhook_secret_rotated {webhook のシークレットの再発行} announcement_created {お知らせの作成} announcement_updated {お知らせの変更} announcement_published {お知らせの公開} announcement_withdrawn {お知らせの取り下げ} invite_created {招待の作成} invite_revoked {招待の失効} relay_added {リレーの追加} relay_followed {リレーのフォロー} relay_unfollowed {リレーのフォローの解除} relay_removed {リレーの削除} relay_accepted {リレーの承認} relay_rejected {リレーの拒否} status_refetch_queued {投稿の再取得} account_statuses_refetch_queued {アカウントの投稿の再取得} domain_statuses_refetch_queued {サーバーの投稿の再取得} billing_import_queued {請求の取り込み} cost_item_created {費用の追加} cost_item_relabeled {費用の名前の変更} cost_item_price_revised {費用の金額の改定} cost_item_end_changed {費用の終了日の変更} cost_item_deleted {費用の削除} supporter_program_enabled {サポーターの有効化} supporter_program_disabled {サポーターの無効化} supporter_tips_enabled {チップの有効化} supporter_tips_revised {チップの変更} supporter_tips_disabled {チップの無効化} supporter_plan_created {プランの作成} supporter_plan_revised {プランの改定} supporter_plan_retired {プランの終了} supporter_subscription_ended {加入の終了} custom_emoji_request_submitted {絵文字の申請} custom_emoji_request_withdrawn {絵文字の申請の取り下げ} custom_emoji_request_approved {絵文字の申請の承認} custom_emoji_request_rejected {絵文字の申請の却下} payment_reconcile_queued {支払いの照合} oauth_client_disabled {アプリの無効化} oauth_client_enabled {アプリの有効化} oauth_client_host_denied {アプリのホストの拒否} oauth_client_host_allowed {アプリのホストの拒否の解除} service_closure_announced {閉鎖の予告} service_closure_withdrawn {閉鎖の取り下げ} service_closure_closed {サービスの閉鎖} service_closure_delivery_completed {閉鎖の配送の完了} voice_room_ended {ボイスチャットの終了} login_provider_created {ログインプロバイダーの追加} login_provider_updated {ログインプロバイダーの変更} login_provider_deleted {ログインプロバイダーの削除} login_provider_enabled {ログインプロバイダーの有効化} login_provider_disabled {ログインプロバイダーの無効化} login_provider_secret_rotated {ログインプロバイダーのシークレットの差し替え} link_card_domain_fetch_stopped {リンクのカードの停止} link_card_domain_images_stopped {リンクのカードの画像の停止} link_card_domain_rule_removed {リンクのカードの再開} instance_marked_available {配送の再開} delivery_revealed {配送の表示} account_deliveries_viewed {アカウントの配送の一覧} domain_allow_added {ドメインの許可} domain_allow_removed {ドメインの許可の解除} domain_list_subscription_created {ブロックリストの購読} domain_list_subscription_updated {ブロックリストの設定の変更} domain_list_subscription_deleted {ブロックリストの購読の停止} domain_list_draft_accepted {下書きの受け入れ} domain_list_draft_rejected {下書きの却下} domain_list_fetch_queued {ブロックリストの取得} event_cancelled {イベントの中止} other {そのほかの操作}}",
+    "defaultMessage": "{action, select, account_action_issued {処分} account_action_lifted {処分の解除} domain_action_issued {ドメインへの処分} domain_action_lifted {ドメインへの処分の解除} report_assigned {通報の担当} report_unassigned {通報の担当の解除} report_resolved {通報の対応完了} report_reopened {通報の再開} report_note_added {通報のメモの追加} report_forwarded {通報の送信} registration_approved {登録の承認} registration_rejected {登録の却下} setting_changed {設定の変更} text_changed {サーバーの文章の変更} rule_added {ルールの追加} rule_revised {ルールの改訂} rule_moved {ルールの移動} rule_retired {ルールの廃止} role_granted {ロールの付与} role_revoked {ロールの剥奪} role_created {ロールの作成} role_updated {ロールの変更} role_deleted {ロールの削除} appeal_upheld {異議申し立てによる処分の維持} appeal_overturned {異議申し立てによる処分の撤回} account_deletion_canceled {削除の取り消し} revealed_private_data {メールアドレスと IP アドレスの表示} signup_block_added {登録の制限の追加} signup_block_lifted {登録の制限の解除} hook_decision_applied {自動審査の判定の適用} hook_decision_overridden {自動審査の判定の取り消し} hook_appeal_upheld {異議申し立てによる拒否の維持} two_factor_disabled {二要素認証の解除} password_reset_link_issued {パスワード再設定のリンク} email_suppression_lifted {メールの配信の再開} account_moved {アカウントの移転} custom_emoji_created {カスタム絵文字の追加} custom_emoji_image_replaced {カスタム絵文字の画像の差し替え} custom_emoji_copied {カスタム絵文字のコピー} custom_emoji_updated {カスタム絵文字の変更} custom_emoji_enabled {カスタム絵文字の有効化} custom_emoji_disabled {カスタム絵文字の無効化} custom_emoji_deleted {カスタム絵文字の削除} webhook_created {webhook の追加} webhook_updated {webhook の変更} webhook_deleted {webhook の削除} webhook_enabled {webhook の有効化} webhook_disabled {webhook の無効化} webhook_secret_rotated {webhook のシークレットの再発行} announcement_created {お知らせの作成} announcement_updated {お知らせの変更} announcement_published {お知らせの公開} announcement_withdrawn {お知らせの取り下げ} invite_created {招待の作成} invite_revoked {招待の取り消し} relay_added {リレーの追加} relay_followed {リレーのフォロー} relay_unfollowed {リレーのフォローの解除} relay_removed {リレーの削除} relay_accepted {リレーの承認} relay_rejected {リレーの却下} status_refetch_queued {投稿の再取得} account_statuses_refetch_queued {アカウントの投稿の再取得} domain_statuses_refetch_queued {サーバーの投稿の再取得} billing_import_queued {請求の取り込み} cost_item_created {費用の追加} cost_item_relabeled {費用の名前の変更} cost_item_price_revised {費用の金額の改定} cost_item_end_changed {費用の終了日の変更} cost_item_deleted {費用の削除} supporter_program_enabled {サポーターのプランの有効化} supporter_program_disabled {サポーターのプランの無効化} supporter_tips_enabled {チップの有効化} supporter_tips_revised {チップの変更} supporter_tips_disabled {チップの無効化} supporter_plan_created {プランの作成} supporter_plan_revised {プランの改定} supporter_plan_retired {プランの廃止} supporter_subscription_ended {加入の終了} custom_emoji_request_submitted {絵文字の申請} custom_emoji_request_withdrawn {絵文字の申請の取り下げ} custom_emoji_request_approved {絵文字の申請の承認} custom_emoji_request_rejected {絵文字の申請の却下} payment_reconcile_queued {支払いの照合} oauth_client_disabled {アプリの無効化} oauth_client_enabled {アプリの有効化} oauth_client_host_denied {アプリのホストの拒否} oauth_client_host_allowed {アプリのホストの拒否の解除} service_closure_announced {閉鎖の予告} service_closure_withdrawn {閉鎖の取り下げ} service_closure_closed {サービスの閉鎖} service_closure_delivery_completed {閉鎖の配送の完了} voice_room_ended {通話のルームの終了} login_provider_created {ログインプロバイダーの追加} login_provider_updated {ログインプロバイダーの変更} login_provider_deleted {ログインプロバイダーの削除} login_provider_enabled {ログインプロバイダーの有効化} login_provider_disabled {ログインプロバイダーの無効化} login_provider_secret_rotated {ログインプロバイダーのシークレットの差し替え} link_card_domain_fetch_stopped {リンクのカードの停止} link_card_domain_images_stopped {リンクのカードの画像の停止} link_card_domain_rule_removed {リンクのカードの再開} instance_marked_available {配送の再開} delivery_revealed {配送の表示} account_deliveries_viewed {アカウントの配送の一覧} domain_allow_added {ドメインの許可} domain_allow_removed {ドメインの許可の解除} domain_list_subscription_created {ブロックリストの購読} domain_list_subscription_updated {ブロックリストの設定の変更} domain_list_subscription_deleted {ブロックリストの購読の停止} domain_list_draft_accepted {ブロックリストの下書きの承認} domain_list_draft_rejected {ブロックリストの下書きの却下} domain_list_fetch_queued {ブロックリストの取得} event_cancelled {イベントの中止} other {そのほかの操作}}",
     "description": "On the audit log of the moderators (/moderation/audit-log), a kind of operation in the filter of operations. Read by moderators."
   }
 }

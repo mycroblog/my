@@ -48,7 +48,7 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), a choice of how long a new action lasts. Read by moderators."
   },
   "staff_domains.kind": {
-    "defaultMessage": "{kind, select, suspend {凍結} limit {制限} reject_media {メディアの拒否} reject_reports {通報の拒否} force_sensitive {メディアをセンシティブに} other {そのほかの処分}}",
+    "defaultMessage": "{kind, select, suspend {凍結} limit {制限} reject_media {メディアの拒否} reject_reports {通報の拒否} force_sensitive {メディアの常時センシティブ指定} other {そのほかの処分}}",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the kind of an action on a domain. Read by moderators."
   },
   "staff_domains.action_state": {
@@ -140,7 +140,7 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the subscriptions to domain block lists, and their screen's title. Read by moderators."
   },
   "staff_domains.action.missing": {
-    "defaultMessage": "この処分はありません。",
+    "defaultMessage": "このアドレスの処分はありません。",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), at the address of an action the server does not have. Read by moderators."
   },
   "staff_domains.action.all": {
@@ -208,11 +208,11 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the fact of the block list subscription that took an action. Read by moderators."
   },
   "staff_domains.action.obfuscated": {
-    "defaultMessage": "ドメインの一部を伏せる",
+    "defaultMessage": "ドメインの一部を伏せて公開",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that hides part of the domain. Read by moderators."
   },
   "staff_domains.action.not_obfuscated": {
-    "defaultMessage": "ドメインをそのまま",
+    "defaultMessage": "ドメインをそのまま公開",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that shows the whole domain. Read by moderators."
   },
   "staff_domains.action.subscription": {
@@ -344,7 +344,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when no row would take an action. Read by moderators."
   },
   "staff_domains.import.others.table": {
-    "defaultMessage": "何もしない行",
+    "defaultMessage": "処分しない行",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would import nothing, for assistive technology. Read by moderators."
   },
   "staff_domains.import.column.domain": {
@@ -372,7 +372,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of a row's domain when it has none. Read by moderators."
   },
   "staff_domains.import.status": {
-    "defaultMessage": "{status, select, already_applied {すでに処分があります} no_action {処分を求めていません} duplicate {前の行と同じドメインです} own_domain {このサーバーのドメインです} invalid {正しくない行です} other {何もしません}}",
+    "defaultMessage": "{status, select, already_applied {すでに処分があります} no_action {処分を求めていません} duplicate {前の行と同じドメインです} own_domain {このサーバーのドメインです} invalid {正しくない行です} other {処分しません}}",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), why a row takes nothing. Read by moderators."
   },
   "staff_domains.import.note": {
@@ -388,7 +388,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would take actions, which the reader keeps or leaves. Read by moderators."
   },
   "staff_domains.import.others": {
-    "defaultMessage": "{count, plural, other {何もしない行 # 件}}",
+    "defaultMessage": "{count, plural, other {処分しない行 # 件}}",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would import nothing. Read by moderators."
   },
   "staff_domains.import.submit": {
@@ -516,7 +516,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription. Read by moderators."
   },
   "staff_domains.lists.failing": {
-    "defaultMessage": "{count, plural, other {# 回続けて失敗}}",
+    "defaultMessage": "{count, plural, =1 {# 回失敗} other {# 回続けて失敗}}",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription whose last fetches failed. Read by moderators."
   },
   "staff_domains.list.mode": {
@@ -564,11 +564,11 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the mode. Read by moderators."
   },
   "staff_domains.list.form.suspend_as": {
-    "defaultMessage": "リストの凍結",
+    "defaultMessage": "リストの凍結の扱い",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's suspend takes here. Read by moderators."
   },
   "staff_domains.list.form.silence_as": {
-    "defaultMessage": "リストのサイレンス",
+    "defaultMessage": "リストのサイレンスの扱い",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's silence (Mastodon's limit) takes here. Read by moderators."
   },
   "staff_domains.list.form.reject_media": {
@@ -588,7 +588,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that subscribes. Read by moderators."
   },
   "staff_domains.list.missing": {
-    "defaultMessage": "この購読はありません。",
+    "defaultMessage": "このアドレスの購読はありません。",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), at the address of a subscription the server does not have. Read by moderators."
   },
   "staff_domains.list.all": {
@@ -708,23 +708,23 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the column of why a draft waits. Read by moderators."
   },
   "staff_domains.drafts.accept": {
-    "defaultMessage": "受け入れる",
+    "defaultMessage": "承認する",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that accepts the drafts picked, and the confirmation's button. Read by moderators."
   },
   "staff_domains.drafts.reject": {
-    "defaultMessage": "退ける",
+    "defaultMessage": "却下する",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the action that rejects the drafts picked. Read by moderators."
   },
   "staff_domains.drafts.accepted": {
-    "defaultMessage": "{count, plural, other {# 件の下書きを受け入れました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
+    "defaultMessage": "{count, plural, other {# 件の下書きを承認しました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were accepted. Read by moderators."
   },
   "staff_domains.drafts.rejected": {
-    "defaultMessage": "{count, plural, other {# 件の下書きを退けました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
+    "defaultMessage": "{count, plural, other {# 件の下書きを却下しました。}}{missing, plural, =0 {} other {# 件はすでに処理されていました。}}",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), after drafts were rejected. Read by moderators."
   },
   "staff_domains.drafts.confirm.title": {
-    "defaultMessage": "{count, plural, other {# 件の下書きを受け入れますか？}}",
+    "defaultMessage": "{count, plural, other {# 件の下書きを承認しますか？}}",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the question of the confirmation before drafts that suspend domains are accepted. Read by moderators."
   },
   "staff_domains.drafts.confirm.about": {
@@ -904,7 +904,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account while its deliveries are shown. Read by moderators."
   },
   "staff_domains.deliveries.account.unknown": {
-    "defaultMessage": "このユーザー名のアカウントはありません。",
+    "defaultMessage": "このサーバーにこのユーザー名のアカウントはありません。kai のような、このサーバーのアカウントのユーザー名を入力してください。",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account the server does not know. Read by moderators."
   },
   "staff_domains.deliveries.show": {
@@ -916,7 +916,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that takes the deliveries' filters off. Read by moderators."
   },
   "staff_domains.deliveries.not_local": {
-    "defaultMessage": "そのアカウントはこのサーバーのアカウントではありません。",
+    "defaultMessage": "そのアカウントはこのサーバーのアカウントではありません。絞り込みを解除すると、すべての配送を表示します。",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the server refused the account filter. Read by moderators."
   },
   "staff_domains.deliveries.loading": {

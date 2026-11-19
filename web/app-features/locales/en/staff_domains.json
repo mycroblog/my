@@ -12,7 +12,7 @@
     "description": "The name of the moderators' screen of the actions on remote domains, in the list of moderation screens and as its title. Read by moderators."
   },
   "staff_domains.entry.domain_actions.hint": {
-    "defaultMessage": "Suspend or limit remote domains, and manage block lists",
+    "defaultMessage": "Suspend or limit remote domains, and manage blocklists",
     "description": "The line under Domain actions in the list of moderation screens. Read by moderators."
   },
   "staff_domains.entry.instances": {
@@ -48,11 +48,11 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), a choice of how long a new action lasts. Read by moderators."
   },
   "staff_domains.kind": {
-    "defaultMessage": "{kind, select, suspend {Suspend} limit {Limit} reject_media {Reject media} reject_reports {Reject reports} force_sensitive {Mark media sensitive} other {Other action}}",
+    "defaultMessage": "{kind, select, suspend {Suspend} limit {Limit} reject_media {Reject media} reject_reports {Reject reports} force_sensitive {Media always marked as sensitive} other {Other action}}",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the kind of an action on a domain. Read by moderators."
   },
   "staff_domains.action_state": {
-    "defaultMessage": "{state, select, active {In effect} expired {Expired} lifted {Lifted} other {Unknown}}",
+    "defaultMessage": "{state, select, active {In effect} expired {Ended} lifted {Lifted} other {Unknown}}",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the state of an action on a domain. Read by moderators."
   },
   "staff_domains.to_server": {
@@ -136,11 +136,11 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the allowlist of federation, and its screen's title. Read by moderators."
   },
   "staff_domains.lists": {
-    "defaultMessage": "Block list subscriptions",
+    "defaultMessage": "Blocklist subscriptions",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that opens the subscriptions to domain block lists, and their screen's title. Read by moderators."
   },
   "staff_domains.action.missing": {
-    "defaultMessage": "There is no such domain action.",
+    "defaultMessage": "There is no domain action at this address.",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), at the address of an action the server does not have. Read by moderators."
   },
   "staff_domains.action.all": {
@@ -216,7 +216,7 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the value of Published as for an action that shows the whole domain. Read by moderators."
   },
   "staff_domains.action.subscription": {
-    "defaultMessage": "A block list subscription",
+    "defaultMessage": "A blocklist subscription",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the link to the subscription that took an action. Read by moderators."
   },
   "staff_domains.form.domain": {
@@ -344,7 +344,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), when no row would take an action. Read by moderators."
   },
   "staff_domains.import.others.table": {
-    "defaultMessage": "Rows that take nothing",
+    "defaultMessage": "Rows that take no action",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the name of the table of rows that would import nothing, for assistive technology. Read by moderators."
   },
   "staff_domains.import.column.domain": {
@@ -372,7 +372,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the place of a row's domain when it has none. Read by moderators."
   },
   "staff_domains.import.status": {
-    "defaultMessage": "{status, select, already_applied {An action covers it already} no_action {Asks for no action} duplicate {An earlier row has this domain} own_domain {This server's own domain} invalid {Not a valid row} other {Takes nothing}}",
+    "defaultMessage": "{status, select, already_applied {An action covers it already} no_action {Asks for no action} duplicate {An earlier row has this domain} own_domain {This server's own domain} invalid {Not a valid row} other {Takes no action}}",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), why a row takes nothing. Read by moderators."
   },
   "staff_domains.import.note": {
@@ -388,7 +388,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would take actions, which the reader keeps or leaves. Read by moderators."
   },
   "staff_domains.import.others": {
-    "defaultMessage": "{count, plural, one {# row takes nothing} other {# rows take nothing}}",
+    "defaultMessage": "{count, plural, one {# row takes no action} other {# rows take no action}}",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the heading of the rows that would import nothing. Read by moderators."
   },
   "staff_domains.import.submit": {
@@ -512,7 +512,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription never fetched. Read by moderators."
   },
   "staff_domains.lists.empty": {
-    "defaultMessage": "You subscribe to no block list. The lists you subscribe to are fetched every day, and their differences wait here for you.",
+    "defaultMessage": "You subscribe to no blocklist. The lists you subscribe to are fetched every day, and their differences wait here for you.",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription. Read by moderators."
   },
   "staff_domains.lists.failing": {
@@ -564,11 +564,11 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of the mode. Read by moderators."
   },
   "staff_domains.list.form.suspend_as": {
-    "defaultMessage": "A suspend of the list takes",
+    "defaultMessage": "A suspend in the list becomes",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's suspend takes here. Read by moderators."
   },
   "staff_domains.list.form.silence_as": {
-    "defaultMessage": "A silence of the list takes",
+    "defaultMessage": "A silence in the list becomes",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the choice of what a list's silence (Mastodon's limit) takes here. Read by moderators."
   },
   "staff_domains.list.form.reject_media": {
@@ -588,7 +588,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the button that subscribes. Read by moderators."
   },
   "staff_domains.list.missing": {
-    "defaultMessage": "There is no such subscription.",
+    "defaultMessage": "There is no subscription at this address.",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), at the address of a subscription the server does not have. Read by moderators."
   },
   "staff_domains.list.all": {
@@ -904,7 +904,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account while its deliveries are shown. Read by moderators."
   },
   "staff_domains.deliveries.account.unknown": {
-    "defaultMessage": "No account here has this username.",
+    "defaultMessage": "No account here has this username. Enter the username of an account of this server, such as kai.",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account the server does not know. Read by moderators."
   },
   "staff_domains.deliveries.show": {
@@ -916,7 +916,7 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the button that takes the deliveries' filters off. Read by moderators."
   },
   "staff_domains.deliveries.not_local": {
-    "defaultMessage": "That account is not an account of this server.",
+    "defaultMessage": "That account is not an account of this server. Clear the filters to see every delivery.",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when the server refused the account filter. Read by moderators."
   },
   "staff_domains.deliveries.loading": {
