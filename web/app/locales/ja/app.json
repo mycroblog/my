@@ -244,16 +244,16 @@
     "description": "The button in the bar of the call the reader is in that leaves the call."
   },
   "app.call_connecting": {
-    "defaultMessage": "接続中…",
+    "defaultMessage": "接続しています…",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call first connects."
   },
   "app.call_reconnecting": {
-    "defaultMessage": "再接続中…",
+    "defaultMessage": "再接続しています…",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call's connection is lost and comes back by itself."
   },
   "app.call_playback_blocked": {
-    "defaultMessage": "どこかをタップすると音声が聞こえます",
-    "description": "In the bar of the call the reader is in, under the room's name, while the browser does not let the call's audio play: any tap or key on the page lets it play."
+    "defaultMessage": "ページに触れるかキーを押すと、ルームの音声が聞こえます",
+    "description": "In the bar of the call the reader is in, under the room's name, while the browser holds the call's audio back: any touch, click or key on the page lets it play."
   },
   "app.maintenance_title": {
     "defaultMessage": "メンテナンス中",
