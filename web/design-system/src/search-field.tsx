@@ -17,12 +17,14 @@ import { Box, Pin, Row, Stack } from "./layout";
 const field = tv({
   slots: {
     label: "font-label",
+    hidden: "sr-only",
     hint: "text-caption text-muted-text [word-break:auto-phrase]",
     glyph: "pointer-events-none text-muted-text",
     input: [
       "box-border h-control-form appearance-none rounded-control border-0 bg-surface-raised font-sans",
       "ps-search-field-start pe-control-form",
       "text-body text-text outline-hidden focus-visible:shadow-focus [&::-webkit-search-cancel-button]:appearance-none",
+      "placeholder:text-muted-text",
       "aria-invalid:outline-solid aria-invalid:outline-[length:var(--form-page-invalid)]",
       "aria-invalid:-outline-offset-[var(--form-page-invalid)] aria-invalid:outline-text",
     ],
@@ -43,6 +45,13 @@ export type SearchFieldProps = {
   hint?: string | undefined;
   /** The words it starts with. */
   defaultValue?: string | undefined;
+  /** Its words, where its owner holds them (a filter bar, whose Clear filters empties it too). */
+  value?: string | undefined;
+  /**
+   * Its label is read, not shown, and stands in the empty field as its placeholder: where what stands around it says
+   * what it searches (the filter bar over a list).
+   */
+  labelHidden?: boolean | undefined;
   /** Its words as the reader writes them, and once cleared (""). */
   onChange: (value: string) => void;
   /** What is wrong (the server refused what it found), under it. */
@@ -60,6 +69,8 @@ export function SearchField({
   label,
   hint,
   defaultValue = "",
+  value: held,
+  labelHidden = false,
   onChange,
   error,
   busy = false,
@@ -68,15 +79,16 @@ export function SearchField({
 }: SearchFieldProps) {
   const s = field();
   const input = useRef<HTMLInputElement>(null);
-  const [value, setValue] = useState(defaultValue);
+  const [own, setOwn] = useState(defaultValue);
+  const value = held ?? own;
   const change = (next: string) => {
-    setValue(next);
+    setOwn(next);
     onChange(next);
   };
   const described = [hint && `${id}-hint`, error && `${id}-error`].filter((part) => part).join(" ") || undefined;
   return (
     <Stack gap="form-page-field-gap">
-      <label className={s.label()} htmlFor={id}>
+      <label className={labelHidden ? s.hidden() : s.label()} htmlFor={id}>
         {label}
       </label>
       {hint !== undefined && (
@@ -99,6 +111,7 @@ export function SearchField({
               type="search"
               value={value}
               autoComplete="off"
+              placeholder={labelHidden ? label : undefined}
               spellCheck={false}
               autoFocus={autoFocus}
               aria-invalid={error ? true : undefined}

@@ -1,0 +1,38 @@
+{
+  "records.select_all": {
+    "defaultMessage": "Select all",
+    "description": "The checkbox at the head of a table of records (reports, accounts, jobs in the staff's screens) that checks every row shown, or unchecks them all; shown beside it on a phone, read to assistive technology at every width."
+  },
+  "records.select_row": {
+    "defaultMessage": "Select {name}",
+    "description": "The name, for assistive technology, of the checkbox at the start of a row of a table of records, which picks the row for an action on all the rows picked: name is what the row's head shows (an account's handle, a domain, a job's name)."
+  },
+  "records.selected": {
+    "defaultMessage": "{count, plural, =0 {None selected} one {# selected} other {# selected}}",
+    "description": "Above a table of records, beside the actions that act on every row picked: how many rows are picked; also read to assistive technology as it changes."
+  },
+  "records.facet": {
+    "defaultMessage": "{facet}: {value}",
+    "description": "A filter of a list in the staff's screens while a value of it is applied, on its button: facet is what it filters by (State, Category), value the value applied (Open, Spam)."
+  },
+  "records.clear_filters": {
+    "defaultMessage": "Clear filters",
+    "description": "After the filters over a list in the staff's screens, while any is applied: removes every filter and empties the search, showing the whole list again."
+  },
+  "records.pages": {
+    "defaultMessage": "Pages",
+    "description": "The name, for assistive technology, of the navigation under a long list (reports, accounts, jobs) that moves to the page before or after."
+  },
+  "records.previous": {
+    "defaultMessage": "Previous",
+    "description": "Under a long list, moves to the page before the one shown (newer records, in a list of the latest first)."
+  },
+  "records.next": {
+    "defaultMessage": "Next",
+    "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
+  },
+  "records.more": {
+    "defaultMessage": "Show more",
+    "description": "Under a list that grows in place (a table of records), adds the next records under those shown."
+  }
+}
