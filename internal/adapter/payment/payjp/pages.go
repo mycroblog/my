@@ -4,11 +4,7 @@ package payjp
 
 import (
 	"context"
-	"crypto/rand"
-	"embed"
-	"encoding/base64"
 	"errors"
-	"html/template"
 	"log/slog"
 	"net/http"
 	"net/url"
@@ -23,27 +19,11 @@ import (
 
 // The pages stand in for the hosted checkout and customer portal that PAY.JP API v1 lacks
 // (ADR-0074 §11). They take the state that StartCheckout and PortalURL signed into their URL,
-// load payjp.js, which takes the card in PAY.JP's own iframe and runs its 3-D Secure in an
-// iframe, and receive only the token of the card: never its number, expiry, or code. The
-// templates are embedded, the only scripts are payjp.js and the page's own with a nonce, and
-// every response carries the pages' Content-Security-Policy (PCI DSS 6.4.3, 11.6.1; the
-// decider's answer 4 on PR #1303).
-
-//go:embed templates/*.html
-var templateFS embed.FS
-
-var pageTemplates = map[string]*template.Template{
-	pageCheckout: template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/checkout.html")),
-	pagePortal:   template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/portal.html")),
-	"error":      template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/error.html")),
-}
-
-// pagesCSP is the Content-Security-Policy of the pages, with the nonce of their scripts: payjp.js
-// from js.pay.jp, its iframes from js.pay.jp and api.pay.jp (the 3-D Secure), its requests to
-// api.pay.jp, the server pages' stylesheet, and forms to this origin only.
-const pagesCSP = "default-src 'none'; script-src 'nonce-%s' https://js.pay.jp; style-src 'self'; " +
-	"frame-src https://js.pay.jp https://api.pay.jp; connect-src https://api.pay.jp; img-src 'self' data:; " +
-	"form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+// and are documents of the web client's payment entry (supporters.PageEnv.Render), which loads
+// payjp.js: it takes the card in PAY.JP's own iframe and runs its 3-D Secure in an iframe, so
+// that the pages receive only the token of the card, never its number, expiry, or code. The
+// document's Content-Security-Policy allows no script but the entry's and payjp.js (PCI DSS
+// 6.4.3, 11.6.1; the decider's answer 4 on PR #1303).
 
 // maxPageForm bounds the body of a page's form.
 const maxPageForm = 16 << 10
@@ -120,68 +100,25 @@ func (p *Provider) Pages(env supporters.PageEnv) http.Handler {
 	return mux
 }
 
-// view is the data of a template.
+// view is a page in the making: the localizer of its locale and the data of the entry.
 type view struct {
 	L         *i18n.Localizer
 	Lang, Dir string
-	Title     string
-	// Stylesheet is the server pages' stylesheet; Nonce is the nonce of the scripts.
-	Stylesheet, Nonce string
-	TestMode          bool
-	Error, Notice     string
-	// Back is where the page's link back goes.
-	Back string
-	// Form is the card form; nil renders no script.
-	Form *cardForm
-
-	// Price is the plan's price on the checkout page.
-	Price string
-	// Card, Paused, and Charges are the customer's card, whether a subscription is paused, and
-	// the recent payments, on the portal page.
-	Card    string
-	Paused  bool
-	Charges []chargeRow
+	supporters.PageData
 }
 
-type cardForm struct {
-	Action, PublicKey, State string
-	Email, Name, Submit      string
-}
-
-type chargeRow struct {
-	Date, Amount, Refunded string
-}
-
-func (h *pages) newView(r *http.Request, st *pageState) view {
+func (h *pages) newView(r *http.Request, st *pageState, screen string) view {
 	var l *i18n.Localizer
 	if st != nil && st.Locale != "" {
 		l = h.env.Locales.Localizer(r.Context(), st.Locale)
 	} else {
 		l = h.env.Locales.RequestLocalizer(r)
 	}
-	v := view{L: l, Lang: l.Locale(), Dir: l.Direction(), TestMode: h.p.mode == supporters.ModeTest}
-	if h.env.Stylesheet != nil {
-		v.Stylesheet = h.env.Stylesheet()
-	}
-	return v
+	return view{L: l, Lang: l.Locale(), Dir: l.Direction(), PageData: supporters.PageData{Screen: screen, TestMode: h.p.mode == supporters.ModeTest}}
 }
 
-func (h *pages) render(w http.ResponseWriter, r *http.Request, status int, name string, v view) {
-	b := make([]byte, 16)
-	_, _ = rand.Read(b)
-	v.Nonce = base64.RawURLEncoding.EncodeToString(b)
-	hd := w.Header()
-	hd.Set("Content-Type", "text/html; charset=utf-8")
-	hd.Set("Content-Language", v.Lang)
-	hd.Set("Content-Security-Policy", strings.Replace(pagesCSP, "%s", v.Nonce, 1))
-	hd.Set("Cache-Control", "no-store")
-	hd.Set("Referrer-Policy", "no-referrer")
-	hd.Set("X-Content-Type-Options", "nosniff")
-	hd.Add("Vary", "Accept-Language")
-	w.WriteHeader(status)
-	if err := pageTemplates[name].ExecuteTemplate(w, "layout", v); err != nil {
-		h.log().ErrorContext(r.Context(), "render a PAY.JP page", slog.String("page", name), slog.Any("error", err))
-	}
+func (h *pages) render(w http.ResponseWriter, r *http.Request, status int, v view) {
+	h.env.Render(w, r, status, supporters.PageDocument{Lang: v.Lang, Dir: v.Dir, Title: v.Title, Data: v.PageData})
 }
 
 func (h *pages) log() *slog.Logger {
@@ -193,9 +130,9 @@ func (h *pages) log() *slog.Logger {
 
 // renderError renders the error page with a link back to back ("" for none).
 func (h *pages) renderError(w http.ResponseWriter, r *http.Request, status int, message func(*i18n.Localizer) string, back string) {
-	v := h.newView(r, nil)
+	v := h.newView(r, nil, supporters.PageScreenError)
 	v.Title, v.Error, v.Back = v.L.ServerPaymentsErrorTitle(), message(v.L), back
-	h.render(w, r, status, "error", v)
+	h.render(w, r, status, v)
 }
 
 // failed renders the error page of a request of PAY.JP that failed.
@@ -291,7 +228,7 @@ func (h *pages) checkoutView(ctx context.Context, r *http.Request, st pageState,
 	if err != nil {
 		return view{}, err
 	}
-	v := h.newView(r, &st)
+	v := h.newView(r, &st, supporters.PageScreenCheckout)
 	v.Title, v.Back = v.L.ServerPaymentsCheckoutTitle(pl.Name), st.Cancel
 	if pl.Interval == string(supporters.IntervalYear) {
 		v.Price = v.L.ServerPaymentsCheckoutPriceYear(float64(pl.Amount))
@@ -302,9 +239,9 @@ func (h *pages) checkoutView(ctx context.Context, r *http.Request, st pageState,
 	if email == "" {
 		email = st.Email
 	}
-	v.Form = &cardForm{
+	v.Card = &supporters.PageCardForm{
 		Action: supporters.PagesPath(Name) + pageCheckout, PublicKey: h.p.o.PublicKey, State: s,
-		Email: email, Name: in.Name, Submit: v.L.ServerPaymentsCheckoutSubmit(),
+		Email: email, Name: in.Name,
 	}
 	return v, nil
 }
@@ -330,7 +267,7 @@ func (h *pages) checkoutPage(w http.ResponseWriter, r *http.Request) {
 		h.failed(w, r, st.Cancel, err)
 		return
 	}
-	h.render(w, r, http.StatusOK, pageCheckout, v)
+	h.render(w, r, http.StatusOK, v)
 }
 
 // checkout takes the checkout form: it checks the card's 3-D Secure, prepares the customer,
@@ -350,7 +287,7 @@ func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		v.Error = message(v.L)
-		h.render(w, r, status, pageCheckout, v)
+		h.render(w, r, status, v)
 	}
 	if in == nil {
 		again(http.StatusBadRequest, (*i18n.Localizer).ServerPaymentsErrorForm, cardInput{Email: r.PostForm.Get("email"), Name: r.PostForm.Get("name")})
@@ -487,11 +424,12 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 	if err := h.p.get(ctx, "read a customer", "/customers/"+url.PathEscape(st.Customer), nil, &cus); err != nil {
 		return view{}, err
 	}
-	v := h.newView(r, &st)
+	v := h.newView(r, &st, supporters.PageScreenPortal)
 	v.Title, v.Back = v.L.ServerPaymentsPortalTitle(), st.Return
+	portal := &supporters.PagePortal{Payments: []supporters.PagePayment{}}
 	for _, c := range cus.Cards.Data {
 		if c.ID == cus.DefaultCard {
-			v.Card = v.L.ServerPaymentsPortalCardValue(i18n.ServerPaymentsPortalCardValueArgs{Brand: c.Brand, Last4: c.Last4, Month: strconv.Itoa(c.ExpMonth), Year: strconv.Itoa(c.ExpYear)})
+			portal.Card = v.L.ServerPaymentsPortalCardValue(i18n.ServerPaymentsPortalCardValueArgs{Brand: c.Brand, Last4: c.Last4, Month: strconv.Itoa(c.ExpMonth), Year: strconv.Itoa(c.ExpYear)})
 		}
 	}
 	subs, err := h.customerSubscriptions(ctx, cus.ID)
@@ -499,7 +437,7 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 		return view{}, err
 	}
 	for _, sub := range subs {
-		v.Paused = v.Paused || sub.Status == subPaused
+		portal.Paused = portal.Paused || sub.Status == subPaused
 	}
 	var charges list[charge]
 	if err := h.p.get(ctx, "list the charges of a customer", "/charges", url.Values{"customer": {cus.ID}, "limit": {"20"}}, &charges); err != nil {
@@ -509,13 +447,14 @@ func (h *pages) portalView(ctx context.Context, r *http.Request, st pageState, s
 		if !c.Captured {
 			continue
 		}
-		row := chargeRow{Date: unixTime(c.Created).In(tokyo).Format(time.DateOnly), Amount: v.L.ServerPaymentsPortalAmountValue(float64(c.Amount))}
+		row := supporters.PagePayment{Date: unixTime(c.Created).In(tokyo).Format(time.DateOnly), Amount: v.L.ServerPaymentsPortalAmountValue(float64(c.Amount))}
 		if c.AmountRefunded > 0 {
 			row.Refunded = v.L.ServerPaymentsPortalAmountValue(float64(c.AmountRefunded))
 		}
-		v.Charges = append(v.Charges, row)
+		portal.Payments = append(portal.Payments, row)
 	}
-	v.Form = &cardForm{Action: supporters.PagesPath(Name) + pagePortal, PublicKey: h.p.o.PublicKey, State: s, Email: cus.Email, Submit: v.L.ServerPaymentsPortalChangeCard()}
+	v.Portal = portal
+	v.Card = &supporters.PageCardForm{Action: supporters.PagesPath(Name) + pagePortal, PublicKey: h.p.o.PublicKey, State: s, Email: cus.Email, Change: true}
 	switch r.URL.Query().Get("done") {
 	case doneChanged:
 		v.Notice = v.L.ServerPaymentsPortalChanged()
@@ -555,7 +494,7 @@ func (h *pages) portalPage(w http.ResponseWriter, r *http.Request) {
 		h.failed(w, r, st.Return, err)
 		return
 	}
-	h.render(w, r, http.StatusOK, pagePortal, v)
+	h.render(w, r, http.StatusOK, v)
 }
 
 // portal takes a card change: the verified card becomes the default and the others are removed,
@@ -575,9 +514,9 @@ func (h *pages) portal(w http.ResponseWriter, r *http.Request) {
 		}
 		v.Notice, v.Error = "", message(v.L)
 		if in != nil {
-			v.Form.Email, v.Form.Name = in.Email, in.Name
+			v.Card.Email, v.Card.Name = in.Email, in.Name
 		}
-		h.render(w, r, status, pagePortal, v)
+		h.render(w, r, status, v)
 	}
 	if in == nil {
 		again(http.StatusBadRequest, (*i18n.Localizer).ServerPaymentsErrorForm)

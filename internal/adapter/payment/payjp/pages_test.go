@@ -4,6 +4,7 @@ package payjp
 
 import (
 	"context"
+	"encoding/json"
 	"io"
 	"log/slog"
 	"net/http"
@@ -35,10 +36,18 @@ func newPageEnv(t *testing.T) *pageEnv {
 		t.Fatal(err)
 	}
 	h := p.Pages(supporters.PageEnv{
-		Locales: &i18n.Resolver{Bundle: b}, Stylesheet: func() string { return "/assets/server.css" },
+		Locales: &i18n.Resolver{Bundle: b}, Render: renderData,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)),
 	})
 	return &pageEnv{p: p, f: f, srv: h}
+}
+
+// renderData is a PageEnv.Render that answers with the page's document as JSON, which the tests
+// read for what the page shows.
+func renderData(w http.ResponseWriter, _ *http.Request, status int, doc supporters.PageDocument) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(doc)
 }
 
 func (e *pageEnv) checkout(t *testing.T) (supporters.Checkout, string) {
@@ -86,38 +95,31 @@ func (e *pageEnv) subscriptionsOf(cus string) []*fakeSub {
 	return out
 }
 
-func TestPagesHeaders(t *testing.T) {
+// The checkout page is the entry's checkout in the locale of the checkout, with the plan, its
+// price, the test mode, and the card form of payjp.js, which has no field of the card itself.
+func TestCheckoutPageData(t *testing.T) {
 	e := newPageEnv(t)
-	c, _ := e.checkout(t)
+	c, s := e.checkout(t)
 	u, _ := url.Parse(c.RedirectURL)
 	rec := e.get(t, u.RequestURI())
 	if rec.Code != http.StatusOK {
 		t.Fatalf("checkout page = %d %s", rec.Code, rec.Body)
 	}
-	h := rec.Header()
-	csp := h.Get("Content-Security-Policy")
-	for _, want := range []string{"default-src 'none'", "script-src 'nonce-", "https://js.pay.jp", "frame-ancestors 'none'", "form-action 'self'"} {
-		if !strings.Contains(csp, want) {
-			t.Errorf("Content-Security-Policy %q lacks %q", csp, want)
-		}
+	var doc supporters.PageDocument
+	if err := json.Unmarshal(rec.Body.Bytes(), &doc); err != nil {
+		t.Fatal(err)
 	}
-	nonce := strings.TrimSuffix(strings.SplitN(strings.SplitN(csp, "'nonce-", 2)[1], "'", 2)[0], "'")
-	body := rec.Body.String()
-	if strings.Count(body, `nonce="`+nonce+`"`) != 2 {
-		t.Errorf("the page's scripts do not carry the nonce %q of its policy", nonce)
+	d := doc.Data
+	if doc.Lang != "ja" || d.Screen != supporters.PageScreenCheckout || !strings.Contains(d.Title, "Supporter") || d.Price != "月額 1,200 円" ||
+		!d.TestMode || d.Back != "https://my.example/supporter" {
+		t.Errorf("checkout page = %+v", doc)
 	}
-	for k, want := range map[string]string{"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "X-Content-Type-Options": "nosniff", "Content-Language": "ja"} {
-		if got := h.Get(k); got != want {
-			t.Errorf("%s = %q, want %q", k, got, want)
-		}
+	want := supporters.PageCardForm{Action: supporters.PagesPath(Name) + pageCheckout, State: s, PublicKey: "pk_test_public", Email: "alice@example.com"}
+	if d.Card == nil || *d.Card != want {
+		t.Errorf("card form = %+v, want %+v", d.Card, want)
 	}
-	for _, want := range []string{"Supporter", "月額 1,200 円", `data-public-key="pk_test_public"`, "テストモード", `value="alice@example.com"`, "/assets/server.css"} {
-		if !strings.Contains(body, want) {
-			t.Errorf("checkout page lacks %q", want)
-		}
-	}
-	for _, field := range []string{`name="number"`, `name="cvc"`, `name="exp`} {
-		if strings.Contains(body, field) {
+	for _, field := range []string{"number", "cvc", "exp"} {
+		if strings.Contains(rec.Body.String(), `"`+field) {
 			t.Errorf("checkout page has a card field %s", field)
 		}
 	}
@@ -137,7 +139,7 @@ func TestPagesRefuseBadState(t *testing.T) {
 		"expired":  supporters.PagesPath(Name) + pageCheckout + "?s=" + url.QueryEscape(old),
 		"of other": supporters.PagesPath(Name) + pagePortal + "?s=" + url.QueryEscape(s),
 	} {
-		if rec := e.get(t, path); rec.Code != http.StatusBadRequest || strings.Contains(rec.Body.String(), "card-form") {
+		if rec := e.get(t, path); rec.Code != http.StatusBadRequest || strings.Contains(rec.Body.String(), `"card"`) {
 			t.Errorf("%s state: %d, want 400 without the form", name, rec.Code)
 		}
 	}
@@ -273,7 +275,7 @@ func (e *pageEnv) process(t *testing.T, claims supporters.CheckoutClaims) *pageE
 		t.Fatal(err)
 	}
 	h := e.p.Pages(supporters.PageEnv{
-		Locales: &i18n.Resolver{Bundle: b}, Stylesheet: func() string { return "" },
+		Locales: &i18n.Resolver{Bundle: b}, Render: renderData,
 		Logger: slog.New(slog.NewTextHandler(io.Discard, nil)), Checkouts: claims,
 	})
 	return &pageEnv{p: e.p, f: e.f, srv: h}
@@ -424,7 +426,7 @@ func TestCheckoutRefusals(t *testing.T) {
 		{"declined", postedCard(s, "tok_declined"), http.StatusPaymentRequired, "別のカード"},
 	} {
 		rec := e.post(t, pageCheckout, tc.form)
-		if rec.Code != tc.status || !strings.Contains(rec.Body.String(), tc.says) || !strings.Contains(rec.Body.String(), `role="alert"`) {
+		if rec.Code != tc.status || !strings.Contains(rec.Body.String(), tc.says) || !strings.Contains(rec.Body.String(), `"error":"`) {
 			t.Errorf("%s: %d, want %d saying %q", tc.name, rec.Code, tc.status, tc.says)
 		}
 	}
@@ -455,7 +457,7 @@ func TestPortalChangesTheCardAndResumes(t *testing.T) {
 	rec := httptest.NewRecorder()
 	e.srv.ServeHTTP(rec, req)
 	body := rec.Body.String()
-	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", "加入が止まっています", "1,200 円", "200 円", "2026-09-12", "card-form", `value="alice@example.com"`} {
+	for _, want := range []string{"Visa (末尾 0002、有効期限 1/2027)", `"paused":true`, "1,200 円", "200 円", "2026-09-12", `"change":true`, `"email":"alice@example.com"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("portal page lacks %q", want)
 		}

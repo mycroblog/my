@@ -22,7 +22,8 @@ name: Release
 # The container image is built from the same commit (ADR-0010 §9). image-build pushes it to ghcr.io/mycroblog/my by
 # digest, with no tag, so that nothing reaches an operator before the notes. image-check runs its binary on each
 # platform, image-attest signs the provenance of the digest and attaches the digest to the draft as image-digest.txt,
-# and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
+# payment-scripts attaches the inventory of the scripts that the payment pages load (PCI DSS 6.4.3) from the checked
+# image as payment-scripts.json, and image-scan reports its vulnerabilities for the decider to read. release-image.yml tags the digest when the decider
 # publishes the release; nothing here tags an image.
 #
 # No release ever publishes a test build (ADR-0015 §6): image-check runs scripts/check-release-build.sh
@@ -526,6 +527,37 @@ jobs:
           echo "$DIGEST" > "$RUNNER_TEMP/image-digest.txt"
           gh release upload "$VERSION" "$RUNNER_TEMP/image-digest.txt" --clobber
           echo "Image: \`ghcr.io/mycroblog/my@$DIGEST\`" >> "$GITHUB_STEP_SUMMARY"
+
+  payment-scripts:
+    # Attaches to the draft the inventory of the scripts that the payment pages load (PCI DSS 6.4.3, ADR-0074 §11):
+    # every chunk of the payment entry with its integrity, and payjp.js, as the web build of the checked image wrote it.
+    # The entry shares chunks with the app, so the list is new with every release.
+    needs: [validate, image-build, image-check]
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      packages: read
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Log in to ghcr.io
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+      - name: Attach the inventory to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          DIGEST: ${{ needs.image-build.outputs.digest }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          scripts/release-image.sh scripts "$DIGEST" "$RUNNER_TEMP/payment-scripts.json" | tee -a "$GITHUB_STEP_SUMMARY"
+          gh release upload "$VERSION" "$RUNNER_TEMP/payment-scripts.json" --clobber
 
   release-notes-image:
     # Writes the image in the draft's notes, in the form operators pin, after a section that says the slow suite was

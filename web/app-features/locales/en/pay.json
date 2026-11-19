@@ -1,0 +1,94 @@
+{
+  "pay.test_mode": {
+    "defaultMessage": "Test mode: nothing is charged.",
+    "description": "Notice at the top of the PAY.JP checkout and card pages while the server uses PAY.JP's test keys: no card is charged."
+  },
+  "pay.fake_notice": {
+    "defaultMessage": "Test build: this checkout stands in for a payment provider, and no money moves.",
+    "description": "Notice at the top of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
+  "pay.back": {
+    "defaultMessage": "Back",
+    "description": "Link from a payment page back to the screen of this server the user came from."
+  },
+  "pay.card.email": {
+    "defaultMessage": "Email address",
+    "description": "Label of the email address field of the card form on the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
+  },
+  "pay.card.name": {
+    "defaultMessage": "Name on the card",
+    "description": "Label of the card holder's name field of the card form on the PAY.JP checkout and card pages."
+  },
+  "pay.card.name_hint": {
+    "defaultMessage": "As printed on the card, in Latin letters.",
+    "description": "Hint above the card holder's name field of the card form on the PAY.JP checkout and card pages."
+  },
+  "pay.card.label": {
+    "defaultMessage": "Card",
+    "description": "Label of PAY.JP's card element (number, expiry, security code, in PAY.JP's own frame) on the checkout and card pages."
+  },
+  "pay.card.note": {
+    "defaultMessage": "The card details go into PAY.JP's form and never reach this server.",
+    "description": "Note under PAY.JP's card element on the checkout and card pages."
+  },
+  "pay.card.failed": {
+    "defaultMessage": "Check the email address, the name on the card, and the card.",
+    "description": "Alert of the card form when PAY.JP could not take the card and gave no reason of its own."
+  },
+  "pay.card.unavailable": {
+    "defaultMessage": "The card form could not load. Reload the page, or try again in a while.",
+    "description": "Alert of the card form when PAY.JP's script (payjp.js) could not be loaded, so no card can be entered."
+  },
+  "pay.checkout.submit": {
+    "defaultMessage": "Subscribe",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
+  },
+  "pay.fake.pay": {
+    "defaultMessage": "Pay",
+    "description": "Button of the fake provider's checkout page that records the payment as paid."
+  },
+  "pay.fake.fail": {
+    "defaultMessage": "Make the payment fail",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "pay.fake.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "Button of the fake provider's checkout page that goes back without paying."
+  },
+  "pay.fake.portal": {
+    "defaultMessage": "This test build has no payment methods or invoices to manage.",
+    "description": "Text of the fake provider's portal page."
+  },
+  "pay.portal.card": {
+    "defaultMessage": "Card in use",
+    "description": "Heading of the card in use on the PAY.JP card page (the customer portal)."
+  },
+  "pay.portal.no_card": {
+    "defaultMessage": "No card is registered.",
+    "description": "Text of the PAY.JP card page without a card."
+  },
+  "pay.portal.change_card": {
+    "defaultMessage": "Change the card",
+    "description": "Heading and button of the card change form on the PAY.JP card page."
+  },
+  "pay.portal.history": {
+    "defaultMessage": "Recent payments",
+    "description": "Heading of the recent payments on the PAY.JP card page."
+  },
+  "pay.portal.history_empty": {
+    "defaultMessage": "No payments yet.",
+    "description": "Text of the PAY.JP card page without payments."
+  },
+  "pay.portal.paused": {
+    "defaultMessage": "The last payment failed, so the subscription is paused. Changing the card pays and resumes it.",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "pay.portal.payment": {
+    "defaultMessage": "{date}: {amount}",
+    "description": "A payment in the recent payments of the PAY.JP card page. {date} is its date (YYYY-MM-DD) and {amount} its amount, already formatted."
+  },
+  "pay.portal.payment_refunded": {
+    "defaultMessage": "{date}: {amount}, of which {refunded} refunded",
+    "description": "A payment in the recent payments of the PAY.JP card page that was refunded in part or in full. {date} is its date (YYYY-MM-DD), {amount} its amount and {refunded} what was refunded, both already formatted."
+  }
+}

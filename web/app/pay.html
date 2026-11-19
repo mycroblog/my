@@ -1,0 +1,15 @@
+<!doctype html>
+<!-- The input of the payment entry of the Vite build (ADR-0074 §11) and its stand-in on the dev server. The Go server
+     serves its own shell of the entry (internal/interface/payments, pages.go), with the tags of the build's manifest key
+     pay.html, the integrity of its scripts and the page's data, and never this file. -->
+<html lang="en" dir="ltr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>mycroblog</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/pay.tsx"></script>
+  </body>
+</html>

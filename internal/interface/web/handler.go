@@ -140,7 +140,7 @@ const (
 // reservedPrefixes are the paths of the server's other endpoints. The SPA has no routes under
 // them, so a request there that no endpoint serves is the server's 404, never the shell.
 // /uploads is the blob prefix of media as received, which is never served (it may carry EXIF).
-var reservedPrefixes = []string{"/api", "/oauth", "/auth", "/mail", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/brand", "/" + licensesDir, PathRobots}
+var reservedPrefixes = []string{"/api", "/oauth", "/auth", "/mail", "/payments", "/.well-known", "/nodeinfo", "/ap", "/media", "/uploads", "/theme", "/brand", "/" + licensesDir, PathRobots}
 
 // Cache-Control values (ADR-0028).
 const (
@@ -158,10 +158,11 @@ const (
 type Handler struct {
 	o    Options
 	tags entryTags
-	// authTags are the tags of the auth entry, which authpages loads (AuthEntry).
-	authTags  entryTags
-	apiOrigin string
-	hasIcon   bool
+	// authTags are the tags of the auth entry, which authpages loads (AuthEntry), and payTags those
+	// of the payment entry, which the payment pages load (PayEntry).
+	authTags, payTags entryTags
+	apiOrigin         string
+	hasIcon           bool
 	// hasAppleTouchIcon reports whether the build has apple-touch-icon.png.
 	hasAppleTouchIcon bool
 	// hasThemeScript reports whether the build has theme.js.
@@ -253,7 +254,7 @@ func New(o Options) (*Handler, error) {
 		}
 	}
 
-	var tags, authTags entryTags
+	var built builtEntries
 	apiOrigin, onHost, err := serverOrigin(o.Host, o.WebOrigin)
 	if err != nil {
 		return nil, err
@@ -275,8 +276,11 @@ func New(o Options) (*Handler, error) {
 			return nil, err
 		}
 		h.o.DevViteOrigin = dev.String()
-		tags = entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx"}
-		authTags = entryTags{Script: h.o.DevViteOrigin + "/src/auth.tsx"}
+		built = builtEntries{
+			app:  entryTags{Script: h.o.DevViteOrigin + "/src/main.tsx"},
+			auth: entryTags{Script: h.o.DevViteOrigin + "/src/auth.tsx"},
+			pay:  entryTags{Script: h.o.DevViteOrigin + "/src/pay.tsx"},
+		}
 		h.csp = withMediaOrigin(devContentSecurityPolicy(dev), mediaOrigin)
 		// A dev server setup is plain HTTP on localhost, unless web_origin names the origin on the host, such as
 		// https://my.localhost behind a TLS proxy.
@@ -284,7 +288,7 @@ func New(o Options) (*Handler, error) {
 			apiOrigin = "http://" + o.Host
 		}
 	} else {
-		tags, authTags, err = readEntries(o.Build)
+		built, err = readEntries(o.Build)
 		if errors.Is(err, errNoBuild) {
 			o.Logger.Warn("the web client is not built into this binary; the shell loads no client", slog.Any("error", err))
 		} else if err != nil {
@@ -296,7 +300,8 @@ func New(o Options) (*Handler, error) {
 		}
 	}
 
-	h.tags, h.authTags, h.apiOrigin = tags, authTags, apiOrigin
+	tags := built.app
+	h.tags, h.authTags, h.payTags, h.apiOrigin = tags, built.auth, built.pay, apiOrigin
 	version := []string{
 		shellSource, h.o.Version, h.o.DevViteOrigin, h.apiOrigin, h.o.Host, h.o.AccountDomain,
 		strconv.FormatBool(h.hasIcon), strconv.FormatBool(h.hasAppleTouchIcon), tags.Script,
@@ -468,8 +473,8 @@ type listedFile struct {
 }
 
 // buildFiles lists the files of the build that are served as they are, with their ETags:
-// every file except the Vite manifest and other hidden files, and the index.html and auth.html
-// that Vite writes (the shell and authpages replace them). The ETags come from the list that the
+// every file except the Vite manifest and other hidden files, and the index.html, auth.html, and
+// pay.html that Vite writes (the shell, authpages, and the payment pages replace them). The ETags come from the list that the
 // web build wrote, and no file is read: a build embeds tens of MB of fonts. A build whose list is
 // missing, or names other files or other sizes than the build holds, is refused.
 func buildFiles(build fs.FS) (map[string]string, error) {
@@ -520,7 +525,7 @@ func servedFiles(build fs.FS) (map[string]int64, error) {
 			}
 			return nil
 		}
-		if d.IsDir() || p == entryKey || p == authEntryKey {
+		if d.IsDir() || p == entryKey || p == authEntryKey || p == payEntryKey {
 			return nil
 		}
 		info, err := d.Info()
@@ -756,6 +761,9 @@ type Entry struct {
 	// whose scripts, styles, and hot module replacement the document's policy must allow; both are
 	// empty in production.
 	ViteClient, DevOrigin string
+	// Integrity is the Subresource Integrity of Script and of each of Preloads, by URL, for an
+	// entry whose document checks them (the payment entry's); nil otherwise.
+	Integrity map[string]string
 }
 
 // AuthEntry returns the auth entry of the build (ADR-0028 §4, ADR-0090 §16), which the sign-in,
@@ -764,5 +772,15 @@ func (h *Handler) AuthEntry() Entry {
 	return Entry{
 		Script: h.authTags.Script, Stylesheets: h.authTags.Stylesheet, Preloads: h.authTags.Preload,
 		ViteClient: viteClient(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin,
+	}
+}
+
+// PayEntry returns the payment entry of the build (ADR-0074 §11), which the checkout and portal
+// pages of a provider without hosted ones load under their own Content-Security-Policy, with the
+// integrity of its scripts from the build's inventory (PaymentScriptsPath).
+func (h *Handler) PayEntry() Entry {
+	return Entry{
+		Script: h.payTags.Script, Stylesheets: h.payTags.Stylesheet, Preloads: h.payTags.Preload,
+		ViteClient: viteClient(h.o.DevViteOrigin), DevOrigin: h.o.DevViteOrigin, Integrity: h.payTags.Integrity,
 	}
 }

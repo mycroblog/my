@@ -3872,27 +3872,6 @@ func (l *Localizer) ServerModerationActionKind(kind string) string {
 	return l.format("server:moderation.action.kind", map[string]any{"kind": kind})
 }
 
-// ServerPaymentsBack formats "server:payments.back". Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11).
-//
-//	en: Back
-func (l *Localizer) ServerPaymentsBack() string {
-	return l.format("server:payments.back", nil)
-}
-
-// ServerPaymentsCard formats "server:payments.card". Label of PAY.JP's card form (number, expiry, security code) on the checkout and card pages.
-//
-//	en: Card
-func (l *Localizer) ServerPaymentsCard() string {
-	return l.format("server:payments.card", nil)
-}
-
-// ServerPaymentsCardNote formats "server:payments.card_note". Note under the card form of the PAY.JP checkout and card pages.
-//
-//	en: The card details go into PAY.JP's form and never reach this server.
-func (l *Localizer) ServerPaymentsCardNote() string {
-	return l.format("server:payments.card_note", nil)
-}
-
 // ServerPaymentsCheckoutPriceMonth formats "server:payments.checkout.price_month". Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen.
 //
 //	en: {amount, number} yen a month
@@ -3907,25 +3886,11 @@ func (l *Localizer) ServerPaymentsCheckoutPriceYear(amount float64) string {
 	return l.format("server:payments.checkout.price_year", map[string]any{"amount": amount})
 }
 
-// ServerPaymentsCheckoutSubmit formats "server:payments.checkout.submit". Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription.
-//
-//	en: Subscribe
-func (l *Localizer) ServerPaymentsCheckoutSubmit() string {
-	return l.format("server:payments.checkout.submit", nil)
-}
-
 // ServerPaymentsCheckoutTitle formats "server:payments.checkout.title". Title of the PAY.JP checkout page. {plan} is the name of the plan.
 //
 //	en: Subscribe to {plan}
 func (l *Localizer) ServerPaymentsCheckoutTitle(plan string) string {
 	return l.format("server:payments.checkout.title", map[string]any{"plan": plan})
-}
-
-// ServerPaymentsEmail formats "server:payments.email". Label of the email field of the PAY.JP checkout and card pages, which the card's 3-D Secure needs.
-//
-//	en: Email address
-func (l *Localizer) ServerPaymentsEmail() string {
-	return l.format("server:payments.email", nil)
 }
 
 // ServerPaymentsErrorDeclined formats "server:payments.error.declined". Error of the PAY.JP checkout and card pages when the payment with the card failed.
@@ -3970,46 +3935,11 @@ func (l *Localizer) ServerPaymentsErrorUnavailable() string {
 	return l.format("server:payments.error.unavailable", nil)
 }
 
-// ServerPaymentsFakeCancel formats "server:payments.fake.cancel". Button of the fake provider's checkout page that goes back without subscribing.
-//
-//	en: Cancel
-func (l *Localizer) ServerPaymentsFakeCancel() string {
-	return l.format("server:payments.fake.cancel", nil)
-}
-
-// ServerPaymentsFakeFail formats "server:payments.fake.fail". Button of the fake provider's checkout page that makes the payment fail, to test the failure.
-//
-//	en: Make the payment fail
-func (l *Localizer) ServerPaymentsFakeFail() string {
-	return l.format("server:payments.fake.fail", nil)
-}
-
 // ServerPaymentsFakeFailed formats "server:payments.fake.failed". Alert of the fake provider's checkout page after its fail button.
 //
 //	en: The payment failed, as asked. Pay or cancel.
 func (l *Localizer) ServerPaymentsFakeFailed() string {
 	return l.format("server:payments.fake.failed", nil)
-}
-
-// ServerPaymentsFakeNotice formats "server:payments.fake.notice". Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6).
-//
-//	en: Test build: this checkout stands in for a payment provider, and no money moves.
-func (l *Localizer) ServerPaymentsFakeNotice() string {
-	return l.format("server:payments.fake.notice", nil)
-}
-
-// ServerPaymentsFakePay formats "server:payments.fake.pay". Button of the fake provider's checkout page that records the subscription as paid.
-//
-//	en: Pay
-func (l *Localizer) ServerPaymentsFakePay() string {
-	return l.format("server:payments.fake.pay", nil)
-}
-
-// ServerPaymentsFakePortal formats "server:payments.fake.portal". Text of the fake provider's portal page.
-//
-//	en: This test build has no payment methods or invoices to manage.
-func (l *Localizer) ServerPaymentsFakePortal() string {
-	return l.format("server:payments.fake.portal", nil)
 }
 
 // ServerPaymentsFakePriceMonthArgs holds the arguments of ServerPaymentsFakePriceMonth, passed by name.
@@ -4060,39 +3990,11 @@ func (l *Localizer) ServerPaymentsFakePriceYear(args ServerPaymentsFakePriceYear
 	return l.format("server:payments.fake.price_year", map[string]any{"amount": args.Amount, "currency": args.Currency})
 }
 
-// ServerPaymentsName formats "server:payments.name". Label of the card holder's name field of the PAY.JP checkout and card pages.
-//
-//	en: Name on the card
-func (l *Localizer) ServerPaymentsName() string {
-	return l.format("server:payments.name", nil)
-}
-
-// ServerPaymentsNameHint formats "server:payments.name_hint". Hint under the card holder's name field of the PAY.JP checkout and card pages.
-//
-//	en: As printed on the card, in Latin letters.
-func (l *Localizer) ServerPaymentsNameHint() string {
-	return l.format("server:payments.name_hint", nil)
-}
-
-// ServerPaymentsPortalAmount formats "server:payments.portal.amount". Column heading of the payments table of the PAY.JP card page.
-//
-//	en: Amount
-func (l *Localizer) ServerPaymentsPortalAmount() string {
-	return l.format("server:payments.portal.amount", nil)
-}
-
 // ServerPaymentsPortalAmountValue formats "server:payments.portal.amount_value". An amount in the payments table of the PAY.JP card page. {amount} is in yen.
 //
 //	en: {amount, number} yen
 func (l *Localizer) ServerPaymentsPortalAmountValue(amount float64) string {
 	return l.format("server:payments.portal.amount_value", map[string]any{"amount": amount})
-}
-
-// ServerPaymentsPortalCard formats "server:payments.portal.card". Heading of the card on the PAY.JP card page.
-//
-//	en: Card in use
-func (l *Localizer) ServerPaymentsPortalCard() string {
-	return l.format("server:payments.portal.card", nil)
 }
 
 // ServerPaymentsPortalCardValueArgs holds the arguments of ServerPaymentsPortalCardValue, passed by name.
@@ -4113,60 +4015,11 @@ func (l *Localizer) ServerPaymentsPortalCardValue(args ServerPaymentsPortalCardV
 	return l.format("server:payments.portal.card_value", map[string]any{"brand": args.Brand, "last4": args.Last4, "month": args.Month, "year": args.Year})
 }
 
-// ServerPaymentsPortalChangeCard formats "server:payments.portal.change_card". Heading and button of the card change form on the PAY.JP card page.
-//
-//	en: Change the card
-func (l *Localizer) ServerPaymentsPortalChangeCard() string {
-	return l.format("server:payments.portal.change_card", nil)
-}
-
 // ServerPaymentsPortalChanged formats "server:payments.portal.changed". Notice of the PAY.JP card page after a card change.
 //
 //	en: The card was changed.
 func (l *Localizer) ServerPaymentsPortalChanged() string {
 	return l.format("server:payments.portal.changed", nil)
-}
-
-// ServerPaymentsPortalDate formats "server:payments.portal.date". Column heading of the payments table of the PAY.JP card page.
-//
-//	en: Date
-func (l *Localizer) ServerPaymentsPortalDate() string {
-	return l.format("server:payments.portal.date", nil)
-}
-
-// ServerPaymentsPortalHistory formats "server:payments.portal.history". Heading of the payments table of the PAY.JP card page.
-//
-//	en: Recent payments
-func (l *Localizer) ServerPaymentsPortalHistory() string {
-	return l.format("server:payments.portal.history", nil)
-}
-
-// ServerPaymentsPortalHistoryEmpty formats "server:payments.portal.history_empty". Text of the PAY.JP card page without payments.
-//
-//	en: No payments yet.
-func (l *Localizer) ServerPaymentsPortalHistoryEmpty() string {
-	return l.format("server:payments.portal.history_empty", nil)
-}
-
-// ServerPaymentsPortalNoCard formats "server:payments.portal.no_card". Text of the PAY.JP card page without a card.
-//
-//	en: No card is registered.
-func (l *Localizer) ServerPaymentsPortalNoCard() string {
-	return l.format("server:payments.portal.no_card", nil)
-}
-
-// ServerPaymentsPortalPaused formats "server:payments.portal.paused". Alert of the PAY.JP card page while a subscription is paused after a failed payment.
-//
-//	en: The last payment failed, so the subscription is paused. Changing the card pays and resumes it.
-func (l *Localizer) ServerPaymentsPortalPaused() string {
-	return l.format("server:payments.portal.paused", nil)
-}
-
-// ServerPaymentsPortalRefunded formats "server:payments.portal.refunded". Column heading of the payments table of the PAY.JP card page: the refunded amount.
-//
-//	en: Refunded
-func (l *Localizer) ServerPaymentsPortalRefunded() string {
-	return l.format("server:payments.portal.refunded", nil)
 }
 
 // ServerPaymentsPortalResumeFailed formats "server:payments.portal.resume_failed". Alert of the PAY.JP card page when the payment that resumes a paused subscription failed.
@@ -4188,13 +4041,6 @@ func (l *Localizer) ServerPaymentsPortalResumed() string {
 //	en: Payment method and history
 func (l *Localizer) ServerPaymentsPortalTitle() string {
 	return l.format("server:payments.portal.title", nil)
-}
-
-// ServerPaymentsTestMode formats "server:payments.test_mode". Banner of the PAY.JP checkout and card pages with test keys.
-//
-//	en: Test mode: nothing is charged.
-func (l *Localizer) ServerPaymentsTestMode() string {
-	return l.format("server:payments.test_mode", nil)
 }
 
 // ServerPaymentsTipDescription formats "server:payments.tip_description". Line item of the payment provider's checkout of a tip, a one-time payment to the server's operation with nothing in return (ADR-0162 §1). {server} is the name of the server. Never word it as a donation.

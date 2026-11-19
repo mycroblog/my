@@ -1,16 +1,4 @@
 {
-  "payments.back": {
-    "defaultMessage": "‮Ԑɐɔʞ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.card": {
-    "defaultMessage": "‮Ↄɐɹp‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.card_note": {
-    "defaultMessage": "‮⊥ɥǝ ɔɐɹp pǝʇɐıʅs ƃo ıuʇo Ԁ∀⅄.ſԀ's ɟoɹɯ ɐup uǝʌǝɹ ɹǝɐɔɥ ʇɥıs sǝɹʌǝɹ.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
   "payments.checkout.price_month": {
     "defaultMessage": "‮{amount, number} ʎǝu ɐ ɯouʇɥ‬",
     "description": "Generated from en by tools/i18n; do not edit."
@@ -19,16 +7,8 @@
     "defaultMessage": "‮{amount, number} ʎǝu ɐ ʎǝɐɹ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "payments.checkout.submit": {
-    "defaultMessage": "‮Snqsɔɹıqǝ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
   "payments.checkout.title": {
     "defaultMessage": "‮Snqsɔɹıqǝ ʇo {plan}‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.email": {
-    "defaultMessage": "‮Ǝɯɐıʅ ɐppɹǝss‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.error.declined": {
@@ -55,28 +35,8 @@
     "defaultMessage": "‮Ԁ∀⅄.ſԀ ıs uoʇ ɐusʍǝɹıuƃ. ⊥ɹʎ ɐƃɐıu ıu ɐ ʍɥıʅǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "payments.fake.cancel": {
-    "defaultMessage": "‮Ↄɐuɔǝʅ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.fake.fail": {
-    "defaultMessage": "‮Wɐʞǝ ʇɥǝ dɐʎɯǝuʇ ɟɐıʅ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
   "payments.fake.failed": {
     "defaultMessage": "‮⊥ɥǝ dɐʎɯǝuʇ ɟɐıʅǝp, ɐs ɐsʞǝp. Ԁɐʎ oɹ ɔɐuɔǝʅ.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.fake.notice": {
-    "defaultMessage": "‮⊥ǝsʇ qnıʅp: ʇɥıs ɔɥǝɔʞonʇ sʇɐups ıu ɟoɹ ɐ dɐʎɯǝuʇ dɹoʌıpǝɹ, ɐup uo ɯouǝʎ ɯoʌǝs.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.fake.pay": {
-    "defaultMessage": "‮Ԁɐʎ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.fake.portal": {
-    "defaultMessage": "‮⊥ɥıs ʇǝsʇ qnıʅp ɥɐs uo dɐʎɯǝuʇ ɯǝʇɥops oɹ ıuʌoıɔǝs ʇo ɯɐuɐƃǝ.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.fake.price_month": {
@@ -91,60 +51,16 @@
     "defaultMessage": "‮{amount} {currency} ɐ ʎǝɐɹ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "payments.name": {
-    "defaultMessage": "‮Nɐɯǝ ou ʇɥǝ ɔɐɹp‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.name_hint": {
-    "defaultMessage": "‮∀s dɹıuʇǝp ou ʇɥǝ ɔɐɹp, ıu ⅂ɐʇıu ʅǝʇʇǝɹs.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.amount": {
-    "defaultMessage": "‮∀ɯonuʇ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
   "payments.portal.amount_value": {
     "defaultMessage": "‮{amount, number} ʎǝu‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.card": {
-    "defaultMessage": "‮Ↄɐɹp ıu nsǝ‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.portal.card_value": {
     "defaultMessage": "‮{brand} ǝupıuƃ ıu {last4}, ǝxdıɹǝs {month}/{year}‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
-  "payments.portal.change_card": {
-    "defaultMessage": "‮Ↄɥɐuƃǝ ʇɥǝ ɔɐɹp‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
   "payments.portal.changed": {
     "defaultMessage": "‮⊥ɥǝ ɔɐɹp ʍɐs ɔɥɐuƃǝp.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.date": {
-    "defaultMessage": "‮ᗡɐʇǝ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.history": {
-    "defaultMessage": "‮ᴚǝɔǝuʇ dɐʎɯǝuʇs‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.history_empty": {
-    "defaultMessage": "‮No dɐʎɯǝuʇs ʎǝʇ.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.no_card": {
-    "defaultMessage": "‮No ɔɐɹp ıs ɹǝƃısʇǝɹǝp.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.paused": {
-    "defaultMessage": "‮⊥ɥǝ ʅɐsʇ dɐʎɯǝuʇ ɟɐıʅǝp, so ʇɥǝ snqsɔɹıdʇıou ıs dɐnsǝp. Ↄɥɐuƃıuƃ ʇɥǝ ɔɐɹp dɐʎs ɐup ɹǝsnɯǝs ıʇ.‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.portal.refunded": {
-    "defaultMessage": "‮ᴚǝɟnupǝp‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.portal.resume_failed": {
@@ -157,10 +73,6 @@
   },
   "payments.portal.title": {
     "defaultMessage": "‮Ԁɐʎɯǝuʇ ɯǝʇɥop ɐup ɥısʇoɹʎ‬",
-    "description": "Generated from en by tools/i18n; do not edit."
-  },
-  "payments.test_mode": {
-    "defaultMessage": "‮⊥ǝsʇ ɯopǝ: uoʇɥıuƃ ıs ɔɥɐɹƃǝp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.tip_description": {

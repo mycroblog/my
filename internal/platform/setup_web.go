@@ -15,8 +15,9 @@ import (
 )
 
 // setUpWeb builds the web client's handler (ADR-0028), registers its assets and manifest, sets
-// a.page to its HTML handler, and returns its auth entry, which the sign-in screens load.
-func (a *App) setUpWeb(opts AppOptions) (web.Entry, error) {
+// a.page to its HTML handler, and returns its auth entry, which the sign-in screens load, and its
+// payment entry, which the payment pages load.
+func (a *App) setUpWeb(opts AppOptions) (auth, pay web.Entry, err error) {
 	if opts.WebBuild == nil {
 		opts.WebBuild = web.Embedded()
 	}
@@ -56,12 +57,12 @@ func (a *App) setUpWeb(opts AppOptions) (web.Entry, error) {
 		Logger:   a.Logger,
 	})
 	if err != nil {
-		return web.Entry{}, err
+		return web.Entry{}, web.Entry{}, err
 	}
 	h.Register(surfaceRouter{a, surfaceWeb})
 	// The ActivityPub handler wraps it for the requests that ask for ActivityPub (activitypub.Handler.Pages).
 	a.page = h
-	return h.AuthEntry(), nil
+	return h.AuthEntry(), h.PayEntry(), nil
 }
 
 // themeRevision returns a theme revision for its stylesheet, and false when there is none.

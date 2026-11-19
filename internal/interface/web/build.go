@@ -3,12 +3,15 @@
 package web
 
 import (
+	"crypto/sha512"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
 	"path"
 	"slices"
+	"strings"
 )
 
 // Paths inside the build.
@@ -23,6 +26,14 @@ const (
 	// authEntryKey is the manifest key of the auth entry (ADR-0028 §4, ADR-0090 §16): the HTML
 	// input of the sign-in, registration, and consent screens, which a full page load opens.
 	authEntryKey = "auth.html"
+	// payEntryKey is the manifest key of the payment entry (ADR-0074 §11): the HTML input of the
+	// checkout and portal pages of a provider without hosted ones, which a full page load opens.
+	payEntryKey = "pay.html"
+	// PaymentScriptsPath is the inventory of the scripts that the payment entry loads (PCI DSS
+	// 6.4.3), which the web build writes from the manifest (web/app/scripts/payment-scripts.ts) and
+	// each release publishes. The server takes the integrity of the entry's scripts from it and
+	// refuses a build whose inventory does not list the entry's chunks.
+	PaymentScriptsPath = ".vite/payment-scripts.json"
 	// assetsDir holds the content-hashed files of the build (Vite's build.assetsDir).
 	assetsDir = "assets"
 	// licensesDir holds the license notices that the build carries: those of the bundled npm packages
@@ -42,10 +53,11 @@ const (
 // chunk is one entry of the Vite build manifest
 // (https://vite.dev/guide/backend-integration.html).
 type chunk struct {
-	File    string   `json:"file"`
-	IsEntry bool     `json:"isEntry"`
-	Imports []string `json:"imports"`
-	CSS     []string `json:"css"`
+	File           string   `json:"file"`
+	IsEntry        bool     `json:"isEntry"`
+	Imports        []string `json:"imports"`
+	DynamicImports []string `json:"dynamicImports"`
+	CSS            []string `json:"css"`
 }
 
 // entryTags are the URLs a document loads to start an entry of the build.
@@ -53,34 +65,125 @@ type entryTags struct {
 	Script     string   // the entry module
 	Stylesheet []string // CSS of the entry and of every chunk it imports statically
 	Preload    []string // chunks the entry imports statically, for <link rel="modulepreload">
+	// Integrity is the Subresource Integrity of Script and of each of Preload, by URL; nil for an
+	// entry whose document loads its scripts without it.
+	Integrity map[string]string
+}
+
+// builtEntries are the tags of the entries of the build: the SPA's, the auth entry's, and the
+// payment entry's, the last two empty when the build lacks them.
+type builtEntries struct {
+	app, auth, pay entryTags
 }
 
 // errNoBuild means the build has no Vite manifest: dist/ holds no build of the web client.
 var errNoBuild = errors.New("web: the build has no " + manifestPath + "; run scripts/task.sh web:build")
 
-// readEntries builds the tags of the SPA entry and of the auth entry from the build manifest; a
-// build without the auth entry leaves its tags empty.
-func readEntries(build fs.FS) (app, auth entryTags, err error) {
+// readEntries builds the tags of the entries from the build manifest, and the integrity of the
+// payment entry's scripts from its inventory.
+func readEntries(build fs.FS) (builtEntries, error) {
 	data, err := fs.ReadFile(build, manifestPath)
 	if errors.Is(err, fs.ErrNotExist) {
-		return entryTags{}, entryTags{}, errNoBuild
+		return builtEntries{}, errNoBuild
 	}
 	if err != nil {
-		return entryTags{}, entryTags{}, fmt.Errorf("web: read %s: %w", manifestPath, err)
+		return builtEntries{}, fmt.Errorf("web: read %s: %w", manifestPath, err)
 	}
 	var manifest map[string]chunk
 	if err := json.Unmarshal(data, &manifest); err != nil {
-		return entryTags{}, entryTags{}, fmt.Errorf("web: parse %s: %w", manifestPath, err)
+		return builtEntries{}, fmt.Errorf("web: parse %s: %w", manifestPath, err)
 	}
-	if app, err = entryOf(manifest, entryKey); err != nil {
-		return entryTags{}, entryTags{}, err
+	var e builtEntries
+	if e.app, err = entryOf(manifest, entryKey); err != nil {
+		return builtEntries{}, err
 	}
 	if _, ok := manifest[authEntryKey]; ok {
-		if auth, err = entryOf(manifest, authEntryKey); err != nil {
-			return entryTags{}, entryTags{}, err
+		if e.auth, err = entryOf(manifest, authEntryKey); err != nil {
+			return builtEntries{}, err
 		}
 	}
-	return app, auth, nil
+	if _, ok := manifest[payEntryKey]; ok {
+		if e.pay, err = entryOf(manifest, payEntryKey); err != nil {
+			return builtEntries{}, err
+		}
+		if e.pay.Integrity, err = paymentScripts(build, manifest); err != nil {
+			return builtEntries{}, err
+		}
+	}
+	return e, nil
+}
+
+// scriptInventory is the inventory at PaymentScriptsPath.
+type scriptInventory struct {
+	Entry   string `json:"entry"`
+	Scripts []struct {
+		URL       string `json:"url"`
+		Integrity string `json:"integrity"`
+	} `json:"scripts"`
+}
+
+// paymentScripts reads the integrity of the payment entry's own scripts from the inventory at
+// PaymentScriptsPath and checks it against the manifest and the files: it lists every chunk that the
+// entry loads, with the page or on demand, with the integrity of its file, and no other script of
+// this site. A build whose inventory is missing or stale is refused, so that no release serves a
+// payment page whose scripts its inventory does not name. The entry's chunks are read once, when
+// the server starts: they are small, unlike the fonts that the ETags spare it.
+func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, error) {
+	stale := func(why string) error {
+		return fmt.Errorf("web: %s %s; run scripts/task.sh web:build", PaymentScriptsPath, why)
+	}
+	data, err := fs.ReadFile(build, PaymentScriptsPath)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil, stale("is missing")
+	}
+	if err != nil {
+		return nil, fmt.Errorf("web: read %s: %w", PaymentScriptsPath, err)
+	}
+	var inv scriptInventory
+	if err := json.Unmarshal(data, &inv); err != nil {
+		return nil, stale("is not an inventory: " + err.Error())
+	}
+	if inv.Entry != payEntryKey {
+		return nil, stale(fmt.Sprintf("is the inventory of %q, not of %s", inv.Entry, payEntryKey))
+	}
+	loaded := map[string]bool{}
+	var visit func(key string)
+	visit = func(key string) {
+		c, ok := manifest[key]
+		if !ok || loaded[fileURL(c.File)] {
+			return
+		}
+		loaded[fileURL(c.File)] = true
+		for _, k := range append(slices.Clone(c.Imports), c.DynamicImports...) {
+			visit(k)
+		}
+	}
+	visit(payEntryKey)
+	integrity := map[string]string{}
+	for _, s := range inv.Scripts {
+		if !strings.HasPrefix(s.URL, "/") {
+			// A script of another site (payjp.js), which the page's policy names.
+			continue
+		}
+		if !loaded[s.URL] {
+			return nil, stale("lists " + s.URL + ", which " + payEntryKey + " does not load")
+		}
+		data, err := fs.ReadFile(build, strings.TrimPrefix(s.URL, "/"))
+		if err != nil {
+			return nil, stale("lists " + s.URL + ", which the build cannot read: " + err.Error())
+		}
+		sum := sha512.Sum384(data)
+		if want := "sha384-" + base64.StdEncoding.EncodeToString(sum[:]); s.Integrity != want {
+			return nil, stale("has the integrity " + s.Integrity + " for " + s.URL + ", whose file has " + want)
+		}
+		integrity[s.URL] = s.Integrity
+	}
+	for u := range loaded {
+		if _, ok := integrity[u]; !ok {
+			return nil, stale("does not list " + u + ", which " + payEntryKey + " loads")
+		}
+	}
+	return integrity, nil
 }
 
 // entryOf builds the tags of the entry key, following Vite's backend integration guide: the

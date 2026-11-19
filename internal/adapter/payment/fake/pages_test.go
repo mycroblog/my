@@ -3,6 +3,7 @@
 package fake
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -53,8 +54,16 @@ func newPagesEnv(t *testing.T) *pagesEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
-	e.h = e.p.Pages(supporters.PageEnv{Locales: &i18n.Resolver{Bundle: b}, Stylesheet: func() string { return "/assets/server.css" }})
+	e.h = e.p.Pages(supporters.PageEnv{Locales: &i18n.Resolver{Bundle: b}, Render: renderData})
 	return e
+}
+
+// renderData is a PageEnv.Render that answers with the page's document as JSON, which the tests
+// read for what the page shows.
+func renderData(w http.ResponseWriter, _ *http.Request, status int, doc supporters.PageDocument) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	_ = json.NewEncoder(w).Encode(doc)
 }
 
 func (e *pagesEnv) start(t *testing.T) supporters.Checkout {
@@ -93,7 +102,7 @@ func pathOf(t *testing.T, raw string) string {
 	return u.Path
 }
 
-// The checkout page shows the plan, its price, and that no money moves; fail shows it again
+// The checkout page shows the plan, its price, and that it is the fake's; fail shows it again
 // with the failure, and pay records the subscription and its payment and returns to the success
 // URL, once.
 func TestCheckoutPage(t *testing.T) {
@@ -107,13 +116,8 @@ func TestCheckoutPage(t *testing.T) {
 	rec := e.get(path)
 	body := rec.Body.String()
 	if rec.Code != http.StatusOK || !strings.Contains(body, "Subscribe to Supporter") || !strings.Contains(body, "1200 JPY a month") ||
-		!strings.Contains(body, "no money moves") || !strings.Contains(body, `value="pay"`) {
+		!strings.Contains(body, `"fake":true`) || !strings.Contains(body, `"choices":{"action":"`+path+`"}`) || strings.Contains(body, `"card"`) {
 		t.Fatalf("GET the checkout = %d %s", rec.Code, body)
-	}
-	for k, want := range map[string]string{"Cache-Control": "no-store", "Referrer-Policy": "no-referrer", "Content-Security-Policy": pagesCSP} {
-		if got := rec.Header().Get(k); got != want {
-			t.Errorf("%s = %q, want %q", k, got, want)
-		}
 	}
 
 	if rec := e.post(path, actionPay, "cross-site"); rec.Code != http.StatusForbidden {
@@ -198,7 +202,7 @@ func TestPortalPageAndOptions(t *testing.T) {
 		t.Fatal(err)
 	}
 	rec := e.get(pathOf(t, u))
-	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `href="https://my.example/settings/supporter?portal=returned"`) {
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"back":"https://my.example/settings/supporter?portal=returned"`) {
 		t.Errorf("GET the portal = %d %s", rec.Code, rec.Body.String())
 	}
 	if _, err := e.p.StartCheckout(t.Context(), supporters.CheckoutRequest{

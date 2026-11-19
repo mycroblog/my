@@ -5,14 +5,15 @@
 
 /**
  * The paths whose navigations the worker leaves to the browser: the server's other endpoints (its reserved prefixes,
- * internal/interface/web/handler.go), the server-rendered sign-in and consent pages among them, which need the network
- * and must never turn into the app's shell, and the Web App Manifest.
+ * internal/interface/web/handler.go), the sign-in, consent and payment pages among them, documents of entries of their
+ * own that need the network and must never turn into the app's shell, and the Web App Manifest.
  */
 const passThroughPaths = [
   "/api",
   "/oauth",
   "/auth",
   "/mail",
+  "/payments",
   "/.well-known",
   "/nodeinfo",
   "/ap",

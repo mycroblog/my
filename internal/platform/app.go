@@ -632,13 +632,14 @@ func NewApp(ctx context.Context, cfg *config.Config, opts AppOptions) (_ *App, e
 	if err := a.setUpFinance(ctx, cfg, repos.finance, opts); err != nil {
 		return nil, err
 	}
-	if err := a.setUpPayments(cfg, repos.payments, paymentProvider, a.supporterSync(opts)); err != nil {
+	// The web client comes after the link previews, which it serves, and before the payments,
+	// whose pages are documents of its payment entry.
+	a.setUpPreviews(repos.statuses)
+	authEntry, payEntry, err := a.setUpWeb(opts)
+	if err != nil {
 		return nil, err
 	}
-	// The web client comes after the link previews, which it serves.
-	a.setUpPreviews(repos.statuses)
-	authEntry, err := a.setUpWeb(opts)
-	if err != nil {
+	if err := a.setUpPayments(cfg, repos.payments, paymentProvider, a.supporterSync(opts), payEntry); err != nil {
 		return nil, err
 	}
 	a.setUpActivityPub(cfg, opts.Version)
