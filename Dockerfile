@@ -29,8 +29,8 @@ COPY scripts/task.sh scripts/
 RUN --mount=type=cache,target=/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     scripts/task.sh --version
-COPY --parents package.json bun.lock bunfig.toml web/*/package.json tools/i18n/package.json pkg/mykit/ts/package.json \
-    pkg/mybot/ts/package.json ./
+COPY --parents package.json bun.lock bunfig.toml patches/ web/*/package.json tools/i18n/package.json \
+    pkg/mykit/ts/package.json pkg/mybot/ts/package.json ./
 RUN --mount=type=cache,target=/root/.bun/install/cache \
     bun install --frozen-lockfile
 COPY Taskfile.yml tsconfig.base.json ./

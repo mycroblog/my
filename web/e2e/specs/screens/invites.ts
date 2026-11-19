@@ -52,13 +52,20 @@ export class Invites {
   }
 
   /**
-   * Creates an invite with the form as it stands, at the server's defaults (one person, seven days), and returns the
-   * invite as the server answered it; the screen then shows it in the form's place.
+   * Creates an invite with the form as it stands, at the server's defaults (one person, seven days), or with `uses`
+   * typed into its number of people, and returns the invite as the server answered it; the screen then shows it in the
+   * form's place.
    */
-  async createOne(): Promise<CreatedInvite> {
+  async createOne(uses?: number): Promise<CreatedInvite> {
     await this.create.click();
     const main = this.page.getByRole("main");
     await expect(main.getByRole("heading", { level: 1, name: "Create invite", exact: true })).toBeVisible();
+    if (uses !== undefined) {
+      // Typed key by key, as a reader does: the field's spin button speaks each value.
+      const field = main.getByRole("textbox", { name: "People who can sign up", exact: true });
+      await field.clear();
+      await field.pressSequentially(String(uses));
+    }
     const answer = this.page.waitForResponse(
       (r) => r.request().method() === "POST" && new URL(r.url()).pathname.endsWith("/api/v1/invites"),
     );
