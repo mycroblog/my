@@ -11,6 +11,7 @@ export { forgetTabValues, readTabValue, writeTabValue } from "./tab-values";
 export { namesCommandKey } from "./keyboard";
 export { watchKeyboardInset } from "./keyboard-inset";
 export { browserLanguages } from "./languages";
+export { mediaDevices } from "./media";
 export { oneTimeCodeField } from "./one-time-code";
 export {
   createPasskey,
