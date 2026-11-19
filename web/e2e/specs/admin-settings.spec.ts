@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The server's administration on the real server (#3262, FR-010, FR-705, FR-725): an administrator changes a setting
-// on a page of Server settings and finds it saved after a reload; writes two rules, moves the second
+// on a page of Server settings and finds it saved after a reload; sets an icon of the server's own, which the app
+// draws the renditions of in the browser, and puts the built-in one back; writes two rules, moves the second
 // first among the rules and retires both; and sets up a GitHub login provider, reads the callback URL to register at GitHub,
 // and deletes it. What each screen shows in every state, and what Save asks before what it ends, are the stories' and
 // the route tests' on the fake (web/app, admin.stories.tsx). A setting changes the whole server for every test that
 // runs beside this one, a repeat of this file on another worker among them: the one changed is the security contact,
-// which no other spec reads, read back as one this spec wrote (the repeat may have saved its own since); and the rules
-// are told by their order, not their places, since the repeat writes rules of its own.
+// which no other spec reads, read back as one this spec wrote (the repeat may have saved its own since); the icon is
+// read from the answers of the page that saved it, never after a reload, and put back at once; and the rules are told
+// by their order, not their places, since the repeat writes rules of its own.
 
 import { randomUUID } from "node:crypto";
 import { Administration } from "./screens";
@@ -27,6 +29,28 @@ test("an administrator sets the security contact and finds it saved", async ({ p
 
   await page.reload();
   await expect(admin.textbox("Security contact")).toHaveValue(/^mailto:security-[0-9a-f]{8}@example\.com$/);
+});
+
+test("an administrator sets an icon of the server's own, sees it saved, and puts the built-in one back", async ({
+  page,
+  signIn,
+  fresh,
+}) => {
+  await signIn(await fresh.person({ admin: true }));
+  const admin = new Administration(page);
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="#2f6f5e"/><circle cx="32" cy="32" r="16" fill="#ffffff"/></svg>`;
+  await admin.open();
+  await admin.go("Administration screens", "Server settings");
+  await admin.go("Server settings", "Icon and logo");
+
+  await admin.chooseBrand("Icon", { name: "icon.svg", mimeType: "image/svg+xml", buffer: Buffer.from(svg) });
+  await admin.saveBrand("icon", "PUT");
+  await expect(admin.saved).toBeVisible();
+  await expect(admin.builtIn("Icon")).toBeVisible();
+
+  await admin.builtIn("Icon").click();
+  await admin.saveBrand("icon", "DELETE");
+  await expect(admin.builtIn("Icon")).toHaveCount(0);
 });
 
 test("an administrator writes two rules, moves the second first among the rules, and retires them", async ({

@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The server's administration of its settings, rules and login providers: its root at /admin, a page of Server
-// settings saved as a whole, the rules and a rule's page, and the login providers and a provider's page. Each write
-// returns once the server has answered it.
+// settings saved as a whole, the icon and logo, the rules and a rule's page, and the login providers and a provider's
+// page. Each write returns once the server has answered it.
 
-import type { Locator, Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
+import type { Upload } from "./article-editor";
 import { answered } from "./write";
 
 const escape = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -60,6 +61,31 @@ export class Administration {
   /** Saves the settings' form, and returns once the server answered. */
   async saveSettings(): Promise<void> {
     await answered(this.page, { methods: ["PATCH"], path: /\/admin\/settings$/ }, async () => {
+      await this.button("Save").click();
+    });
+  }
+
+  /** The group of a brand picture on Icon and logo: its picture, and the buttons that choose it and put it back. */
+  brand(name: "Icon" | "Logo" | "Logo for dark backgrounds"): Locator {
+    return this.main.getByRole("group", { name, exact: true });
+  }
+
+  /** The button of the brand picture `name` that puts the built-in picture back, there once the server's own is. */
+  builtIn(name: "Icon" | "Logo" | "Logo for dark backgrounds"): Locator {
+    return this.brand(name).getByRole("button", { name: "Use the built-in image", exact: true });
+  }
+
+  /** Picks `file` for the brand picture `name`; the page shows it once the server checked it, and saves nothing yet. */
+  async chooseBrand(name: "Icon" | "Logo" | "Logo for dark backgrounds", file: Upload): Promise<void> {
+    const chooser = this.page.waitForEvent("filechooser");
+    await this.brand(name).getByRole("button", { name: "Choose an SVG file", exact: true }).click();
+    await (await chooser).setFiles(file);
+    await expect(this.builtIn(name)).toBeVisible();
+  }
+
+  /** Saves the brand pictures, and returns once the server answered the write (`PUT`, `DELETE`) of `kind`. */
+  async saveBrand(kind: "icon" | "logo" | "logo_dark", method: "PUT" | "DELETE"): Promise<void> {
+    await answered(this.page, { methods: [method], path: new RegExp(`/admin/instance/brand/${kind}$`) }, async () => {
       await this.button("Save").click();
     });
   }
