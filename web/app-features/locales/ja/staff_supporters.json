@@ -356,12 +356,12 @@
     "description": "Label of the field of the tips' amounts."
   },
   "staff_supporters.tips.amounts.hint": {
-    "defaultMessage": "1〜6 個の金額をカンマで区切って",
-    "description": "Line under the field of the tips' amounts."
+    "defaultMessage": "1〜6 個の金額を 1 行に 1 つずつ",
+    "description": "Under the field of the tips' amounts. Read by administrators."
   },
   "staff_supporters.tips.amounts.invalid": {
-    "defaultMessage": "{currency} の金額を 1〜6 個、数字だけでカンマで区切って書いてください。",
-    "description": "Under the field of the tips' amounts when it holds no amount or one that is not a number of the currency."
+    "defaultMessage": "{currency} の金額を 1〜6 個、1 行に 1 つずつ数字で書いてください。",
+    "description": "Under the field of the tips' amounts when it holds none, more than six, or one that is not an amount of the currency. Read by administrators."
   },
   "staff_supporters.tips.unavailable": {
     "defaultMessage": "チップをオンにできません。サポーターのプランがオンで、決済の事業者が一回払いを受け付ける必要があります。",
@@ -399,10 +399,6 @@
     "defaultMessage": "設定に決済の事業者がありません。",
     "description": "In the payment provider's section when the deployment configures none."
   },
-  "staff_supporters.payments.provider": {
-    "defaultMessage": "事業者",
-    "description": "Term of the fact that names the payment provider (stripe, payjp)."
-  },
   "staff_supporters.payments.mode": {
     "defaultMessage": "モード",
     "description": "Term of the fact that says whether the provider's keys are test or live keys."
@@ -430,10 +426,6 @@
   "staff_supporters.payments.reconciliation.run": {
     "defaultMessage": "{outcome, select, succeeded {成功} partial {一部完了 (続きを実行中)} other {失敗}} {at}: {checked} 件を確認、{corrected} 件を修正",
     "description": "The last reconciliation: how it ended, when, and how many subscriptions it read again and corrected."
-  },
-  "staff_supporters.payments.why": {
-    "defaultMessage": "止まった理由",
-    "description": "Term of the fact that says why the last reconciliation stopped."
   },
   "staff_supporters.payments.warning": {
     "defaultMessage": "{warning, select, no_webhook {webhook の受信が記録されていません。事業者の webhook の宛先を確認してください。} reconciliation_corrected {最後の照合が、webhook で直るはずの加入を修正しました。事業者の webhook を確認してください。} duplicate_charge {重複した加入が、まだ解約と返金をされていません。照合のたびに再試行します。すぐに試すには「今すぐ照合する」を選んでください。} other {決済の事業者の設定を確認してください。}}",
@@ -615,6 +607,10 @@
     "defaultMessage": "プランが与えるロールを選んでください。",
     "description": "Under the role's field when none is chosen. Read by administrators."
   },
+  "staff_supporters.plan.role.loading": {
+    "defaultMessage": "ロールを読み込んでいます…",
+    "description": "In the place of the role of a new supporter plan while the roles load. Read by administrators."
+  },
   "staff_supporters.plan.discount": {
     "defaultMessage": "年払いの割引率 (%)",
     "description": "Label of a plan's discount for paying yearly, in percent."
@@ -687,9 +683,9 @@
     "defaultMessage": "期間の終わり",
     "description": "Term of the fact of when a subscription's period ends."
   },
-  "staff_supporters.subscription.grace_ends": {
-    "defaultMessage": "猶予の終わり",
-    "description": "Term of the fact of when a subscription whose payment failed loses its role."
+  "staff_supporters.subscription.grace_until": {
+    "defaultMessage": "{at} までロールを保ちます",
+    "description": "Under the state of a subscription whose payment failed: when it loses the plan's role. {at} is a date and a time. Read by administrators."
   },
   "staff_supporters.subscription.scheduled": {
     "defaultMessage": "予約された変更",

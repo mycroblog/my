@@ -7,6 +7,7 @@
 // press did is said in the screen's status, which takes the focus; a refusal stands under the field it is about.
 
 import {
+  amountFits,
   costCategories,
   costMemoLimit,
   costNameLimit,
@@ -18,16 +19,14 @@ import {
   type CostItem,
 } from "@my/app-data";
 import {
-  Box,
   Button,
   ConfirmDialog,
   DateTimeField,
   FactList,
   FeedNotice,
   focusRefusedField,
-  FormSection,
-  LogEntry,
-  LogList,
+  FinanceRow,
+  FinanceTable,
   ModalPresence,
   Row,
   ScreenStack,
@@ -43,7 +42,7 @@ import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
 import { errorOf, Field, ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus } from "../parts";
-import { amountFits, FinanceBack, financePaths, scheduleWords, useDay, useTodayDate } from "./parts";
+import { FinanceBack, financePaths, scheduleWords, useDay, useTodayDate } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
 
@@ -106,27 +105,16 @@ function CostItemView({ item, go }: { item: CostItem; go: (href: string) => void
   );
 }
 
-/** The facts of an item. */
+/** The facts of an item that no form below changes: how often it is paid, from when, and when it was recorded. */
 function CostFacts({ item }: { item: CostItem }) {
   const { t } = useStaffStrings();
   const day = useDay();
   const moment = useMoment();
   const facts: Fact[] = [
-    { term: t("staff_finance.cost.provider"), value: item.provider },
-    { term: t("staff_finance.cost.category"), value: t("finance.category", { category: item.category }) },
     { term: t("staff_finance.cost.schedule"), value: scheduleWords(t, item) },
     item.schedule === "once"
       ? { term: t("staff_finance.cost.paid_on"), value: day(item.starts_on) }
       : { term: t("staff_finance.cost.starts"), value: day(item.starts_on) },
-    ...(item.schedule === "once"
-      ? []
-      : [
-          {
-            term: t("staff_finance.cost.ends"),
-            value: item.ends_on === undefined ? t("staff_finance.cost.no_end") : day(item.ends_on),
-          },
-        ]),
-    ...(item.memo === "" ? [] : [{ term: t("staff_finance.cost.memo"), value: item.memo }]),
     { term: t("staff_finance.cost.recorded"), value: moment(item.created_at) },
   ];
   return <FactList label={t("staff_finance.cost.facts")} items={facts} />;
@@ -216,16 +204,19 @@ function Prices({ item, say }: { item: CostItem; say: Say }) {
   return (
     <Titled title={t("staff_finance.cost.prices")}>
       <Stack gap="entry-room">
-        <LogList label={t("staff_finance.cost.prices")}>
+        <FinanceTable
+          label={t("staff_finance.cost.prices")}
+          head={t("staff_finance.cost.revise.date")}
+          columns={[{ label: t("staff_finance.costs.column.price"), figures: true }]}
+        >
           {shown.map(({ revision, i }) => (
-            <LogEntry key={`${revision.effective_on}-${String(i)}`} icon="finance" date={revision.revised_at}>
-              {t("staff_finance.cost.price_from", {
-                price: moneyText(locale, revision.price),
-                date: day(revision.effective_on),
-              })}
-            </LogEntry>
+            <FinanceRow
+              key={`${revision.effective_on}-${String(i)}`}
+              head={day(revision.effective_on)}
+              cells={[{ figures: [moneyText(locale, revision.price)] }]}
+            />
           ))}
-        </LogList>
+        </FinanceTable>
         <Stack
           gap="screen-field-gap"
           as={
@@ -260,6 +251,7 @@ function Prices({ item, say }: { item: CostItem; say: Say }) {
               name="amount"
               label={t("staff_finance.cost.revise.amount", { currency })}
               inputMode="decimal"
+              figures
               error={errors.amount}
               onChange={(value) => {
                 setAmount(value);
@@ -333,7 +325,7 @@ function Label({ item, say }: { item: CostItem; say: Say }) {
     setRefused(undefined);
   };
   return (
-    <FormSection id={`${ids}-heading`} heading={t("staff_finance.cost.label")}>
+    <Titled title={t("staff_finance.cost.label")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -403,7 +395,7 @@ function Label({ item, say }: { item: CostItem; say: Say }) {
           </Button>
         </Row>
       </Stack>
-    </FormSection>
+    </Titled>
   );
 }
 
@@ -441,7 +433,7 @@ function End({ item, say }: { item: CostItem; say: Say }) {
     );
   };
   return (
-    <FormSection id={`${ids}-heading`} heading={t("staff_finance.cost.end")}>
+    <Titled title={t("staff_finance.cost.end")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -489,7 +481,7 @@ function End({ item, say }: { item: CostItem; say: Say }) {
           )}
         </Row>
       </Stack>
-    </FormSection>
+    </Titled>
   );
 }
 
@@ -497,13 +489,14 @@ function End({ item, say }: { item: CostItem; say: Say }) {
 function Delete({ item, onDeleted, say }: { item: CostItem; onDeleted: () => void; say: Say }) {
   const { t } = useStaffStrings();
   const { remove } = useCostItemActions();
-  const ids = useId();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   return (
-    <FormSection id={`${ids}-heading`} heading={t("staff_finance.cost.delete")} apart>
+    <Titled title={t("staff_finance.cost.delete")}>
       <Stack gap="screen-field-gap">
-        <Box as="p">{t("staff_finance.cost.delete.about")}</Box>
+        <FeedNotice start lead>
+          {t("staff_finance.cost.delete.about")}
+        </FeedNotice>
         <Row>
           <Button
             onPress={() => {
@@ -537,6 +530,6 @@ function Delete({ item, onDeleted, say }: { item: CostItem; onDeleted: () => voi
           </ConfirmDialog>
         )}
       </ModalPresence>
-    </FormSection>
+    </Titled>
   );
 }

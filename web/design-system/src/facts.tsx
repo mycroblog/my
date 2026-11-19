@@ -31,15 +31,16 @@ import { Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 
 /**
- * The frame of the facts, which knows its own width: narrow, one column, each term over its value; wide, the terms'
- * column as wide as the longest term up to a limit, the values' the rest.
+ * The frame of the facts, which knows its own width: narrow (a phone), one column, each term over its value; wide, the
+ * terms' column of one width in every list, so that the values of a screen's lists stand in one column, the values'
+ * the rest.
  */
 function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { className: string }) {
   return (
     <div className="@container">
       <dl
         {...rest}
-        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-y-screen-row-gap @min-[16rem]:grid-cols-[fit-content(12rem)_minmax(0,1fr)] @min-[16rem]:gap-x-shell-edge`}
+        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-y-screen-row-gap @min-[30rem]:grid-cols-[12rem_minmax(0,1fr)] @min-[30rem]:gap-x-shell-edge`}
       />
     </div>
   );
@@ -48,7 +49,7 @@ function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { class
 /** A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. */
 function FactLine({ children }: { children: ReactNode }) {
   return (
-    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[16rem]:gap-y-0">
+    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0">
       {children}
     </div>
   );

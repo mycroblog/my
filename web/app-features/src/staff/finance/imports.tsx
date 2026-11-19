@@ -24,6 +24,7 @@ import {
   ScreenStack,
   ScreenTitle,
   Stack,
+  StateMark,
   type Fact,
 } from "@my/design-system";
 import { useRef, useState, type ReactNode } from "react";
@@ -61,11 +62,13 @@ function sourceFacts(t: T, locale: string, moment: (iso: string) => string, sour
     {
       term: t("staff_finance.imports.last_run"),
       value:
-        run === undefined
-          ? t("staff_finance.imports.never")
-          : run.outcome === "succeeded"
-            ? t("staff_finance.imports.succeeded", { at: moment(run.occurred_at) })
-            : t("staff_finance.imports.failed_at", { at: moment(run.occurred_at) }),
+        run === undefined ? (
+          t("staff_finance.imports.never")
+        ) : run.outcome === "succeeded" ? (
+          <StateMark state="active">{t("staff_finance.imports.succeeded", { at: moment(run.occurred_at) })}</StateMark>
+        ) : (
+          <StateMark state="failed">{t("staff_finance.imports.failed_at", { at: moment(run.occurred_at) })}</StateMark>
+        ),
     },
     ...(run === undefined || run.outcome === "succeeded"
       ? []
@@ -142,7 +145,6 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
                   {
                     figures:
                       m.totals.length === 0 ? [t("finance.none")] : m.totals.map((total) => moneyText(locale, total)),
-                    estimated: m.kind === "estimate",
                   },
                 ]}
               />

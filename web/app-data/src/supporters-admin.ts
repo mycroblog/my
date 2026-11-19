@@ -9,6 +9,7 @@
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
+import { answered, oneRead, type OneRead } from "./finance-admin";
 import { instanceQuery } from "./instance";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
@@ -76,38 +77,11 @@ export const planLimits = {
 } as const;
 
 /** Whether `error` is the server's answer of `status`, and of `type` where given. */
-const answered = (error: unknown, status: number, type?: string) =>
-  error instanceof ProblemError &&
-  error.status === status &&
-  (type === undefined || error.type === `/api/v1/problems/${type}`);
+const answeredAs = (error: unknown, status: number, type: string) =>
+  answered(error, status) && error instanceof ProblemError && error.type === `/api/v1/problems/${type}`;
 
-/** What a screen reads of one thing: it, once read, and where its read is. */
-export type SupporterRead<T> = {
-  readonly value: T | undefined;
-  readonly status: "pending" | "error" | "success";
-  /** The server has no such thing (404): no plan or subscription of that ID, or no payment provider. */
-  readonly missing: boolean;
-  /** The server refused the reader (403): their roles no longer have the permission. */
-  readonly forbidden: boolean;
-  readonly refetch: () => void;
-};
-
-function readOf<T>(query: {
-  data: T | undefined;
-  status: "pending" | "error" | "success";
-  error: unknown;
-  refetch: () => unknown;
-}): SupporterRead<T> {
-  return {
-    value: query.data,
-    status: query.status,
-    missing: answered(query.error, 404),
-    forbidden: answered(query.error, 403),
-    refetch: () => {
-      void query.refetch();
-    },
-  };
-}
+/** What a screen reads of one thing: it, once read, and where its read is; `missing` a 404 (no plan, no provider). */
+export type SupporterRead<T> = OneRead<T>;
 
 /** Puts `value` under `key` once the reads of it on their way are cancelled. */
 async function put<T>(data: AppData, key: readonly unknown[], value: T | undefined): Promise<T> {
@@ -116,6 +90,17 @@ async function put<T>(data: AppData, key: readonly unknown[], value: T | undefin
   data.queryClient.setQueryData(key, value);
   return value;
 }
+
+/**
+ * What counts the members of the plans: the supporters list, and the members of each plan of the income's totals, the
+ * administrators', a holder of `view_finance`'s and the public ones.
+ */
+export const membersRead = [
+  "/instance/supporters",
+  "/admin/income_totals",
+  "/finance/income_totals",
+  "/instance/income_totals",
+] as const;
 
 /** Reads again everything of `paths`, and the instance, which says whether the program and the tips are on. */
 function changed(data: AppData, ...paths: string[]): void {
@@ -140,17 +125,17 @@ export function paymentStatusQuery({ queries }: AppData) {
 
 /** The supporter program. */
 export function useSupporterProgram(): SupporterRead<SupporterProgram> {
-  return readOf(useQuery(supporterProgramQuery(useAppData())));
+  return oneRead(useQuery(supporterProgramQuery(useAppData())));
 }
 
 /** The tips. */
 export function useSupporterTips(): SupporterRead<SupporterTips> {
-  return readOf(useQuery(supporterTipsQuery(useAppData())));
+  return oneRead(useQuery(supporterTipsQuery(useAppData())));
 }
 
 /** The state of the payment provider; `missing` where the deployment configures none. */
 export function usePaymentStatus(): SupporterRead<PaymentStatus> {
-  return readOf(useQuery({ ...paymentStatusQuery(useAppData()), retry: false }));
+  return oneRead(useQuery({ ...paymentStatusQuery(useAppData()), retry: false }));
 }
 
 /** Reads the program, the tips and the payment provider's state, for a route's loader. */
@@ -176,9 +161,9 @@ export type ProgramRefusal =
 
 /** What the server's refusal of a change of the program or the tips was. */
 export function programRefusal(error: unknown): ProgramRefusal {
-  if (answered(error, 409, "supporters-unavailable") || answered(error, 409, "tips-unavailable"))
+  if (answeredAs(error, 409, "supporters-unavailable") || answeredAs(error, 409, "tips-unavailable"))
     return { kind: "unavailable" };
-  if (answered(error, 409, "live-subscriptions")) return { kind: "live-subscriptions" };
+  if (answeredAs(error, 409, "live-subscriptions")) return { kind: "live-subscriptions" };
   if (error instanceof ProblemError && error.status === 422)
     return { kind: "amounts", reason: error.problem["reason"] as TipAmountsProblemReason | undefined };
   return { kind: "failed" };
@@ -248,7 +233,7 @@ export function adminPlansQuery({ queries }: AppData) {
 
 /** Every plan, the retired ones too, by rank. */
 export function useAdminPlans(): SupporterRead<readonly AdminSupporterPlan[]> {
-  const read = readOf(useQuery(adminPlansQuery(useAppData())));
+  const read = oneRead(useQuery(adminPlansQuery(useAppData())));
   return { ...read, value: read.value?.items };
 }
 
@@ -267,15 +252,25 @@ export async function loadAdminPlans(data: AppData): Promise<void> {
   await data.queryClient.query(adminPlansQuery(data)).catch(() => undefined);
 }
 
+/** The roles, as a holder of `manage_roles` reads them. */
+export function adminRolesQuery({ queries }: AppData) {
+  return queries.queryOptions("get", "/admin/roles");
+}
+
+/** Reads the roles, for a route's loader. */
+export async function loadAdminRoles(data: AppData): Promise<void> {
+  await data.queryClient.query(adminRolesQuery(data)).catch(() => undefined);
+}
+
 /** The roles, for a holder of `manage_roles`; nothing is read while `enabled` is false. */
 export function useAdminRoles(enabled = true): SupporterRead<readonly AdminRole[]> {
-  const read = readOf(useQuery({ ...useAppData().queries.queryOptions("get", "/admin/roles"), enabled }));
+  const read = oneRead(useQuery({ ...adminRolesQuery(useAppData()), enabled }));
   return { ...read, value: read.value?.items };
 }
 
 /** Which rule a refused plan breaks: its `reason`, the member a 422 names; undefined for another failure. */
 export function planRefusal(error: unknown): SupporterPlanProblemReason | "retired" | "unknown-role" | undefined {
-  if (answered(error, 409, "supporter-plan-retired")) return "retired";
+  if (answeredAs(error, 409, "supporter-plan-retired")) return "retired";
   if (answered(error, 404)) return "unknown-role";
   if (!(error instanceof ProblemError) || error.status !== 422) return undefined;
   return error.problem["reason"] as SupporterPlanProblemReason | undefined;
@@ -291,7 +286,13 @@ async function planWritten(data: AppData, plan: AdminSupporterPlan | undefined):
     const others = now.items.filter((p) => p.id !== plan.id);
     return { ...now, items: [...others, plan].toSorted((a, b) => a.rank - b.rank) };
   });
-  changed(data, "/admin/supporter_plans", "/admin/supporter_subscriptions", "/instance/supporter_plans");
+  changed(
+    data,
+    "/admin/supporter_plans",
+    "/admin/supporter_subscriptions",
+    "/instance/supporter_plans",
+    ...membersRead,
+  );
   return plan;
 }
 
@@ -358,7 +359,7 @@ export function useAdminSubscriptions(q: SubscriptionQuery): PagedList<AdminSubs
 
 /** The subscription of `id`. */
 export function useAdminSubscription(id: string): SupporterRead<AdminSubscription> {
-  return readOf(useQuery(adminSubscriptionQuery(useAppData(), id)));
+  return oneRead(useQuery(adminSubscriptionQuery(useAppData(), id)));
 }
 
 /** Reads the subscriptions of `q`, for a route's loader. */
@@ -381,12 +382,12 @@ export async function endSubscription(data: AppData, id: string): Promise<AdminS
   const ended = await data.api.POST("/admin/supporter_subscriptions/{id}/end", { params: { path: { id } } }).then(
     ({ data: answer }) => answer,
     async (e: unknown) => {
-      if (!answered(e, 409, "subscription-ended")) throw e;
+      if (!answeredAs(e, 409, "subscription-ended")) throw e;
       return (await data.api.GET("/admin/supporter_subscriptions/{id}", { params: { path: { id } } })).data;
     },
   );
   const subscription = await put(data, key, ended);
-  changed(data, "/admin/supporter_subscriptions", "/admin/supporter_plans");
+  changed(data, "/admin/supporter_subscriptions", "/admin/supporter_plans", ...membersRead);
   return subscription;
 }
 

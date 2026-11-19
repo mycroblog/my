@@ -58,7 +58,7 @@ export const costNameLimit = 100;
 export const costMemoLimit = 10_000;
 
 /** Whether `error` is the server's answer of `status`. */
-const answered = (error: unknown, status: number) => error instanceof ProblemError && error.status === status;
+export const answered = (error: unknown, status: number) => error instanceof ProblemError && error.status === status;
 
 /** What a screen reads of one thing: it, once read, and where its read is. */
 export type OneRead<T> = {
@@ -71,7 +71,8 @@ export type OneRead<T> = {
   readonly refetch: () => void;
 };
 
-function oneRead<T>(query: {
+/** What a query gives a screen of one thing (a list read whole, a set of totals). */
+export function oneRead<T>(query: {
   data: T | undefined;
   status: "pending" | "error" | "success";
   error: unknown;
@@ -236,39 +237,14 @@ export function adminIncomeTotalsQuery({ queries }: AppData, q: FinanceQuery) {
   return queries.queryOptions("get", "/admin/income_totals", { params: { query: totalsQueryOf(q) } });
 }
 
-/** What a screen reads of a set of totals: also whether the server refused the reader (403). */
-export type AdminTotalsRead<T> = {
-  /** The totals; while the window changes, the ones read before stay until the new ones come. */
-  readonly totals: T | undefined;
-  readonly status: "pending" | "error" | "success";
-  readonly forbidden: boolean;
-  readonly refetch: () => void;
-};
-
-function totalsRead<T>(query: {
-  data: T | undefined;
-  status: "pending" | "error" | "success";
-  error: unknown;
-  refetch: () => unknown;
-}): AdminTotalsRead<T> {
-  return {
-    totals: query.data,
-    status: query.status,
-    forbidden: answered(query.error, 403),
-    refetch: () => {
-      void query.refetch();
-    },
-  };
-}
-
 /** The totals of the costs of `q`. */
-export function useAdminCostTotals(q: FinanceQuery): AdminTotalsRead<Schemas["CostTotals"]> {
-  return totalsRead(useQuery({ ...adminCostTotalsQuery(useAppData(), q), placeholderData: keepPreviousData }));
+export function useAdminCostTotals(q: FinanceQuery): OneRead<Schemas["CostTotals"]> {
+  return oneRead(useQuery({ ...adminCostTotalsQuery(useAppData(), q), placeholderData: keepPreviousData }));
 }
 
 /** The totals of the income of `q`. */
-export function useAdminIncomeTotals(q: FinanceQuery): AdminTotalsRead<AdminIncomeTotals> {
-  return totalsRead(useQuery({ ...adminIncomeTotalsQuery(useAppData(), q), placeholderData: keepPreviousData }));
+export function useAdminIncomeTotals(q: FinanceQuery): OneRead<AdminIncomeTotals> {
+  return oneRead(useQuery({ ...adminIncomeTotalsQuery(useAppData(), q), placeholderData: keepPreviousData }));
 }
 
 // ---- The money movements ----------------------------------------------------------------------------------------------

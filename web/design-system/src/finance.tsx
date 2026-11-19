@@ -93,8 +93,8 @@ function FinanceLine({
 const PLACE = {
   // The head of a row: narrow, a line of its own; wide, the first column.
   head: "col-span-full min-w-0 @min-[30rem]:col-span-1",
-  // The name of the heads' column, which a narrow table says to assistive technology alone.
-  corner: "sr-only @min-[30rem]:not-sr-only",
+  // The name of the heads' column: narrow, a line of its own over the columns' names, as a row's head over its cells.
+  corner: "col-span-full min-w-0 @min-[30rem]:col-span-1",
   // A cell of figures, at its column's end.
   figures: "min-w-0 justify-self-stretch text-end",
   // A cell of words, from its column's start.
@@ -150,7 +150,7 @@ const TotalContext = createContext(false);
 export type FinanceTableProps = {
   /** What the table is, for assistive technology ("Totals by month"). */
   label: string;
-  /** The name of the rows' heads' column ("Month", "Provider"), which a narrow table says to assistive technology alone. */
+  /** The name of the rows' heads' column ("Month", "Provider"), over the columns' names on a narrow table. */
   head: string;
   /** The columns after the heads, one to four: "Costs", "Income", "Balance"; "Category", "Amount". */
   columns: readonly FinanceColumn[];

@@ -193,7 +193,7 @@ function RecordFrame({
     <div
       {...rest}
       style={{ "--record-tracks": tracks } as CSSProperties}
-      className={`${className} ${contained ? "" : "-mx-screen-row-inline"} grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-entry-avatar`}
+      className={`${className} ${contained ? "" : "-mx-screen-row-inline"} grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-shell-edge`}
     />
   );
 }
@@ -220,13 +220,13 @@ function RecordLine({
     ? [
         "flex",
         "@min-[30rem]:col-span-full @min-[30rem]:grid @min-[30rem]:grid-cols-subgrid @min-[30rem]:items-center",
-        "@min-[30rem]:gap-x-entry-avatar @min-[30rem]:pb-screen-air",
+        "@min-[30rem]:gap-x-shell-edge @min-[30rem]:pb-screen-air",
       ].join(" ")
     : [
         // Narrow, a break after the first line (its ::after, a line of its own) sends the facts under it.
         "relative flex flex-wrap items-baseline gap-x-screen-row-gap gap-y-hair py-screen-row-block",
         "after:order-1 after:basis-full after:content-['']",
-        "@min-[30rem]:col-span-full @min-[30rem]:grid @min-[30rem]:grid-cols-subgrid @min-[30rem]:gap-x-entry-avatar",
+        "@min-[30rem]:col-span-full @min-[30rem]:grid @min-[30rem]:grid-cols-subgrid @min-[30rem]:gap-x-shell-edge",
         "@min-[30rem]:gap-y-0",
         "@min-[30rem]:after:hidden",
       ].join(" ");

@@ -306,7 +306,11 @@ export function supportersAdminHandlers(c: SupportersAdminContext): {
             corrected_subscriptions: o.webhook === "missing" ? 2 : 0,
             occurred_at: iso(reconciledAt),
           },
-    warnings: o.webhook === "missing" ? ["no_webhook", "reconciliation_corrected"] : [],
+    // A reconciliation that corrected subscriptions is a sign only where it ran.
+    warnings:
+      o.webhook === "missing"
+        ? ["no_webhook", ...(o.reconciliation === "failed" ? [] : ["reconciliation_corrected" as const])]
+        : [],
   });
 
   // ---- The checks of a plan --------------------------------------------------------------------------------------------

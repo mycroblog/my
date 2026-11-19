@@ -252,7 +252,18 @@ export {
   type PublicTotalsRead,
   type TotalsRead,
 } from "./finance";
-export { moneyIn, moneyLess, moneyPercent, moneySign, moneyTimes, type Money } from "./money";
+export {
+  amountFits,
+  currencies,
+  currencyDigits,
+  digitsOf,
+  moneyIn,
+  moneyLess,
+  moneyPercent,
+  moneySign,
+  moneyTimes,
+  type Money,
+} from "./money";
 export {
   conversationQuery,
   conversationsQuery,
@@ -1011,7 +1022,6 @@ export {
   type AdminIncomePeriodTotal,
   type AdminIncomeTotals,
   type AdminSetting,
-  type AdminTotalsRead,
   type BillingImport,
   type BillingSourceName,
   type CostItem,
@@ -1028,6 +1038,8 @@ export {
 } from "./finance-admin";
 export {
   adminPlansQuery,
+  adminRolesQuery,
+  loadAdminRoles,
   adminSubscriptionQuery,
   adminSubscriptionsQuery,
   endSubscription,

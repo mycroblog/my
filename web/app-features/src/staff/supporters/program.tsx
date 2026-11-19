@@ -8,6 +8,7 @@
 // with a reconciliation run now. What a press did is said in the screen's status, which takes the focus.
 
 import {
+  amountFits,
   loadAdminPlans,
   loadAdminSettings,
   loadSupporterProgram,
@@ -28,6 +29,7 @@ import {
   type SupporterTips,
 } from "@my/app-data";
 import {
+  Box,
   Button,
   CaptionLine,
   CheckField,
@@ -42,6 +44,7 @@ import {
   SettingsItem,
   SettingsMenu,
   Stack,
+  StateMark,
   TextField,
   TextLink,
   type Fact,
@@ -49,7 +52,7 @@ import {
 import { useId, useRef, useState, type ReactNode } from "react";
 import { moneyText } from "../../finance-totals";
 import { Field, ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus, type T } from "../parts";
-import { amountFits, supporterCurrencies, supportersPaths } from "./parts";
+import { supporterCurrencies, supportersPaths, tipAmountsOf } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
 
@@ -77,6 +80,7 @@ export function SupportersAdminScreen(): ReactNode {
     <ScreenStack>
       {title}
       <StatusRegion said={status.said} region={region} />
+      <Warnings program={program.value} />
       <Doors />
       <Program program={program.value} say={status.say} />
       <Disclosure program={program.value} />
@@ -84,6 +88,33 @@ export function SupportersAdminScreen(): ReactNode {
       <Tips say={status.say} />
       <Payments say={status.say} />
     </ScreenStack>
+  );
+}
+
+/**
+ * What to look at, first, in the look of a failure: what the program lacks, the payment provider's signs of webhooks
+ * not set up right, and a reconciliation that failed.
+ */
+function Warnings({ program }: { program: SupporterProgram }): ReactNode {
+  const { t } = useStaffStrings();
+  const payments = usePaymentStatus().value;
+  const run = payments?.last_reconciliation;
+  const lines = [
+    ...program.warnings.map((w) => t("staff_supporters.program.warning", { warning: w })),
+    ...(payments?.warnings ?? []).map((w) => t("staff_supporters.payments.warning", { warning: w })),
+    ...(run !== undefined && run.outcome === "failed"
+      ? [t("staff_supporters.payments.error", { kind: run.error_kind })]
+      : []),
+  ];
+  if (lines.length === 0) return null;
+  return (
+    <Stack gap="entry-line">
+      {lines.map((line) => (
+        <StateMark key={line} state="failed">
+          {line}
+        </StateMark>
+      ))}
+    </Stack>
   );
 }
 
@@ -144,7 +175,8 @@ function Program({ program, say }: { program: SupporterProgram; say: Say }) {
       term: t("staff_supporters.program.configured"),
       value: program.configured_provider ?? t("staff_supporters.program.no_provider"),
     },
-    ...(program.provider === undefined
+    // The provider it was enabled with, only where the configuration names another.
+    ...(program.provider === undefined || program.provider === program.configured_provider
       ? []
       : [{ term: t("staff_supporters.program.enabled_with"), value: program.provider }]),
     {
@@ -214,15 +246,6 @@ function Program({ program, say }: { program: SupporterProgram; say: Say }) {
     <Titled title={t("staff_supporters.program")}>
       <Stack gap="entry-room">
         <FactList label={t("staff_supporters.program")} items={facts} />
-        {program.warnings.length > 0 && (
-          <Stack gap="entry-line">
-            {program.warnings.map((w) => (
-              <CaptionLine key={w} icon="caution" alert>
-                {t("staff_supporters.program.warning", { warning: w })}
-              </CaptionLine>
-            ))}
-          </Stack>
-        )}
         {action}
       </Stack>
     </Titled>
@@ -236,24 +259,19 @@ function Disclosure({ program }: { program: SupporterProgram }) {
   return (
     <Titled title={t("staff_supporters.disclosure")}>
       <Stack gap="entry-line">
-        <FeedNotice
-          start
-          lead
-          action={
-            program.commerce_disclosure ? (
-              <TextLink href="/about/commerce">{t("staff_supporters.disclosure.read")}</TextLink>
-            ) : undefined
-          }
-        >
+        <Box as="p">
           {t(
             program.commerce_disclosure ? "staff_supporters.disclosure.published" : "staff_supporters.disclosure.none",
           )}
-        </FeedNotice>
-        {may && (
-          <Row>
+        </Box>
+        <Row wrap gap="screen-tab-gap">
+          {program.commerce_disclosure && (
+            <TextLink href="/about/commerce">{t("staff_supporters.disclosure.read")}</TextLink>
+          )}
+          {may && (
             <TextLink href="/admin/documents/commerce-disclosure">{t("staff_supporters.disclosure.edit")}</TextLink>
-          </Row>
-        )}
+          )}
+        </Row>
       </Stack>
     </Titled>
   );
@@ -347,7 +365,7 @@ function ListAudience({ say }: { say: Say }) {
 }
 
 /** The amounts of `tips` as the field holds them, comma-separated. */
-const amountsText = (tips: SupporterTips) => tips.amounts.map((m) => m.amount).join(", ");
+const amountsText = (tips: SupporterTips) => tips.amounts.map((m) => m.amount).join("\n");
 
 /** The tips: what the provider allows and whether users may tip now, and the form that turns them on or off. */
 function Tips({ say }: { say: Say }) {
@@ -417,10 +435,7 @@ function TipsForm({ tips, say }: { tips: SupporterTips; say: Say }) {
   const send = () => {
     if (busy) return;
     setFailed(undefined);
-    const list = amounts
-      .split(/[,、\s]+/)
-      .map((a) => a.trim())
-      .filter((a) => a !== "");
+    const list = tipAmountsOf(amounts);
     if (on && (list.length === 0 || list.some((a) => !amountFits(a, currency)))) {
       setError(t("staff_supporters.tips.amounts.invalid", { currency }));
       document.getElementById(amountsId)?.focus();
@@ -483,6 +498,8 @@ function TipsForm({ tips, say }: { tips: SupporterTips; say: Say }) {
             label={t("staff_supporters.tips.amounts")}
             hint={error === undefined ? t("staff_supporters.tips.amounts.hint") : undefined}
             defaultValue={amounts}
+            multiline
+            rows={3}
             error={error}
             onChange={(v) => {
               setAmounts(v);
@@ -505,7 +522,6 @@ function TipsForm({ tips, say }: { tips: SupporterTips; say: Say }) {
 function paymentFacts(t: T, moment: (iso: string) => string, s: PaymentStatus): Fact[] {
   const run = s.last_reconciliation;
   return [
-    { term: t("staff_supporters.payments.provider"), value: s.provider },
     { term: t("staff_supporters.payments.mode"), value: t("staff_supporters.payments.mode.value", { mode: s.mode }) },
     { term: t("staff_supporters.payments.zone"), value: s.time_zone },
     {
@@ -514,24 +530,17 @@ function paymentFacts(t: T, moment: (iso: string) => string, s: PaymentStatus): 
     },
     {
       term: t("staff_supporters.payments.reconciliation"),
-      value:
-        run === undefined
-          ? t("staff_supporters.payments.reconciliation.none")
-          : t("staff_supporters.payments.reconciliation.run", {
-              outcome: run.outcome,
-              at: moment(run.occurred_at),
-              checked: run.checked_subscriptions,
-              corrected: run.corrected_subscriptions,
-            }),
+      value: (() => {
+        if (run === undefined) return t("staff_supporters.payments.reconciliation.none");
+        const words = t("staff_supporters.payments.reconciliation.run", {
+          outcome: run.outcome,
+          at: moment(run.occurred_at),
+          checked: run.checked_subscriptions,
+          corrected: run.corrected_subscriptions,
+        });
+        return <StateMark state={run.outcome === "failed" ? "failed" : "active"}>{words}</StateMark>;
+      })(),
     },
-    ...(run === undefined || run.error_kind === "none"
-      ? []
-      : [
-          {
-            term: t("staff_supporters.payments.why"),
-            value: t("staff_supporters.payments.error", { kind: run.error_kind }),
-          },
-        ]),
   ];
 }
 
@@ -562,15 +571,6 @@ function Payments({ say }: { say: Say }) {
     body = (
       <Stack gap="entry-room">
         <FactList label={t("staff_supporters.payments")} items={paymentFacts(t, moment, read.value)} />
-        {read.value.warnings.length > 0 && (
-          <Stack gap="entry-line">
-            {read.value.warnings.map((w) => (
-              <CaptionLine key={w} icon="caution" alert>
-                {t("staff_supporters.payments.warning", { warning: w })}
-              </CaptionLine>
-            ))}
-          </Stack>
-        )}
         <Row>
           <Button
             busy={busy}

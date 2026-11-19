@@ -20,19 +20,22 @@ export const supportersPaths = {
 /** The currencies a price or a tip is written in: those the server takes (yen and US dollars). */
 export const supporterCurrencies = ["JPY", "USD"] as const;
 
-/** The digits after the point of `currency`'s amounts. */
-const digitsOf = (currency: string) => (currency === "JPY" ? 0 : 2);
-
-/** Whether `amount` is an amount of `currency` as the API takes it: digits, and no more decimals than it has. */
-export function amountFits(amount: string, currency: string): boolean {
-  const digits = digitsOf(currency);
-  return (digits === 0 ? /^\d+$/ : new RegExp(`^\\d+(\\.\\d{1,${String(digits)}})?$`)).test(amount.trim());
+/**
+ * The amounts of the tips as the reader wrote them: one a line, or apart by a semicolon or 、, each with its spaces and
+ * its thousands separators (a comma, a space) taken away, so that "1,000" is one amount.
+ */
+export function tipAmountsOf(text: string): string[] {
+  return text
+    .split(/[\n;；、]+/)
+    .map((a) => a.replace(/[,\s\u00a0\u202f]/g, ""))
+    .filter((a) => a !== "");
 }
 
 /** How a subscription's state weighs as a record's: what holds the role, what waits, what is over. */
 export const subscriptionMark: Readonly<Record<SubscriptionState, RecordState>> = {
   active: "active",
-  canceling: "active",
+  // Its perks stay to the period's end, which it waits for: not the look of one that renews.
+  canceling: "pending",
   past_due: "failed",
   pending: "pending",
   lapsed: "failed",

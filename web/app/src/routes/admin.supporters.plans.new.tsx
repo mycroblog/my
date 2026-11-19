@@ -3,13 +3,13 @@
 // A new supporter plan, at /admin/supporters/plans/new, a screen under Supporters (ADR-0072): its form, on a role of
 // its own; once created, the plan's screen. Without a session it asks the reader to sign in.
 
-import { loadPlans, PlanCreateScreen } from "@my/app-features";
+import { loadPlanCreate, PlanCreateScreen } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
 import { screenLoad } from "../screen-load";
 import { StaffUnderPage } from "../shell/staff-under";
 
 export const Route = createFileRoute("/admin/supporters/plans/new")({
-  loader: ({ context }) => screenLoad(context, loadPlans),
+  loader: ({ context }) => screenLoad(context, loadPlanCreate),
   component: NewPlan,
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },

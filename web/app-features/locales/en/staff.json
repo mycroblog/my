@@ -15,6 +15,10 @@
     "defaultMessage": "Administration screens",
     "description": "The name, for assistive technology, of the list of server administration screens at /admin."
   },
+  "staff.root.title": {
+    "defaultMessage": "{area, select, moderation {Moderation} other {Admin}}",
+    "description": "Title of the root of the moderation screens (/moderation) or of the administration screens (/admin), as the navigation names it."
+  },
   "staff.root.loading": {
     "defaultMessage": "Loading the screens open to you…",
     "description": "At /moderation or /admin while the server has not yet said which screens the reader's permissions open."

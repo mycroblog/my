@@ -533,8 +533,6 @@ export function financeHandlers(c: FinanceContext): {
       if ("problem" in q) return q;
       const moves = movements(Math.min(q.periods.at(-1)?.end ?? today, today), c.tips);
       const nets = incomeOf(q, true);
-      const sum = (list: readonly Movement[], p: { start: number; end: number }, of: (mv: Movement) => number) =>
-        list.filter((mv) => mv.on >= p.start && mv.on <= p.end).reduce((total, mv) => total + of(mv), 0);
       return {
         status: 200,
         body: {
@@ -542,44 +540,32 @@ export function financeHandlers(c: FinanceContext): {
           basis: q.basis,
           periods: q.periods.map((p, i) => {
             const net = nets[i];
-            const met = moves.some((mv) => mv.on >= p.start && mv.on <= p.end);
-            const yen = (minor: number) => (met ? [money(minor, "JPY")] : []);
-            const tips = moves.filter(tipOf);
-            const subscriptions = moves.filter((mv) => !tipOf(mv));
+            // The fees spread as their payments do, so that the gross is always the net and its fees.
+            const fee = incomeIn(
+              moves.map((mv) => ({ ...mv, minor: feeOf(mv) })),
+              q.basis,
+              p.start,
+              p.end,
+            );
+            const netMinor = incomeIn(moves, q.basis, p.start, p.end);
+            const yen = (minor: number | undefined) => (minor === undefined ? [] : [money(minor, "JPY")]);
+            const of = (list: readonly Movement[]) => incomeIn(list, q.basis, p.start, p.end);
+            const tips = of(moves.filter(tipOf));
             return {
               label: p.label,
               starts_on: dateOf(p.start),
               ends_on: dateOf(p.end),
-              gross: yen(sum(moves, p, (mv) => mv.minor + feeOf(mv))),
-              fee: yen(sum(moves, p, feeOf)),
+              gross: yen(netMinor === undefined ? undefined : netMinor + (fee ?? 0)),
+              fee: yen(netMinor === undefined ? undefined : (fee ?? 0)),
               net: net?.net ?? [],
               balance: net?.balance ?? [],
-              net_by_source: met
-                ? [
-                    {
-                      source: "subscription" as const,
-                      net: [
-                        money(
-                          sum(subscriptions, p, (mv) => mv.minor),
-                          "JPY",
-                        ),
-                      ],
-                    },
-                    ...(tips.some((mv) => mv.on >= p.start && mv.on <= p.end)
-                      ? [
-                          {
-                            source: "one_time" as const,
-                            net: [
-                              money(
-                                sum(tips, p, (mv) => mv.minor),
-                                "JPY",
-                              ),
-                            ],
-                          },
-                        ]
-                      : []),
-                  ]
-                : [],
+              net_by_source:
+                netMinor === undefined
+                  ? []
+                  : [
+                      { source: "subscription" as const, net: yen(of(moves.filter((mv) => !tipOf(mv))) ?? 0) },
+                      ...(tips === undefined ? [] : [{ source: "one_time" as const, net: yen(tips) }]),
+                    ],
             };
           }),
           plans: c.planCounts(),

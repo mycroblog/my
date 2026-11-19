@@ -111,10 +111,6 @@
     "defaultMessage": "期間ごとの収入",
     "description": "Name, for assistive technology, of the table of the income per period."
   },
-  "staff_finance.income.about": {
-    "defaultMessage": "収支は純額から費用を引いた額です。",
-    "description": "The note under the table of the income per period."
-  },
   "staff_finance.income.column.gross": {
     "defaultMessage": "総額",
     "description": "Column of the income: the amount paid, before fees."
@@ -383,6 +379,10 @@
     "defaultMessage": "空にすると、今月の費用が 1 つの通貨ならその合計を目標にします。",
     "description": "Under the funding meter's target."
   },
+  "staff_finance.publication.target.shown": {
+    "defaultMessage": "月 {amount}",
+    "description": "Under the funding meter's monthly target once it holds an amount: that amount as money. {amount} is the amount with its currency."
+  },
   "staff_finance.publication.target.currency": {
     "defaultMessage": "目標の通貨",
     "description": "Field of the currency of the funding meter's target."
@@ -402,10 +402,6 @@
   "staff_finance.publication.viewer": {
     "defaultMessage": "会計の画面",
     "description": "Heading of what people with the permission to read the finance see on /finance."
-  },
-  "staff_finance.publication.viewer.about": {
-    "defaultMessage": "会計を読めるロールを持つ人は、会計の画面で合計と内訳を見られます。ここで選んだものも見られます。",
-    "description": "Over the choices of what people with the permission to read the finance see. Read by administrators."
   },
   "staff_finance.publication.viewer.names": {
     "defaultMessage": "費用の項目の名前を出す",
@@ -488,16 +484,12 @@
     "description": "Field of a cost item: how often it is paid, a choice of once, weeks, months or years, and the N beside it."
   },
   "staff_finance.cost.schedule.option": {
-    "defaultMessage": "{schedule, select, once {単発} weeks {週ごと} months {月ごと} years {年ごと} other {}}",
-    "description": "Option of how often a cost item is paid; the number of weeks, months or years stands beside it."
+    "defaultMessage": "{schedule, select, once {単発} weeks {{count, plural, other {週ごと}}} months {{count, plural, other {か月ごと}}} years {{count, plural, other {年ごと}}} other {}}",
+    "description": "Option of how often a cost item is paid: once, or the unit after the number of weeks, months or years between two payments, which stands before it. {count} is that number."
   },
   "staff_finance.cost.interval": {
     "defaultMessage": "間隔",
     "description": "Name, for assistive technology, of the number of weeks, months or years between two payments of a cost item."
-  },
-  "staff_finance.cost.interval.unit": {
-    "defaultMessage": "{schedule, select, weeks {週ごと} months {か月ごと} years {年ごと} other {}}",
-    "description": "The unit after the number of weeks, months or years between two payments of a cost item."
   },
   "staff_finance.cost.interval.blank": {
     "defaultMessage": "1 から {max} の数を書いてください。",
@@ -522,10 +514,6 @@
   "staff_finance.cost.ends.before": {
     "defaultMessage": "最初の支払日以降の日付を選んでください。",
     "description": "Under the last payment date of a cost item when it is before the first payment."
-  },
-  "staff_finance.cost.no_end": {
-    "defaultMessage": "終わりなし",
-    "description": "Fact of a repeating cost item without a last payment date."
   },
   "staff_finance.cost.amount": {
     "defaultMessage": "金額",
@@ -567,10 +555,6 @@
     "defaultMessage": "この費用について",
     "description": "Name, for assistive technology, of the facts of a cost item."
   },
-  "staff_finance.cost.price_from": {
-    "defaultMessage": "{date} から {price}",
-    "description": "A price of a cost item and the date it applies from, to the payments on or after it. {price} is an amount, {date} a date."
-  },
   "staff_finance.cost.recorded": {
     "defaultMessage": "記録日時",
     "description": "Fact of a cost item: when it was recorded."
@@ -600,7 +584,7 @@
     "description": "Field of a new price of a cost item. {currency} is its currency's code."
   },
   "staff_finance.cost.label": {
-    "defaultMessage": "名前とメモ",
+    "defaultMessage": "詳細",
     "description": "Heading of the form that changes a cost item's name, provider, category and memo."
   },
   "staff_finance.cost.label.save": {

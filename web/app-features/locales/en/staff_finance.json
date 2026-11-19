@@ -111,10 +111,6 @@
     "defaultMessage": "Income per period",
     "description": "Name, for assistive technology, of the table of the income per period."
   },
-  "staff_finance.income.about": {
-    "defaultMessage": "The balance is net income less costs.",
-    "description": "The note under the table of the income per period."
-  },
   "staff_finance.income.column.gross": {
     "defaultMessage": "Gross",
     "description": "Column of the income: the amount paid, before fees."
@@ -383,6 +379,10 @@
     "defaultMessage": "Leave it empty to use this month's costs, when they are in one currency.",
     "description": "Under the funding meter's target."
   },
+  "staff_finance.publication.target.shown": {
+    "defaultMessage": "{amount} a month",
+    "description": "Under the funding meter's monthly target once it holds an amount: that amount as money. {amount} is the amount with its currency."
+  },
   "staff_finance.publication.target.currency": {
     "defaultMessage": "Currency of the target",
     "description": "Field of the currency of the funding meter's target."
@@ -402,10 +402,6 @@
   "staff_finance.publication.viewer": {
     "defaultMessage": "Finance screen",
     "description": "Heading of what people with the permission to read the finance see on /finance."
-  },
-  "staff_finance.publication.viewer.about": {
-    "defaultMessage": "People whose role lets them read the finance see the totals and the breakdown on the finance screen, and what you choose here.",
-    "description": "Over the choices of what people with the permission to read the finance see. Read by administrators."
   },
   "staff_finance.publication.viewer.names": {
     "defaultMessage": "Show the names of the cost items",
@@ -488,16 +484,12 @@
     "description": "Field of a cost item: how often it is paid, a choice of once, weeks, months or years, and the N beside it."
   },
   "staff_finance.cost.schedule.option": {
-    "defaultMessage": "{schedule, select, once {Once} weeks {Weekly} months {Monthly} years {Yearly} other {}}",
-    "description": "Option of how often a cost item is paid; the number of weeks, months or years stands beside it."
+    "defaultMessage": "{schedule, select, once {Once} weeks {{count, plural, one {week} other {weeks}}} months {{count, plural, one {month} other {months}}} years {{count, plural, one {year} other {years}}} other {}}",
+    "description": "Option of how often a cost item is paid: once, or the unit after the number of weeks, months or years between two payments, which stands before it. {count} is that number."
   },
   "staff_finance.cost.interval": {
     "defaultMessage": "Every",
     "description": "Name, for assistive technology, of the number of weeks, months or years between two payments of a cost item."
-  },
-  "staff_finance.cost.interval.unit": {
-    "defaultMessage": "{schedule, select, weeks {weeks} months {months} years {years} other {}}",
-    "description": "The unit after the number of weeks, months or years between two payments of a cost item."
   },
   "staff_finance.cost.interval.blank": {
     "defaultMessage": "Write a number from 1 to {max}.",
@@ -522,10 +514,6 @@
   "staff_finance.cost.ends.before": {
     "defaultMessage": "Choose a date on or after the first payment.",
     "description": "Under the last payment date of a cost item when it is before the first payment."
-  },
-  "staff_finance.cost.no_end": {
-    "defaultMessage": "No end",
-    "description": "Fact of a repeating cost item without a last payment date."
   },
   "staff_finance.cost.amount": {
     "defaultMessage": "Amount",
@@ -567,10 +555,6 @@
     "defaultMessage": "About this cost",
     "description": "Name, for assistive technology, of the facts of a cost item."
   },
-  "staff_finance.cost.price_from": {
-    "defaultMessage": "{price} from {date}",
-    "description": "A price of a cost item and the date it applies from, to the payments on or after it. {price} is an amount, {date} a date."
-  },
   "staff_finance.cost.recorded": {
     "defaultMessage": "Recorded",
     "description": "Fact of a cost item: when it was recorded."
@@ -600,7 +584,7 @@
     "description": "Field of a new price of a cost item. {currency} is its currency's code."
   },
   "staff_finance.cost.label": {
-    "defaultMessage": "Name and memo",
+    "defaultMessage": "Details",
     "description": "Heading of the form that changes a cost item's name, provider, category and memo."
   },
   "staff_finance.cost.label.save": {

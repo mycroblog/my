@@ -81,14 +81,14 @@ export function FinanceAdminScreen(): ReactNode {
         <FeedNotice lead>{t("staff_finance.forbidden")}</FeedNotice>
       </ScreenStack>
     );
-  const spent = costs.totals;
-  const got = income.totals;
+  const spent = costs.value;
+  const got = income.value;
   const pages = <FinancePages view={view} />;
   return (
     <ScreenStack>
       {title}
       <Doors />
-      <FinanceChoices view={view} />
+      <FinanceChoices view={view} about={false} />
       {spent === undefined || got === undefined ? (
         <ReadNotice reads={[costs, income]} />
       ) : (
@@ -99,6 +99,7 @@ export function FinanceAdminScreen(): ReactNode {
           balance
           sources={spent.rules.sources}
           incomeRules={got.rules}
+          rules={false}
         />
       )}
       {pages}

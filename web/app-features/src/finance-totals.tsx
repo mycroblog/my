@@ -11,6 +11,7 @@
 import {
   costBases,
   costGranularities,
+  digitsOf,
   financePeriodAfter,
   type CostBasis,
   type CostBreakdownLine,
@@ -165,9 +166,14 @@ const instantOf = (date: string) => new Date(`${date}T00:00:00Z`);
 
 /** An amount in its currency, as the reader's language writes it. */
 export function moneyText(locale: string, money: Money): string {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: money.currency }).format(
-    money.amount as `${number}`,
-  );
+  // The digits the server keeps for the currency (ISO 4217), which Intl's own (CLDR) do not always match.
+  const digits = digitsOf(money.currency);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: money.currency,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(money.amount as `${number}`);
 }
 
 /** The period of a period of the totals as the API gives it. */
@@ -260,7 +266,7 @@ export function incomeBeside(net: readonly Money[], costs: readonly Money[]): Mo
  * The choice of the period's length, and of how a payment longer than a month counts, each named over it; the second
  * says what its option means, the one place that says it.
  */
-export function FinanceChoices({ view }: { view: FinanceView }) {
+export function FinanceChoices({ view, about = true }: { view: FinanceView; about?: boolean }) {
   const { t } = useFinanceStrings();
   return (
     <Stack gap="screen-row-gap">
@@ -278,7 +284,11 @@ export function FinanceChoices({ view }: { view: FinanceView }) {
         options={costBases.map((value) => ({ value, label: t(`finance.basis.${value}`) }))}
         value={view.basis}
         onChange={view.count}
-        about={t(view.basis === "amortized" ? "finance.basis.amortized_about" : "finance.basis.cash_about")}
+        about={
+          about
+            ? t(view.basis === "amortized" ? "finance.basis.amortized_about" : "finance.basis.cash_about")
+            : undefined
+        }
       />
     </Stack>
   );
@@ -303,7 +313,7 @@ export function FinancePages({ view }: { view: FinanceView }) {
   return (
     <>
       <div ref={pages}>
-        <Row wrap gap="entry-caption">
+        <Row wrap justify="center" gap="entry-caption">
           <Button size="target" onPress={view.earlier}>
             {t("finance.earlier", { granularity: view.granularity })}
           </Button>
@@ -402,6 +412,7 @@ export function TotalsTable({
   balance,
   sources,
   incomeRules,
+  rules = true,
 }: {
   view: FinanceView;
   costs: readonly CostPeriodTotal[] | undefined;
@@ -411,6 +422,8 @@ export function TotalsTable({
   sources: CostTotalsRules["sources"] | undefined;
   /** The income's rules, where the income is shown. */
   incomeRules: IncomeTotalsRules | undefined;
+  /** The rules that cut the periods as the table's note; the administrators' screen, which knows them, leaves them out. */
+  rules?: boolean;
 }) {
   const { t, locale } = useFinanceStrings();
   const columns: FinanceColumn[] = [
@@ -435,7 +448,7 @@ export function TotalsTable({
       head={t(`finance.period.${view.granularity}`)}
       columns={columns}
       estimated={estimated ? t("finance.estimate") : undefined}
-      about={rulesOf(t, sources, incomeRules)}
+      about={rules ? rulesOf(t, sources, incomeRules) : undefined}
     >
       {rows.map((period) => {
         const cost = costs?.find((p) => p.label === period.label);

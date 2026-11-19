@@ -275,6 +275,8 @@ const form = tv({
     widget: "min-h-form-page-widget",
   },
   variants: {
+    // An amount, at the field's end in figures of one width, as a number field holds its number.
+    figures: { true: { input: "text-end tabular-nums" } },
     // A textarea starts at a control's height, or as tall as the lines it says it shows (`rows`), and the reader may
     // make it taller.
     height: {
@@ -408,6 +410,8 @@ export type TextFieldProps = {
   describedBy?: string | undefined;
   /** It takes the focus as it mounts (a field the reader just opened: a list's name). */
   autoFocus?: boolean | undefined;
+  /** It holds an amount (a price): at its end, in figures of one width, as a number field does. */
+  figures?: boolean | undefined;
   /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
   onChange?: ((value: string) => void) | undefined;
   /**
@@ -444,8 +448,9 @@ export function TextField({
   autoFocus,
   onChange,
   labelHidden = false,
+  figures = false,
 }: TextFieldProps) {
-  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
+  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows", figures });
   const holder = use(FieldContext);
   const described = idsOf(
     describedBy,

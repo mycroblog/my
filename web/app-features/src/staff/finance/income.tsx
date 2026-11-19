@@ -23,14 +23,11 @@ import {
   FinanceRow,
   FinanceTable,
   MoreRecords,
-  RecordTable,
   ScreenStack,
   ScreenTitle,
   TextButton,
   type FilterValue,
   type FinanceFigure,
-  type RecordColumn,
-  type RecordRow,
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import {
@@ -65,7 +62,6 @@ function IncomeTable({ view, periods }: { view: FinanceView; periods: readonly A
         { label: t("staff_finance.income.column.net"), figures: true },
         { label: t("staff_finance.income.column.balance"), figures: true },
       ]}
-      about={t("staff_finance.income.about")}
     >
       {answeredPeriods(view, periods).map((period) => {
         const got = periods.find((p) => p.label === period.label);
@@ -125,9 +121,7 @@ const payerOf = (t: T, m: IncomeMovement): string => {
   );
 };
 
-type Column = "on" | "gross" | "fee" | "net";
-
-/** The money movements, newest first, of the kind the address names. */
+/** The money movements, newest first, of the kind the address names: a movement a row, its amounts in columns. */
 function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (search: StaffSearch) => void }) {
   const { t, locale } = useStaffStrings();
   const day = useDay();
@@ -138,66 +132,69 @@ function Movements({ search, onSearch }: { search: StaffSearch; onSearch: (searc
     label: t("staff_finance.income.kind", { kind: k }),
     icon: "funding",
   }));
-  const filters = (
-    <FilterBar
-      label={t("staff_finance.income.filters")}
-      applied={kind !== undefined}
-      onClear={() => {
-        onSearch({});
-      }}
-    >
-      <FilterFacet
-        label={t("staff_finance.income.kind.label")}
-        any={t("staff_finance.income.kind.any")}
-        values={values}
-        chosen={kind}
-        onChoose={(chosen) => {
-          onSearch(chosen === undefined ? {} : { kind: chosen });
-        }}
-      />
-    </FilterBar>
-  );
-  const columns: RecordColumn<Column>[] = [
-    { key: "on", label: t("staff_finance.income.column.on"), kind: "fit", bare: true },
-    { key: "gross", label: t("staff_finance.income.column.gross"), kind: "figures" },
-    { key: "fee", label: t("staff_finance.income.column.fee"), kind: "figures" },
-    { key: "net", label: t("staff_finance.income.column.net"), kind: "figures" },
-  ];
-  const rows = list.items.map((m): RecordRow<Column> => ({
-    id: m.id,
-    head: payerOf(t, m),
-    caption: t("staff_finance.income.what", { kind: m.kind, source: m.source }),
-    cells: {
-      on: day(m.occurred_on),
-      gross: moneyText(locale, m.gross),
-      fee: moneyText(locale, m.fee),
-      net: moneyText(locale, m.net),
-    },
-  }));
+  let shown: ReactNode;
+  if (list.status !== "success" && list.items.length === 0)
+    shown =
+      list.status === "error" ? (
+        <FeedNotice alert start action={<TextButton onPress={list.refetch}>{t("staff.retry")}</TextButton>}>
+          {t("staff_finance.income.movements.failed")}
+        </FeedNotice>
+      ) : (
+        <FeedNotice start>{t("staff_finance.income.movements.loading")}</FeedNotice>
+      );
+  else if (list.items.length === 0)
+    shown = (
+      <FeedNotice start>
+        {t(kind === undefined ? "staff_finance.income.movements.empty" : "staff_finance.income.movements.none")}
+      </FeedNotice>
+    );
+  else
+    shown = (
+      <FinanceTable
+        label={t("staff_finance.income.movements")}
+        head={t("staff_finance.income.column.payer")}
+        columns={[
+          { label: t("staff_finance.income.column.on") },
+          { label: t("staff_finance.income.column.gross"), figures: true },
+          { label: t("staff_finance.income.column.fee"), figures: true },
+          { label: t("staff_finance.income.column.net"), figures: true },
+        ]}
+      >
+        {list.items.map((m) => (
+          <FinanceRow
+            key={m.id}
+            head={payerOf(t, m)}
+            caption={t("staff_finance.income.what", { kind: m.kind, source: m.source })}
+            cells={[
+              day(m.occurred_on),
+              { figures: [moneyText(locale, m.gross)] },
+              { figures: [moneyText(locale, m.fee)] },
+              { figures: [moneyText(locale, m.net)] },
+            ]}
+          />
+        ))}
+      </FinanceTable>
+    );
   return (
     <Titled title={t("staff_finance.income.movements")}>
-      {filters}
-      {list.status !== "success" && list.items.length === 0 ? (
-        list.status === "error" ? (
-          <FeedNotice alert start action={<TextButton onPress={list.refetch}>{t("staff.retry")}</TextButton>}>
-            {t("staff_finance.income.movements.failed")}
-          </FeedNotice>
-        ) : (
-          <FeedNotice start>{t("staff_finance.income.movements.loading")}</FeedNotice>
-        )
-      ) : (
-        <RecordTable
-          label={t("staff_finance.income.movements")}
-          head={{ label: t("staff_finance.income.column.payer") }}
-          columns={columns}
-          rows={rows}
-          empty={
-            <FeedNotice>
-              {t(kind === undefined ? "staff_finance.income.movements.empty" : "staff_finance.income.movements.none")}
-            </FeedNotice>
-          }
+      <FilterBar
+        label={t("staff_finance.income.filters")}
+        applied={kind !== undefined}
+        onClear={() => {
+          onSearch({});
+        }}
+      >
+        <FilterFacet
+          label={t("staff_finance.income.kind.label")}
+          any={t("staff_finance.income.kind.any")}
+          values={values}
+          chosen={kind}
+          onChoose={(chosen) => {
+            onSearch(chosen === undefined ? {} : { kind: chosen });
+          }}
         />
-      )}
+      </FilterBar>
+      {shown}
       {list.failedNextPage ? (
         <FeedNotice alert start action={<TextButton onPress={list.fetchNextPage}>{t("staff.retry")}</TextButton>}>
           {t("staff_finance.income.movements.failed_more")}
@@ -222,11 +219,11 @@ export function IncomeAdminScreen({ search, onSearch, go }: StaffUnderProps): Re
         <FeedNotice lead>{t("staff_finance.forbidden")}</FeedNotice>
       </ScreenStack>
     );
-  const got = totals.totals;
+  const got = totals.value;
   return (
     <ScreenStack>
       {title}
-      <FinanceChoices view={view} />
+      <FinanceChoices view={view} about={false} />
       {got === undefined ? <ReadNotice reads={[totals]} /> : <IncomeTable view={view} periods={got.periods} />}
       <FinancePages view={view} />
       <BySource view={view} period={got?.periods.at(-1)} />

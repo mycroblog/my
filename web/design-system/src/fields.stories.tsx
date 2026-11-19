@@ -52,6 +52,15 @@ export const DateOnly: Story = {
   },
 };
 
+/** An amount, at the field's end as a number is. */
+export const Amount: Story = {
+  render: () => (
+    <Column>
+      <TextField id="amount" name="amount" label="Monthly price" inputMode="decimal" figures defaultValue="1500" />
+    </Column>
+  ),
+};
+
 /** A date and a time that is refused: the line of the text's color. */
 export const DateTimeInvalid: Story = {
   render: () => (

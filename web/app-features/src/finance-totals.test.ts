@@ -6,7 +6,15 @@
 
 import { expect, test } from "bun:test";
 import { financePeriodAfter } from "@my/app-data";
-import { answeredPeriods, barOf, importedProvider, incomeBeside, todayIn, type FinanceView } from "./finance-totals";
+import {
+  answeredPeriods,
+  barOf,
+  importedProvider,
+  incomeBeside,
+  moneyText,
+  todayIn,
+  type FinanceView,
+} from "./finance-totals";
 
 test("today is the date of the reader's zone, ahead of UTC's east of it", () => {
   const at = new Date("2026-11-30T16:00:00Z");
@@ -57,4 +65,11 @@ test("only an amount above zero draws a bar", () => {
   expect(barOf({ amount: "12.5", currency: "USD" })).toBe(12.5);
   expect(barOf({ amount: "-12.5", currency: "USD" })).toBeUndefined();
   expect(barOf({ amount: "0", currency: "USD" })).toBeUndefined();
+});
+
+test("an amount is written with its currency's digits as the server keeps them, not Intl's", () => {
+  // Intl (CLDR) writes the Iraqi dinar and the Hungarian forint with no decimals; ISO 4217 gives them 3 and 2.
+  expect(moneyText("en", { amount: "12.345", currency: "IQD" })).toContain("12.345");
+  expect(moneyText("en", { amount: "1000.50", currency: "HUF" })).toContain("1,000.50");
+  expect(moneyText("en", { amount: "1650", currency: "JPY" })).toBe("¥1,650");
 });

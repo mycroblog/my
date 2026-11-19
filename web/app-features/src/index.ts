@@ -227,7 +227,16 @@ export { ReportScreen, useReportTitle, type ReportScreenProps } from "./staff/re
 export { StaffMissing, StaffRoot } from "./staff/root";
 export { StaffEntryScreen, useStaffTitle, type StaffEntryScreenProps } from "./staff/screen";
 export { SupportersAdminScreen, loadSupportersAdmin } from "./staff/supporters/program";
-export { loadPlans, PlanCreateScreen, PlanListScreen, PlanScreen, usePlanTitle } from "./staff/supporters/plans";
+export {
+  inputOfReason,
+  loadPlanCreate,
+  loadPlans,
+  planRoles,
+  PlanCreateScreen,
+  PlanListScreen,
+  PlanScreen,
+  usePlanTitle,
+} from "./staff/supporters/plans";
 export { supportersPaths } from "./staff/supporters/parts";
 export {
   loadSubscription,

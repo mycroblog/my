@@ -8,6 +8,7 @@
 // server refuses, stands under the field it is about; what names none, beside the button.
 
 import {
+  amountFits,
   costCategories,
   costIntervalLimit,
   costMemoLimit,
@@ -50,15 +51,7 @@ import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
 import { errorOf, Field, ReadNotice, useStaffStrings, type T } from "../parts";
-import {
-  amountFits,
-  FinanceBack,
-  financePaths,
-  scheduleWords,
-  useCurrencyOptions,
-  useDay,
-  useTodayDate,
-} from "./parts";
+import { FinanceBack, financePaths, scheduleWords, currencyOptions, useDay, useTodayDate } from "./parts";
 
 // ---- The list ---------------------------------------------------------------------------------------------------------
 
@@ -113,8 +106,9 @@ export function CostItemsScreen({ go }: StaffUnderProps): ReactNode {
     );
   const columns: RecordColumn<Column>[] = [
     { key: "schedule", label: t("staff_finance.costs.column.schedule"), bare: true },
-    { key: "price", label: t("staff_finance.costs.column.price"), kind: "figures" },
     { key: "end", label: t("staff_finance.costs.column.end"), kind: "fit", beside: true },
+    // Last, and beside the head on a phone too, so that the prices line up at the row's end.
+    { key: "price", label: t("staff_finance.costs.column.price"), kind: "figures", beside: true },
   ];
   const rows = list.items.map((item): RecordRow<Column> => {
     const price = costPriceOn(item, today)?.price;
@@ -240,7 +234,7 @@ function useStartCurrency(): string {
 export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
   const { t } = useStaffStrings();
   const { create } = useCostItemActions();
-  const currencies = useCurrencyOptions();
+  const currencies = currencyOptions();
   const today = useTodayDate();
   const ids = useId();
   const idOf = (input: Input) => `${ids}-${input}`;
@@ -298,7 +292,6 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
     );
   };
   const once = draft.schedule === "once";
-  const unit = once ? undefined : t("staff_finance.cost.interval.unit", { schedule: draft.schedule });
   const failed = Object.keys(faults).length > 0 || refused !== undefined;
   return (
     <ScreenStack>
@@ -350,17 +343,6 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
         </Field>
         <Field id={idOf("schedule")} label={t("staff_finance.cost.schedule")}>
           <Row wrap align="center" gap="screen-tab-gap">
-            <Select
-              id={idOf("schedule")}
-              options={costSchedules.map((s) => ({
-                value: s,
-                label: t("staff_finance.cost.schedule.option", { schedule: s }),
-              }))}
-              value={draft.schedule}
-              onChange={(value) => {
-                change({ schedule: costSchedules.find((s) => s === value) ?? "months" });
-              }}
-            />
             {!once && (
               <NumberField
                 id={idOf("interval")}
@@ -369,12 +351,22 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
                 value={draft.interval}
                 min={1}
                 max={costIntervalLimit}
-                unit={unit}
                 onChange={(interval) => {
                   change({ interval });
                 }}
               />
             )}
+            <Select
+              id={idOf("schedule")}
+              options={costSchedules.map((s) => ({
+                value: s,
+                label: t("staff_finance.cost.schedule.option", { schedule: s, count: draft.interval ?? 1 }),
+              }))}
+              value={draft.schedule}
+              onChange={(value) => {
+                change({ schedule: costSchedules.find((s) => s === value) ?? "months" });
+              }}
+            />
           </Row>
           {!once && errorAt("interval") !== undefined && (
             <FieldError id={`${idOf("interval")}-error`}>{errorAt("interval") ?? ""}</FieldError>
@@ -419,6 +411,7 @@ export function CostItemCreateScreen({ go }: StaffUnderProps): ReactNode {
             name="amount"
             label={t("staff_finance.cost.amount")}
             inputMode="decimal"
+            figures
             error={errorAt("amount")}
             onChange={(amount) => {
               change({ amount });

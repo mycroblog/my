@@ -39,6 +39,14 @@ export function useMoment(): (iso: string) => string {
   return (iso) => format.format(new Date(iso)).replace(/ /g, " ");
 }
 
+/** Writes a moment's date alone in the reader's zone, held together: a list's lines carry the day, not the time. */
+export function useMomentDay(): (iso: string) => string {
+  const { locale } = useLocale();
+  const zone = useTimeZone();
+  const format = dateFormat(locale, zone, { dateStyle: "medium" });
+  return (iso) => format.format(new Date(iso)).replace(/ /g, "\u00a0");
+}
+
 /** The handle a sentence names an account by; the words for an account that is gone without one. */
 export function handleIn(t: T, account: Account | undefined): string {
   return account === undefined ? t("staff.account_gone") : sentenceHandleOf(account);

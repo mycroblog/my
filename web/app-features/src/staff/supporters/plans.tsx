@@ -8,7 +8,10 @@
 // under the field it is about; what names none, beside the button.
 
 import {
+  amountFits,
   loadAdminPlans,
+  loadAdminRoles,
+  viewerQuery,
   planLimits,
   planPermissions,
   planRefusal,
@@ -64,7 +67,7 @@ import {
   useStatus,
   type T,
 } from "../parts";
-import { amountFits, supporterCurrencies, supportersPaths } from "./parts";
+import { supporterCurrencies, supportersPaths } from "./parts";
 
 type PlanPermission = (typeof planPermissions)[number];
 
@@ -148,6 +151,7 @@ export function PlanListScreen({ go }: StaffUnderProps): ReactNode {
     <ScreenStack>
       {head}
       <RecordTable
+        even
         label={t("staff_supporters.plans")}
         head={{ label: t("staff_supporters.plans.column.plan") }}
         columns={columns}
@@ -161,14 +165,30 @@ export function PlanListScreen({ go }: StaffUnderProps): ReactNode {
 /** Reads the plans, for the routes' loaders of the plans' screens. */
 export const loadPlans = (data: AppData): Promise<void> => loadAdminPlans(data);
 
+/** Reads the plans and, for a holder of `manage_roles`, the roles a new plan is on, for the new plan's loader. */
+export async function loadPlanCreate(data: AppData): Promise<void> {
+  const viewer = await data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined);
+  await Promise.all([
+    loadAdminPlans(data),
+    viewer?.permissions.includes("manage_roles") === true ? loadAdminRoles(data) : undefined,
+  ]);
+}
+
 // ---- The form -------------------------------------------------------------------------------------------------------
 
 /** The inputs of a plan's form, each a member of the request or a group of them. */
 type Input =
   "role" | "name" | "description" | "price" | "discount" | "emoji" | "rank" | "visibility" | "position" | "permissions";
 
-/** The input a refusal's reason is about; undefined for one that names none. */
-function inputOfReason(reason: SupporterPlanProblemReason | "retired" | "unknown-role" | undefined): Input | undefined {
+/**
+ * The input a refusal's reason is about, on a new plan's form (`editing` false) or a plan's; undefined for one that
+ * names no input the form shows. A new plan's form has no position nor permissions, which are its role's: what the
+ * server finds wrong with them stands under the role. A plan's form has no role, and a 404 there is the plan's.
+ */
+export function inputOfReason(
+  reason: SupporterPlanProblemReason | "retired" | "unknown-role" | undefined,
+  editing: boolean,
+): Input | undefined {
   switch (reason) {
     case "name":
     case "description":
@@ -189,13 +209,13 @@ function inputOfReason(reason: SupporterPlanProblemReason | "retired" | "unknown
     case "role_taken":
     case "role_held":
     case "unknown-role":
-      return "role";
+      return editing ? undefined : "role";
     case "role_position":
     case "order_position":
-      return "position";
+      return editing ? "position" : "role";
     case "role_permissions":
     case "order_permissions":
-      return "permissions";
+      return editing ? "permissions" : "role";
     default:
       return undefined;
   }
@@ -216,18 +236,19 @@ type Draft = {
   permissions: readonly PlanPermission[];
 };
 
-/** The position of the built-in moderator's role, under which a plan's role stands (FR-912). */
-const moderatorPosition = 100;
+/** Whether a role grants only what a plan may give (FR-912): member permissions alone. */
+const memberOnly = (r: AdminRole) => r.permissions.every((p) => (planPermissions as readonly string[]).includes(p));
 
-/** The roles a plan may be on: below the moderators, with member permissions alone. */
-const planRoles = (roles: readonly AdminRole[]) =>
-  roles.filter(
-    (r) =>
-      r.position < moderatorPosition &&
-      r.key !== "moderator" &&
-      r.key !== "admin" &&
-      r.permissions.every((p) => (planPermissions as readonly string[]).includes(p)),
-  );
+/**
+ * The roles a new plan may be on (FR-912): with member permissions alone, below every staff role (one that grants
+ * more, the built-in moderator's among them), and on no plan already (`taken`, the plans' roles). Whether a role has
+ * holders the API does not say of a role; the server refuses one that has (`role_held`), under the role.
+ */
+export function planRoles(roles: readonly AdminRole[], taken: ReadonlySet<string>): AdminRole[] {
+  const staff = roles.filter((r) => !memberOnly(r)).map((r) => r.position);
+  const ceiling = staff.reduce((low, position) => Math.min(low, position), Infinity);
+  return roles.filter((r) => memberOnly(r) && r.position < ceiling && !taken.has(r.key));
+}
 
 /**
  * The form of a plan: a new one (`plan` undefined), on a role chosen among the reader's roles where they may read them,
@@ -278,7 +299,9 @@ function PlanForm({
     setDraft((d) => ({ ...d, ...next }));
     setErrors((e) => ({ ...e, [input]: undefined }));
   };
-  const offered = roles.value === undefined ? undefined : planRoles(roles.value);
+  const plans = useAdminPlans().value;
+  const offered =
+    roles.value === undefined ? undefined : planRoles(roles.value, new Set((plans ?? []).map((p) => p.role.key)));
   /** The faults the form finds before sending, each under its input. */
   const faults = (): Partial<Record<Input, string>> => ({
     ...(plan === undefined && draft.role.trim() === "" ? { role: t("staff_supporters.plan.role.blank") } : {}),
@@ -328,7 +351,7 @@ function PlanForm({
       (e: unknown) => {
         setBusy(false);
         const reason = planRefusal(e);
-        const input = inputOfReason(reason);
+        const input = inputOfReason(reason, plan !== undefined);
         const words = refusal(e) ?? t("staff_supporters.write_failed");
         if (input === undefined) {
           setFailed(reason === "retired" ? t("staff_supporters.plan.refused.retired") : words);
@@ -367,7 +390,11 @@ function PlanForm({
       }
     >
       {plan === undefined &&
-        (offered === undefined || !readsRoles ? (
+        (readsRoles && roles.status === "pending" ? (
+          <Field id={ids.role} label={t("staff_supporters.plan.role")}>
+            <FeedNotice start>{t("staff_supporters.plan.role.loading")}</FeedNotice>
+          </Field>
+        ) : offered === undefined || !readsRoles ? (
           <TextField
             id={ids.role}
             name="role"
@@ -428,7 +455,8 @@ function PlanForm({
           name="price"
           label={t("staff_supporters.plan.price")}
           defaultValue={draft.amount}
-          inputMode="numeric"
+          inputMode="decimal"
+          figures
           error={errors.price}
           onChange={(v) => {
             change({ amount: v }, "price");
@@ -464,7 +492,8 @@ function PlanForm({
       </Field>
       {plan !== undefined && (
         <>
-          {numberField("position", t("staff_supporters.plan.position"), 0, moderatorPosition - 1)}
+          {/* The server holds it under every staff role, and says so under the field. */}
+          {numberField("position", t("staff_supporters.plan.position"), 0, 999)}
           <Field id={ids.permissions} label={t("staff_supporters.plan.permissions")} error={errors.permissions}>
             <Stack id={ids.permissions} tabIndex={-1} gap="entry-line">
               {planPermissions.map((p) => (
@@ -492,7 +521,8 @@ function PlanForm({
       )}
       {failed !== undefined && <FormAlert regular>{failed}</FormAlert>}
       <Row>
-        <Button kind="primary" type="submit" busy={busy}>
+        {/* A new plan's form is the screen's one action; a plan's change is one section of several, as Save is elsewhere. */}
+        <Button kind={plan === undefined ? "primary" : "secondary"} type="submit" busy={busy}>
           {t(plan === undefined ? "staff_supporters.plan.create" : "staff_supporters.plan.save")}
         </Button>
       </Row>
@@ -534,6 +564,17 @@ function planFacts(t: T, locale: string, moment: (iso: string) => string, plan: 
       value: t("staff_supporters.plans.members", { count: plan.members }),
     },
     { term: t("staff_supporters.plan.role"), value: plan.role.key },
+    // What the form below changes is its field alone, while the plan can be changed.
+    ...(plan.retired ? retiredFacts(t, locale, plan) : []),
+    ...(plan.retired_at === undefined
+      ? []
+      : [{ term: t("staff_supporters.plan.retired_at"), value: moment(plan.retired_at) }]),
+  ];
+}
+
+/** The facts of a retired plan that its form would hold, which a retired plan no longer has. */
+function retiredFacts(t: T, locale: string, plan: AdminSupporterPlan): Fact[] {
+  return [
     {
       term: t("staff_supporters.plan.permissions"),
       value:
@@ -545,9 +586,6 @@ function planFacts(t: T, locale: string, moment: (iso: string) => string, plan: 
     },
     { term: t("staff_supporters.plan.emoji"), value: String(plan.emoji_limit) },
     { term: t("staff_supporters.plan.rank"), value: String(plan.rank) },
-    ...(plan.retired_at === undefined
-      ? []
-      : [{ term: t("staff_supporters.plan.retired_at"), value: moment(plan.retired_at) }]),
   ];
 }
 

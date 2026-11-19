@@ -9,6 +9,7 @@
 // without it the screen says what is published now, from the instance.
 
 import {
+  amountFits,
   loadAdminSettings,
   useAdminSettings,
   useInstance,
@@ -28,7 +29,7 @@ import {
   FieldError,
   focusRefusedField,
   FormAlert,
-  FormSection,
+  GroupHeading,
   Row,
   ScreenStack,
   ScreenTitle,
@@ -38,9 +39,10 @@ import {
 } from "@my/design-system";
 import { useId, useRef, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
+import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, StatusRegion, useStaffStrings, useStatus, type T } from "../parts";
-import { amountFits, FinanceBack, useCurrencyOptions } from "./parts";
+import { errorOf, Field, ReadNotice, StatusRegion, Titled, useStaffStrings, useStatus, type T } from "../parts";
+import { FinanceBack, currencyOptions } from "./parts";
 
 /** The settings of this screen. */
 const keys = [
@@ -92,9 +94,12 @@ function Choice<V extends string>({
   words,
   error,
   onChange,
+  shown = false,
 }: {
   id: string;
   label: string;
+  /** Its name stands over it, where no heading names it. */
+  shown?: boolean;
   choices: readonly V[];
   value: string;
   words: (choice: V) => { name: string; about: string };
@@ -104,6 +109,7 @@ function Choice<V extends string>({
   const chosen = choices.indexOf(value as V);
   return (
     <Stack gap="entry-line">
+      {shown && <GroupHeading>{label}</GroupHeading>}
       <ChoiceList
         id={id}
         label={label}
@@ -115,9 +121,7 @@ function Choice<V extends string>({
             key: c,
             label: (
               <Stack gap="entry-line">
-                <Box as="span" weight="label">
-                  {name}
-                </Box>
+                <Box as="span">{name}</Box>
                 <Box as="span" text="caption" tone="muted" breaks="phrase">
                   {about}
                 </Box>
@@ -158,9 +162,9 @@ const viewerIncomeWords = (t: T, value: string): Words => ({
 
 /** The form of what is published, for a holder of `manage_settings`. */
 function PublicationForm({ saved }: { saved: Values }) {
-  const { t } = useStaffStrings();
+  const { t, locale } = useStaffStrings();
   const save = useSaveAdminSettings();
-  const currencies = useCurrencyOptions();
+  const currencies = currencyOptions();
   const region = useRef<HTMLDivElement>(null);
   const status = useStatus(region);
   const ids = useId();
@@ -217,6 +221,15 @@ function PublicationForm({ saved }: { saved: Values }) {
       },
     );
   };
+  const target = shown.funding_meter_target_amount.trim();
+  const targetCurrency = shown.funding_meter_target_currency;
+  // The target as money, once it is one; while it is empty, what an empty target means.
+  const targetHint =
+    target !== "" && targetCurrency !== "" && amountFits(target, targetCurrency)
+      ? t("staff_finance.publication.target.shown", {
+          amount: moneyText(locale, { amount: target, currency: targetCurrency }),
+        })
+      : t("staff_finance.publication.target.hint");
   const allowed = meterAllowed(values);
   const meterNote = allowed.length === 1 ? "one_side" : allowed.includes("percent") ? "both_private" : "both_published";
   return (
@@ -233,7 +246,7 @@ function PublicationForm({ saved }: { saved: Values }) {
       }
     >
       <StatusRegion said={status.said} region={region} />
-      <FormSection id={`${ids}-costs`} heading={t("staff_finance.publication.costs")}>
+      <Titled title={t("staff_finance.publication.costs")}>
         <Choice
           id={idOf("finance_visibility")}
           label={t("staff_finance.publication.costs")}
@@ -245,8 +258,8 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("finance_visibility", v);
           }}
         />
-      </FormSection>
-      <FormSection id={`${ids}-income`} heading={t("staff_finance.publication.income")}>
+      </Titled>
+      <Titled title={t("staff_finance.publication.income")}>
         <Choice
           id={idOf("income_visibility")}
           label={t("staff_finance.publication.income")}
@@ -258,11 +271,11 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("income_visibility", v);
           }}
         />
-      </FormSection>
-      <FormSection id={`${ids}-meter`} heading={t("staff_finance.publication.meter")}>
-        <Box as="p" breaks="phrase">
-          {t("staff_finance.publication.meter.allowed", { case: meterNote })}
-        </Box>
+      </Titled>
+      <Titled title={t("staff_finance.publication.meter")}>
+        {meterNote === "one_side" && (
+          <Box as="p">{t("staff_finance.publication.meter.allowed", { case: meterNote })}</Box>
+        )}
         <Choice
           id={idOf("funding_meter_visibility")}
           label={t("staff_finance.publication.meter")}
@@ -279,8 +292,9 @@ function PublicationForm({ saved }: { saved: Values }) {
             id={idOf("funding_meter_target_amount")}
             name="target"
             label={t("staff_finance.publication.target")}
-            hint={t("staff_finance.publication.target.hint")}
+            hint={targetHint}
             inputMode="decimal"
+            figures
             defaultValue={saved.funding_meter_target_amount}
             error={errorAt("funding_meter_target_amount")}
             onChange={(v) => {
@@ -315,11 +329,8 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("funding_meter_rail", on ? "true" : "false");
           }}
         />
-      </FormSection>
-      <FormSection id={`${ids}-viewer`} heading={t("staff_finance.publication.viewer")}>
-        <Box as="p" breaks="phrase">
-          {t("staff_finance.publication.viewer.about")}
-        </Box>
+      </Titled>
+      <Titled title={t("staff_finance.publication.viewer")}>
         <CheckField
           id={idOf("finance_viewer_item_names")}
           name="item_names"
@@ -347,6 +358,7 @@ function PublicationForm({ saved }: { saved: Values }) {
         <Choice
           id={idOf("finance_viewer_income")}
           label={t("staff_finance.publication.viewer.income")}
+          shown
           choices={viewerIncomeChoices}
           value={shown.finance_viewer_income}
           words={(c) => viewerIncomeWords(t, c)}
@@ -355,7 +367,7 @@ function PublicationForm({ saved }: { saved: Values }) {
             set("finance_viewer_income", v);
           }}
         />
-      </FormSection>
+      </Titled>
       {(fault !== undefined || refused !== undefined) && (
         <FormAlert regular>
           {refused?.field === undefined && refused?.reason !== undefined

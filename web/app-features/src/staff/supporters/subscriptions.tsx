@@ -46,7 +46,16 @@ import {
 import { useRef, useState, type ReactNode } from "react";
 import { staffHref, type StaffSearch, type StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import { ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus, type T } from "../parts";
+import {
+  ReadNotice,
+  StatusRegion,
+  Titled,
+  useMoment,
+  useMomentDay,
+  useStaffStrings,
+  useStatus,
+  type T,
+} from "../parts";
 import { stateWords, subscriberOf, subscriptionMark, supportersPaths } from "./parts";
 
 /** The subscriptions an address's query asks for: of a plan and a state, each of every kind where left out. */
@@ -72,7 +81,7 @@ type Column = "plan" | "ends" | "state";
 /** The subscriptions, filtered by plan and state, a page at a time. */
 export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps): ReactNode {
   const { t } = useStaffStrings();
-  const moment = useMoment();
+  const moment = useMomentDay();
   const q = subscriptionsOf(search);
   const list = useAdminSubscriptions(q);
   const plans = useAdminPlans().value ?? [];
@@ -169,7 +178,6 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
         head={{ label: t("staff_supporters.subscriptions.column.subscriber") }}
         columns={columns}
         rows={rows}
-        even
         empty={
           <FeedNotice>
             {t(filtered ? "staff_supporters.subscriptions.empty.filtered" : "staff_supporters.subscriptions.empty")}
@@ -244,7 +252,15 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
   const facts: Fact[] = [
     {
       term: t("staff_supporters.subscription.state"),
-      value: <StateMark state={subscriptionMark[s.state]}>{stateWords(t, s.state)}</StateMark>,
+      // Until when a subscription whose payment failed keeps its role, beside where it stands.
+      value: (
+        <Stack gap="hair">
+          <StateMark state={subscriptionMark[s.state]}>{stateWords(t, s.state)}</StateMark>
+          {s.grace_ends_at !== undefined && (
+            <span>{t("staff_supporters.subscription.grace_until", { at: moment(s.grace_ends_at) })}</span>
+          )}
+        </Stack>
+      ),
     },
     { term: t("staff_supporters.subscription.plan"), value: termsOf(t, s) },
     {
@@ -258,9 +274,6 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
     ...(s.period_ends_at === undefined
       ? []
       : [{ term: t("staff_supporters.subscription.period_ends"), value: moment(s.period_ends_at) }]),
-    ...(s.grace_ends_at === undefined
-      ? []
-      : [{ term: t("staff_supporters.subscription.grace_ends"), value: moment(s.grace_ends_at) }]),
     ...(s.scheduled_interval === undefined && s.scheduled_plan_id === undefined
       ? []
       : [
