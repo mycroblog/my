@@ -15,6 +15,7 @@ export { ArticleText } from "./article";
 export { ArticleEditor, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
+export { EmojiRequests, OwnEmoji } from "./custom-emoji";
 export { conversationRead, Conversations } from "./conversations";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
@@ -46,3 +47,4 @@ export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoo
 export { Welcome } from "./welcome";
 export { Notice } from "./notice";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";
+export { AnnouncementsAdmin } from "./announcements-admin";

@@ -1,0 +1,250 @@
+{
+  "staff_announcements.entry": {
+    "defaultMessage": "お知らせ",
+    "description": "The name of the screen of the server's announcements to every local user, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_announcements.entry.hint": {
+    "defaultMessage": "このサーバーの全員へのお知らせ",
+    "description": "The line under Announcements in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_announcements.write": {
+    "defaultMessage": "お知らせを書く",
+    "description": "The button at the end of the title of /admin/announcements that opens the form of a new announcement. Read by administrators."
+  },
+  "staff_announcements.filters": {
+    "defaultMessage": "お知らせを絞り込む",
+    "description": "For assistive technology, the name of the filters over the list of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.filter.state": {
+    "defaultMessage": "状態",
+    "description": "The filter of the announcements by where they stand (a draft, scheduled, showing, ended, withdrawn). Read by administrators."
+  },
+  "staff_announcements.filter.any": {
+    "defaultMessage": "すべての状態",
+    "description": "The choice of the state filter that keeps every announcement. Read by administrators."
+  },
+  "staff_announcements.loading": {
+    "defaultMessage": "お知らせを読み込んでいます…",
+    "description": "At /admin/announcements while the list is read. Read by administrators."
+  },
+  "staff_announcements.failed": {
+    "defaultMessage": "お知らせを読み込めませんでした。",
+    "description": "At /admin/announcements when the list could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.table": {
+    "defaultMessage": "お知らせ",
+    "description": "For assistive technology, the name of the table of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.column.title": {
+    "defaultMessage": "タイトル",
+    "description": "The header of the column of the announcements' titles. Read by administrators."
+  },
+  "staff_announcements.column.window": {
+    "defaultMessage": "表示する期間",
+    "description": "The header of the column of when each announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.column.state": {
+    "defaultMessage": "状態",
+    "description": "The header of the column of where each announcement stands. Read by administrators."
+  },
+  "staff_announcements.empty": {
+    "defaultMessage": "まだお知らせはありません。書いたお知らせはここに並び、公開するまでは下書きです。",
+    "description": "At /admin/announcements while there is none. Read by administrators."
+  },
+  "staff_announcements.empty.filtered": {
+    "defaultMessage": "この状態のお知らせはありません。絞り込みを解除すると、すべてを表示します。",
+    "description": "At /admin/announcements when the state filter keeps none. Read by administrators."
+  },
+  "staff_announcements.standing": {
+    "defaultMessage": "{standing, select, draft {下書き} scheduled {公開待ち} showing {表示中} ended {終了} withdrawn {取り下げ済み} other {{standing}}}",
+    "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
+  },
+  "staff_announcements.window.both": {
+    "defaultMessage": "{from} から {until} まで",
+    "description": "When an announcement shows: both sides of its window, each a date and a time. Read by administrators."
+  },
+  "staff_announcements.window.from": {
+    "defaultMessage": "{from} から",
+    "description": "When an announcement shows: from a moment, until it is withdrawn. Read by administrators."
+  },
+  "staff_announcements.window.until": {
+    "defaultMessage": "公開から {until} まで",
+    "description": "When an announcement shows: from its publication until a moment. Read by administrators."
+  },
+  "staff_announcements.window.open": {
+    "defaultMessage": "公開から取り下げるまで",
+    "description": "When an announcement shows, with no window set. Read by administrators."
+  },
+  "staff_announcements.new": {
+    "defaultMessage": "新しいお知らせ",
+    "description": "The title of the form of a new announcement, at /admin/announcements/new. Read by administrators."
+  },
+  "staff_announcements.one": {
+    "defaultMessage": "お知らせ",
+    "description": "The title of an announcement's page while it is read, or when its address names none. Read by administrators."
+  },
+  "staff_announcements.section": {
+    "defaultMessage": "タイトル",
+    "description": "The heading of the section of an announcement's title. Read by administrators."
+  },
+  "staff_announcements.title": {
+    "defaultMessage": "タイトル",
+    "description": "The field of an announcement's title, plain text on one line. Read by administrators."
+  },
+  "staff_announcements.title.rule": {
+    "defaultMessage": "タイトルは 1 行で {max} 文字までにしてください。",
+    "description": "Under the title of an announcement when it is empty, too long or has a line break. Read by administrators."
+  },
+  "staff_announcements.text": {
+    "defaultMessage": "本文",
+    "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
+  },
+  "staff_announcements.text.about": {
+    "defaultMessage": "Markdown で書きます。読む人には整形されて表示され、保存すると「読む人に見える表示」で確かめられます。",
+    "description": "Under the heading of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.placeholder": {
+    "defaultMessage": "このサーバーの全員に知らせたいこと",
+    "description": "In the empty editor of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.rule": {
+    "defaultMessage": "本文は {max} 文字までで書いてください。",
+    "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
+  },
+  "staff_announcements.editor_failed": {
+    "defaultMessage": "エディターを読み込めませんでした。ページを再読み込みして、もう一度試してください。",
+    "description": "In the place of an announcement's editor when its part of the app could not be fetched. Read by administrators."
+  },
+  "staff_announcements.when": {
+    "defaultMessage": "表示する期間",
+    "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.when.about": {
+    "defaultMessage": "あなたのタイムゾーンの日時です。「開始」が空なら公開から、「終了」が空なら取り下げるまで表示します。",
+    "description": "Under the heading of when an announcement shows; Starts and Ends are the names of its two fields. Read by administrators."
+  },
+  "staff_announcements.when.invalid": {
+    "defaultMessage": "実在する日時を入力するか、空にしてください。",
+    "description": "Under a side of an announcement's window that holds no valid date and time. Read by administrators."
+  },
+  "staff_announcements.starts": {
+    "defaultMessage": "開始",
+    "description": "The field of the moment an announcement starts to show, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends": {
+    "defaultMessage": "終了",
+    "description": "The field of the moment an announcement stops showing, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends.after": {
+    "defaultMessage": "終了は開始より後にしてください。",
+    "description": "Under the end of an announcement's window when it is not after its start. Read by administrators."
+  },
+  "staff_announcements.save_draft": {
+    "defaultMessage": "下書きとして保存",
+    "description": "The button of a new announcement's form that keeps it as a draft, which nobody sees. Read by administrators."
+  },
+  "staff_announcements.save": {
+    "defaultMessage": "保存",
+    "description": "The button of an announcement's form that saves its changes. Read by administrators."
+  },
+  "staff_announcements.publish": {
+    "defaultMessage": "公開",
+    "description": "The button of a new or a draft announcement's form that publishes it, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.publish.title": {
+    "defaultMessage": "このお知らせを公開しますか？",
+    "description": "The question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.text": {
+    "defaultMessage": "表示が始まると、このサーバーの全員に表示され、通知が届きます。その後の変更では通知し直しません。",
+    "description": "Under the question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.cancel": {
+    "defaultMessage": "公開しない",
+    "description": "The button that closes the question before publishing an announcement, keeping it as it was. Read by administrators."
+  },
+  "staff_announcements.published": {
+    "defaultMessage": "公開しました",
+    "description": "Beside Save once an announcement was published. Read by administrators."
+  },
+  "staff_announcements.save.refused": {
+    "defaultMessage": "保存されていません。示した箇所を直して、もう一度試してください。",
+    "description": "Beside the buttons of an announcement's form when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_announcements.save.failed": {
+    "defaultMessage": "保存されていません。接続を確かめて、もう一度試してください。",
+    "description": "Beside the buttons of an announcement's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_announcements.save.withdrawn": {
+    "defaultMessage": "このお知らせはその間に取り下げられたため、変更できません。ページを再読み込みして確かめてください。",
+    "description": "Beside the buttons of an announcement's form when the server refused the change because it was withdrawn. Read by administrators."
+  },
+  "staff_announcements.standing.heading": {
+    "defaultMessage": "現在の状態",
+    "description": "The heading of the first section of an announcement's page: its state, when it shows, when it was published and revised. Read by administrators."
+  },
+  "staff_announcements.published_at": {
+    "defaultMessage": "{date} に公開",
+    "description": "A fact of an announcement: when it was last published (a date and a time). Read by administrators."
+  },
+  "staff_announcements.revised_at": {
+    "defaultMessage": "{date} に最終変更",
+    "description": "A fact of an announcement: when its text or window last changed (a date and a time). Read by administrators."
+  },
+  "staff_announcements.preview": {
+    "defaultMessage": "読む人に見える表示",
+    "description": "The heading of the section of an announcement's page that shows its title and its text as readers get them. Read by administrators."
+  },
+  "staff_announcements.preview.about": {
+    "defaultMessage": "最後に保存した内容です。",
+    "description": "Under the heading of what readers see of an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw": {
+    "defaultMessage": "お知らせの取り下げ",
+    "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
+  },
+  "staff_announcements.withdraw.about": {
+    "defaultMessage": "だれにも表示されなくなり、変更も公開もできなくなります。届いた通知も表示されなくなります。",
+    "description": "Under the heading of the section that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.press": {
+    "defaultMessage": "取り下げる",
+    "description": "The button that withdraws an announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.withdraw.title": {
+    "defaultMessage": "このお知らせを取り下げますか？",
+    "description": "The question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.text": {
+    "defaultMessage": "だれにも表示されなくなります。取り消せません。",
+    "description": "Under the question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.cancel": {
+    "defaultMessage": "取り下げない",
+    "description": "The button that closes the question before withdrawing an announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.withdraw.failed": {
+    "defaultMessage": "お知らせは取り下げられていません。接続を確かめて、もう一度試してください。",
+    "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.irreversible": {
+    "defaultMessage": "取り消せません。",
+    "description": "The mark beside the button that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.loading_one": {
+    "defaultMessage": "お知らせを読み込んでいます…",
+    "description": "On an announcement's page while it is read. Read by administrators."
+  },
+  "staff_announcements.failed_one": {
+    "defaultMessage": "お知らせを読み込めませんでした。",
+    "description": "On an announcement's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.missing": {
+    "defaultMessage": "このアドレスのお知らせはありません。",
+    "description": "At /admin/announcements/{id} for an ID no announcement has, before the link to all announcements. Read by administrators."
+  },
+  "staff_announcements.all": {
+    "defaultMessage": "すべてのお知らせ",
+    "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  }
+}

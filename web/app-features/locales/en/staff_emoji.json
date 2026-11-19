@@ -1,0 +1,494 @@
+{
+  "staff_emoji.entry": {
+    "defaultMessage": "Custom emoji",
+    "description": "The name of the screen of the custom emoji and the requests for new ones, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_emoji.entry.hint": {
+    "defaultMessage": "This server's emoji, others', and requests",
+    "description": "The line under Custom emoji in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_emoji.no_image": {
+    "defaultMessage": "No image",
+    "description": "In the place of a custom emoji's image when it cannot be shown (another server's media the server rejects). Read by administrators."
+  },
+  "staff_emoji.state.enabled": {
+    "defaultMessage": "Shown",
+    "description": "The state of a custom emoji that shows where it is used. Read by administrators."
+  },
+  "staff_emoji.state.disabled": {
+    "defaultMessage": "Disabled",
+    "description": "The state of a custom emoji that is disabled: its :shortcode: stays text everywhere. Read by administrators."
+  },
+  "staff_emoji.state.failed": {
+    "defaultMessage": "Nothing changed. Check your connection and try again.",
+    "description": "In the section of a custom emoji's actions when disabling or enabling it failed. Read by administrators."
+  },
+  "staff_emoji.origin": {
+    "defaultMessage": "Server",
+    "description": "The filter of the custom emoji by where they come from, and the fact of an emoji's server. Read by administrators."
+  },
+  "staff_emoji.origin.any": {
+    "defaultMessage": "Every server",
+    "description": "The value of the server filter of the custom emoji that keeps them all. Read by administrators."
+  },
+  "staff_emoji.origin.local": {
+    "defaultMessage": "This server",
+    "description": "A custom emoji of this server, as a filter's value and an emoji's fact. Read by administrators."
+  },
+  "staff_emoji.origin.remote": {
+    "defaultMessage": "Other servers",
+    "description": "The filter's value that keeps the custom emoji of other servers; also an emoji of another server whose domain is not known. Read by administrators."
+  },
+  "staff_emoji.tab.emoji": {
+    "defaultMessage": "Emoji",
+    "description": "The first tab of Custom emoji: the emoji themselves. Read by administrators."
+  },
+  "staff_emoji.tab.requests": {
+    "defaultMessage": "Requests",
+    "description": "The second tab of Custom emoji: the requests for new emoji, while none waits. Read by administrators."
+  },
+  "staff_emoji.tab.requests.count": {
+    "defaultMessage": "Requests {count}",
+    "description": "The second tab of Custom emoji, with how many requests wait for a decision. Read by administrators."
+  },
+  "staff_emoji.tab.requests.more": {
+    "defaultMessage": "Requests {count}+",
+    "description": "The second tab of Custom emoji when more requests wait than the first page holds. Read by administrators."
+  },
+  "staff_emoji.add": {
+    "defaultMessage": "Register an emoji",
+    "description": "The button at the end of the title of Custom emoji that opens the form of a new local emoji. Read by administrators."
+  },
+  "staff_emoji.filters": {
+    "defaultMessage": "Filter custom emoji",
+    "description": "For assistive technology, the bar of filters over the custom emoji. Read by administrators."
+  },
+  "staff_emoji.search": {
+    "defaultMessage": "Find by shortcode",
+    "description": "The search field of the custom emoji, which finds those whose shortcode holds the words. Read by administrators."
+  },
+  "staff_emoji.search.clear": {
+    "defaultMessage": "Clear the search",
+    "description": "The button that empties the search field of the custom emoji. Read by administrators."
+  },
+  "staff_emoji.column.image": {
+    "defaultMessage": "Image",
+    "description": "The column of the custom emoji's images in their tables. Read by administrators."
+  },
+  "staff_emoji.column.shortcode": {
+    "defaultMessage": "Shortcode",
+    "description": "The column of the custom emoji's shortcodes, each between colons, in their tables. Read by administrators."
+  },
+  "staff_emoji.column.state": {
+    "defaultMessage": "State",
+    "description": "The column of the state of a custom emoji or of a request, in their tables. Read by administrators."
+  },
+  "staff_emoji.table": {
+    "defaultMessage": "Custom emoji",
+    "description": "For assistive technology, the table of the custom emoji. Read by administrators."
+  },
+  "staff_emoji.row.category": {
+    "defaultMessage": "Category: {category}",
+    "description": "A fact under a local custom emoji's shortcode: its category in the picker, as the staff wrote it. Read by administrators."
+  },
+  "staff_emoji.row.aliases": {
+    "defaultMessage": "Also {aliases}",
+    "description": "A fact under a local custom emoji's shortcode: its aliases, each between colons. Read by administrators."
+  },
+  "staff_emoji.row.hidden": {
+    "defaultMessage": "Not in the picker",
+    "description": "A fact under a local custom emoji's shortcode: the picker does not offer it, though texts can use it. Read by administrators."
+  },
+  "staff_emoji.loading": {
+    "defaultMessage": "Loading the custom emoji…",
+    "description": "At /admin/custom-emojis while the emoji are read. Read by administrators."
+  },
+  "staff_emoji.failed": {
+    "defaultMessage": "The custom emoji could not be loaded.",
+    "description": "At /admin/custom-emojis when the emoji could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.empty": {
+    "defaultMessage": "There is no custom emoji yet. Register one, or they come with the posts of other servers.",
+    "description": "At /admin/custom-emojis when the server has no custom emoji at all. Read by administrators."
+  },
+  "staff_emoji.empty.filtered": {
+    "defaultMessage": "No custom emoji matches these filters.",
+    "description": "At /admin/custom-emojis when the filters or the search keep none, over Clear filters. Read by administrators."
+  },
+  "staff_emoji.new": {
+    "defaultMessage": "New custom emoji",
+    "description": "The title of the form of a new local custom emoji. Read by administrators."
+  },
+  "staff_emoji.register": {
+    "defaultMessage": "Register",
+    "description": "The button of the submit bar of a new custom emoji's form. Read by administrators."
+  },
+  "staff_emoji.save": {
+    "defaultMessage": "Save",
+    "description": "The button of the submit bar of a custom emoji's place in the picker. Read by administrators."
+  },
+  "staff_emoji.this": {
+    "defaultMessage": "Emoji",
+    "description": "The heading of the section of a new custom emoji's shortcode and image. Read by administrators."
+  },
+  "staff_emoji.shortcode": {
+    "defaultMessage": "Shortcode",
+    "description": "The field of a new custom emoji's shortcode, which texts write between colons. Read by administrators."
+  },
+  "staff_emoji.shortcode.rule": {
+    "defaultMessage": "2 to 30 letters (A to Z, a to z), digits and _. Case matters, and it cannot be changed later.",
+    "description": "Under the shortcode of a new custom emoji: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_emoji.shortcode.taken": {
+    "defaultMessage": "Another emoji of this server has this shortcode, or a pending request keeps it. Choose another.",
+    "description": "Under a shortcode the server refused because a local emoji or a pending request has it. Read by administrators."
+  },
+  "staff_emoji.image": {
+    "defaultMessage": "Image",
+    "description": "The field of a new custom emoji's image. Read by administrators."
+  },
+  "staff_emoji.image.hint": {
+    "defaultMessage": "A PNG, GIF or WebP, no more than 1,024 pixels on its longer side.",
+    "description": "Under the image field of a custom emoji: what the server takes. Read by administrators."
+  },
+  "staff_emoji.image.heavy": {
+    "defaultMessage": "This image is larger than 100 KB: some servers (GoToSocial) do not fetch emoji that large.",
+    "description": "Under the image field of a custom emoji when the picked file is over 100 KB. Read by administrators."
+  },
+  "staff_emoji.image.choose": {
+    "defaultMessage": "Choose an image",
+    "description": "The button of the image field of a custom emoji that opens the file picker. Read by administrators."
+  },
+  "staff_emoji.image.another": {
+    "defaultMessage": "Choose another",
+    "description": "The button of the image field of a new custom emoji once one is picked. Read by administrators."
+  },
+  "staff_emoji.image.none": {
+    "defaultMessage": "No image chosen",
+    "description": "In the place of the file's name in the image field of a new custom emoji while none is picked. Read by administrators."
+  },
+  "staff_emoji.image.current": {
+    "defaultMessage": "The current image stays until you choose another",
+    "description": "In the place of a file's name in the field that replaces a custom emoji's image, before one is picked. Read by administrators."
+  },
+  "staff_emoji.image.replace": {
+    "defaultMessage": "New image",
+    "description": "The field that replaces a local custom emoji's image at once. Read by administrators."
+  },
+  "staff_emoji.image.replaced": {
+    "defaultMessage": "The image is replaced. Other servers fetch it again.",
+    "description": "In the section of a custom emoji's actions once its image was replaced. Read by administrators."
+  },
+  "staff_emoji.image.missing": {
+    "defaultMessage": "Choose the image of the emoji.",
+    "description": "Under the image field of a new custom emoji when Register was pressed without one. Read by administrators."
+  },
+  "staff_emoji.image.format": {
+    "defaultMessage": "Choose a PNG, GIF or WebP image.",
+    "description": "Under the image field of a custom emoji when the server refused the file's format. Read by administrators."
+  },
+  "staff_emoji.image.too_large": {
+    "defaultMessage": "This file is larger than the server takes for an emoji. Choose a smaller one.",
+    "description": "Under the image field of a custom emoji when the file is over the server's size limit. Read by administrators."
+  },
+  "staff_emoji.image.too_big": {
+    "defaultMessage": "Choose an image no more than 1,024 pixels on its longer side.",
+    "description": "Under the image field of a custom emoji when the image is too wide or tall. Read by administrators."
+  },
+  "staff_emoji.image.failed": {
+    "defaultMessage": "The image could not be read. Choose another or try again.",
+    "description": "Under the image field of a custom emoji when the upload could not be processed. Read by administrators."
+  },
+  "staff_emoji.picker": {
+    "defaultMessage": "In the picker",
+    "description": "The heading of the section of a local custom emoji's category, aliases and whether the picker offers it. Read by administrators."
+  },
+  "staff_emoji.picker.about": {
+    "defaultMessage": "Where the emoji picker shows the emoji and the names it finds it by. Texts can use every emoji that is shown, in the picker or not.",
+    "description": "Under the heading of a custom emoji's place in the picker. Read by administrators."
+  },
+  "staff_emoji.category": {
+    "defaultMessage": "Category",
+    "description": "The field of a custom emoji's category in the picker; empty for none. Read by administrators."
+  },
+  "staff_emoji.category.rule": {
+    "defaultMessage": "Write up to {max} characters.",
+    "description": "Under the category of a custom emoji when it is too long. Read by administrators."
+  },
+  "staff_emoji.aliases": {
+    "defaultMessage": "Aliases",
+    "description": "The field of a custom emoji's other names, which the picker finds it by. Read by administrators."
+  },
+  "staff_emoji.aliases.hint": {
+    "defaultMessage": "Separate them with spaces.",
+    "description": "Under the aliases of a custom emoji: how several are written in the one field. Read by administrators."
+  },
+  "staff_emoji.aliases.rule": {
+    "defaultMessage": "Write up to {max} aliases, each 2 to 30 letters, digits and _.",
+    "description": "Under the aliases of a custom emoji when one breaks the rules of a shortcode or there are too many. Read by administrators."
+  },
+  "staff_emoji.visible": {
+    "defaultMessage": "Offer it in the picker",
+    "description": "The setting of whether the emoji picker offers a local custom emoji. Read by administrators."
+  },
+  "staff_emoji.visible.value": {
+    "defaultMessage": "{value, select, true {Yes} other {No}}",
+    "description": "A value of whether the picker offers a custom emoji. Read by administrators."
+  },
+  "staff_emoji.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked and save again.",
+    "description": "Beside Save or Register of a custom emoji when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_emoji.save.failed": {
+    "defaultMessage": "Nothing was saved. Check your connection and try again.",
+    "description": "Beside Save or Register of a custom emoji when the save failed with no field named. Read by administrators."
+  },
+  "staff_emoji.actions": {
+    "defaultMessage": "Use",
+    "description": "The heading of the first section of a custom emoji's page: its image, Disable or Enable, and a new image. Read by administrators."
+  },
+  "staff_emoji.enabled.about": {
+    "defaultMessage": "Shown wherever it is used. Disabled, its :shortcode: stays text everywhere.",
+    "description": "Under the heading of the actions of a custom emoji that is shown. Read by administrators."
+  },
+  "staff_emoji.disabled.about": {
+    "defaultMessage": "Disabled: its :shortcode: stays text everywhere until it is enabled again.",
+    "description": "Under the heading of the actions of a disabled custom emoji. Read by administrators."
+  },
+  "staff_emoji.disable": {
+    "defaultMessage": "Disable",
+    "description": "The button that disables a custom emoji. Read by administrators."
+  },
+  "staff_emoji.enable": {
+    "defaultMessage": "Enable",
+    "description": "The button that enables a disabled custom emoji. Read by administrators."
+  },
+  "staff_emoji.disabled": {
+    "defaultMessage": "The emoji is disabled.",
+    "description": "In the section of a custom emoji's actions once it was disabled. Read by administrators."
+  },
+  "staff_emoji.enabled": {
+    "defaultMessage": "The emoji is shown again.",
+    "description": "In the section of a custom emoji's actions once it was enabled. Read by administrators."
+  },
+  "staff_emoji.facts": {
+    "defaultMessage": "Details",
+    "description": "The heading of the facts of a custom emoji. Read by administrators."
+  },
+  "staff_emoji.created_by": {
+    "defaultMessage": "Made by",
+    "description": "The fact of who made a local custom emoji. Read by administrators."
+  },
+  "staff_emoji.created_by.none": {
+    "defaultMessage": "The command line",
+    "description": "The value of Made by for a local custom emoji made with the server's command line. Read by administrators."
+  },
+  "staff_emoji.uri": {
+    "defaultMessage": "Address",
+    "description": "The fact of a custom emoji's ActivityPub address, which other servers know it by. Read by administrators."
+  },
+  "staff_emoji.created": {
+    "defaultMessage": "Registered",
+    "description": "The fact of when a local custom emoji was registered. Read by administrators."
+  },
+  "staff_emoji.seen": {
+    "defaultMessage": "First seen",
+    "description": "The fact of when the server first saw another server's custom emoji. Read by administrators."
+  },
+  "staff_emoji.updated": {
+    "defaultMessage": "Image set",
+    "description": "The fact of when a custom emoji's current image was set. Read by administrators."
+  },
+  "staff_emoji.copy": {
+    "defaultMessage": "Copy to this server",
+    "description": "The heading of the section of another server's custom emoji that copies it into a local one. Read by administrators."
+  },
+  "staff_emoji.copy.about": {
+    "defaultMessage": "Makes a local emoji of the same image, offered in the picker, which this server's texts can use.",
+    "description": "Under the heading of the copy of another server's custom emoji. Read by administrators."
+  },
+  "staff_emoji.copy.shortcode": {
+    "defaultMessage": "Shortcode of the copy",
+    "description": "The field of the shortcode the copy of another server's custom emoji takes, the remote one's at first. Read by administrators."
+  },
+  "staff_emoji.copy.press": {
+    "defaultMessage": "Copy",
+    "description": "The button that copies another server's custom emoji into a local one. Read by administrators."
+  },
+  "staff_emoji.copy.no_image": {
+    "defaultMessage": "Its image cannot be shown here, so it cannot be copied.",
+    "description": "In the copy section of another server's custom emoji whose image cannot be shown. Read by administrators."
+  },
+  "staff_emoji.copy.fetch_failed": {
+    "defaultMessage": "Its image could not be fetched from its server, so nothing was copied. Try again later.",
+    "description": "In the copy section when the server could not fetch the remote emoji's image. Read by administrators."
+  },
+  "staff_emoji.delete": {
+    "defaultMessage": "Delete the emoji",
+    "description": "The heading of the last section of a local custom emoji's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_emoji.delete.about": {
+    "defaultMessage": "Posts and profiles that used it show its :shortcode: as text, and reactions with it are no longer shown.",
+    "description": "Under the heading of the section that deletes a custom emoji. Read by administrators."
+  },
+  "staff_emoji.delete.press": {
+    "defaultMessage": "Delete",
+    "description": "The button that deletes a custom emoji, and the confirmation of its question. Read by administrators."
+  },
+  "staff_emoji.delete.title": {
+    "defaultMessage": "Delete {shortcode}?",
+    "description": "The question before deleting a custom emoji (its shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.delete.text": {
+    "defaultMessage": "The emoji and its images are deleted for good. Type its shortcode to delete it.",
+    "description": "Under the question before deleting a custom emoji, over the field of its shortcode to type. Read by administrators."
+  },
+  "staff_emoji.delete.cancel": {
+    "defaultMessage": "Keep the emoji",
+    "description": "The button that closes the question before deleting a custom emoji, keeping it. Read by administrators."
+  },
+  "staff_emoji.delete.failed": {
+    "defaultMessage": "The emoji was not deleted. Check your connection and try again.",
+    "description": "In the section that deletes a custom emoji when the deletion failed. Read by administrators."
+  },
+  "staff_emoji.irreversible": {
+    "defaultMessage": "This cannot be undone.",
+    "description": "The mark beside the button that deletes a custom emoji. Read by administrators."
+  },
+  "staff_emoji.one.loading": {
+    "defaultMessage": "Loading the emoji…",
+    "description": "On a custom emoji's page while it is read. Read by administrators."
+  },
+  "staff_emoji.one.failed": {
+    "defaultMessage": "The emoji could not be loaded.",
+    "description": "On a custom emoji's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.missing": {
+    "defaultMessage": "There is no custom emoji at this address. It may have been deleted.",
+    "description": "At /admin/custom-emojis/{id} for an ID the server has no emoji of, before the link to all. Read by administrators."
+  },
+  "staff_emoji.all": {
+    "defaultMessage": "All custom emoji",
+    "description": "The link to /admin/custom-emojis under the sentence that an address names no emoji. Read by administrators."
+  },
+  "staff_emoji.request.state": {
+    "defaultMessage": "{state, select, pending {Pending} approved {Approved} rejected {Rejected} withdrawn {Withdrawn} lapsed {Lapsed} other {{state}}}",
+    "description": "The state of a request for a custom emoji. Lapsed: a request for a new image of an emoji that was deleted. Read by administrators."
+  },
+  "staff_emoji.request.state.term": {
+    "defaultMessage": "State",
+    "description": "The filter of the requests by their state, and the fact of a request's state. Read by administrators."
+  },
+  "staff_emoji.request.state.any": {
+    "defaultMessage": "Every state",
+    "description": "The value of the state filter of the requests that keeps them all; the list shows pending ones by default. Read by administrators."
+  },
+  "staff_emoji.request.filters": {
+    "defaultMessage": "Filter requests",
+    "description": "For assistive technology, the bar of filters over the requests for custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.table": {
+    "defaultMessage": "Requests for custom emoji",
+    "description": "For assistive technology, the table of the requests for custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.kind": {
+    "defaultMessage": "Asks for",
+    "description": "The fact of what a request for a custom emoji asks. Read by administrators."
+  },
+  "staff_emoji.request.kind.name": {
+    "defaultMessage": "{kind, select, create {A new emoji} image {A new image} other {{kind}}}",
+    "description": "What a request asks: a new custom emoji, or a new image of one the requester made. Read by administrators."
+  },
+  "staff_emoji.request.requester": {
+    "defaultMessage": "Asked by",
+    "description": "The column and the fact of who asked for a custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.created": {
+    "defaultMessage": "Asked",
+    "description": "The column and the fact of when a request for a custom emoji was made. Read by administrators."
+  },
+  "staff_emoji.request.decided_at": {
+    "defaultMessage": "Decided",
+    "description": "The fact of when a request was approved, rejected, withdrawn or lapsed. Read by administrators."
+  },
+  "staff_emoji.request.image": {
+    "defaultMessage": "Image",
+    "description": "The fact of a request's image. Read by administrators."
+  },
+  "staff_emoji.request.facts": {
+    "defaultMessage": "The request",
+    "description": "For assistive technology, the facts of a request for a custom emoji. Read by administrators."
+  },
+  "staff_emoji.request.reason.term": {
+    "defaultMessage": "Reason",
+    "description": "The fact of why a request was rejected, as the administrator wrote it. Read by administrators."
+  },
+  "staff_emoji.request.reason.hint": {
+    "defaultMessage": "The person who asked reads it. Up to {max} characters; you may leave it empty.",
+    "description": "Under the reason of a rejection. Read by administrators."
+  },
+  "staff_emoji.request.reason.rule": {
+    "defaultMessage": "Write the reason in {max} characters or fewer.",
+    "description": "Beside Reject when the reason is too long. Read by administrators."
+  },
+  "staff_emoji.request.close": {
+    "defaultMessage": "Close",
+    "description": "The button that closes a request opened over the list. Read by administrators."
+  },
+  "staff_emoji.request.loading": {
+    "defaultMessage": "Loading the requests…",
+    "description": "At /admin/custom-emojis/requests while the requests are read. Read by administrators."
+  },
+  "staff_emoji.request.failed": {
+    "defaultMessage": "The requests could not be loaded.",
+    "description": "At /admin/custom-emojis/requests when they could not be read, before Try again. Read by administrators."
+  },
+  "staff_emoji.request.empty": {
+    "defaultMessage": "No request waits for a decision. Requests come here as people with the permission ask for emoji.",
+    "description": "At /admin/custom-emojis/requests when no request is pending. Read by administrators."
+  },
+  "staff_emoji.request.empty.state": {
+    "defaultMessage": "No request is in this state.",
+    "description": "At /admin/custom-emojis/requests when no request is in the state filtered, over Clear filters. Read by administrators."
+  },
+  "staff_emoji.request.approve": {
+    "defaultMessage": "Approve",
+    "description": "The button that approves a request, making the emoji with the requester as its creator. Read by administrators."
+  },
+  "staff_emoji.request.reject": {
+    "defaultMessage": "Reject",
+    "description": "The button that opens the reason of a rejection of a request. Read by administrators."
+  },
+  "staff_emoji.request.reject.confirm": {
+    "defaultMessage": "Reject the request",
+    "description": "The button that rejects a request with the reason written over it. Read by administrators."
+  },
+  "staff_emoji.request.reason": {
+    "defaultMessage": "Reason",
+    "description": "The field of why a request is rejected, which the requester reads; it may stay empty. Read by administrators."
+  },
+  "staff_emoji.request.approved": {
+    "defaultMessage": "{shortcode} is approved and made.",
+    "description": "Over the requests once one was approved (the emoji's shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.request.rejected": {
+    "defaultMessage": "The request for {shortcode} is rejected.",
+    "description": "Over the requests once one was rejected (the shortcode between colons). Read by administrators."
+  },
+  "staff_emoji.request.cannot_create": {
+    "defaultMessage": "The person who asked may no longer create custom emoji, so this request cannot be approved. You can reject it.",
+    "description": "Beside Reject of a request when the server refused its approval because the requester lost the permission. Read by administrators."
+  },
+  "staff_emoji.request.taken": {
+    "defaultMessage": "An emoji of this server has the shortcode {shortcode} now, so this request cannot be approved. You can reject it.",
+    "description": "Beside Reject of a request when a local emoji took its shortcode since. Read by administrators."
+  },
+  "staff_emoji.request.decided": {
+    "defaultMessage": "This request was decided or withdrawn meanwhile. Close it to see the list as it is now.",
+    "description": "In a request opened over the list when it is no longer pending. Read by administrators."
+  },
+  "staff_emoji.request.failed.write": {
+    "defaultMessage": "Nothing was decided. Check your connection and try again.",
+    "description": "Beside Approve and Reject when the decision failed with no reason. Read by administrators."
+  }
+}

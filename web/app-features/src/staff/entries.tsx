@@ -24,6 +24,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { serverEntries } from "./server/entries";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
 const staffAreas = ["moderation", "admin"] as const;
@@ -32,6 +33,10 @@ export type StaffArea = (typeof staffAreas)[number];
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
+  // The server's own settings, texts and rules (#3262).
+  { id: "server", area: "admin", heading: "staff.group.server" },
+  // What the server connects to and lets connect to it (#3262).
+  { id: "connections", area: "admin", heading: "staff.group.connections" },
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -44,6 +49,8 @@ export type StaffAddress = {
   readonly search: StaffSearch;
   /** Shows the screen with `search` in place of the query, as a new entry of the history. */
   readonly onSearch: (search: StaffSearch) => void;
+  /** Shows another address of the app, as a new entry of the history (a server the reader names, a thing made). */
+  readonly go: (href: string) => void;
 };
 
 /** What an entry's screen is given by the route that places it. */
@@ -92,6 +99,8 @@ export const staffEntries: readonly StaffEntry[] = [
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
   },
+  // Roles, custom emoji, announcements and webhooks (#3263).
+  ...serverEntries,
 ];
 
 /**

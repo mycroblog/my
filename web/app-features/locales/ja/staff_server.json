@@ -1,0 +1,26 @@
+{
+  "staff_server.leave.title": {
+    "defaultMessage": "保存せずに移動しますか？",
+    "description": "The question when the reader leaves a form of roles, custom emoji, announcements or webhooks with changes not saved. Read by administrators."
+  },
+  "staff_server.leave.text": {
+    "defaultMessage": "このページで変えた内容は保存されておらず、失われます。",
+    "description": "Under the question before leaving a form with changes not saved. Read by administrators."
+  },
+  "staff_server.leave.cancel": {
+    "defaultMessage": "このページに残る",
+    "description": "The button that keeps the reader on the form with changes not saved. Read by administrators."
+  },
+  "staff_server.leave.confirm": {
+    "defaultMessage": "移動する",
+    "description": "The button that leaves the form, losing the changes not saved. Read by administrators."
+  },
+  "staff_server.copied": {
+    "defaultMessage": "コピーしました",
+    "description": "Beside the button that copies a value shown once (a webhook's secret), once it is copied. Read by administrators."
+  },
+  "staff_server.copy_failed": {
+    "defaultMessage": "コピーできませんでした。文字を選択してコピーしてください。",
+    "description": "Beside the button that copies a value shown once, when the browser refused to copy it. Read by administrators."
+  }
+}

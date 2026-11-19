@@ -74,6 +74,8 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
+import { permissionsOfRoles } from "./staff-roles";
+import { refusalOf, staffServerHandlers, type FakeStaffServer, type FakeStaffServerOptions } from "./staff-server";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -462,6 +464,11 @@ export type FakeOptions = {
    * the funding meter, and the reader as a holder of `view_finance`.
    */
   finance?: FakeFinanceOptions;
+  /**
+   * The administration of roles, custom emoji, announcements and webhooks (staff-server.ts): the roles the reader
+   * holds in place of the scenario's, and what each area starts with.
+   */
+  staffServer?: FakeStaffServerOptions;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -569,6 +576,8 @@ export type FakeApi = {
   readonly supporters: FakeSupporters;
   /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
   readonly reports: FakeReports;
+  /** The IDs of the custom emoji, announcements and webhooks of the administration by their keys (staff-server.ts). */
+  readonly staffServer: FakeStaffServer;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1917,6 +1926,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const moderation = ["manage_reports", "manage_accounts", "manage_domains", "manage_invites", "view_audit"] as const;
     // A holder of `view_finance` by a role of their own, as a plan's role may grant it.
     const finance = username === viewer && o.finance?.viewer !== undefined ? (["view_finance"] as const) : [];
+    // The roles a story gives the reader in place of the scenario's, which grant what they grant.
+    const roles = username === viewer ? o.staffServer?.roles?.viewer : undefined;
+    if (roles !== undefined) return permissionsOfRoles(roles);
     if (staff === "moderator") return [...moderation, ...finance];
     if (staff !== "admin") return [...finance];
     return [
@@ -2191,8 +2203,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ended: false,
     };
   };
+  // The ones published from the administration (staff-announcements.ts) first, as the newest.
   const shownAnnouncements = () =>
-    around === "none" ? [] : seed.announcements.toReversed().map((a) => announcementOf(a.key));
+    around === "none"
+      ? []
+      : [
+          ...staffServer.server.shownAnnouncements(),
+          ...seed.announcements.toReversed().map((a) => announcementOf(a.key)),
+        ];
   // One whose window ended a month ago, which the history lists after the ones showing now: the seed publishes none,
   // since a window that ended cannot be set on a new announcement.
   const endedAnnouncement: Schema<"Announcement"> = {
@@ -2424,6 +2442,28 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     eventId: (key) => events.events.id(key),
     translates: o.translation?.reports === true && o.translation.provider === "answers",
     host: fakeHost,
+  });
+
+  // The administration of roles, custom emoji, announcements and webhooks (staff-server.ts).
+  const staffServer = staffServerHandlers({
+    started,
+    options: o.staffServer,
+    viewer,
+    visitor,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    known: (username) => people.some((p) => p.username === username),
+    accountId: idOf,
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    localEmojis: customEmojis,
+    host: fakeHost,
+    origin: fakeOrigin,
+    idAt,
+    problem: refusalOf,
+    notFound,
   });
 
   // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
@@ -3752,6 +3792,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...moderated.handlers,
 
+    // ---- The administration of roles, custom emoji, announcements and webhooks ----------------------------------------
+
+    ...staffServer.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3972,6 +4016,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     events: events.events,
     supporters: supporting.supporters,
     reports: moderated.reports,
+    staffServer: staffServer.server,
     unimplemented,
     revocations,
     newPosts,

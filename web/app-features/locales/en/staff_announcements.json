@@ -1,0 +1,250 @@
+{
+  "staff_announcements.entry": {
+    "defaultMessage": "Announcements",
+    "description": "The name of the screen of the server's announcements to every local user, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_announcements.entry.hint": {
+    "defaultMessage": "News for everyone on this server",
+    "description": "The line under Announcements in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_announcements.write": {
+    "defaultMessage": "Write an announcement",
+    "description": "The button at the end of the title of /admin/announcements that opens the form of a new announcement. Read by administrators."
+  },
+  "staff_announcements.filters": {
+    "defaultMessage": "Filter announcements",
+    "description": "For assistive technology, the name of the filters over the list of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.filter.state": {
+    "defaultMessage": "State",
+    "description": "The filter of the announcements by where they stand (a draft, scheduled, showing, ended, withdrawn). Read by administrators."
+  },
+  "staff_announcements.filter.any": {
+    "defaultMessage": "Any state",
+    "description": "The choice of the state filter that keeps every announcement. Read by administrators."
+  },
+  "staff_announcements.loading": {
+    "defaultMessage": "Loading the announcements…",
+    "description": "At /admin/announcements while the list is read. Read by administrators."
+  },
+  "staff_announcements.failed": {
+    "defaultMessage": "The announcements could not be loaded.",
+    "description": "At /admin/announcements when the list could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.table": {
+    "defaultMessage": "Announcements",
+    "description": "For assistive technology, the name of the table of announcements at /admin/announcements. Read by administrators."
+  },
+  "staff_announcements.column.title": {
+    "defaultMessage": "Title",
+    "description": "The header of the column of the announcements' titles. Read by administrators."
+  },
+  "staff_announcements.column.window": {
+    "defaultMessage": "Shows",
+    "description": "The header of the column of when each announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.column.state": {
+    "defaultMessage": "State",
+    "description": "The header of the column of where each announcement stands. Read by administrators."
+  },
+  "staff_announcements.empty": {
+    "defaultMessage": "No announcement has been written yet. One you write shows here, as a draft until you publish it.",
+    "description": "At /admin/announcements while there is none. Read by administrators."
+  },
+  "staff_announcements.empty.filtered": {
+    "defaultMessage": "No announcement is in this state. Clear the filter to see every one.",
+    "description": "At /admin/announcements when the state filter keeps none. Read by administrators."
+  },
+  "staff_announcements.standing": {
+    "defaultMessage": "{standing, select, draft {Draft} scheduled {Scheduled} showing {Showing} ended {Ended} withdrawn {Withdrawn} other {{standing}}}",
+    "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
+  },
+  "staff_announcements.window.both": {
+    "defaultMessage": "From {from} until {until}",
+    "description": "When an announcement shows: both sides of its window, each a date and a time. Read by administrators."
+  },
+  "staff_announcements.window.from": {
+    "defaultMessage": "From {from}",
+    "description": "When an announcement shows: from a moment, until it is withdrawn. Read by administrators."
+  },
+  "staff_announcements.window.until": {
+    "defaultMessage": "From its publication until {until}",
+    "description": "When an announcement shows: from its publication until a moment. Read by administrators."
+  },
+  "staff_announcements.window.open": {
+    "defaultMessage": "From its publication until it is withdrawn",
+    "description": "When an announcement shows, with no window set. Read by administrators."
+  },
+  "staff_announcements.new": {
+    "defaultMessage": "New announcement",
+    "description": "The title of the form of a new announcement, at /admin/announcements/new. Read by administrators."
+  },
+  "staff_announcements.one": {
+    "defaultMessage": "Announcement",
+    "description": "The title of an announcement's page while it is read, or when its address names none. Read by administrators."
+  },
+  "staff_announcements.section": {
+    "defaultMessage": "Title",
+    "description": "The heading of the section of an announcement's title. Read by administrators."
+  },
+  "staff_announcements.title": {
+    "defaultMessage": "Title",
+    "description": "The field of an announcement's title, plain text on one line. Read by administrators."
+  },
+  "staff_announcements.title.rule": {
+    "defaultMessage": "Write a title of up to {max} characters on one line.",
+    "description": "Under the title of an announcement when it is empty, too long or has a line break. Read by administrators."
+  },
+  "staff_announcements.text": {
+    "defaultMessage": "Text",
+    "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
+  },
+  "staff_announcements.text.about": {
+    "defaultMessage": "Written in Markdown. Readers get it formatted, as it shows under What readers see once saved.",
+    "description": "Under the heading of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.placeholder": {
+    "defaultMessage": "What everyone on this server should know",
+    "description": "In the empty editor of an announcement's text. Read by administrators."
+  },
+  "staff_announcements.text.rule": {
+    "defaultMessage": "Write a text of up to {max} characters.",
+    "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
+  },
+  "staff_announcements.editor_failed": {
+    "defaultMessage": "The editor could not be loaded. Reload the page and try again.",
+    "description": "In the place of an announcement's editor when its part of the app could not be fetched. Read by administrators."
+  },
+  "staff_announcements.when": {
+    "defaultMessage": "When it shows",
+    "description": "The heading of the section of when an announcement shows to the readers. Read by administrators."
+  },
+  "staff_announcements.when.about": {
+    "defaultMessage": "In your time zone. Leave Starts empty to show it from its publication, and Ends empty to show it until it is withdrawn.",
+    "description": "Under the heading of when an announcement shows; Starts and Ends are the names of its two fields. Read by administrators."
+  },
+  "staff_announcements.when.invalid": {
+    "defaultMessage": "Enter a date and a time that exist, or leave it empty.",
+    "description": "Under a side of an announcement's window that holds no valid date and time. Read by administrators."
+  },
+  "staff_announcements.starts": {
+    "defaultMessage": "Starts",
+    "description": "The field of the moment an announcement starts to show, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends": {
+    "defaultMessage": "Ends",
+    "description": "The field of the moment an announcement stops showing, a date and a time. Read by administrators."
+  },
+  "staff_announcements.ends.after": {
+    "defaultMessage": "Choose an end after the start.",
+    "description": "Under the end of an announcement's window when it is not after its start. Read by administrators."
+  },
+  "staff_announcements.save_draft": {
+    "defaultMessage": "Save as draft",
+    "description": "The button of a new announcement's form that keeps it as a draft, which nobody sees. Read by administrators."
+  },
+  "staff_announcements.save": {
+    "defaultMessage": "Save",
+    "description": "The button of an announcement's form that saves its changes. Read by administrators."
+  },
+  "staff_announcements.publish": {
+    "defaultMessage": "Publish",
+    "description": "The button of a new or a draft announcement's form that publishes it, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.publish.title": {
+    "defaultMessage": "Publish this announcement?",
+    "description": "The question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.text": {
+    "defaultMessage": "Everyone on this server sees it and is notified once it starts to show. Changes after that notify nobody again.",
+    "description": "Under the question before publishing an announcement. Read by administrators."
+  },
+  "staff_announcements.publish.cancel": {
+    "defaultMessage": "Not now",
+    "description": "The button that closes the question before publishing an announcement, keeping it as it was. Read by administrators."
+  },
+  "staff_announcements.published": {
+    "defaultMessage": "Published",
+    "description": "Beside Save once an announcement was published. Read by administrators."
+  },
+  "staff_announcements.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked and try again.",
+    "description": "Beside the buttons of an announcement's form when a field was refused, which is marked under it. Read by administrators."
+  },
+  "staff_announcements.save.failed": {
+    "defaultMessage": "Nothing was saved. Check your connection and try again.",
+    "description": "Beside the buttons of an announcement's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_announcements.save.withdrawn": {
+    "defaultMessage": "This announcement was withdrawn meanwhile, so it can no longer change. Reload the page to see it.",
+    "description": "Beside the buttons of an announcement's form when the server refused the change because it was withdrawn. Read by administrators."
+  },
+  "staff_announcements.standing.heading": {
+    "defaultMessage": "Where it stands",
+    "description": "The heading of the first section of an announcement's page: its state, when it shows, when it was published and revised. Read by administrators."
+  },
+  "staff_announcements.published_at": {
+    "defaultMessage": "Published {date}",
+    "description": "A fact of an announcement: when it was last published (a date and a time). Read by administrators."
+  },
+  "staff_announcements.revised_at": {
+    "defaultMessage": "Last changed {date}",
+    "description": "A fact of an announcement: when its text or window last changed (a date and a time). Read by administrators."
+  },
+  "staff_announcements.preview": {
+    "defaultMessage": "What readers see",
+    "description": "The heading of the section of an announcement's page that shows its title and its text as readers get them. Read by administrators."
+  },
+  "staff_announcements.preview.about": {
+    "defaultMessage": "As last saved.",
+    "description": "Under the heading of what readers see of an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw": {
+    "defaultMessage": "Withdraw the announcement",
+    "description": "The heading of the last section of an announcement's page, apart, which withdraws it. Read by administrators."
+  },
+  "staff_announcements.withdraw.about": {
+    "defaultMessage": "Nobody sees it again, and it can no longer change or be published. Its notifications are hidden.",
+    "description": "Under the heading of the section that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.press": {
+    "defaultMessage": "Withdraw",
+    "description": "The button that withdraws an announcement, and the confirmation of its question. Read by administrators."
+  },
+  "staff_announcements.withdraw.title": {
+    "defaultMessage": "Withdraw this announcement?",
+    "description": "The question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.text": {
+    "defaultMessage": "Nobody sees it again. This cannot be undone.",
+    "description": "Under the question before withdrawing an announcement. Read by administrators."
+  },
+  "staff_announcements.withdraw.cancel": {
+    "defaultMessage": "Keep it",
+    "description": "The button that closes the question before withdrawing an announcement, keeping it. Read by administrators."
+  },
+  "staff_announcements.withdraw.failed": {
+    "defaultMessage": "The announcement was not withdrawn. Check your connection and try again.",
+    "description": "In the section that withdraws an announcement when it failed. Read by administrators."
+  },
+  "staff_announcements.irreversible": {
+    "defaultMessage": "This cannot be undone.",
+    "description": "The mark beside the button that withdraws an announcement. Read by administrators."
+  },
+  "staff_announcements.loading_one": {
+    "defaultMessage": "Loading the announcement…",
+    "description": "On an announcement's page while it is read. Read by administrators."
+  },
+  "staff_announcements.failed_one": {
+    "defaultMessage": "The announcement could not be loaded.",
+    "description": "On an announcement's page when it could not be read, before Try again. Read by administrators."
+  },
+  "staff_announcements.missing": {
+    "defaultMessage": "There is no announcement at this address.",
+    "description": "At /admin/announcements/{id} for an ID no announcement has, before the link to all announcements. Read by administrators."
+  },
+  "staff_announcements.all": {
+    "defaultMessage": "All announcements",
+    "description": "The link to /admin/announcements under the sentence that an address names no announcement. Read by administrators."
+  }
+}

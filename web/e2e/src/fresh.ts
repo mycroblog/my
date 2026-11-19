@@ -7,7 +7,7 @@
 // reading the clock.
 
 import { randomBytes, randomUUID } from "node:crypto";
-import { all, type Api, type components } from "@mycroblog/mykit";
+import { all, ProblemError, type Api, type components } from "@mycroblog/mykit";
 import type { Drawing } from "./drawing";
 import { silentMP3, tinyWebM } from "./av";
 import {
@@ -43,6 +43,12 @@ export type FreshPersonOptions = {
   admin?: boolean;
   /** Who may read the person's lists of follows and followers (FR-311); everyone by default. */
   followsVisibility?: components["schemas"]["FollowsVisibility"];
+  /**
+   * A role the person holds, made by the scenario's administrator the first time a test asks for its key (at place 1,
+   * with `permissions`), and granted to the person: the same key with the same permissions in every test that names
+   * it (`create_custom_emojis`: a person who asks for custom emoji).
+   */
+  role?: { key: string; permissions: readonly components["schemas"]["Permission"][] };
 };
 
 /**
@@ -202,6 +208,7 @@ export class Fresh {
     if (error !== undefined) throw new Error(`fresh: the profile of ${p.username} was refused`);
     for (const followee of o.follows ?? []) await this.#follow(p, followee, true);
     for (const follower of o.followedBy ?? []) await this.#follow(follower, p, true);
+    if (o.role !== undefined) await this.#grant(p, o.role);
     if (o.totp === true) p.totp = await enrollTOTP(api);
     return p;
   }
@@ -430,6 +437,19 @@ export class Fresh {
       name: `Fresh ${id.slice(0, 8)}`,
       username: `fresh_${id}`,
     };
+  }
+
+  /** Grants `p` the role of `role.key`, which the administrator makes first where the server has none of that key. */
+  async #grant(p: Person, role: { key: string; permissions: readonly components["schemas"]["Permission"][] }) {
+    const api = await this.#staff("admin");
+    try {
+      await api.POST("/admin/roles", { body: { key: role.key, position: 1, permissions: [...role.permissions] } });
+    } catch (e) {
+      // Another test, or another run of this one, made it already: the key is taken, the role is the same.
+      if (!(e instanceof ProblemError && e.status === 422)) throw e;
+    }
+    const account = await this.#account(p);
+    await api.PUT("/admin/accounts/{id}/roles/{role}", { params: { path: { id: account.id, role: role.key } } });
   }
 
   /** The scenario's administrator, and its moderator. */

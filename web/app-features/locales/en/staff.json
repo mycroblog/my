@@ -35,6 +35,14 @@
     "defaultMessage": "What waits for moderators",
     "description": "The heading of the group of moderation screens that hold what waits for a moderator (reports, later appeals and registrations)."
   },
+  "staff.group.server": {
+    "defaultMessage": "This server",
+    "description": "The heading at /admin of the group of screens of the server's own settings, texts and rules. Read by administrators."
+  },
+  "staff.group.connections": {
+    "defaultMessage": "Connections",
+    "description": "The heading at /admin of the group of screens of what the server connects to: relays, login providers, OAuth apps. Read by administrators."
+  },
   "staff.entry.reports": {
     "defaultMessage": "Reports",
     "description": "The name of the moderators' queue of reports, in the list at /moderation and as the title of its screen."

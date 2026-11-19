@@ -1,0 +1,298 @@
+{
+  "staff_roles.entry": {
+    "defaultMessage": "Roles",
+    "description": "The name of the screen of the roles and their permissions, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_roles.entry.hint": {
+    "defaultMessage": "Who may do what, and their badges",
+    "description": "The line under Roles in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_roles.loading": {
+    "defaultMessage": "Loading the roles…",
+    "description": "On a screen of roles while the roles are read. Read by administrators."
+  },
+  "staff_roles.failed": {
+    "defaultMessage": "The roles could not be loaded.",
+    "description": "On a screen of roles when the roles could not be read, before Try again. Read by administrators."
+  },
+  "staff_roles.missing": {
+    "defaultMessage": "There is no role at this address. It may have been deleted.",
+    "description": "At /admin/roles/{key} for a key no role has, before the link to all roles. Read by administrators."
+  },
+  "staff_roles.all": {
+    "defaultMessage": "All roles",
+    "description": "The link to /admin/roles under the sentence that an address names no role. Read by administrators."
+  },
+  "staff_roles.list.count": {
+    "defaultMessage": "{count, plural, one {# role} other {# roles}}",
+    "description": "The heading of the list of every role at /admin/roles: how many there are. Read by administrators."
+  },
+  "staff_roles.list.about": {
+    "defaultMessage": "Your highest role is {key}, at place {position}. You can change only the roles at or below it, and give or take only the permissions you hold.",
+    "description": "Under the heading of the roles at /admin/roles: the reader's highest role (its key, as written) and what that lets them change. Read by administrators."
+  },
+  "staff_roles.add": {
+    "defaultMessage": "Add a role",
+    "description": "The button at the end of the heading of the roles that opens the form of a new role. Read by administrators."
+  },
+  "staff_roles.row.place": {
+    "defaultMessage": "Place {position}",
+    "description": "A fact of a role in a list: its place among the roles, a number from 0 to 1000; a higher one outranks a lower one. Read by administrators."
+  },
+  "staff_roles.row.permissions": {
+    "defaultMessage": "{count, plural, =0 {No permissions} one {# permission} other {# permissions}}",
+    "description": "A fact of a role in the list of roles: how many permissions it grants. Read by administrators."
+  },
+  "staff_roles.row.badge": {
+    "defaultMessage": "Badge: {label}",
+    "description": "A fact of a role in the list of roles: the label of its badge, as the staff wrote it. Read by administrators."
+  },
+  "staff_roles.state.above": {
+    "defaultMessage": "Above yours",
+    "description": "At the end of a role's row: the role is above the reader's highest role, so they cannot change, grant or revoke it. Read by administrators."
+  },
+  "staff_roles.state.plan": {
+    "defaultMessage": "From a plan",
+    "description": "At the end of a role's row: a supporter plan grants the role, so its plan, not the reader, sets it. Read by administrators."
+  },
+  "staff_roles.state.builtin": {
+    "defaultMessage": "Built in",
+    "description": "At the end of a role's row: one of the server's own roles (admin, moderator), which cannot be deleted. Read by administrators."
+  },
+  "staff_roles.fixed.above": {
+    "defaultMessage": "This role is above your highest role, {key}, so you cannot change it.",
+    "description": "On the page of a role above the reader's highest role (its key, as written), under what the role is. Read by administrators."
+  },
+  "staff_roles.fixed.admin": {
+    "defaultMessage": "The administrator role always has every permission and the highest place. Only its badge can change.",
+    "description": "On the page of the built-in admin role, under what it is. Read by administrators."
+  },
+  "staff_roles.fixed.plan": {
+    "defaultMessage": "A supporter plan grants this role. Change its place and permissions from the plan.",
+    "description": "On the page of a role a supporter plan grants, under what it is. Read by administrators."
+  },
+  "staff_roles.permission": {
+    "defaultMessage": "{permission, select, manage_reports {Handle reports} manage_accounts {Moderate accounts} manage_domains {Moderate other servers} manage_rules {Edit the rules} manage_settings {Change the server settings} manage_roles {Manage roles} manage_invites {Manage invites} view_audit {Read the audit log} manage_jobs {Manage jobs} manage_login_recovery {Recover sign-ins} manage_custom_emojis {Manage custom emoji} manage_webhooks {Manage webhooks} manage_announcements {Write announcements} manage_finance {Manage the finance} view_finance {Read the finance} manage_supporters {Manage the supporter program} create_custom_emojis {Request custom emoji} manage_oauth_apps {Manage OAuth apps} manage_service_closure {Announce the closure} start_voice_rooms {Open voice chat rooms} manage_errors {Handle errors} manage_login_providers {Manage login providers} create_invites {Create invites} keep_posts_longer {Keep posts longer} create_articles {Write articles} create_events {Create events} other {{permission}}}",
+    "description": "The name of a permission a role grants, as a checkbox of a role's form and in a list of them. Read by administrators."
+  },
+  "staff_roles.role": {
+    "defaultMessage": "Role",
+    "description": "The heading of the section of a role's name and place, on a role's page and the form of a new one. Read by administrators."
+  },
+  "staff_roles.key": {
+    "defaultMessage": "Name",
+    "description": "The field of a new role's name, its key, which never changes later. Read by administrators."
+  },
+  "staff_roles.key.rule": {
+    "defaultMessage": "1 to 64 lowercase letters (a to z), digits, _ and -. It cannot be changed later.",
+    "description": "Under the name of a new role: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_roles.key.taken": {
+    "defaultMessage": "Another role is named {key}. Choose another name.",
+    "description": "Under the name of a new role when another role has it. Read by administrators."
+  },
+  "staff_roles.position": {
+    "defaultMessage": "Place",
+    "description": "The field of a role's place among the roles, a number. Read by administrators."
+  },
+  "staff_roles.position.about": {
+    "defaultMessage": "From 0 to {max}. A role outranks those at a lower place.",
+    "description": "Under the place of a role: the numbers the reader may give it (up to their own highest role) and what the place means. Read by administrators."
+  },
+  "staff_roles.position.rule": {
+    "defaultMessage": "Choose a place from 0 to {max}.",
+    "description": "Under the place of a role when the server refused it. Read by administrators."
+  },
+  "staff_roles.position.reach": {
+    "defaultMessage": "Choose a place from 0 to {max}, no higher than your own highest role.",
+    "description": "Under the place of a role when it is empty or above what the reader may give. Read by administrators."
+  },
+  "staff_roles.permissions": {
+    "defaultMessage": "Permissions",
+    "description": "The heading of the section of a role's permissions, a checkbox each. Read by administrators."
+  },
+  "staff_roles.permissions.about": {
+    "defaultMessage": "What the people who hold the role may do. You can give or take only the permissions you hold.",
+    "description": "Under the heading of a role's permissions. Read by administrators."
+  },
+  "staff_roles.permissions.fixed": {
+    "defaultMessage": "It also grants {names}, which you do not hold, so they stay as they are.",
+    "description": "Under the checkboxes of a role's permissions: the permissions the role grants that the reader lacks, as a list. Read by administrators."
+  },
+  "staff_roles.permissions.refused": {
+    "defaultMessage": "These permissions could not be saved. Check them and save again.",
+    "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
+  },
+  "staff_roles.permissions.missing": {
+    "defaultMessage": "Your roles no longer grant {names}, so you cannot give or take it. Leave it as it was.",
+    "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
+  },
+  "staff_roles.facts.permissions": {
+    "defaultMessage": "Grants {names}.",
+    "description": "On the page of a role the reader cannot change: the permissions it grants, as a list. Read by administrators."
+  },
+  "staff_roles.facts.no_permissions": {
+    "defaultMessage": "Grants no permission.",
+    "description": "On the page of a role the reader cannot change, for one with no permission. Read by administrators."
+  },
+  "staff_roles.badge": {
+    "defaultMessage": "Badge",
+    "description": "The heading of the section of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.about": {
+    "defaultMessage": "A label the people who hold the role may show on their profile. Leave it empty for none.",
+    "description": "Under the heading of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.label": {
+    "defaultMessage": "Label",
+    "description": "The field of the label of a role's badge. Read by administrators."
+  },
+  "staff_roles.badge.label.rule": {
+    "defaultMessage": "Write up to {max} characters on one line.",
+    "description": "Under the label of a role's badge when it is too long or has a line break. Read by administrators."
+  },
+  "staff_roles.badge.color": {
+    "defaultMessage": "Color",
+    "description": "The choice of the color of a role's badge, with the badge as it shows under it. Read by administrators."
+  },
+  "staff_roles.badge.color.name": {
+    "defaultMessage": "{color, select, neutral {Gray} red {Red} orange {Orange} yellow {Yellow} green {Green} teal {Teal} blue {Blue} purple {Purple} pink {Pink} other {{color}}}",
+    "description": "A color a role's badge may take, in the choice of its color. Read by administrators."
+  },
+  "staff_roles.badge.color.refused": {
+    "defaultMessage": "This color cannot be used. Choose another.",
+    "description": "Under the color of a role's badge when the server refused it. Read by administrators."
+  },
+  "staff_roles.save": {
+    "defaultMessage": "Save",
+    "description": "The button of the submit bar of a role's form. Read by administrators."
+  },
+  "staff_roles.create": {
+    "defaultMessage": "Create role",
+    "description": "The button of the submit bar of a new role's form. Read by administrators."
+  },
+  "staff_roles.new": {
+    "defaultMessage": "New role",
+    "description": "The title of the form of a new role, at /admin/roles/new. Read by administrators."
+  },
+  "staff_roles.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked and save again.",
+    "description": "Beside Save when the server or the form refused a field of a role, which is marked under it. Read by administrators."
+  },
+  "staff_roles.save.failed": {
+    "defaultMessage": "Nothing was saved. Check your connection and try again.",
+    "description": "Beside Save of a role's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_roles.save.builtin": {
+    "defaultMessage": "The administrator role keeps every permission and its place. Nothing was saved.",
+    "description": "Beside Save of a role's form when the server refused a change of a built-in role. Read by administrators."
+  },
+  "staff_roles.save.plan": {
+    "defaultMessage": "A supporter plan grants this role, so its place and permissions change from the plan. Nothing was saved.",
+    "description": "Beside Save of a role's form when the server refused a change that would break a supporter plan's role. Read by administrators."
+  },
+  "staff_roles.save.forbidden": {
+    "defaultMessage": "Your roles no longer allow this. Reload the page to see what you may do.",
+    "description": "Beside a role's Save, or in a section of an account's roles, when the server refused the reader the change (403). Read by administrators."
+  },
+  "staff_roles.delete": {
+    "defaultMessage": "Delete the role",
+    "description": "The heading of the last section of a role's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_roles.delete.about": {
+    "defaultMessage": "Only a role that nobody holds can be deleted.",
+    "description": "Under the heading of the section that deletes a role. Read by administrators."
+  },
+  "staff_roles.delete.press": {
+    "defaultMessage": "Delete",
+    "description": "The button that deletes a role, and the confirmation of its question. Read by administrators."
+  },
+  "staff_roles.delete.title": {
+    "defaultMessage": "Delete the role {key}?",
+    "description": "The question before deleting a role (its key, as written). Read by administrators."
+  },
+  "staff_roles.delete.text": {
+    "defaultMessage": "The role and its badge are deleted for good. Type its name to delete it.",
+    "description": "Under the question before deleting a role, over the field of its name to type. Read by administrators."
+  },
+  "staff_roles.delete.cancel": {
+    "defaultMessage": "Keep the role",
+    "description": "The button that closes the question before deleting a role, keeping it. Read by administrators."
+  },
+  "staff_roles.delete.held": {
+    "defaultMessage": "People hold this role, so it was not deleted. Revoke it from them first.",
+    "description": "In the section that deletes a role when the server refused it because users hold it. Read by administrators."
+  },
+  "staff_roles.delete.failed": {
+    "defaultMessage": "The role was not deleted. Check your connection and try again.",
+    "description": "In the section that deletes a role when the deletion failed for another reason. Read by administrators."
+  },
+  "staff_roles.irreversible": {
+    "defaultMessage": "This cannot be undone.",
+    "description": "The mark beside the button that deletes a role. Read by administrators."
+  },
+  "staff_roles.account": {
+    "defaultMessage": "Roles",
+    "description": "The heading of the section of an account's Management screen that lists the roles it holds, with Grant and Revoke. Read by administrators."
+  },
+  "staff_roles.account.about": {
+    "defaultMessage": "What this person may do. You can grant and revoke only the roles at or below your own that hold no permission you lack.",
+    "description": "Under the heading of an account's roles. Read by administrators."
+  },
+  "staff_roles.account.none": {
+    "defaultMessage": "This person holds no role.",
+    "description": "In the section of an account's roles while it holds none. Read by administrators."
+  },
+  "staff_roles.account.none_to_grant": {
+    "defaultMessage": "There is no other role you may grant.",
+    "description": "In the section of an account's roles, in the place of Grant, when the reader may grant none of the roles it lacks. Read by administrators."
+  },
+  "staff_roles.account.grant_role": {
+    "defaultMessage": "Role to grant",
+    "description": "The choice of a role to grant to an account, beside Grant. Read by administrators."
+  },
+  "staff_roles.account.grant": {
+    "defaultMessage": "Grant",
+    "description": "The button that grants the chosen role to an account. Read by administrators."
+  },
+  "staff_roles.account.revoke": {
+    "defaultMessage": "Revoke",
+    "description": "The button of a role an account holds that takes it from the account. Read by administrators."
+  },
+  "staff_roles.account.granted": {
+    "defaultMessage": "{handle} holds {key} now.",
+    "description": "In the section of an account's roles once a role (its key, as written) was granted to the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.revoked": {
+    "defaultMessage": "{handle} no longer holds {key}.",
+    "description": "In the section of an account's roles once a role (its key) was revoked from the account (its handle). Read by administrators."
+  },
+  "staff_roles.account.grant_failed": {
+    "defaultMessage": "{key} was not granted. Check your connection and try again.",
+    "description": "In the section of an account's roles when granting a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.revoke_failed": {
+    "defaultMessage": "{key} was not revoked. Check your connection and try again.",
+    "description": "In the section of an account's roles when revoking a role (its key) failed. Read by administrators."
+  },
+  "staff_roles.account.plan": {
+    "defaultMessage": "A supporter plan grants {key}, so its subscriptions give and take it.",
+    "description": "In the section of an account's roles when the server refused to grant or revoke a plan's role (its key). Read by administrators."
+  },
+  "staff_roles.account.last_admin": {
+    "defaultMessage": "This is the server's only administrator, so the role stays. Grant it to someone else first.",
+    "description": "In the section of an account's roles when the server refused to revoke admin from its only holder. Read by administrators."
+  },
+  "staff_roles.account.own.title": {
+    "defaultMessage": "Revoke {key} from yourself?",
+    "description": "The question before the reader revokes a role (its key) from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.text": {
+    "defaultMessage": "You lose what the role lets you do, perhaps also the permission to grant it back.",
+    "description": "Under the question before the reader revokes a role from their own account. Read by administrators."
+  },
+  "staff_roles.account.own.cancel": {
+    "defaultMessage": "Keep the role",
+    "description": "The button that closes the question before the reader revokes a role from themselves, keeping it. Read by administrators."
+  }
+}

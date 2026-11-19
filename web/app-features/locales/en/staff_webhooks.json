@@ -1,0 +1,370 @@
+{
+  "staff_webhooks.entry": {
+    "defaultMessage": "Webhooks",
+    "description": "The name of the screen of the webhooks that send the server's events to other services, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff_webhooks.entry.hint": {
+    "defaultMessage": "Send the server's events to other services",
+    "description": "The line under Webhooks in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff_webhooks.loading": {
+    "defaultMessage": "Loading the webhooks…",
+    "description": "At /admin/webhooks while the webhooks are read. Read by administrators."
+  },
+  "staff_webhooks.failed": {
+    "defaultMessage": "The webhooks could not be loaded.",
+    "description": "At /admin/webhooks when the webhooks could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.one.loading": {
+    "defaultMessage": "Loading the webhook…",
+    "description": "At /admin/webhooks/{id} while the webhook is read. Read by administrators."
+  },
+  "staff_webhooks.one.failed": {
+    "defaultMessage": "The webhook could not be loaded.",
+    "description": "At /admin/webhooks/{id} when the webhook could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.missing": {
+    "defaultMessage": "There is no webhook at this address. It may have been deleted.",
+    "description": "At /admin/webhooks/{id} for an ID that names no webhook, before the link to all webhooks. Read by administrators."
+  },
+  "staff_webhooks.all": {
+    "defaultMessage": "All webhooks",
+    "description": "The link to /admin/webhooks under the sentence that an address names no webhook. Read by administrators."
+  },
+  "staff_webhooks.list.count": {
+    "defaultMessage": "{count, plural, one {# webhook} other {# webhooks}}",
+    "description": "The heading of the list of webhooks at /admin/webhooks: how many there are. Read by administrators."
+  },
+  "staff_webhooks.list.about": {
+    "defaultMessage": "Each webhook posts the events it receives to its address, signed with its secret. One whose deliveries keep failing is turned off by the server.",
+    "description": "Under the heading of the webhooks. Read by administrators."
+  },
+  "staff_webhooks.add": {
+    "defaultMessage": "Set up a webhook",
+    "description": "The button that opens the form of a new webhook, at the end of the webhooks' heading or under the sentence that there is none. Read by administrators."
+  },
+  "staff_webhooks.empty": {
+    "defaultMessage": "No webhook yet. Set one up to send the server's events to another service.",
+    "description": "In the list of webhooks while there is none, over Set up a webhook. Read by administrators."
+  },
+  "staff_webhooks.row.events": {
+    "defaultMessage": "{count, plural, one {# event} other {# events}}",
+    "description": "A fact of a webhook in the list: how many kinds of events it receives. Read by administrators."
+  },
+  "staff_webhooks.state.on": {
+    "defaultMessage": "On",
+    "description": "At the end of a webhook's row: it receives its events. Read by administrators."
+  },
+  "staff_webhooks.state.off": {
+    "defaultMessage": "Off",
+    "description": "At the end of a webhook's row: it receives nothing. Read by administrators."
+  },
+  "staff_webhooks.standing.failing": {
+    "defaultMessage": "{count, plural, one {# delivery failed} other {# deliveries failed in a row}} since {since}",
+    "description": "Where a webhook that is on stands, in its row: how many attempts failed in a row and since when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.standing.failing_off": {
+    "defaultMessage": "Turned off by the server: its deliveries kept failing",
+    "description": "Where a webhook stands, in its row, after the server turned it off for deliveries that failed for 72 hours and 20 attempts. Read by administrators."
+  },
+  "staff_webhooks.standing.gone": {
+    "defaultMessage": "Turned off by the server: its address answered that it is gone",
+    "description": "Where a webhook stands, in its row, after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.new": {
+    "defaultMessage": "New webhook",
+    "description": "The title of the form of a new webhook, at /admin/webhooks/new. Read by administrators."
+  },
+  "staff_webhooks.create": {
+    "defaultMessage": "Set up",
+    "description": "The button of the submit bar of a new webhook's form. Read by administrators."
+  },
+  "staff_webhooks.save": {
+    "defaultMessage": "Save",
+    "description": "The button of the submit bar of a webhook's form. Read by administrators."
+  },
+  "staff_webhooks.endpoint": {
+    "defaultMessage": "Where it posts",
+    "description": "The heading of the section of a webhook's address and description. Read by administrators."
+  },
+  "staff_webhooks.url": {
+    "defaultMessage": "Address",
+    "description": "The field of the URL a webhook posts its messages to, and the name of that fact on a webhook's page. Read by administrators."
+  },
+  "staff_webhooks.url.rule": {
+    "defaultMessage": "An address that starts with https:// or http:// and has no user name and no part after #, up to 2048 bytes.",
+    "description": "Under the address of a webhook: the rule its value follows, also when it was refused. Read by administrators."
+  },
+  "staff_webhooks.description": {
+    "defaultMessage": "What it is for",
+    "description": "The field of a webhook's description, optional. Read by administrators."
+  },
+  "staff_webhooks.description.rule": {
+    "defaultMessage": "Write up to {max} characters on one line.",
+    "description": "Under the description of a webhook when it is too long or has a control character. Read by administrators."
+  },
+  "staff_webhooks.group": {
+    "defaultMessage": "{group, select, reports {Reports} accounts {Accounts and registrations} domains {Other servers} posts {Posts} emoji {Custom emoji} errors {Errors} other {{group}}}",
+    "description": "The heading of a group of events a webhook may receive, a checkbox each. Read by administrators."
+  },
+  "staff_webhooks.event": {
+    "defaultMessage": "{event, select, report_created {A report is filed} report_resolved {A report is resolved} report_reopened {A report is reopened} registration_pending {A registration awaits approval} account_created {An account is created} account_updated {A local account changes its profile} moderation_action_created {An account is moderated} moderation_action_lifted {An account's moderation is lifted} appeal_created {An appeal is made} domain_moderation_action_created {A server is moderated} domain_moderation_action_lifted {A server's moderation is lifted} status_created {A local account posts publicly} custom_emoji_created {A custom emoji is added} custom_emoji_updated {A custom emoji changes} custom_emoji_deleted {A custom emoji is deleted} error_group_created {A new error happens} error_group_regressed {A resolved error happens again} webhook_test {Test message} other {{event}}}",
+    "description": "An event a webhook may receive, as a checkbox of its form and as a delivery's name in its history; webhook_test is the test message. Read by administrators."
+  },
+  "staff_webhooks.events.none": {
+    "defaultMessage": "Choose at least one event.",
+    "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
+  },
+  "staff_webhooks.events.missing": {
+    "defaultMessage": "Your roles no longer allow events that need {names}. Leave them as they were.",
+    "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
+  },
+  "staff_webhooks.events.fixed": {
+    "defaultMessage": "Other events",
+    "description": "The heading of the section that names the events of a webhook the reader may not change. Read by administrators."
+  },
+  "staff_webhooks.events.kept": {
+    "defaultMessage": "It also receives {names}, which your roles do not let you change, so they stay as they are.",
+    "description": "On a webhook's form: the events it receives that the reader may not change (a list). Read by administrators."
+  },
+  "staff_webhooks.events.left": {
+    "defaultMessage": "Your roles do not let you choose {names}.",
+    "description": "On a webhook's form: the events the reader may not subscribe it to (a list). Read by administrators."
+  },
+  "staff_webhooks.save.refused": {
+    "defaultMessage": "Nothing was saved. Fix what is marked and save again.",
+    "description": "Beside Save when the server or the form refused a field of a webhook, which is marked under it. Read by administrators."
+  },
+  "staff_webhooks.save.failed": {
+    "defaultMessage": "Nothing was saved. Check your connection and try again.",
+    "description": "Beside Save of a webhook's form when the save failed with no field named. Read by administrators."
+  },
+  "staff_webhooks.save.forbidden": {
+    "defaultMessage": "Your roles no longer allow this. Reload the page to see what you may do.",
+    "description": "Beside Save of a webhook's form when the server refused the reader (403). Read by administrators."
+  },
+  "staff_webhooks.secret": {
+    "defaultMessage": "Secret",
+    "description": "The heading of the section of a webhook's secret shown once, and the name of the value to copy. Read by administrators."
+  },
+  "staff_webhooks.secret.once": {
+    "defaultMessage": "It is shown only now. Copy it into the service that receives the messages: it checks their signatures with it.",
+    "description": "Right over a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.copy": {
+    "defaultMessage": "Copy the secret",
+    "description": "The button that copies a webhook's secret shown once. Read by administrators."
+  },
+  "staff_webhooks.secret.created": {
+    "defaultMessage": "The webhook is set up",
+    "description": "The title of the view that takes the form's place once a new webhook was set up, over its secret. Read by administrators."
+  },
+  "staff_webhooks.secret.created.about": {
+    "defaultMessage": "It receives the events you chose from now on, signed with this secret.",
+    "description": "Under the title that a new webhook is set up. Read by administrators."
+  },
+  "staff_webhooks.secret.rotated": {
+    "defaultMessage": "The webhook has a new secret",
+    "description": "The title of the view that takes the place of the new-secret section once a new secret was made. Read by administrators."
+  },
+  "staff_webhooks.secret.rotated.about": {
+    "defaultMessage": "It signs every message from now on. For 24 hours the previous secret signs them too, so the receiving service can switch without losing one.",
+    "description": "Under the title that a webhook has a new secret. Read by administrators."
+  },
+  "staff_webhooks.secret.done": {
+    "defaultMessage": "Done",
+    "description": "The button after a secret shown once, which leaves it: to the new webhook's page, or back to the webhook's page as it was. Read by administrators."
+  },
+  "staff_webhooks.summary.on": {
+    "defaultMessage": "On",
+    "description": "The title of a webhook's summary while it receives its events and its last delivery worked. Read by administrators."
+  },
+  "staff_webhooks.summary.on.about": {
+    "defaultMessage": "It receives the events it subscribes to.",
+    "description": "Under the title that a webhook is on. Read by administrators."
+  },
+  "staff_webhooks.summary.failing": {
+    "defaultMessage": "Its deliveries are failing",
+    "description": "The title of a webhook's summary while it is on and its last attempts failed. Read by administrators."
+  },
+  "staff_webhooks.summary.failing.about": {
+    "defaultMessage": "{count, plural, one {# attempt has failed} other {# attempts in a row have failed}} since {since}. The server turns the webhook off once failures span 72 hours and number 20.",
+    "description": "Under the title that a webhook's deliveries are failing: how many attempts, since when (a date and time), and when the server turns it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off": {
+    "defaultMessage": "Off",
+    "description": "The title of a webhook's summary after an administrator turned it off. Read by administrators."
+  },
+  "staff_webhooks.summary.off.about": {
+    "defaultMessage": "It receives nothing until it is turned on again. What happens meanwhile is not sent later.",
+    "description": "Under the title that a webhook is off. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off": {
+    "defaultMessage": "Turned off by the server",
+    "description": "The title of a webhook's summary after the server turned it off for deliveries that kept failing. Read by administrators."
+  },
+  "staff_webhooks.summary.failing_off.about": {
+    "defaultMessage": "Its deliveries failed for 72 hours and 20 attempts in a row. Turn it on once its address works again.",
+    "description": "Under the title that the server turned a webhook off for failing deliveries. Read by administrators."
+  },
+  "staff_webhooks.summary.gone": {
+    "defaultMessage": "Turned off by the server",
+    "description": "The title of a webhook's summary after the server turned it off because its address answered 410 Gone. Read by administrators."
+  },
+  "staff_webhooks.summary.gone.about": {
+    "defaultMessage": "Its address answered that it is gone (410). Change the address, or turn it on if it works again.",
+    "description": "Under the title that the server turned a webhook off because its address said it is gone. Read by administrators."
+  },
+  "staff_webhooks.test": {
+    "defaultMessage": "Send a test",
+    "description": "The button that sends a test message to a webhook that is on. Read by administrators."
+  },
+  "staff_webhooks.test.sent": {
+    "defaultMessage": "A test message is on its way. It shows in the deliveries.",
+    "description": "Beside Send a test once the server took the test message. Read by administrators."
+  },
+  "staff_webhooks.test.failed": {
+    "defaultMessage": "The test was not sent. Check your connection and try again.",
+    "description": "Beside Send a test when the server did not take it. Read by administrators."
+  },
+  "staff_webhooks.turn_off": {
+    "defaultMessage": "Turn off",
+    "description": "The button that turns a webhook off. Read by administrators."
+  },
+  "staff_webhooks.turn_on": {
+    "defaultMessage": "Turn on",
+    "description": "The button that turns a webhook on. Read by administrators."
+  },
+  "staff_webhooks.turned_off": {
+    "defaultMessage": "The webhook is off.",
+    "description": "Beside the summary's buttons once a webhook was turned off. Read by administrators."
+  },
+  "staff_webhooks.turned_on": {
+    "defaultMessage": "The webhook is on.",
+    "description": "Beside the summary's buttons once a webhook was turned on. Read by administrators."
+  },
+  "staff_webhooks.switch.failed": {
+    "defaultMessage": "Nothing changed. Check your connection and try again.",
+    "description": "Beside the summary's buttons when turning a webhook on or off failed. Read by administrators."
+  },
+  "staff_webhooks.facts": {
+    "defaultMessage": "Webhook",
+    "description": "The heading of the section of what a webhook is: its address and dates. Read by administrators."
+  },
+  "staff_webhooks.facts.created": {
+    "defaultMessage": "Set up",
+    "description": "The name of the fact of when a webhook was set up, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.facts.revised": {
+    "defaultMessage": "Last changed",
+    "description": "The name of the fact of when a webhook's address, description or events last changed, over the date and time. Read by administrators."
+  },
+  "staff_webhooks.deliveries": {
+    "defaultMessage": "Deliveries",
+    "description": "The heading of the section of a webhook's deliveries of the last 14 days. Read by administrators."
+  },
+  "staff_webhooks.deliveries.about": {
+    "defaultMessage": "The messages of the last 14 days, newest first. A failed one is tried again for about 27 hours, and any can be sent again with the same message ID.",
+    "description": "Under the heading of a webhook's deliveries. Read by administrators."
+  },
+  "staff_webhooks.deliveries.loading": {
+    "defaultMessage": "Loading the deliveries…",
+    "description": "In the section of a webhook's deliveries while they are read. Read by administrators."
+  },
+  "staff_webhooks.deliveries.failed": {
+    "defaultMessage": "The deliveries could not be loaded.",
+    "description": "In the section of a webhook's deliveries when they could not be read, before Try again. Read by administrators."
+  },
+  "staff_webhooks.deliveries.more_failed": {
+    "defaultMessage": "The older deliveries could not be loaded. Try again.",
+    "description": "Under a webhook's deliveries when the next page failed, over Show more. Read by administrators."
+  },
+  "staff_webhooks.deliveries.empty": {
+    "defaultMessage": "Nothing was sent in the last 14 days.",
+    "description": "In the section of a webhook's deliveries while there is none. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempts": {
+    "defaultMessage": "{count, plural, =0 {Not sent yet} one {# attempt} other {# attempts}}",
+    "description": "A fact of a delivery: how many times it was sent. Read by administrators."
+  },
+  "staff_webhooks.delivery.attempt": {
+    "defaultMessage": "{outcome, select, succeeded {Answered {code}} http_error {Answered {code}} timeout {No answer within 15 seconds} connection_error {Could not connect} forbidden_destination {The server may not reach this address} other {{outcome}}} at {at}",
+    "description": "A fact of a delivery: what its last attempt got (an HTTP status code, or why it got none) and when (a date and time). Read by administrators."
+  },
+  "staff_webhooks.delivery.status": {
+    "defaultMessage": "{status, select, pending {Waiting} succeeded {Delivered} failing {Failing} other {{status}}}",
+    "description": "At the end of a delivery's row: where it stands. Read by administrators."
+  },
+  "staff_webhooks.delivery.redeliver": {
+    "defaultMessage": "Send again",
+    "description": "The button of a delivery that sends its message again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again": {
+    "defaultMessage": "It is sent again soon.",
+    "description": "The last line of a delivery's row once the server took Send again. Read by administrators."
+  },
+  "staff_webhooks.delivery.again_failed": {
+    "defaultMessage": "It was not sent again. Check your connection and try again.",
+    "description": "The last line of a delivery's row when Send again failed. Read by administrators."
+  },
+  "staff_webhooks.rotate": {
+    "defaultMessage": "New secret",
+    "description": "The heading of the section of a webhook's page that makes a new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.about": {
+    "defaultMessage": "Make one if the secret leaked or to change it. For 24 hours the previous secret signs messages too.",
+    "description": "Under the heading of the section that makes a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.press": {
+    "defaultMessage": "Make a new secret",
+    "description": "The button that makes a webhook's new secret, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.rotate.title": {
+    "defaultMessage": "Make a new secret?",
+    "description": "The question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.text": {
+    "defaultMessage": "The new secret is shown once. After 24 hours, only it signs the messages, so update the receiving service before then.",
+    "description": "Under the question before making a webhook's new secret. Read by administrators."
+  },
+  "staff_webhooks.rotate.cancel": {
+    "defaultMessage": "Keep the secret",
+    "description": "The button that closes the question before making a new secret, keeping the current one. Read by administrators."
+  },
+  "staff_webhooks.rotate.failed": {
+    "defaultMessage": "No new secret was made. Check your connection and try again.",
+    "description": "In the section that makes a webhook's new secret when it failed. Read by administrators."
+  },
+  "staff_webhooks.delete": {
+    "defaultMessage": "Delete the webhook",
+    "description": "The heading of the last section of a webhook's page, apart, which deletes it. Read by administrators."
+  },
+  "staff_webhooks.delete.about": {
+    "defaultMessage": "It receives nothing more, and its deliveries are no longer listed.",
+    "description": "Under the heading of the section that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.delete.press": {
+    "defaultMessage": "Delete",
+    "description": "The button that deletes a webhook, and the confirmation of its question. Read by administrators."
+  },
+  "staff_webhooks.delete.title": {
+    "defaultMessage": "Delete the webhook to {host}?",
+    "description": "The question before deleting a webhook, named by its address's host. Read by administrators."
+  },
+  "staff_webhooks.delete.text": {
+    "defaultMessage": "The webhook and its deliveries are deleted for good. Type its host to delete it.",
+    "description": "Under the question before deleting a webhook, over the field of its host to type. Read by administrators."
+  },
+  "staff_webhooks.delete.cancel": {
+    "defaultMessage": "Keep the webhook",
+    "description": "The button that closes the question before deleting a webhook, keeping it. Read by administrators."
+  },
+  "staff_webhooks.delete.failed": {
+    "defaultMessage": "The webhook was not deleted. Check your connection and try again.",
+    "description": "In the section that deletes a webhook when the deletion failed. Read by administrators."
+  },
+  "staff_webhooks.irreversible": {
+    "defaultMessage": "This cannot be undone.",
+    "description": "The mark beside the button that deletes a webhook. Read by administrators."
+  }
+}
