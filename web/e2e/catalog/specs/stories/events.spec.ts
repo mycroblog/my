@@ -8,7 +8,8 @@
 // tests' (web/design-system/src/event.dom.test.tsx); the stories' accessibility checks are the check of every story.
 
 import type { Locator, Page } from "@playwright/test";
-import { shownTexts } from "../boxes";
+import { shownTexts, smallestSide } from "../boxes";
+import { readCellByCell } from "../tables";
 import { expect, minimum, pc, test } from "../test";
 
 /** The story of the parts of an event named `name`. */
@@ -26,55 +27,6 @@ const columnsRow = (page: Page) =>
 /** The groups of the reader's answer named `name` (an answer alone; a date's answer in the poll). */
 const answers = (page: Page, name: string | RegExp) =>
   page.getByRole("radiogroup", { name, exact: typeof name === "string" });
-
-/**
- * The table named `name` as Chromium gives it to assistive technology, read cell by cell: for each row after the
- * first, each of its cells as `<the row's header> | <the column's header> | <the cell>`, a column's header counted by
- * the cell's place in its row; the first row is the columns' headers, and a row that does not line up with it, or a
- * table that is not there, is told as such. A name is the one Chromium computes, its spaces folded.
- */
-async function readCellByCell(page: Page, name: string): Promise<string[]> {
-  const cdp = await page.context().newCDPSession(page);
-  try {
-    await cdp.send("Accessibility.enable");
-    const { nodes } = await cdp.send("Accessibility.getFullAXTree");
-    type Node = (typeof nodes)[number];
-    const byId = new Map(nodes.map((node) => [node.nodeId, node]));
-    const roleOf = (node: Node) => String(node.role?.value ?? "");
-    const nameOf = (node: Node) =>
-      String(node.name?.value ?? "")
-        .replace(/\s+/g, " ")
-        .trim();
-    /** The nodes under `node` of the roles `roles`, not looking inside one of them, in the tree's order. */
-    const under = (node: Node, roles: readonly string[]): Node[] =>
-      (node.childIds ?? []).flatMap((id) => {
-        const child = byId.get(id);
-        if (child === undefined) return [];
-        if (!child.ignored && roles.includes(roleOf(child))) return [child];
-        return under(child, roles);
-      });
-    const table = nodes.find((node) => !node.ignored && roleOf(node) === "table" && nameOf(node) === name);
-    if (table === undefined) return [`no table named ${name}`];
-    const [head, ...rows] = under(table, ["row"]);
-    if (head === undefined) return ["no row"];
-    const columns = under(head, ["columnheader", "rowheader", "cell"]);
-    if (columns.some((column) => roleOf(column) !== "columnheader"))
-      return [`a first row of ${columns.map(roleOf).join(", ")}`];
-    return rows.flatMap((row) => {
-      const [date, ...cells] = under(row, ["columnheader", "rowheader", "cell"]);
-      if (date === undefined || roleOf(date) !== "rowheader" || cells.length + 1 !== columns.length)
-        return [`a row of ${[date, ...cells].map((cell) => (cell ? roleOf(cell) : "nothing")).join(", ")}`];
-      return cells.map(
-        (cell, i) =>
-          `${nameOf(date)} | ${columns[i + 1] ? nameOf(columns[i + 1] as Node) : ""} | ${
-            roleOf(cell) === "cell" ? nameOf(cell) : roleOf(cell)
-          }`,
-      );
-    });
-  } finally {
-    await cdp.detach();
-  }
-}
 
 /** Says that `part` holds `count` radios, and that none of them can be chosen. */
 const everyRadioDisabled = async (part: Locator | Page, count: number) => {
@@ -298,16 +250,3 @@ test("each story of an event's parts shows its state, and the date poll is read 
 
 /** The group of the reader's answer on the date whose header reads `date`, then the column's name. */
 const yoursOn = (date: string) => new RegExp(`^${date.replace(/[()]/g, "\\$&").replace(/ /g, "\\s*")}\\s*Your answer$`);
-
-/**
- * How many elements `targets` finds, and the sides of those smaller than the decided target (44 CSS px in both
- * directions; the decider's decision on #3236), as `<width>×<height>`.
- */
-const smallestSide = (targets: Locator) =>
-  targets.evaluateAll((elements) => {
-    const below = elements
-      .map((element) => element.getBoundingClientRect())
-      .filter(({ width, height }) => width < 44 || height < 44)
-      .map(({ width, height }) => `${Math.round(width)}×${Math.round(height)}`);
-    return { count: elements.length, below };
-  });
