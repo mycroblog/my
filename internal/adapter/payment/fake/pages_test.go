@@ -115,7 +115,7 @@ func TestCheckoutPage(t *testing.T) {
 
 	rec := e.get(path)
 	body := rec.Body.String()
-	if rec.Code != http.StatusOK || !strings.Contains(body, "Subscribe to Supporter") || !strings.Contains(body, "1200 JPY a month") ||
+	if rec.Code != http.StatusOK || !strings.Contains(body, "Subscribe to the supporter plan “Supporter”") || !strings.Contains(body, "1200 JPY a month") ||
 		!strings.Contains(body, `"fake":true`) || !strings.Contains(body, `"choices":{"action":"`+path+`"}`) || strings.Contains(body, `"card"`) {
 		t.Fatalf("GET the checkout = %d %s", rec.Code, body)
 	}

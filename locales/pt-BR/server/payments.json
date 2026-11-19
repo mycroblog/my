@@ -7,14 +7,6 @@
     "defaultMessage": "{amount, number} ienes por ano",
     "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
   },
-  "payments.checkout.title": {
-    "defaultMessage": "Assinar {plan}",
-    "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
-  },
-  "payments.error.declined": {
-    "defaultMessage": "O cartão foi recusado. Tente outro cartão.",
-    "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
-  },
   "payments.error.form": {
     "defaultMessage": "Verifique o e-mail, o nome no cartão e o cartão.",
     "description": "Error of the PAY.JP checkout and card pages when a field is missing or invalid."
@@ -22,10 +14,6 @@
   "payments.error.state": {
     "defaultMessage": "Esta página expirou. Comece de novo pela tela de onde você veio.",
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
-  },
-  "payments.error.three_d_secure": {
-    "defaultMessage": "Não foi possível verificar o cartão (3-D Secure). Tente de novo ou use outro cartão.",
-    "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
   },
   "payments.error.title": {
     "defaultMessage": "Pagamento",
@@ -62,10 +50,6 @@
   "payments.portal.changed": {
     "defaultMessage": "O cartão foi trocado.",
     "description": "Notice of the PAY.JP card page after a card change."
-  },
-  "payments.portal.resume_failed": {
-    "defaultMessage": "O cartão foi trocado, mas o pagamento falhou. Tente outro cartão.",
-    "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {
     "defaultMessage": "O cartão foi trocado e a assinatura foi retomada.",

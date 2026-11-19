@@ -3888,14 +3888,14 @@ func (l *Localizer) ServerPaymentsCheckoutPriceYear(amount float64) string {
 
 // ServerPaymentsCheckoutTitle formats "server:payments.checkout.title". Title of the PAY.JP checkout page. {plan} is the name of the plan.
 //
-//	en: Subscribe to {plan}
+//	en: Subscribe to the supporter plan “{plan}”
 func (l *Localizer) ServerPaymentsCheckoutTitle(plan string) string {
 	return l.format("server:payments.checkout.title", map[string]any{"plan": plan})
 }
 
 // ServerPaymentsErrorDeclined formats "server:payments.error.declined". Error of the PAY.JP checkout and card pages when the payment with the card failed.
 //
-//	en: The card was declined. Try another card.
+//	en: The card was declined, and nothing was charged. Try another card.
 func (l *Localizer) ServerPaymentsErrorDeclined() string {
 	return l.format("server:payments.error.declined", nil)
 }
@@ -3916,7 +3916,7 @@ func (l *Localizer) ServerPaymentsErrorState() string {
 
 // ServerPaymentsErrorThreeDSecure formats "server:payments.error.three_d_secure". Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed.
 //
-//	en: The card could not be verified (3-D Secure). Try again or use another card.
+//	en: The card could not be verified (3-D Secure), and nothing was charged. Try again or use another card.
 func (l *Localizer) ServerPaymentsErrorThreeDSecure() string {
 	return l.format("server:payments.error.three_d_secure", nil)
 }
@@ -4024,7 +4024,7 @@ func (l *Localizer) ServerPaymentsPortalChanged() string {
 
 // ServerPaymentsPortalResumeFailed formats "server:payments.portal.resume_failed". Alert of the PAY.JP card page when the payment that resumes a paused subscription failed.
 //
-//	en: The card was changed, but the payment failed. Try another card.
+//	en: The card was changed, but the payment that resumes the subscription failed, so it is still paused. Try another card.
 func (l *Localizer) ServerPaymentsPortalResumeFailed() string {
 	return l.format("server:payments.portal.resume_failed", nil)
 }

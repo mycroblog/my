@@ -8,11 +8,11 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.checkout.title": {
-    "defaultMessage": "‮Snqsɔɹıqǝ ʇo {plan}‬",
+    "defaultMessage": "‮Snqsɔɹıqǝ ʇo ʇɥǝ snddoɹʇǝɹ dʅɐu “{plan}”‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.error.declined": {
-    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ʍɐs pǝɔʅıuǝp. ⊥ɹʎ ɐuoʇɥǝɹ ɔɐɹp.‬",
+    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ʍɐs pǝɔʅıuǝp, ɐup uoʇɥıuƃ ʍɐs ɔɥɐɹƃǝp. ⊥ɹʎ ɐuoʇɥǝɹ ɔɐɹp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.error.form": {
@@ -24,7 +24,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.error.three_d_secure": {
-    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ɔonʅp uoʇ qǝ ʌǝɹıɟıǝp (3-ᗡ Sǝɔnɹǝ). ⊥ɹʎ ɐƃɐıu oɹ nsǝ ɐuoʇɥǝɹ ɔɐɹp.‬",
+    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ɔonʅp uoʇ qǝ ʌǝɹıɟıǝp (3-ᗡ Sǝɔnɹǝ), ɐup uoʇɥıuƃ ʍɐs ɔɥɐɹƃǝp. ⊥ɹʎ ɐƃɐıu oɹ nsǝ ɐuoʇɥǝɹ ɔɐɹp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.error.title": {
@@ -64,7 +64,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.portal.resume_failed": {
-    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ʍɐs ɔɥɐuƃǝp, qnʇ ʇɥǝ dɐʎɯǝuʇ ɟɐıʅǝp. ⊥ɹʎ ɐuoʇɥǝɹ ɔɐɹp.‬",
+    "defaultMessage": "‮⊥ɥǝ ɔɐɹp ʍɐs ɔɥɐuƃǝp, qnʇ ʇɥǝ dɐʎɯǝuʇ ʇɥɐʇ ɹǝsnɯǝs ʇɥǝ snqsɔɹıdʇıou ɟɐıʅǝp, so ıʇ ıs sʇıʅʅ dɐnsǝp. ⊥ɹʎ ɐuoʇɥǝɹ ɔɐɹp.‬",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "payments.portal.resumed": {

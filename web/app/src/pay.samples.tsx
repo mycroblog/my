@@ -26,14 +26,14 @@ const portalAction = "/payments/pages/payjp/portal";
 const back = "/settings/supporter";
 
 const words = {
-  checkoutTitle: { en: "Subscribe to Supporter", ja: "Supporter に加入する" },
+  checkoutTitle: { en: "Subscribe to the supporter plan “Supporter”", ja: "サポーターのプラン「Supporter」に加入する" },
   monthly: { en: "1,200 yen a month", ja: "月額 1,200 円" },
   fakeMonthly: { en: "500 JPY a month", ja: "月額 500 JPY" },
   tipTitle: { en: "Tip for my.example", ja: "my.example へのチップ" },
   tip: { en: "500 JPY, once", ja: "500 JPY (1 回だけ)" },
   threeDSecure: {
-    en: "The card could not be verified (3-D Secure). Try again or use another card.",
-    ja: "カードの本人認証 (3D セキュア) ができませんでした。もう一度試すか、別のカードを使ってください。",
+    en: "The card could not be verified (3-D Secure), and nothing was charged. Try again or use another card.",
+    ja: "カードの本人認証 (3D セキュア) ができませんでした。料金は請求されていません。もう一度試すか、別のカードを使ってください。",
   },
   fakeFailed: {
     en: "The payment failed, as asked. Pay or cancel.",
@@ -43,12 +43,12 @@ const words = {
   card: { en: "Visa ending in 4242, expires 12/2030", ja: "Visa (末尾 4242、有効期限 12/2030)" },
   changed: { en: "The card was changed.", ja: "カードを変更しました。" },
   resumeFailed: {
-    en: "The card was changed, but the payment failed. Try another card.",
-    ja: "カードを変更しましたが、支払いに失敗しました。別のカードを試してください。",
+    en: "The card was changed, but the payment that resumes the subscription failed, so it is still paused. Try another card.",
+    ja: "カードを変更しましたが、加入を再開する支払いに失敗したため、加入は一時停止されたままです。別のカードを試してください。",
   },
   amount: { en: "1,200 yen", ja: "1,200 円" },
   refunded: { en: "200 yen", ja: "200 円" },
-  errorTitle: { en: "Payment", ja: "お支払い" },
+  errorTitle: { en: "Payment", ja: "支払い" },
   expired: {
     en: "This page has expired. Start again from the screen you came from.",
     ja: "このページの有効期限が切れています。元の画面からやり直してください。",
