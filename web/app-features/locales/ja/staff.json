@@ -124,7 +124,7 @@
     "description": "The name of the column of the queue of reports that holds whether a report is open, who handles it, or that it is resolved."
   },
   "staff.reports.by": {
-    "defaultMessage": "{handle} さんの通報",
+    "defaultMessage": "{handle} からの通報",
     "description": "Under a reported account's handle in the queue of reports: who filed the report. {handle} is their handle."
   },
   "staff.reports.by_server": {
@@ -168,7 +168,7 @@
     "description": "The state of an open report that the reader handles, in the queue of reports."
   },
   "staff.report.state.assigned": {
-    "defaultMessage": "{handle} さんが担当",
+    "defaultMessage": "担当: {handle}",
     "description": "The state of an open report that another moderator handles, in the queue of reports. {handle} is their handle."
   },
   "staff.report.state.assigned_someone": {
@@ -396,15 +396,15 @@
     "description": "For assistive technology, the name of the facts of one change of a voice chat room's settings."
   },
   "staff.report.room.log": {
-    "defaultMessage": "ルームの記録",
+    "defaultMessage": "ルームにいた人",
     "description": "The heading, and the name for assistive technology, of the log of the voice chat room a report points at."
   },
   "staff.report.room.left": {
-    "defaultMessage": "{reason, select, moved {{handle} さんが別のルームへ移動} disconnected {{handle} さんの接続が切れた} removed {{handle} さんがルームから退出させられた} blocked {{handle} さんがブロックで退出} suspended {{handle} さんが凍結で退出} room_ended {{handle} さんが終了まで参加} other {{handle} さんが退出}}",
+    "defaultMessage": "{reason, select, moved {{handle} が別のルームへ移動} disconnected {{handle} の接続が切れた} removed {{handle} がルームから退出させられた} blocked {{handle} がブロックで退出} suspended {{handle} が凍結で退出} room_ended {{handle} が終了まで参加} other {{handle} が退出}}",
     "description": "An entry of a voice chat room's log on a report's screen: how the account of {handle} left."
   },
   "staff.report.room.removed": {
-    "defaultMessage": "{by} さんが {handle} さんをルームから退出させた",
+    "defaultMessage": "{by} が {handle} をルームから退出させた",
     "description": "An entry of a voice chat room's log on a report's screen. {by} removed {handle}, who may not join again."
   },
   "staff.report.room.end": {
@@ -416,11 +416,11 @@
     "description": "The term, in a report's facts, of how the voice chat room it points at ended."
   },
   "staff.report.room.joined": {
-    "defaultMessage": "{handle} さんが参加",
+    "defaultMessage": "{handle} が参加",
     "description": "An entry of a voice chat room's log on a report's screen. {handle} is who joined."
   },
   "staff.report.revision.by": {
-    "defaultMessage": "{handle} さんが設定を変更",
+    "defaultMessage": "{handle} が設定を変更",
     "description": "An entry of the log of a voice chat room or an event on a report's screen: a change of its settings. Details shows them."
   },
   "staff.report.revision.reported": {
@@ -472,7 +472,7 @@
     "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
   },
   "staff.report.event.cancelled_by": {
-    "defaultMessage": "{reason, select, moderator {モデレーターが中止} organizer_suspended {主催者の凍結で中止} organizer_deleted {主催者の削除で中止} other {主催者が中止}}",
+    "defaultMessage": "{reason, select, moderator {モデレーターによる} organizer_suspended {主催者の凍結による} organizer_deleted {主催者の削除による} other {主催者による}}",
     "description": "In a report's facts of a cancelled event: who or what cancelled it."
   },
   "staff.report.event.cancelled_at": {
@@ -488,7 +488,7 @@
     "description": "In the place of a report's notes while it has none."
   },
   "staff.report.note.by": {
-    "defaultMessage": "{handle} さん",
+    "defaultMessage": "{handle} が記入",
     "description": "Under a note on a report: who wrote it. {handle} is their handle."
   },
   "staff.report.note.cli": {
@@ -532,7 +532,7 @@
     "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
   },
   "staff.report.forward.confirm.about": {
-    "defaultMessage": "相手のモデレーターには、アカウントと投稿と書いた文が届き、通報者のことは何も届きません。通報を送れるのは 1 回だけです。取り消せません。",
+    "defaultMessage": "相手のモデレーターに届くのは、アカウント、投稿、あなたが書いた文だけで、通報者のことは届きません。通報を送れるのは 1 回だけです。取り消せません。",
     "description": "What the confirmation of sending a report to the account's server says it sends, and that it goes once."
   },
   "staff.report.forward.refused": {
@@ -544,7 +544,7 @@
     "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
   },
   "staff.report.forward.ask": {
-    "defaultMessage": "相手のサーバーに送る…",
+    "defaultMessage": "相手のサーバーに送信する…",
     "description": "The button that asks, in a confirmation, before a report goes to the reported account's server."
   },
   "staff.report.cancel": {
@@ -552,7 +552,7 @@
     "description": "The button of a confirmation on a report's screen that does nothing."
   },
   "staff.report.resolved": {
-    "defaultMessage": "{outcome, select, actioned {対応済み (処分した)} other {対応済み (処分は不要)}}",
+    "defaultMessage": "{outcome, select, actioned {対応済み (処分あり)} other {対応済み (処分は不要)}}",
     "description": "A resolved report's state in its facts, with how it was resolved."
   },
   "staff.report.reporter.review": {
@@ -564,7 +564,7 @@
     "description": "Who filed a report that another server sent, in its facts. {domain} is that server."
   },
   "staff.report.title": {
-    "defaultMessage": "{handle} さんへの通報",
+    "defaultMessage": "{handle} への通報",
     "description": "The title of a report's screen, for assistive technology and the browser's tab. {handle} is the reported account's handle."
   },
   "staff.report.translated_unnamed": {

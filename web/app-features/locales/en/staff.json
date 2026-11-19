@@ -180,7 +180,7 @@
     "description": "The state of a report a moderator resolved, in the queue of reports."
   },
   "staff.report.category": {
-    "defaultMessage": "{category, select, spam {Spam} legal {Illegal content} violation {Breaks the server's rules} other {Other}}",
+    "defaultMessage": "{category, select, spam {Spam} legal {Illegal content} violation {Breaks the server's rules} other {Something else}}",
     "description": "Why an account was reported, in the queue of reports, its filter, and the report's facts."
   },
   "staff.report.back": {
@@ -396,7 +396,7 @@
     "description": "For assistive technology, the name of the facts of one change of a voice chat room's settings."
   },
   "staff.report.room.log": {
-    "defaultMessage": "In the room",
+    "defaultMessage": "Who was in the room",
     "description": "The heading, and the name for assistive technology, of the log of the voice chat room a report points at."
   },
   "staff.report.room.left": {
@@ -532,7 +532,7 @@
     "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
   },
   "staff.report.forward.confirm.about": {
-    "defaultMessage": "Their moderators get the account, the posts and your text, and nothing of the reporter. A report can be sent only once. This cannot be undone.",
+    "defaultMessage": "Their moderators get the account, the posts and your text, but nothing about the reporter. A report can be sent only once. This cannot be undone.",
     "description": "What the confirmation of sending a report to the account's server says it sends, and that it goes once."
   },
   "staff.report.forward.refused": {
