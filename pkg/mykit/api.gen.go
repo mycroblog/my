@@ -27064,9 +27064,11 @@ type ClientInterface interface {
 	//
 	// The amounts that a tip, a one-time payment to the server's operation with nothing in
 	// return, may be: the operator's choices, smallest first, in one currency. A 404 while the
-	// server takes no tips (`Instance.tips_enabled`). To an authenticated user, it also says why
-	// they may not tip when they may not (`ineligible_reason`), the check that `POST /supporter/tips`
-	// makes.
+	// server takes no tips (`Instance.tips_enabled`). To a request whose access token grants
+	// `read:supporters`, it also says why the user may not tip when they may not
+	// (`ineligible_reason`, the check that `POST /supporter/tips` makes), and that answer is
+	// `no-store`; a request without a token, or with one that does not grant the scope, gets the
+	// amounts alone.
 	//
 	// Corresponds with GET /instance/tip_amounts (the `GetInstanceTipAmounts` operationId).
 	GetInstanceTipAmounts(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -38664,9 +38666,11 @@ func (c *Client) ListInstanceSupporters(ctx context.Context, params *ListInstanc
 //
 // The amounts that a tip, a one-time payment to the server's operation with nothing in
 // return, may be: the operator's choices, smallest first, in one currency. A 404 while the
-// server takes no tips (`Instance.tips_enabled`). To an authenticated user, it also says why
-// they may not tip when they may not (`ineligible_reason`), the check that `POST /supporter/tips`
-// makes.
+// server takes no tips (`Instance.tips_enabled`). To a request whose access token grants
+// `read:supporters`, it also says why the user may not tip when they may not
+// (`ineligible_reason`, the check that `POST /supporter/tips` makes), and that answer is
+// `no-store`; a request without a token, or with one that does not grant the scope, gets the
+// amounts alone.
 //
 // Corresponds with GET /instance/tip_amounts (the `GetInstanceTipAmounts` operationId).
 func (c *Client) GetInstanceTipAmounts(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -69026,9 +69030,11 @@ type ClientWithResponsesInterface interface {
 	//
 	// The amounts that a tip, a one-time payment to the server's operation with nothing in
 	// return, may be: the operator's choices, smallest first, in one currency. A 404 while the
-	// server takes no tips (`Instance.tips_enabled`). To an authenticated user, it also says why
-	// they may not tip when they may not (`ineligible_reason`), the check that `POST /supporter/tips`
-	// makes.
+	// server takes no tips (`Instance.tips_enabled`). To a request whose access token grants
+	// `read:supporters`, it also says why the user may not tip when they may not
+	// (`ineligible_reason`, the check that `POST /supporter/tips` makes), and that answer is
+	// `no-store`; a request without a token, or with one that does not grant the scope, gets the
+	// amounts alone.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -109815,9 +109821,11 @@ func (c *ClientWithResponses) ListInstanceSupportersWithResponse(ctx context.Con
 //
 // The amounts that a tip, a one-time payment to the server's operation with nothing in
 // return, may be: the operator's choices, smallest first, in one currency. A 404 while the
-// server takes no tips (`Instance.tips_enabled`). To an authenticated user, it also says why
-// they may not tip when they may not (`ineligible_reason`), the check that `POST /supporter/tips`
-// makes.
+// server takes no tips (`Instance.tips_enabled`). To a request whose access token grants
+// `read:supporters`, it also says why the user may not tip when they may not
+// (`ineligible_reason`, the check that `POST /supporter/tips` makes), and that answer is
+// `no-store`; a request without a token, or with one that does not grant the scope, gets the
+// amounts alone.
 //
 // Returns a wrapper object for the known response body format(s).
 //

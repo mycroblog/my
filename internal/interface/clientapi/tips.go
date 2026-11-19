@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	appsupporters "github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -110,8 +111,13 @@ func (s *Server) GetInstanceTipAmounts(ctx context.Context, _ GetInstanceTipAmou
 	}
 	out := TipAmounts{Amounts: tipMoneys(currency, amounts)}
 	cache := cachePublic
-	if v, ok := ViewerFrom(ctx); ok {
-		// The user's own answer, which a confirmed address changes at once.
+	v, ok := ViewerFrom(ctx)
+	if ok {
+		cache = cachePrivate
+	}
+	// The operation takes any token, so only one that grants read:supporters reads the user's
+	// own answer, which a confirmed address changes at once.
+	if ok && scopeGranted(v, identity.ScopeReadSupporters) {
 		cache = cacheNoStore
 		// The answer of the check that StartTip makes, so that the two never disagree.
 		reason, err := tips.TipEligibility(ctx, v.UserID)

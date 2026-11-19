@@ -148,9 +148,9 @@ func TestTips(t *testing.T) {
 	}
 }
 
-// TestTipEligibility checks that the amounts of the tips say to an authenticated user why they may
-// not tip, from the check of the start, and say nothing of it to an anonymous request or a user
-// who may tip.
+// TestTipEligibility checks that the amounts of the tips say to a token that grants
+// read:supporters why its user may not tip, from the check of the start, and say nothing of it to
+// an anonymous request, to a token without the scope, or to a user who may tip.
 func TestTipEligibility(t *testing.T) {
 	f := &fakeTips{}
 	e := newAuthEnv(t, func(o *clientapi.Options) { o.Tips = f })
@@ -177,7 +177,12 @@ func TestTipEligibility(t *testing.T) {
 	if f.asked[len(f.asked)-1] != userOf(aliceAccountID) {
 		t.Errorf("asked for %v, want alice", f.asked)
 	}
-	if res := e.send(t, http.MethodGet, "/instance/tip_amounts", "other", ""); res.StatusCode != http.StatusForbidden {
-		t.Errorf("GET /instance/tip_amounts without read:supporters = %d, want 403", res.StatusCode)
+	f.reason, f.asked = appsupporters.IneligibleEmail, nil
+	res := e.send(t, http.MethodGet, "/instance/tip_amounts", "other", "")
+	if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "private, max-age=60" {
+		t.Fatalf("GET /instance/tip_amounts without read:supporters = %d, Cache-Control %q, want 200", res.StatusCode, res.Header.Get("Cache-Control"))
+	}
+	if got := decode[clientapi.TipAmounts](t, res); got.IneligibleReason != nil || len(got.Amounts) != 3 || len(f.asked) != 0 {
+		t.Errorf("without read:supporters: %+v, asked %v, want the amounts and no reason", got, f.asked)
 	}
 }
