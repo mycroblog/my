@@ -26,6 +26,7 @@ import type { MessageId } from "../messages.gen";
 import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
 import { AppsSettings, loadAppsSettings } from "./apps/apps";
 import { DisplaySettings, loadDisplaySettings } from "./display";
+import { EventSettings, loadEventSettings } from "./events";
 import { FilterSettings, loadFilterSettings } from "./filters";
 import { InvitesSettings, loadInvitesSettings } from "./invites/invites";
 import { loadNotificationSettings, NotificationSettings } from "./notifications";
@@ -167,6 +168,16 @@ export const settingsEntries: readonly SettingsEntry[] = [
     shown: (facts) => facts.voice,
     Screen: VoiceSettings,
     load: loadVoiceSettings,
+  },
+  {
+    // The reminders of the events the reader goes to (ADR-0161 §12).
+    path: "events",
+    group: "general",
+    icon: "events",
+    name: "settings.entry.events",
+    hint: "settings.entry.events.hint",
+    Screen: EventSettings,
+    load: loadEventSettings,
   },
   {
     path: "relationships",

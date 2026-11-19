@@ -43,7 +43,8 @@ export type Fake = {
    * The app's path (`{provider:github}` in it is the ID of the fake's login provider of that kind, `{app:own:0}` and
    * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized,
    * `{invite:0}` the ID of the reader's invite at that index of their list, `{room:1}` the ID of the fake's open room at
-   * that index, `{room:opened}` of the room the story's reader opens),
+   * that index, `{room:opened}` of the room the story's reader opens, `{event:book-swap}` of the fake's event of that
+   * key),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
@@ -135,11 +136,13 @@ function folded(body: unknown): unknown {
 }
 
 /**
- * Whether `url` is one of the shell's reads, which every state answers as normal: the open voice rooms only as the
- * column beside the main one reads its first few (`limit`), so that the rooms' screen is in the story's state.
+ * Whether `url` is one of the shell's reads, which every state answers as normal: the open voice rooms and the events
+ * only as the column beside the main one reads their first few (`limit`), so that their screens are in the story's
+ * state.
  */
 const shellRequest = (url: URL) =>
-  shell.test(url.pathname) && (url.pathname !== "/api/v1/voice/rooms" || url.searchParams.has("limit"));
+  shell.test(url.pathname) &&
+  (!["/api/v1/voice/rooms", "/api/v1/events"].includes(url.pathname) || url.searchParams.has("limit"));
 
 /** The fake server's answers as a screen in `state` gets them. */
 function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
@@ -191,7 +194,8 @@ function pathOf(fake: FakeApi, at: string): string {
             : room === "opened"
               ? fake.voice.nextRoomId()
               : fake.voice.roomId(Number(room)),
-      );
+      )
+      .replace(/\{event:([\w-]+)\}/g, (_, key: string) => fake.events.id(key));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

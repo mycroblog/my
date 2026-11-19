@@ -7,7 +7,7 @@
 // (not on their own screen); and the funding meter when the instance shows it here. The server's pages end it, as they
 // end the menu's sheet. Under `wide`, a line above the home timeline counts the unread announcements instead.
 
-import { RoomCaption, roomIcon, voiceRoomPath } from "@my/app-components";
+import { eventPath, RoomCaption, roomIcon, useEventTime, voiceRoomPath } from "@my/app-components";
 import { LatestNotifications } from "@my/app-features";
 import {
   useAnnouncements,
@@ -29,9 +29,7 @@ import {
   RelativeTime,
   SectionLine,
   SectionList,
-  timeZoneName,
   useLocale,
-  useTimeZone,
 } from "@my/design-system";
 import { useStrings } from "../locale";
 
@@ -89,39 +87,17 @@ export function UnreadAnnouncements() {
   );
 }
 
-/** The place name of an IANA time zone (`Asia/Tokyo` is Tokyo). */
-const placeOf = (zone: string) => (zone.split("/").at(-1) ?? zone).replaceAll("_", " ");
-
-/**
- * When an event starts, in the reader's time zone, and in the event's own with its place's name when that is another
- * (FR-951).
- */
-function useEventTime(event: ServerEvent): string {
-  const t = useStrings();
-  const { locale } = useLocale();
-  const timeZone = useTimeZone();
-  const at = new Date(event.starts_at);
-  const here = dateFormat(locale, timeZone, {
-    weekday: "short",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(at);
-  let there: string;
-  try {
-    if (timeZoneName(timeZone) === event.time_zone) return here;
-    // The event's zone is the options' own, which the platform refuses when it does not know it.
-    there = dateFormat(locale, timeZone, { hour: "numeric", minute: "2-digit", timeZone: event.time_zone }).format(at);
-  } catch {
-    // A time zone the browser does not know: the reader's time alone.
-    return here;
-  }
-  return t("app.event_elsewhere", { here, there, zone: placeOf(event.time_zone) });
-}
-
+/** An event of the column: its title and when it starts, or, while its date is polled, that it is (as its list says). */
 function EventLine({ event }: { event: ServerEvent }) {
-  return <SectionLine href={`/events/${event.id}`} title={event.title} caption={useEventTime(event)} />;
+  const t = useStrings();
+  const time = useEventTime(event);
+  return (
+    <SectionLine
+      href={eventPath(event.id)}
+      title={event.title}
+      caption={event.state === "unscheduled" ? t("app.event_date_polled") : time}
+    />
+  );
 }
 
 function RoomLine({ room }: { room: VoiceRoom }) {

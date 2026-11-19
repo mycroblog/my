@@ -85,6 +85,7 @@ describe("the menu", () => {
       display,
       notifications,
       voice,
+      events,
       relationships,
       filters,
       security,
@@ -102,6 +103,8 @@ describe("the menu", () => {
     expect(notifications?.slice(1)).toEqual(["/settings/notifications", null]);
     expect(voice?.[0]).toMatch(/^Voice chat\s*The rooms you hosted$/);
     expect(voice?.slice(1)).toEqual(["/settings/voice", null]);
+    expect(events?.[0]).toMatch(/^Events\s*Reminders before events$/);
+    expect(events?.slice(1)).toEqual(["/settings/events", null]);
     expect(relationships?.[0]).toMatch(new RegExp(`^Relationships\\s*${relationshipsHint}$`));
     expect(relationships?.slice(1)).toEqual(["/settings/relationships", null]);
     expect(filters?.[0]).toMatch(new RegExp(`^Keyword filters\\s*${filtersHint}$`));
@@ -167,6 +170,7 @@ describe("an entry", () => {
       ["Display and posting", "/settings/display", "page"],
       ["Notifications", "/settings/notifications", null],
       ["Voice chat", "/settings/voice", null],
+      ["Events", "/settings/events", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
@@ -196,6 +200,7 @@ describe("an entry", () => {
       ["Display and posting", "/settings/display", null],
       ["Notifications", "/settings/notifications", null],
       ["Voice chat", "/settings/voice", null],
+      ["Events", "/settings/events", null],
       ["Relationships", "/settings/relationships", null],
       ["Keyword filters", "/settings/filters", null],
       ["Security", "/settings/security", null],
@@ -263,6 +268,7 @@ describe("the display language", () => {
       ["表示と投稿", "/settings/display", "page"],
       ["通知", "/settings/notifications", null],
       ["通話", "/settings/voice", null],
+      ["イベント", "/settings/events", null],
       ["つながり", "/settings/relationships", null],
       ["キーワードフィルタ", "/settings/filters", null],
       ["セキュリティ", "/settings/security", null],

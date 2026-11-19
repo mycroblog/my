@@ -420,6 +420,271 @@ describe("the voice rooms", () => {
   });
 });
 
+describe("the events", () => {
+  type Event = components["schemas"]["Event"];
+  type Candidate = components["schemas"]["EventCandidate"];
+  type Problem = components["schemas"]["Problem"];
+
+  const read = async (fake: FakeApi, key: string) =>
+    (await ask(fake, "GET", `/events/${fake.events.id(key)}`)) as Answered<Event>;
+  const problemOf = (answer: Answered<unknown>) => [answer.status, (answer.body as Problem).type];
+  /** An instant `days` days from now, as the API writes it. */
+  const inDays = (days: number, hours = 0) => new Date(Date.now() + (days * 24 + hours) * 3_600_000).toISOString();
+
+  test("the list holds the upcoming events the reader sees, the nearest first, a cancelled one too", async () => {
+    const fake = createFakeApi();
+    const list = (await ask(fake, "GET", "/events?limit=40")) as Answered<{ items: Event[] }>;
+    const ids = list.body.items.map((e) => e.id);
+    for (const key of ["meetup", "photo-walk", "bread-class", "garden-day", "coffee-voice", "flea-market"])
+      expect(ids).toContain(fake.events.id(key));
+    // Not for the reader (the organizer's followers, an account they block), and one that ended.
+    for (const key of ["followers-brunch", "flash-sale", "picnic"]) expect(ids).not.toContain(fake.events.id(key));
+    const starts = list.body.items.map((e) => Date.parse(e.starts_at));
+    expect(starts).toEqual(starts.toSorted((a, b) => a - b));
+    // An ended one is read alone, and one the reader does not see is not there.
+    expect((await read(fake, "picnic")).status).toBe(200);
+    expect((await read(fake, "followers-brunch")).status).toBe(404);
+    const sams = (await ask(fake, "GET", `/events?organizer_id=${fake.accountId("sam")}`)) as Answered<{
+      items: Event[];
+    }>;
+    expect(new Set(sams.body.items.map((e) => e.organizer.username))).toEqual(new Set(["sam"]));
+    const none = (await ask(createFakeApi({ around: "none" }), "GET", "/events")) as Answered<{ items: Event[] }>;
+    expect(none.body.items).toEqual([]);
+  });
+
+  test("the reader's part in each event, and the places they see: the others only by their kind", async () => {
+    const fake = createFakeApi();
+    const [poll, co, invited, approved, unapproved, open] = await Promise.all(
+      ["photo-walk", "bread-class", "garden-day", "book-swap", "cooking-night", "tiny-concert"].map((k) =>
+        read(fake, k),
+      ),
+    ).then((answers) => answers.map((a) => a.body));
+    expect([poll?.viewer.organizer, poll?.state, poll?.places.map((p) => p.kind)]).toEqual([
+      true,
+      "unscheduled",
+      ["physical"],
+    ]);
+    expect([co?.viewer.coorganizer, co?.places.map((p) => p.kind), co?.hidden_places]).toEqual([
+      true,
+      ["physical", "url"],
+      [],
+    ]);
+    expect([invited?.viewer.invited, invited?.visibility, invited?.places.length]).toEqual([true, "invited", 1]);
+    expect([approved?.viewer.answer, approved?.viewer.approved, approved?.places.length]).toEqual(["going", true, 2]);
+    expect([unapproved?.viewer.answer, unapproved?.places, unapproved?.hidden_places]).toEqual([
+      "maybe",
+      [],
+      ["physical"],
+    ]);
+    expect([open?.capacity, open?.going_count, open?.places.map((p) => p.kind)]).toEqual([3, 3, ["url"]]);
+  });
+
+  test("a voice place before the start, with its room open, and with one that could not open", async () => {
+    const fake = createFakeApi();
+    const voice = async (key: string) => (await read(fake, key)).body.places.find((p) => p.kind === "voice");
+    const before = await voice("radio-hour");
+    expect(before).toEqual({ kind: "voice", speakers: "manual" });
+    const open = await voice("coffee-voice");
+    const room = (await ask(fake, "GET", `/voice/rooms/${open?.room_id ?? "none"}`)) as Answered<{
+      host: { username: string };
+    }>;
+    expect([room.status, room.body.host.username]).toEqual([200, "sam"]);
+    expect((await voice("trail-talk"))?.room_unavailable).toBe("too_many_rooms");
+  });
+
+  test("an answer counts and lists the reader until the start; at capacity, cancelled, started and polled it is refused", async () => {
+    const fake = createFakeApi();
+    const answer = (key: string, a: string) => ask(fake, "PUT", `/events/${fake.events.id(key)}/rsvp`, { answer: a });
+    const going = (await answer("meetup", "going")) as Answered<Event>;
+    expect([going.status, going.body.viewer.answer]).toEqual([200, "going"]);
+    const attendees = (await ask(fake, "GET", `/events/${fake.events.id("meetup")}/attendees`)) as Answered<{
+      items: { account: { username: string }; answer: string }[];
+    }>;
+    expect(attendees.body.items.map((a) => [a.account.username, a.answer])).toEqual([["yuki", "going"]]);
+    expect(problemOf(await answer("tiny-concert", "going"))).toEqual([409, "/api/v1/problems/event-full"]);
+    expect((await answer("tiny-concert", "maybe")).status).toBe(200);
+    expect(problemOf(await answer("flea-market", "going"))).toEqual([409, "/api/v1/problems/event-closed"]);
+    expect(problemOf(await answer("coffee-voice", "declined"))).toEqual([409, "/api/v1/problems/event-closed"]);
+    expect(problemOf(await answer("photo-walk", "going"))).toEqual([409, "/api/v1/problems/event-unscheduled"]);
+    // Not going ends an approval, and the places shown to the approved go.
+    const declined = (await answer("book-swap", "declined")) as Answered<Event>;
+    expect([declined.body.viewer.approved, declined.body.hidden_places]).toEqual([false, ["physical", "url"]]);
+  });
+
+  test("a poll is answered, lists who answered, and once its organizer confirms a candidate takes no more answers", async () => {
+    const fake = createFakeApi();
+    const id = fake.events.id("photo-walk");
+    const candidates = (await ask(fake, "GET", `/events/${id}/candidates`)) as Answered<{ items: Candidate[] }>;
+    const [first, second] = candidates.body.items;
+    if (first === undefined || second === undefined) throw new Error("test: the poll has no two candidates");
+    expect([first.yes_count, first.vote]).toEqual([2, undefined]);
+    const voted = (await ask(fake, "PUT", `/events/${id}/candidates/${first.id}/vote`, {
+      vote: "maybe",
+    })) as Answered<Candidate>;
+    expect([voted.body.vote, voted.body.maybe_count]).toEqual(["maybe", 1]);
+    const ballots = (await ask(fake, "GET", `/events/${id}/candidates/${first.id}/votes?vote=yes`)) as Answered<{
+      items: { account: { username: string } }[];
+    }>;
+    expect(ballots.body.items.map((b) => b.account.username).toSorted()).toEqual(["hana", "sam"]);
+    const added = (await ask(fake, "POST", `/events/${id}/candidates`, {
+      starts_at: inDays(20),
+      ends_at: inDays(20, 2),
+    })) as Answered<Candidate>;
+    expect(added.status).toBe(201);
+    expect((await ask(fake, "DELETE", `/events/${id}/candidates/${added.body.id}`)).status).toBe(204);
+    const confirmed = (await ask(fake, "POST", `/events/${id}/candidates/${second.id}/confirm`)) as Answered<Event>;
+    expect([confirmed.body.state, confirmed.body.starts_at]).toEqual(["scheduled", second.starts_at]);
+    expect(problemOf(await ask(fake, "PUT", `/events/${id}/candidates/${first.id}/vote`, { vote: "yes" }))).toEqual([
+      409,
+      "/api/v1/problems/event-scheduled",
+    ]);
+    // A poll keeps its last candidate.
+    const made = (await ask(fake, "POST", "/events", {
+      title: "One day only",
+      candidates: [{ starts_at: inDays(3), ends_at: inDays(3, 1) }],
+    })) as Answered<Event>;
+    const only = (await ask(fake, "GET", `/events/${made.body.id}/candidates`)) as Answered<{ items: Candidate[] }>;
+    const last = await ask(fake, "DELETE", `/events/${made.body.id}/candidates/${only.body.items[0]?.id ?? ""}`);
+    expect(problemOf(last)).toEqual([409, "/api/v1/problems/event-last-candidate"]);
+  });
+
+  test("an organizer creates within the limits; a voice place, a date out of them and both dates are refused", async () => {
+    const create = (fake: FakeApi, body: object) => ask(fake, "POST", "/events", { title: "Night walk", ...body });
+    const fake = createFakeApi();
+    const made = (await create(fake, {
+      starts_at: inDays(2),
+      ends_at: inDays(2, 2),
+      time_zone: "Asia/Tokyo",
+      places: [{ kind: "voice" }, { kind: "url", name: "Map", url: "https://maps.example/walk" }],
+    })) as Answered<Event>;
+    expect([made.status, made.body.viewer.organizer, made.body.places[0]]).toEqual([
+      201,
+      true,
+      { kind: "voice", speakers: "manual" },
+    ]);
+    const field = async (body: object) => ((await create(fake, body)).body as Problem).field;
+    const faults = [
+      await field({ starts_at: inDays(-1), ends_at: inDays(1) }),
+      await field({ starts_at: inDays(1), ends_at: inDays(9) }),
+      await field({ starts_at: inDays(400), ends_at: inDays(400, 1) }),
+      await field({}),
+      await field({
+        starts_at: inDays(1),
+        ends_at: inDays(1, 1),
+        places: [{ kind: "url", name: "x", url: "ftp://x.example" }],
+      }),
+    ];
+    expect(faults).toEqual(["starts_at", "ends_at", "starts_at", "candidates", "places"]);
+    const noVoice = createFakeApi({ voiceStarters: "permitted" });
+    expect(
+      problemOf(await create(noVoice, { starts_at: inDays(1), ends_at: inDays(1, 1), places: [{ kind: "voice" }] })),
+    ).toEqual([422, "/api/v1/problems/event-voice-unavailable"]);
+    const notEligible = createFakeApi({ eventCreators: "permitted" });
+    expect(problemOf(await create(notEligible, { starts_at: inDays(1), ends_at: inDays(1, 1) }))).toEqual([
+      403,
+      "/api/v1/problems/event-not-eligible",
+    ]);
+    for (let i = 0; i < 9; i++) await create(fake, { starts_at: inDays(1), ends_at: inDays(1, 1) });
+    const limited = await fake.serve(
+      request("POST", "/events", { title: "One more", starts_at: inDays(1), ends_at: inDays(1, 1) }),
+    );
+    expect([limited.status, Number(limited.headers.get("Retry-After")) > 0]).toEqual([429, true]);
+  });
+
+  test("a co-organizer changes, invites once, approves; the organizer alone cancels and names co-organizers", async () => {
+    const fake = createFakeApi();
+    const id = fake.events.id("bread-class");
+    const changed = (await ask(fake, "PATCH", `/events/${id}`, { capacity: 20 })) as Answered<Event>;
+    expect([changed.body.capacity, changed.body.revision_count]).toEqual([20, 2]);
+    expect(problemOf(await ask(fake, "PATCH", `/events/${id}`, { visibility: "public" }))).toEqual([
+      403,
+      "/api/v1/problems/event-organizer-only",
+    ]);
+    const invite = (who: string) => ask(fake, "POST", `/events/${id}/invitations`, { account_id: fake.accountId(who) });
+    expect((await invite("ren")).status).toBe(201);
+    expect(problemOf(await invite("ren"))).toEqual([409, "/api/v1/problems/event-already-invited"]);
+    expect(problemOf(await invite("quickdeals"))).toEqual([422, "/api/v1/problems/event-invalid-invitee"]);
+    const invitations = (await ask(fake, "GET", `/events/${id}/invitations`)) as Answered<{
+      items: { account: { username: string } }[];
+    }>;
+    expect(invitations.body.items.map((i) => i.account.username)).toEqual(["mio", "ren"]);
+    expect((await ask(fake, "DELETE", `/events/${id}/invitations/${fake.accountId("ren")}`)).status).toBe(204);
+    expect((await ask(fake, "DELETE", `/events/${id}/invitations/${fake.accountId("ren")}`)).status).toBe(404);
+    expect(problemOf(await invite("ren"))).toEqual([409, "/api/v1/problems/event-already-invited"]);
+    const approval = `/events/${id}/attendees/${fake.accountId("layla")}/approval`;
+    const approved = (await ask(fake, "PUT", approval)) as Answered<{ approved: boolean }>;
+    expect(approved.body.approved).toBe(true);
+    expect(((await ask(fake, "DELETE", approval)) as Answered<{ approved: boolean }>).body.approved).toBe(false);
+    expect(problemOf(await ask(fake, "PUT", `/events/${id}/attendees/${fake.accountId("ren")}/approval`))).toEqual([
+      422,
+      "/api/v1/problems/event-not-attending",
+    ]);
+    expect(problemOf(await ask(fake, "PUT", `/events/${id}/coorganizers/${fake.accountId("mio")}`))).toEqual([
+      403,
+      "/api/v1/problems/event-organizer-only",
+    ]);
+    expect(problemOf(await ask(fake, "POST", `/events/${id}/cancel`, {}))).toEqual([
+      403,
+      "/api/v1/problems/event-organizer-only",
+    ]);
+    // The reader's own event: co-organizers up to 3, then cancelled with a note, and closed.
+    const own = fake.events.id("photo-walk");
+    for (const who of ["sam", "layla"])
+      expect((await ask(fake, "PUT", `/events/${own}/coorganizers/${fake.accountId(who)}`)).status).toBe(200);
+    expect(problemOf(await ask(fake, "PUT", `/events/${own}/coorganizers/${fake.accountId("mio")}`))).toEqual([
+      409,
+      "/api/v1/problems/event-too-many-coorganizers",
+    ]);
+    const removed = (await ask(
+      fake,
+      "DELETE",
+      `/events/${own}/coorganizers/${fake.accountId("sam")}`,
+    )) as Answered<Event>;
+    expect(removed.body.coorganizers.map((a) => a.username)).toEqual(["hana", "layla"]);
+    const cancelled = (await ask(fake, "POST", `/events/${own}/cancel`, { note: "Too much snow" })) as Answered<Event>;
+    expect([cancelled.body.state, cancelled.body.cancellation?.note]).toEqual(["cancelled", "Too much snow"]);
+    expect(problemOf(await ask(fake, "PATCH", `/events/${own}`, { title: "Again" }))).toEqual([
+      409,
+      "/api/v1/problems/event-closed",
+    ]);
+  });
+
+  test("the .ics names only the places the reader sees, and exists once the date is fixed", async () => {
+    const fake = createFakeApi();
+    const ics = async (key: string) => {
+      const response = await fake.serve(request("GET", `/events/${fake.events.id(key)}/calendar.ics`));
+      return { response, text: await response.text() };
+    };
+    const shown = await ics("book-swap");
+    expect(shown.response.headers.get("Content-Type")).toBe("text/calendar");
+    expect(shown.response.headers.get("Content-Disposition")).toBe(
+      `attachment; filename="${fake.events.id("book-swap")}.ics"`,
+    );
+    expect(shown.text).toContain("METHOD:PUBLISH");
+    expect(shown.text).toContain("LOCATION:Café Lumière");
+    expect((await ics("cooking-night")).text).not.toContain("LOCATION");
+    expect((await ics("flea-market")).text).toContain("STATUS:CANCELLED");
+    expect((await ics("photo-walk")).response.status).toBe(409);
+  });
+
+  test("the reader's reminders are the defaults until they choose, the earliest first; more than 3 are refused", async () => {
+    const fake = createFakeApi();
+    const path = "/preferences/event_reminders";
+    expect((await ask(fake, "GET", path)).body).toEqual({ minutes_before: [1440, 60], defaults: true });
+    expect((await ask(fake, "PUT", path, { minutes_before: [30, 2880] })).body).toEqual({
+      minutes_before: [2880, 30],
+      defaults: false,
+    });
+    const refused = (await ask(fake, "PUT", path, { minutes_before: [10, 20, 30, 40] })) as Answered<Problem>;
+    expect([refused.status, refused.body.field]).toEqual([422, "minutes_before"]);
+    expect(((await ask(fake, "PUT", path, { minutes_before: [1] })) as Answered<Problem>).status).toBe(422);
+    expect((await ask(fake, "PUT", path, { defaults: true })).body).toEqual({
+      minutes_before: [1440, 60],
+      defaults: true,
+    });
+  });
+});
+
 describe("the seed", () => {
   test("without one, the fake holds the scenario", async () => {
     const fake = createFakeApi();

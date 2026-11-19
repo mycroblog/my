@@ -17,6 +17,7 @@
 import {
   AccountName,
   accountPath,
+  EventListLine,
   FieldList,
   handleOf,
   ListColumn,
@@ -39,6 +40,7 @@ import {
   useAccountLists,
   useAccountStatuses,
   useAccountVoiceRoom,
+  useEvents,
   useInstance,
   useChangeRelationship,
   useLists,
@@ -77,6 +79,8 @@ import {
   TextButton,
   TextLink,
   LinkButton,
+  RowItem,
+  RowList,
   useLocale,
   useTimeZone,
 } from "@my/design-system";
@@ -470,6 +474,29 @@ function VoiceEntry({ account }: { account: Account }) {
   return entry === undefined || entry === null ? null : <VoiceRoomEntryLine entry={entry} />;
 }
 
+/** How many of the account's upcoming events its profile shows. */
+const eventsShown = 3;
+
+/**
+ * The upcoming events the account organizes that the reader sees (ADR-0161 §9, FR-951), the nearest first, as lines
+ * that lead to them; nothing for none, without a session, or for an account of another server, which has none here.
+ */
+function EventsEntry({ account, t }: { account: Account; t: T }) {
+  const signedIn = useViewer() !== undefined;
+  const list = useEvents({ organizerId: account.id }, signedIn && !account.acct.includes("@"));
+  if (list.items.length === 0) return null;
+  const now = Date.now();
+  return (
+    <RowList label={t("profile.events")}>
+      {list.items.slice(0, eventsShown).map((event) => (
+        <RowItem key={event.id}>
+          <EventListLine event={event} now={now} />
+        </RowItem>
+      ))}
+    </RowList>
+  );
+}
+
 function Head({
   account,
   relationship,
@@ -612,6 +639,7 @@ function Head({
         )}
       </MetaLine>
       {!blocked && <VoiceEntry account={account} />}
+      {!blocked && <EventsEntry account={account} t={t} />}
       {!own && relationship?.note !== undefined && <Note account={account} note={relationship.note} t={t} />}
       {mutedDomain !== undefined && (
         <CaptionLine

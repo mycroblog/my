@@ -173,8 +173,11 @@ const choice = tv({
       "bg-surface-raised font-sans text-body font-label text-text outline-hidden",
       "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
       "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
-      "has-[input:checked]:bg-text has-[input:checked]:text-surface",
-      "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-disabled",
+      "has-[input:checked:enabled]:bg-text has-[input:checked]:text-surface",
+      // Closed, the answers dim; the chosen one stays knocked out, of the muted text's color, which keeps the surface's
+      // words on it at a readable contrast where a dimmed knock-out would not.
+      "has-[input:disabled]:cursor-not-allowed has-[input:disabled:not(:checked)]:opacity-disabled",
+      "has-[input:checked:disabled]:bg-muted-text",
     ],
     note: "text-caption text-muted-text [word-break:auto-phrase]",
     // The note keeps its room while a save state stands in its place.
@@ -445,8 +448,11 @@ const table = tv({
       "outline-hidden",
       "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
       "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
-      "has-[input:checked]:bg-text has-[input:checked]:text-surface",
-      "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-disabled",
+      "has-[input:checked:enabled]:bg-text has-[input:checked]:text-surface",
+      // Closed, the answers dim; the chosen one stays knocked out, of the muted text's color, which keeps the surface's
+      // words on it at a readable contrast where a dimmed knock-out would not.
+      "has-[input:disabled]:cursor-not-allowed has-[input:disabled:not(:checked)]:opacity-disabled",
+      "has-[input:checked:disabled]:bg-muted-text",
     ],
     save: "text-caption",
   },
@@ -464,7 +470,7 @@ export type CandidateTableProps = {
   label: string;
   /** The head of the dates' column, for assistive technology ("Date"). */
   time: string;
-  /** The answers' words, each the head of the column of its count: "Can go", "Maybe", "Cannot". */
+  /** The answers' words, each the head of the column of its count: "Can go", "Maybe", "Cannot go". */
   names: Readonly<Record<Answer, string>>;
   /** The head of the column of the reader's answer ("Your answer"). */
   yours: string;
@@ -669,7 +675,7 @@ export type PlaceLineProps = {
   hidden?: boolean | undefined;
   /** The voice room could not open: its glyph is the microphone crossed out, and `note` says why. */
   unavailable?: boolean | undefined;
-  /** A muted line under it: the voice room's state ("Opens at the start", "Open now", why it could not open). */
+  /** A muted line under it: the voice room's state ("Opens when the event starts", "Open now", why it could not open). */
   note?: string | undefined;
   /** The way into the voice room while it is open (a `LinkButton`), after the note. */
   action?: ReactNode;

@@ -279,10 +279,6 @@
     "defaultMessage": "{count, plural, other {対応待ち # 件}}",
     "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
   },
-  "app.event_elsewhere": {
-    "defaultMessage": "{here} · {there} ({zone})",
-    "description": "Under an event's title in the column beside the timeline, when the event's time zone is not the reader's: its date and time in the reader's zone ({here}), then its time in the event's own zone ({there}) with the zone's place name ({zone}, such as Tokyo)."
-  },
   "app.new_tab": {
     "defaultMessage": "(新しいタブで開きます)",
     "description": "Said after a link that opens in a new tab, for assistive technology."
@@ -390,5 +386,13 @@
   "app.voice_invitations": {
     "defaultMessage": "招待",
     "description": "The heading and the document's title of the screen of a voice chat room's invitations."
+  },
+  "app.event": {
+    "defaultMessage": "イベント",
+    "description": "The heading of an event's page until its title is known, or when it is not shown to the reader."
+  },
+  "app.event_date_polled": {
+    "defaultMessage": "日程を調整中",
+    "description": "In place of an event's time in the column beside the timeline, while its organizers poll its date."
   }
 }

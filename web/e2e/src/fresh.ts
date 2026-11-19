@@ -275,6 +275,34 @@ export class Fresh {
     return { id: body(data, "the room").room.id, name };
   }
 
+  /**
+   * A new event for every local user that `organizer` organizes, whose title is `title` and a word unique to it, two
+   * hours long: `inDays` days from now (3 by default), or, with `candidates`, a date poll of a date that many days from
+   * now each. Its ID, its title, and the start of each candidate, in their order.
+   */
+  async event(
+    organizer: Person,
+    o: { title: string; inDays?: number; candidates?: readonly number[] },
+  ): Promise<{ id: string; title: string; candidates: readonly Date[] }> {
+    const title = `${o.title} ${unique().slice(0, 8)}`;
+    const now = Date.now();
+    const startOf = (days: number) => new Date(now + days * 86_400_000);
+    const span = (days: number) => ({
+      starts_at: startOf(days).toISOString(),
+      ends_at: new Date(startOf(days).getTime() + 2 * 3_600_000).toISOString(),
+    });
+    const { data } = await (
+      await this.#api(organizer)
+    ).POST("/events", {
+      body: {
+        title,
+        time_zone: "UTC",
+        ...(o.candidates === undefined ? span(o.inDays ?? 3) : { candidates: o.candidates.map(span) }),
+      },
+    });
+    return { id: body(data, "the event").id, title, candidates: (o.candidates ?? []).map(startOf) };
+  }
+
   /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */
   async reaction(by: Person, post: FreshPost, emoji: string): Promise<void> {
     const { error } = await (

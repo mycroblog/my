@@ -1,0 +1,266 @@
+{
+  "events.list": {
+    "defaultMessage": "これからのイベント",
+    "description": "The name of the list of upcoming events on the events' screen, for assistive technology."
+  },
+  "events.loading": {
+    "defaultMessage": "イベントを読み込んでいます…",
+    "description": "In place of the list of events while the first of them load."
+  },
+  "events.failed": {
+    "defaultMessage": "イベントを読み込めませんでした。",
+    "description": "In place of the list of events when they could not be loaded, beside a button to try again."
+  },
+  "events.failed_more": {
+    "defaultMessage": "続きを読み込めませんでした。",
+    "description": "Under a list of an event's screens (the events, who is going, who answered a date) when its next page could not be loaded, beside a button to try again."
+  },
+  "events.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under a list of an event's screens that loads the next of it."
+  },
+  "events.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after a sentence that says something of an event's screens could not be loaded."
+  },
+  "events.empty": {
+    "defaultMessage": "これからのイベントはありません。あなたに見えるイベントをこのサーバーの誰かが計画すると、ここに表示されます。",
+    "description": "In place of the list of events when there is none the reader sees."
+  },
+  "events.back": {
+    "defaultMessage": "イベント",
+    "description": "The back button at the top of an event's page, which leads to the list of events."
+  },
+  "events.event_loading": {
+    "defaultMessage": "イベントを読み込んでいます…",
+    "description": "In place of an event's page while it loads."
+  },
+  "events.event_failed": {
+    "defaultMessage": "イベントを読み込めませんでした。",
+    "description": "In place of an event's page when it could not be loaded, beside a button to try again."
+  },
+  "events.gone": {
+    "defaultMessage": "このイベントは存在しないか、あなたには見えません。",
+    "description": "All an event's page says when the server has no event at its address that the reader sees."
+  },
+  "events.local_only": {
+    "defaultMessage": "このサーバーにアカウントがある人だけが、イベントを見られます。このイベントを見るにはログインしてください。",
+    "description": "All an event's page says to a visitor who is not signed in, over the sign-in button."
+  },
+  "events.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "The button on an event's page for a visitor, which signs in and comes back to the event."
+  },
+  "events.cancelled": {
+    "defaultMessage": "{reason, select, moderator {このイベントはモデレーターが中止しました。} organizer_suspended {このイベントは中止されました。主催者のアカウントが凍結されたためです。} organizer_deleted {このイベントは中止されました。主催者のアカウントが削除されたためです。} other {このイベントは主催者が中止しました。}}",
+    "description": "At the top of a cancelled event's page, by who or what cancelled it; the organizer's note, if any, follows on its own line."
+  },
+  "events.date_polled": {
+    "defaultMessage": "日程はまだ決まっていません。",
+    "description": "In place of an event's time on its page while its organizers poll its date; the poll follows below, under its own heading."
+  },
+  "events.visibility": {
+    "defaultMessage": "{visibility, select, public {このサーバーの全員に公開} followers {{organizer} さんのフォロワーに公開} following {{organizer} さんがフォローしている人に公開} mutuals {{organizer} さんと相互フォローの人に公開} other {招待された人だけに公開}}",
+    "description": "Who sees an event, under its time on its page: organizer is the organizer's display name. Those invited and those who answered always see it too."
+  },
+  "events.capacity": {
+    "defaultMessage": "{going, plural, other {定員 {capacity} 人のうち # 人が行く}}",
+    "description": "How many answered going to an event that has a capacity, under its time on its page: going is how many, capacity the most it takes."
+  },
+  "events.where": {
+    "defaultMessage": "場所",
+    "description": "The heading of an event's places on its page, and the name of their list."
+  },
+  "events.place_voice": {
+    "defaultMessage": "通話のルーム",
+    "description": "The name of an event's voice chat room among its places."
+  },
+  "events.place_physical": {
+    "defaultMessage": "現地",
+    "description": "Said before the name of an event's place to meet in person, for assistive technology."
+  },
+  "events.place_url": {
+    "defaultMessage": "オンライン",
+    "description": "Said before the name of an event's place online, for assistive technology."
+  },
+  "events.place_hidden": {
+    "defaultMessage": "{kind, select, physical {現地: 主催者が承認した参加者にだけ場所が表示されます} voice {通話のルーム} other {オンライン: 主催者が承認した参加者にだけリンクが表示されます}}",
+    "description": "A place of an event the reader does not see, by its kind alone: it is shown to the attendees the organizers approve."
+  },
+  "events.map": {
+    "defaultMessage": "地図を開く",
+    "description": "The link to the map of an event's place in person, which leaves the site."
+  },
+  "events.room_opens": {
+    "defaultMessage": "イベントの開始時に開きます",
+    "description": "Under an event's voice chat room before the event starts."
+  },
+  "events.room_opening": {
+    "defaultMessage": "まもなく開きます",
+    "description": "Under an event's voice chat room once the event started, before the server opened the room."
+  },
+  "events.room_open": {
+    "defaultMessage": "開催中",
+    "description": "Under an event's voice chat room while it is open, over the button that joins it."
+  },
+  "events.room_ended": {
+    "defaultMessage": "ルームは終了しました",
+    "description": "Under an event's voice chat room once the room it opened ended."
+  },
+  "events.room_cancelled": {
+    "defaultMessage": "開きません。イベントは中止されました",
+    "description": "Under the voice chat room of a cancelled event."
+  },
+  "events.room_unavailable": {
+    "defaultMessage": "{reason, select, disabled {開けませんでした。このサーバーでは通話が無効です} not_eligible {開けませんでした。主催者は通話のルームのホストになれません} too_many_rooms {開けませんでした。このサーバーで開けるルームの数に達していました} other {開けませんでした。主催者は別のルームのホストでした}}",
+    "description": "Under an event's voice chat room that could not open at the start, why; the event goes on."
+  },
+  "events.join": {
+    "defaultMessage": "ルームに参加",
+    "description": "The button under an event's open voice chat room, which joins the room and opens its page."
+  },
+  "events.join_failed": {
+    "defaultMessage": "ルームに参加できませんでした。少し待ってからもう一度試してください。",
+    "description": "Said when joining an event's voice chat room failed."
+  },
+  "events.your_answer": {
+    "defaultMessage": "あなたの出欠",
+    "description": "The heading of the reader's answer to an event (going, maybe, not going), and the name of the answers."
+  },
+  "events.answer": {
+    "defaultMessage": "{answer, select, going {行く} maybe {たぶん} other {行かない}}",
+    "description": "An answer to an event, on its button."
+  },
+  "events.answer_full": {
+    "defaultMessage": "定員に達しています。「たぶん」か「行かない」なら答えられます。",
+    "description": "Under the answers to an event whose going reached its capacity, when the reader is not among them."
+  },
+  "events.answer_started": {
+    "defaultMessage": "イベントが始まったため、出欠は変えられません。",
+    "description": "Under the answers to an event that started."
+  },
+  "events.answer_refused_full": {
+    "defaultMessage": "保存できませんでした。定員に達しています。",
+    "description": "In place of the line under the answers to an event when going was refused at capacity."
+  },
+  "events.answer_refused_closed": {
+    "defaultMessage": "保存できませんでした。イベントは始まったか、中止されました。",
+    "description": "In place of the line under the answers to an event when the answer was refused for an event that started or was cancelled."
+  },
+  "events.answer_refused_unscheduled": {
+    "defaultMessage": "保存できませんでした。日程がまだ決まっていません。",
+    "description": "In place of the line under the answers to an event when the answer was refused while its date is polled."
+  },
+  "events.calendar": {
+    "defaultMessage": "カレンダーに追加",
+    "description": "The button on an event's page that downloads its calendar file (.ics) to import into the reader's calendar."
+  },
+  "events.calendar_saved": {
+    "defaultMessage": "{name} をダウンロードしました。開くとカレンダーに追加できます。",
+    "description": "Under the calendar button of an event once its file was downloaded: name is the file's name."
+  },
+  "events.calendar_failed": {
+    "defaultMessage": "カレンダーのファイルをダウンロードできませんでした。少し待ってからもう一度試してください。",
+    "description": "Under the calendar button of an event when its file could not be downloaded."
+  },
+  "events.calendar_unscheduled": {
+    "defaultMessage": "日程が決まると、カレンダーのファイルをダウンロードできます。",
+    "description": "Under the calendar button of an event when the server refused its file while its date is polled."
+  },
+  "events.poll_heading": {
+    "defaultMessage": "都合のよい日時は？",
+    "description": "The heading of an event's date poll on its page."
+  },
+  "events.poll_note": {
+    "defaultMessage": "答えると、イベントが見える全員にあなたの名前が見えます。",
+    "description": "Over an event's date poll."
+  },
+  "events.poll": {
+    "defaultMessage": "日程の調整",
+    "description": "The name of the table of an event's candidate dates, for assistive technology."
+  },
+  "events.poll_date": {
+    "defaultMessage": "日時",
+    "description": "The head of the column of the dates in an event's date poll, for assistive technology."
+  },
+  "events.vote": {
+    "defaultMessage": "{vote, select, yes {行ける} maybe {たぶん} other {行けない}}",
+    "description": "An answer to a candidate date of an event, the head of the column of its count and on its button."
+  },
+  "events.yours": {
+    "defaultMessage": "あなたの答え",
+    "description": "The head of the column of the reader's own answer in an event's date poll."
+  },
+  "events.poll_loading": {
+    "defaultMessage": "候補の日時を読み込んでいます…",
+    "description": "In place of an event's date poll while its dates load."
+  },
+  "events.poll_failed": {
+    "defaultMessage": "候補の日時を読み込めませんでした。",
+    "description": "In place of an event's date poll when its dates could not be loaded, beside a button to try again."
+  },
+  "events.vote_scheduled": {
+    "defaultMessage": "保存できませんでした。日程が決まり、調整は締め切られました。",
+    "description": "Under an event's date poll when an answer was refused because the organizers confirmed a date."
+  },
+  "events.vote_closed": {
+    "defaultMessage": "保存できませんでした。イベントは中止されました。",
+    "description": "Under an event's date poll when an answer was refused for a cancelled event."
+  },
+  "events.answered": {
+    "defaultMessage": "答えた人",
+    "description": "The heading over who answered each candidate date of an event's date poll."
+  },
+  "events.who_answered": {
+    "defaultMessage": "{count, plural, =0 {{date} にはまだ答えがありません} other {{date} に # 人が答えました}}",
+    "description": "The summary of who answered a candidate date, over the button that shows them: date is the candidate's date and time."
+  },
+  "events.vote_group": {
+    "defaultMessage": "{vote, select, yes {行ける} maybe {たぶん} other {行けない}} ({count})",
+    "description": "The heading of who answered a candidate date one way, with how many."
+  },
+  "events.ballots_loading": {
+    "defaultMessage": "答えた人を読み込んでいます…",
+    "description": "In place of who answered a candidate date while they load."
+  },
+  "events.ballots_failed": {
+    "defaultMessage": "答えた人を読み込めませんでした。",
+    "description": "In place of who answered a candidate date when they could not be loaded, beside a button to try again."
+  },
+  "events.ballots_none": {
+    "defaultMessage": "この日時に答えた人はまだいません。",
+    "description": "In place of who answered a candidate date when no one did."
+  },
+  "events.organizers": {
+    "defaultMessage": "{count, plural, other {主催者}}",
+    "description": "The heading of who organizes an event on its page: the organizer, then the co-organizers."
+  },
+  "events.going_group": {
+    "defaultMessage": "行く ({count})",
+    "description": "The heading of who answered going to an event, with how many."
+  },
+  "events.maybe_group": {
+    "defaultMessage": "たぶん",
+    "description": "The heading of who answered maybe to an event."
+  },
+  "events.attendees_loading": {
+    "defaultMessage": "参加者を読み込んでいます…",
+    "description": "In place of who is going to an event while they load."
+  },
+  "events.attendees_failed": {
+    "defaultMessage": "参加者を読み込めませんでした。",
+    "description": "In place of who is going to an event when they could not be loaded, beside a button to try again."
+  },
+  "events.attendees_none": {
+    "defaultMessage": "まだ誰も「行く」「たぶん」と答えていません。",
+    "description": "In place of who is going to an event when no one answered going or maybe."
+  },
+  "events.vote_failed": {
+    "defaultMessage": "{date} の答えの保存を完了できませんでした。",
+    "description": "Under an event's date poll when the answer to one date could not be saved, beside a button to try it again: date is the candidate's date and time."
+  },
+  "events.mark": {
+    "defaultMessage": "{state, select, cancelled {中止} other {終了}}",
+    "description": "At the top of an event's page, beside its glyph, as its line in a list marks it: it was cancelled (the reason follows under it) or it ended."
+  }
+}

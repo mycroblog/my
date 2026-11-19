@@ -27,6 +27,8 @@
 //   - `fresh.source(author, id)` the text and content warning of the author's post `id` as the server keeps them.
 //   - `fresh.draft(author, { text, inSeconds? })` a new draft of `author` whose text is `text` and a word unique to it,
 //     scheduled `inSeconds` from now when given; it returns `{ id, text }`.
+//   - `fresh.event(organizer, { title, inDays?, candidates? })` a new event for every local user, two hours long,
+//     `inDays` from now or a date poll of the days given; it returns `{ id, title }`.
 //   - `fresh.followRequest(from, to)` a follow request of `from` to the locked `to`, waiting for `to` to decide it.
 //   - `fresh.move(from, to)` the move of the fresh `from`'s account to the fresh `to`'s, which names `from` as an alias.
 //   - `fresh.moderate(staff, target, { kind, publicReason, expiresIn? })` a moderation action of `staff`, a fresh person

@@ -55,6 +55,7 @@ const rowsAt = (at: string, { withInvites, here }: { withInvites: boolean; here?
     display,
     "/settings/notifications",
     "/settings/voice",
+    "/settings/events",
     "/settings/relationships",
     "/settings/filters",
     "/settings/security",

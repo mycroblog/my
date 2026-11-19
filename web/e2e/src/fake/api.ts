@@ -30,7 +30,7 @@
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
 // How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are access.ts's; the
-// voice rooms, joining one, and its session's heartbeat and stream, voice.ts's.
+// voice rooms, joining one, and its session's heartbeat and stream, voice.ts's; the events, events.ts's.
 //
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
 // `newNotification` make one. A test scripts an operation with `script` (script.ts). The token revocation the app
@@ -46,7 +46,6 @@ import {
   drafts as scenarioDrafts,
   draftSchedule,
   emojis as scenarioEmojis,
-  eventStart,
   events as scenarioEvents,
   follows as scenarioFollows,
   interactions as scenarioInteractions,
@@ -66,11 +65,11 @@ import {
   type Post,
   type Restriction,
   type ServerAnnouncement,
-  type ServerEventPlan,
 } from "../scenario";
 import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } from "./common";
 import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
+import { eventHandlers, fakeEventPlans, type FakeEventPlan, type FakeEvents } from "./events";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
@@ -105,7 +104,7 @@ export type FakeSeed = {
   lists: readonly PersonList[];
   drafts: readonly DraftPlan[];
   announcements: readonly ServerAnnouncement[];
-  events: readonly ServerEventPlan[];
+  events: readonly FakeEventPlan[];
   emojis: readonly CustomEmoji[];
   conversationReads: readonly { by: string; post: string }[];
 };
@@ -188,7 +187,8 @@ export const scenario: FakeSeed = {
   lists: scenarioLists,
   drafts: scenarioDrafts,
   announcements: scenarioAnnouncements,
-  events: scenarioEvents,
+  // The scenario's events, then the fake's own, whose places, polls, attendees and rooms the seed does not make.
+  events: [...scenarioEvents, ...fakeEventPlans],
   emojis: scenarioEmojis,
   conversationReads: scenarioConversationReads,
 };
@@ -290,6 +290,11 @@ export type FakeOptions = {
   voiceStarters?: "everyone" | "permitted";
   /** Why the server refuses every opening of a room: the reader may not, too many are open, or they host another. */
   voiceOpen?: FakeVoiceOpenRefusal;
+  /**
+   * Who may create events (the instance setting `event_creators`): every local account by default, or only those
+   * whose roles have `create_events` (`permitted`), as the admin's do.
+   */
+  eventCreators?: "everyone" | "permitted";
   /**
    * The reader's exports of their data: none by default; one being built (`building`), one ready to download
    * (`ready`), one being built over an earlier one that is ready (`rebuilding`), one that could not be built
@@ -538,6 +543,8 @@ export type FakeApi = {
   send: (event: FakeStreamEvent) => void;
   /** The reader's call: the rooms' IDs, their session, and what its room stream says (voice.ts). */
   readonly voice: FakeVoice;
+  /** The events' IDs by the seed's keys, and an event as the reader sees it now (events.ts). */
+  readonly events: FakeEvents;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -2309,30 +2316,27 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       file_size: 4_812_345,
     });
 
-  const eventOf = (e: ServerEventPlan, i: number): Schema<"Event"> => {
-    const startsAt = eventStart(e, started);
-    return {
-      id: idAt(startsAt.getTime(), 40_000 + i),
-      organizer: accountOf(e.organizer),
-      coorganizers: [],
-      title: e.title,
-      description: e.description,
-      visibility: "public",
-      time_zone: e.timeZone,
-      place_disclosure: "approved",
-      capacity: 0,
-      places: [],
-      hidden_places: [],
-      starts_at: startsAt.toISOString(),
-      ends_at: new Date(startsAt.getTime() + e.hours * 60 * minute).toISOString(),
-      state: "scheduled",
-      going_count: 4,
-      created_at: new Date(started - day).toISOString(),
-      revised_at: new Date(started - day).toISOString(),
-      revision_count: 1,
-      viewer: { organizer: e.organizer === viewer, coorganizer: false, invited: false, approved: false },
-    };
-  };
+  // The events (events.ts), of the seed's plans whose organizer it has; a voice place's open room is the one its
+  // organizer hosts among the rooms above.
+  const events = eventHandlers({
+    plans: seed.events,
+    started,
+    viewer,
+    accountOf: (username) => (people.some((p) => p.username === username) ? accountOf(username) : undefined),
+    usernameOf: (id) => usernameOf.get(id),
+    active: (username) => local(username) && username !== deactivated,
+    follows: follows_,
+    blocks: (a, b) => blocking.has(`${a}>${b}`) || blocking.has(`${b}>${a}`),
+    roomHostedBy: (username) => rooms.find((r) => r.host.username === username)?.id,
+    voiceOff: o.voiceOff === true,
+    mayHostRooms: () => o.voiceStarters !== "permitted" || permissionsOf(viewer).includes("start_voice_rooms"),
+    mayCreate: () => o.eventCreators !== "permitted" || permissionsOf(viewer).includes("create_events"),
+    unlisted: around === "none",
+    origin: fakeOrigin,
+    problem,
+    notFound,
+    page,
+  });
 
   // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
   // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
@@ -2348,7 +2352,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return p === undefined ? status : { status: statusOf(p) };
     };
     const firstEvent = seed.events[0];
-    const event = firstEvent === undefined ? undefined : eventOf(firstEvent, 0);
+    const event = firstEvent === undefined ? undefined : events.events.shown(firstEvent.key);
     const about: About = event === undefined ? {} : { event_id: event.id, event };
     const room = rooms[0];
     type Kinds = [NotificationType, string | undefined, About][];
@@ -2800,10 +2804,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       announcementRead.add(a.key);
       return { status: 200, body: announcementOf(a.key) };
     },
-    "GET /events": ({ query }) => ({
-      status: 200,
-      body: page(around === "none" ? [] : seed.events.map(eventOf), query).body,
-    }),
     "GET /admin/counts": () => {
       const granted = permissionsOf(viewer);
       const counts = exact<Schema<"AdminCounts">>()({
@@ -3650,6 +3650,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...voiceRooms.handlers,
 
+    // ---- The events ---------------------------------------------------------------------------------------------------
+
+    ...events.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3867,6 +3871,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     script: scripts.script,
     send,
     voice: voiceRooms.voice,
+    events: events.events,
     unimplemented,
     revocations,
     newPosts,

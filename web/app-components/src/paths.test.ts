@@ -3,6 +3,7 @@
 import { describe, expect, test } from "bun:test";
 import {
   autoDeletePath,
+  eventPath,
   hashtagPath,
   notificationPath,
   tagPath,
@@ -80,7 +81,7 @@ describe("notificationPath", () => {
     expect(of("announcement", { announcement: { id: "a1" } })).toBe("/announcements/a1");
   });
 
-  test("an event's lead nowhere else yet, even with an account or a post", () => {
+  test("an event's notification opens the event, whatever else it carries, and stays without one", () => {
     for (const type of [
       "event_invited",
       "event_schedule_confirmed",
@@ -89,8 +90,10 @@ describe("notificationPath", () => {
       "event_reminder",
       "event_started",
       "event_room_unavailable",
-    ])
+    ]) {
+      expect([type, of(type, { account: sora, status: post, event_id: "e1" })]).toEqual([type, "/events/e1"]);
       expect([type, of(type, { account: sora, status: post })]).toEqual([type, "/notifications"]);
+    }
   });
 
   test("a voice chat room's start and an invitation to it open the room, whatever else they carry", () => {
@@ -103,6 +106,11 @@ describe("notificationPath", () => {
   test("a voice chat room's notification without the room stays on the notifications", () => {
     for (const type of ["voice_room_started", "voice_room_invited"])
       expect([type, of(type, { account: sora })]).toEqual([type, "/notifications"]);
+  });
+
+  test("an event's address is the app's event screen, its ID encoded", () => {
+    expect(eventPath("01a1f1")).toBe("/events/01a1f1");
+    expect(eventPath("a/b")).toBe(`/events/${encodeURIComponent("a/b")}`);
   });
 
   test("a room's address is the app's room screen, its ID encoded", () => {
