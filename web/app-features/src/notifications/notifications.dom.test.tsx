@@ -157,7 +157,10 @@ test("a row over the list counts the follow requests and opens their screen; a r
 
   expect(row.getAttribute("href")).toBe("/notifications/follow_requests");
   expect(row.compareDocumentPosition(feed()) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-  expect(buttons(entry(/requested to follow you/))).toEqual(["More about this notification", "Dismiss notification"]);
+  expect(buttons(entry(/requested to follow you/))).toEqual([
+    "More actions for this notification",
+    "Dismiss notification",
+  ]);
 });
 
 test("over the list, a row counts what waits for the reader's approval; a request's notification has no buttons to answer it", async () => {
@@ -168,7 +171,7 @@ test("over the list, a row counts what waits for the reader's approval; a reques
   const asked = entry(/asked to reply to your post/);
 
   expect(row.compareDocumentPosition(asked) & Node.DOCUMENT_POSITION_FOLLOWING).not.toBe(0);
-  expect(buttons(asked)).toEqual(["More about this notification", "Dismiss notification"]);
+  expect(buttons(asked)).toEqual(["More actions for this notification", "Dismiss notification"]);
 
   await shown(made, "ja");
   expect(screen.getByText("承認待ち 3件")).not.toBeNull();
@@ -182,9 +185,9 @@ test("the row of what waits leads to its screen, and stays over the Mentions tab
 
   expect(row().getAttribute("href")).toBe("/notifications/waiting");
   expect(requests().map(buttons)).toEqual([
-    ["More about this notification", "Dismiss notification"],
-    ["More about this notification", "Dismiss notification"],
-    ["More about this notification", "Dismiss notification"],
+    ["More actions for this notification", "Dismiss notification"],
+    ["More actions for this notification", "Dismiss notification"],
+    ["More actions for this notification", "Dismiss notification"],
   ]);
 
   await user.click(screen.getByRole("tab", { name: "Mentions" }));

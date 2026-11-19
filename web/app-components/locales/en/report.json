@@ -20,7 +20,7 @@
     "description": "The button of the report panel that closes it without sending the report."
   },
   "report.intro": {
-    "defaultMessage": "{kind, select, room {Only the moderators of {instance} read your report. The room's host, {handle}, is never told who sent it.} event {Only the moderators of {instance} read your report. The event's organizer, {handle}, is never told who sent it.} other {Only the moderators of {instance} read your report. {handle} is never told who sent it.}}",
+    "defaultMessage": "{kind, select, room {The moderators of {instance} read your report. It is not public, and the room's host, {handle}, is never told who sent it.} event {The moderators of {instance} read your report. It is not public, and the event's organizer, {handle}, is never told who sent it.} other {The moderators of {instance} read your report. It is not public, and {handle} is never told who sent it.}}",
     "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
   },
   "report.category": {
@@ -124,7 +124,7 @@
     "description": "The button that mutes the reported account, once the report was sent."
   },
   "report.mute_hint": {
-    "defaultMessage": "You will no longer see their posts. They are not told.",
+    "defaultMessage": "Their posts stay out of your timelines. They are not told.",
     "description": "What muting the reported account does, over its button."
   },
   "report.block": {
