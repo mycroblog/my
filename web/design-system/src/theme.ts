@@ -21,11 +21,20 @@ import {
   shell,
   text,
   toggle,
+  voice,
 } from "@my/design-tokens";
 import plugin from "tailwindcss/plugin";
 import { transitionRules } from "./motion-css";
 
 const ref = (name: string) => `var(${name})`;
+
+/** The rings of who speaks, the halo `swell` past the ring of the text's color. */
+const speaking = (swell: string) =>
+  [
+    "0 0 0 var(--voice-ring-gap) var(--voice-cut, var(--color-surface))",
+    "0 0 0 calc(var(--voice-ring-gap) + var(--voice-ring-width)) var(--color-text)",
+    `0 0 0 calc(var(--voice-ring-gap) + var(--voice-ring-width) + ${swell}) color-mix(in srgb, var(--color-text) var(--voice-halo-share), transparent)`,
+  ].join(", ");
 const names = <T extends object>(o: T) => Object.keys(o) as (keyof T & string)[];
 
 /** A token's camel-case name as its custom property's: `gapWide` as `gap-wide`. */
@@ -95,6 +104,11 @@ const theme = {
     "icon-navigation": ref("--icon-navigation"),
     ...Object.fromEntries(names(shell).map((name) => [`shell-${kebab(name)}`, ref(`--shell-${kebab(name)}`)])),
     ...Object.fromEntries(names(screen).map((name) => [`screen-${kebab(name)}`, ref(`--screen-${kebab(name)}`)])),
+    ...Object.fromEntries(
+      names(voice)
+        .filter((name) => typeof voice[name] === "number" && name !== "haloShare")
+        .map((name) => [`voice-${kebab(name)}`, ref(`--voice-${kebab(name)}`)]),
+    ),
     // The room above an entry of a feed from what stands before it outside the feed (a heading, the tabs): the
     // entry's surface reaches past its content and its focus ring past the surface, neither touching what is above.
     "entry-room":
@@ -239,10 +253,18 @@ const theme = {
     "face-cut": "0 0 0 var(--screen-face-cut) var(--face-cut-color, var(--color-surface))",
     overlay: ref("--shadow-overlay"),
     bar: ref("--shadow-bar"),
+    // The rings around the avatar of who speaks in a voice chat room: the surface under it (`--voice-cut`), the
+    // text's color, and the halo, under the ring until it swells (`animate-speaking`).
+    speaking: speaking("0px"),
   },
-  animation: Object.fromEntries(
-    names(motion).map((name) => [name, `my-${name} var(--duration-${name}) linear infinite`]),
-  ),
+  animation: {
+    ...Object.fromEntries(names(motion).map((name) => [name, `my-${name} var(--duration-${name}) linear infinite`])),
+    // A voice chat room's: a reaction rises and fades once, or, with reduced motion, fades in and out where it is; the
+    // halo of who speaks swells and settles while they speak.
+    reaction: "my-reaction var(--voice-reaction-duration) ease-out both",
+    "reaction-still": "my-reaction-still var(--voice-reaction-duration) linear both",
+    speaking: "my-speaking var(--voice-speaking-duration) ease-in-out infinite alternate",
+  },
 };
 
 export default plugin(
@@ -272,6 +294,19 @@ export default plugin(
       ':root[data-theme="light"]': { colorScheme: "light" },
       ':root[data-theme="dark"]': { colorScheme: "dark" },
       "@keyframes my-spin": { to: { transform: "rotate(360deg)" } },
+      "@keyframes my-reaction": {
+        from: { opacity: "0", transform: "translateY(0) scale(0.6)" },
+        "12%": { opacity: "1", transform: "translateY(calc(var(--voice-rise) * -0.12)) scale(1)" },
+        "70%": { opacity: "1" },
+        to: { opacity: "0", transform: "translateY(calc(var(--voice-rise) * -1)) scale(1)" },
+      },
+      "@keyframes my-reaction-still": {
+        from: { opacity: "0" },
+        "12%": { opacity: "1" },
+        "70%": { opacity: "1" },
+        to: { opacity: "0" },
+      },
+      "@keyframes my-speaking": { to: { boxShadow: speaking("var(--voice-halo)") } },
     });
     api.addBase(transitionRules);
   },

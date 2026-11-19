@@ -110,6 +110,8 @@ const GAP = {
   "shell-inset": "gap-shell-inset",
   "shell-item-gap": "gap-shell-item-gap",
   "viewer-inset": "gap-viewer-inset",
+  "voice-control-gap": "gap-voice-control-gap",
+  "voice-tile-gap": "gap-voice-tile-gap",
 } as const;
 
 /** A gap between the children of a line alone, where the lines of a row that wraps stand otherwise apart. */

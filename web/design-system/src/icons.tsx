@@ -137,6 +137,7 @@ import {
   IconUserPlus,
   IconUserQuestion,
   IconUsers,
+  IconVolume,
   IconVolumeOff,
   IconWebhookOff,
   IconWorld,
@@ -279,6 +280,10 @@ export const icons = {
   live: { off: IconBroadcast },
   microphone: { off: IconMicrophone, on: IconMicrophoneOff },
   leave: { off: IconDoorExit, directional: true },
+  // A voice chat room: a hand raised to speak (on, while raised: Tabler has no filled hand), and turning on the sound
+  // the browser held back until a press (a speaker, apart from mute's crossed one).
+  hand: { off: IconHandStop, on: "tile" },
+  hear: { off: IconVolume },
   // Signing in: an arrow into a door.
   signIn: { off: IconLogin2, directional: true },
   github: { off: IconBrandGithub },
