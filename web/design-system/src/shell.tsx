@@ -38,6 +38,7 @@ import { Box, Column, Row, Stack, type Gap } from "./layout";
 import { UnreadMark } from "./list";
 import { useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
+import { HeadcountMark, type Headcount } from "./voice";
 
 /**
  * Where a part of the frame sits: in the rail or sidebar, in the tab bar, floating over it, in the Menu (the one menu,
@@ -1252,7 +1253,10 @@ const call = tv({
     room: "flex min-w-0 flex-1 items-center gap-entry-avatar",
     glyph: "inline-flex flex-none",
     lines: "grid min-w-0 flex-1 leading-entry",
-    name: "truncate",
+    // The name's line: the name, cut first, then how many are in the room, never cut.
+    head: "flex min-w-0 items-baseline gap-entry-caption",
+    name: "min-w-0 truncate",
+    count: "flex-none",
     detail: "truncate",
     actions: "flex flex-none items-center gap-shell-inset",
     button: ["box-border inline-flex flex-none items-center justify-center gap-icon-button-gap", callTarget],
@@ -1266,7 +1270,7 @@ const call = tv({
     place: {
       // Above the tab bar, at its full width, on the raised surface.
       dock: {
-        root: "h-shell-call-bar bg-surface-raised ps-shell-edge pe-shell-inset",
+        root: "bg-surface-raised ps-shell-edge pe-shell-inset",
         button: "bg-transparent data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
         hear: "h-control-timeline px-control-timeline-inline pointer-coarse:h-icon-button-touch",
       },
@@ -1306,7 +1310,18 @@ const call = tv({
       float: {},
       menu: {},
     },
+    // The browser holds the room's sound back: above the tab bar, hearing takes a line of its own over the room and
+    // its two buttons, at the bar's width, so that the room's name and count keep their room.
+    held: { true: {}, false: {} },
   },
+  compoundVariants: [
+    { place: "dock", held: false, class: { root: "h-shell-call-bar" } },
+    {
+      place: "dock",
+      held: true,
+      class: { root: "min-h-shell-call-bar flex-wrap py-shell-inset", hear: "basis-full" },
+    },
+  ],
 });
 
 // What the parts of the call's bar look like wherever it is. The microphone muted is knocked out, as a toggle on is,
@@ -1345,6 +1360,7 @@ const callLook = tv({
 function CallPart({
   part,
   as,
+  held = false,
   children,
 }: {
   part:
@@ -1352,7 +1368,9 @@ function CallPart({
     | "room"
     | "glyph"
     | "lines"
+    | "head"
     | "name"
+    | "count"
     | "detail"
     | "actions"
     | "button"
@@ -1361,9 +1379,11 @@ function CallPart({
     | "hearLabel"
     | "tooltip";
   as: ReactElement<{ className?: unknown }>;
+  /** The browser holds the room's sound back, and hearing is a part of the bar. */
+  held?: boolean | undefined;
   children?: ReactNode;
 }) {
-  const s = call({ place: use(PlaceContext) });
+  const s = call({ place: use(PlaceContext), held });
   return (
     <Box as={as} className={s[part]()}>
       {children}
@@ -1375,12 +1395,15 @@ function CallPart({
  * The bar of the call the reader is in, kept while they move between screens: above the tab bar on a phone, ending the
  * navigation from `tablet`. The room's glyph, name and detail (who hosts it, how many listen) lead to its screen (in the
  * rail, its name in a tooltip); then the microphone, on while muted, and leaving last, each named, and labelled from
- * `desktop`. While the call connects or connects again, a spinner stands in the room's glyph and the detail says so;
- * while the browser holds the room's sound back until a press, `hear` comes first, knocked out, with its words.
+ * `desktop`. How many are in the room follows its name, never cut. While the call connects or connects again, a
+ * spinner stands in the room's glyph and the detail says so; while the browser holds the room's sound back until a
+ * press, `hear` is the bar's strongest part, knocked out, with its words: above the tab bar a line of its own over the
+ * room, at the rail's end a tile before the microphone, and from `desktop` a line of its own over the two buttons.
  */
 export function CallBar({
   href,
   room,
+  count,
   detail,
   busy = false,
   hear,
@@ -1392,7 +1415,9 @@ export function CallBar({
 }: {
   href: string;
   room: string;
-  /** Who hosts it and how many are in it, or what the call is going through ("Reconnecting…", "Muted by the host"). */
+  /** How many are in the room. */
+  count?: Headcount | undefined;
+  /** Who hosts it, or what the call is going through ("Reconnecting…", "The host muted you"). */
   detail: string;
   /** The call connects, or connects again. */
   busy?: boolean | undefined;
@@ -1407,14 +1432,31 @@ export function CallBar({
 }) {
   const place = use(PlaceContext);
   const look = callLook();
+  const held = hear !== undefined;
+  const hearing = hear !== undefined && (
+    <CallPart part="hear" held as={<AriaButton className={look.hear()} onPress={hear.onPress} />}>
+      <Icon name="hear" place="action" />
+      <CallPart part="hearLabel" as={<span />}>
+        {hear.label}
+      </CallPart>
+    </CallPart>
+  );
   const link = (
     <CallPart part="room" as={<Link className={look.room()} href={href} />}>
       <CallPart part="glyph" as={<span />}>
         {busy ? <span className={look.spinner()} aria-hidden="true" /> : <Icon name="live" place="action" />}
       </CallPart>
       <CallPart part="lines" as={<span />}>
-        <CallPart part="name" as={<span className={look.name()} dir="auto" />}>
-          {room}
+        <CallPart part="head" as={<span />}>
+          <CallPart part="name" as={<span className={look.name()} dir="auto" />}>
+            {room}
+          </CallPart>
+          {count !== undefined && " "}
+          {count !== undefined && (
+            <CallPart part="count" as={<span className={look.detail()} />}>
+              <HeadcountMark count={count} />
+            </CallPart>
+          )}
         </CallPart>{" "}
         <CallPart part="detail" as={<span className={look.detail()} />}>
           {detail}
@@ -1425,6 +1467,7 @@ export function CallBar({
   return (
     <CallPart
       part="root"
+      held={held}
       as={
         <div
           data-frame-call={place === "dock" ? "" : undefined}
@@ -1434,6 +1477,7 @@ export function CallBar({
         />
       }
     >
+      {place === "dock" && hearing}
       {place === "side" ? (
         <TooltipTrigger delay={300}>
           {link}
@@ -1441,21 +1485,14 @@ export function CallBar({
             <Box as="span" display="block" className="font-label" dir="auto">
               {room}
             </Box>
-            {detail}
+            {count === undefined ? detail : `${count.label} · ${detail}`}
           </CallPart>
         </TooltipTrigger>
       ) : (
         link
       )}
       <CallPart part="actions" as={<span />}>
-        {hear !== undefined && (
-          <CallPart part="hear" as={<AriaButton className={look.hear()} onPress={hear.onPress} />}>
-            <Icon name="hear" place="action" />
-            <CallPart part="hearLabel" as={<span />}>
-              {hear.label}
-            </CallPart>
-          </CallPart>
-        )}
+        {place !== "dock" && hearing}
         <CallPart part="button" as={<ToggleButton className={look.button()} isSelected={muted} onChange={onMute} />}>
           <Icon name="microphone" place="action" on={muted} />
           <CallPart part="buttonLabel" as={<span />}>

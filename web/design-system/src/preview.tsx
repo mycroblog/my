@@ -38,6 +38,19 @@ export function PreviewItems({
   return <ItemsContext value={states}>{children}</ItemsContext>;
 }
 
+const StillContext = createContext(false);
+
+/** Whether the motions inside stand still at a moment of their run (the reactions of a voice chat room, rising). */
+export const usePreviewStill = () => useContext(StillContext);
+
+/**
+ * Holds the motions inside at a moment of their run, each at a height of its own, so that a shot, which ends every
+ * motion before it shoots, shows what rises in the middle of its rise.
+ */
+export function PreviewStill({ children }: { children: ReactNode }) {
+  return <StillContext value>{children}</StillContext>;
+}
+
 const ExpandedContext = createContext(false);
 
 /** Whether the disclosures inside show what they fold at first (a content warning opened). */

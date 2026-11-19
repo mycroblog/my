@@ -251,6 +251,9 @@ const SPACE_ABOVE = {
 } as const;
 const SPACE_BELOW = {
   "menu-group-gap": "mb-menu-group-gap",
+  // Past the ring around the avatar of who speaks in a voice chat room and its halo swelled, so that neither meets
+  // what is under it.
+  "voice-ring": "mb-[calc(var(--voice-ring-gap)+var(--voice-ring-width)+var(--voice-halo))]",
   "screen-focus-gap": "mb-screen-focus-gap",
   "shell-edge": "mb-shell-edge",
   "shell-gap": "mb-shell-gap",

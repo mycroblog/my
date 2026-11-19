@@ -14,7 +14,8 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import { CustomEmoji } from "./content";
 import { sampleCustomEmoji } from "./emoji.samples";
 import { Box, Stack } from "./layout";
-import { GroupHeading, ListTitle, RowItem, RowList } from "./list";
+import { PreviewStill } from "./preview";
+import { GroupHeading, RowItem, RowList } from "./list";
 import { images } from "./samples";
 import {
   ParticipantGrid,
@@ -23,6 +24,7 @@ import {
   RoomControl,
   RoomControls,
   RoomLine,
+  RoomTitle,
   type Reaction,
 } from "./voice";
 
@@ -135,7 +137,10 @@ function useReactions(every: number): [readonly Reaction[], (id: string) => void
   ];
 }
 
-/** The reader's controls: a speaker's microphone, or a listener's hand, then a reaction and leaving. */
+/**
+ * The reader's controls: a speaker's microphone, or a listener's hand, each named by what a press does now, then a
+ * reaction and leaving.
+ */
 function Controls({ speaker, on = false }: { speaker: boolean; on?: boolean }) {
   const [pressed, setPressed] = useState(on);
   const toggle = () => {
@@ -144,29 +149,37 @@ function Controls({ speaker, on = false }: { speaker: boolean; on?: boolean }) {
   return (
     <RoomControls label="Room controls" end={<RoomControl icon="leave" label="Leave" onPress={none} />}>
       {speaker ? (
-        <RoomControl icon="microphone" label="Mute" pressed={pressed} onPress={toggle} />
+        <RoomControl icon="microphone" label={pressed ? "Unmute" : "Mute"} on={pressed} onPress={toggle} />
       ) : (
-        <RoomControl icon="hand" label="Raise hand" pressed={pressed} onPress={toggle} />
+        <RoomControl icon="hand" label={pressed ? "Lower hand" : "Raise hand"} on={pressed} onPress={toggle} />
       )}
       <RoomControl icon="react" label="React" onPress={none} />
     </RoomControls>
   );
 }
 
-/** The room: its name, its stage under the reactions, its listeners, and the reader's controls. */
+/** Reactions held at a moment of their rise, Unicode and custom emoji, so that a shot shows them. */
+const held: readonly Reaction[] = [
+  { id: "a", emoji: "👏" },
+  { id: "e", emoji: custom("sparkle") },
+  { id: "c", emoji: "❤️" },
+  { id: "b", emoji: custom("party") },
+  { id: "d", emoji: "🔥" },
+];
+
+/** The room: its title, its stage under reactions held mid-rise, its listeners, and the reader's controls. */
 function Room({ speaker }: { speaker: boolean }) {
-  const [reactions, done] = useReactions(700);
   return (
     <Column>
       <Stack gap="entry-room">
-        <ListTitle glyph="☕" count="20">
-          Morning coffee chat
-        </ListTitle>
+        <RoomTitle icon="☕" name="Morning coffee chat" count={{ shown: "20", label: "20 in the room" }} />
         <Stack gap="entry-line">
           <GroupHeading>Speakers</GroupHeading>
-          <ReactionFlow reactions={reactions} onDone={done}>
-            <Stage />
-          </ReactionFlow>
+          <PreviewStill>
+            <ReactionFlow reactions={held} onDone={none}>
+              <Stage />
+            </ReactionFlow>
+          </PreviewStill>
         </Stack>
         <Stack gap="entry-line">
           <GroupHeading>Listeners</GroupHeading>
@@ -211,8 +224,24 @@ export const ListenerTiles: Story = {
   ),
 };
 
-/** Reactions rising over the stage from its end, Unicode and custom emoji; with reduced motion they fade in place. */
+/**
+ * Reactions over the stage, held at a moment of their rise at three heights, the highest fading, Unicode and custom
+ * emoji, in lanes from the stage's end.
+ */
 export const Reactions: Story = {
+  render: () => (
+    <Column>
+      <PreviewStill>
+        <ReactionFlow reactions={held} onDone={none}>
+          <Stage />
+        </ReactionFlow>
+      </PreviewStill>
+    </Column>
+  ),
+};
+
+/** Reactions rising over the stage as they arrive, each once; with reduced motion they fade in and out in place. */
+export const ReactionsMoving: Story = {
   render: function Render() {
     const [reactions, done] = useReactions(500);
     return (
@@ -238,7 +267,8 @@ export const RoomLines: Story = {
             href="/voice/1"
             icon="☕"
             name="Morning coffee chat"
-            caption="Hosted by Mika · 20 in the room"
+            caption="Hosted by Mika"
+            count={{ shown: "20", label: "20 in the room" }}
             speakers={[
               { name: "Mika", src: images.dusk },
               { name: "Ren", src: images.snow },
@@ -252,7 +282,8 @@ export const RoomLines: Story = {
             href="/voice/2"
             icon={custom("party")}
             name="Release party for v0.2"
-            caption="Hosted by Ren · 48 in the room"
+            caption="Hosted by Ren"
+            count={{ shown: "48", label: "48 in the room" }}
             speakers={[{ name: "Ren", src: images.snow }]}
           />
         </RowItem>
@@ -260,7 +291,8 @@ export const RoomLines: Story = {
           <RoomLine
             href="/voice/3"
             name="A room with a name long enough to wrap onto a second line, and then to be cut at the end of it"
-            caption="Hosted by Sora with a display name that is long too · 3 in the room"
+            caption="Hosted by Sora with a display name that is long too"
+            count={{ shown: "3", label: "3 in the room" }}
             speakers={[
               { name: "Sora", src: images.logo },
               { name: "Mika", src: images.dusk },
@@ -268,14 +300,23 @@ export const RoomLines: Story = {
           />
         </RowItem>
         <RowItem>
-          <RoomLine href="/voice/4" icon="🎧" name="Quiet listening" caption="Hosted by Aoi · 1 in the room" />
+          <RoomLine
+            href="/voice/4"
+            icon="🎧"
+            name="Quiet listening"
+            caption="Hosted by Aoi"
+            count={{ shown: "1", label: "1 in the room" }}
+          />
         </RowItem>
       </RowList>
     </Column>
   ),
 };
 
-/** A speaker's controls: the microphone on, then muted (knocked out, crossed out), a reaction, and leaving apart. */
+/**
+ * A speaker's controls: the microphone on, named Mute; then off, knocked out and crossed out, named Unmute; a reaction,
+ * and leaving apart.
+ */
 export const SpeakerControls: Story = {
   render: () => (
     <Column>
@@ -287,7 +328,7 @@ export const SpeakerControls: Story = {
   ),
 };
 
-/** A listener's controls: a hand to raise, then raised (knocked out), a reaction, and leaving apart. */
+/** A listener's controls: Raise hand; then raised, knocked out, named Lower hand; a reaction, and leaving apart. */
 export const ListenerControls: Story = {
   render: () => (
     <Column>
@@ -305,7 +346,7 @@ export const ControlsDisabled: Story = {
     <Column>
       <Box>
         <RoomControls label="Room controls" end={<RoomControl icon="leave" label="Leave" onPress={none} />}>
-          <RoomControl icon="microphone" label="Mute" pressed={false} isDisabled />
+          <RoomControl icon="microphone" label="Mute" isDisabled />
           <RoomControl icon="react" label="React" onPress={none} />
         </RoomControls>
       </Box>

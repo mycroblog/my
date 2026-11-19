@@ -16,6 +16,7 @@ import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
 import { FormActions, FormHead, FormLink, FormLinks, FormPage, FormPageFooter, FormText } from "./form-page";
 import { MenuGroup, MenuItem } from "./menu";
+import { HeadcountMark } from "./voice";
 import { images } from "./samples";
 import {
   CallBar,
@@ -316,18 +317,30 @@ function Around({ who = "reader", at = "/", around = "all" }: ShellState) {
               href="/voice/1"
               glyph="☕"
               title="Morning coffee chat"
-              caption="Hosted by Mika · 12 in the room"
+              caption={
+                <>
+                  Hosted by Mika <HeadcountMark count={{ shown: "12", label: "12 in the room" }} />
+                </>
+              }
             />
             <SectionLine
               href="/voice/2"
               glyph="🎉"
               title="Release party for v0.2"
-              caption="Hosted by Ren · 48 in the room"
+              caption={
+                <>
+                  Hosted by Ren <HeadcountMark count={{ shown: "48", label: "48 in the room" }} />
+                </>
+              }
             />
             <SectionLine
               href="/voice/3"
               title="A room with a name long enough to wrap onto a second line in this column"
-              caption="Hosted by Sora · 3 in the room"
+              caption={
+                <>
+                  Hosted by Sora <HeadcountMark count={{ shown: "3", label: "3 in the room" }} />
+                </>
+              }
             />
           </SectionList>
         </FrameSection>
@@ -487,6 +500,7 @@ function Shell(state: ShellState) {
     <CallBar
       href="/voice/1"
       room="Morning coffee chat"
+      count={{ shown: "12", label: "12 in the room" }}
       detail={
         callState === "connecting"
           ? "Connecting…"
@@ -494,7 +508,7 @@ function Shell(state: ShellState) {
             ? "Reconnecting…"
             : callState === "mutedByHost" && muted
               ? "The host muted you"
-              : "Hosted by Mika · 12 in the room"
+              : "Hosted by Mika"
       }
       busy={callState === "connecting" || callState === "reconnecting"}
       hear={

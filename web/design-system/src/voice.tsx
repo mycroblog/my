@@ -15,12 +15,13 @@
 
 import type { ReactNode } from "react";
 import { Children } from "react";
-import { Button as AriaButton, Link, ToggleButton, Toolbar } from "react-aria-components";
+import { Button as AriaButton, Heading, Link, Toolbar } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Avatar } from "./avatar";
+import { usePreviewStill } from "./preview";
 import { Faces } from "./faces";
 import { Icon, icons, type IconName } from "./icons";
-import { Box, Pin, Row, Stack } from "./layout";
+import { Box, Pin, Row, Spoken, Stack } from "./layout";
 
 /** Where a participant's tile sits: on the stage (who may speak), or in the list of listeners, compact. */
 export type ParticipantSize = "stage" | "listener";
@@ -103,9 +104,10 @@ export function ParticipantTile({
     <Stack
       as={<AriaButton className={s.root()} aria-label={label} {...(onPress === undefined ? {} : { onPress })} />}
       justify="center"
+      pack="start"
       gap="hair"
     >
-      <Box as="span" anchor rigid display="inline-block" className={s.face()}>
+      <Box as="span" anchor rigid display="inline-block" spaceBelow="voice-ring" className={s.face()}>
         <Avatar name={name} src={src} size={size === "stage" ? "preview" : "post"} decorative />
         {hand !== undefined && (
           <Pin as="span" top="0" end="0">
@@ -218,13 +220,24 @@ function ReactionLane({ lane, children }: { lane: number; children: ReactNode })
 }
 
 const bubble = tv({
-  base: "text-[length:var(--voice-reaction)] leading-none animate-reaction motion-reduce:animate-reaction-still",
+  base: "text-[length:var(--voice-reaction)] leading-none",
+  variants: {
+    // Rising, or held at a moment of the rise in a story (`PreviewStill`), at one of three heights.
+    step: {
+      moving: "animate-reaction motion-reduce:animate-reaction-still",
+      0: "-translate-y-[calc(var(--voice-rise)*0.15)]",
+      1: "-translate-y-[calc(var(--voice-rise)*0.4)]",
+      2: "-translate-y-[calc(var(--voice-rise)*0.65)] opacity-60",
+    },
+  },
 });
 
 /** One reaction: it rises and fades, or, with reduced motion, fades in and out where it is; then it is done. */
-function Rising({ onDone, children }: { onDone: () => void; children: ReactNode }) {
+function Rising({ index, onDone, children }: { index: number; onDone: () => void; children: ReactNode }) {
+  const still = usePreviewStill();
+  const step = still ? ((index % 3) as 0 | 1 | 2) : "moving";
   return (
-    <Box as="span" display="inline-block" className={bubble()} onAnimationEnd={onDone}>
+    <Box as="span" display="inline-block" className={bubble({ step })} onAnimationEnd={onDone}>
       {children}
     </Box>
   );
@@ -248,9 +261,10 @@ export function ReactionFlow({
 }) {
   return (
     <ReactionPlace
-      over={reactions.map((r) => (
+      over={reactions.map((r, i) => (
         <ReactionLane key={r.id} lane={laneOf(r.id)}>
           <Rising
+            index={i}
             onDone={() => {
               onDone(r.id);
             }}
@@ -262,6 +276,61 @@ export function ReactionFlow({
     >
       {children}
     </ReactionPlace>
+  );
+}
+
+const headcount = tv({ slots: { root: "", glyph: "", figure: "tabular-nums" } });
+
+/** How many are in a room, as a figure. */
+export type Headcount = {
+  /** The figure, as the reader's locale writes it ("20"). */
+  shown: string;
+  /** What it says to assistive technology ("20 in the room"). */
+  label: string;
+};
+
+/**
+ * How many are in a room: the people's glyph and the figure, the same wherever a room shows it (its title, its line
+ * in a list, the call's bar), heard as its label.
+ */
+export function HeadcountMark({ count, place = "caption" }: { count: Headcount; place?: "caption" | "action" }) {
+  const s = headcount();
+  return (
+    <Row as="span" inline rigid align="center" gap="hair" className={s.root()}>
+      <Row as="span" inline className={s.glyph()} aria-hidden="true">
+        <Icon name="members" place={place} />
+      </Row>
+      <span className={s.figure()} aria-hidden="true">
+        {count.shown}
+      </span>
+      <Spoken>{count.label}</Spoken>
+    </Row>
+  );
+}
+
+const title = tv({
+  slots: {
+    root: "text-title font-normal",
+    emoji: "leading-none",
+    count: "text-body text-muted-text",
+  },
+});
+
+/** The title of a room's screen: its icon emoji, its name, which wraps, and how many are in it, muted. */
+export function RoomTitle({ icon, name, count }: { icon?: ReactNode; name: string; count: Headcount }) {
+  const s = title();
+  return (
+    <Row as={<Heading level={2} className={s.root()} />} wrap align="center" gapX="entry-caption">
+      {icon !== undefined && (
+        <Row as="span" inline rigid className={s.emoji()} aria-hidden="true">
+          {icon}
+        </Row>
+      )}
+      <span dir="auto">{name}</span>
+      <Row as="span" inline rigid className={s.count()}>
+        <HeadcountMark count={count} place="action" />
+      </Row>
+    </Row>
   );
 }
 
@@ -289,18 +358,20 @@ export type RoomLineProps = {
   name: string;
   /** Its icon emoji (FR-923): a Unicode emoji, or a `CustomEmoji`; without one, the room's glyph stands in. */
   icon?: ReactNode;
-  /** Who hosts it and how many are in it, in the reader's words ("Hosted by Mika · 12 in the room"). */
+  /** Who hosts it, in the reader's words ("Hosted by Mika"). */
   caption: ReactNode;
+  /** How many are in it. */
+  count: Headcount;
   /** Who speaks in it now, the first first; the first three show. */
   speakers?: readonly { name: string; src?: string | undefined }[] | undefined;
 };
 
 /**
  * A room going on, as a line of a list that is one link to it: its icon emoji (or the room's glyph) at the start, its
- * name over who hosts it and how many are in it, after the glyph of a call going on, and the faces of who speaks at
- * the end.
+ * name over who hosts it and how many are in it (the people's glyph and the figure), after the glyph of a call going
+ * on, and the faces of who speaks at the end.
  */
-export function RoomLine({ href, name, icon, caption, speakers = [] }: RoomLineProps) {
+export function RoomLine({ href, name, icon, caption, count, speakers = [] }: RoomLineProps) {
   const s = line();
   return (
     <Row
@@ -324,7 +395,10 @@ export function RoomLine({ href, name, icon, caption, speakers = [] }: RoomLineP
           <Row as="span" line rigid align="center">
             <Icon name="live" place="caption" />
           </Row>
-          <span>{caption}</span>
+          <Row as="span" wrap align="baseline" gapX="entry-caption">
+            <span>{caption}</span>
+            <HeadcountMark count={count} />
+          </Row>
         </Row>
       </Stack>
       {speakers.length > 0 && (
@@ -341,7 +415,7 @@ export function RoomLine({ href, name, icon, caption, speakers = [] }: RoomLineP
 const control = tv({
   slots: {
     root: [
-      "group box-border min-w-voice-control cursor-pointer rounded-control border-0 bg-transparent p-0",
+      "group box-border min-w-voice-control-width cursor-pointer rounded-control border-0 bg-transparent p-0",
       "font-sans text-caption font-label text-text outline-hidden data-focus-visible:shadow-focus",
       "data-disabled:cursor-not-allowed data-disabled:opacity-disabled",
     ],
@@ -369,21 +443,25 @@ function ownOn(name: IconName): boolean {
 
 export type RoomControlProps = {
   icon: IconName;
-  /** Its name, shown under its glyph; a toggle's is the same on and off ("Mute", pressed while muted). */
+  /**
+   * Its name, shown under its glyph: what a press does now, which follows its state ("Mute", and "Unmute" while
+   * muted; "Raise hand", and "Lower hand" while raised).
+   */
   label: string;
-  /** A toggle's state; none for an action that is no toggle (React, Leave). */
-  pressed?: boolean | undefined;
+  /** Its state is on (the microphone off, the hand raised): knocked out, its glyph in its on shape. */
+  on?: boolean | undefined;
   /** What a press does; or it is a trigger (the emoji picker's popover, a `MenuSurface`). */
   onPress?: (() => void) | undefined;
   isDisabled?: boolean | undefined;
 };
 
 /**
- * A control of the room's bar: its glyph on a raised tile a finger's size, its name under it. A toggle that is on is
- * knocked out, its glyph in its on shape where it has one of its own (the microphone crossed out).
+ * A control of the room's bar, a button: its glyph on a raised tile a finger's size, its name under it. While its
+ * state is on, the tile is knocked out and its glyph takes its on shape where it has one of its own (the microphone
+ * crossed out), so that glyph and fill say the state, and its name says what a press does then: one name, no
+ * pressed state beside it, so that what is shown and what is heard agree.
  */
-export function RoomControl({ icon, label, pressed, onPress, isDisabled }: RoomControlProps) {
-  const on = pressed === true;
+export function RoomControl({ icon, label, on = false, onPress, isDisabled }: RoomControlProps) {
   const s = control({ on });
   const glyph = (
     <Row as="span" inline rigid align="center" justify="center" className={s.tile()}>
@@ -396,11 +474,7 @@ export function RoomControl({ icon, label, pressed, onPress, isDisabled }: RoomC
     ...(isDisabled === undefined ? {} : { isDisabled }),
   };
   return (
-    <Stack
-      as={pressed === undefined ? <AriaButton {...props} /> : <ToggleButton {...props} isSelected={pressed} />}
-      justify="center"
-      gap="hair"
-    >
+    <Stack as={<AriaButton {...props} />} justify="center" gap="hair">
       {glyph}
       <span className={s.label()}>{label}</span>
     </Stack>

@@ -560,7 +560,8 @@ export const shell = {
  * surface under it, the ring of the text's color, and how far its halo swells past the ring, in a share of the text's
  * color; the size of a badge on an avatar's corner (a microphone off, a hand raised) on a speaker's and on a listener's
  * avatar; the size of a reaction's emoji, the width of a lane reactions rise in and how far they rise; the size of a
- * control of the room's bar and the space between its controls; and the box of a room's emoji at the start of a line
+ * control of the room's bar, the least width of one with its name, so that a name that changes with its state moves
+ * nothing beside it, and the space between its controls; and the box of a room's emoji at the start of a line
  * of a list, and the emoji's size in it. Durations in ms: a reaction's rise, and the halo's swell while one speaks.
  */
 export const voice = {
@@ -570,7 +571,7 @@ export const voice = {
   tilePadding: 0.25,
   ringGap: 0.125,
   ringWidth: 0.1875,
-  halo: 0.3125,
+  halo: 0.25,
   haloShare: 0.3,
   badge: 1.25,
   badgeSmall: 1.125,
@@ -578,6 +579,7 @@ export const voice = {
   lane: 2.25,
   rise: 9,
   control: 3,
+  controlWidth: 4.5,
   controlGap: 0.5,
   roomBox: 2.5,
   roomEmoji: 1.5,

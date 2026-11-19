@@ -252,12 +252,15 @@ export {
   Toast,
 } from "./shell";
 export {
+  HeadcountMark,
   ParticipantGrid,
   ParticipantTile,
   ReactionFlow,
   RoomControl,
   RoomControls,
   RoomLine,
+  RoomTitle,
+  type Headcount,
   type ParticipantSize,
   type ParticipantTileProps,
   type Reaction,

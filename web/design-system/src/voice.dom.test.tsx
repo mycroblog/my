@@ -3,7 +3,15 @@
 import { expect, test } from "bun:test";
 import { fireEvent, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ParticipantGrid, ParticipantTile, ReactionFlow, RoomControl, RoomControls, RoomLine } from "./voice";
+import {
+  ParticipantGrid,
+  ParticipantTile,
+  ReactionFlow,
+  RoomControl,
+  RoomControls,
+  RoomLine,
+  RoomTitle,
+} from "./voice";
 
 test("a participant's tile is a button named by the name first, then their role, the block's mark and their states", async () => {
   const user = userEvent.setup();
@@ -85,18 +93,19 @@ test("a room's line is one link named by its name and caption, its emoji and fac
       href="/voice/1"
       icon="☕"
       name="Morning coffee chat"
-      caption="Hosted by Mika · 20 in the room"
+      caption="Hosted by Mika"
+      count={{ shown: "20", label: "20 in the room" }}
       speakers={[{ name: "Mika" }, { name: "Ren" }, { name: "Sora" }, { name: "Aoi" }]}
     />,
   );
 
-  const link = screen.getByRole("link", { name: "Morning coffee chat Hosted by Mika · 20 in the room" });
+  const link = screen.getByRole("link", { name: "Morning coffee chat Hosted by Mika 20 in the room" });
   expect(link.getAttribute("href")).toBe("/voice/1");
   // The first three faces show.
   expect(link.querySelectorAll("[data-initial]")).toHaveLength(3);
 });
 
-test("the room's controls are a toolbar the arrow keys move along, leaving last, and a toggle says it is on", async () => {
+test("the room's controls are a toolbar of buttons the arrow keys move along, leaving last, each named by what it does now", async () => {
   const user = userEvent.setup();
   const did: string[] = [];
   render(
@@ -104,7 +113,7 @@ test("the room's controls are a toolbar the arrow keys move along, leaving last,
       label="Room controls"
       end={<RoomControl icon="leave" label="Leave" onPress={() => did.push("leave")} />}
     >
-      <RoomControl icon="microphone" label="Mute" pressed onPress={() => did.push("mute")} />
+      <RoomControl icon="microphone" label="Unmute" on onPress={() => did.push("unmute")} />
       <RoomControl icon="react" label="React" onPress={() => did.push("react")} />
     </RoomControls>,
   );
@@ -113,9 +122,10 @@ test("the room's controls are a toolbar the arrow keys move along, leaving last,
   const buttons = within(bar).getAllByRole("button");
   const [mute, react, leave] = buttons;
   if (mute === undefined || react === undefined || leave === undefined) throw new Error("three controls");
-  expect(buttons.map((b) => b.textContent)).toEqual(["Mute", "React", "Leave"]);
-  expect(within(bar).getByRole("button", { name: "Mute", pressed: true })).toBe(mute);
-  expect(react.hasAttribute("aria-pressed")).toBe(false);
+  expect(buttons.map((b) => b.textContent)).toEqual(["Unmute", "React", "Leave"]);
+  // One name for what is shown and heard: no pressed state beside it.
+  expect(within(bar).getByRole("button", { name: "Unmute" })).toBe(mute);
+  expect(buttons.some((b) => b.hasAttribute("aria-pressed"))).toBe(false);
 
   await user.tab();
   expect(document.activeElement).toBe(mute);
@@ -125,5 +135,11 @@ test("the room's controls are a toolbar the arrow keys move along, leaving last,
   await user.keyboard("{ArrowRight}");
   expect(document.activeElement).toBe(leave);
   await user.keyboard("{Enter}");
-  expect(did).toEqual(["mute", "leave"]);
+  expect(did).toEqual(["unmute", "leave"]);
+});
+
+test("a room's title is a heading of its name and how many are in it, the emoji hidden", () => {
+  render(<RoomTitle icon="☕" name="Morning coffee chat" count={{ shown: "20", label: "20 in the room" }} />);
+
+  expect(screen.getByRole("heading", { level: 2, name: "Morning coffee chat 20 in the room" })).toBeDefined();
 });
