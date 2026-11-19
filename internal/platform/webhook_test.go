@@ -284,6 +284,12 @@ func TestWebhookData(t *testing.T) {
 		t.Fatal(err)
 	}
 	bobToken := issueAccessToken(t, app, bob.User.ID, "read write")
+	// The report's target is neither its reporter nor the moderator who reads it, who would not be
+	// told the reporter (ADR-0058 §9).
+	carol, err := app.Identity.RegisterLocalUser(ctx, identity.RegisterInput{Username: "carol", Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	api := func(token, method, path string, body any, out any) {
 		t.Helper()
@@ -344,7 +350,7 @@ func TestWebhookData(t *testing.T) {
 	var report struct {
 		ID string `json:"id"`
 	}
-	api(bobToken, http.MethodPost, "/reports", map[string]any{"account_id": admin.AccountID, "category": "spam", "comment": "rude"}, &report)
+	api(bobToken, http.MethodPost, "/reports", map[string]any{"account_id": carol.AccountID, "category": "spam", "comment": "rude"}, &report)
 	data := message("report.created")
 	var reports struct {
 		Items []map[string]any `json:"items"`
