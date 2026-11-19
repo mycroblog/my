@@ -742,6 +742,15 @@ export {
 } from "./profile";
 export { blocksQuery, mutesQuery, useBlocks, useMutes, type MutedAccount } from "./relations";
 export {
+  fileReport,
+  reportFaultField,
+  useFileReport,
+  type CreateReport,
+  type InstanceRule,
+  type OwnReport,
+  type ReportCategory,
+} from "./reports";
+export {
   deleteKeywordFilter,
   filterContexts,
   filterLimitOf,

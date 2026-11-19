@@ -33,6 +33,7 @@ export { ownProfileHeading, Profile } from "./profile";
 export { ProfileForm, ProfileSettings } from "./profile-settings";
 export { Reactors } from "./reactors";
 export { Relationships } from "./relationships";
+export { ReportPanel, type ReportReason } from "./report";
 export { ForgotPassword, PasswordReset } from "./reset";
 export { Security, TwoFactorSetup, virtualAuthenticator } from "./security";
 export { DisplaySettings, Landing, Settings } from "./settings";

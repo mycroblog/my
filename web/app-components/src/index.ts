@@ -118,6 +118,20 @@ export { excerptHtml, PostContent, ServerDomain, type ContentEmoji, type PostCon
 export { isRemote, QuoteContext, ReplyContext } from "./post-context";
 export { PostDetails } from "./post-details";
 export { FilterSentence } from "./post-filter";
+export {
+  reportDraft,
+  ReportPanel,
+  reportPanelLimits,
+  type ReportAccount,
+  type ReportAfter,
+  type ReportCategory,
+  type ReportDraft,
+  type ReportPanelProps,
+  type ReportPost,
+  type ReportPosts,
+  type ReportRule,
+  type ReportTarget,
+} from "./report";
 export type {
   PostAccount,
   PostFiltered,

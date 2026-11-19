@@ -105,6 +105,7 @@ export { loadWaitingRequests, WaitingRequests } from "./notifications/waiting";
 export { FollowRequests, loadFollowRequests } from "./notifications/follow-requests";
 export { PostActions, type ComposeRequest } from "./post-actions";
 export { inAnotherLanguage, TranslatablePost, usePostTranslation, type PostTranslationState } from "./post-translation";
+export { ReportDialog, reportRequest, type ReportAct, type ReportSubject } from "./report";
 export { Follows, loadFollows } from "./profile/follows";
 export { loadOwnProfile, loadProfile, OwnProfile, Profile, useProfileTitle } from "./profile/profile";
 export { loadOwnApp, OwnApp, useOwnAppTitle } from "./settings/apps/app";

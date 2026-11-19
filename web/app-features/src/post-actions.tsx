@@ -61,6 +61,7 @@ import { createContext, use, useEffect, useState, type ReactNode } from "react";
 import { rememberReaction, usePickerData } from "./emoji/picker";
 import { emojiStrings } from "./emoji/strings";
 import { stringsIn } from "./locale";
+import { ReportDialog } from "./report";
 
 /** How long a notice stays. */
 const noticeMs = 6000;
@@ -112,6 +113,8 @@ export type PostAuthor = {
   readonly done: (id: string) => AuthorDone | undefined;
   /** Undoes what the reader did from the menu of the post of `id`, which shows again. */
   readonly undo: (id: string) => void;
+  /** Opens the report of the author of `status` (the post a boost shows), the post chosen (report.tsx). */
+  readonly report: (status: PostStatus) => void;
 };
 
 const Context = createContext<{
@@ -309,6 +312,11 @@ export function PostActions({
   const [done, setDone] = useState<ReadonlyMap<string, AuthorDone>>(new Map());
   /** The confirmation of blocking the author of a post, open over the page. */
   const [blocking, setBlocking] = useState<{ status: PostStatus } | undefined>(undefined);
+  /**
+   * The report of a post's author, open over the page, and what the reader did to the author from it, which the post
+   * shows in its place once the report closes, so that the focus goes back to the menu it was opened from.
+   */
+  const [reporting, setReporting] = useState<{ status: PostStatus; did?: AuthorAction } | undefined>(undefined);
   // The posts' react action is at hand: the picker's code comes once the page is idle, and its emoji too for a reader
   // who opened a picker here before; else its emoji come on the reach. A reader without an account (no composer)
   // reacts after signing in, and gets nothing ahead.
@@ -434,6 +442,9 @@ export function PostActions({
       else doAuthor(action, status);
     },
     done: (id) => done.get(id),
+    report: (status) => {
+      setReporting({ status });
+    },
     undo: (id) => {
       const what = done.get(id);
       if (what === undefined) return;
@@ -526,6 +537,23 @@ export function PostActions({
           >
             {t("profile.block_confirm_text")}
           </ConfirmDialog>
+        )}
+        {reporting && (
+          <ReportDialog
+            key={`report:${reporting.status.id}`}
+            subject={{ kind: "account", account: reporting.status.account, post: reporting.status }}
+            act={(action) =>
+              writeAuthor(action, reporting.status.account, true).then(() => {
+                // A block says more of the author than a mute does, whichever came first.
+                setReporting((now) => now && { ...now, did: now.did === "block" ? "block" : action });
+              })
+            }
+            onClose={() => {
+              const { status, did } = reporting;
+              setReporting(undefined);
+              if (did !== undefined) leave(status.id, { action: did, account: status.account });
+            }}
+          />
         )}
         {confirm && (
           <DeleteConfirm

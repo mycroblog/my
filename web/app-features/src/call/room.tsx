@@ -18,6 +18,8 @@
 //   its head leads to its settings and invitations and ends it, and the host's Leave asks who hosts next or to end it
 //   while others are in the room.
 // - A participant the reader blocks, or who blocks the reader, is shown and marked, never hidden.
+// - For a reader who is not its host: More in its head (or the last group of a co-host's menu), which reports the room
+//   and its host to the moderators (report.tsx), before joining and in it.
 // - After the call: why the reader is no longer in it, when it was not their own doing (room-end.ts), over the room as
 //   it is now, or over that it ended.
 // - A room the reader does not see or that ended: what its summary says (ended, with its name where the server shows
@@ -79,6 +81,7 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from "rea
 import { usePickerData, rememberReaction } from "../emoji/picker";
 import { emojiStrings } from "../emoji/strings";
 import { stringsIn } from "../locale";
+import { ReportDialog } from "../report";
 import { CallUnavailableError, useVoiceCall, useVoiceCallState } from "./calls";
 import {
   EndRoomDialog,
@@ -241,12 +244,42 @@ function Participants({ room, live, t }: { room: VoiceRoom; live: Live | undefin
   );
 }
 
+/**
+ * The report of the room, for a reader who is not its host: what opens it, for the room's menu (none for its host),
+ * and the panel while it is open.
+ */
+function useRoomReport(room: VoiceRoom): { onReport: (() => void) | undefined; dialog: ReactNode } {
+  const viewer = useViewer()?.id;
+  const [open, setOpen] = useState(false);
+  const offered = viewer !== undefined && viewer !== room.host.id;
+  return {
+    onReport: offered
+      ? () => {
+          setOpen(true);
+        }
+      : undefined,
+    dialog: (
+      <ModalPresence>
+        {open && (
+          <ReportDialog
+            key="report"
+            subject={{ kind: "room", account: room.host, id: room.id, name: room.name }}
+            onClose={() => {
+              setOpen(false);
+            }}
+          />
+        )}
+      </ModalPresence>
+    ),
+  };
+}
+
 /** The back button to the rooms. */
 function Back({ onBack, t }: { onBack: () => void; t: T }) {
   return <BackButton onPress={onBack}>{t("voice.back")}</BackButton>;
 }
 
-/** The head of a room's page: back to the rooms, then its title, and the host's menu of the room at its end. */
+/** The head of a room's page: back to the rooms, then its title, and the room's menu at its end. */
 function Head({ room, onBack, menu, t }: { room: VoiceRoom; onBack: () => void; menu?: ReactNode; t: T }) {
   const count = useHeadcount(room.participants_count);
   const title = <RoomTitle icon={roomIcon(room.icon)} name={room.name} count={count} />;
@@ -348,6 +381,7 @@ function BeforeJoin({
   t: T;
 }) {
   const other = useVoiceCallState();
+  const report = useRoomReport(room);
   const [busy, setBusy] = useState(false);
   const [failure, setFailure] = useState<JoinFailure | null>(null);
   const foot = useRef<HTMLDivElement>(null);
@@ -369,7 +403,22 @@ function BeforeJoin({
   };
   return (
     <ScreenStack>
-      <Head room={room} onBack={onBack} t={t} />
+      <Head
+        room={room}
+        onBack={onBack}
+        menu={
+          <RoomMenu
+            self={undefined}
+            settingsHref={voiceRoomSettingsPath(room.id)}
+            invitationsHref={voiceInvitationsPath(room.id)}
+            onEnd={() => undefined}
+            onReport={report.onReport}
+            t={t}
+          />
+        }
+        t={t}
+      />
+      {report.dialog}
       {end !== null && <Line>{endSentence(end, t)}</Line>}
       <About room={room} t={t} />
       <Participants room={room} live={undefined} t={t} />
@@ -569,6 +618,7 @@ function InRoom({
   // call's bar of another screen asks for the first as it leads here (leave-ask.ts).
   const [asking, setAsking] = useState<Asking | null>(null);
   const askedFromBar = useLeaveAsk(room.id);
+  const report = useRoomReport(room);
   const leaving = asking?.kind === "leave" || (askedFromBar && asking === null);
   const controls = useRef<HTMLDivElement>(null);
   const speaker = self?.role === "speaker";
@@ -662,11 +712,13 @@ function InRoom({
             onEnd={() => {
               setAsking({ kind: "end" });
             }}
+            onReport={report.onReport}
             t={t}
           />
         }
         t={t}
       />
+      {report.dialog}
       <About room={room} t={t} />
       {callStatus(state, t).map((words) => (
         <Line

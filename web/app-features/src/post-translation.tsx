@@ -255,8 +255,8 @@ export function usePostTranslation(status: PostStatus, visitor = false): PostTra
 }
 
 /**
- * The groups of another's post's menu that act on its author (mute, block…) and on a remote author's server (mute
- * server), headed by whom they act on; for a signed-in reader only.
+ * The groups of another's post's menu that act on its author (mute, block…, report…, the post chosen in the report)
+ * and on a remote author's server (mute server), headed by whom they act on; for a signed-in reader only.
  */
 function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor }) {
   const { t } = stringsIn(useLocale().locale);
@@ -272,6 +272,15 @@ function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor
         </MenuItem>
         <MenuItem id="block-author" icon="block" onAction={on("block")}>
           {t("profile.block")}
+        </MenuItem>
+        <MenuItem
+          id="report-author"
+          icon="report"
+          onAction={() => {
+            author.report(status);
+          }}
+        >
+          {t("report.menu")}
         </MenuItem>
       </MenuGroup>
       {account.acct.includes("@") && (

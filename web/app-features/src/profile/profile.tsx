@@ -5,7 +5,7 @@
 // server they mute. Its head: the banner, the avatar with the reader's actions at the other end of its row (on their
 // own, Edit profile, which leads to the form of the settings; on another's, the bell
 // of its new posts while the reader follows it, follow in its state, more: mute, block and remove a follower, each of
-// the last two after a confirmation, and mute its server), the name with a locked account's lock and a bot's badge, the
+// the last two after a confirmation, report it, and mute its server), the name with a locked account's lock and a bot's badge, the
 // handle with "Follows you" and the role badges, the bio, the fields, when it joined and its counts (each opening its
 // list, follows.tsx), the reader's private note on it, the lines of its state (blocked, muted, its server muted, locked,
 // remote), and the featured hashtags. A moved account (ADR-0089 §4) says where it moved, its main action leading
@@ -88,6 +88,7 @@ import { useId, useState } from "react";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { profileEditPath } from "../profile-identity";
+import { ReportDialog } from "../report";
 import { TranslatablePost as Post } from "../post-translation";
 
 type T = ReturnType<typeof stringsIn>["t"];
@@ -238,8 +239,8 @@ type Asking = { readonly kind: "block" | "remove"; readonly busy: boolean };
 
 /**
  * The menu of what else the reader may do: open the original page of a remote account; mute the account, block it
- * after a confirmation, remove it from their followers (while it follows them) after another; mute its server, or
- * stop muting it (`mutedDomain`, the domain muted that the account's falls under).
+ * after a confirmation, remove it from their followers (while it follows them) after another, report it (report.tsx);
+ * mute its server, or stop muting it (`mutedDomain`, the domain muted that the account's falls under).
  */
 function More({
   account,
@@ -256,6 +257,7 @@ function More({
   const muteServer = useMuteDomain();
   const write = useAccountWrite(t);
   const [asking, setAsking] = useState<Asking | undefined>(undefined);
+  const [reporting, setReporting] = useState(false);
   const [open, setOpen] = useState(false);
   const [panel, setPanel] = useState<"more" | "lists">("more");
   const following = relationship.following ?? false;
@@ -375,6 +377,15 @@ function More({
                   {t("profile.remove_follower")}
                 </MenuItem>
               )}
+              <MenuItem
+                id="report"
+                icon="report"
+                onAction={() => {
+                  setReporting(true);
+                }}
+              >
+                {t("report.menu")}
+              </MenuItem>
             </MenuGroup>
             {remote && (
               <MenuGroup title={account.domain}>
@@ -412,6 +423,15 @@ function More({
           >
             {t(asking.kind === "block" ? "profile.block_confirm_text" : "profile.remove_follower_text")}
           </ConfirmDialog>
+        )}
+        {reporting && (
+          <ReportDialog
+            key="report"
+            subject={{ kind: "account", account }}
+            onClose={() => {
+              setReporting(false);
+            }}
+          />
         )}
       </ModalPresence>
     </>

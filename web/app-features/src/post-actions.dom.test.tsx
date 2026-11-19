@@ -187,7 +187,15 @@ test("the More menu offers a reader what they may do with the post: their own, t
     "Delete and redraft…",
     "Delete…",
   ]);
-  expect(await menuOf("The first loaf.")).toEqual(["Copy link", "Share", "Bookmark", "Mute thread", "Mute", "Block…"]);
+  expect(await menuOf("The first loaf.")).toEqual([
+    "Copy link",
+    "Share",
+    "Bookmark",
+    "Mute thread",
+    "Mute",
+    "Block…",
+    "Report…",
+  ]);
 });
 
 test("Mute thread reaches the server, and the menu then offers Unmute thread, which ends the mute and offers Mute thread again", async () => {

@@ -8,7 +8,9 @@
 // counts the follow requests and opens their screen (follow-requests.tsx), and one under it what waits for the reader's
 // approval (waiting.tsx), where those are answered: their notifications here are plain lines. A notification that
 // asks for an answer of its own (follow back) has it as the primary button; that of a scheduled post that could not be
-// published opens its draft in the composer.
+// published opens its draft in the composer. A line about an account that acted toward the reader has a menu at its
+// end, before Dismiss, whose Report… reports the account, with its post where the notification is about one
+// (report.tsx).
 // New notifications come in at the top as the stream receives them. The actions of a post it shows are answered as on
 // every screen (post-actions.tsx).
 
@@ -21,6 +23,7 @@ import {
   nameOf,
   notificationPath,
   PostContent,
+  sentenceHandleOf,
 } from "@my/app-components";
 import {
   notificationMarkerQuery,
@@ -45,6 +48,10 @@ import {
   FeedNotice,
   HeardActions,
   IconButton,
+  MenuButton,
+  MenuGroup,
+  MenuItem,
+  ModalPresence,
   NoticeCaption,
   NoticeLine,
   OpenRow,
@@ -57,6 +64,7 @@ import {
 import { useId, useRef, useState, type ReactNode } from "react";
 import { FollowOf } from "../account-follow";
 import { stringsIn } from "../locale";
+import { ReportDialog } from "../report";
 import { useCompose, usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
 import { TranslatablePost as Post } from "../post-translation";
 import { messages } from "../messages.gen";
@@ -158,6 +166,67 @@ function Dismiss({ n, t }: { n: NotificationItem; t: T }) {
   return <IconButton icon="close" label={t("notifications.dismiss")} onPress={run} />;
 }
 
+/** The kinds whose account is one that acted toward the reader, which the reader may report from the notification. */
+const reportedKinds: ReadonlySet<NotificationItem["type"]> = new Set([
+  "follow",
+  "follow_request",
+  "follow_accepted",
+  "mention",
+  "boost",
+  "favourite",
+  "reaction",
+  "quote",
+  "status",
+  "reply_request",
+  "boost_request",
+  "quote_request",
+  "interaction_accepted",
+  "interaction_rejected",
+  "voice_room_started",
+  "voice_room_invited",
+  "event_invited",
+]);
+
+/**
+ * The menu at the end of a notification's line about an account that acted toward the reader: Report… opens the
+ * report of the account, its post chosen where the notification is about one of its posts (a mention, a quote).
+ */
+function More({ n, t }: { n: NotificationItem; t: T }) {
+  const [reporting, setReporting] = useState(false);
+  const account = n.account;
+  if (account === undefined || !reportedKinds.has(n.type)) return null;
+  // The reader's own post that another favourited or boosted is not the account's: only its own is chosen.
+  const post = n.status !== undefined && n.status.account.id === account.id ? n.status : undefined;
+  return (
+    <>
+      <MenuButton icon="more" label={t("report.notification_more")}>
+        <MenuGroup title={sentenceHandleOf(account)}>
+          <MenuItem
+            id="report"
+            icon="report"
+            onAction={() => {
+              setReporting(true);
+            }}
+          >
+            {t("report.menu")}
+          </MenuItem>
+        </MenuGroup>
+      </MenuButton>
+      <ModalPresence>
+        {reporting && (
+          <ReportDialog
+            key="report"
+            subject={{ kind: "account", account, post }}
+            onClose={() => {
+              setReporting(false);
+            }}
+          />
+        )}
+      </ModalPresence>
+    </>
+  );
+}
+
 /** Where a notification's line leads, when it leads elsewhere than the notifications themselves. */
 function targetOf(n: NotificationItem): string | undefined {
   const path = notificationPath(n);
@@ -191,7 +260,14 @@ function Line({
         id={id}
         unread={unread}
         href={targetOf(n)}
-        action={held ? undefined : <Dismiss n={n} t={t} />}
+        action={
+          held ? undefined : (
+            <>
+              <More n={n} t={t} />
+              <Dismiss n={n} t={t} />
+            </>
+          )
+        }
         excerpt={
           n.status !== undefined && (
             <Excerpt>

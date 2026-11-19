@@ -6,7 +6,8 @@
 //   hand, stop them speaking, mute a speaker, remove them (asked first); and for the host alone, make or unmake a
 //   co-host (3 at most) and hand the room over (asked first). By §5's rules: nobody acts on the host or on themselves,
 //   and the host and the co-hosts do not remove each other; a tile the reader can do nothing with is no control.
-// - The room's own menu, in its head: its settings and ending it for the host, its invitations for both.
+// - The room's own menu, in its head: its settings and ending it for the host, its invitations for both, and its
+//   report for a co-host; a reader who does not run the room has More there, which reports it (report.tsx).
 // - The host leaving a room with others in it: who hosts next (any other participant; the server refuses one who may
 //   not host, and the dialog says so) or ending the room, in a dialog; a host alone in it leaves, and the room ends.
 
@@ -18,6 +19,7 @@ import {
   ChoiceList,
   ConfirmDialog,
   FormAlert,
+  MenuButton,
   MenuGroup,
   MenuItem,
   MenuSurface,
@@ -208,12 +210,17 @@ export function HostAskDialog({
   );
 }
 
-/** The room's menu in its head: its settings and ending it for the host, its invitations for the host and co-hosts. */
+/**
+ * The room's menu in its head: its settings and ending it for the host, its invitations for the host and co-hosts, and
+ * reporting it (`onReport`, for a reader who is not its host) last and apart; for a reader who does not run the room,
+ * More, which holds the report alone.
+ */
 export function RoomMenu({
   self,
   settingsHref,
   invitationsHref,
   onEnd,
+  onReport,
   open,
   onOpenChange,
   t,
@@ -222,12 +229,28 @@ export function RoomMenu({
   settingsHref: string;
   invitationsHref: string;
   onEnd: () => void;
+  /** Opens the report of the room; none for its host, who does not report their own room. */
+  onReport?: (() => void) | undefined;
   /** The menu is open (a story's), with `onOpenChange`; else its button alone opens it. */
   open?: boolean | undefined;
   onOpenChange?: ((open: boolean) => void) | undefined;
   t: T;
 }) {
-  if (self === undefined || !(self.hosting || self.cohosting)) return null;
+  const report = onReport && (
+    <MenuGroup>
+      <MenuItem id="report" icon="report" onAction={onReport}>
+        {t("report.menu_room")}
+      </MenuItem>
+    </MenuGroup>
+  );
+  if (self === undefined || !(self.hosting || self.cohosting)) {
+    if (report === undefined) return null;
+    return (
+      <MenuButton icon="more" label={t("report.more")} open={open} onOpenChange={onOpenChange}>
+        {report}
+      </MenuButton>
+    );
+  }
   return (
     // A button that names itself, a sheet on a phone (the app's MenuSheet), a popover from a tablet.
     <MenuSurface
@@ -258,6 +281,7 @@ export function RoomMenu({
           </MenuItem>
         </MenuGroup>
       )}
+      {report}
     </MenuSurface>
   );
 }
