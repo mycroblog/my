@@ -33,14 +33,14 @@ export type EventTimeProps = {
 };
 
 /**
- * An event's time: the reader's, then, muted and on a line of its own where the line is too short for both, the
- * event's own with its zone's place name ("Sun 6:00 AM (Tokyo)"), each whole.
+ * An event's time: the reader's, and under it, on a line of its own and muted, the event's own with its zone's place
+ * name ("Sun 6:00 AM (Tokyo)"), so that the two never read as one.
  */
 export function EventTime({ dateTime, shown, own }: EventTimeProps) {
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   return (
-    <Row as="span" wrap align="baseline" gapX="entry-caption">
+    <Stack as="span">
       <Box as={<time dateTime={dateTime} />} breaks="phrase">
         {shown}
       </Box>
@@ -49,7 +49,7 @@ export function EventTime({ dateTime, shown, own }: EventTimeProps) {
           {t("event.own_time", { time: own.shown, zone: own.zone })}
         </Box>
       )}
-    </Row>
+    </Stack>
   );
 }
 
@@ -58,7 +58,7 @@ export type PlaceKind = "voice" | "physical" | "url";
 
 const placeIcon: Record<PlaceKind, IconName> = { voice: "room", physical: "inPerson", url: "link" };
 
-/** Where an event is or how it ended: cancelled, in the text's color; ended, muted. */
+/** How an event ended: cancelled or ended, each marked alike, its glyph and its words in the text's color. */
 export type EventState = { kind: "cancelled" | "ended"; label: string };
 
 const line = tv({
@@ -73,7 +73,7 @@ const line = tv({
     day: "text-title leading-none tabular-nums",
     title: "text-body font-label [word-break:auto-phrase]",
     caption: "text-caption text-muted-text [word-break:auto-phrase]",
-    cancelled: "font-label text-text",
+    state: "font-label text-text",
   },
   variants: {
     // Over: its title and its date muted, as what is past is (one color each: no class merges here).
@@ -105,8 +105,9 @@ export type EventLineProps = {
 
 /**
  * An event as a line of a list that is one link to it: the day it starts on in a box at the start, the month over the
- * day (the glyph of events while its date is polled); its title, then when it is, after its state where it was cancelled or ended; then the kinds of its places,
- * each a glyph and its word, who organizes it and how many are going. A cancelled or ended event mutes its title and
+ * day (the glyph of events while its date is polled); its title, then its state, a glyph and its words, where it was
+ * cancelled or ended, and when it is; then the kinds of its places, each a glyph and its word, who organizes it and how
+ * many are going. A cancelled or ended event mutes its title and
  * its date.
  */
 export function EventLine({ href, title, date, time, places = [], organizer, going, state }: EventLineProps) {
@@ -133,8 +134,8 @@ export function EventLine({ href, title, date, time, places = [], organizer, goi
         </Box>
         <Row as="span" wrap align="center" gapX="entry-caption" className={s.caption()}>
           {state !== undefined && (
-            <Row as="span" rigid align="center" gap="hair" className={state.kind === "cancelled" ? s.cancelled() : ""}>
-              {state.kind === "cancelled" && <Icon name="eventCancelled" place="caption" />}
+            <Row as="span" rigid align="center" gap="hair" className={s.state()}>
+              <Icon name={state.kind === "cancelled" ? "eventCancelled" : "eventEnded"} place="caption" />
               <span>{state.label}</span>
             </Row>
           )}
@@ -242,8 +243,7 @@ export type AnswerChoiceProps = {
   /** The answers that may not be chosen now (going, at capacity); `note` says why. */
   disabled?: readonly Answer[] | undefined;
   /**
-   * The line under the answers: why some cannot be chosen, or what answering does ("Your name shows in the list of who
-   * answered"). It describes the answers.
+   * The line under the answers: why some or all cannot be chosen now ("The event is full"). It describes the answers.
    */
   note?: string | undefined;
   /**
@@ -376,7 +376,7 @@ function CandidatePlace({
 }
 
 /**
- * An answer of the reader's to a date, as `as` (a `RadioButton`): narrow, a timeline control's height, a glyph and its
+ * An answer of the reader's to a date, as `as` (a `RadioButton`): narrow, a finger's target tall, a glyph and its
  * word; wide, a finger's target, square, its glyph alone.
  */
 function AnswerPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
@@ -387,7 +387,7 @@ function AnswerPlace({ as, children }: { as: ReactElement<{ className?: unknown 
       align="center"
       justify="center"
       gap="entry-caption"
-      className="min-h-control-timeline px-control-timeline-inline @min-[32rem]:size-icon-button-touch @min-[32rem]:px-0"
+      className="min-h-icon-button-touch px-control-timeline-inline @min-[32rem]:size-icon-button-touch @min-[32rem]:px-0"
     >
       {children}
     </Row>
@@ -497,7 +497,7 @@ export type CandidateRowProps = {
   isDisabled?: boolean | undefined;
   /** It is the date the organizers confirmed: the words for it ("Confirmed"), under its time. */
   confirmed?: string | undefined;
-  /** What the organizers may do with it (a `MenuSurface` on an icon button: confirm, withdraw…). */
+  /** What the organizers may do with it (a `MenuSurface` on a `square` `IconButton`: confirm, withdraw…). */
   actions?: ReactNode;
 };
 
@@ -517,7 +517,7 @@ export function CandidateRow({ time, counts, answer, onAnswer, isDisabled, confi
           {time}
           {confirmed !== undefined && (
             <Row as="span" align="center" gap="hair" className={s.confirmed()}>
-              <Icon name="eventConfirmed" place="caption" />
+              <Icon name="dateFixed" place="caption" />
               <span>{confirmed}</span>
             </Row>
           )}
@@ -635,14 +635,11 @@ export type PlaceLineProps = {
   address?: string | undefined;
   /** A place online's address, or a place in person's map. */
   link?: OutLink | undefined;
-  /**
-   * The reader may not see where it is (it is shown to the approved participants): its kind alone shows, muted, with
-   * `note` saying why.
-   */
+  /** The reader may not see where it is (it is shown to the approved participants): its kind alone shows, muted. */
   hidden?: boolean | undefined;
   /** The voice room could not open: its glyph is the microphone crossed out, and `note` says why. */
   unavailable?: boolean | undefined;
-  /** A muted line under it: the voice room's state ("Opens at the start", "Open now"), why a place is hidden. */
+  /** A muted line under it: the voice room's state ("Opens at the start", "Open now", why it could not open). */
   note?: string | undefined;
   /** The way into the voice room while it is open (a `LinkButton`), after the note. */
   action?: ReactNode;

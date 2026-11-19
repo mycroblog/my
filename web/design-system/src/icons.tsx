@@ -38,6 +38,7 @@ import {
   IconCalendarEvent,
   IconCalendarEventFilled,
   IconCalendarExclamation,
+  IconCalendarMinus,
   IconCalendarTime,
   IconCalendarX,
   IconChartBar,
@@ -347,6 +348,10 @@ export const icons = {
   // pin on a map. The answers to it and to its date poll: going or can go, maybe, not going or cannot, each a shape
   // of its own, so that a column of counts and the reader's own answer say which by shape as well as by word.
   inPerson: { off: IconMapPin },
+  // An event's date fixed among its poll's (a check in a ring, apart from the calendars of its notifications), and an
+  // event that ended, a calendar struck through as the cancelled one is crossed out: two ends, marked alike.
+  dateFixed: { off: IconCircleCheck },
+  eventEnded: { off: IconCalendarMinus },
   answerYes: { off: IconCheck },
   answerMaybe: { off: IconQuestionMark },
   answerNo: { off: IconX },

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The parts of an event (ADR-0161, FR-951, FR-952), each in every state, and an event's page they make together: its
-// time, in the reader's zone alone and beside the event's own; events as lines of a list (a date fixed and its own
+// time, in the reader's zone alone and over the event's own; events as lines of a list (a date fixed and its own
 // zone, a date polled, cancelled, ended, a title that wraps, no place) and in the column beside the main one; the
 // reader's answer before answering, answered, saving, saved and not saved, at capacity, before a date is fixed and
 // after the start; the date poll's table for a participant, for an organizer with each date's actions, with a date
@@ -23,11 +23,12 @@ import {
   type Answer,
 } from "./event";
 import { IconButton } from "./icon-button";
-import { Box, Stack } from "./layout";
+import { Box, Row, Stack } from "./layout";
 import { GroupHeading, RowItem, RowList, ScreenTitle } from "./list";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { SaveState } from "./save-state";
 import { FrameSection, SectionList, SectionLine } from "./shell";
+import { HeadcountMark } from "./voice";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 const none = () => undefined;
@@ -197,9 +198,12 @@ const dates: readonly PollDate[] = [
 /** What an organizer may do with a date: confirm it, or withdraw it, last and apart. */
 function DateActions({ name }: { name: string }) {
   return (
-    <MenuSurface trigger={<IconButton icon="more" label={`Options for ${name}`} />} label={`Options for ${name}`}>
+    <MenuSurface
+      trigger={<IconButton icon="more" label={`Options for ${name}`} square />}
+      label={`Options for ${name}`}
+    >
       <MenuGroup>
-        <MenuItem id="confirm" icon="eventConfirmed">
+        <MenuItem id="confirm" icon="dateFixed">
           Confirm this date…
         </MenuItem>
       </MenuGroup>
@@ -313,12 +317,14 @@ export const EventPage: Story = {
         <Stack gap="entry-line">
           <ScreenTitle>Book club: The Left Hand of Darkness</ScreenTitle>
           <Box text="body">{times.run}</Box>
-          <Box text="caption" tone="muted">
-            By Mika · 12 going · 3 maybe
-          </Box>
+          <Row wrap align="center" gapX="entry-caption" text="caption" tone="muted">
+            <span>By Mika</span>
+            <HeadcountMark count={{ shown: "12", label: "12 going" }} />
+            <HeadcountMark count={{ shown: "3", label: "3 maybe" }} glyph="answerMaybe" />
+          </Row>
         </Stack>
         <Places room="waiting" />
-        <Answering note="Your name shows in the list of who answered." save={null} />
+        <Answering save={null} />
         <Stack gap="entry-line">
           <GroupHeading>When can you go?</GroupHeading>
           <Poll save={null} />
@@ -331,7 +337,7 @@ export const EventPage: Story = {
 /**
  * Events as lines of a list: a date fixed, its own zone beside the reader's, every kind of place, who organizes it and
  * how many are going; one place; a date polled, the glyph of events in the date's box; a title and a name that wrap;
- * cancelled, its mark in the text's color; and ended, muted.
+ * cancelled and ended, each marked by a glyph and its words.
  */
 export const EventLines: Story = {
   render: () => (
@@ -357,8 +363,8 @@ export const InTheColumnBeside: Story = {
 };
 
 /**
- * An event's time: in the reader's zone alone, where the event's is the same; beside the event's own, with its zone's
- * place name, on a line of its own where both do not fit; in a body's size and in a caption's.
+ * An event's time: in the reader's zone alone, where the event's is the same; over the event's own, with its zone's
+ * place name, on a line of its own; in a body's size and in a caption's.
  */
 export const Times: Story = {
   render: () => (
@@ -374,11 +380,11 @@ export const Times: Story = {
   ),
 };
 
-/** The reader's answer before they answer: none chosen, the note saying what answering does. */
+/** The reader's answer before they answer: none chosen. */
 export const AnswerUnanswered: Story = {
   render: () => (
     <Column>
-      <Answering note="Your name shows in the list of who answered." save={null} />
+      <Answering save={null} />
     </Column>
   ),
 };
@@ -388,20 +394,20 @@ export const AnswerSaving: Story = {
   render: () => (
     <Column>
       <Stack gap="entry-room">
-        <Answering initial="yes" note="Your name shows in the list of who answered." save={null} />
+        <Answering initial="yes" save={null} />
         <Answering
           initial="maybe"
-          note="Your name shows in the list of who answered."
+
           save={<SaveState state="saving" />}
         />
         <Answering
           initial="maybe"
-          note="Your name shows in the list of who answered."
+
           save={<SaveState state="saved" />}
         />
         <Answering
           initial="no"
-          note="Your name shows in the list of who answered."
+
           save={<SaveState state="failed" onRetry={none} />}
         />
       </Stack>
@@ -467,13 +473,13 @@ export const DateActionsOpen: Story = {
     <Column>
       <div style={{ minHeight: rem(320) }}>
         <MenuSurface
-          trigger={<IconButton icon="more" label="Options for Sat, Dec 5" />}
+          trigger={<IconButton icon="more" label="Options for Sat, Dec 5" square />}
           label="Options for Sat, Dec 5"
           placement="bottom end"
           open
         >
           <MenuGroup>
-            <MenuItem id="confirm" icon="eventConfirmed">
+            <MenuItem id="confirm" icon="dateFixed">
               Confirm this date…
             </MenuItem>
           </MenuGroup>
@@ -513,7 +519,7 @@ export const PlacesRoomOpenOrNot: Story = {
 };
 
 /**
- * Places the reader may not see (shown to the approved participants): the kind alone, muted, and why; the voice room
+ * Places the reader may not see (shown to the approved participants): the kind alone, muted; the voice room
  * always shows. In person without a map.
  */
 export const PlacesHidden: Story = {
@@ -522,8 +528,8 @@ export const PlacesHidden: Story = {
       <Stack gap="entry-room">
         <PlaceList label="Where">
           <PlaceLine kind="voice" label="Voice chat room" note="Opens at the start" />
-          <PlaceLine kind="physical" label="In person" hidden note="Shown to approved participants" />
-          <PlaceLine kind="url" label="Online" hidden note="Shown to approved participants" />
+          <PlaceLine kind="physical" label="In person" hidden />
+          <PlaceLine kind="url" label="Online" hidden />
         </PlaceList>
         <PlaceList label="Where">
           <PlaceLine kind="physical" label="In person" name="The park by the station" address="North exit" />
