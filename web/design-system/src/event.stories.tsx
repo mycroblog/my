@@ -395,21 +395,9 @@ export const AnswerSaving: Story = {
     <Column>
       <Stack gap="entry-room">
         <Answering initial="yes" save={null} />
-        <Answering
-          initial="maybe"
-
-          save={<SaveState state="saving" />}
-        />
-        <Answering
-          initial="maybe"
-
-          save={<SaveState state="saved" />}
-        />
-        <Answering
-          initial="no"
-
-          save={<SaveState state="failed" onRetry={none} />}
-        />
+        <Answering initial="maybe" save={<SaveState state="saving" />} />
+        <Answering initial="maybe" save={<SaveState state="saved" />} />
+        <Answering initial="no" save={<SaveState state="failed" onRetry={none} />} />
       </Stack>
     </Column>
   ),
