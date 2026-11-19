@@ -76,7 +76,7 @@ export const queueHref = (search: StaffSearch): string => staffHref(reportQueueP
 const filtered = (q: ReportQueueQuery) => q.state !== "open" || q.category !== undefined || q.assignee !== undefined;
 
 /** The state of a report as its row says it: open, assigned (to the reader, or to whom), or resolved. */
-export function ReportStateMark({ report }: { report: QueuedReport }): ReactNode {
+function ReportStateMark({ report }: { report: QueuedReport }): ReactNode {
   const { t } = useStaffStrings();
   const me = useViewer()?.id;
   const assignee = useReportAccount(report.assignee_account_id);
@@ -100,7 +100,7 @@ export function ReportStateMark({ report }: { report: QueuedReport }): ReactNode
 export const categoryWords = (t: T, category: Category): string => t("staff.report.category", { category });
 
 /** Who filed a report, as its row's line under its account says it. */
-export function filedBy(t: T, report: QueuedReport): string {
+function filedBy(t: T, report: QueuedReport): string {
   if (report.hook_origin !== undefined) return t("staff.reports.by_review");
   if (report.uri !== undefined) {
     const domain = report.reporter_account?.acct.split("@")[1] ?? new URL(report.uri).host;

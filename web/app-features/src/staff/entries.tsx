@@ -26,14 +26,14 @@ import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
-export const staffAreas = ["moderation", "admin"] as const;
+const staffAreas = ["moderation", "admin"] as const;
 export type StaffArea = (typeof staffAreas)[number];
 
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
-export type StaffGroupId = (typeof staffGroups)[number]["id"];
+type StaffGroupId = (typeof staffGroups)[number]["id"];
 
 /** The query of a screen's address, member by member, as a screen of the staff reads it. */
 export type StaffSearch = Readonly<Record<string, string | undefined>>;

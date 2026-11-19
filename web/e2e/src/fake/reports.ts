@@ -601,6 +601,3 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
     },
   };
 }
-
-/** The fake's rules once the fake starts, for the instance it answers. */
-export const rulesAt = (started: number) => fakeRules(started).rules;
