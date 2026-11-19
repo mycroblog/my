@@ -52,7 +52,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import type { StaffAddress } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
 import {
   cursorOf,
   domainKindWords,
@@ -64,7 +64,6 @@ import {
   refusalWords,
   Section,
   tied,
-  useSaid,
 } from "./parts";
 
 /** The names under which a subscription's page keeps the pages of its fetches in its address. */

@@ -11,8 +11,11 @@
 // its screen.
 
 import {
+  instanceQuery,
   loadReportQueue,
   moderationCountsQuery,
+  useAccountCounts,
+  useInstance,
   useOpenReportCount,
   usePermissions,
   useViewer,
@@ -24,6 +27,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { accountEntries, accountGroups } from "./accounts/entries";
 import { domainEntries, domainGroups } from "./domains/entries";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
@@ -33,6 +37,7 @@ export type StaffArea = (typeof staffAreas)[number];
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
+  ...accountGroups,
   ...domainGroups,
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
@@ -59,6 +64,14 @@ export type StaffFacts = {
   readonly permissions: readonly Permission[];
   /** The reports that are open; undefined until the server said, or without `manage_reports`. */
   readonly openReports: number | undefined;
+  /**
+   * The registrations that wait for approval and the appeals that wait for a decision; undefined until the server
+   * said, or without `manage_accounts`.
+   */
+  readonly pendingRegistrations: number | undefined;
+  readonly pendingAppeals: number | undefined;
+  /** The server is a one-person server (ADR-0152); undefined until the server said. */
+  readonly singleUser: boolean | undefined;
 };
 
 /** A screen of the staff's. */
@@ -76,6 +89,8 @@ export type StaffEntry = {
   readonly hint: MessageId;
   /** How many things wait there for the reader, the badge at the row's end, and its words; none without it. */
   readonly count?: { readonly of: (facts: StaffFacts) => number | undefined; readonly words: MessageId };
+  /** Whether the server offers it at all (none on a one-person server); offered where left out. */
+  readonly shown?: (facts: StaffFacts) => boolean;
   readonly Screen: ComponentType<StaffEntryProps>;
   /** Reads what its screen shows at the query `search`, for the route's loader to wait for. */
   readonly load?: (data: AppData, search: StaffSearch) => Promise<void>;
@@ -96,6 +111,7 @@ export const staffEntries: readonly StaffEntry[] = [
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
   },
+  ...accountEntries,
   ...domainEntries,
 ];
 
@@ -107,7 +123,16 @@ export function useStaffFacts(enabled = true): StaffFacts & { readonly known: bo
   const known = useViewer(enabled) !== undefined;
   const permissions = usePermissions(enabled);
   const openReports = useOpenReportCount(enabled);
-  return { permissions, openReports, known };
+  const counts = useAccountCounts(enabled);
+  const singleUser = useInstance()?.single_user;
+  return {
+    permissions,
+    openReports,
+    pendingRegistrations: counts.registrations,
+    pendingAppeals: counts.appeals,
+    singleUser,
+    known,
+  };
 }
 
 /**
@@ -117,7 +142,7 @@ export function useStaffFacts(enabled = true): StaffFacts & { readonly known: bo
 export function useStaffWaiting(area: StaffArea, enabled = true): number | undefined {
   const facts = useStaffFacts(enabled);
   const counts = staffEntries
-    .filter((e) => e.area === area && facts.permissions.includes(e.permission))
+    .filter((e) => e.area === area && opens(e, facts))
     .flatMap((e) => {
       const n = e.count?.of(facts);
       return n === undefined ? [] : [n];
@@ -125,10 +150,14 @@ export function useStaffWaiting(area: StaffArea, enabled = true): number | undef
   return counts.length === 0 ? undefined : counts.reduce((a, b) => a + b, 0);
 }
 
+/** Whether `entry` is open to the reader of `facts`: their permissions open it, and the server offers it. */
+const opens = (entry: StaffEntry, facts: StaffFacts): boolean =>
+  facts.permissions.includes(entry.permission) && (entry.shown?.(facts) ?? true);
+
 /** The entries of `area` open to the reader, in their order; none until the server said who they are. */
 export function useStaffEntries(area: StaffArea): readonly StaffEntry[] {
-  const { permissions } = useStaffFacts();
-  return staffEntries.filter((e) => e.area === area && permissions.includes(e.permission));
+  const facts = useStaffFacts();
+  return staffEntries.filter((e) => e.area === area && opens(e, facts));
 }
 
 /** The entry of `area` at `path` open to the reader; undefined for none, or one their permissions do not open. */
@@ -173,5 +202,20 @@ export async function loadStaffEntry(
   const viewer = await readViewer(data);
   const entry = staffEntries.find((e) => e.area === area && e.path === path);
   if (entry === undefined || viewer?.permissions.includes(entry.permission) !== true) return;
+  // An entry the server does not offer (registrations on a one-person server) asks it nothing: its screen says that
+  // the address names none, as the root lists none.
+  if (entry.shown !== undefined) {
+    const instance = await data.queryClient
+      .query({ ...instanceQuery(data), staleTime: Infinity })
+      .catch(() => undefined);
+    const facts: StaffFacts = {
+      permissions: viewer.permissions,
+      openReports: undefined,
+      pendingRegistrations: undefined,
+      pendingAppeals: undefined,
+      singleUser: instance?.single_user,
+    };
+    if (!entry.shown(facts)) return;
+  }
   await (load === undefined ? entry.load?.(data, search) : load(data));
 }

@@ -75,6 +75,7 @@ import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } fro
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { domainHandlers, type FakeDomainOptions, type FakeDomains } from "./domains";
+import { moderationHandlers, type FakeModeration, type FakeModerationOptions } from "./accounts";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -325,6 +326,11 @@ export type FakeOptions = {
   reports?: FakeReportOptions;
   /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
   domains?: FakeDomainOptions;
+  /**
+   * The moderation of accounts (accounts.ts): the fake's own actions, appeals, registrations, decisions of the hooks,
+   * sign-up blocks and invites by default, or none of them.
+   */
+  moderation?: FakeModerationOptions;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
@@ -574,6 +580,8 @@ export type FakeApi = {
   readonly reports: FakeReports;
   /** The domain actions' and the subscriptions' IDs by the fake's keys, and the audit log (domains.ts). */
   readonly domains: FakeDomains;
+  /** The IDs of the moderation's actions, appeals, registrations and the rest by the fake's keys (accounts.ts). */
+  readonly moderation: FakeModeration;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1929,6 +1937,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
       ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance"] as const),
       "manage_service_closure",
+      "manage_login_recovery",
     ];
   };
   /** The reader's own account, with what only they read of it. */
@@ -2448,6 +2457,25 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     host: fakeHost,
   });
 
+  // The moderation of accounts (accounts.ts): actions, appeals, registrations, hooks' decisions, sign-up blocks, invites.
+  const accounts = moderationHandlers({
+    started,
+    options: o.moderation,
+    viewer,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    people,
+    accountOf,
+    accountId: idOf,
+    statusById: (id) => {
+      const key = keyOf.get(id);
+      return key === undefined ? undefined : statusOf(postOf(key));
+    },
+    reports: moderated.reports,
+    singleUser: o.singleUser === true,
+    registrationClosed: instanceBody.registrations.mode === "closed",
+    host: fakeHost,
+  });
+
   // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
   // (about the reader's post), the server's notices, or those to its moderators, each with what its sentence and its
   // target read.
@@ -2919,7 +2947,12 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       const counts = exact<Schema<"AdminCounts">>()({
         ...(granted.includes("manage_reports") ? { open_reports: moderated.reports.openCount() } : {}),
         ...(granted.includes("manage_reports") ? oldestOpen(moderated.reports.oldestOpen()) : {}),
-        ...(granted.includes("manage_accounts") ? { pending_registrations: 2, pending_appeals: 1 } : {}),
+        ...(granted.includes("manage_accounts")
+          ? {
+              ...(o.singleUser === true ? {} : { pending_registrations: accounts.moderation.pendingRegistrations() }),
+              pending_appeals: accounts.moderation.pendingAppeals(),
+            }
+          : {}),
       });
       return { status: 200, body: counts };
     },
@@ -3773,6 +3806,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The moderators' reports ------------------------------------------------------------------------------------
 
     ...moderated.handlers,
+    ...accounts.handlers,
 
     // ---- The domains, the remote servers and the audit log ------------------------------------------------------------
 
@@ -3999,6 +4033,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     supporters: supporting.supporters,
     reports: moderated.reports,
     domains: federated.domains,
+    moderation: accounts.moderation,
     unimplemented,
     revocations,
     newPosts,

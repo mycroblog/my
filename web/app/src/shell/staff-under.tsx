@@ -43,7 +43,9 @@ export function StaffOpened({ entry, title, children }: { entry: string; title: 
   const t = useStrings();
   const known = useStaffFacts().known;
   const open = useStaffEntry("moderation", entry) !== undefined;
-  if (known && !open)
+  // Nothing of the screen, and none of its reads, before the reader's permissions say it is open.
+  if (!known) return <ScreenHeading>{title}</ScreenHeading>;
+  if (!open)
     return (
       <>
         <ScreenHeading>{t("app.moderation")}</ScreenHeading>

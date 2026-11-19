@@ -22,8 +22,8 @@ import {
   type RecordRow,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
-import { ReadNotice, useMoment, useStaffStrings } from "../parts";
-import { refusalWords, Section, tied, useSaid } from "./parts";
+import { ReadNotice, useMoment, useStaffStrings, useSaid } from "../parts";
+import { refusalWords, Section, tied } from "./parts";
 
 /** The allowlist: allowing a domain, and the domains allowed, which the reader removes. */
 export function DomainAllowsScreen({ onBack }: { onBack: () => void }): ReactNode {

@@ -51,7 +51,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
 import {
   auditLogPath,
   cursorOf,
@@ -64,7 +64,6 @@ import {
   remoteServerPath,
   Section,
   tied,
-  useSaid,
   Way,
   Ways,
 } from "./parts";

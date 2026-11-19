@@ -18,7 +18,6 @@ import {
   Button,
   FactList,
   FeedNotice,
-  FieldError,
   FilterBar,
   FilterToggle,
   LinkButton,
@@ -33,7 +32,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, useSaid } from "../parts";
 import {
   auditLogPath,
   cursorOf,
@@ -52,7 +51,6 @@ import {
   refusalWords,
   remoteServerPath,
   useEnd,
-  useSaid,
   Way,
   Ways,
 } from "./parts";
@@ -124,6 +122,7 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
           value: written,
           onChange: setWritten,
           clearLabel: t("staff_domains.actions.domain.clear"),
+          error: page.invalid ? t("staff_domains.actions.domain.invalid") : undefined,
         }}
         applied={q.domain !== undefined || !q.active}
         onClear={() => {
@@ -139,8 +138,6 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
           }}
         />
       </FilterBar>
-      {/* What the server takes for no domain is said under the search, as a field's error is. */}
-      {page.invalid && <FieldError>{t("staff_domains.actions.domain.invalid")}</FieldError>}
     </>
   );
   if (page.forbidden) return <FeedNotice lead>{t("staff_domains.forbidden")}</FeedNotice>;

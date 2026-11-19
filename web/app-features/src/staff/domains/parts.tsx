@@ -7,11 +7,8 @@
 
 import { staffRefusalOf, type DomainAction, type DomainActionKind } from "@my/app-data";
 import {
-  Box,
-  CaptionLine,
   FieldError,
   FieldLabel,
-  FormAlert,
   Icon,
   LinkButton,
   ListTitle,
@@ -23,7 +20,7 @@ import {
   type IconName,
   type SelectOption,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
@@ -88,7 +85,7 @@ export function Pages({
   next,
   of = firstList,
 }: {
-  address: StaffAddress;
+  address: Pick<StaffAddress, "search" | "onSearch">;
   next: string | undefined;
   of?: { cursor: string; trail: string };
 }) {
@@ -117,37 +114,6 @@ export function Pages({
       }
     />
   );
-}
-
-/** What a press said: its words, whether they say it failed, and a count that makes each saying a new element. */
-type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
-
-/**
- * A status of a screen that says what a press did, or that it failed: `say` puts the words in it and moves the focus
- * there, since the press may have taken its own button away; `status` is the region, there from the start.
- */
-export function useSaid(): { say: (words: string, alert?: boolean) => void; status: ReactNode } {
-  const [said, setSaid] = useState<Said | undefined>(undefined);
-  const ref = useRef<HTMLDivElement>(null);
-  const say = (words: string, alert = false) => {
-    setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
-    requestAnimationFrame(() => ref.current?.focus());
-  };
-  const status = (
-    <Box as={<div ref={ref} role="status" tabIndex={-1} />}>
-      {said !== undefined &&
-        (said.alert ? (
-          <FormAlert key={said.n} regular>
-            {said.words}
-          </FormAlert>
-        ) : (
-          <CaptionLine key={said.n} icon="accepted">
-            {said.words}
-          </CaptionLine>
-        ))}
-    </Box>
-  );
-  return { say, status };
 }
 
 /**
@@ -203,10 +169,14 @@ export function LabelledSelect({
 /** The kind of a domain action, in words ("Suspend"). */
 export const domainKindWords = (t: T, kind: DomainActionKind): string => t("staff_domains.kind", { kind });
 
-/** The state of a domain action, marked: in effect, ended by itself, or lifted. */
+/**
+ * The state of a domain action, marked: one in effect by what it does (a suspend shut, a limit or a rejection held
+ * back), else ended by itself, or lifted.
+ */
 export function DomainActionStateMark({ action }: { action: DomainAction }) {
   const { t } = useStaffStrings();
-  return <StateMark state={action.state}>{t("staff_domains.action_state", { state: action.state })}</StateMark>;
+  const state = action.state !== "active" ? action.state : action.kind === "suspend" ? "suspended" : "limited";
+  return <StateMark state={state}>{t("staff_domains.action_state", { state: action.state })}</StateMark>;
 }
 
 /** When a domain action ends: the moment, or that it lasts until it is lifted. */

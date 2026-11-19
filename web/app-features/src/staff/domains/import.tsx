@@ -34,8 +34,8 @@ import {
 } from "@my/design-system";
 import { useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { saveFile } from "../../save-file";
-import { useStaffStrings, type T } from "../parts";
-import { domainActionsPath, domainKindWords, refusalWords, Section, tied, useSaid } from "./parts";
+import { useStaffStrings, type T, useSaid } from "../parts";
+import { domainActionsPath, domainKindWords, refusalWords, Section, tied } from "./parts";
 
 /** The kinds a row would issue, joined as the reader's language joins a list. */
 function kindsOf(t: T, locale: string, row: DomainImportRow): string {

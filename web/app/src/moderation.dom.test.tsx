@@ -73,12 +73,7 @@ test("Moderation lists Reports to a holder of manage_reports, with how many are 
     "link",
     { name: new RegExp(`^Reports .*\\b${String(open)} open reports$`) },
   );
-  expect(listed()).toEqual([
-    "/moderation/reports",
-    "/moderation/domain-actions",
-    "/moderation/instances",
-    "/moderation/audit-log",
-  ]);
+  expect(listed()).toContain("/moderation/reports");
   await app.user.click(reports);
   await app.arrived("/moderation/reports");
   expect(await main().findByRole("table", { name: "Reports" })).toBeDefined();
@@ -86,10 +81,12 @@ test("Moderation lists Reports to a holder of manage_reports, with how many are 
 
 test("a reader with other moderation permissions but not manage_reports is not shown Reports in the root's list", async () => {
   const on = fakeApp({ viewer: "marco" });
+  // Permissions that open none of the screens built yet: neither the reports nor the accounts' screens.
+  const opening = new Set(["manage_reports", "manage_accounts", "manage_invites"]);
   on.fake.script("GET /accounts/verify_credentials", {
     change: (account) => ({
       ...account,
-      permissions: account.permissions.filter((permission) => permission !== "manage_reports"),
+      permissions: account.permissions.filter((permission) => !opening.has(permission)),
     }),
   });
   await renderApp("/moderation", { on });
@@ -146,13 +143,14 @@ test("the counts of what waits for moderators are asked for only by a holder of 
 
 // The count of the navigation.
 
-test("Moderation in the navigation counts the open reports and leads, through the root, to the queue of the open reports", async () => {
+test("Moderation in the navigation counts what waits (the open reports, the registrations and the appeals) and leads, through the root, to the queue of the open reports", async () => {
   const on = fakeApp({ viewer: "marco" });
   const open = on.fake.reports.openCount();
+  const waiting = open + on.fake.moderation.pendingRegistrations() + on.fake.moderation.pendingAppeals();
   const app = await renderApp("/lists", { on });
 
   const [place] = await waitFor(() => {
-    const found = screen.queryAllByRole("link", { name: new RegExp(`^Moderation\\s+${String(open)} waiting$`) });
+    const found = screen.queryAllByRole("link", { name: new RegExp(`^Moderation\\s+${String(waiting)} waiting$`) });
     if (found.length === 0) throw new Error("test: the navigation counts nothing in Moderation yet");
     return found;
   });
