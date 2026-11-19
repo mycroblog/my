@@ -16,6 +16,7 @@ import {
   mayRequest,
   useOwnEmoji,
   useOwnEmojis,
+  type OwnMore,
   useOwnEmojiWrites,
   validShortcode,
   type AppData,
@@ -41,6 +42,7 @@ import {
   SettingsFacts,
   SettingsList,
   SettingsListRow,
+  MoreRecords,
   SettingsNote,
   SettingsResult,
   SettingsScreen,
@@ -95,7 +97,7 @@ const stateOf = (t: T, r: OwnCustomEmojiRequest): string => t("emoji_own.request
 type Said = { readonly text: string; readonly n: number };
 
 /** The reader's requests, with Withdraw while one waits, and what came of a withdrawal in the section's status. */
-function Requests({ requests }: { requests: readonly OwnCustomEmojiRequest[] }) {
+function Requests({ requests, more }: { requests: readonly OwnCustomEmojiRequest[]; more: OwnMore }) {
   const t = useT();
   const moment = useMoment(false);
   const writes = useOwnEmojiWrites();
@@ -166,6 +168,7 @@ function Requests({ requests }: { requests: readonly OwnCustomEmojiRequest[] }) 
       <SettingsResult ref={saidRef}>
         {said === undefined ? undefined : <span key={said.n}>{said.text}</span>}
       </SettingsResult>
+      <More more={more} />
     </SettingsSection>
   );
 }
@@ -215,7 +218,7 @@ export function CustomEmojiSettings({ back }: SettingsEntryProps): ReactNode {
           <SettingsNote instead>{t("emoji_own.quota.reached", { date: day(quota.resetsAt) })}</SettingsNote>
         )}
       </SettingsSection>
-      <Requests requests={requests} />
+      <Requests requests={requests} more={read.moreRequests} />
       <SettingsSection heading={t("emoji_own.emojis")}>
         {emojis.length === 0 ? (
           <SettingsEmpty>{t("emoji_own.emojis.empty")}</SettingsEmpty>
@@ -233,8 +236,21 @@ export function CustomEmojiSettings({ back }: SettingsEntryProps): ReactNode {
             ))}
           </SettingsList>
         )}
+        <More more={read.moreEmojis} />
       </SettingsSection>
     </SettingsScreen>
+  );
+}
+
+/** Show more under a list of the reader's that has a next page; the words that it failed, with the same button. */
+function More({ more }: { more: OwnMore }) {
+  const t = useT();
+  if (!more.hasNext) return null;
+  return (
+    <>
+      {more.failed && <SettingsNote>{t("emoji_own.more.failed")}</SettingsNote>}
+      <MoreRecords busy={more.fetching} onPress={more.next} />
+    </>
   );
 }
 

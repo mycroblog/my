@@ -254,5 +254,9 @@
   "emoji_own.delete.cancel": {
     "defaultMessage": "Keep the emoji",
     "description": "The button that closes the question before deleting one of the reader's emoji, keeping it."
+  },
+  "emoji_own.more.failed": {
+    "defaultMessage": "The rest of the list could not be loaded. Try again with Show more.",
+    "description": "On the reader's custom emoji screen, over Show more, when the next page of their emoji or requests could not be read."
   }
 }

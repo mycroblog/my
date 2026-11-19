@@ -12,7 +12,7 @@ import type { AppData } from "./app-data";
 import { viewerQuery } from "./accounts";
 import { useAppData } from "./provider";
 import { readOf, type ScreenRead } from "./reads";
-import type { Permission } from "./rights";
+import { isMemberPermission, type Permission } from "./rights";
 
 /** A role as the administrators manage it. */
 export type AdminRole = components["schemas"]["AdminRole"];
@@ -103,7 +103,25 @@ export type RoleRights = {
   readonly permissions: ReadonlySet<Permission>;
   /** The IDs of the roles a supporter plan grants: none where the reader may not read the plans. */
   readonly planRoles: ReadonlySet<string>;
+  /** The highest place of a plan's role, which every staff role stays above; none where none is known. */
+  readonly planTop: number | undefined;
 };
+
+/** Whether a role of `key` and `permissions` is a staff role: a built-in one, or one with a permission of the staff. */
+export const isStaffRole = (key: string, permissions: Iterable<Permission>): boolean =>
+  builtinRoles.has(key) || [...permissions].some((p) => !isMemberPermission(p));
+
+/** The lowest place a staff role may take: above every plan's role (ADR-0072 §5), 0 where none is known. */
+export const lowestStaffPlace = (rights: RoleRights): number => (rights.planTop === undefined ? 0 : rights.planTop + 1);
+
+/**
+ * The permissions the reader may give or take on a role of `key` at `position`: theirs, but no staff permission at a
+ * place at or below a plan's role, which a staff role may not take.
+ */
+export const offeredPermissionsAt = (rights: RoleRights, key: string, position: number | null): readonly Permission[] =>
+  offeredPermissions(rights).filter(
+    (p) => isMemberPermission(p) || builtinRoles.has(key) || position === null || position >= lowestStaffPlace(rights),
+  );
 
 /** Whether `role` is at or below the reader's highest role: theirs to change, grant and revoke, the rest aside. */
 export const withinReach = (role: AdminRole, rights: RoleRights): boolean => role.position <= rights.top;
@@ -161,6 +179,10 @@ export function useRoleRights(): ScreenRead & { readonly rights: RoleRights | un
       topKey: own.data.items.toSorted((a, b) => b.position - a.position)[0]?.key,
       permissions: new Set(viewer.permissions),
       planRoles: new Set(plans.data?.items.map((p) => p.role.id) ?? []),
+      planTop:
+        plans.data === undefined || plans.data.items.length === 0
+          ? undefined
+          : Math.max(...plans.data.items.map((p) => p.role.position)),
     },
   };
 }
@@ -269,15 +291,21 @@ export type AdminRoleWrites = {
 
 /**
  * Reads again what a change of the roles changes: the roles, every account's roles (a role's place and permissions are
- * theirs too), and the reader's own account, whose permissions follow their roles.
+ * theirs too), the reader's own account, whose permissions follow their roles, and what shows badges.
  */
 async function rolesChanged(data: AppData): Promise<void> {
   void data.queryClient.invalidateQueries({ queryKey: viewerQuery(data).queryKey });
+  // A role's badge shows on its holders' profiles and in the reader's choice of badges.
+  void data.queryClient.invalidateQueries({ predicate: ({ queryKey }) => badgesShownBy(queryKey[1]) });
   void data.queryClient.invalidateQueries({
     predicate: ({ queryKey }) => queryKey[1] === "/admin/accounts/{id}/roles",
   });
   await data.queryClient.invalidateQueries({ queryKey: adminRolesQuery(data).queryKey });
 }
+
+/** Whether a read of `path` shows role badges: an account's own (its profile), and the reader's choice of badges. */
+const badgesShownBy = (path: unknown): boolean =>
+  path === "/accounts/{id}" || path === "/accounts/lookup" || path === "/preferences/badges";
 
 /** What an account's roles became, put into the cache, and the reader's own account read again if it is theirs. */
 async function heldChanged(
@@ -290,9 +318,9 @@ async function heldChanged(
   await data.queryClient.cancelQueries({ queryKey: key });
   data.queryClient.setQueryData(key, list);
   void data.queryClient.invalidateQueries({ queryKey: viewerQuery(data).queryKey });
-  // An account's page of the moderators may list its roles too.
+  // An account's page of the moderators may list its roles too, and its badges follow its roles.
   void data.queryClient.invalidateQueries({
-    predicate: ({ queryKey }) => queryKey[1] === "/admin/accounts/{id}" || queryKey[1] === "/accounts/{id}",
+    predicate: ({ queryKey }) => queryKey[1] === "/admin/accounts/{id}" || badgesShownBy(queryKey[1]),
   });
   return list.items;
 }

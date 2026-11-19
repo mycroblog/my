@@ -83,14 +83,6 @@
     "defaultMessage": "Never ends",
     "description": "When a ban ends, in a list of actions and its facts: it never does. Read by moderators."
   },
-  "staff_accounts.copied": {
-    "defaultMessage": "Copied",
-    "description": "Said after a moderator copied a link to pass on (a password reset link, an invite's link). Read by moderators."
-  },
-  "staff_accounts.copy_failed": {
-    "defaultMessage": "Could not copy. Select the link and copy it.",
-    "description": "Said when the browser refused to copy a link to pass on. Read by moderators."
-  },
   "staff_accounts.refused": {
     "defaultMessage": "{why, select, outranks {You cannot do this to an account whose role ranks as high as yours.} last_admin {This would lock the only administrator out. Give another account the administrator's role first.} decided {Someone decided this meanwhile. Reload to see the decision.} not_appealable {The account was deleted, so its ban cannot be overturned. You can still uphold the ban.} not_overridable {This decision cannot be cancelled here.} not_suppressed {Email to this account is not stopped any more.} no_two_factor {This account does not use two-factor authentication any more.} registration_closed {Registrations are closed, so no invite can be created. Open them in the server settings first.} closing {The service is closing, so no registration can be approved any more.} event_closed {The event is cancelled already.} forbidden {Your account's permissions no longer allow this.} missing {Someone removed it meanwhile. Reload to see what is there now.} other {This could not be done. Reload the app and try again.}}",
     "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."

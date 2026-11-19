@@ -6,7 +6,7 @@
 // off), none, loading, failing, and the address for a moderator, whose permissions do not open it. The form of a new
 // one, for the administrator and for a community lead (`lead`: no `manage_domains`, so the servers' events are left
 // out too). A webhook of each state with its deliveries; the lead on a webhook that receives an event they may not
-// change, named and kept; loading, failing, and an address that names none. The views of a secret shown once (a new
+// handle, shown with no form; loading, failing, and an address that names none. The views of a secret shown once (a new
 // webhook's, a new secret) follow a press, so they are the feature's screens alone, opened in that state on a fake server of their own.
 
 import { AppDataProvider, createAppData } from "@my/app-data";
@@ -83,9 +83,12 @@ export const WebhookTurnedOffByTheServer: Story = {
 export const WebhookOff: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:old}"),
 };
-/** The lead on a webhook that receives an account's event, which needs a permission the lead holds, and the rest. */
+/**
+ * The lead on a webhook that receives a server's moderation, whose permission they lack: what it is and receives, and
+ * why they cannot change it, with no form; its test, its state, its secret and Delete are still theirs.
+ */
 export const WebhookForALead: Story = {
-  parameters: asLead("/admin/webhooks/{server:webhook:archive}"),
+  parameters: asLead("/admin/webhooks/{server:webhook:chat}"),
 };
 export const WebhookLoading: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}", {

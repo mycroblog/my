@@ -366,5 +366,13 @@
   "staff_webhooks.irreversible": {
     "defaultMessage": "This cannot be undone.",
     "description": "The mark beside the button that deletes a webhook. Read by administrators."
+  },
+  "staff_webhooks.locked.events": {
+    "defaultMessage": "Events",
+    "description": "On the page of a webhook the reader cannot change, the name over the list of the events it receives. Read by administrators."
+  },
+  "staff_webhooks.locked": {
+    "defaultMessage": "It receives events that your roles do not let you change, so only someone who may handle all of them can change it. You can still test it, turn it off and on, give it a new secret, or delete it.",
+    "description": "On the page of a webhook that receives an event whose permission the reader lacks, in the place of its form: why it cannot be changed, and what the reader may still do. Read by administrators."
   }
 }

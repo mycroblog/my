@@ -42,6 +42,9 @@ const memberPermissions: ReadonlySet<Permission> = new Set([
   "create_events",
 ]);
 
+/** Whether `permission` is a member's (ADR-0070 §1): of neither moderation nor the server's administration. */
+export const isMemberPermission = (permission: Permission): boolean => memberPermissions.has(permission);
+
 /** The places that `permissions` open. */
 export function rightsOf(permissions: readonly Permission[]): Rights {
   return {

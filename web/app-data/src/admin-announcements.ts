@@ -135,7 +135,7 @@ const inputOf = (input: AdminAnnouncementInput): AdminAnnouncementInput => ({
 
 /**
  * Puts the announcement the server answered into the cache, and reads again what it changes: the administrators'
- * lists, and the readers' announcements, their history and the reader's page of it.
+ * lists, the readers' announcements, their history and the reader's page of it, and the reader's notifications.
  */
 async function written(data: AppData, a: AdminAnnouncement | undefined): Promise<AdminAnnouncement> {
   if (a === undefined) throw new Error("app-data: a write of an announcement answered without it");
@@ -147,6 +147,11 @@ async function written(data: AppData, a: AdminAnnouncement | undefined): Promise
   void queryClient.invalidateQueries({ queryKey: announcementsQuery(data).queryKey });
   void queryClient.invalidateQueries({ queryKey: announcementHistoryQuery(data).queryKey });
   void queryClient.invalidateQueries({ predicate: ({ queryKey }) => queryKey[1] === "/announcements/{id}" });
+  // Publishing notifies every local user, the reader too, and withdrawing hides those notifications: their list and the
+  // unread count change.
+  void queryClient.invalidateQueries({
+    predicate: ({ queryKey }) => queryKey[1] === "/notifications" || queryKey[1] === "/notifications/marker",
+  });
   return a;
 }
 

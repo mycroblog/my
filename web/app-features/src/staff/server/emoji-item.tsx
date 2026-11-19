@@ -31,8 +31,6 @@ import {
   ModalPresence,
   Row,
   SaveState,
-  Select,
-  SettingRow,
   SettingsNote,
   SettingsResult,
   SettingsScreen,
@@ -43,7 +41,7 @@ import {
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { adminEmojiPath, adminEmojisPath, coded, EmojiImage, originOf } from "./emoji-parts";
-import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { Irreversible, LeaveDialog, OnOffRow, ScreenNotice, type AdminSubProps } from "../settings/parts";
 import { BackTo, useStillThere, useUnsavedReport } from "./parts";
 
 /** The fields a refusal is said under. */
@@ -193,17 +191,15 @@ function PickerFields({ f }: { f: FormState }) {
           f.change({ aliases });
         }}
       />
-      <SettingRow id={`${f.id}-visible`} label={t("staff_emoji.visible")} form>
-        <Select
-          name="visible"
-          options={["true", "false"].map((v) => ({ value: v, label: t("staff_emoji.visible.value", { value: v }) }))}
-          value={f.form.visible ? "true" : "false"}
-          isDisabled={f.busy}
-          onChange={(v) => {
-            f.change({ visible: v === "true" });
-          }}
-        />
-      </SettingRow>
+      <OnOffRow
+        id={`${f.id}-visible`}
+        label={t("staff_emoji.visible")}
+        on={f.form.visible}
+        disabled={f.busy}
+        onChange={(visible) => {
+          f.change({ visible });
+        }}
+      />
     </SettingsSection>
   );
 }
@@ -254,6 +250,7 @@ export function NewEmojiScreen({ go, onUnsaved, leaving }: AdminSubProps): React
         if (!there.current) return;
         f.setBase(f.form);
         f.setSent({ kind: "saved" });
+        onUnsaved?.(false);
         go(adminEmojiPath(emoji.id));
       },
       (error: unknown) => {
@@ -340,19 +337,26 @@ function EmojiActions({ emoji }: { emoji: AdminCustomEmoji }) {
       },
     );
   };
-  const replace = (file: File) => {
+  const [asking, setAsking] = useState(false);
+  const pick = (file: File) => {
     setPicked(file);
     setImageError(undefined);
+  };
+  const replace = () => {
+    if (picked === undefined) return;
     setBusy("image");
-    writes.replaceImage(emoji.id, file).then(
+    writes.replaceImage(emoji.id, picked).then(
       () => {
         if (!there.current) return;
         setBusy(undefined);
+        setAsking(false);
+        setPicked(undefined);
         say(t("staff_emoji.image.replaced"));
       },
       (error: unknown) => {
         if (!there.current) return;
         setBusy(undefined);
+        setAsking(false);
         setImageError(emojiRefusalOf(t, error).why);
         focusRefusedField(`${id}-image`);
       },
@@ -383,10 +387,42 @@ function EmojiActions({ emoji }: { emoji: AdminCustomEmoji }) {
           accept="image/png,image/gif,image/webp"
           row
           isDisabled={busy !== undefined}
-          onFile={replace}
+          onFile={pick}
         />
       )}
+      {emoji.local && picked !== undefined && imageError === undefined && (
+        <Box>
+          <Button
+            size="timeline"
+            touch
+            busy={busy === "image"}
+            isDisabled={busy !== undefined}
+            onPress={() => {
+              setAsking(true);
+            }}
+          >
+            {t("staff_emoji.image.replace.press")}
+          </Button>
+        </Box>
+      )}
       <SettingsResult>{said === undefined ? undefined : <span key={said.n}>{said.text}</span>}</SettingsResult>
+      <ModalPresence>
+        {asking && (
+          <ConfirmDialog
+            key="replace"
+            title={t("staff_emoji.image.replace.title", { shortcode: emoji.shortcode })}
+            cancel={t("staff_emoji.image.replace.cancel")}
+            confirm={t("staff_emoji.image.replace.press")}
+            busy={busy === "image"}
+            onCancel={() => {
+              setAsking(false);
+            }}
+            onConfirm={replace}
+          >
+            {t("staff_emoji.image.replace.text")}
+          </ConfirmDialog>
+        )}
+      </ModalPresence>
     </SettingsSection>
   );
 }
@@ -522,6 +558,8 @@ function LocalEmoji({ emoji, go, onUnsaved, leaving }: AdminSubProps & { emoji: 
       () => {
         if (!there.current) return;
         setAsking(false);
+        // The guard hears that nothing is left unsaved before the screen leaves, not at the next render.
+        onUnsaved?.(false);
         go(adminEmojisPath);
       },
       () => {

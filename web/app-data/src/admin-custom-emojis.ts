@@ -11,7 +11,7 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { MediaFailedError } from "./compose";
 import { useAppData } from "./provider";
-import { customEmojisQuery } from "./reactions";
+import { refreshCustomEmojis } from "./reactions";
 import { readOf, type ScreenRead } from "./reads";
 
 /** A custom emoji as the administrators manage it. */
@@ -200,7 +200,7 @@ async function emojisChanged(data: AppData): Promise<void> {
     "/custom_emojis/mine",
     "/custom_emoji_requests",
   ]);
-  void data.queryClient.invalidateQueries({ queryKey: customEmojisQuery(data).queryKey });
+  void refreshCustomEmojis(data);
   await data.queryClient.invalidateQueries({ predicate: ({ queryKey }) => paths.has(String(queryKey[1])) });
 }
 

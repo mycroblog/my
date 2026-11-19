@@ -8,6 +8,7 @@
 // confirmed with the host typed. The API gives no delivery's payload, so none is shown.
 
 import {
+  mayHandleEvent,
   useAdminWebhook,
   useAdminWebhookWrites,
   usePermissions,
@@ -28,6 +29,7 @@ import {
   SettingsFacts,
   SettingsList,
   SettingsListRow,
+  SettingsNote,
   SettingsResult,
   SettingsScreen,
   SettingsSection,
@@ -374,6 +376,31 @@ function NewSecret({ webhook, shown }: { webhook: AdminWebhook; shown?: string |
   );
 }
 
+/**
+ * What a webhook that receives an event the reader may not handle says of itself: its description and its events, and
+ * that only someone whose roles hold every event's permission can change it.
+ */
+function LockedSettings({ webhook }: { webhook: AdminWebhook }) {
+  const { t, locale } = useStaffStrings();
+  const events = new Intl.ListFormat(locale, { type: "conjunction" }).format(
+    webhook.events.map((e) => eventName(t, e)),
+  );
+  return (
+    <SettingsSection heading={t("staff_webhooks.endpoint")}>
+      <SettingsFacts
+        label={t("staff_webhooks.endpoint")}
+        items={[
+          ...(webhook.description === undefined
+            ? []
+            : [{ text: t("staff_webhooks.description"), about: [webhook.description] }]),
+          { text: t("staff_webhooks.locked.events"), about: [events] },
+        ]}
+      />
+      <SettingsNote instead>{t("staff_webhooks.locked")}</SettingsNote>
+    </SettingsSection>
+  );
+}
+
 /** What a change of the form sends: only what changed, an emptied description sent empty, which removes it. */
 function changeOf(f: WebhookFormState): WebhookChange {
   const { form, base } = f;
@@ -404,6 +431,9 @@ function WebhookPage({
   const there = useStillThere();
   const f = useWebhookForm(formOf(webhook), permissions, onUnsaved);
   const host = hostOf(webhook.url);
+  // The server checks every event of a change against the reader's permissions, so a webhook that receives one the
+  // reader may not handle takes no change of theirs at all: it is shown, not offered as a form.
+  const locked = webhook.events.some((e) => !mayHandleEvent(e, permissions));
   const [asking, setAsking] = useState(false);
   const [deleting, setDeleting] = useState<"idle" | "sending" | "failed">("idle");
   const save = () => {
@@ -431,6 +461,8 @@ function WebhookPage({
       () => {
         if (!there.current) return;
         setAsking(false);
+        // The guard hears that nothing is left unsaved before the screen leaves, not at the next render.
+        onUnsaved?.(false);
         go(adminWebhooksPath);
       },
       () => {
@@ -449,7 +481,7 @@ function WebhookPage({
         // What the form does not hold stands after its Save, apart, and what ends the webhook last.
         foot={
           <>
-            <WebhookBar f={f} onSave={save} label={t("staff_webhooks.save")} />
+            {!locked && <WebhookBar f={f} onSave={save} label={t("staff_webhooks.save")} />}
             <Deliveries webhook={webhook} />
             <NewSecret webhook={webhook} shown={defaultSecret} />
             <SettingsSection heading={t("staff_webhooks.delete")} about={t("staff_webhooks.delete.about")}>
@@ -473,8 +505,14 @@ function WebhookPage({
       >
         <WebhookState webhook={webhook} />
         <WebhookFacts webhook={webhook} />
-        <WebhookPlaceFields f={f} />
-        <WebhookEventFields f={f} />
+        {locked ? (
+          <LockedSettings webhook={webhook} />
+        ) : (
+          <>
+            <WebhookPlaceFields f={f} />
+            <WebhookEventFields f={f} />
+          </>
+        )}
       </SettingsScreen>
       <ModalPresence>
         {asking ? (

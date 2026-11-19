@@ -350,7 +350,7 @@ export function WebhookSecret({
         about={t(kind === "created" ? "staff_webhooks.secret.created.about" : "staff_webhooks.secret.rotated.about")}
       />
       <SettingsSection heading={t("staff_webhooks.secret")} about={t("staff_webhooks.secret.once")}>
-        <CopyValue label={t("staff_webhooks.secret")} value={secret} copy={t("staff_webhooks.secret.copy")} />
+        <CopyValue primary label={t("staff_webhooks.secret")} value={secret} copy={t("staff_webhooks.secret.copy")} />
       </SettingsSection>
       {done}
     </>

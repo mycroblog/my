@@ -3,7 +3,7 @@
 // The fake's webhooks (FR-722, ADR-0060), as a holder of `manage_webhooks` keeps them under /admin/webhooks, checked
 // as the server checks them: a URL of http or https of at most 2048 bytes without user info or a fragment, a
 // description of at most 200 characters, at least one event and none twice, and no event whose permission the reader
-// lacks added or removed (`missing_permission`). The webhooks: `alerts`, enabled and healthy, with deliveries that
+// lacks among those it is to receive, its old ones too (`missing_permission`). The webhooks: `alerts`, enabled and healthy, with deliveries that
 // succeeded, one that waits and one that keeps failing; `chat`, enabled and failing now; `archive`, which the server
 // disabled after its deliveries kept failing; `old`, which an administrator disabled. A secret is `whsec_` and the
 // base64 of 32 bytes, as the server makes it; a test adds a delivery that waits, and a redelivery puts one back to
@@ -177,7 +177,7 @@ export function webhookHandlers(c: StaffServerContext): {
       "chat",
       {
         url: "https://chat.example.org/api/incoming/a-long-path-of-the-chat-service-that-runs-past-a-phone",
-        events: ["status.created"],
+        events: ["domain_moderation_action.created", "status.created"],
         state: "enabled",
         state_reason: "admin",
         state_changed_at: at(s - 10 * 24 * hour),
@@ -217,7 +217,7 @@ export function webhookHandlers(c: StaffServerContext): {
     });
   const found = (id: string) => webhooks.find((w) => w.id === id);
   /** What is wrong with a URL, a description or events, as the server checks them; none for valid ones. */
-  const check = (url?: string, description?: string, events?: readonly Event[], before: readonly Event[] = []) => {
+  const check = (url?: string, description?: string, events?: readonly Event[]) => {
     if (url !== undefined) {
       let parsed: URL | undefined;
       try {
@@ -240,10 +240,10 @@ export function webhookHandlers(c: StaffServerContext): {
     if (events !== undefined) {
       if (events.length === 0 || new Set(events).size !== events.length) return refused("events");
       const mine = c.permissions();
-      const changed = [...new Set([...events, ...before])].filter((e) => events.includes(e) !== before.includes(e));
+      // As the server does, every event the webhook is to receive needs its permission, not only those that change.
       const missing = [
         ...new Set(
-          changed.flatMap((e) => {
+          events.flatMap((e) => {
             const p = needed(e);
             return p === undefined || mine.includes(p) ? [] : [p];
           }),
@@ -308,7 +308,7 @@ export function webhookHandlers(c: StaffServerContext): {
       if (!allowed()) return forbidden();
       const w = found(params.id);
       if (w === undefined) return c.notFound();
-      const wrong = check(body.url, body.description, body.events, w.events);
+      const wrong = check(body.url, body.description, body.events ?? w.events);
       if (wrong !== undefined) return wrong;
       if (body.url !== undefined) w.url = body.url;
       if (body.description !== undefined) {

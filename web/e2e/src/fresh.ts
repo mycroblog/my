@@ -561,6 +561,30 @@ export class Fresh {
     throw new Error("fresh: the plans never took subscriptions");
   }
 
+  /**
+   * Deletes the local custom emoji of `shortcode` a test made, as the scenario's administrator, so that no test's emoji
+   * stays in every reader's picker; none of that shortcode is no failure.
+   */
+  async deleteEmoji(shortcode: string): Promise<void> {
+    const api = await this.#staff("admin");
+    const { data } = await api.GET("/admin/custom_emojis", { params: { query: { local: true, shortcode } } });
+    for (const emoji of data?.items.filter((e) => e.shortcode === shortcode) ?? [])
+      await api.DELETE("/admin/custom_emojis/{id}", { params: { path: { id: emoji.id } } });
+  }
+
+  /**
+   * Withdraws every announcement titled `title` that is not withdrawn, as the scenario's administrator, so that no
+   * test's announcement stays above every reader's home timeline; none of that title is no failure.
+   */
+  async withdrawAnnouncement(title: string): Promise<void> {
+    const api = await this.#staff("admin");
+    for (const state of ["draft", "scheduled", "showing"] as const) {
+      const { data } = await api.GET("/admin/announcements", { params: { query: { state } } });
+      for (const a of data?.items.filter((x) => x.title === title) ?? [])
+        await api.POST("/admin/announcements/{id}/withdraw", { params: { path: { id: a.id } } });
+    }
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);

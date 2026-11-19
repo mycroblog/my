@@ -96,8 +96,8 @@
     "description": "The field of a role's place among the roles, a number. Read by administrators."
   },
   "staff_roles.position.about": {
-    "defaultMessage": "From 0 to {max}. A role outranks those at a lower place.",
-    "description": "Under the place of a role: the numbers the reader may give it (up to their own highest role) and what the place means. Read by administrators."
+    "defaultMessage": "From {min} to {max}. A role outranks those at a lower place.",
+    "description": "Under the place of a role: the numbers the reader may give it (up to their own highest role; for a role with staff permissions, above the supporter plans' roles) and what the place means. Read by administrators."
   },
   "staff_roles.position.rule": {
     "defaultMessage": "Choose a place from 0 to {max}.",
@@ -106,6 +106,10 @@
   "staff_roles.position.reach": {
     "defaultMessage": "Choose a place from 0 to {max}, no higher than your own highest role.",
     "description": "Under the place of a role when it is empty or above what the reader may give. Read by administrators."
+  },
+  "staff_roles.position.plans": {
+    "defaultMessage": "A role with staff permissions stays above the roles of the supporter plans: choose a place from {min}.",
+    "description": "Under the place of a role with staff permissions (or a built-in role) when it is at or below the highest place of a supporter plan's role. Read by administrators."
   },
   "staff_roles.permissions": {
     "defaultMessage": "Permissions",

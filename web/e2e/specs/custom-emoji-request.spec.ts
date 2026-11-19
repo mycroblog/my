@@ -47,32 +47,37 @@ test("a person asks for a custom emoji, an administrator approves the request, a
   const admin = await fresh.person({ admin: true });
   const shortcode = `e2e_${randomUUID().replaceAll("-", "").slice(0, 16)}`;
 
-  // The person asks for it in their settings; it waits for a decision.
-  await signIn(artist);
-  const own = new OwnEmoji(page);
-  await own.open();
-  await own.ask(shortcode, png);
-  await expect(own.request(shortcode)).toContainText("Waiting for a decision");
-
-  // The administrator, in a browser of their own, approves it from the requests.
-  const theirs = await browser.newContext({
-    ...(baseURL === undefined ? {} : { baseURL }),
-    extraHTTPHeaders: { "X-Forwarded-For": "198.19.251.2" },
-  });
   try {
-    const staff = await theirs.newPage();
-    await signInOn(staff, admin);
-    const requests = new EmojiRequests(staff);
-    await requests.open();
-    await expect(requests.row(shortcode)).toBeVisible();
-    await requests.approve(shortcode);
-    await expect(requests.said(`The request for :${shortcode}: is approved.`)).toBeVisible();
-  } finally {
-    await theirs.close();
-  }
+    // The person asks for it in their settings; it waits for a decision.
+    await signIn(artist);
+    const own = new OwnEmoji(page);
+    await own.open();
+    await own.ask(shortcode, png);
+    await expect(own.request(shortcode)).toContainText("Waiting for a decision");
 
-  // The person finds it approved, and among their own emoji.
-  await page.reload();
-  await expect(own.request(shortcode)).toContainText("Approved");
-  await expect(own.emoji(shortcode)).toBeVisible();
+    // The administrator, in a browser of their own, approves it from the requests.
+    const theirs = await browser.newContext({
+      ...(baseURL === undefined ? {} : { baseURL }),
+      extraHTTPHeaders: { "X-Forwarded-For": "198.19.251.2" },
+    });
+    try {
+      const staff = await theirs.newPage();
+      await signInOn(staff, admin);
+      const requests = new EmojiRequests(staff);
+      await requests.open();
+      await expect(requests.row(shortcode)).toBeVisible();
+      await requests.approve(shortcode);
+      await expect(requests.said(`The request for :${shortcode}: is approved.`)).toBeVisible();
+    } finally {
+      await theirs.close();
+    }
+
+    // The person finds it approved, and among their own emoji.
+    await page.reload();
+    await expect(own.request(shortcode)).toContainText("Approved");
+    await expect(own.emoji(shortcode)).toBeVisible();
+  } finally {
+    // The approved emoji would stay in every reader's picker on the shared server.
+    await fresh.deleteEmoji(shortcode);
+  }
 });

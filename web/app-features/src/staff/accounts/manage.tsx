@@ -35,7 +35,8 @@ import {
 import { useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref } from "../entries";
 import { Titled, useMoment, useStaffStrings } from "../parts";
-import { AccountStateMark, CopyValue, refusalWords, useSaid } from "./parts";
+import { CopyValue } from "../settings/parts";
+import { AccountStateMark, refusalWords, useSaid } from "./parts";
 import { AccountRoles } from "../server/account-roles";
 import { emailDomainSearch } from "./search";
 
@@ -294,6 +295,7 @@ function LoginRecovery({ account, say }: { account: ModeratedAccountDetail; say:
         ) : (
           <Stack gap="entry-line">
             <CopyValue
+              primary
               label={t("staff_accounts.recovery.link.value")}
               value={link.url}
               copy={t("staff_accounts.recovery.link.copy")}

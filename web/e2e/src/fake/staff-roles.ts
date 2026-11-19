@@ -56,6 +56,7 @@ const startingRoles: readonly Omit<Role, "id">[] = [
       "manage_roles",
       "view_audit",
       "manage_custom_emojis",
+      "manage_webhooks",
       "manage_announcements",
       "create_custom_emojis",
     ],

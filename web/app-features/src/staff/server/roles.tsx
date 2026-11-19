@@ -16,7 +16,9 @@ import {
   highestPlace,
   mayDelete,
   mayReshape,
-  offeredPermissions,
+  isStaffRole,
+  lowestStaffPlace,
+  offeredPermissionsAt,
   permissionOrder,
   roleLimits,
   roleRefusal,
@@ -234,16 +236,16 @@ function useRoleForm(start: RoleForm, onUnsaved: AdminSubProps["onUnsaved"]) {
     form.label.trim() !== base.label.trim() ||
     (form.label.trim() !== "" && form.color !== base.color);
   useUnsavedReport(onUnsaved, unsaved, busy);
-  /** The id of the control a refusal of `field` puts the focus on. */
-  const controlOf = (field: Field) =>
+  /** The id of the control a refusal of `field` puts the focus on: of the permissions, the first offered. */
+  const controlOf = (field: Field, rights: RoleRights) =>
     field === "permissions"
-      ? `${id}-permission-${offeredFirst(form)}`
+      ? `${id}-permission-${offeredPermissionsAt(rights, form.key, form.position)[0] ?? permissionOrder[0]}`
       : field === "position" || field === "color"
         ? `${id}-${field}-control`
         : `${id}-${field}`;
-  const refuse = (field: Field | undefined, why: string) => {
+  const refuse = (field: Field | undefined, why: string, rights: RoleRights) => {
     setSent({ kind: "refused", field, why });
-    if (field !== undefined) focusNext.current = controlOf(field);
+    if (field !== undefined) focusNext.current = controlOf(field, rights);
   };
   return {
     id,
@@ -259,22 +261,26 @@ function useRoleForm(start: RoleForm, onUnsaved: AdminSubProps["onUnsaved"]) {
       setSent((was) => (was.kind === "saved" || was.kind === "refused" ? { kind: "idle" } : was));
     },
     /** Says what came of a refused write: under the field it is about, which takes the focus, or in the submit bar. */
-    refused: (error: unknown) => {
+    refused: (error: unknown, rights: RoleRights) => {
       const r = refusalOf(t, locale, error, form);
-      refuse(r.field, r.why);
+      refuse(r.field, r.why, rights);
     },
     /** What the form finds wrong before sending: a key the server would refuse, a place out of reach or none. */
     check: (rights: RoleRights, keyed: boolean): boolean => {
       if (keyed && !validRoleKey(form.key)) {
-        refuse("key", t("staff_roles.key.rule"));
+        refuse("key", t("staff_roles.key.rule"), rights);
         return false;
       }
       if (form.position === null || form.position < 0 || form.position > highestPlace(rights)) {
-        refuse("position", t("staff_roles.position.reach", { max: highestPlace(rights) }));
+        refuse("position", t("staff_roles.position.reach", { max: highestPlace(rights) }), rights);
+        return false;
+      }
+      if (isStaffRole(form.key, form.permissions) && form.position < lowestStaffPlace(rights)) {
+        refuse("position", t("staff_roles.position.plans", { min: lowestStaffPlace(rights) }), rights);
         return false;
       }
       if (Array.from(form.label.trim()).length > roleLimits.badgeLabel || form.label.includes("\n")) {
-        refuse("label", t("staff_roles.badge.label.rule", { max: roleLimits.badgeLabel }));
+        refuse("label", t("staff_roles.badge.label.rule", { max: roleLimits.badgeLabel }), rights);
         return false;
       }
       return true;
@@ -282,14 +288,15 @@ function useRoleForm(start: RoleForm, onUnsaved: AdminSubProps["onUnsaved"]) {
   };
 }
 
-/** The first permission the form offers, whose checkbox a refusal of the permissions focuses. */
-const offeredFirst = (form: RoleForm): string => form.permissions.values().next().value ?? permissionOrder[0];
-
 type FormState = ReturnType<typeof useRoleForm>;
 
 /** What is wrong with `field`, as the form's last save says it. */
 const errorOf = (f: FormState, field: Field): string | undefined =>
   f.sent.kind === "refused" && f.sent.field === field ? f.sent.why : undefined;
+
+/** The lowest place the form's role may take: above the plans' roles for a staff role, else 0. */
+const lowestPlaceOf = (f: FormState, rights: RoleRights): number =>
+  isStaffRole(f.form.key, f.form.permissions) ? Math.min(lowestStaffPlace(rights), highestPlace(rights)) : 0;
 
 /** The place of a role among the roles, no higher than the reader's highest. */
 function PlaceRow({ f, rights }: { f: FormState; rights: RoleRights }) {
@@ -298,7 +305,7 @@ function PlaceRow({ f, rights }: { f: FormState; rights: RoleRights }) {
     <SettingRow
       id={`${f.id}-position`}
       label={t("staff_roles.position")}
-      about={t("staff_roles.position.about", { max: highestPlace(rights) })}
+      about={t("staff_roles.position.about", { min: lowestPlaceOf(f, rights), max: highestPlace(rights) })}
       form
       error={errorOf(f, "position")}
     >
@@ -306,7 +313,7 @@ function PlaceRow({ f, rights }: { f: FormState; rights: RoleRights }) {
         id={`${f.id}-position-control`}
         name="position"
         value={f.form.position}
-        min={0}
+        min={lowestPlaceOf(f, rights)}
         max={highestPlace(rights)}
         isDisabled={f.busy}
         onChange={(position) => {
@@ -324,7 +331,7 @@ function PlaceRow({ f, rights }: { f: FormState; rights: RoleRights }) {
 function PermissionFields({ f, rights, fixed }: { f: FormState; rights: RoleRights; fixed: readonly Permission[] }) {
   const { t, locale } = useStaffStrings();
   const error = errorOf(f, "permissions");
-  const offered = offeredPermissions(rights);
+  const offered = offeredPermissionsAt(rights, f.form.key, f.form.position);
   return (
     <SettingsSection heading={t("staff_roles.permissions")} about={t("staff_roles.permissions.about")}>
       {offered.map((p, i) => (
@@ -464,7 +471,7 @@ export function NewRoleScreen({ go, onUnsaved, leaving }: AdminSubProps): ReactN
         go(adminRolePath(role.key));
       },
       (error: unknown) => {
-        if (there.current) f.refused(error);
+        if (there.current) f.refused(error, rights);
       },
     );
   };
@@ -571,7 +578,7 @@ function RoleForm({ role, rights, go, onUnsaved, leaving }: AdminSubProps & { ro
         f.setSent({ kind: "saved" });
       },
       (error: unknown) => {
-        if (there.current) f.refused(error);
+        if (there.current) f.refused(error, rights);
       },
     );
   };

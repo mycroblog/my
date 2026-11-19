@@ -3,10 +3,10 @@
 // An announcement from its writing to its readers, on the real server (#3263, FR-726, ADR-0125): an administrator finds
 // Announcements through Admin in the navigation and its list of screens, writes one with a title of its own and
 // publishes it, answering the question; a person then finds it in the server's announcements and opens it. Every local
-// user is notified of it and sees it above their home timeline, so it is withdrawn at the end whatever happened (a
-// window that ends soon would read the clock, which the specs do not), and nothing here counts what other specs could
-// change. What each screen shows in every state is the stories' and the route tests' on the fake (web/app,
-// admin-announcements.stories.tsx).
+// user is notified of it and sees it above their home timeline, so the administrator withdraws it from its page, and
+// it is withdrawn by its title at the end whatever happened (a window that ends soon would read the clock, which the
+// specs do not); nothing here counts what other specs could change. What each screen shows in every state is the
+// stories' and the route tests' on the fake (web/app, admin-announcements.stories.tsx).
 
 import { randomUUID } from "node:crypto";
 import type { Page } from "@playwright/test";
@@ -40,7 +40,6 @@ test("an administrator publishes an announcement, and a person reads it among th
   });
   const staff = await theirs.newPage();
   const screen = new AnnouncementsAdmin(staff);
-  let published: string | undefined;
   try {
     await signInOn(staff, admin);
     await screen.place.click();
@@ -49,7 +48,7 @@ test("an administrator publishes an announcement, and a person reads it among th
     await screen.fill({ title, text });
     await screen.publish();
     await expect(staff).toHaveURL(/\/admin\/announcements\/[^/]+$/);
-    published = staff.url();
+    const published = staff.url();
     await expect(screen.heading(title)).toBeVisible();
 
     // The person finds it among the server's announcements, and opens it.
@@ -58,13 +57,13 @@ test("an administrator publishes an announcement, and a person reads it among th
     await expect(screen.listedOn(page, title)).toBeVisible();
     await screen.listedOn(page, title).click();
     await expect(page.getByRole("main").getByText(text)).toBeVisible();
+    // The administrator withdraws it from its page.
+    await staff.goto(published);
+    await screen.withdraw();
+    await expect(screen.said("Withdrawn")).toBeVisible();
   } finally {
-    // Withdrawn whatever happened, so that no other spec's reader keeps seeing it.
-    if (published !== undefined) {
-      await staff.goto(published);
-      await screen.withdraw();
-      await expect(screen.said("Withdrawn")).toBeVisible();
-    }
+    // Withdrawn whatever happened, found by its title, so that no other spec's reader keeps seeing it.
+    await fresh.withdrawAnnouncement(title);
     await theirs.close();
   }
 });
