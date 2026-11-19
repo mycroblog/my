@@ -1,0 +1,190 @@
+{
+  "supporters.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button that reads again what the supporters' page could not read."
+  },
+  "supporters.list.failed_more": {
+    "defaultMessage": "続きのサポーターを読み込めませんでした。",
+    "description": "Under the supporters list of the supporters' page, when its next page could not be read; Try again follows."
+  },
+  "supporters.list.more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the supporters list that reads its next page."
+  },
+  "supporters.list.about": {
+    "defaultMessage": "このサーバーを支援し、一覧に載ることを選んだ人を、プランごとに示します。",
+    "description": "Under the heading of the supporters list."
+  },
+  "supporters.list.signed_in": {
+    "defaultMessage": "サポーターの一覧は、このサーバーにログインした人だけが見られます。",
+    "description": "In the supporters list's place for a visitor, where the server shows it to signed-in readers; Sign in follows."
+  },
+  "supporters.list.loading": {
+    "defaultMessage": "サポーターを読み込んでいます…",
+    "description": "In the supporters list's place while it is read."
+  },
+  "supporters.list.failed": {
+    "defaultMessage": "サポーターを読み込めませんでした。",
+    "description": "In the supporters list's place when it could not be read; Try again follows."
+  },
+  "supporters.list.empty": {
+    "defaultMessage": "一覧に載ることを選んだ人はまだいません。",
+    "description": "In the supporters list's place while nobody is on it."
+  },
+  "supporters.period": {
+    "defaultMessage": "{interval, select, month {月払い} other {年払い}}",
+    "description": "A choice of the billing period over the plans ({interval}: month or year)."
+  },
+  "supporters.period.label": {
+    "defaultMessage": "支払いの間隔",
+    "description": "The name of the choice of the billing period (monthly or yearly) over the plans, for assistive technology."
+  },
+  "supporters.save": {
+    "defaultMessage": "{upTo, select, yes {最大 {percent}% 割引} other {{percent}% 割引}}",
+    "description": "Under Yearly in the choice of the billing period: what paying yearly saves against twelve monthly payments, in whole percent; upTo is yes where the plans save different shares and this is the most."
+  },
+  "supporters.plans": {
+    "defaultMessage": "プラン",
+    "description": "The heading of the supporter plans on the supporters' page, and the name of their list."
+  },
+  "supporters.yours": {
+    "defaultMessage": "あなたのプラン",
+    "description": "On the card of the plan the reader pays for, at the period chosen, in the place of its button."
+  },
+  "supporters.per": {
+    "defaultMessage": "{interval, select, month {/ 月} other {/ 年}}",
+    "description": "After a plan's price, the period it is paid for ({interval}: month or year)."
+  },
+  "supporters.price_note.month": {
+    "defaultMessage": "年払いなら {year}",
+    "description": "Under a plan's monthly price: its yearly price ({year}, an amount such as ¥5,000)."
+  },
+  "supporters.includes": {
+    "defaultMessage": "{plan} の特典をすべて含みます",
+    "description": "On the card of a plan above the lowest: it holds the perks of the plan under it ({plan}, that plan's name, the operator's)."
+  },
+  "supporters.refused": {
+    "defaultMessage": "{kind, select, ineligible {このアカウントは今は加入できません。ページを読み込み直して、理由を確かめてください。} subscribed {すでにこのサーバーを支援しています。ページを読み込み直して、プランを確かめてください。} plan_unavailable {このプランは今は新しい加入を受け付けていません。ほかのプランを選んでください。} closing {このサーバーは閉鎖するため、新しい加入を受け付けていません。} unavailable {今は加入を始められません。しばらくしてから試してください。} state {今は加入を変更できません。ページを読み込み直して、今の状態を確かめてください。} payment_failed {支払いに失敗しました。料金は請求されていません。プランは変わりません。設定の「サポーター」にある「支払いと請求書」でカードを変更して、もう一度試してください。} payment_processing {支払いを処理しています。済むとプランが変わります。} other {できませんでした。もう一度試してください。}}",
+    "description": "In the question before subscribing or changing the plan, in its text's place, when the server refused it ({kind}: why)."
+  },
+  "supporters.commerce": {
+    "defaultMessage": "特定商取引法に基づく表記",
+    "description": "The link to the server's commerce disclosure, after what subscribing or changing the plan does, in the question before it."
+  },
+  "supporters.failed": {
+    "defaultMessage": "サポーターのページを読み込めませんでした。",
+    "description": "In the supporters' page's place when what it shows could not be read; Try again follows."
+  },
+  "supporters.loading": {
+    "defaultMessage": "サポーターのページを読み込んでいます…",
+    "description": "In the supporters' page's place while what it shows is read."
+  },
+  "supporters.none": {
+    "defaultMessage": "このサーバーはここでは支援を受け付けていません。",
+    "description": "The supporters' page of a server whose plans, tips and supporters list are all off, or of the native app, which shows no purchase, where the list is off."
+  },
+  "supporters.plans.failed": {
+    "defaultMessage": "プランを読み込めませんでした。",
+    "description": "In the plans' place on the supporters' page when they could not be read; Try again follows."
+  },
+  "supporters.plans.loading": {
+    "defaultMessage": "プランを読み込んでいます…",
+    "description": "In the plans' place on the supporters' page while they are read."
+  },
+  "supporters.plans.none": {
+    "defaultMessage": "今は加入できるプランがありません。",
+    "description": "In the plans' place on the supporters' page while the server offers none."
+  },
+  "supporters.subscribe": {
+    "defaultMessage": "選択する",
+    "description": "The button on a plan's card that asks before leaving for the payment provider's checkout of that plan, at the period chosen; the card names it by its plan for assistive technology (Choose Supporter)."
+  },
+  "supporters.switch": {
+    "defaultMessage": "変更する",
+    "description": "The button on a plan's card, for a reader subscribed to another plan or period, that asks before changing to it."
+  },
+  "supporters.checkout.confirm": {
+    "defaultMessage": "支払いへ進む",
+    "description": "The button of the question before subscribing that leaves for the payment provider's checkout."
+  },
+  "supporters.checkout.cancel": {
+    "defaultMessage": "今はしない",
+    "description": "The button of the question before subscribing that closes it with nothing done."
+  },
+  "supporters.checkout.text": {
+    "defaultMessage": "今 {price} を支払い、解約するまで{interval, select, month {毎月} other {毎年}} {price} を支払います。特典は支払いが済むと始まります。解約は設定の「サポーター」からいつでもでき、支払った期間の終わりまで特典は続きます。",
+    "description": "What subscribing does, in the question before the payment provider's checkout ({price}: the plan's price at the period; {interval}: month or year)."
+  },
+  "supporters.checkout.title": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})に加入しますか？",
+    "description": "The question before leaving for the payment provider's checkout ({plan}: the plan's name, the operator's; {interval}: month or year)."
+  },
+  "supporters.change.confirm": {
+    "defaultMessage": "{when, select, now {今すぐ変更する} other {変更を予約する}}",
+    "description": "The button of the question before changing the plan ({when}: now, or at the end of the period)."
+  },
+  "supporters.change.keep": {
+    "defaultMessage": "今のプランのままにする",
+    "description": "A button that keeps the reader's plan as it is: in the question before a change, and beside a change scheduled for the period's end, which it cancels."
+  },
+  "supporters.change.text": {
+    "defaultMessage": "{when, select, now {この期間の残りの差額を今すぐ請求し、支払いが済むとプランが変わります。その後は{interval, select, month {毎月} other {毎年}} {price} を支払います。} other {今は請求されません。{date} までは {plan} のままで、その後プランが変わり、{interval, select, month {毎月} other {毎年}} {price} を支払います。}}",
+    "description": "What a change of the plan does, in the question before it ({when}: now or at the period's end on {date}; {plan}: the reader's plan now; {price}: the new price at {interval})."
+  },
+  "supporters.change.price_kept": {
+    "defaultMessage": "今は以前の料金 {kept} のまま続いています。変更すると今の料金になり、{plan} に戻しても以前の料金には戻りません。",
+    "description": "In the question before changing the plan, when the reader renews at an earlier price than the plan's price now ({kept}: what they pay; {plan}: their plan's name)."
+  },
+  "supporters.change.title": {
+    "defaultMessage": "{when, select, now {今すぐ {plan} ({interval, select, month {月払い} other {年払い}})に変更しますか？} other {{date} に {plan} ({interval, select, month {月払い} other {年払い}})に変更しますか？}}",
+    "description": "The question before changing the plan or the period ({when}: now, the difference charged at once, or at the end of the period, on {date}; {plan}: the new plan's name)."
+  },
+  "supporters.subscription": {
+    "defaultMessage": "加入の状態",
+    "description": "The heading of the reader's subscription in the Supporter screen, and the link to it from the plans after the sentence that says they support the server."
+  },
+  "supporters.yours.plan": {
+    "defaultMessage": "{plan} でこのサーバーを支援しています。",
+    "description": "Over the plans, for a reader who supports the server ({plan}: their plan's name, the operator's)."
+  },
+  "supporters.yours.lapsed": {
+    "defaultMessage": "{plan} の支払いに失敗し、特典は終わりました。加入の画面で支払い方法を更新してください。",
+    "description": "Over the plans, for a reader whose subscription's payment failed and whose 7 days of grace ended ({plan}: its plan's name); the link to their subscription follows."
+  },
+  "supporters.sign_in": {
+    "defaultMessage": "ログイン",
+    "description": "The link to the sign-in after a sentence of the supporters' page that asks for an account; it comes back to the page."
+  },
+  "supporters.bar.subscribe": {
+    "defaultMessage": "{reason, select, signed_out {加入するには、このサーバーのアカウントが必要です。} email_unverified {加入するには、メールアドレスを確認してください。} not_local {加入できるのは、このサーバーのアカウントを持つ人だけです。} restricted {アカウントが制限されている間は加入できません。} subscribed {すでにこのサーバーを支援しています。} other {今は加入できません。}}",
+    "description": "Why the reader is not offered to subscribe to a plan ({reason})."
+  },
+  "supporters.bar.tip": {
+    "defaultMessage": "{reason, select, signed_out {チップを贈るには、このサーバーのアカウントが必要です。} email_unverified {チップを贈るには、メールアドレスを確認してください。} not_local {チップを贈れるのは、このサーバーのアカウントを持つ人だけです。} restricted {アカウントが制限されている間はチップを贈れません。} other {今はチップを贈れません。}}",
+    "description": "Why the reader is not offered to tip the server ({reason})."
+  },
+  "supporters.tip": {
+    "defaultMessage": "サーバーにチップを贈る",
+    "description": "The heading of the tip on the supporters' page, the screen of the tip in the settings, and the row of the settings that leads there."
+  },
+  "supporters.tip.about": {
+    "defaultMessage": "チップは、{server} のサービスへのお礼として、運営する人に 1 回だけ払うものです。見返りはありません。",
+    "description": "What a tip is, beside the way to tip and the choice of its amount ({server}: the server's name). It is no purchase and brings nothing in return."
+  },
+  "supporters.tip.go": {
+    "defaultMessage": "チップを贈る",
+    "description": "The link of the supporters' page to the screen that pays a tip."
+  },
+  "supporters.list": {
+    "defaultMessage": "サポーター",
+    "description": "The heading of the supporters list on the supporters' page."
+  },
+  "supporters.changed": {
+    "defaultMessage": "{when, select, now {プランが {plan} ({interval, select, month {月払い} other {年払い}})になりました。} other {{date} にプランが {plan} ({interval, select, month {月払い} other {年払い}})に変わります。}}",
+    "description": "Under the plans, once a change of the plan was made ({when}: now, or scheduled for {date})."
+  },
+  "supporters.same_plan": {
+    "defaultMessage": "すでに {plan} ({interval, select, month {月払い} other {年払い}}) です。",
+    "description": "Under the plans, when a change the reader asked for again was already made (its first answer did not reach them): the plan is theirs ({plan}: its name)."
+  }
+}

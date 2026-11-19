@@ -115,6 +115,14 @@
     "defaultMessage": "イベントの前のリマインダー",
     "description": "The line under the entry of the settings of events in the settings' menu."
   },
+  "settings.entry.supporter": {
+    "defaultMessage": "サポーター",
+    "description": "The entry of the settings of the reader's support of the server (their subscription, tips, the supporters list), in the settings' menu and as its screen's title."
+  },
+  "settings.entry.supporter.hint": {
+    "defaultMessage": "加入・チップ・サポーターの一覧",
+    "description": "Under Supporter in the settings' menu: what its screen holds."
+  },
   "settings.sign_out": {
     "defaultMessage": "ログアウト…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
@@ -3446,5 +3454,197 @@
   "settings.events.defaults_done": {
     "defaultMessage": "既定に戻しました",
     "description": "Beside the button that brings back the default reminders once it did."
+  },
+  "settings.supporter.loading": {
+    "defaultMessage": "加入の状態を読み込んでいます…",
+    "description": "In the Supporter screen's place while the reader's subscription is read."
+  },
+  "settings.supporter.failed": {
+    "defaultMessage": "加入の状態を読み込めませんでした。",
+    "description": "In the Supporter screen's place when the reader's subscription could not be read; Try again follows."
+  },
+  "settings.supporter.tip": {
+    "defaultMessage": "チップ",
+    "description": "The heading of the section of the Supporter screen that leads to tipping the server."
+  },
+  "settings.supporter.tip.caption": {
+    "defaultMessage": "1 回だけ払うお礼",
+    "description": "Under Tip the server in the Supporter screen."
+  },
+  "settings.supporter.tip.limited.later": {
+    "defaultMessage": "チップの開始が多すぎます。しばらくしてから試してください。",
+    "description": "Before Tip when the server limits how often a tip starts and says no wait."
+  },
+  "settings.supporter.tip.refused": {
+    "defaultMessage": "{kind, select, tip_amount {この金額は今は選べません。ほかの金額を選んでください。} tip_pending {別のチップを始めています。少し待ってから、もう一度試してください。} tips_unavailable {今はチップを払えません。しばらくしてから試してください。} closing {このサーバーは閉鎖するため、チップを受け付けていません。} ineligible {このアカウントは今はチップを贈れません。ページを読み込み直して、理由を確かめてください。} other {できませんでした。もう一度試してください。}}",
+    "description": "Before Tip when the server refused to start a tip ({kind}: why)."
+  },
+  "settings.supporter.tip.returned": {
+    "defaultMessage": "あなたのチップ",
+    "description": "The heading of what came of the tip the reader came back from, when it could not be read."
+  },
+  "settings.supporter.tip.returned.failed": {
+    "defaultMessage": "チップの結果を読み込めませんでした。後でページを読み込み直してください。",
+    "description": "When the tip the reader came back from the checkout of could not be read."
+  },
+  "settings.supporter.tip.result": {
+    "defaultMessage": "{result, select, paid {{amount} のチップをありがとうございます} unpaid {チップは支払われませんでした} settling {{amount} のチップを確認しています} other {このチップは見つかりませんでした}}",
+    "description": "The title of what came of the tip the reader came back from ({result}; {amount}: the tip's amount)."
+  },
+  "settings.supporter.tip.result.about": {
+    "defaultMessage": "{result, select, paid {{server} の運営に届きます。} unpaid {料金は請求されていません。下からもう一度チップを贈れます。} settling {支払いが済むとこのページが更新されます。} other {ここではこれ以上わかりません。}}",
+    "description": "Under the title of what came of the tip ({server}: the server's name)."
+  },
+  "settings.supporter.tip.loading": {
+    "defaultMessage": "金額を読み込んでいます…",
+    "description": "In the tip screen's place while the operator's amounts are read."
+  },
+  "settings.supporter.tip.failed": {
+    "defaultMessage": "金額を読み込めませんでした。",
+    "description": "In the tip screen's place when the amounts could not be read; Try again follows."
+  },
+  "settings.supporter.tip.pay": {
+    "defaultMessage": "{amount} のチップを贈る",
+    "description": "The tip screen's primary button: it starts a tip of the amount chosen and leaves for the payment provider's checkout."
+  },
+  "settings.supporter.tip.off": {
+    "defaultMessage": "このサーバーは今はチップを受け付けていません。",
+    "description": "The tip screen of a server that takes no tips."
+  },
+  "settings.supporter.tip.amount": {
+    "defaultMessage": "金額",
+    "description": "The heading of the choice of a tip's amount, and the choice's name."
+  },
+  "settings.supporter.tip.once": {
+    "defaultMessage": "チップを始めると、開いたままのチップの支払いのページは使えなくなり、支払いは 1 回だけになります。",
+    "description": "Under the amounts of a tip: one tip is open at a time."
+  },
+  "settings.supporter.tip.limited": {
+    "defaultMessage": "チップの開始が多すぎます。{minutes, plural, other {# 分}}後にもう一度試してください。",
+    "description": "Before Tip when the server limits how often a tip starts ({minutes}: how long to wait)."
+  },
+  "settings.supporter.returned.canceled": {
+    "defaultMessage": "支払いのページを離れました。料金は請求されていません。",
+    "description": "Said in the Supporter screen when the reader came back from the payment provider's checkout without paying."
+  },
+  "settings.supporter.returned.settling": {
+    "defaultMessage": "支払いを確認しています。済むとこのページが更新されます。",
+    "description": "Said in the Supporter screen when the reader came back from the checkout and the payment has not settled yet."
+  },
+  "settings.supporter.returned.paid": {
+    "defaultMessage": "ありがとうございます。{plan} ({interval, select, month {月払い} other {年払い}})でこのサーバーを支援しています。",
+    "description": "Said in the Supporter screen when the reader came back from the checkout and the payment went through ({plan}: the plan's name)."
+  },
+  "settings.supporter.portal.ended": {
+    "defaultMessage": "決済サービスにあなたの加入がありません。ページを読み込み直して、今の状態を確かめてください。",
+    "description": "Said in the Supporter screen when the payment provider's portal cannot open: it knows no subscription of the reader."
+  },
+  "settings.supporter.state.renewing": {
+    "defaultMessage": "{date} に更新",
+    "description": "The state of an active subscription: when it renews ({date}, a day with its year)."
+  },
+  "settings.supporter.state.ending": {
+    "defaultMessage": "{date} に終了",
+    "description": "The state of a cancelled subscription: when it ends ({date})."
+  },
+  "settings.supporter.state.failed": {
+    "defaultMessage": "支払いに失敗しました。{date} に特典が終わる前に、支払い方法を更新してください",
+    "description": "The state of a subscription whose payment failed, in its 7 days of grace ({date}: when the grace ends)."
+  },
+  "settings.supporter.state.lapsed": {
+    "defaultMessage": "支払いに失敗し、特典は終わりました",
+    "description": "The state of a subscription whose payment failed and whose grace ended: the role is gone until a payment goes through."
+  },
+  "settings.supporter.state.pending": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})への加入は、最初の支払い {price} を待っています。",
+    "description": "The state of a subscription whose first payment is not made yet ({plan}: the plan's name; {price}: what the first payment charges, the price of the plan at its period)."
+  },
+  "settings.supporter.state.changing": {
+    "defaultMessage": "{date} に {plan} ({interval, select, month {月払い} other {年払い}})に変わります",
+    "description": "The state of a subscription whose change to another plan or period waits for the period's end ({plan}: the new plan's name)."
+  },
+  "settings.supporter.resume": {
+    "defaultMessage": "解約を取り消す",
+    "description": "The button beside a cancelled subscription that takes the cancellation back."
+  },
+  "settings.supporter.resumed": {
+    "defaultMessage": "加入は続きます。{date} に更新されます。",
+    "description": "Said once a cancelled subscription was resumed ({date}: when it renews)."
+  },
+  "settings.supporter.update_payment": {
+    "defaultMessage": "支払い方法を更新",
+    "description": "The button beside a failed payment that leaves for the payment provider's portal, where the reader changes the card."
+  },
+  "settings.supporter.none": {
+    "defaultMessage": "プランでの支援はしていません。",
+    "description": "In the reader's subscription's place while they have none."
+  },
+  "settings.supporter.portal": {
+    "defaultMessage": "支払いと請求書",
+    "description": "The button of the Supporter screen that leaves for the payment provider's portal of payment methods and invoices."
+  },
+  "settings.supporter.cancel": {
+    "defaultMessage": "解約する",
+    "description": "The button that asks before cancelling the subscription at its period's end, and the confirmation of that question."
+  },
+  "settings.supporter.cancel.open": {
+    "defaultMessage": "解約する…",
+    "description": "The last button of the reader's subscription: it asks before cancelling at the period's end (the question's own button is Cancel subscription)."
+  },
+  "settings.supporter.cancel.title": {
+    "defaultMessage": "解約しますか？",
+    "description": "The question before cancelling the subscription."
+  },
+  "settings.supporter.cancel.keep": {
+    "defaultMessage": "解約しない",
+    "description": "The button of the question before cancelling that keeps the subscription."
+  },
+  "settings.supporter.cancel.text": {
+    "defaultMessage": "今後は請求されません。{date} に終了し、それまで特典は続きます。その日までは解約を取り消せます。",
+    "description": "What cancelling does, in the question before it ({date}: the period's end)."
+  },
+  "settings.supporter.cancel.scheduled": {
+    "defaultMessage": "その日に予約していた {plan} ({interval, select, month {月払い} other {年払い}})への変更も取り消されます。",
+    "description": "In the question before cancelling, after what cancelling does, when a change to another plan or period waits for the period's end ({plan}: that plan's name)."
+  },
+  "settings.supporter.canceled": {
+    "defaultMessage": "加入は {date} に終了します。",
+    "description": "Said once the subscription was cancelled ({date}: the period's end)."
+  },
+  "settings.supporter.plans.door": {
+    "defaultMessage": "{change, select, yes {プランを変更} other {プランを見る}}",
+    "description": "The row that leads to the plans on the supporters' page ({change}: yes for a reader whose subscription may change)."
+  },
+  "settings.supporter.plans.door.caption": {
+    "defaultMessage": "{change, select, yes {ほかのプランや支払いの間隔に} other {サポーターのページで加入}}",
+    "description": "Under the row that leads to the plans."
+  },
+  "settings.supporter.listing": {
+    "defaultMessage": "サポーターの一覧",
+    "description": "The heading of the reader's choice to be on the supporters list."
+  },
+  "settings.supporter.listing.label": {
+    "defaultMessage": "サポーターの一覧に載せる",
+    "description": "The switch of the reader's choice to be on the supporters list."
+  },
+  "settings.supporter.listing.about": {
+    "defaultMessage": "{audience, select, everyone {一覧は誰でも見られ、あなたはプランの下に載ります。} other {一覧はこのサーバーにログインした人が見られ、あなたはプランの下に載ります。}}",
+    "description": "Under the switch of the reader's choice to be on the supporters list ({audience}: who may read the list)."
+  },
+  "settings.supporter.detail.price": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})・{interval, select, month {月} other {年}} {price}",
+    "description": "Under the state of a subscription that renews: its plan, period and price ({price}: what it renews at)."
+  },
+  "settings.supporter.detail.changing": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})・それまでは{interval, select, month {月} other {年}} {now}、その後は{after, select, month {月} other {年}} {price}",
+    "description": "Under the state of a subscription whose change waits for the period's end: the plan now, its price until then ({now}), and the price after ({price}, at the period {after})."
+  },
+  "settings.supporter.detail.ending": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})・{interval, select, month {月} other {年}} {price}・それまで特典は続きます。",
+    "description": "Under the state of a cancelled subscription that ends at its period's end: its plan, period and price."
+  },
+  "settings.supporter.kept": {
+    "defaultMessage": "{plan} ({interval, select, month {月払い} other {年払い}})のままです。",
+    "description": "Said once the change that waited for the period's end was cancelled."
   }
 }

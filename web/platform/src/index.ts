@@ -38,6 +38,7 @@ export {
   type PushSubscriptionData,
 } from "./push";
 export { copyText, shareLink, type ShareOutcome } from "./share";
+export { inNativeShell } from "./shell";
 export { playSound, trySound } from "./sound";
 export { joinTabGroup, type TabGroup } from "./tabs";
 export {

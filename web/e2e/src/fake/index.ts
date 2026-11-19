@@ -26,3 +26,5 @@ export type { Failure, Script, Scripted, Seen } from "./script";
 export { UnimplementedError, type Route } from "./spec";
 export type { FakeVoice, FakeVoiceEvent } from "./voice";
 export type { FakeEventPlan, FakeEvents } from "./events";
+export type { FakeFinanceOptions } from "./finance";
+export type { FakeSupporterOptions, FakeSupporters } from "./supporters";

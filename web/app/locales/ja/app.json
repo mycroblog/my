@@ -410,5 +410,9 @@
   "app.event_date_polled": {
     "defaultMessage": "日程を調整中",
     "description": "In place of an event's time in the column beside the timeline, while its organizers poll its date."
+  },
+  "app.supporters": {
+    "defaultMessage": "サポーター",
+    "description": "The name of the supporters' page (the plans, the tip and the supporters list): its heading, and its place in the menu."
   }
 }

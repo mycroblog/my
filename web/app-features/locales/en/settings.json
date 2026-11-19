@@ -115,6 +115,14 @@
     "defaultMessage": "Reminders before events",
     "description": "The line under the entry of the settings of events in the settings' menu."
   },
+  "settings.entry.supporter": {
+    "defaultMessage": "Supporter",
+    "description": "The entry of the settings of the reader's support of the server (their subscription, tips, the supporters list), in the settings' menu and as its screen's title."
+  },
+  "settings.entry.supporter.hint": {
+    "defaultMessage": "Your subscription, tips and the supporters list",
+    "description": "Under Supporter in the settings' menu: what its screen holds."
+  },
   "settings.sign_out": {
     "defaultMessage": "Sign out…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
@@ -3446,5 +3454,197 @@
   "settings.events.defaults_done": {
     "defaultMessage": "Restored the defaults",
     "description": "Beside the button that brings back the default reminders once it did."
+  },
+  "settings.supporter.loading": {
+    "defaultMessage": "Loading your subscription…",
+    "description": "In the Supporter screen's place while the reader's subscription is read."
+  },
+  "settings.supporter.failed": {
+    "defaultMessage": "Your subscription could not be loaded.",
+    "description": "In the Supporter screen's place when the reader's subscription could not be read; Try again follows."
+  },
+  "settings.supporter.tip": {
+    "defaultMessage": "Tip",
+    "description": "The heading of the section of the Supporter screen that leads to tipping the server."
+  },
+  "settings.supporter.tip.caption": {
+    "defaultMessage": "A thank-you, paid once",
+    "description": "Under Tip the server in the Supporter screen."
+  },
+  "settings.supporter.tip.limited.later": {
+    "defaultMessage": "You started too many tips. Try again later.",
+    "description": "Before Tip when the server limits how often a tip starts and says no wait."
+  },
+  "settings.supporter.tip.refused": {
+    "defaultMessage": "{kind, select, tip_amount {This amount is no longer offered. Choose another.} tip_pending {Another tip is starting. Wait a moment, then try again.} tips_unavailable {Tips cannot be paid right now. Try again later.} closing {This server is closing, so it takes no tips.} ineligible {Your account cannot tip now. Reload the page to see why.} other {This could not be done. Try again.}}",
+    "description": "Before Tip when the server refused to start a tip ({kind}: why)."
+  },
+  "settings.supporter.tip.returned": {
+    "defaultMessage": "Your tip",
+    "description": "The heading of what came of the tip the reader came back from, when it could not be read."
+  },
+  "settings.supporter.tip.returned.failed": {
+    "defaultMessage": "What came of your tip could not be loaded. Reload the page later.",
+    "description": "When the tip the reader came back from the checkout of could not be read."
+  },
+  "settings.supporter.tip.result": {
+    "defaultMessage": "{result, select, paid {Thank you for your tip of {amount}} unpaid {Your tip was not paid} settling {Your tip of {amount} is being confirmed} other {This tip could not be found}}",
+    "description": "The title of what came of the tip the reader came back from ({result}; {amount}: the tip's amount)."
+  },
+  "settings.supporter.tip.result.about": {
+    "defaultMessage": "{result, select, paid {It goes to the people who run {server}.} unpaid {Nothing was charged. You can tip again below.} settling {This page updates once the payment goes through.} other {Nothing more is known of it here.}}",
+    "description": "Under the title of what came of the tip ({server}: the server's name)."
+  },
+  "settings.supporter.tip.loading": {
+    "defaultMessage": "Loading the amounts…",
+    "description": "In the tip screen's place while the operator's amounts are read."
+  },
+  "settings.supporter.tip.failed": {
+    "defaultMessage": "The amounts could not be loaded.",
+    "description": "In the tip screen's place when the amounts could not be read; Try again follows."
+  },
+  "settings.supporter.tip.pay": {
+    "defaultMessage": "Tip {amount}",
+    "description": "The tip screen's primary button: it starts a tip of the amount chosen and leaves for the payment provider's checkout."
+  },
+  "settings.supporter.tip.off": {
+    "defaultMessage": "This server takes no tips now.",
+    "description": "The tip screen of a server that takes no tips."
+  },
+  "settings.supporter.tip.amount": {
+    "defaultMessage": "Amount",
+    "description": "The heading of the choice of a tip's amount, and the choice's name."
+  },
+  "settings.supporter.tip.once": {
+    "defaultMessage": "Starting a tip ends any tip payment page you left open, so you pay only once.",
+    "description": "Under the amounts of a tip: one tip is open at a time."
+  },
+  "settings.supporter.tip.limited": {
+    "defaultMessage": "You started too many tips. Try again in {minutes, plural, one {# minute} other {# minutes}}.",
+    "description": "Before Tip when the server limits how often a tip starts ({minutes}: how long to wait)."
+  },
+  "settings.supporter.returned.canceled": {
+    "defaultMessage": "You left the payment page. Nothing was charged.",
+    "description": "Said in the Supporter screen when the reader came back from the payment provider's checkout without paying."
+  },
+  "settings.supporter.returned.settling": {
+    "defaultMessage": "Your payment is being confirmed. This page updates once it goes through.",
+    "description": "Said in the Supporter screen when the reader came back from the checkout and the payment has not settled yet."
+  },
+  "settings.supporter.returned.paid": {
+    "defaultMessage": "Thank you. You support this server on {plan}, {interval, select, month {monthly} other {yearly}}.",
+    "description": "Said in the Supporter screen when the reader came back from the checkout and the payment went through ({plan}: the plan's name)."
+  },
+  "settings.supporter.portal.ended": {
+    "defaultMessage": "The payment provider has no subscription of yours. Reload the page to see where it stands.",
+    "description": "Said in the Supporter screen when the payment provider's portal cannot open: it knows no subscription of the reader."
+  },
+  "settings.supporter.state.renewing": {
+    "defaultMessage": "Renews on {date}",
+    "description": "The state of an active subscription: when it renews ({date}, a day with its year)."
+  },
+  "settings.supporter.state.ending": {
+    "defaultMessage": "Ends on {date}",
+    "description": "The state of a cancelled subscription: when it ends ({date})."
+  },
+  "settings.supporter.state.failed": {
+    "defaultMessage": "Your payment failed: update your payment method before {date}, or your perks end then",
+    "description": "The state of a subscription whose payment failed, in its 7 days of grace ({date}: when the grace ends)."
+  },
+  "settings.supporter.state.lapsed": {
+    "defaultMessage": "Your payment failed, and your perks have ended",
+    "description": "The state of a subscription whose payment failed and whose grace ended: the role is gone until a payment goes through."
+  },
+  "settings.supporter.state.pending": {
+    "defaultMessage": "Your subscription to {plan}, {interval, select, month {monthly} other {yearly}}, waits for its first payment of {price}.",
+    "description": "The state of a subscription whose first payment is not made yet ({plan}: the plan's name; {price}: what the first payment charges, the price of the plan at its period)."
+  },
+  "settings.supporter.state.changing": {
+    "defaultMessage": "Changes to {plan}, {interval, select, month {monthly} other {yearly}}, on {date}",
+    "description": "The state of a subscription whose change to another plan or period waits for the period's end ({plan}: the new plan's name)."
+  },
+  "settings.supporter.resume": {
+    "defaultMessage": "Resume",
+    "description": "The button beside a cancelled subscription that takes the cancellation back."
+  },
+  "settings.supporter.resumed": {
+    "defaultMessage": "Your subscription goes on. It renews on {date}.",
+    "description": "Said once a cancelled subscription was resumed ({date}: when it renews)."
+  },
+  "settings.supporter.update_payment": {
+    "defaultMessage": "Update payment",
+    "description": "The button beside a failed payment that leaves for the payment provider's portal, where the reader changes the card."
+  },
+  "settings.supporter.none": {
+    "defaultMessage": "You do not support this server with a plan.",
+    "description": "In the reader's subscription's place while they have none."
+  },
+  "settings.supporter.portal": {
+    "defaultMessage": "Payments and invoices",
+    "description": "The button of the Supporter screen that leaves for the payment provider's portal of payment methods and invoices."
+  },
+  "settings.supporter.cancel": {
+    "defaultMessage": "Cancel subscription",
+    "description": "The button that asks before cancelling the subscription at its period's end, and the confirmation of that question."
+  },
+  "settings.supporter.cancel.open": {
+    "defaultMessage": "Cancel subscription…",
+    "description": "The last button of the reader's subscription: it asks before cancelling at the period's end (the question's own button is Cancel subscription)."
+  },
+  "settings.supporter.cancel.title": {
+    "defaultMessage": "Cancel your subscription?",
+    "description": "The question before cancelling the subscription."
+  },
+  "settings.supporter.cancel.keep": {
+    "defaultMessage": "Keep subscription",
+    "description": "The button of the question before cancelling that keeps the subscription."
+  },
+  "settings.supporter.cancel.text": {
+    "defaultMessage": "You are not charged again. It ends on {date}, and your perks stay until then. You can resume it until that day.",
+    "description": "What cancelling does, in the question before it ({date}: the period's end)."
+  },
+  "settings.supporter.cancel.scheduled": {
+    "defaultMessage": "The change to {plan}, {interval, select, month {monthly} other {yearly}}, scheduled for then is cancelled too.",
+    "description": "In the question before cancelling, after what cancelling does, when a change to another plan or period waits for the period's end ({plan}: that plan's name)."
+  },
+  "settings.supporter.canceled": {
+    "defaultMessage": "Your subscription ends on {date}.",
+    "description": "Said once the subscription was cancelled ({date}: the period's end)."
+  },
+  "settings.supporter.plans.door": {
+    "defaultMessage": "{change, select, yes {Change your plan} other {See the plans}}",
+    "description": "The row that leads to the plans on the supporters' page ({change}: yes for a reader whose subscription may change)."
+  },
+  "settings.supporter.plans.door.caption": {
+    "defaultMessage": "{change, select, yes {Another plan, or another billing period} other {Subscribe on the supporters' page}}",
+    "description": "Under the row that leads to the plans."
+  },
+  "settings.supporter.listing": {
+    "defaultMessage": "Supporters list",
+    "description": "The heading of the reader's choice to be on the supporters list."
+  },
+  "settings.supporter.listing.label": {
+    "defaultMessage": "List me among the supporters",
+    "description": "The switch of the reader's choice to be on the supporters list."
+  },
+  "settings.supporter.listing.about": {
+    "defaultMessage": "{audience, select, everyone {Anyone can see the list, with you under your plan.} other {People signed in to this server can see the list, with you under your plan.}}",
+    "description": "Under the switch of the reader's choice to be on the supporters list ({audience}: who may read the list)."
+  },
+  "settings.supporter.detail.price": {
+    "defaultMessage": "{plan}, {interval, select, month {monthly} other {yearly}} · {price} {interval, select, month {a month} other {a year}}",
+    "description": "Under the state of a subscription that renews: its plan, period and price ({price}: what it renews at)."
+  },
+  "settings.supporter.detail.changing": {
+    "defaultMessage": "{plan}, {interval, select, month {monthly} other {yearly}} · {now} {interval, select, month {a month} other {a year}} until then, {price} {after, select, month {a month} other {a year}} after",
+    "description": "Under the state of a subscription whose change waits for the period's end: the plan now, its price until then ({now}), and the price after ({price}, at the period {after})."
+  },
+  "settings.supporter.detail.ending": {
+    "defaultMessage": "{plan}, {interval, select, month {monthly} other {yearly}} · {price} {interval, select, month {a month} other {a year}} · Your perks stay until then.",
+    "description": "Under the state of a cancelled subscription that ends at its period's end: its plan, period and price."
+  },
+  "settings.supporter.kept": {
+    "defaultMessage": "You keep {plan}, {interval, select, month {monthly} other {yearly}}.",
+    "description": "Said once the change that waited for the period's end was cancelled."
   }
 }

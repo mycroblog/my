@@ -4,10 +4,11 @@
 // §22, ADR-0086 §18): what is around the reader, in sections on the page, in the decider's order (ADR-0125 §4): the
 // unread announcements the reader sees now, when there are any (not on the announcements' own screen, which lists
 // them; the menu leads to all of them); the first open voice rooms; the first upcoming events; the latest notifications
-// (not on their own screen); and the funding meter when the instance shows it here. The server's pages end it, as they
-// end the menu's sheet. Under `wide`, a line above the home timeline counts the unread announcements instead.
+// (not on their own screen); and the funding meter when the instance shows it here, which leads to the costs page.
+// The server's pages end it, as they end the menu's sheet. Under `wide`, a line above the home timeline counts the
+// unread announcements instead.
 
-import { eventPath, RoomCaption, roomIcon, useEventTime, voiceRoomPath } from "@my/app-components";
+import { eventPath, RoomCaption, roomIcon, costsPagePath, useEventTime, voiceRoomPath } from "@my/app-components";
 import { LatestNotifications } from "@my/app-features";
 import {
   useAnnouncements,
@@ -112,7 +113,10 @@ function RoomLine({ room }: { room: VoiceRoom }) {
   );
 }
 
-/** The funding meter of this month: the share of its costs covered, the month, and whether its costs may change. */
+/**
+ * The funding meter of this month: the share of its costs covered, the month, and whether its costs may change; it
+ * leads to the costs page, whose month's costs it is of (FR-905).
+ */
 function Funding({ meter }: { meter: FundingMeter }) {
   const t = useStrings();
   const { locale } = useLocale();
@@ -120,7 +124,7 @@ function Funding({ meter }: { meter: FundingMeter }) {
   const month = dateFormat(locale, "UTC", { month: "long" }).format(new Date(meter.starts_on));
   const caption = t("app.funding_caption", { covered: meter.covered ? "yes" : "no", month });
   return (
-    <FrameSection id="around-funding" icon="funding" href="/about#funding" heading={t("app.funding")}>
+    <FrameSection id="around-funding" icon="funding" href={costsPagePath} heading={t("app.funding")}>
       <Meter
         value={meter.percent / 100}
         label={t("app.funding_label")}

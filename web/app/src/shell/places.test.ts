@@ -3,7 +3,15 @@
 import { expect, test } from "bun:test";
 import { rightsOf, type Rights } from "@my/app-data";
 import { instanceOf } from "../test/server";
-import { aroundPlacesFor, composesAt, isPlaceAt, navigationPaths, placesFor, type Place } from "./places";
+import {
+  aroundPlacesFor,
+  composesAt,
+  isPlaceAt,
+  navigationPaths,
+  placesFor,
+  supportersPageShows,
+  type Place,
+} from "./places";
 
 const hrefs = (places: readonly Place[]) => places.map((p) => p.href);
 const none: Rights = rightsOf([]);
@@ -94,12 +102,27 @@ test("the menu holds Announcements, the voice rooms while they are on, the event
     "/announcements",
     "/voice",
     "/events",
-    "/about#funding",
+    "/about/costs",
   ]);
   expect(hrefs(aroundPlacesFor(true, await instanceOf({ voiceOff: true }), "/login"))).not.toContain("/voice");
   const noMeter = await instanceOf();
   Reflect.deleteProperty(noMeter, "funding_meter");
-  expect(hrefs(aroundPlacesFor(true, noMeter, "/login"))).not.toContain("/about#funding");
+  expect(hrefs(aroundPlacesFor(true, noMeter, "/login"))).not.toContain("/about/costs");
+});
+
+test("the menu leads to the supporters' page beside the costs while it has something for the reader", async () => {
+  const supporting = await instanceOf({ supporters: {} });
+  expect(hrefs(aroundPlacesFor(true, supporting, "/login"))).toEqual([
+    "/announcements",
+    "/voice",
+    "/events",
+    "/about/supporters",
+    "/about/costs",
+  ]);
+  // In the native shell the plans are no way in: the list is, where the instance shows it.
+  expect(supportersPageShows(supporting, true)).toBe(false);
+  expect(supportersPageShows(await instanceOf({ supporters: { list: "everyone" } }), true)).toBe(true);
+  expect(supportersPageShows(await instanceOf({ supporters: { program: false, tips: {} } }), false)).toBe(true);
 });
 
 test("a visitor's menu leads to the sign-in, and to nothing that needs a session", async () => {

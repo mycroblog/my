@@ -44,7 +44,7 @@ export type Fake = {
    * `{app:authorized:1}` the ID of the fake's app at that index of the apps the reader registered or authorized,
    * `{invite:0}` the ID of the reader's invite at that index of their list, `{room:1}` the ID of the fake's open room at
    * that index, `{room:opened}` of the room the story's reader opens, `{event:book-swap}` of the fake's event of that
-   * key),
+   * key), `{tip:open}` and `{tip:paid}` of the reader's tip of the fake's supporters left open or paid,
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
    * `action:<index>` of the moderators' action on the reader's account at that index (newest first),
@@ -195,7 +195,8 @@ function pathOf(fake: FakeApi, at: string): string {
               ? fake.voice.nextRoomId()
               : fake.voice.roomId(Number(room)),
       )
-      .replace(/\{event:([\w-]+)\}/g, (_, key: string) => fake.events.id(key));
+      .replace(/\{event:([\w-]+)\}/g, (_, key: string) => fake.events.id(key))
+      .replace(/\{tip:(open|paid)\}/g, (_, key: "open" | "paid") => fake.supporters.tipId(key));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));

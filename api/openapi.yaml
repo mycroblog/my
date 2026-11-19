@@ -29534,6 +29534,7 @@ components:
         - state
         - plan_id
         - plan_name
+        - plan_rank
         - interval
         - price
         - started_at
@@ -29546,6 +29547,11 @@ components:
           $ref: '#/components/schemas/Id'
         plan_name:
           type: string
+        plan_rank:
+          description: |
+            The plan's `rank`, given also for a hidden plan, which the plan list leaves out: a change
+            to a plan of a higher rank applies at once, to a lower one at the end of the period.
+          type: integer
         interval:
           $ref: '#/components/schemas/SupporterInterval'
         price:

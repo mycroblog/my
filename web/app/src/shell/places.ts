@@ -6,8 +6,10 @@
 // part but the direct messages, and Menu; the menu's sheet holds the rest, the direct messages first, and the
 // announcements. A visitor without a session has the timelines the instance shows everyone, and search.
 
+import { costsPagePath, supportersPagePath } from "@my/app-components";
 import type { Instance, Rights } from "@my/app-data";
 import type { IconName } from "@my/design-system";
+import { inNativeShell } from "@my/platform";
 import type { MessageId } from "../messages.gen";
 
 /** A place of the navigation; `count` names what its badge counts. */
@@ -69,7 +71,21 @@ const finance: Place = { href: "/finance", icon: "finance", label: "app.finance"
 const announcements: Place = { href: "/announcements", icon: "announcements", label: "app.announcements" };
 const voiceRooms: Place = { href: "/voice", icon: "room", label: "app.voice_rooms" };
 const events: Place = { href: "/events", icon: "events", label: "app.events_place" };
-const funding: Place = { href: "/about#funding", icon: "funding", label: "app.funding" };
+/** The funding meter's place: the costs page, whose month's costs the meter says are covered (FR-905). */
+const funding: Place = { href: costsPagePath, icon: "funding", label: "app.funding" };
+const supporters: Place = { href: supportersPagePath, icon: "funding", label: "app.supporters" };
+
+/**
+ * Whether the supporters' page has something for the reader: the plans or the tips, out of the native shell, which
+ * shows no purchase (ADR-0072 §14, ADR-0162 §3), or the supporters list the instance shows.
+ */
+export function supportersPageShows(instance: Instance | undefined, nativeShell = inNativeShell()): boolean {
+  if (instance === undefined) return false;
+  const offers = !nativeShell && (instance.supporters_enabled || instance.tips_enabled);
+  const list = instance.supporters_enabled && instance.supporter_list_visibility !== "off";
+  return offers || list;
+}
+
 /** The sign-in at `href`, in a visitor's menu. */
 const signInPlace = (href: string): Place => ({ href, icon: "signIn", label: "app.sign_in_action" });
 
@@ -95,9 +111,9 @@ export const navigationPaths: ReadonlySet<string> = new Set(
 
 /**
  * The places of what is around the reader, which the menu holds: the announcements, the voice rooms while they are
- * on (FR-920: none of them shows while they are off, nor before the instance says), the events, and the funding while
- * the instance shows its meter. A visitor has the sign-in (at `signIn`) alone: the API answers the voice rooms and the
- * events only with a session.
+ * on (FR-920: none of them shows while they are off, nor before the instance says), the events, the supporters' page
+ * while it has something for the reader, and the costs page while the instance shows its funding meter. A visitor
+ * has the sign-in (at `signIn`) alone: the API answers the voice rooms and the events only with a session.
  */
 export function aroundPlacesFor(signedIn: boolean, instance: Instance | undefined, signIn: string): readonly Place[] {
   if (!signedIn) return [signInPlace(signIn)];
@@ -105,6 +121,7 @@ export function aroundPlacesFor(signedIn: boolean, instance: Instance | undefine
     announcements,
     ...(instance?.voice_enabled === true ? [voiceRooms] : []),
     events,
+    ...(supportersPageShows(instance) ? [supporters] : []),
     ...(instance?.funding_meter === undefined ? [] : [funding]),
   ];
 }

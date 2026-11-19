@@ -37,15 +37,20 @@ export const signOutHref = (pathname: string): string => `${pathname}?sign_out=t
 
 /**
  * What a screen of the settings reads of its address and of the app, for what leaves the app and comes back (a login
- * provider's page): the fragment of the address, the way to take it off once read, which keeps the screen and replaces
- * the address in the history, and the way out of the app.
+ * provider's page, a payment provider's): the fragment and the query of the address, the way to take each off once
+ * read, which keeps the screen and replaces the address in the history, and the way out of the app.
  */
 export function useSettingsAddress(): SettingsAddress {
   const router = useRouter();
   const fragment = useLocation({ select: (location) => location.hash });
+  const search = useLocation({ select: (location) => location.searchStr });
   return {
     fragment,
     onFragmentRead: () => {
+      router.history.replace(router.state.location.pathname);
+    },
+    search,
+    onSearchRead: () => {
       router.history.replace(router.state.location.pathname);
     },
     leave: router.options.context.leave,
