@@ -233,7 +233,11 @@
   },
   "app.call_mute": {
     "defaultMessage": "ミュート",
-    "description": "The microphone's toggle in the bar of the call the reader is in; pressed while the microphone is off."
+    "description": "The microphone's button in the bar of the call the reader is in, while the microphone is on: pressing it turns the microphone off."
+  },
+  "app.call_unmute": {
+    "defaultMessage": "ミュートを解除",
+    "description": "The microphone's button in the bar of the call the reader is in, while the microphone is off: pressing it turns the microphone on."
   },
   "app.call_leave": {
     "defaultMessage": "退出",

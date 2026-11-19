@@ -32,24 +32,25 @@ test("the bar of a call stays across the screens, its microphone mutes and unmut
     if (first === undefined) throw new Error("test: the shell shows no bar of the call");
     return within(first);
   };
-  const muted = () => bar().getByRole("button", { name: "Mute" }).getAttribute("aria-pressed");
-  const becomes = (pressed: string) =>
+  // The microphone's button is named by what a press does now: Mute, and Unmute while muted.
+  const mic = () => bar().getByRole("button", { name: /^(Mute|Unmute)$/ });
+  const becomes = (name: string) =>
     waitFor(() => {
-      if (muted() !== pressed) throw new Error(`the microphone's button is pressed: ${String(muted())}`);
+      if (mic().textContent !== name) throw new Error(`the microphone's button reads ${mic().textContent}`);
     });
 
-  expect(muted()).toBe("false");
+  expect(mic().textContent).toBe("Mute");
   expect(screen.queryAllByRole("button", { name: "Update" })).toHaveLength(0);
 
-  await app.user.click(bar().getByRole("button", { name: "Mute" }));
-  await becomes("true");
+  await app.user.click(mic());
+  await becomes("Unmute");
   await app.navigate("/notifications/follow_requests");
-  expect(muted()).toBe("true");
+  expect(mic().textContent).toBe("Unmute");
 
-  await app.user.click(bar().getByRole("button", { name: "Mute" }));
-  await becomes("false");
+  await app.user.click(mic());
+  await becomes("Mute");
   await app.navigate("/lists");
-  expect(muted()).toBe("false");
+  expect(mic().textContent).toBe("Mute");
   expect(screen.queryAllByRole("button", { name: "Update" })).toHaveLength(0);
 
   // Once the call is left, the bar goes and the newer build is offered.

@@ -4,8 +4,8 @@
 // state, whole and edge to edge, so that each reads at the phone, tablet and PC widths of the toolbar's viewport: a
 // reader at home with every section around them; a moderator, whose places end with moderation (its count), admin and
 // finance; a server with its local and federated timelines off; a single-user server; a visitor not signed in; the
-// closure announced; the reader offline and the server down; a call; the toasts of a newer version; the column beside
-// the main one with none of its sections but the notifications, which have none yet; the reader in their direct
+// closure announced; the reader offline and the server down; a call, connecting, connecting again, muted by its host,
+// and its sound held back until a press; the toasts of a newer version; the column beside the main one with none of its sections but the notifications, which have none yet; the reader in their direct
 // messages, whose place counts the unread conversations; and the menu's sheet open. Its words are samples in English.
 
 import { breakpoint, color } from "@my/design-tokens";
@@ -16,6 +16,7 @@ import { Button } from "./button";
 import { Byline, Entry, Stamp } from "./entry";
 import { FormActions, FormHead, FormLink, FormLinks, FormPage, FormPageFooter, FormText } from "./form-page";
 import { MenuGroup, MenuItem } from "./menu";
+import { HeadcountMark } from "./voice";
 import { images } from "./samples";
 import {
   CallBar,
@@ -66,6 +67,11 @@ type ShellState = {
   call?: boolean;
   /** The reader's microphone muted in the call. */
   muted?: boolean;
+  /**
+   * What the call goes through: connecting, connecting again, the host muted the reader, or the browser holds its
+   * sound back until a press.
+   */
+  callState?: "connecting" | "reconnecting" | "mutedByHost" | "soundHeld";
   toast?: "stale" | "required";
   /** The sections of the column beside the main one: all, some (rooms and the meter left out), or none. */
   around?: "all" | "some" | "none";
@@ -307,12 +313,34 @@ function Around({ who = "reader", at = "/", around = "all" }: ShellState) {
           all={{ text: "All", name: "All voice chat rooms" }}
         >
           <SectionList>
-            <SectionLine href="/voice/1" title="Morning coffee chat" caption="Hosted by Mika · 12 in the room" />
-            <SectionLine href="/voice/2" title="Release party for v0.2" caption="Hosted by Ren · 48 in the room" />
+            <SectionLine
+              href="/voice/1"
+              glyph="☕"
+              title="Morning coffee chat"
+              caption={
+                <>
+                  Hosted by Mika <HeadcountMark count={{ shown: "12", label: "12 in the room" }} />
+                </>
+              }
+            />
+            <SectionLine
+              href="/voice/2"
+              glyph="🎉"
+              title="Release party for v0.2"
+              caption={
+                <>
+                  Hosted by Ren <HeadcountMark count={{ shown: "48", label: "48 in the room" }} />
+                </>
+              }
+            />
             <SectionLine
               href="/voice/3"
               title="A room with a name long enough to wrap onto a second line in this column"
-              caption="Hosted by Sora · 3 in the room"
+              caption={
+                <>
+                  Hosted by Sora <HeadcountMark count={{ shown: "3", label: "3 in the room" }} />
+                </>
+              }
             />
           </SectionList>
         </FrameSection>
@@ -428,8 +456,9 @@ function Banners({ closure, connection }: ShellState) {
 }
 
 function Shell(state: ShellState) {
-  const { who = "reader", at = "/", call, toast, logo, around = "all" } = state;
-  const [muted, setMuted] = useState(state.muted ?? false);
+  const { who = "reader", at = "/", call, callState, toast, logo, around = "all" } = state;
+  const [muted, setMuted] = useState(state.muted ?? callState === "mutedByHost");
+  const [held, setHeld] = useState(callState === "soundHeld");
   // The frame holds two Menus, one hidden at any width: the one that shows is the open one.
   const [menu, setMenu] = useState(state.menu ?? false);
   const onPhone = useSyncExternalStore(
@@ -471,10 +500,30 @@ function Shell(state: ShellState) {
     <CallBar
       href="/voice/1"
       room="Morning coffee chat"
-      detail="Hosted by Mika · 12 in the room"
+      count={{ shown: "12", label: "12 in the room" }}
+      detail={
+        callState === "connecting"
+          ? "Connecting…"
+          : callState === "reconnecting"
+            ? "Reconnecting…"
+            : callState === "mutedByHost" && muted
+              ? "The host muted you"
+              : "Hosted by Mika"
+      }
+      busy={callState === "connecting" || callState === "reconnecting"}
+      hear={
+        held
+          ? {
+              label: "Tap to hear",
+              onPress: () => {
+                setHeld(false);
+              },
+            }
+          : undefined
+      }
       muted={muted}
-      muteLabel="Mute"
-      onMute={() => {
+      micLabel={muted ? "Unmute" : "Mute"}
+      onMic={() => {
         setMuted(!muted);
       }}
       leaveLabel="Leave"
@@ -634,6 +683,10 @@ export const InCall: Story = { args: { call: true } };
 export const InCallMuted: Story = {
   args: { call: true, muted: true, who: "staff" },
 };
+export const InCallConnecting: Story = { args: { call: true, callState: "connecting" } };
+export const InCallReconnecting: Story = { args: { call: true, callState: "reconnecting" } };
+export const InCallMutedByHost: Story = { args: { call: true, callState: "mutedByHost" } };
+export const InCallSoundHeld: Story = { args: { call: true, callState: "soundHeld" } };
 export const UpdateReady: Story = { args: { toast: "stale", call: false } };
 export const UpdateRequired: Story = {
   args: { toast: "required", at: "/notifications" },

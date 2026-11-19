@@ -33,6 +33,7 @@ import {
   shell,
   spinner,
   text,
+  voice,
 } from "./tokens";
 
 describe("contrastPairs", () => {
@@ -204,6 +205,16 @@ test("properties declare every token", () => {
   for (const [name, value] of Object.entries(shell)) {
     if (!/[A-Z]/.test(name)) expect(properties[`--shell-${name}`]).toBe(`${value}rem`);
   }
+});
+
+test("a voice chat room's tiles hold their avatars and its lanes their reactions, declared as properties", () => {
+  expect(voice.stage - 2 * voice.tilePadding).toBeGreaterThanOrEqual(avatar.preview);
+  expect(voice.listener - 2 * voice.tilePadding).toBeGreaterThanOrEqual(avatar.post);
+  expect(voice.lane).toBeGreaterThanOrEqual(voice.reaction);
+  expect(properties["--voice-stage"]).toBe(`${voice.stage}rem`);
+  expect(properties["--voice-halo-share"]).toBe(`${voice.haloShare * 100}%`);
+  expect(properties["--voice-reaction-duration"]).toBe(`${voice.duration.reaction}ms`);
+  expect(properties["--voice-speaking-duration"]).toBe(`${voice.duration.speaking}ms`);
 });
 
 test("the app's frame changes at widths that hold its columns, in order", () => {

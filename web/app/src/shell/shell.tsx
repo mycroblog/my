@@ -199,8 +199,8 @@ function CallSlot({ call }: { call: Call }) {
       room={call.room}
       detail={t("app.room_caption", { host: call.host, count: call.participants })}
       muted={call.muted}
-      muteLabel={t("app.call_mute")}
-      onMute={() => {
+      micLabel={t(call.muted ? "app.call_unmute" : "app.call_mute")}
+      onMic={() => {
         muteCall(!call.muted);
       }}
       leaveLabel={t("app.call_leave")}

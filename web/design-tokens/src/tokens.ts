@@ -554,6 +554,38 @@ export const shell = {
   toastInset: 0.25,
 } as const;
 
+/**
+ * A voice chat room's screen, in rem: the least width of a speaker's tile on the stage and of a listener's in the list
+ * under it, the space between the tiles, and a tile's padding; around the avatar of who speaks, the ring of the
+ * surface under it, the ring of the text's color, and how far its halo swells past the ring, in a share of the text's
+ * color; the size of a badge on an avatar's corner (a microphone off, a hand raised) on a speaker's and on a listener's
+ * avatar; the size of a reaction's emoji, the width of a lane reactions rise in and how far they rise; the size of a
+ * control of the room's bar, the least width of one with its name, so that a name that changes with its state moves
+ * nothing beside it, and the space between its controls; and the box of a room's emoji at the start of a line
+ * of a list, and the emoji's size in it. Durations in ms: a reaction's rise, and the halo's swell while one speaks.
+ */
+export const voice = {
+  stage: 4.75,
+  listener: 3.75,
+  tileGap: 0.5,
+  tilePadding: 0.25,
+  ringGap: 0.125,
+  ringWidth: 0.1875,
+  halo: 0.25,
+  haloShare: 0.3,
+  badge: 1.25,
+  badgeSmall: 1.125,
+  reaction: 2,
+  lane: 2.25,
+  rise: 9,
+  control: 3,
+  controlWidth: 5.5,
+  controlGap: 0.5,
+  roomBox: 2.5,
+  roomEmoji: 1.5,
+  duration: { reaction: 3200, speaking: 900 },
+} as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -597,7 +629,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -763,6 +795,11 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--kbd-gap", `${kbd.gap}rem`],
   ...Object.entries(shell).map(([name, value]): [string, string] => [`--shell-${kebab(name)}`, `${value}rem`]),
   ...Object.entries(screen).map(([name, value]): [string, string] => [`--screen-${kebab(name)}`, `${value}rem`]),
+  ...Object.entries(voice).flatMap(([name, value]): [string, string][] =>
+    typeof value === "number"
+      ? [[`--voice-${kebab(name)}`, name === "haloShare" ? percent(value) : `${value}rem`]]
+      : Object.entries(value).map(([kind, ms]): [string, string] => [`--voice-${kind}-duration`, `${ms}ms`]),
+  ),
   ...Object.entries(formPage).map(([name, value]): [string, string] => [
     `--form-page-${kebab(name)}`,
     name === "bannerRatio" ? `${value}` : `${value}rem`,
