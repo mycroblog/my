@@ -24,6 +24,13 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { AdminDocumentsScreen } from "./documents";
+import { AdminLoginProvidersScreen, loadLoginProviders } from "./login-providers";
+import { AdminOAuthAppsScreen, loadOAuthApps } from "./oauth-apps";
+import { AdminRelaysScreen, loadRelays } from "./relays";
+import { AdminRulesScreen, loadRules } from "./rules";
+import { AdminSettingsScreen } from "./settings/screen";
+import { loadTranslationSettings, TranslationSettingsScreen } from "./settings/translation";
 
 /** The two areas of the staff's screens, each a tree of routes under its root. */
 const staffAreas = ["moderation", "admin"] as const;
@@ -32,6 +39,10 @@ export type StaffArea = (typeof staffAreas)[number];
 /** The groups of an area's root, in its order, each under its heading. */
 export const staffGroups = [
   { id: "queues", area: "moderation", heading: "staff.group.queues" },
+  // The server's own settings, texts and rules (#3262).
+  { id: "server", area: "admin", heading: "staff.group.server" },
+  // What the server connects to and lets connect to it (#3262).
+  { id: "connections", area: "admin", heading: "staff.group.connections" },
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -91,6 +102,84 @@ export const staffEntries: readonly StaffEntry[] = [
     count: { of: (facts) => facts.openReports, words: "staff.entry.reports.count" },
     Screen: ReportQueueScreen,
     load: (data, search) => loadReportQueue(data, queueOf(search)),
+  },
+  // The instance's settings, texts, rules, relays, login providers and OAuth apps (FR-001, FR-010, FR-705, FR-724,
+  // FR-725, FR-922, ADR-0058 §1): each screen under one of them is a route of its own (admin.settings.$topic.tsx and
+  // the like).
+  {
+    path: "settings",
+    area: "admin",
+    group: "server",
+    permission: "manage_settings",
+    icon: "settings",
+    name: "staff.entry.settings",
+    hint: "staff.entry.settings.hint",
+    Screen: AdminSettingsScreen,
+  },
+  {
+    path: "documents",
+    area: "admin",
+    group: "server",
+    permission: "manage_settings",
+    icon: "file",
+    name: "staff.entry.documents",
+    hint: "staff.entry.documents.hint",
+    Screen: AdminDocumentsScreen,
+  },
+  {
+    path: "rules",
+    area: "admin",
+    group: "server",
+    permission: "manage_rules",
+    icon: "list",
+    name: "staff.entry.rules",
+    hint: "staff.entry.rules.hint",
+    Screen: AdminRulesScreen,
+    load: (data) => loadRules(data),
+  },
+  {
+    path: "translation",
+    area: "admin",
+    group: "server",
+    permission: "manage_settings",
+    icon: "translate",
+    name: "staff.entry.translation",
+    hint: "staff.entry.translation.hint",
+    Screen: TranslationSettingsScreen,
+    load: (data) => loadTranslationSettings(data),
+  },
+  {
+    path: "relays",
+    area: "admin",
+    group: "connections",
+    permission: "manage_settings",
+    icon: "federated",
+    name: "staff.entry.relays",
+    hint: "staff.entry.relays.hint",
+    Screen: AdminRelaysScreen,
+    load: (data) => loadRelays(data),
+  },
+  {
+    path: "login-providers",
+    area: "admin",
+    group: "connections",
+    permission: "manage_login_providers",
+    icon: "signIn",
+    name: "staff.entry.login_providers",
+    hint: "staff.entry.login_providers.hint",
+    Screen: AdminLoginProvidersScreen,
+    load: (data) => loadLoginProviders(data),
+  },
+  {
+    path: "oauth-apps",
+    area: "admin",
+    group: "connections",
+    permission: "manage_oauth_apps",
+    icon: "apps",
+    name: "staff.entry.oauth_apps",
+    hint: "staff.entry.oauth_apps.hint",
+    Screen: AdminOAuthAppsScreen,
+    load: (data, search) => loadOAuthApps(data, search),
   },
 ];
 

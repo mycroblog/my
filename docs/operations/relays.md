@@ -6,8 +6,9 @@ and its own public posts reach further. An instance that does not join a relay g
 ## Join a relay
 
 Use "Relays" in the admin area (`/admin/relays`). It requires the permission `manage_settings`, which the built-in `admin` role has.
-"Join a relay" opens the form that registers one. The list shows each relay's state with a button that leaves it or joins it again;
-choosing a relay opens its page, with its addresses, what it brought in during the last 24 hours, and the button that deletes it.
+"Join a relay" opens the form that registers one. The list shows each relay's state and what it brought in during the last 24
+hours; choosing a relay opens its page, with its addresses and the button that leaves it, or, once it was left or rejected
+the server, the buttons that join it again and delete it. Leaving and deleting ask first.
 The CLI is `my admin relay` (`my admin relay -help`):
 
 ```sh
@@ -27,7 +28,7 @@ my admin relay delete <relay id>                                  # delete a rel
 3. If you turn off "Receive posts from the relay" when registering, the server only sends. To change this, leave the relay and register it again.
 
 You cannot register the relay of a server under a domain action (`suspend`). If the server of a joined relay is suspended later, the state does not change,
-but nothing is sent to or received from that relay, and the admin area shows a warning.
+but nothing is sent to or received from that relay, and the admin area says so in the relay's state.
 
 ## What the server sends
 

@@ -403,9 +403,9 @@ Switching to `allowlist`, and removing an allow while it is on, ends follows for
 
 In the web client, open Moderation → Domain actions and choose "Allowed domains" (`/moderation/domain-actions/allowed`) to read,
 add and remove allows; removing one asks first, since it cuts the domain off while `federation_scope` is `allowlist`. The
-setting itself is "Federation scope" on the federation page of the server settings (`/admin/settings/federation`, with the
-permission `manage_settings`): choosing "Allowed domains only" and saving shows the follows the switch would end, the local
-users who lose one, and the servers with the most of them, and saves only once you confirm.
+setting itself is "Servers" on the Federation page of the server settings (`/admin/settings/federation`, with the
+permission `manage_settings`): choosing "Allowed servers only" and saving shows the follows the switch would end, the local
+accounts that lose one, and the servers with the most of them, and saves only once you confirm.
 
 Adding and removing an allow are in the audit log (`domain_allow_added` and `domain_allow_removed`), and the switch is the `setting_changed` of `federation_scope`.
 
