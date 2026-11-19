@@ -13,10 +13,10 @@
 // must know before going (cancelled, the date confirmed) is in the text's color, one that ends nothing (ended) muted.
 
 import { createContext, use, useId, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
-import { Link, RadioButton, RadioField, RadioGroup } from "react-aria-components";
+import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Icon, type IconName } from "./icons";
-import { Box, Layers, Row, Spoken, Stack } from "./layout";
+import { Box, Layers, Pin, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { HeadcountMark, type Headcount } from "./voice";
 
@@ -171,16 +171,55 @@ const choice = tv({
     segment: [
       "box-border min-h-control-form cursor-pointer rounded-control px-control-timeline-inline py-control-form-line",
       "bg-surface-raised font-sans text-body font-label text-text outline-hidden",
-      "data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed data-focus-visible:shadow-focus",
-      "data-selected:bg-text data-selected:text-surface",
-      "data-selected:data-hovered:bg-text data-selected:data-pressed:bg-text",
-      "data-disabled:cursor-not-allowed data-disabled:opacity-disabled",
+      "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
+      "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
+      "has-[input:checked]:bg-text has-[input:checked]:text-surface",
+      "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-disabled",
     ],
     note: "text-caption text-muted-text [word-break:auto-phrase]",
     // The note keeps its room while a save state stands in its place.
     hidden: "invisible",
   },
 });
+
+/**
+ * The radio of an answer, over the whole of its label and not drawn: a press or a click anywhere on the answer lands on
+ * the control itself, and the label under it shows its state (chosen, focused, disabled). Radios of one `name` are one
+ * group to the browser, which the arrow keys move along.
+ */
+function AnswerInput({
+  name,
+  value,
+  checked,
+  disabled,
+  onChange,
+}: {
+  name: string;
+  value: Answer;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (answer: Answer) => void;
+}) {
+  return (
+    <Pin
+      cover
+      full="both"
+      as={
+        <input
+          type="radio"
+          name={name}
+          value={value}
+          checked={checked}
+          disabled={disabled}
+          className="cursor-pointer opacity-0 disabled:cursor-not-allowed"
+          onChange={() => {
+            onChange(value);
+          }}
+        />
+      }
+    />
+  );
+}
 
 /**
  * The three answers, which know their own width: in columns alike, each a third of the row; from a tablet's column, no
@@ -197,7 +236,7 @@ function ChoicePlace({ children }: { children: ReactNode }) {
 }
 
 /**
- * An answer, as `as` (a `RadioButton`), as wide as its column: on a phone, its glyph over its word, which a third of
+ * An answer, as `as` (its `<label>`, which its radio covers), as wide as its column: on a phone, its glyph over its word, which a third of
  * the row holds in any language; from a tablet's column, its glyph before its word.
  */
 function SegmentPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
@@ -205,6 +244,7 @@ function SegmentPlace({ as, children }: { as: ReactElement<{ className?: unknown
     <Row
       as={as}
       full
+      anchor
       align="center"
       justify="center"
       gap="hair"
@@ -254,7 +294,7 @@ export type AnswerChoiceProps = {
 };
 
 /**
- * The reader's answer to an event, one of three side by side, a radio group the arrow keys move along: each a glyph
+ * The reader's answer to an event, one of three side by side, a radio group the arrow keys move along, each radio over the whole of its answer: each a glyph
  * and its word on the raised surface, the chosen one knocked out; the note under them, and the save state in its place.
  */
 export function AnswerChoice({
@@ -273,27 +313,23 @@ export function AnswerChoice({
   return (
     <Stack
       gap="entry-line"
-      as={
-        <RadioGroup
-          aria-label={label}
-          orientation="horizontal"
-          value={value}
-          onChange={(v) => {
-            onChange(v as Answer);
-          }}
-          {...(isDisabled === undefined ? {} : { isDisabled })}
-          {...(note === undefined ? {} : { "aria-describedby": id })}
-        />
-      }
+      role="radiogroup"
+      aria-label={label}
+      {...(note === undefined ? {} : { "aria-describedby": id })}
     >
       <ChoicePlace>
         {answers.map((a) => (
-          <RadioField key={a} value={a} isDisabled={disabled.includes(a)}>
-            <SegmentPlace as={<RadioButton className={s.segment()} />}>
-              <Icon name={answerIcon[a]} place="action" />
-              <span>{names[a]}</span>
-            </SegmentPlace>
-          </RadioField>
+          <SegmentPlace key={a} as={<label className={s.segment()} data-selected={value === a || undefined} />}>
+            <AnswerInput
+              name={id}
+              value={a}
+              checked={value === a}
+              disabled={isDisabled === true || disabled.includes(a)}
+              onChange={onChange}
+            />
+            <Icon name={answerIcon[a]} place="action" />
+            <span>{names[a]}</span>
+          </SegmentPlace>
         ))}
       </ChoicePlace>
       {lined && <ChoiceNote id={id} note={note} save={save} />}
@@ -376,7 +412,7 @@ function CandidatePlace({
 }
 
 /**
- * An answer of the reader's to a date, as `as` (a `RadioButton`): narrow, a finger's target tall, a glyph and its
+ * An answer of the reader's to a date, as `as` (its `<label>`, which its radio covers): narrow, a finger's target tall, a glyph and its
  * word; wide, a finger's target, square, its glyph alone.
  */
 function AnswerPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
@@ -384,6 +420,7 @@ function AnswerPlace({ as, children }: { as: ReactElement<{ className?: unknown 
     <Row
       as={as}
       rigid
+      anchor
       align="center"
       justify="center"
       gap="entry-caption"
@@ -405,10 +442,11 @@ const table = tv({
     // As the answers to the event, smaller: on the raised surface, the chosen one knocked out.
     segment: [
       "box-border cursor-pointer rounded-control bg-surface-raised font-sans text-caption font-label text-text",
-      "outline-hidden data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
-      "data-focus-visible:shadow-focus data-selected:bg-text data-selected:text-surface",
-      "data-selected:data-hovered:bg-text data-selected:data-pressed:bg-text",
-      "data-disabled:cursor-not-allowed data-disabled:opacity-disabled",
+      "outline-hidden",
+      "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
+      "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
+      "has-[input:checked]:bg-text has-[input:checked]:text-surface",
+      "has-[input:disabled]:cursor-not-allowed has-[input:disabled]:opacity-disabled",
     ],
     save: "text-caption",
   },
@@ -534,29 +572,21 @@ export function CandidateRow({ time, counts, answer, onAnswer, isDisabled, confi
         </CandidatePlace>
       ))}
       <CandidatePlace at="answer" role="cell" className="">
-        <Row
-          gap="hair"
-          as={
-            <RadioGroup
-              aria-labelledby={`${id} ${headId("yours")}`}
-              orientation="horizontal"
-              value={answer}
-              onChange={(v) => {
-                onAnswer(v as Answer);
-              }}
-              {...(isDisabled === undefined ? {} : { isDisabled })}
-            />
-          }
-        >
+        <Row gap="hair" role="radiogroup" aria-labelledby={`${id} ${headId("yours")}`}>
           {answers.map((a) => (
-            <RadioField key={a} value={a}>
-              <AnswerPlace as={<RadioButton className={s.segment()} />}>
-                <Icon name={answerIcon[a]} place="caption" />
-                <CandidatePlace at="word" className="">
-                  {names[a]}
-                </CandidatePlace>
-              </AnswerPlace>
-            </RadioField>
+            <AnswerPlace key={a} as={<label className={s.segment()} data-selected={answer === a || undefined} />}>
+              <AnswerInput
+                name={id}
+                value={a}
+                checked={answer === a}
+                disabled={isDisabled === true}
+                onChange={onAnswer}
+              />
+              <Icon name={answerIcon[a]} place="caption" />
+              <CandidatePlace at="word" className="">
+                {names[a]}
+              </CandidatePlace>
+            </AnswerPlace>
           ))}
         </Row>
       </CandidatePlace>
