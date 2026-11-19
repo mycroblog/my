@@ -19,7 +19,9 @@ import (
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
 	"github.com/mycroblog/my/internal/domain/moderation"
+	domain "github.com/mycroblog/my/internal/domain/supporters"
 	"github.com/mycroblog/my/pkg/testkit"
+	"github.com/mycroblog/my/pkg/testkit/financetest"
 )
 
 // The flows of the tips (ADR-0162, FR-918) on the fake provider's one-time payments.
@@ -507,5 +509,82 @@ func supporterTipErasure(t *testing.T, se *supporterEnv) {
 	}
 	if m, _ := e.income.get(refund.ID); m.Source != string(finance.SourceOneTime) {
 		t.Errorf("source of a refund after the erasure = %s, want one_time", m.Source)
+	}
+}
+
+// With no webhook, one reconciliation over a window that holds the checkout of a paid tip and
+// that of a subscription re-reads each by its kind (ADR-0074 §4, ADR-0162 §14) and books the
+// money of both.
+func supporterTipReconciled(t *testing.T, se *supporterEnv) {
+	ctx := t.Context()
+	if se.h.Payments == nil {
+		t.Skip("the harness has no payment records")
+	}
+	e := newTipEnv(t, se)
+	plan := e.plan(t, "supporter", 1, 10, 500)
+	now := e.Clock.Now()
+	// A tip is paid; its notice and its money wait at the provider.
+	alice := e.user("alice")
+	st, tipRef := e.tip(t, alice, 500)
+	if _, _, err := e.world.PayOneTime(tipRef); err != nil {
+		t.Fatal(err)
+	}
+	tipMoney := e.lastMoney(t)
+	e.supporterEnv.world.PutChange(supporters.Notice{EventID: "evt_tip", Type: "checkout.completed", Kind: supporters.NoticeCheckout, ObjectID: string(tipRef), OccurredAt: now})
+	// A subscription's checkout completes in the same window.
+	bob := e.user("bob")
+	co, err := e.svc.StartCheckout(ctx, supporters.CheckoutInput{
+		UserID: bob, PlanID: plan.ID, Interval: domain.IntervalMonth, SuccessURL: "https://" + testkit.ContractHost + "/ok", CancelURL: "https://" + testkit.ContractHost + "/no",
+	})
+	if err != nil {
+		t.Fatalf("StartCheckout = %v", err)
+	}
+	pending := e.sub(t, co.SubscriptionID)
+	if pending.Checkout == nil {
+		t.Fatalf("the subscription after the checkout: %+v", pending)
+	}
+	subRef := supporters.SubscriptionRef("sub_reconciled")
+	end := now.AddDate(0, 1, 0)
+	e.supporterEnv.world.PutCheckout(supporters.CheckoutResult{
+		Ref: pending.Checkout.Ref, Status: supporters.CheckoutCompleted, LocalID: co.SubscriptionID, Customer: "cus_reconciled", Subscription: subRef,
+	})
+	e.supporterEnv.world.PutSubscription(supporters.SubscriptionSnapshot{
+		Ref: subRef, Customer: "cus_reconciled", LocalID: co.SubscriptionID, Price: plan.Prices[domain.IntervalMonth].Ref,
+		Status: supporters.StatusActive, PeriodStart: now, PeriodEnd: end,
+	})
+	subMoney := supporters.MoneyMovement{
+		ID: "txn_sub_reconciled", Kind: supporters.MoneyPayment, Subscription: subRef, Payment: "pi_sub_reconciled", OccurredAt: now,
+		OccurredOn: supporters.DateOf(now), Covers: supporters.DateRange{Start: supporters.DateOf(now), End: supporters.DateOf(end)},
+		Gross: "500", Fee: "0", Net: "500", Currency: "JPY", Final: true,
+	}
+	e.supporterEnv.world.PutMoney(subMoney)
+	e.supporterEnv.world.PutChange(supporters.Notice{
+		EventID: "evt_sub", Type: "checkout.completed", Kind: supporters.NoticeCheckout, ObjectID: string(pending.Checkout.Ref), Subscription: subRef, OccurredAt: now,
+	})
+	e.Clock.Advance(time.Minute)
+	payments := supporters.NewPayments(supporters.PaymentsDeps{
+		UnitOfWork: e.deps.UnitOfWork, Repository: e.h.Payments, Provider: e.supporterEnv.world, Syncer: e.svc,
+		Outbox: e.deps.Outbox, Clock: e.Clock, IDs: e.IDs, Logger: financetest.DiscardLogger(),
+	})
+	if r := payments.Reconcile(ctx, "schedule:1"); !r.IsDone() {
+		t.Fatalf("Reconcile = %v", r.Err())
+	}
+	run, err := e.h.Payments.LastReconcileRun(ctx, paymentProvider, false)
+	if err != nil || run.Outcome != supporters.ReconcileSucceeded || run.ErrorKind != supporters.ErrorNone {
+		t.Fatalf("reconciliation = %+v, %v, want succeeded", run, err)
+	}
+	// The jobs that the views queue have not run: the reconciliation did this.
+	if v := e.ownTip(t, alice, st.TipID); v.State != supporters.TipStatePaid {
+		t.Errorf("tip after the reconciliation: %s, want paid", v.State)
+	}
+	if m, ok := e.income.get(tipMoney.ID); !ok || m.Source != string(finance.SourceOneTime) || m.TipID != st.TipID {
+		t.Errorf("income of the tip = %+v, %v, want one_time with its tip", m, ok)
+	}
+	if m, ok := e.income.get(subMoney.ID); !ok || m.Source != string(finance.SourceSubscription) || m.SubscriptionID != co.SubscriptionID {
+		t.Errorf("income of the subscription = %+v, %v, want its subscription's", m, ok)
+	}
+	e.run(t)
+	if v := e.expect(t, co.SubscriptionID, domain.StateActive, plan, true); v.Link != subRef {
+		t.Errorf("the subscription after the reconciliation: %+v, want linked to %s", v, subRef)
 	}
 }

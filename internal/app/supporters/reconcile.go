@@ -23,9 +23,10 @@ func ContinuationKey(runID string) string { return "continue:" + runID }
 // stages, each from the cursors of the latest succeeded or partial attempt:
 //
 //  1. the changes since ChangesOverlap before the end of the previous listing, whose
-//     subscriptions and checkouts it re-reads (skipped on ErrChangesWindow, which the sweep
-//     makes up for);
-//  2. the checkouts that our subscriptions wait for;
+//     subscriptions and checkouts it re-reads, a checkout resolved as the webhook's job
+//     resolves it, so that a tip's one-time checkout goes to SyncTip (skipped on
+//     ErrChangesWindow, which the sweep makes up for);
+//  2. the checkouts that our subscriptions and tips wait for;
 //  3. the money movements after the money cursor;
 //  4. a sweep of every subscription of the account from the sweep cursor, which starts over
 //     after the last page.
@@ -37,7 +38,8 @@ func ContinuationKey(runID string) string { return "continue:" + runID }
 // when it used its requests, the continuation job (ContinuationKey, ContinuationDelay later)
 // that picks up from its cursors. A job whose attempt is recorded does nothing. A failure of
 // the provider is recorded and waits for the next reconciliation; a failure of the Syncer or
-// the database is retried.
+// the database is retried. An object the provider does not have (ErrPaymentNotFound) is logged
+// and skipped, so that it does not stop the rest.
 func (p *Payments) Reconcile(ctx context.Context, runKey string) queue.Result {
 	name := p.d.Provider.Name()
 	used, err := p.d.Repository.ReconcileRunKeyUsed(ctx, name, runKey)
@@ -141,24 +143,54 @@ func (r *reconciliation) sync(ctx context.Context, snap SubscriptionSnapshot) er
 	return nil
 }
 
-// checkout re-reads a checkout once per attempt and hands it to the Syncer; it returns the
-// subscription a completed checkout created.
+// checkout re-reads a subscription's checkout once per attempt and hands it to the Syncer; it
+// returns the subscription a completed checkout created.
 func (r *reconciliation) checkout(ctx context.Context, ref CheckoutRef) (SubscriptionRef, error) {
-	if r.checkouts[ref] {
+	if ref == "" || r.checkouts[ref] {
 		return "", nil
 	}
 	if !r.take() {
 		return "", errRequestCap
 	}
-	res, err := r.p.d.Provider.GetCheckout(ctx, ref)
+	sub, err := r.p.readCheckout(ctx, ref)
+	if r.missing(ctx, "checkout", string(ref), err) {
+		err = nil
+	}
 	if err != nil {
 		return "", err
 	}
-	if _, err := r.p.d.Syncer.SyncCheckout(ctx, r.p.d.Provider.Name(), res); err != nil {
-		return "", fmt.Errorf("%w: %w", errSyncer, err)
+	r.checkouts[ref] = true
+	return sub, nil
+}
+
+// tip re-reads a tip's one-time checkout once per attempt and hands it to the record of the tips.
+func (r *reconciliation) tip(ctx context.Context, ref CheckoutRef) error {
+	if ref == "" || r.checkouts[ref] {
+		return nil
+	}
+	if !r.take() {
+		return errRequestCap
+	}
+	err := r.p.readTip(ctx, ref)
+	if r.missing(ctx, "one-time checkout", string(ref), err) {
+		err = nil
+	}
+	if err != nil {
+		return err
 	}
 	r.checkouts[ref] = true
-	return res.Subscription, nil
+	return nil
+}
+
+// missing reports whether err is of an object the provider does not have, which it logs: the
+// attempt goes on without it, as the webhook's job drops it.
+func (r *reconciliation) missing(ctx context.Context, what, id string, err error) bool {
+	if !errors.Is(err, ErrPaymentNotFound) {
+		return false
+	}
+	r.p.d.Logger.WarnContext(ctx, "payment reconciliation skipped an object the provider does not have",
+		slog.String("provider", r.p.d.Provider.Name()), slog.String("object", what), slog.String("id", id), slog.Any("error", err))
+	return true
 }
 
 // refetch re-reads a subscription once per attempt and hands it to the Syncer.
@@ -222,13 +254,42 @@ func (r *reconciliation) notice(ctx context.Context, n Notice) error {
 	case NoticeSubscription:
 		return r.refetch(ctx, SubscriptionRef(n.ObjectID))
 	case NoticeCheckout:
-		sub, err := r.checkout(ctx, CheckoutRef(n.ObjectID))
-		if err != nil {
-			return err
-		}
-		return r.refetch(ctx, sub)
+		return r.checkoutNotice(ctx, n)
 	}
 	return nil
+}
+
+// checkoutNotice resolves the notice of a checkout as the webhook's job does (HandleNotice),
+// which tells a tip's one-time checkout from a subscription's, and re-reads what it points at.
+func (r *reconciliation) checkoutNotice(ctx context.Context, n Notice) error {
+	ref := CheckoutRef(n.ObjectID)
+	if ref == "" || r.checkouts[ref] {
+		return nil
+	}
+	if !r.take() {
+		return errRequestCap
+	}
+	ch, err := r.p.d.Provider.Resolve(ctx, n)
+	if r.missing(ctx, "checkout", n.ObjectID, err) {
+		r.checkouts[ref] = true
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	for _, ref := range ch.Subscriptions {
+		if err := r.refetch(ctx, ref); err != nil {
+			return err
+		}
+	}
+	if err := r.tip(ctx, ch.OneTimeCheckout); err != nil {
+		return err
+	}
+	sub, err := r.checkout(ctx, ch.Checkout)
+	if err != nil {
+		return err
+	}
+	return r.refetch(ctx, sub)
 }
 
 // openCheckouts is stage 2: the open checkouts of the subscriptions, then of the tips.
@@ -252,8 +313,7 @@ func (r *reconciliation) openCheckouts(ctx context.Context) error {
 // openTipCheckouts re-reads the checkouts of the open tips (ADR-0162 §14): an hour at most, one
 // per user, so they are few.
 func (r *reconciliation) openTipCheckouts(ctx context.Context) error {
-	ot, ok := r.p.d.Provider.(OneTimePayments)
-	if !ok {
+	if _, ok := r.p.d.Provider.(OneTimePayments); !ok {
 		return nil
 	}
 	refs, err := r.p.d.Syncer.OpenTipCheckouts(ctx, r.p.d.Provider.Name(), r.now)
@@ -261,20 +321,9 @@ func (r *reconciliation) openTipCheckouts(ctx context.Context) error {
 		return fmt.Errorf("%w: %w", errSyncer, err)
 	}
 	for _, ref := range refs {
-		if r.checkouts[ref] {
-			continue
-		}
-		if !r.take() {
-			return errRequestCap
-		}
-		res, err := ot.GetOneTimeCheckout(ctx, ref)
-		if err != nil {
+		if err := r.tip(ctx, ref); err != nil {
 			return err
 		}
-		if _, err := r.p.d.Syncer.SyncTip(ctx, r.p.d.Provider.Name(), res); err != nil {
-			return fmt.Errorf("%w: %w", errSyncer, err)
-		}
-		r.checkouts[ref] = true
 	}
 	return nil
 }

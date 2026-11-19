@@ -24,6 +24,7 @@ func TestSupporterFlows(t *testing.T) {
 		return supporterstest.SupporterHarness{
 			AccountHarness: identitytest.AccountHarness{UnitOfWork: db, Identity: sqliteidentity.NewRepository(db), Accounts: sqliteaccount.NewRepository(db)},
 			Supporters:     sqlitesupporters.NewSupporterRepository(db),
+			Payments:       sqlitesupporters.NewPaymentRepository(db),
 			NewWorld: func(o supporterstest.PaymentWorldOptions) supporterstest.PaymentWorld {
 				return fake.New(fake.Options{Name: o.Name, Mode: o.Mode, Now: o.Now, PageSize: o.PageSize})
 			},
