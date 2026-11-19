@@ -40,6 +40,12 @@ export type FakeVoice = {
   readonly drop: () => void;
   /** How many times the stream of the reader's session was opened, since the session joined. */
   readonly opened: () => number;
+  /** The ID of the fake's room that ended: its summary says so, and the room answers 404. */
+  readonly endedRoomId: () => string;
+  /** The ID of the fake's open room the reader does not see: its summary says it is open, and the room answers 404. */
+  readonly hiddenRoomId: () => string;
+  /** The open room where the account of `id` hosts or speaks, as its profile has it; undefined for none. */
+  readonly entryOf: (id: string) => Schema<"VoiceRoomEntry"> | undefined;
 };
 
 /** What the voice handlers take from the fake. */
@@ -52,6 +58,12 @@ export type VoiceContext = {
   readonly off: boolean;
   /** The rooms the list shows: all, or none. */
   readonly listed: () => readonly Room[];
+  /** The server shows the summaries of its rooms (`voice_public_summary`). */
+  readonly summaries: boolean;
+  /** A room that ended. */
+  readonly ended: { readonly id: string; readonly name: string };
+  /** An open room the reader does not see (its host blocks them, it is for the host's followers). */
+  readonly hidden: { readonly id: string; readonly name: string };
   readonly problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   readonly notFound: () => Refusal;
   readonly page: <T extends { id: string }>(
@@ -67,6 +79,8 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
   let joined: { room: string; session: string } | null = null;
   let stream: ReadableStreamDefaultController<Uint8Array> | null = null;
   let opened = 0;
+  /** The rooms that ended while the fake ran, by their IDs: their summary says so. */
+  const endedRooms = new Map<string, string>([[c.ended.id, c.ended.name]]);
 
   const roomOf = (id: string) => c.rooms.find((r) => r.id === id);
   const grant = (): Schema<"VoiceGrant"> => ({
@@ -113,8 +127,10 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     closeStream();
     const room = joined === null ? undefined : roomOf(joined.room);
     if (room !== undefined) {
-      if (event === "ended") c.rooms.splice(c.rooms.indexOf(room), 1);
-      else takeOut(room);
+      if (event === "ended") {
+        c.rooms.splice(c.rooms.indexOf(room), 1);
+        endedRooms.set(room.id, room.name);
+      } else takeOut(room);
     }
     joined = null;
   };
@@ -139,6 +155,30 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     "GET /voice/rooms/{id}": ({ params }) => {
       const room = c.off ? undefined : roomOf(params.id);
       return room === undefined ? c.notFound() : { status: 200, body: shown(room) };
+    },
+    "GET /voice/rooms/{id}/summary": ({ params }) => {
+      if (c.off) return c.notFound();
+      const room = roomOf(params.id);
+      if (room !== undefined) {
+        const shows = c.summaries && room.visibility === "local";
+        const about = shows
+          ? {
+              name: room.name,
+              ...(room.icon === undefined ? {} : { icon: room.icon }),
+              description: room.description,
+              host: room.host,
+            }
+          : {};
+        return { status: 200, body: { id: room.id, state: "open" as const, ...about } };
+      }
+      if (params.id === c.hidden.id) return { status: 200, body: { id: c.hidden.id, state: "open" as const } };
+      const ended = endedRooms.get(params.id);
+      if (ended !== undefined)
+        return {
+          status: 200,
+          body: { id: params.id, state: "ended" as const, ...(c.summaries ? { name: ended } : {}) },
+        };
+      return c.notFound();
     },
     "GET /voice/history": () => (c.off ? c.notFound() : { status: 200, body: { items: [] } }),
     "POST /voice/rooms/{id}/participation": ({ params }) => {
@@ -242,6 +282,23 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
     },
     drop: closeStream,
     opened: () => opened,
+    endedRoomId: () => c.ended.id,
+    hiddenRoomId: () => c.hidden.id,
+    entryOf: (id) => {
+      if (c.off) return undefined;
+      for (const room of c.listed()) {
+        const p = room.participants.find((q) => q.account.id === id && q.role === "speaker");
+        if (p === undefined) continue;
+        return {
+          id: room.id,
+          name: room.name,
+          ...(room.icon === undefined ? {} : { icon: room.icon }),
+          role: p.hosting ? ("host" as const) : ("speaker" as const),
+          participants_count: room.participants_count,
+        };
+      }
+      return undefined;
+    },
   };
   return { handlers, voice };
 }

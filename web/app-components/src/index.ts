@@ -68,6 +68,8 @@ export {
   reactorsPath,
   statusPath,
   tagPath,
+  voiceRoomPath,
+  voiceRoomsPath,
   waitingPath,
   type NotificationTarget,
 } from "./paths";
@@ -97,4 +99,14 @@ export type {
   PostTranslation,
   PostVisibility,
 } from "./status";
+export {
+  RoomCaption,
+  roomIcon,
+  useHeadcount,
+  VoiceRoomEntryLine,
+  VoiceRoomLine,
+  type RoomEntryShown,
+  type RoomIcon,
+  type RoomShown,
+} from "./voice-room";
 export { ReactorsTitle, WhoReacted, type Reactors } from "./who-reacted";

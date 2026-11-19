@@ -72,6 +72,8 @@ type ShellState = {
    * sound back until a press.
    */
   callState?: "connecting" | "reconnecting" | "mutedByHost" | "soundHeld";
+  /** The reader listens in the call and does not speak: the bar has no microphone. */
+  listener?: boolean;
   toast?: "stale" | "required";
   /** The sections of the column beside the main one: all, some (rooms and the meter left out), or none. */
   around?: "all" | "some" | "none";
@@ -523,9 +525,13 @@ function Shell(state: ShellState) {
       }
       muted={muted}
       micLabel={muted ? "Unmute" : "Mute"}
-      onMic={() => {
-        setMuted(!muted);
-      }}
+      onMic={
+        state.listener === true
+          ? undefined
+          : () => {
+              setMuted(!muted);
+            }
+      }
       leaveLabel="Leave"
       onLeave={() => undefined}
     />
@@ -683,6 +689,8 @@ export const InCall: Story = { args: { call: true } };
 export const InCallMuted: Story = {
   args: { call: true, muted: true, who: "staff" },
 };
+/** A call the reader listens in: Leave alone, no microphone. */
+export const InCallListening: Story = { args: { call: true, listener: true } };
 export const InCallConnecting: Story = { args: { call: true, callState: "connecting" } };
 export const InCallReconnecting: Story = { args: { call: true, callState: "reconnecting" } };
 export const InCallMutedByHost: Story = { args: { call: true, callState: "mutedByHost" } };

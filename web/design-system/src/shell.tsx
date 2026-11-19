@@ -1393,9 +1393,9 @@ function CallPart({
 /**
  * The bar of the call the reader is in, kept while they move between screens: above the tab bar on a phone, ending the
  * navigation from `tablet`. The room's glyph, name and detail (who hosts it, how many listen) lead to its screen (in the
- * rail, its name in a tooltip); then the microphone, a button named by what a press does now (Mute, Unmute while
- * muted, knocked out and crossed out then, as the room's own control is), and leaving last, each named, and labelled
- * from `desktop`. How many are in the room follows its name, never cut. While the call connects or connects again, a
+ * rail, its name in a tooltip); then, for a speaker, the microphone, a button named by what a press does now (Mute,
+ * Unmute while muted, knocked out and crossed out then, as the room's own control is), and leaving last, each named,
+ * and labelled from `desktop`; a listener's bar has no microphone. How many are in the room follows its name, never cut. While the call connects or connects again, a
  * spinner stands in the room's glyph and the detail says so; while the browser holds the room's sound back until a
  * press, `hear` is the bar's strongest part, knocked out, with its words: above the tab bar a line of its own over the
  * room, at the rail's end a tile before the microphone, and from `desktop` a line of its own over the two buttons.
@@ -1423,11 +1423,14 @@ export function CallBar({
   busy?: boolean | undefined;
   /** The browser holds the room's sound back until the reader presses this ("Tap to hear"). */
   hear?: { label: string; onPress: () => void } | undefined;
-  muted: boolean;
+  muted?: boolean | undefined;
   /** The microphone's name: what a press does now ("Mute", and "Unmute" while muted). */
-  micLabel: string;
-  /** The microphone was pressed: the owner turns it off, or on while muted. */
-  onMic: () => void;
+  micLabel?: string | undefined;
+  /**
+   * The microphone was pressed: the owner turns it off, or on while muted. Without it the bar has no microphone: the
+   * reader listens and does not speak.
+   */
+  onMic?: (() => void) | undefined;
   leaveLabel: string;
   onLeave: () => void;
 }) {
@@ -1494,15 +1497,17 @@ export function CallBar({
       )}
       <CallPart part="actions" as={<span />}>
         {place !== "dock" && hearing}
-        <CallPart
-          part="button"
-          as={<AriaButton className={look.button()} onPress={onMic} data-on={muted || undefined} />}
-        >
-          <Icon name="microphone" place="action" on={muted} />
-          <CallPart part="buttonLabel" as={<span />}>
-            {micLabel}
+        {onMic !== undefined && (
+          <CallPart
+            part="button"
+            as={<AriaButton className={look.button()} onPress={onMic} data-on={muted || undefined} />}
+          >
+            <Icon name="microphone" place="action" on={muted === true} />
+            <CallPart part="buttonLabel" as={<span />}>
+              {micLabel}
+            </CallPart>
           </CallPart>
-        </CallPart>
+        )}
         <CallPart part="button" as={<AriaButton className={look.button()} onPress={onLeave} />}>
           <Icon name="leave" place="action" />
           <CallPart part="buttonLabel" as={<span />}>

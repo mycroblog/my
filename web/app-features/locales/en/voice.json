@@ -1,0 +1,250 @@
+{
+  "voice.rooms": {
+    "defaultMessage": "Rooms open now",
+    "description": "The name of the list of the open voice chat rooms on the rooms' screen, for assistive technology."
+  },
+  "voice.rooms_loading": {
+    "defaultMessage": "Loading rooms…",
+    "description": "In place of the list of voice chat rooms while the first of them load."
+  },
+  "voice.rooms_loading_more": {
+    "defaultMessage": "Loading more rooms…",
+    "description": "Under the voice chat rooms while more load."
+  },
+  "voice.rooms_failed": {
+    "defaultMessage": "The rooms could not be loaded.",
+    "description": "In place of the list of voice chat rooms when they could not be loaded, beside a button to try again."
+  },
+  "voice.rooms_failed_more": {
+    "defaultMessage": "More rooms could not be loaded.",
+    "description": "Under the voice chat rooms when more could not be loaded, beside a button to try again."
+  },
+  "voice.rooms_empty": {
+    "defaultMessage": "No room is open now. When someone opens one you can join, it shows here.",
+    "description": "In place of the list of voice chat rooms when none is open that the reader sees."
+  },
+  "voice.back": {
+    "defaultMessage": "Voice chat rooms",
+    "description": "The back button at the top of a voice chat room's page, which leads to the list of rooms."
+  },
+  "voice.room_untitled": {
+    "defaultMessage": "Voice chat room",
+    "description": "The title of a voice chat room's page while its name is not known or not shown (a visitor of a room whose summary the server does not show)."
+  },
+  "voice.loading": {
+    "defaultMessage": "Loading the room…",
+    "description": "In place of a voice chat room while it loads."
+  },
+  "voice.failed": {
+    "defaultMessage": "The room could not be loaded.",
+    "description": "In place of a voice chat room when it could not be loaded, beside a button to try again."
+  },
+  "voice.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after a voice chat room's or a list's failure to load that loads it again."
+  },
+  "voice.hosted_by": {
+    "defaultMessage": "Hosted by {host}",
+    "description": "Under a voice chat room's title on its page: who hosts it ({host}, a display name)."
+  },
+  "voice.speakers": {
+    "defaultMessage": "Speakers",
+    "description": "The heading of the participants of a voice chat room who may speak (the host, the co-hosts, the speakers), and the name of their list."
+  },
+  "voice.listeners": {
+    "defaultMessage": "Listeners",
+    "description": "The heading of the participants of a voice chat room who listen, and the name of their list."
+  },
+  "voice.no_listeners": {
+    "defaultMessage": "No one is listening yet.",
+    "description": "Under the heading Listeners of a voice chat room while it has none."
+  },
+  "voice.role_host": {
+    "defaultMessage": "Host",
+    "description": "Under a participant's name in a voice chat room: they host it."
+  },
+  "voice.role_cohost": {
+    "defaultMessage": "Co-host",
+    "description": "Under a participant's name in a voice chat room: they are a co-host."
+  },
+  "voice.speaking": {
+    "defaultMessage": "Speaking",
+    "description": "Said of a participant of a voice chat room while they speak, for assistive technology; their avatar is ringed."
+  },
+  "voice.mic_off": {
+    "defaultMessage": "Microphone off",
+    "description": "Said of a speaker of a voice chat room whose microphone is off; a crossed-out microphone on their avatar."
+  },
+  "voice.hand": {
+    "defaultMessage": "Hand raised",
+    "description": "Said of a participant of a voice chat room who raised a hand to speak; a hand on their avatar."
+  },
+  "voice.blocked": {
+    "defaultMessage": "Blocked",
+    "description": "Under the name of a participant of a voice chat room whom the reader blocks or who blocks the reader; they are shown, marked, and their reactions are hidden."
+  },
+  "voice.join_note": {
+    "defaultMessage": "When you join, your name shows in the list of participants for everyone who can see this room.",
+    "description": "Over the Join button of a voice chat room the reader is not in: what joining shows of them."
+  },
+  "voice.join_moves": {
+    "defaultMessage": "You leave {room} when you join this one.",
+    "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
+  },
+  "voice.join_full": {
+    "defaultMessage": "The room is full. Try again later.",
+    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
+  },
+  "voice.join_hosting": {
+    "defaultMessage": "You host another room. End it or hand it over before you join this one.",
+    "description": "After pressing Join, when the reader hosts another open voice chat room."
+  },
+  "voice.join": {
+    "defaultMessage": "Join",
+    "description": "The button that joins the reader to a voice chat room, as a listener."
+  },
+  "voice.join_unavailable": {
+    "defaultMessage": "This browser cannot use voice chat on this page. Open this server's address with https:// or use another browser.",
+    "description": "After pressing Join, when the browser gives the page no microphone or sound: the page is not served over HTTPS, or the browser does not support it."
+  },
+  "voice.join_failed": {
+    "defaultMessage": "You could not join the room. Try again.",
+    "description": "After pressing Join, when joining failed for any other reason."
+  },
+  "voice.connecting": {
+    "defaultMessage": "Connecting…",
+    "description": "In a voice chat room the reader joined, until its connection is up."
+  },
+  "voice.reconnecting": {
+    "defaultMessage": "The connection was lost. Reconnecting…",
+    "description": "In a voice chat room the reader is in, while its connection is down and comes back by itself."
+  },
+  "voice.muted_by": {
+    "defaultMessage": "{name} turned your microphone off. You can turn it on again.",
+    "description": "In a voice chat room the reader speaks in, after a host or a co-host ({name}, their display name) muted the reader."
+  },
+  "voice.muted_by_someone": {
+    "defaultMessage": "A host turned your microphone off. You can turn it on again.",
+    "description": "In a voice chat room the reader speaks in, after a host or co-host who is no longer listed muted the reader."
+  },
+  "voice.mic_failed": {
+    "defaultMessage": "{reason, select, denied {The browser was not allowed to use your microphone. Allow it in the site's settings, then try again.} missing {No microphone was found. Connect one, then try again.} busy {Another app is using your microphone. Close it, then try again.} refused {You are no longer a speaker in this room. To speak again, use Raise hand or Speak.} other {Your microphone could not be turned on. Try again.}}",
+    "description": "In a voice chat room, when the reader's microphone could not be turned on: the browser refused it ({reason} denied), there is none (missing), another app holds it (busy), the reader is a listener again and the server did not let them speak (refused; Raise hand and Speak are the controls that ask to speak), or anything else (other)."
+  },
+  "voice.hear_room": {
+    "defaultMessage": "Hear the room",
+    "description": "The button in a voice chat room, and in the call's bar, while the browser holds the room's sound back until the reader presses something: pressing it plays the sound."
+  },
+  "voice.hear_held": {
+    "defaultMessage": "The browser is holding the room's sound back.",
+    "description": "Beside the Hear the room button in a voice chat room, while the browser holds its sound back until a press."
+  },
+  "voice.controls": {
+    "defaultMessage": "Room controls",
+    "description": "The name of the toolbar of a voice chat room's controls (the microphone, the hand, reactions, leaving), for assistive technology."
+  },
+  "voice.mute": {
+    "defaultMessage": "Mute",
+    "description": "The microphone's control in a voice chat room while it is on: pressing it turns it off."
+  },
+  "voice.unmute": {
+    "defaultMessage": "Unmute",
+    "description": "The microphone's control in a voice chat room while it is off: pressing it turns it on."
+  },
+  "voice.speak": {
+    "defaultMessage": "Speak",
+    "description": "The control of a listener of a voice chat room who may speak without asking: pressing it makes them a speaker."
+  },
+  "voice.listen": {
+    "defaultMessage": "Stop speaking",
+    "description": "The control of a speaker of a voice chat room that makes them a listener again."
+  },
+  "voice.raise_hand": {
+    "defaultMessage": "Raise hand",
+    "description": "The control of a listener of a voice chat room who may not speak without asking: pressing it asks the hosts to let them speak."
+  },
+  "voice.lower_hand": {
+    "defaultMessage": "Lower hand",
+    "description": "The control of a listener of a voice chat room whose hand is raised: pressing it takes the request back."
+  },
+  "voice.react": {
+    "defaultMessage": "React",
+    "description": "The control of a voice chat room that opens the emoji picker to send a reaction, which everyone in the room sees for a moment."
+  },
+  "voice.leave": {
+    "defaultMessage": "Leave",
+    "description": "The control of a voice chat room that leaves it."
+  },
+  "voice.act_failed": {
+    "defaultMessage": "{action, select, speak {Speaking} listen {Stopping speaking} raise {Raising your hand} lower {Lowering your hand} leave {Leaving} other {The reaction}} did not finish. Try again.",
+    "description": "In a voice chat room, when the server refused or did not answer what the reader pressed: action is which of them (speak, listen to stop speaking, raise or lower the hand, leave, or other: sending a reaction)."
+  },
+  "voice.host_must_choose": {
+    "defaultMessage": "You host this room. To leave it, end it or hand it over to someone in it.",
+    "description": "In a voice chat room, when its host pressed Leave while others are in it: the server keeps them in until they choose."
+  },
+  "voice.end_room": {
+    "defaultMessage": "End the room",
+    "description": "The button beside the notice that the host must choose before leaving: it ends the voice chat room for everyone."
+  },
+  "voice.output": {
+    "defaultMessage": "Sound output",
+    "description": "The name of the choice, in a voice chat room, of the speakers or headphones the room's sound plays on."
+  },
+  "voice.output_default": {
+    "defaultMessage": "System default",
+    "description": "The first choice of the sound output in a voice chat room: the device's default speakers."
+  },
+  "voice.output_unnamed": {
+    "defaultMessage": "Output {number}",
+    "description": "A choice of the sound output in a voice chat room whose device the browser does not name until the site may use the microphone ({number}, its place in the list)."
+  },
+  "voice.end": {
+    "defaultMessage": "{kind, select, removed {{reason, select, removed {A host removed you from {room}. You cannot join it again.} blocked {You were taken out of {room} because of a block.} suspended {You were taken out of {room} because your account was suspended.} disconnected {You were taken out of {room} because the connection was lost.} other {You are no longer in {room}.}}} replaced {You joined {room} on another device, so you left it on this one.} ended {{reason, select, host {The host ended {room}.} moderator {A moderator ended {room}.} time_limit {{room} reached its time limit and ended.} disabled {{room} ended because voice chat was turned off on this server.} host_disconnected {{room} ended because its host lost the connection.} other {{room} ended.}}} lost {The connection to {room} was lost.} other {The sound of {room} stopped working, so you are no longer in it.}}",
+    "description": "Why the reader is no longer in the voice chat room {room} (its name), on its page and in a toast on the other screens: {kind} removed (with {reason}: removed by a host, blocked, suspended, disconnected), replaced (joined on another device), ended (with {reason}: why the room ended), lost (the server dropped the session), or other (the sound failed)."
+  },
+  "voice.end_close": {
+    "defaultMessage": "Close",
+    "description": "The button at the end of the toast that says why the reader is no longer in a voice chat room."
+  },
+  "voice.ended": {
+    "defaultMessage": "This room has ended.",
+    "description": "On the page of a voice chat room that ended, under its name when the server shows it."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "This room is not open, or you cannot see it.",
+    "description": "On the page of a voice chat room the reader does not see: it never was, or it is not shown to them."
+  },
+  "voice.local_only": {
+    "defaultMessage": "Only people with an account on this server can join its rooms.",
+    "description": "On the page of a voice chat room for a visitor who is not signed in, beside the sign-in button."
+  },
+  "voice.open_now": {
+    "defaultMessage": "Open now",
+    "description": "On a voice chat room's page for a visitor, while the room is open and the server shows its summary."
+  },
+  "voice.off": {
+    "defaultMessage": "Voice chat is not available on this server.",
+    "description": "On a voice chat page while the server has voice chat turned off."
+  },
+  "voice.open_hosted_by": {
+    "defaultMessage": "Open now · Hosted by {host}",
+    "description": "On a voice chat room's page for a visitor, under its name, while the room is open and the server shows its summary with its host ({host}, a display name)."
+  },
+  "voice.end_open": {
+    "defaultMessage": "Open the room",
+    "description": "The action of the toast that says why the reader is no longer in a voice chat room: it opens the room's page, which says it again."
+  },
+  "voice.rooms_more": {
+    "defaultMessage": "Show more",
+    "description": "The button under the voice chat rooms that loads the next of them."
+  },
+  "voice.self": {
+    "defaultMessage": "You",
+    "description": "Under the name on the reader's own tile among the participants of a voice chat room: the tile is theirs. A line of its own, which a long name never cuts."
+  },
+  "voice.sign_in_join": {
+    "defaultMessage": "Sign in to join",
+    "description": "The button on a voice chat room's page for a visitor who is not signed in: the sign-in, which comes back to the room, where they can join it."
+  }
+}

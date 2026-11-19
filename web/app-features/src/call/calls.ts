@@ -82,13 +82,14 @@ export function runCallsOn(given: Partial<CallRuntime>): () => void {
 }
 
 /** The summary of `state` the shell's bar shows. */
-function summaryOf({ room, micWanted, phase, connection, playbackBlocked }: VoiceCallState): Call {
+function summaryOf({ room, self, micWanted, phase, connection, playbackBlocked }: VoiceCallState): Call {
   return {
     roomId: room.id,
     room: room.name,
     host: room.host.display_name || room.host.username,
     participants: room.participants_count,
     muted: !micWanted,
+    speaks: self?.role === "speaker",
     phase:
       phase === "connecting"
         ? "connecting"

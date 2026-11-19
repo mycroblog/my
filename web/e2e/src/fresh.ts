@@ -265,6 +265,16 @@ export class Fresh {
     return { id: draft.id, text };
   }
 
+  /**
+   * A new voice chat room that `host` opens, for every local user, where everyone may speak without asking; its ID.
+   * The host joins it with a session of the API, which their browser's join takes over (one place per person).
+   */
+  async voiceRoom(host: Person, o: { name: string }): Promise<{ id: string; name: string }> {
+    const name = `${o.name} ${unique().slice(0, 8)}`;
+    const { data } = await (await this.#api(host)).POST("/voice/rooms", { body: { name, speakers: "everyone" } });
+    return { id: body(data, "the room").room.id, name };
+  }
+
   /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */
   async reaction(by: Person, post: FreshPost, emoji: string): Promise<void> {
     const { error } = await (

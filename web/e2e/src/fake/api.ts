@@ -279,6 +279,11 @@ export type FakeOptions = {
   /** The voice chat rooms are off: the instance says so and `/voice/...` answers 404. */
   voiceOff?: boolean;
   /**
+   * The server shows the summaries of its rooms to visitors (the instance setting `voice_public_summary`): a room's
+   * page then names it, and while it is open its description and host.
+   */
+  voiceSummaries?: boolean;
+  /**
    * The reader's exports of their data: none by default; one being built (`building`), one ready to download
    * (`ready`), one being built over an earlier one that is ready (`rebuilding`), one that could not be built
    * (`failed`), or one whose archive is past the day the server keeps it until and not yet removed (`expired`).
@@ -2128,36 +2133,99 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const announcementHistory = () => (around === "none" ? [] : [...shownAnnouncements(), endedAnnouncement]);
 
   // The open voice rooms: rooms are live, so the scenario, which the seed applies, holds none; these stand in, each
-  // while the seed has its host.
-  const rooms: Schema<"VoiceRoom">[] = [
-    { name: "Morning coffee chat", host: "sam", count: 12 },
-    { name: "Release party for v0.2", host: "hana", count: 48 },
-    { name: "Photo walk planning: which trail this weekend, and who brings the long lens", host: "yuki", count: 3 },
-    { name: "Arabic and English, slowly", host: "layla", count: 5 },
-  ].flatMap((r, i) =>
-    people.some((p) => p.username === r.host)
-      ? [
-          {
-            id: idAt(started - (i + 1) * 30 * minute, 30_000 + i),
-            name: r.name,
-            description: "",
-            hashtags: [],
-            visibility: "local",
-            speakers: "everyone",
-            host: accountOf(r.host),
-            opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
-            participants_count: r.count,
-            participants: [],
-          },
-        ]
-      : [],
-  );
+  // while the seed has its host, with those of its participants the seed has: on the stage the host first (`host`,
+  // a speaker), the co-hosts (`co`) and the speakers (`speak`), and the listeners, a raised hand among them (`hand`).
+  // A participant the reader blocks, or who blocks the reader, is marked so.
+  type FakeRoom = {
+    name: string;
+    host: string;
+    icon?: string;
+    description?: string;
+    hashtags?: string[];
+    speakers?: Schema<"VoiceRoomSpeakers">;
+    co?: string[];
+    speak?: string[];
+    listen?: string[];
+    hand?: string[];
+  };
+  const fakeRooms: FakeRoom[] = [
+    {
+      name: "Morning coffee chat",
+      host: "sam",
+      icon: "☕",
+      description: "Bread, bikes and whatever the week brought. Drop in, say hi, or just listen.",
+      hashtags: ["coffee"],
+      speakers: "manual",
+      co: ["mio"],
+      speak: ["hana"],
+      listen: ["marco", "layla", "ren", "kai", "quickdeals", "kobo@bread.example"],
+      hand: ["layla"],
+    },
+    { name: "Release party for v0.2", host: "hana", icon: "🎉", hashtags: ["mycroblog"], listen: ["marco", "sam"] },
+    {
+      name: "Photo walk planning: which trail this weekend, and who brings the long lens",
+      host: "yuki",
+      speak: ["mio"],
+      listen: ["kai"],
+    },
+    { name: "Arabic and English, slowly", host: "layla", hashtags: ["coffee"], listen: ["ren"] },
+  ];
+  const local = (username: string) => people.some((p) => p.username === username) && !username.includes("@");
+  const blocksEither = (username: string) =>
+    blocking.has(`${viewer}>${username}`) || blocking.has(`${username}>${viewer}`);
+  const participant = (
+    username: string,
+    role: "speaker" | "listener",
+    r: FakeRoom,
+  ): Schema<"VoiceRoomParticipant"> => ({
+    account: accountOf(username),
+    role,
+    hosting: username === r.host,
+    cohosting: r.co?.includes(username) === true,
+    hand_raised: r.hand?.includes(username) === true,
+    blocked: blocksEither(username),
+    // Their live session, which the room's stream names, and nothing connects to.
+    session: `fake-peer-${username}`,
+  });
+  const rooms: Schema<"VoiceRoom">[] = fakeRooms.flatMap((r, i) => {
+    if (!local(r.host)) return [];
+    // The reader hosts a room only while in it: their room waits for them, as one opened for a scheduled time does.
+    const stage = [...(r.host === viewer ? [] : [r.host]), ...(r.co ?? []), ...(r.speak ?? [])].filter(local);
+    const participants = [
+      ...stage.map((u) => participant(u, "speaker", r)),
+      ...(r.listen ?? []).filter((u) => local(u) && u !== viewer).map((u) => participant(u, "listener", r)),
+    ].filter((p) => p.account.username !== viewer);
+    return [
+      {
+        id: idAt(started - (i + 1) * 30 * minute, 30_000 + i),
+        name: r.name,
+        ...(r.icon === undefined ? {} : { icon: { name: r.icon } }),
+        description: r.description ?? "",
+        hashtags: r.hashtags ?? [],
+        visibility: "local",
+        speakers: r.speakers ?? "everyone",
+        host: accountOf(r.host),
+        opened_at: new Date(started - (i + 1) * 30 * minute).toISOString(),
+        participants_count: participants.length,
+        participants,
+      },
+    ];
+  });
 
   const voiceRooms = voiceHandlers({
     rooms,
     viewer: () => accountOf(viewer),
     off: o.voiceOff === true,
     listed: () => (around === "none" ? [] : rooms),
+    summaries: o.voiceSummaries === true,
+    ended: {
+      id: idAt(started - 3 * 60 * minute, 30_100),
+      name: "Late night radio",
+    },
+    hidden: {
+      id: idAt(started - 2 * 60 * minute, 30_101),
+      name: "Book club, members only",
+    },
     problem,
     notFound,
     page,
@@ -2806,7 +2874,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     }),
     "GET /accounts/{id}": ({ params }) => {
       const username = usernameOf.get(params.id);
-      return username === undefined ? notFound() : { status: 200, body: fullAccount(personOf(username)) };
+      if (username === undefined) return notFound();
+      // Only the account's own read carries the room where it hosts or speaks (ADR-0100 §8).
+      const entry = voiceRooms.voice.entryOf(params.id);
+      return {
+        status: 200,
+        body: { ...fullAccount(personOf(username)), ...(entry === undefined ? {} : { voice_room: entry }) },
+      };
     },
     "GET /accounts/{id}/statuses": ({ params, query }) => {
       const all = profilePosts(usernameOf.get(params.id) ?? "");
@@ -3602,7 +3676,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+)$/;
+    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

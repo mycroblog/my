@@ -14,7 +14,7 @@
 // knocked out as a toggle on is. The words are the screen's: every label comes in a prop.
 
 import type { ReactNode } from "react";
-import { Children } from "react";
+import { Children, cloneElement, Fragment, type ReactElement } from "react";
 import { Button as AriaButton, Heading, Link, Toolbar } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Avatar } from "./avatar";
@@ -30,7 +30,7 @@ const tile = tv({
   slots: {
     // The ring of who speaks and the badges' cut take the surface under them, hovered or not.
     root: [
-      "box-border cursor-pointer rounded-control border-0 bg-transparent p-voice-tile-padding font-sans text-text",
+      "box-border rounded-control border-0 bg-transparent p-voice-tile-padding font-sans text-text",
       "outline-hidden data-focus-visible:shadow-focus",
       "[--face-cut-color:var(--color-surface)] [--voice-cut:var(--color-surface)]",
       "data-hovered:bg-surface-hover data-hovered:[--face-cut-color:var(--color-surface-hover)]",
@@ -41,7 +41,8 @@ const tile = tv({
     face: "rounded-full",
     badge: "rounded-full bg-text text-surface shadow-face-cut",
     name: "text-caption font-label",
-    caption: "text-caption text-muted-text [word-break:auto-phrase]",
+    // A caption is a word or two: cut at the tile's edge, never broken inside a word.
+    caption: "text-caption text-muted-text [overflow-wrap:normal] [word-break:keep-all]",
   },
   variants: {
     size: {
@@ -50,6 +51,8 @@ const tile = tv({
     },
     // The halo swells and settles while they speak; with reduced motion the ring stays still.
     speaking: { true: { face: "shadow-speaking animate-speaking motion-reduce:animate-none" } },
+    // Only a tile a press does something on looks pressable.
+    pressable: { true: { root: "cursor-pointer" } },
   },
 });
 
@@ -59,6 +62,8 @@ export type ParticipantTileProps = {
   /** The avatar's image. */
   src?: string | undefined;
   size: ParticipantSize;
+  /** The tile is the reader's own: the words for it ("You"), a line of their own, which the name's cut never takes. */
+  self?: string | undefined;
   /** Their role, while they have one that is not a speaker's or a listener's: "Host", "Co-host". */
   role?: string | undefined;
   /** While they speak (the stream says so; nothing here listens): the words for it ("Speaking"). */
@@ -69,7 +74,10 @@ export type ParticipantTileProps = {
   hand?: string | undefined;
   /** While the reader blocks them, or they the reader (ADR-0100 §10): the mark's words ("Blocked"). */
   blocked?: string | undefined;
-  /** What a press does (opens what the reader may do with them); or the tile is a `MenuSurface`'s trigger. */
+  /**
+   * What a press does (opens what the reader may do with them). Without it the tile is no control: a picture named by
+   * all it shows, which nothing presses or focuses.
+   */
   onPress?: (() => void) | undefined;
 };
 
@@ -83,14 +91,17 @@ function Badge({ size, icon, on = false }: { size: ParticipantSize; icon: IconNa
 }
 
 /**
- * A participant of a room, pressed as one: their avatar, ringed while they speak, a hand raised on its top corner at
- * the end and the microphone off on its bottom one; their name under it, then their role and the block's mark, muted.
- * Its name for assistive technology says all of them, the name first.
+ * A participant of a room, pressed as one where a press does something: their avatar, ringed while they speak, a hand
+ * raised on its top corner at the end and the microphone off on its bottom one; their name under it, cut to one line,
+ * then whether it is the reader's own, their role and the block's mark, muted, each on a line of its own that is cut
+ * rather than broken inside a word. Its name for assistive technology says all of them, the name first, once: a
+ * button's, or without `onPress` an image's, whose parts are not read again.
  */
 export function ParticipantTile({
   name,
   src,
   size,
+  self,
   role,
   speaking,
   muted,
@@ -98,11 +109,19 @@ export function ParticipantTile({
   blocked,
   onPress,
 }: ParticipantTileProps) {
-  const s = tile({ size, speaking: speaking !== undefined });
-  const label = [name, role, blocked, speaking, muted, hand].filter((w) => w !== undefined && w !== "").join(", ");
+  const s = tile({ size, speaking: speaking !== undefined, pressable: onPress !== undefined });
+  const label = [name, self, role, blocked, speaking, muted, hand]
+    .filter((w) => w !== undefined && w !== "")
+    .join(", ");
   return (
     <Stack
-      as={<AriaButton className={s.root()} aria-label={label} {...(onPress === undefined ? {} : { onPress })} />}
+      as={
+        onPress === undefined ? (
+          <div role="img" className={s.root()} aria-label={label} />
+        ) : (
+          <AriaButton className={s.root()} aria-label={label} onPress={onPress} />
+        )
+      }
       justify="center"
       pack="start"
       gap="hair"
@@ -124,13 +143,26 @@ export function ParticipantTile({
       <Box as="span" lines={1} className={s.name()} dir="auto">
         {name}
       </Box>
-      {role !== undefined && " "}
-      {role !== undefined && <span className={s.caption()}>{role}</span>}
+      {[self, role].map(
+        (words) =>
+          words !== undefined && (
+            <Fragment key={words}>
+              {" "}
+              <Box as="span" lines={1} className={s.caption()}>
+                {words}
+              </Box>
+            </Fragment>
+          ),
+      )}
       {blocked !== undefined && " "}
       {blocked !== undefined && (
-        <Row as="span" inline align="center" gap="hair" className={s.caption()}>
-          <Icon name="block" place="caption" />
-          <span>{blocked}</span>
+        <Row as="span" align="center" justify="center" gap="hair" className={s.caption()}>
+          <Row as="span" inline rigid>
+            <Icon name="block" place="caption" />
+          </Row>
+          <Box as="span" lines={1}>
+            {blocked}
+          </Box>
         </Row>
       )}
     </Stack>
@@ -316,8 +348,11 @@ const title = tv({
   },
 });
 
-/** The title of a room's screen: its icon emoji, its name, which wraps, and how many are in it, muted. */
-export function RoomTitle({ icon, name, count }: { icon?: ReactNode; name: string; count: Headcount }) {
+/**
+ * The title of a room's screen: its icon emoji, its name, which wraps, and how many are in it, muted, where that is
+ * shown (not to a visitor, nor once the room ended).
+ */
+export function RoomTitle({ icon, name, count }: { icon?: ReactNode; name: string; count?: Headcount | undefined }) {
   const s = title();
   return (
     <Row as={<Heading level={2} className={s.root()} />} wrap align="center" gapX="entry-caption">
@@ -327,9 +362,11 @@ export function RoomTitle({ icon, name, count }: { icon?: ReactNode; name: strin
         </Row>
       )}
       <span dir="auto">{name}</span>
-      <Row as="span" inline rigid className={s.count()}>
-        <HeadcountMark count={count} place="action" />
-      </Row>
+      {count !== undefined && (
+        <Row as="span" inline rigid className={s.count()}>
+          <HeadcountMark count={count} place="action" />
+        </Row>
+      )}
     </Row>
   );
 }
@@ -474,7 +511,7 @@ export function RoomControl({ icon, label, on = false, onPress, isDisabled }: Ro
     ...(isDisabled === undefined ? {} : { isDisabled }),
   };
   return (
-    <Stack as={<AriaButton {...props} />} justify="center" gap="hair">
+    <Stack as={<AriaButton {...props} data-room-control="" />} justify="center" gap="hair">
       {glyph}
       <span className={s.label()}>{label}</span>
     </Stack>
@@ -488,13 +525,33 @@ export function RoomControl({ icon, label, on = false, onPress, isDisabled }: Ro
  */
 export function RoomControls({ label, children, end }: { label: string; children: ReactNode; end?: ReactNode }) {
   return (
-    <Row as={<Toolbar aria-label={label} />} align="start" gap="voice-control-gap">
+    <ControlsPlace as={<Toolbar aria-label={label} />}>
       {children}
       {end !== undefined && (
         <Row push="end" rigid gap="voice-control-gap">
           {end}
         </Row>
       )}
+    </ControlsPlace>
+  );
+}
+
+/**
+ * The row of a room's controls, as `as`: side by side, each at least a control's width, and narrower where four do not
+ * fit at that width (a speaker's on a phone's 320 px), so that each takes a quarter of the row, less the gap, and its
+ * name wraps under its glyph.
+ */
+function ControlsPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+  return (
+    <Row
+      as={cloneElement(as, {
+        className:
+          "@container [&_[data-room-control]]:min-w-[min(var(--voice-control-width),calc(25cqi-var(--voice-control-gap)))]",
+      })}
+      align="start"
+      gap="voice-control-gap"
+    >
+      {children}
     </Row>
   );
 }

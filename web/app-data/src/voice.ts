@@ -20,6 +20,10 @@ export type VoiceRoomParticipant = Schemas["VoiceRoomParticipant"];
 export type VoiceGrant = Schemas["VoiceGrant"];
 /** A joined session: the room, the new session, and its grant. */
 export type VoiceJoin = Schemas["VoiceRoomJoin"];
+/** What a room's page shows a visitor who does not see the room (ADR-0100 §9): open or ended, and its name when shown. */
+export type VoiceRoomSummary = Schemas["VoiceRoomSummary"];
+/** The open room where an account hosts or speaks, on its profile (ADR-0100 §8). */
+export type VoiceRoomEntry = Schemas["VoiceRoomEntry"];
 /** A room the reader hosted. */
 export type VoiceRoomHistoryEntry = Schemas["VoiceRoomHistoryEntry"];
 /** Why a session left a room, or why the room ended, as the stream's `removed`, `replaced` and `ended` say. */
@@ -59,6 +63,11 @@ export function voiceRoomQuery({ queries }: AppData, id: string) {
   return queries.queryOptions("get", "/voice/rooms/{id}", { params: { path: { id } } });
 }
 
+/** The summary of the room `id`, the same for every visitor: whether it is open or ended, and its name when shown. */
+export function voiceRoomSummaryQuery({ queries }: AppData, id: string) {
+  return queries.queryOptions("get", "/voice/rooms/{id}/summary", { params: { path: { id } } });
+}
+
 /** The rooms the reader hosted, newest first, a page at a time. */
 export function voiceHistoryQuery({ api, queries }: AppData) {
   return pagedQuery<VoiceRoomHistoryEntry>(
@@ -73,10 +82,57 @@ export function useVoiceRooms(tag?: string, enabled = true): PagedList<VoiceRoom
   return usePagedList(voiceRoomsQuery(useAppData(), tag), enabled);
 }
 
-/** The room of `id`; undefined until the server answered, and its failure (a 404 for a room that ended). */
-export function useVoiceRoom(id: string, enabled = true): { room: VoiceRoom | undefined; error: Error | null } {
+/**
+ * The room of `id`; undefined until the server answered and once it answered 404 (a room that ended), its failure,
+ * and what reads it again (the reader's Try again).
+ */
+export function useVoiceRoom(
+  id: string,
+  enabled = true,
+): { room: VoiceRoom | undefined; error: Error | null; refetch: () => void } {
   const query = useQuery({ ...voiceRoomQuery(useAppData(), id), enabled });
-  return enabled ? { room: query.data, error: query.error as Error | null } : { room: undefined, error: null };
+  const refetch = () => {
+    void query.refetch();
+  };
+  const error = query.error as Error | null;
+  // A room the server holds no more (it ended, or the reader sees it no more) is gone, whatever the cache held of it.
+  const gone = error instanceof ProblemError && error.status === 404;
+  return enabled ? { room: gone ? undefined : query.data, error, refetch } : { room: undefined, error: null, refetch };
+}
+
+/**
+ * The summary of the room `id`, which needs no session: undefined until the server answered, and its failure (a 404
+ * for a room the server does not know, and for every room while the voice chat is off), and what reads it again.
+ */
+export function useVoiceRoomSummary(
+  id: string,
+  enabled = true,
+): { summary: VoiceRoomSummary | undefined; error: Error | null; refetch: () => void } {
+  const query = useQuery({ ...voiceRoomSummaryQuery(useAppData(), id), enabled });
+  const refetch = () => {
+    void query.refetch();
+  };
+  return enabled
+    ? { summary: query.data, error: query.error as Error | null, refetch }
+    : { summary: undefined, error: null, refetch };
+}
+
+/**
+ * The open room where the account of `id` hosts or speaks, which the reader sees: null for none, undefined until the
+ * server answered and while `enabled` is false. Only the account's own read carries it (GET /accounts/{id}): it is
+ * kept under a key of its own, since the cache's copies of the account, which other reads and writes put there, do not
+ * carry it, and it is read anew as a screen asks for it.
+ */
+export function useAccountVoiceRoom(id: string | undefined, enabled = true): VoiceRoomEntry | null | undefined {
+  const { api } = useAppData();
+  const query = useQuery({
+    queryKey: ["voice-entry", id],
+    queryFn: async ({ signal }) =>
+      (await api.GET("/accounts/{id}", { params: { path: { id: id ?? "" } }, signal })).data?.voice_room ?? null,
+    enabled: enabled && id !== undefined,
+    refetchOnMount: "always",
+  });
+  return enabled && id !== undefined ? query.data : undefined;
 }
 
 /** The rooms the reader hosted, newest first. */

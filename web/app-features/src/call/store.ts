@@ -6,15 +6,16 @@
 import { useSyncExternalStore } from "react";
 
 /**
- * The call the reader is in: the room, who hosts it, how many are in it, and whether the reader's microphone is off;
- * whether its stream is still `connecting` or `reconnecting` (live when absent), and whether the browser blocked its
- * audio until a gesture.
+ * The call the reader is in: the room, who hosts it, how many are in it, whether the reader speaks in it (a speaker
+ * when absent) and whether their microphone is off; whether its stream is still `connecting` or `reconnecting` (live
+ * when absent), and whether the browser blocked its audio until a gesture.
  */
 export type Call = {
   readonly roomId: string;
   readonly room: string;
   readonly host: string;
   readonly participants: number;
+  readonly speaks?: boolean;
   readonly muted: boolean;
   readonly phase?: "connecting" | "live" | "reconnecting";
   readonly playbackBlocked?: boolean;
