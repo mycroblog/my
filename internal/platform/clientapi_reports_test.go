@@ -70,7 +70,7 @@ func TestReportsThroughTheAPI(t *testing.T) {
 	if i < 0 {
 		t.Fatalf("open reports = %+v, want %s", page.Items, report.Id)
 	}
-	if got := page.Items[i]; got.State != clientapi.AdminReportStateOpen || got.ReporterAccountId != c.ids["alice"] ||
+	if got := page.Items[i]; got.State != clientapi.AdminReportStateOpen || got.ReporterAccountId == nil || *got.ReporterAccountId != c.ids["alice"] ||
 		got.Comment != "Please look" || !reflect.DeepEqual(got.RuleIds, []string{rule.ID}) || !reflect.DeepEqual(got.StatusIds, []string{public.Id}) {
 		t.Errorf("listed report = %+v, want it open with the reporter, statuses, and rules", got)
 	}
