@@ -1,0 +1,5 @@
+# SPDX-License-Identifier: AGPL-3.0-only
+# The patches that bun install applies to dependencies (patchedDependencies of package.json).
+docs: ["docs/adr/0019-security-baseline.md"]
+checks: [web, docker]
+shared: true

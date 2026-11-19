@@ -61,18 +61,20 @@ import {
   ScreenStack,
   ScreenTitle,
   Stack,
+  StateMark,
   TextButton,
   TextField,
   TextLink,
   type Fact,
   type IconName,
 } from "@my/design-system";
-import { Fragment, useId, useRef, useState, type ReactNode } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
 import { charsOf } from "../../chars";
 import { readerLanguage, usePostTranslation } from "../../post-translation";
-import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { handleIn, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
+import { ActOnAccount, CancelEvent, EndRoom } from "../accounts/places";
 
 /** What the reader is told of a refused translation, by why the server refused. */
 const failureOf = (e: unknown): TranslationFailure => {
@@ -119,22 +121,14 @@ export function useReportTitle(id: string): string | undefined {
   return report === undefined ? undefined : t("staff.report.title", { handle: handleIn(t, report.target_account) });
 }
 
-/** What a press on the report did, said in the screen's status. */
-type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
-
 function ReportView({ report, onBack }: { report: ReportDetail; onBack: () => void }) {
   const { t } = useStaffStrings();
   const actions = useReportActions(report.id);
   const me = useViewer()?.id;
   const [busy, setBusy] = useState<string | undefined>(undefined);
-  const [said, setSaid] = useState<Said | undefined>(undefined);
-  const status = useRef<HTMLDivElement>(null);
+  // What a press did, or that it failed, said in the screen's status, which takes the focus.
+  const { say, status } = useSaid();
   const target = handleIn(t, report.target_account);
-  /** Says what a press did, or that it failed, and moves the focus to that. */
-  const say = (words: string, alert: boolean) => {
-    setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
-    requestAnimationFrame(() => status.current?.focus());
-  };
   /** Runs a write of `kind`, then says what it did. */
   const run = (kind: string, write: () => Promise<unknown>, done: string) => {
     if (busy !== undefined) return;
@@ -227,18 +221,7 @@ function ReportView({ report, onBack }: { report: ReportDetail; onBack: () => vo
         <ScreenTitle back={<BackButton onPress={onBack}>{t("staff.report.back")}</BackButton>}>{target}</ScreenTitle>
         <Row wrap align="center" gap="screen-tab-gap">
           {head}
-          <Box grow as={<div ref={status} role="status" tabIndex={-1} />}>
-            {said !== undefined &&
-              (said.alert ? (
-                <FormAlert key={said.n} regular>
-                  {said.words}
-                </FormAlert>
-              ) : (
-                <CaptionLine key={said.n} icon="accepted">
-                  {said.words}
-                </CaptionLine>
-              ))}
-          </Box>
+          {status}
         </Row>
       </Stack>
       <ReportFacts report={report} me={me} />
@@ -275,13 +258,18 @@ function GoButton({ href, icon, children }: { href: string; icon: IconName; chil
 }
 
 /**
- * The reported account. The way to act on it, its moderation screen (/moderation/accounts/{id}), comes at its line's
- * end with that screen (#3260), for a reader with `manage_accounts` alone.
+ * The reported account, with the way to act on it at its line's end, its moderation screen
+ * (/moderation/accounts/{id}), for a reader with `manage_accounts` alone.
  */
 function ReportedAccount({ report }: { report: ReportDetail }) {
   const { t } = useStaffStrings();
   if (report.target_account === undefined) return <FeedNotice start>{t("staff.account_gone")}</FeedNotice>;
-  return <AccountLine account={report.target_account} />;
+  return (
+    <AccountLine
+      account={report.target_account}
+      end={<ActOnAccount account={report.target_account_id} report={report.id} />}
+    />
+  );
 }
 
 /** The domain of a remote account's server; undefined for a local one. */
@@ -304,7 +292,12 @@ function useRoomFacts(room: ReportedVoiceRoom | undefined): Fact[] {
     { term: t("staff.report.room.opened"), value: moment(room.opened_at) },
     {
       term: t("staff.report.room.ended"),
-      value: room.ended_at === undefined ? t("staff.report.room.open_now") : moment(room.ended_at),
+      value:
+        room.ended_at === undefined ? (
+          <StateMark state="open">{t("staff.report.room.open_now")}</StateMark>
+        ) : (
+          moment(room.ended_at)
+        ),
     },
     ...(room.ended_at === undefined
       ? []
@@ -673,13 +666,17 @@ function VoiceRoom({ room }: { room: ReportedVoiceRoom }) {
     })),
   ].toSorted((a, b) => b.at.localeCompare(a.at));
   return (
-    <Titled title={t("staff.report.room.log")}>
-      <LogList label={t("staff.report.room.log")}>
-        {entries.map((e) => (
-          <Fragment key={e.key}>{e.node}</Fragment>
-        ))}
-      </LogList>
-    </Titled>
+    <>
+      <Titled title={t("staff.report.room.log")}>
+        <LogList label={t("staff.report.room.log")}>
+          {entries.map((e) => (
+            <Fragment key={e.key}>{e.node}</Fragment>
+          ))}
+        </LogList>
+      </Titled>
+      {/* Ending the room for everyone stands last and apart, after what it is decided on. */}
+      {room.ended_at === undefined && <EndRoom id={room.id} />}
+    </>
   );
 }
 
@@ -689,10 +686,11 @@ function EventTarget({ event }: { event: ReportedEvent }) {
   return (
     <Titled title={t("staff.report.event.log")}>
       <Stack gap="entry-room">
-        <Row>
+        <Row wrap gap="screen-tab-gap">
           <GoButton href={eventPath(event.id)} icon="events">
             {t("staff.report.event.open")}
           </GoButton>
+          {event.cancellation === undefined && <CancelEvent id={event.id} />}
         </Row>
         <LogList label={t("staff.report.event.log")}>
           {[...event.revisions].reverse().map((r) => (

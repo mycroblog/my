@@ -142,7 +142,7 @@ my invite revoke <code>
   (the built-in `moderator` does not have it, so to delegate this, create a role with that permission and grant it).
   A service that hands out invites by itself calls the same API with a token of the scope `admin:manage_invites` ([letting another service use the admin API](moderation.md#letting-another-service-use-the-admin-api)).
   "Create an invite" on the list opens the form (`/moderation/invites/new`), which shows the code and the sign-up link of the new invite.
-  The list lets you copy the link of a usable invite and revoke it.
+  The list shows every invite's code, who created it, how many signed up with it, its end and its state; pick invites and choose "Revoke", which asks first.
 - The list shows every invite, the staff's and the members', with who created it (`created_by`) and how (`creator_kind`: `staff` or `member`). The holders of `manage_invites` can revoke any of them.
 - The account's Review page of the moderation screens (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) shows the invite the account signed up with and who created it, the person who invited the user.
 - Creating and revoking an invite is recorded in the audit log (`invite_created`, `invite_revoked`) from the screen, the API and the CLI alike. The target name is the first 4 characters of the code (`ABCD…`); the full code is not copied to the audit log.
@@ -196,6 +196,7 @@ my registration reject -note "spam" bob
 - Exit code 2 means a wrong argument.
 
 The same decisions can be made from the admin screens (the client API). All of them need the `manage_accounts` permission.
+In the web client, Moderation → Registrations (`/moderation/registrations`) lists the registrations waiting for approval with their email address, whether it is confirmed and the reason for joining; pick them and choose "Approve" or "Reject", which asks first, with a note for the moderators. A one-person server does not show it.
 
 | Operation | What it does |
 | --- | --- |

@@ -412,6 +412,20 @@ export class Fresh {
   }
 
   /**
+   * What the audit log holds of the operations of `staff`, a person who keeps the administrator's rights, the newest
+   * first: each as its kind and the kind of its target (`account_action_issued account`).
+   */
+  async audited(staff: Person): Promise<string[]> {
+    const actor = await this.#account(staff);
+    const { data } = await (
+      await this.#api(staff)
+    ).GET("/admin/audit_log", { params: { query: { actor_account_id: actor.id, limit: 40 } } });
+    return body(data, `the audit log of ${staff.username}`).items.map(
+      (entry) => `${entry.action} ${entry.target_kind}`,
+    );
+  }
+
+  /**
    * A name, an address and a password that nobody has signed up with; with `approval`, an address of the domain whose
    * sign-ups wait for a moderator (the scenario's `approvalDomain`).
    */

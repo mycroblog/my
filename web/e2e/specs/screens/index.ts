@@ -41,6 +41,7 @@ export { Security, TwoFactorSetup, virtualAuthenticator } from "./security";
 export { DisplaySettings, Landing, Settings } from "./settings";
 export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { SignUp } from "./sign-up";
+export { StaffAccounts } from "./staff-accounts";
 export { Thread } from "./thread";
 export { VerifyEmail } from "./verify";
 export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoom, VoiceRoomOpen } from "./voice";
