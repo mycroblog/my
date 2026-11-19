@@ -47,7 +47,7 @@ export class ReportPanel {
   /** The choice of why, a radio each. */
   reason(reason: ReportReason): Locator {
     return this.dialog
-      .getByRole("radiogroup", { name: "Why are you reporting it?", exact: true })
+      .getByRole("radiogroup", { name: "Why are you reporting this?", exact: true })
       .getByRole("radio", { name: new RegExp(`^${escape(reason)} .+$`) });
   }
 
@@ -60,7 +60,7 @@ export class ReportPanel {
   /** A rule of the server, once a break of the rules is chosen, by its text. */
   rule(text: string): Locator {
     return this.dialog
-      .getByRole("group", { name: "Which rules does it break?", exact: true })
+      .getByRole("group", { name: "Which rules does this break?", exact: true })
       .getByRole("checkbox", { name: new RegExp(`^${escape(text)}(?: .+)?$`) });
   }
 

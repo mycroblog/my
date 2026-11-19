@@ -116,7 +116,7 @@
     "description": "The name of the column of the queue of reports that holds why the account was reported."
   },
   "staff.reports.column.filed": {
-    "defaultMessage": "受付",
+    "defaultMessage": "通報日時",
     "description": "The name of the column of the queue of reports that holds when a report was filed; it sorts the queue."
   },
   "staff.reports.column.state": {
@@ -148,7 +148,7 @@
     "description": "In the place of the queue of reports when the filters match none; Clear filters follows."
   },
   "staff.reports.clear": {
-    "defaultMessage": "条件をクリア",
+    "defaultMessage": "絞り込みを解除",
     "description": "The button after the sentence that no report matches the filters: back to the open reports."
   },
   "staff.reports.loading": {
@@ -184,7 +184,7 @@
     "description": "The state of a report a moderator resolved, in the queue of reports."
   },
   "staff.report.category": {
-    "defaultMessage": "{category, select, spam {スパム} legal {違法なコンテンツ} violation {サーバーのルール違反} other {その他}}",
+    "defaultMessage": "{category, select, spam {スパム} legal {違法な内容} violation {サーバーのルール違反} other {その他}}",
     "description": "Why an account was reported, in the queue of reports, its filter, and the report's facts."
   },
   "staff.report.back": {
@@ -224,7 +224,7 @@
     "description": "The name of the menu that Resolve opens on a report's screen."
   },
   "staff.report.resolve.actioned": {
-    "defaultMessage": "処分した",
+    "defaultMessage": "処分あり",
     "description": "An item of the Resolve menu of a report: a moderator acted on the account."
   },
   "staff.report.resolve.dismissed": {
@@ -276,7 +276,7 @@
     "description": "The term of the server's rules a report cites, in its facts."
   },
   "staff.report.fact.filed": {
-    "defaultMessage": "受付",
+    "defaultMessage": "通報日時",
     "description": "The term of when a report was filed, in its facts."
   },
   "staff.report.fact.reporter": {
@@ -328,7 +328,7 @@
     "description": "The heading of the section of a report's screen that names the reported account."
   },
   "staff.report.moderate": {
-    "defaultMessage": "このアカウントを審査する",
+    "defaultMessage": "このアカウントに対応する",
     "description": "The link of a report's screen to the reported account's moderation screen, where a moderator acts on it."
   },
   "staff.report.comment": {
@@ -356,8 +356,8 @@
     "description": "Under a report's translated comment. {language} is the language it was written in, {provider} the provider that translated it."
   },
   "staff.report.translate_failed": {
-    "defaultMessage": "{reason, select, limit {サーバーの今月の翻訳の上限に達しました。} visibility {このコメントを受け取れる翻訳の提供元がありません。} language {この言語を翻訳できる提供元がありません。} other {コメントを翻訳できませんでした。}}",
-    "description": "Under a report's comment when the server did not translate it, by why. Try again follows only after a failure."
+    "defaultMessage": "{reason, select, limit {このサーバーで今月翻訳できる量の上限に達しました。来月からまた翻訳できます。} visibility {このコメントは、このサーバーの翻訳サービスには送れません。} language {このサーバーの翻訳サービスは、この言語の組み合わせに対応していません。} other {コメントを翻訳できませんでした。}}",
+    "description": "Under a report's comment when the server did not translate it, by why: limit (the reader or the whole server used up this month's characters), visibility (no translation service of the server may receive a report's text), language (none translates from the comment's language into the reader's), other (the service failed). Try again follows only other. Read by moderators, who still read the comment as written."
   },
   "staff.report.posts": {
     "defaultMessage": "{count, plural, other {投稿 # 件}}",
@@ -372,7 +372,7 @@
     "description": "Over a post a report points at whose author or a moderator deleted it since. {date} is a date and a time."
   },
   "staff.report.room": {
-    "defaultMessage": "ボイスチャットルーム",
+    "defaultMessage": "通話のルーム",
     "description": "The heading of the section of a report's screen about the voice chat room it points at."
   },
   "staff.report.room.name": {
@@ -420,7 +420,7 @@
     "description": "Under an entry of a voice chat room's log: how and when the account left. {date} is a date and a time."
   },
   "staff.report.room.removed": {
-    "defaultMessage": "{by} さんが {handle} さんをルームから退出させました",
+    "defaultMessage": "{by} さんが {handle} さんをルームから退出させた",
     "description": "An entry of a voice chat room's log on a report's screen. {by} removed {handle}, who may not join again."
   },
   "staff.report.room.end": {
@@ -456,7 +456,7 @@
     "description": "In a report's facts of an event that has no places."
   },
   "staff.report.event.voice_place": {
-    "defaultMessage": "このサーバーのボイスチャットルーム",
+    "defaultMessage": "このサーバーの通話のルーム",
     "description": "In the list of an event's places on a report's screen, for a voice chat room."
   },
   "staff.report.event.when": {
@@ -548,7 +548,7 @@
     "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
   },
   "staff.report.forward.confirm.about": {
-    "defaultMessage": "送れるのは 1 回だけです。取り消せません。",
+    "defaultMessage": "通報を送れるのは 1 回だけです。取り消せません。",
     "description": "What follows forwarding a report, in its confirmation."
   },
   "staff.report.forward.refused": {
@@ -556,11 +556,11 @@
     "description": "Before the button that forwards a report, when the server refused: it was sent meanwhile, or can no longer be."
   },
   "staff.report.forward.hint": {
-    "defaultMessage": "1000 文字まで。空なら文を送りません。",
+    "defaultMessage": "1000 文字まで書けます。空なら文は送りません。",
     "description": "The line under the field of the text a forwarded report carries."
   },
   "staff.report.forward.too_long": {
-    "defaultMessage": "1000 文字以内で書いてください。",
+    "defaultMessage": "文を 1000 文字以内にしてください。",
     "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
   },
   "staff.report.cancel": {
@@ -568,7 +568,7 @@
     "description": "The button of a confirmation on a report's screen that does nothing."
   },
   "staff.report.resolved": {
-    "defaultMessage": "{outcome, select, actioned {対応済み (処分した) {date}} other {対応済み (処分は不要) {date}}}",
+    "defaultMessage": "{outcome, select, actioned {対応済み (処分あり) {date}} other {対応済み (処分は不要) {date}}}",
     "description": "A resolved report's state in its facts, with how and when it was resolved. {date} is a date and a time."
   },
   "staff.report.reporter.review": {

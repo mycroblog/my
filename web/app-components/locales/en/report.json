@@ -24,7 +24,7 @@
     "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
   },
   "report.category": {
-    "defaultMessage": "Why are you reporting it?",
+    "defaultMessage": "Why are you reporting this?",
     "description": "The heading of the choice of why the reader reports the account, the room or the event."
   },
   "report.category_name": {
@@ -32,19 +32,19 @@
     "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
   },
   "report.category_hint": {
-    "defaultMessage": "{category, select, spam {Unwanted ads, the same post over and over, or misleading links} legal {Content that breaks the law} violation {You choose the rules it breaks next} other {Say what is wrong in the comment}}",
+    "defaultMessage": "{category, select, spam {Unwanted ads, the same post over and over, or misleading links} legal {Content that breaks the law} violation {You choose the rules this breaks next} other {Say what is wrong in the comment}}",
     "description": "What a reason for a report covers, under its name in the report panel. {category} is spam, legal, violation or other."
   },
   "report.category_missing": {
-    "defaultMessage": "Choose why you are reporting it.",
+    "defaultMessage": "Choose why you are reporting this.",
     "description": "The error under the reasons of the report panel, when the reader sends it without choosing one."
   },
   "report.rules": {
-    "defaultMessage": "Which rules does it break?",
+    "defaultMessage": "Which rules does this break?",
     "description": "The heading of the choice of the server's rules that the reported account breaks, shown once the reader chose that reason."
   },
   "report.rules_missing": {
-    "defaultMessage": "Choose at least one rule it breaks.",
+    "defaultMessage": "Choose at least one rule this breaks.",
     "description": "The error under the server's rules in the report panel, when the reader sends it without choosing any."
   },
   "report.posts": {

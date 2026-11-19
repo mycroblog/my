@@ -46,7 +46,6 @@
     "server:errors.remote_account",
     "server:errors.report.not_resolved",
     "server:errors.report.not_forwardable",
-    "appfeatures:staff.report.translate_failed#limit",
     "appfeatures:staff.report.translate_failed#visibility",
     "appfeatures:staff.report.translate_failed#language",
     "server:errors.subscription_blocked",

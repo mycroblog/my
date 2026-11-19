@@ -292,7 +292,7 @@
     "description": "The term, in a report's facts, of whether a report of a remote account went to that account's server."
   },
   "staff.report.fact.history": {
-    "defaultMessage": "The account before",
+    "defaultMessage": "The account's record",
     "description": "The term, in a report's facts, of what the moderators had about the reported account: its other reports and actions."
   },
   "staff.report.rule_retired": {
@@ -324,7 +324,7 @@
     "description": "In a report's facts: how many other reports the account has, open or resolved, and how many moderation actions it had, ended ones included."
   },
   "staff.report.account": {
-    "defaultMessage": "The account",
+    "defaultMessage": "Reported account",
     "description": "The heading of the section of a report's screen that names the reported account."
   },
   "staff.report.moderate": {
@@ -356,8 +356,8 @@
     "description": "Under a report's translated comment. {language} is the language it was written in, {provider} the provider that translated it."
   },
   "staff.report.translate_failed": {
-    "defaultMessage": "{reason, select, limit {The server's monthly translation limit is reached.} visibility {No translation provider may receive this comment.} language {No translation provider translates this language.} other {The comment could not be translated.}}",
-    "description": "Under a report's comment when the server did not translate it, by why. Try again follows only after a failure."
+    "defaultMessage": "{reason, select, limit {This server's monthly translation limit is reached. Translation is available again next month.} visibility {This comment cannot be sent to this server's translation service.} language {This server's translation service does not translate between these languages.} other {The comment could not be translated.}}",
+    "description": "Under a report's comment when the server did not translate it, by why: limit (the reader or the whole server used up this month's characters), visibility (no translation service of the server may receive a report's text), language (none translates from the comment's language into the reader's), other (the service failed). Try again follows only other. Read by moderators, who still read the comment as written."
   },
   "staff.report.posts": {
     "defaultMessage": "{count, plural, one {# post} other {# posts}}",
@@ -532,7 +532,7 @@
     "description": "The heading of the section of a report of a remote account that forwards it to the account's server."
   },
   "staff.report.forward.about": {
-    "defaultMessage": "This sends {domain}'s moderators the account and the posts, with the text below. Nothing of the reporter is sent: not their account, not their comment. A report is sent once.",
+    "defaultMessage": "This sends {domain}'s moderators the account and the posts, with the text below. Nothing of the reporter is sent: not their account, not their comment. A report can be sent only once.",
     "description": "What forwarding a report does, on its screen. {domain} is the reported account's server."
   },
   "staff.report.forward.field": {
@@ -548,7 +548,7 @@
     "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
   },
   "staff.report.forward.confirm.about": {
-    "defaultMessage": "It is sent once. This cannot be undone.",
+    "defaultMessage": "A report can be sent only once. This cannot be undone.",
     "description": "What follows forwarding a report, in its confirmation."
   },
   "staff.report.forward.refused": {
@@ -556,11 +556,11 @@
     "description": "Before the button that forwards a report, when the server refused: it was sent meanwhile, or can no longer be."
   },
   "staff.report.forward.hint": {
-    "defaultMessage": "Up to 1,000 characters. Left empty, none is sent.",
+    "defaultMessage": "Up to 1,000 characters. Left empty, no text is sent.",
     "description": "The line under the field of the text a forwarded report carries."
   },
   "staff.report.forward.too_long": {
-    "defaultMessage": "Write 1,000 characters or fewer.",
+    "defaultMessage": "Shorten the text to 1,000 characters or fewer.",
     "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
   },
   "staff.report.cancel": {
