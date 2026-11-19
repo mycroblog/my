@@ -1,0 +1,45 @@
+diff --git a/dist/private/live-announcer/LiveAnnouncer.cjs b/dist/private/live-announcer/LiveAnnouncer.cjs
+index 9875ec59c1e0219c3f6ecf64c610621e5c16e873..bebf950f9b59bf17e45ec5f66f3ec3350fdab453 100644
+--- a/dist/private/live-announcer/LiveAnnouncer.cjs
++++ b/dist/private/live-announcer/LiveAnnouncer.cjs
+@@ -108,8 +108,8 @@ class $74b2c5b1e7ea9589$var$LiveAnnouncer {
+     }
+     clear(assertiveness) {
+         if (!this.node) return;
+-        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.innerHTML = '';
+-        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.innerHTML = '';
++        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.replaceChildren();
++        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.replaceChildren();
+     }
+ }
+ 
+diff --git a/dist/private/live-announcer/LiveAnnouncer.js b/dist/private/live-announcer/LiveAnnouncer.js
+index 8f0994d6cd3acf68bb314bf7e6fc5c055f19c6f6..bfd99f0ad9115aae16e7b9ec4e6294c64c39227f 100644
+--- a/dist/private/live-announcer/LiveAnnouncer.js
++++ b/dist/private/live-announcer/LiveAnnouncer.js
+@@ -75,8 +75,8 @@ class $a53edfcc12185fd0$var$LiveAnnouncer {
+     }
+     clear(assertiveness) {
+         if (!this.node) return;
+-        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.innerHTML = '';
+-        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.innerHTML = '';
++        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.replaceChildren();
++        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.replaceChildren();
+     }
+     constructor(){
+         this.node = null;
+diff --git a/dist/private/live-announcer/LiveAnnouncer.mjs b/dist/private/live-announcer/LiveAnnouncer.mjs
+index 3ac1d43b6d80394356dcd03114d4f7f69fbcb8da..287663d671de07c7195fdba029fc461c4c6aeb93 100644
+--- a/dist/private/live-announcer/LiveAnnouncer.mjs
++++ b/dist/private/live-announcer/LiveAnnouncer.mjs
+@@ -100,8 +100,8 @@ class $a46cf152bb926da5$var$LiveAnnouncer {
+     }
+     clear(assertiveness) {
+         if (!this.node) return;
+-        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.innerHTML = '';
+-        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.innerHTML = '';
++        if ((!assertiveness || assertiveness === 'assertive') && this.assertiveLog) this.assertiveLog.replaceChildren();
++        if ((!assertiveness || assertiveness === 'polite') && this.politeLog) this.politeLog.replaceChildren();
+     }
+ }
+ 
