@@ -6,11 +6,13 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/mycroblog/my/internal/app/queue"
 	"github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/interface/clientapi"
 	paymentshttp "github.com/mycroblog/my/internal/interface/payments"
+	"github.com/mycroblog/my/internal/interface/web"
 	"github.com/mycroblog/my/internal/platform/config"
 )
 
@@ -52,9 +54,10 @@ func (a *App) paymentsAPI() clientapi.Payments {
 // (ADR-0074 §3, §4) when there is a provider (newPaymentProvider): the webhook endpoint, the
 // jobs of the deliveries, the reconciliation every payments_reconcile_interval, and the purge of
 // the receipts, which hand the facts to sync (the supporters core, or AppOptions.SupporterSync
-// in its place). Without a provider nothing runs and the endpoint answers 404 like any unknown
+// in its place), and the pages of a provider without hosted ones, documents of the web build's
+// payment entry. Without a provider nothing runs and the endpoint answers 404 like any unknown
 // path.
-func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepository, prov supporters.PaymentProvider, sync supporters.Syncer) error {
+func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepository, prov supporters.PaymentProvider, sync supporters.Syncer, entry web.Entry) error {
 	if prov == nil {
 		return nil
 	}
@@ -70,8 +73,23 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 		UnitOfWork: a.UnitOfWork, Repository: repo, Provider: prov, Syncer: sync, Outbox: outbox,
 		Clock: a.Clock, IDs: a.IDs, RateLimiter: a.RateLimiter,
 		ReconcileInterval: cfg.PaymentsReconcileInterval, ReconcileMaxRequests: cfg.PaymentsReconcileMaxRequests,
-		PageEnv: supporters.PageEnv{Locales: a.Locales, Logger: a.Logger},
-		Logger:  a.Logger,
+		PageEnv: supporters.PageEnv{Locales: a.Locales, Logger: a.Logger, Render: paymentshttp.Shell{
+			Entry: paymentshttp.PageEntry{
+				Script: entry.Script, Stylesheets: entry.Stylesheets, Preloads: entry.Preloads, Integrity: entry.Integrity,
+				ViteClient: entry.ViteClient, DevOrigin: entry.DevOrigin,
+			},
+			ThemeStylesheet: a.themeStylesheet, Logger: a.Logger,
+			// The pages name the server that is paid, as the sign-in screens introduce it.
+			Server: func(ctx context.Context) supporters.PageInstance {
+				srv := supporters.PageInstance{Name: a.instanceName(ctx), Description: strings.TrimSpace(a.instanceSummary(ctx))}
+				if srv.Name == "" {
+					srv.Name = cfg.Host
+				}
+				srv.Logo, srv.LogoDark = a.brandLogos(ctx)
+				return srv
+			},
+		}.Render},
+		Logger: a.Logger,
 	})
 	a.Payments.RegisterJobs(a.Handlers, a.Scheduler)
 	paymentshttp.New(paymentshttp.Options{Webhooks: a.Payments, Pages: a.Payments, Problem: a.writeStatusProblem, Logger: a.Logger}).

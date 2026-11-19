@@ -237,7 +237,8 @@ scripts/task.sh api:check     # api:spec-check (the root lists every file of api
 `my serve` serves the HTML shell embedded in the binary for `/` and the client's routes, with the link previews, the
 icons, and the Web App Manifest. The shell loads the client (`web/app`) when the binary embeds its build, and the
 sign-in, registration and consent screens (`/auth/...`, `/oauth/authorize`) load its auth entry (`web/app/auth.html`)
-the same way; without a build they are blank.
+and the payment pages (`/payments/pages/...`) its payment entry (`web/app/pay.html`) the same way; without a build they
+are blank.
 
 - `scripts/task.sh web:build` builds `web/app` with Vite into `internal/interface/web/dist`, which Go embeds with
   `//go:embed all:dist`, with the brand assets of `web/brand`. Only a placeholder `.gitkeep` is committed there, so the

@@ -14,7 +14,7 @@ name: Release image
 # private; on its settings page (https://github.com/orgs/mycroblog/packages/container/my/settings) link it to this
 # repository, give mycroblog/my the Admin role under "Manage Actions access", and make it public, which cannot be undone.
 # In the repository's settings, under General, turn on Immutable releases: a published Release's tag and assets
-# (image-digest.txt) are then frozen, a draft's are not, and a published v0.0.0-test.N keeps its tag, so number each
+# (image-digest.txt, payment-scripts.json) are then frozen, a draft's are not, and a published v0.0.0-test.N keeps its tag, so number each
 # trial anew.
 on:
   release:
@@ -73,6 +73,15 @@ jobs:
             exit 1
           fi
           echo "digest=$digest" >> "$GITHUB_OUTPUT"
+      # Every published release carries the inventory of the scripts that the payment pages load (PCI DSS 6.4.3,
+      # ADR-0074 §11), which release.yml's payment-scripts job attaches from the image: none, no tag.
+      - name: Check the inventory of the payment pages' scripts
+        run: |
+          if ! gh release download "$VERSION" --pattern payment-scripts.json --output - |
+            jq -e '.entry == "pay.html" and (.scripts | length > 1) and all(.scripts[]; .loads == "third party" or ((.url | startswith("/assets/")) and (.integrity | startswith("sha384-"))))' > /dev/null; then
+            echo "::error::$VERSION carries no payment-scripts.json, the inventory of the payment pages' scripts: rerun release.yml's payment-scripts job on the draft, or cut the release again."
+            exit 1
+          fi
       - name: Check the provenance against the tag's commit
         env:
           DIGEST: ${{ steps.digest.outputs.digest }}

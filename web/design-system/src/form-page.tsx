@@ -49,6 +49,9 @@ const page = tv({
       "desktop:px-shell-edge desktop:pt-form-page-top-wide desktop:pb-form-page-bottom",
     ],
     header: "desktop:hidden",
+    // A state of the whole page (a payment page in test mode): on the raised surface, apart from an alert, which is
+    // knocked out.
+    band: "rounded-overlay bg-surface-raised p-form-page-alert-padding text-center font-label [word-break:auto-phrase]",
     main: "flex flex-1 flex-col gap-form-page-screen-gap",
   },
   variants: {
@@ -147,6 +150,11 @@ export type FormPageProps = {
   /** The footer (FormPageFooter). */
   footer?: ReactNode;
   /**
+   * A state of the whole page that comes before everything on it (a payment page in test mode, where nothing is
+   * charged), in a band of its own at the top of the column.
+   */
+  band?: string | undefined;
+  /**
    * The server's front page: its introduction shows at every width and names the page, and `more` ends it (a link to
    * the server's about page).
    */
@@ -155,7 +163,7 @@ export type FormPageProps = {
 };
 
 /** A page of its own outside the app's frame: the server's mark or introduction, the screen, and the footer. */
-export function FormPage({ server, wordmark, footer, front, children }: FormPageProps) {
+export function FormPage({ server, wordmark, footer, front, band, children }: FormPageProps) {
   const banner = server?.banner !== undefined && server.banner !== "";
   const isFront = server !== undefined && front !== undefined;
   const s = page({ banner, alone: server === undefined, front: isFront });
@@ -185,6 +193,11 @@ export function FormPage({ server, wordmark, footer, front, children }: FormPage
           </aside>
         ))}
       <div className={s.column()}>
+        {band !== undefined && (
+          <p className={s.band()} role="note" dir="auto">
+            {band}
+          </p>
+        )}
         {server !== undefined && !isFront && (
           <header className={s.header()}>
             <Mark server={server} wordmark={wordmark} size="line" />
@@ -794,6 +807,31 @@ export function FormList({ items }: { items: ReactNode[] }) {
     <Stack as="ul" gap="form-page-list-gap" className={form().list()}>
       {items.map((item, i) => (
         <li key={i}>{item}</li>
+      ))}
+    </Stack>
+  );
+}
+
+/**
+ * Rows of a record, one under another (the payments of a subscription): what each is at the start (its date), what it
+ * comes to at the end (its amount), and what qualifies it (a refund) muted after the end, all read as one line.
+ */
+export function FormRows({ rows }: { rows: { key: string; start: string; end: string; note?: string | undefined }[] }) {
+  const s = form();
+  return (
+    <Stack as="ul" gap="form-page-list-gap">
+      {rows.map((row) => (
+        <Row as="li" key={row.key} wrap justify="between" align="baseline" gap="form-page-alert-gap">
+          <span dir="auto">{row.start}</span>
+          <Row as="span" inline wrap align="baseline" gap="form-page-alert-gap">
+            <span dir="auto">{row.end}</span>
+            {row.note !== undefined && (
+              <span className={s.hint()} dir="auto">
+                {row.note}
+              </span>
+            )}
+          </Row>
+        </Row>
       ))}
     </Stack>
   );

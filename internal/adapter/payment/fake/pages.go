@@ -4,11 +4,8 @@ package fake
 
 import (
 	"crypto/rand"
-	"embed"
 	"encoding/hex"
 	"fmt"
-	"html/template"
-	"log/slog"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -22,20 +19,8 @@ import (
 // The pages of a PageProvider stand in for a provider's hosted checkout and
 // portal in the test builds (build tag e2e_fakes, ADR-0015 §6): the checkout shows the plan, its
 // price, and that no money moves, and offers to pay, to make the payment fail, or to cancel.
-// They are server-rendered like the PAY.JP pages and run no script.
-
-//go:embed templates/*.html
-var templateFS embed.FS
-
-var pageTemplates = map[string]*template.Template{
-	"checkout": template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/checkout.html")),
-	"portal":   template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/portal.html")),
-	"error":    template.Must(template.ParseFS(templateFS, "templates/layout.html", "templates/error.html")),
-}
-
-// pagesCSP is the Content-Security-Policy of the pages: no script, the server pages' stylesheet,
-// and forms to this origin only.
-const pagesCSP = "default-src 'none'; style-src 'self'; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'"
+// They are documents of the web client's payment entry like the PAY.JP pages
+// (supporters.PageEnv.Render), with no card form.
 
 // The pages under supporters.PagesPath, each followed by its token.
 const (
@@ -120,55 +105,33 @@ func (pp PageProvider) Pages(env supporters.PageEnv) http.Handler {
 	return mux
 }
 
-// view is the data of a template.
+// view is a page in the making: the localizer of its locale and the data of the entry.
 type view struct {
 	L         *i18n.Localizer
 	Lang, Dir string
-	Title     string
-	// Stylesheet is the server pages' stylesheet.
-	Stylesheet string
-	Error      string
-	// Back is where the page's link back goes.
-	Back string
-	// Price is the plan's price on the checkout page.
-	Price string
+	supporters.PageData
 }
 
-func (h *pages) newView(r *http.Request, locale string) view {
+func (h *pages) newView(r *http.Request, locale, screen string) view {
 	var l *i18n.Localizer
 	if locale != "" {
 		l = h.env.Locales.Localizer(r.Context(), locale)
 	} else {
 		l = h.env.Locales.RequestLocalizer(r)
 	}
-	v := view{L: l, Lang: l.Locale(), Dir: l.Direction()}
-	if h.env.Stylesheet != nil {
-		v.Stylesheet = h.env.Stylesheet()
-	}
-	return v
+	return view{L: l, Lang: l.Locale(), Dir: l.Direction(), PageData: supporters.PageData{Screen: screen, Fake: true}}
 }
 
-func (h *pages) render(w http.ResponseWriter, r *http.Request, status int, name string, v view) {
-	hd := w.Header()
-	hd.Set("Content-Type", "text/html; charset=utf-8")
-	hd.Set("Content-Language", v.Lang)
-	hd.Set("Content-Security-Policy", pagesCSP)
-	hd.Set("Cache-Control", "no-store")
-	hd.Set("Referrer-Policy", "no-referrer")
-	hd.Set("X-Content-Type-Options", "nosniff")
-	hd.Add("Vary", "Accept-Language")
-	w.WriteHeader(status)
-	if err := pageTemplates[name].ExecuteTemplate(w, "layout", v); err != nil && h.env.Logger != nil {
-		h.env.Logger.ErrorContext(r.Context(), "render a page of the fake payment provider", slog.String("page", name), slog.Any("error", err))
-	}
+func (h *pages) render(w http.ResponseWriter, r *http.Request, status int, v view) {
+	h.env.Render(w, r, status, supporters.PageDocument{Lang: v.Lang, Dir: v.Dir, Title: v.Title, Data: v.PageData})
 }
 
 // renderError renders the page of an expired or unknown link, with a link back to back ("" for
 // none).
 func (h *pages) renderError(w http.ResponseWriter, r *http.Request, status int, back string) {
-	v := h.newView(r, "")
+	v := h.newView(r, "", supporters.PageScreenError)
 	v.Title, v.Error, v.Back = v.L.ServerPaymentsErrorTitle(), v.L.ServerPaymentsErrorState(), back
-	h.render(w, r, status, "error", v)
+	h.render(w, r, status, v)
 }
 
 // openCheckout returns the request of the checkout of token while it can be paid: false for an
@@ -208,13 +171,12 @@ func (h *pages) checkoutView(r *http.Request, req supporters.CheckoutRequest) vi
 		}
 	}
 	h.p.mu.Unlock()
-	v := h.newView(r, req.Locale)
+	v := h.newView(r, req.Locale, supporters.PageScreenCheckout)
 	v.Title, v.Back = v.L.ServerPaymentsCheckoutTitle(name), req.CancelURL
-	amount := formatMinor(spec.AmountMinor, spec.Currency)
+	v.Choices = &supporters.PageChoices{Action: r.URL.Path}
+	v.Price = &supporters.PagePrice{Amount: spec.AmountMinor, Currency: spec.Currency, Interval: supporters.PageIntervalMonth}
 	if spec.Interval == supporters.IntervalYear {
-		v.Price = v.L.ServerPaymentsFakePriceYear(i18n.ServerPaymentsFakePriceYearArgs{Amount: amount, Currency: spec.Currency})
-	} else {
-		v.Price = v.L.ServerPaymentsFakePriceMonth(i18n.ServerPaymentsFakePriceMonthArgs{Amount: amount, Currency: spec.Currency})
+		v.Price.Interval = supporters.PageIntervalYear
 	}
 	return v
 }
@@ -232,7 +194,7 @@ func (h *pages) checkoutPage(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound, req.CancelURL)
 		return
 	}
-	h.render(w, r, http.StatusOK, "checkout", h.checkoutView(r, req))
+	h.render(w, r, http.StatusOK, h.checkoutView(r, req))
 }
 
 // checkout takes the checkout form: pay completes the checkout with a new subscription and its
@@ -261,7 +223,7 @@ func (h *pages) checkout(w http.ResponseWriter, r *http.Request) {
 	case action == actionFail:
 		v := h.checkoutView(r, req)
 		v.Error = v.L.ServerPaymentsFakeFailed()
-		h.render(w, r, http.StatusPaymentRequired, "checkout", v)
+		h.render(w, r, http.StatusPaymentRequired, v)
 	default:
 		h.renderError(w, r, http.StatusBadRequest, req.CancelURL)
 	}
@@ -332,7 +294,7 @@ func (h *pages) portalPage(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound, "")
 		return
 	}
-	v := h.newView(r, "")
+	v := h.newView(r, "", supporters.PageScreenPortal)
 	v.Title, v.Back = v.L.ServerPaymentsPortalTitle(), pt.returnURL
-	h.render(w, r, http.StatusOK, "portal", v)
+	h.render(w, r, http.StatusOK, v)
 }

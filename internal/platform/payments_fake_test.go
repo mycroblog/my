@@ -89,8 +89,8 @@ func TestE2EFakesPaymentsCheckout(t *testing.T) {
 		e.h.ServeHTTP(rec, req)
 		return rec
 	}
-	if rec := serve(http.MethodGet, ""); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Subscribe to Supporter") ||
-		!strings.Contains(rec.Body.String(), "500 JPY a month") || !strings.Contains(rec.Body.String(), "no money moves") {
+	if rec := serve(http.MethodGet, ""); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "Subscribe to the supporter plan “Supporter”") ||
+		!strings.Contains(rec.Body.String(), `"price":{"amount":500,"currency":"JPY","interval":"month"}`) || !strings.Contains(rec.Body.String(), `"fake":true`) {
 		t.Fatalf("GET the checkout page = %d %s", rec.Code, rec.Body.String())
 	}
 	if rec := serve(http.MethodPost, "fail"); rec.Code != http.StatusPaymentRequired {

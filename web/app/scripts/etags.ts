@@ -13,7 +13,7 @@ import { join, relative, sep } from "node:path";
 const etagsPath = ".vite/etags.json";
 
 /** The HTML that Vite writes at the build's root, which the server replaces with its own shells. */
-const viteHTML = new Set(["index.html", "auth.html"]);
+const viteHTML = new Set(["index.html", "auth.html", "pay.html"]);
 
 /** The size and the ETag of each served file of the build in `dir`, by its path with forward slashes, in order. */
 export function etagList(dir: string): Record<string, { size: number; etag: string }> {

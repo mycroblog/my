@@ -354,18 +354,18 @@ v1 にホスト型の画面がないので、adapter が Stripe のホスト型�
   - `CheckoutRef` は `<顧客>/<こちらの加入の ID>/<有効期限>`。`GetCheckout` は顧客の定期課金を読み、`metadata.my_subscription_id` が一致するものがあれば `completed`（その顧客と定期課金）、なく有効期限を過ぎていれば `expired`、ほかは `open` を返す。
 - **ポータル**（`PortalURL`）: 既定のカードのブランド・下 4 桁・有効期限（表示するだけで保存しない）、定期課金の状態（停止していれば支払いに失敗したことと、カードを更新すると再開すること）、直近の支払いの履歴（`GET /v1/charges?customer=`、日付・金額・返金）、カードの変更を出す。
   カードの変更は申し込みと同じ 1・2 の手順（定期課金は作らない）で、成功したら新しいカードを既定にして古いカードを消し、停止している定期課金を `/resume` で再開する（その場で課金する）。解約はポータルに出さない（解約はこのサーバーの画面と API で行う、ADR-0072 §8）。
-- **CSP**: ページごとに次の CSP を付け（payjp.js を許す）、Web クライアントの CSP（ADR-0019 §9）は変えない。正確なオリジンは **要検証**（実装で payjp.js の文書に合わせる）。
+- **CSP**: ページごとに次の CSP を付け（payjp.js を許す）、Web クライアントの CSP（ADR-0019 §9）は変えない。nonce は使わず `<script>` と `modulepreload` に SRI を付け、ページは遅延読み込みをしない。正確なオリジンは **要検証**（実装で payjp.js の文書に合わせる）。
 
   ```text
   default-src 'none'; script-src 'self' https://js.pay.jp; style-src 'self'; frame-src https://js.pay.jp https://api.pay.jp;
-  connect-src https://api.pay.jp; img-src 'self' data:; form-action 'self'; frame-ancestors 'none'; base-uri 'none'
+  connect-src https://api.pay.jp; img-src 'self' data:; font-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'none'; object-src 'none'
   ```
 
 - **偽造の防止**: `POST` は `net/http.CrossOriginProtection` を通し、署名した状態をフォームにも載せる（ADR-0019 §4）。ページはカード情報を受けず、受けるのは payjp.js が作ったトークンの ID だけである。
-- **i18n**: 文言はサーバーのメッセージ（`server.payments.*`、`locales/en` と `locales/ja`）で、ロケールは状態のロケールを使う（ADR-0009）。
+- **i18n**: 文言は Web クライアント（`appfeatures:pay.*`）とサーバー（`server.payments.*`）のメッセージで、ロケールは状態のロケールを使う（ADR-0009）。
 - **PCI**: カードの番号は PAY.JP の iframe の中だけで入力され、このサーバーと Web クライアントのスクリプトは触れない。運営者の範囲は SAQ A 相当で、運営者が確かめる事項として docs に書く（§5 と同じ）。
   決済のページがこのサーバーのオリジンに載るので、PCI DSS v4 の決済のページのスクリプトの管理（要件 6.4.3）と改ざんの検知（要件 11.6.1）に沿って、次を守る。
-  - ページが読むスクリプトの目録（要件 6.4.3）は、ビルドのマニフェストから生成し、リリースごとに公開する。chunk を共有するので一覧は変わるが、生成なので費用はかからない（採らなかった案: chunk を共有しない入口）。外部のスクリプトは CSP の `script-src` で `https://js.pay.jp` だけを許す。解析・広告のスクリプトを載せない。
+  - ページが読むスクリプトの目録（要件 6.4.3）は、ビルドのマニフェストから生成し、リリースごとに公開する。古い目録のビルドは起動を拒む。chunk を共有するので一覧は変わるが、生成なので費用はかからない（採らなかった案: chunk を共有しない入口）。外部のスクリプトは CSP の `script-src` で `https://js.pay.jp` だけを許す。解析・広告のスクリプトを載せない。
   - CSP と `X-Content-Type-Options: nosniff`・`frame-ancestors 'none'` は常に付け、ページのテストで確かめる。
   - カードの番号・有効期限・CVC を受ける項目を、フォームにもサーバーにも持たない。サーバーが受けるのはトークンの ID・名義・メールだけで、ログに残すのは PAY.JP のオブジェクトの ID だけにする。
   - 運営者の docs に、SAQ A の範囲の確かめ方（このページと PAY.JP の iframe の分担、CSP、TLS）と、ページの CSP を変える設定を持たないことを書く。

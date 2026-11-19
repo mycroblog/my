@@ -1,38 +1,10 @@
 {
-  "payments.back": {
-    "defaultMessage": "Back",
-    "description": "Link from the PAY.JP checkout or card page back to where the user came from (ADR-0074 §11)."
-  },
-  "payments.card": {
-    "defaultMessage": "Card",
-    "description": "Label of PAY.JP's card form (number, expiry, security code) on the checkout and card pages."
-  },
-  "payments.card_note": {
-    "defaultMessage": "The card details go into PAY.JP's form and never reach this server.",
-    "description": "Note under the card form of the PAY.JP checkout and card pages."
-  },
-  "payments.checkout.price_month": {
-    "defaultMessage": "{amount, number} yen a month",
-    "description": "Price of a monthly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
-  "payments.checkout.price_year": {
-    "defaultMessage": "{amount, number} yen a year",
-    "description": "Price of a yearly plan on the PAY.JP checkout page. {amount} is in yen."
-  },
-  "payments.checkout.submit": {
-    "defaultMessage": "Subscribe",
-    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure) and starts the subscription."
-  },
   "payments.checkout.title": {
-    "defaultMessage": "Subscribe to {plan}",
+    "defaultMessage": "Subscribe to the supporter plan “{plan}”",
     "description": "Title of the PAY.JP checkout page. {plan} is the name of the plan."
   },
-  "payments.email": {
-    "defaultMessage": "Email address",
-    "description": "Label of the email field of the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
-  },
   "payments.error.declined": {
-    "defaultMessage": "The card was declined. Try another card.",
+    "defaultMessage": "The card was declined, and nothing was charged. Try another card.",
     "description": "Error of the PAY.JP checkout and card pages when the payment with the card failed."
   },
   "payments.error.form": {
@@ -44,7 +16,7 @@
     "description": "Error of the PAY.JP checkout and card pages when their link is expired or altered."
   },
   "payments.error.three_d_secure": {
-    "defaultMessage": "The card could not be verified (3-D Secure). Try again or use another card.",
+    "defaultMessage": "The card could not be verified (3-D Secure), and nothing was charged. Try again or use another card.",
     "description": "Error of the PAY.JP checkout and card pages when the 3-D Secure of the card failed."
   },
   "payments.error.title": {
@@ -52,103 +24,23 @@
     "description": "Title of the error page of the PAY.JP checkout and card pages."
   },
   "payments.error.unavailable": {
-    "defaultMessage": "PAY.JP is not answering. Try again in a while.",
+    "defaultMessage": "PAY.JP is not answering. Try again in a while. If anything was charged, the subscription shows on the screen you came from.",
     "description": "Error of the PAY.JP checkout and card pages when PAY.JP failed or did not answer."
-  },
-  "payments.fake.cancel": {
-    "defaultMessage": "Cancel",
-    "description": "Button of the fake provider's checkout page that goes back without subscribing."
-  },
-  "payments.fake.fail": {
-    "defaultMessage": "Make the payment fail",
-    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
   },
   "payments.fake.failed": {
     "defaultMessage": "The payment failed, as asked. Pay or cancel.",
     "description": "Alert of the fake provider's checkout page after its fail button."
   },
-  "payments.fake.notice": {
-    "defaultMessage": "Test build: this checkout stands in for a payment provider, and no money moves.",
-    "description": "Notice of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
-  },
-  "payments.fake.pay": {
-    "defaultMessage": "Pay",
-    "description": "Button of the fake provider's checkout page that records the subscription as paid."
-  },
-  "payments.fake.portal": {
-    "defaultMessage": "This test build has no payment methods or invoices to manage.",
-    "description": "Text of the fake provider's portal page."
-  },
-  "payments.fake.price_month": {
-    "defaultMessage": "{amount} {currency} a month",
-    "description": "Price of a monthly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_once": {
-    "defaultMessage": "{amount} {currency}, once",
-    "description": "Price of a tip on the fake provider's checkout page, paid once. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.fake.price_year": {
-    "defaultMessage": "{amount} {currency} a year",
-    "description": "Price of a yearly plan on the fake provider's checkout page. {amount} is the amount in major units, already formatted; {currency} is its ISO 4217 code."
-  },
-  "payments.name": {
-    "defaultMessage": "Name on the card",
-    "description": "Label of the card holder's name field of the PAY.JP checkout and card pages."
-  },
-  "payments.name_hint": {
-    "defaultMessage": "As printed on the card, in Latin letters.",
-    "description": "Hint under the card holder's name field of the PAY.JP checkout and card pages."
-  },
-  "payments.portal.amount": {
-    "defaultMessage": "Amount",
-    "description": "Column heading of the payments table of the PAY.JP card page."
-  },
-  "payments.portal.amount_value": {
-    "defaultMessage": "{amount, number} yen",
-    "description": "An amount in the payments table of the PAY.JP card page. {amount} is in yen."
-  },
-  "payments.portal.card": {
-    "defaultMessage": "Card in use",
-    "description": "Heading of the card on the PAY.JP card page."
-  },
   "payments.portal.card_value": {
     "defaultMessage": "{brand} ending in {last4}, expires {month}/{year}",
     "description": "The card on the PAY.JP card page: its brand, last four digits, and expiry month and year."
-  },
-  "payments.portal.change_card": {
-    "defaultMessage": "Change the card",
-    "description": "Heading and button of the card change form on the PAY.JP card page."
   },
   "payments.portal.changed": {
     "defaultMessage": "The card was changed.",
     "description": "Notice of the PAY.JP card page after a card change."
   },
-  "payments.portal.date": {
-    "defaultMessage": "Date",
-    "description": "Column heading of the payments table of the PAY.JP card page."
-  },
-  "payments.portal.history": {
-    "defaultMessage": "Recent payments",
-    "description": "Heading of the payments table of the PAY.JP card page."
-  },
-  "payments.portal.history_empty": {
-    "defaultMessage": "No payments yet.",
-    "description": "Text of the PAY.JP card page without payments."
-  },
-  "payments.portal.no_card": {
-    "defaultMessage": "No card is registered.",
-    "description": "Text of the PAY.JP card page without a card."
-  },
-  "payments.portal.paused": {
-    "defaultMessage": "The last payment failed, so the subscription is paused. Changing the card pays and resumes it.",
-    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
-  },
-  "payments.portal.refunded": {
-    "defaultMessage": "Refunded",
-    "description": "Column heading of the payments table of the PAY.JP card page: the refunded amount."
-  },
   "payments.portal.resume_failed": {
-    "defaultMessage": "The card was changed, but the payment failed. Try another card.",
+    "defaultMessage": "The card was changed, but the payment that resumes the subscription failed, so it is still paused. Try another card.",
     "description": "Alert of the PAY.JP card page when the payment that resumes a paused subscription failed."
   },
   "payments.portal.resumed": {
@@ -158,10 +50,6 @@
   "payments.portal.title": {
     "defaultMessage": "Payment method and history",
     "description": "Title of the PAY.JP card page (the customer portal)."
-  },
-  "payments.test_mode": {
-    "defaultMessage": "Test mode: nothing is charged.",
-    "description": "Banner of the PAY.JP checkout and card pages with test keys."
   },
   "payments.tip_description": {
     "defaultMessage": "Tip for {server}",

@@ -53,12 +53,12 @@ The server stores only PAY.JP object IDs (`cus_`, `sub_`, `ch_`, Plan IDs, event
 
 The payment page is served from this server's origin, so it is built with PCI DSS v4's management of payment-page scripts (requirement 6.4.3) and detection of tampering (requirement 11.6.1) in mind.
 
-- The page loads only `https://js.pay.jp/v2/pay.js` and a small script with a nonce that is embedded in the page. It carries neither the web client's bundle nor any analytics or advertising script.
-- The page always carries its own Content-Security-Policy (`script-src` only the nonce and `https://js.pay.jp`, `frame-src` only `https://js.pay.jp` and `https://api.pay.jp`, `form-action 'self'`, `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `Cache-Control: no-store`, and `X-Content-Type-Options: nosniff`. No setting changes the CSP.
-- The template and the script are embedded in the server's binary and cannot be changed at run time. Form submissions are accepted only from the same origin.
+- The page is a part of the web client, built into the server's binary: it loads the web client's own scripts from this server, each with its Subresource Integrity, and `https://js.pay.jp/v2/pay.js`, which PAY.JP serves and updates. It loads no analytics or advertising script.
+- Every release carries `payment-scripts.json`, the list of every script the page loads: each script of the web client with its hash, and payjp.js. The page shares scripts with the rest of the web client, so the list changes from release to release; keep the list of the release you run. The server refuses to start with a build whose list does not match its scripts.
+- The page always carries its own Content-Security-Policy (`script-src` only this server and `https://js.pay.jp`, `frame-src` only `https://js.pay.jp` and `https://api.pay.jp`, `form-action 'self'`, `frame-ancestors 'none'`), `Referrer-Policy: no-referrer`, `Cache-Control: no-store`, and `X-Content-Type-Options: nosniff`. No setting changes the CSP. Form submissions are accepted only from the same origin.
 
 As a result, the operator's scope is expected to be that of a merchant who leaves payment entry to PAY.JP's iframe (SAQ A). Check the scope that applies and the type of self-assessment questionnaire against PAY.JP's guidance and your card brands' requirements.
-When you do, it helps to keep a record of these points: the payment page URLs (`/payments/pages/payjp/checkout` and `/portal`), the list of scripts the page loads (the two above), the page's CSP, and that traffic to the server uses TLS (the reverse proxy's configuration).
+When you do, it helps to keep a record of these points: the payment page URLs (`/payments/pages/payjp/checkout` and `/portal`), the list of scripts the page loads (`payment-scripts.json` of the release), the page's CSP, and that traffic to the server uses TLS (the reverse proxy's configuration).
 
 ## 1. Prepare the PAY.JP account
 

@@ -81,6 +81,9 @@ WORKDIR /src
 FROM gcr.io/distroless/static-debian13:nonroot@sha256:aafe993665bf6200db38a02c11a9351e782a84b6a45e7f33b6695638c88e3931 AS app
 COPY --from=build /out/my /usr/local/bin/my
 COPY --from=build --chown=nonroot:nonroot /out/data /data
+# The inventory of the scripts that the payment pages load (PCI DSS 6.4.3), from the web build that the binary embeds;
+# release.yml attaches it to the release (scripts/release-image.sh scripts).
+COPY --from=web /src/internal/interface/web/dist/.vite/payment-scripts.json /usr/share/my/payment-scripts.json
 WORKDIR /data
 ENV MY_LISTEN=:8080
 EXPOSE 8080

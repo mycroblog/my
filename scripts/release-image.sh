@@ -25,6 +25,9 @@
 #                                                           fails when X.Y.Z exists on another digest
 #   scripts/release-image.sh check DIGEST PLATFORM VERSION  runs the image's binary (on the runner's platform) and checks
 #                                                           it with scripts/check-release-build.sh; needs go
+#   scripts/release-image.sh scripts DIGEST OUT             copies the inventory of the scripts that the payment pages load
+#                                                           (PCI DSS 6.4.3), which the image's web build wrote, to OUT and
+#                                                           checks that it is one
 #   scripts/release-image.sh scan [--fail] REF              reports the vulnerabilities of both platforms of REF with
 #                                                           Grype, which gets no credentials; --fail: fixable HIGH or above fail
 #
@@ -189,6 +192,23 @@ check() {
   echo "$ref ($platform): $out, not a test build."
 }
 
+# The inventory of the payment entry's scripts in the image (Dockerfile, stage app), which the web build of the binary in
+# the same image wrote (web/app/scripts/payment-scripts.ts).
+inventory_path=/usr/share/my/payment-scripts.json
+
+scripts() {
+  (($# == 2)) || usage
+  local want="$1" out="$2" ref="$image@$1" id
+  check_digest "$want"
+  docker pull -q --platform linux/amd64 "$ref" >/dev/null
+  id="$(docker create --platform linux/amd64 "$ref")"
+  docker cp -q "$id:$inventory_path" "$out"
+  docker rm "$id" >/dev/null
+  jq -e '.entry == "pay.html" and (.scripts | length > 1) and all(.scripts[]; .loads == "third party" or ((.url | startswith("/assets/")) and (.integrity | startswith("sha384-"))))' "$out" >/dev/null ||
+    die "$ref holds no inventory of the payment entry's scripts at $inventory_path"
+  echo "$ref: the payment pages load $(jq '.scripts | length' "$out") scripts, listed in $out."
+}
+
 scan() {
   local fail=() status=0 dir platform result
   if [[ "${1:-}" == --fail ]]; then
@@ -232,6 +252,7 @@ case "$cmd" in
   digest) digest "$@" ;;
   tag) tag "$@" ;;
   check) check "$@" ;;
+  scripts) scripts "$@" ;;
   scan) scan "$@" ;;
   *) usage ;;
 esac

@@ -36,7 +36,7 @@ tested and tagged.
 - **`upgrade`**: a failure in `my db upgrade -check` or `my schema apply` usually means a schema change that the
   previous release's data does not satisfy; in the reads, data the upgrade did not carry over. Operators are promised
   this upgrade: fix it on `main`. Reproduce it with `scripts/task.sh docker:upgrade-test PREVIOUS=<tag>`.
-- **`npm` or an image job after `release` passed**: fix the cause (for `npm`, usually the trusted publisher), then
+- **`npm`, an image job or `payment-scripts` after `release` passed**: fix the cause (for `npm`, usually the trusted publisher), then
   `gh run rerun <run-id> -R mycroblog/my --failed`. Versions already published are skipped.
 - **`release-notes-prose`**: the draft keeps the facts alone under a `release-notes: facts only` comment. Rerun the
   failed jobs; they replace only such a draft. `scripts/release-notes.sh prompt` shows what the model gets.
@@ -50,7 +50,10 @@ tested and tagged.
 2. The image: `gh release download vX.Y.Z -R mycroblog/my --pattern image-digest.txt --output -`, then
    `docker run --rm ghcr.io/mycroblog/my@<digest> version`, and run it as far as the release calls for. Read the
    `image-scan` summary: a finding with a fix in a base image or a dependency means another commit and a new version.
-3. Publish the draft. Check that the runs of `release-image.yml` and, for a stable version, `docs-site-deploy.yml`
+3. The payment pages' scripts (PCI DSS 6.4.3): the draft carries `payment-scripts.json` (`gh release view` lists it),
+   whose only script of another site is `https://js.pay.jp/v2/pay.js`; without it `release-image.yml` refuses to tag,
+   so rerun the `payment-scripts` job first.
+4. Publish the draft. Check that the runs of `release-image.yml` and, for a stable version, `docs-site-deploy.yml`
    that it starts pass.
 
 ## Afterwards

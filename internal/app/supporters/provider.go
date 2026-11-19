@@ -121,13 +121,14 @@ type PageServer interface {
 	Pages(env PageEnv) http.Handler
 }
 
-// PageEnv is what the pages of a PageServer render with: the server's own pages' locales and
-// stylesheet (ADR-0009, ADR-0090).
+// PageEnv is what the pages of a PageServer render with: the server's locales (ADR-0009) and
+// the document of the web client's payment entry (pages.go).
 type PageEnv struct {
 	// Locales resolves the locale of a request.
 	Locales *i18n.Resolver
-	// Stylesheet returns the URL of the server pages' stylesheet; "" leaves the pages unstyled.
-	Stylesheet func() string
+	// Render answers with the document of a page; Payments.Pages fills it when it is nil with one
+	// that answers 503.
+	Render PageRenderer
 	// Logger logs what a page could not do.
 	Logger *slog.Logger
 	// Checkouts claims a checkout across the server's processes; Payments.Pages fills it.

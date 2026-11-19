@@ -31,10 +31,10 @@ const licenseFiles = [
 const server = process.env["MY_SERVER"] ?? "https://my.localhost";
 
 // The build of the web client (ADR-0025 §1, §9, ADR-0028 §4): the Go server serves its own HTML shells and builds their
-// <script> and <link> tags from the manifest, whose entries are index.html, the app, and auth.html, the auth screens
-// that a page load opens, so the build writes the manifest, with a relative base, into the directory Go embeds;
-// web:build empties it first, and after the build adds web/brand and the list of the files' ETags
-// (scripts/etags.ts). Every asset is a file of
+// <script> and <link> tags from the manifest, whose entries are index.html, the app, auth.html, the auth screens
+// that a page load opens, and pay.html, the payment pages that a page load opens, so the build writes the manifest, with a relative base, into the directory Go embeds;
+// web:build empties it first, and after the build adds web/brand, the inventory of the payment entry's scripts
+// (scripts/payment-scripts.ts) and the list of the files' ETags (scripts/etags.ts). Every asset is a file of
 // its own, since the shell's CSP allows no data: source. React Compiler runs through the plugin of vite-plugins/,
 // which fails the build on a function it skips. The routes of src/routes compile into src/routeTree.gen.ts, which
 // scripts/routes.ts also writes with the same options, each route's components in a chunk of their own; TanStack
@@ -81,10 +81,19 @@ export default defineConfig({
           ],
         },
         // The build's scripts, stylesheet and images; not its HTML (the worker precaches the server's shell at /home
-        // instead) nor the auth screens' files, which the app never loads, and not its fonts (tens of MB of splits),
+        // instead) nor the auth screens' and the payment pages' files, which the app never loads, and not its fonts (tens of MB of splits),
         // which the worker caches as a page first uses them.
         globPatterns: ["**/*.{js,css,svg,png}"],
-        globIgnores: ["index.html", "auth.html", "sw.js", "assets/auth-*.js", "assets/auth-*.css"],
+        globIgnores: [
+          "index.html",
+          "auth.html",
+          "pay.html",
+          "sw.js",
+          "assets/auth-*.js",
+          "assets/auth-*.css",
+          "assets/pay-*.js",
+          "assets/pay-*.css",
+        ],
       },
     }),
   ],
@@ -100,6 +109,7 @@ export default defineConfig({
       input: [
         fileURLToPath(new URL("index.html", import.meta.url)),
         fileURLToPath(new URL("auth.html", import.meta.url)),
+        fileURLToPath(new URL("pay.html", import.meta.url)),
       ],
     },
   },
@@ -109,7 +119,10 @@ export default defineConfig({
     strictPort: true,
     origin: "http://localhost:5173",
     proxy: Object.fromEntries(
-      ["/api", "/oauth", "/auth"].map((path) => [path, { target: server, changeOrigin: true, secure: false }]),
+      ["/api", "/oauth", "/auth", "/payments"].map((path) => [
+        path,
+        { target: server, changeOrigin: true, secure: false },
+      ]),
     ),
   },
 });

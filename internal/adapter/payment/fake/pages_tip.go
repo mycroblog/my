@@ -6,7 +6,6 @@ import (
 	"net/http"
 
 	"github.com/mycroblog/my/internal/app/supporters"
-	"github.com/mycroblog/my/internal/i18n"
 )
 
 // The checkout page of a tip (onetime.go) among the pages of a PageProvider: it shows the
@@ -38,11 +37,10 @@ func tipSuccessURL(req supporters.OneTimeRequest, ref supporters.CheckoutRef) st
 
 // tipView returns the view of the checkout page of a tip.
 func (h *pages) tipView(r *http.Request, req supporters.OneTimeRequest) view {
-	v := h.newView(r, req.Locale)
+	v := h.newView(r, req.Locale, supporters.PageScreenCheckout)
 	v.Title, v.Back = req.Description, req.CancelURL
-	v.Price = v.L.ServerPaymentsFakePriceOnce(i18n.ServerPaymentsFakePriceOnceArgs{
-		Amount: formatMinor(req.AmountMinor, req.Currency), Currency: req.Currency,
-	})
+	v.Choices = &supporters.PageChoices{Action: r.URL.Path}
+	v.Price = &supporters.PagePrice{Amount: req.AmountMinor, Currency: req.Currency, Interval: supporters.PageIntervalOnce}
 	return v
 }
 
@@ -59,7 +57,7 @@ func (h *pages) tipPage(w http.ResponseWriter, r *http.Request) {
 		h.renderError(w, r, http.StatusNotFound, req.CancelURL)
 		return
 	}
-	h.render(w, r, http.StatusOK, "checkout", h.tipView(r, req))
+	h.render(w, r, http.StatusOK, h.tipView(r, req))
 }
 
 // tip takes the checkout form of a tip: pay records the payment and the events of its checkout
@@ -97,7 +95,7 @@ func (h *pages) tip(w http.ResponseWriter, r *http.Request) {
 	case action == actionFail:
 		v := h.tipView(r, req)
 		v.Error = v.L.ServerPaymentsFakeFailed()
-		h.render(w, r, http.StatusPaymentRequired, "checkout", v)
+		h.render(w, r, http.StatusPaymentRequired, v)
 	default:
 		h.renderError(w, r, http.StatusBadRequest, req.CancelURL)
 	}

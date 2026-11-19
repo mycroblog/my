@@ -151,8 +151,8 @@ func (p *Payments) Pages(ctx context.Context, provider, clientIP string) (PagesR
 	if env.Logger == nil {
 		env.Logger = p.d.Logger
 	}
-	if env.Stylesheet == nil {
-		env.Stylesheet = func() string { return "" }
+	if env.Render == nil {
+		env.Render = unrendered(env.Logger)
 	}
 	if env.Checkouts == nil {
 		env.Checkouts = p

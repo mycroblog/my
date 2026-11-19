@@ -1,0 +1,126 @@
+{
+  "pay.test_mode": {
+    "defaultMessage": "テストモードです (課金されません)。",
+    "description": "Notice at the top of the PAY.JP checkout and card pages while the server uses PAY.JP's test keys: no card is charged."
+  },
+  "pay.fake_notice": {
+    "defaultMessage": "テスト用ビルドの、決済サービスの代わりの画面です。お金は動きません。",
+    "description": "Notice at the top of the checkout and portal pages of the fake payment provider, which only test builds have (ADR-0015 §6)."
+  },
+  "pay.back": {
+    "defaultMessage": "戻る",
+    "description": "Link from a payment page back to the screen of this server the user came from."
+  },
+  "pay.card.email": {
+    "defaultMessage": "メールアドレス",
+    "description": "Label of the email address field of the card form on the PAY.JP checkout and card pages, which the card's 3-D Secure needs."
+  },
+  "pay.card.name": {
+    "defaultMessage": "カードの名義",
+    "description": "Label of the card holder's name field of the card form on the PAY.JP checkout and card pages."
+  },
+  "pay.card.name_hint": {
+    "defaultMessage": "カードに記載のとおり、半角の英字で入力してください。",
+    "description": "Hint above the card holder's name field of the card form on the PAY.JP checkout and card pages."
+  },
+  "pay.card.label": {
+    "defaultMessage": "カード",
+    "description": "Label of PAY.JP's card element (number, expiry, security code, in PAY.JP's own frame) on the checkout and card pages."
+  },
+  "pay.card.note": {
+    "defaultMessage": "カードの情報は PAY.JP のフォームに入力され、このサーバーには届きません。",
+    "description": "Note under PAY.JP's card element on the checkout and card pages."
+  },
+  "pay.card.failed": {
+    "defaultMessage": "カードを確かめられませんでした。料金は請求されていません。メールアドレス・カードの名義・カードの情報を見直して、もう一度試してください。",
+    "description": "Alert of the card form when PAY.JP could not take the card and gave no reason of its own."
+  },
+  "pay.card.unavailable": {
+    "defaultMessage": "カードの入力欄を読み込めませんでした。ページを読み込み直すか、しばらくしてからもう一度試してください。",
+    "description": "Alert of the card form when PAY.JP's script (payjp.js) could not be loaded, so no card can be entered."
+  },
+  "pay.card.name_invalid": {
+    "defaultMessage": "カードの名義は、カードに記載のとおり半角の英字で入力してください。",
+    "description": "Error under the card holder's name field when it is not 2 to 45 Latin letters, digits, spaces, periods or hyphens, the only names PAY.JP takes. Shown before the card is sent."
+  },
+  "pay.checkout.submit": {
+    "defaultMessage": "{amount} を支払って加入する",
+    "description": "Button of the PAY.JP checkout page that verifies the card (3-D Secure), pays the first period and starts the subscription. {amount} is what is charged now, formatted with its currency (¥1,200)."
+  },
+  "pay.checkout.then": {
+    "defaultMessage": "以降は{price}です。",
+    "description": "Line right above the button of the PAY.JP checkout page: what the subscription costs after the first payment. {price} is a price with its interval (pay.price.month or pay.price.year)."
+  },
+  "pay.fake.pay": {
+    "defaultMessage": "支払う",
+    "description": "Button of the fake provider's checkout page that records the payment as paid."
+  },
+  "pay.fake.fail": {
+    "defaultMessage": "支払いを失敗させる",
+    "description": "Button of the fake provider's checkout page that makes the payment fail, to test the failure."
+  },
+  "pay.fake.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "Button of the fake provider's checkout page that goes back without paying."
+  },
+  "pay.fake.portal": {
+    "defaultMessage": "テスト用ビルドには、管理する支払い方法や請求書はありません。",
+    "description": "Text of the fake provider's portal page."
+  },
+  "pay.portal.card": {
+    "defaultMessage": "お使いのカード",
+    "description": "Heading of the card in use on the PAY.JP card page (the customer portal)."
+  },
+  "pay.portal.no_card": {
+    "defaultMessage": "カードは登録されていません。",
+    "description": "Text of the PAY.JP card page without a card."
+  },
+  "pay.portal.change_card": {
+    "defaultMessage": "カードを変更する",
+    "description": "Heading and button of the card change form on the PAY.JP card page."
+  },
+  "pay.portal.history": {
+    "defaultMessage": "最近の支払い",
+    "description": "Heading of the recent payments on the PAY.JP card page."
+  },
+  "pay.portal.history_empty": {
+    "defaultMessage": "支払いはまだありません。",
+    "description": "Text of the PAY.JP card page without payments."
+  },
+  "pay.portal.paused": {
+    "defaultMessage": "直近の支払いに失敗したため、加入が一時停止されています。猶予期間が終わると特典もなくなります。カードを変更すると支払いが行われ、加入が再開します。",
+    "description": "Alert of the PAY.JP card page while a subscription is paused after a failed payment."
+  },
+  "pay.portal.plan": {
+    "defaultMessage": "{plan}: {price}",
+    "description": "The subscription at the top of the PAY.JP card page. {plan} is the plan's name, {price} a price with its interval (pay.price.month or pay.price.year)."
+  },
+  "pay.portal.next": {
+    "defaultMessage": "次回の支払い: {date}",
+    "description": "Line under the subscription at the top of the PAY.JP card page. {date} is the date of the next payment (YYYY-MM-DD)."
+  },
+  "pay.portal.add_card": {
+    "defaultMessage": "カードを登録する",
+    "description": "Heading and button of the card form on the PAY.JP card page of a customer without a card."
+  },
+  "pay.portal.refunded": {
+    "defaultMessage": "うち {amount} を返金",
+    "description": "The muted end of a row of the recent payments on the PAY.JP card page, for a payment refunded in part or in full. {amount} is formatted with its currency."
+  },
+  "pay.price.month": {
+    "defaultMessage": "月額 {amount}",
+    "description": "A price paid every month on the payment pages. {amount} is formatted with its currency (¥1,200)."
+  },
+  "pay.price.year": {
+    "defaultMessage": "年額 {amount}",
+    "description": "A price paid every year on the payment pages. {amount} is formatted with its currency (¥12,000)."
+  },
+  "pay.price.once": {
+    "defaultMessage": "{amount} (1 回だけ)",
+    "description": "An amount paid once (a tip) on the payment pages. {amount} is formatted with its currency (¥500)."
+  },
+  "pay.back_to_app": {
+    "defaultMessage": "アプリに戻る",
+    "description": "Action of a payment page that leads back to this server's app: under the error of an expired or unknown page, and at the end of the other pages."
+  }
+}
