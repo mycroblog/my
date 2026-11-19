@@ -183,9 +183,10 @@ func (r *reconciliation) tip(ctx context.Context, ref CheckoutRef) error {
 }
 
 // missing reports whether err is of an object the provider does not have, which it logs: the
-// attempt goes on without it, as the webhook's job drops it.
+// attempt goes on without it, as the webhook's job drops it. An error of the Syncer is never
+// one, since it is retried.
 func (r *reconciliation) missing(ctx context.Context, what, id string, err error) bool {
-	if !errors.Is(err, ErrPaymentNotFound) {
+	if errors.Is(err, errSyncer) || !errors.Is(err, ErrPaymentNotFound) {
 		return false
 	}
 	r.p.d.Logger.WarnContext(ctx, "payment reconciliation skipped an object the provider does not have",

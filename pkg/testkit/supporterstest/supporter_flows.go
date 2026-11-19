@@ -107,6 +107,7 @@ func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
 		{"ErasesTheTipsOfAnAccount", supporterTipErasure},
 		{"RebuildsTheOpenTips", supporterTipRebuild},
 		{"ReconcilesATipAndASubscriptionInOneWindow", supporterTipReconciled},
+		{"SkipsACheckoutTheProviderDoesNotHave", supporterReconcileSkipsMissing},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newSupporterEnv(t, newHarness)) })
