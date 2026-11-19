@@ -1,0 +1,250 @@
+{
+  "voice.rooms": {
+    "defaultMessage": "開催中のルーム",
+    "description": "The name of the list of the open voice chat rooms on the rooms' screen, for assistive technology."
+  },
+  "voice.rooms_loading": {
+    "defaultMessage": "ルームを読み込んでいます…",
+    "description": "In place of the list of voice chat rooms while the first of them load."
+  },
+  "voice.rooms_loading_more": {
+    "defaultMessage": "続きのルームを読み込んでいます…",
+    "description": "Under the voice chat rooms while more load."
+  },
+  "voice.rooms_failed": {
+    "defaultMessage": "ルームを読み込めませんでした。",
+    "description": "In place of the list of voice chat rooms when they could not be loaded, beside a button to try again."
+  },
+  "voice.rooms_failed_more": {
+    "defaultMessage": "続きのルームを読み込めませんでした。",
+    "description": "Under the voice chat rooms when more could not be loaded, beside a button to try again."
+  },
+  "voice.rooms_empty": {
+    "defaultMessage": "いま開いているルームはありません。参加できるルームが開くと、ここに表示されます。",
+    "description": "In place of the list of voice chat rooms when none is open that the reader sees."
+  },
+  "voice.back": {
+    "defaultMessage": "通話のルーム",
+    "description": "The back button at the top of a voice chat room's page, which leads to the list of rooms."
+  },
+  "voice.room_untitled": {
+    "defaultMessage": "通話のルーム",
+    "description": "The title of a voice chat room's page while its name is not known or not shown (a visitor of a room whose summary the server does not show)."
+  },
+  "voice.loading": {
+    "defaultMessage": "ルームを読み込んでいます…",
+    "description": "In place of a voice chat room while it loads."
+  },
+  "voice.failed": {
+    "defaultMessage": "ルームを読み込めませんでした。",
+    "description": "In place of a voice chat room when it could not be loaded, beside a button to try again."
+  },
+  "voice.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button after a voice chat room's or a list's failure to load that loads it again."
+  },
+  "voice.hosted_by": {
+    "defaultMessage": "ホスト: {host}",
+    "description": "Under a voice chat room's title on its page: who hosts it ({host}, a display name)."
+  },
+  "voice.speakers": {
+    "defaultMessage": "話者",
+    "description": "The heading of the participants of a voice chat room who may speak (the host, the co-hosts, the speakers), and the name of their list."
+  },
+  "voice.listeners": {
+    "defaultMessage": "聞き手",
+    "description": "The heading of the participants of a voice chat room who listen, and the name of their list."
+  },
+  "voice.no_listeners": {
+    "defaultMessage": "まだ聞き手はいません。",
+    "description": "Under the heading Listeners of a voice chat room while it has none."
+  },
+  "voice.role_host": {
+    "defaultMessage": "ホスト",
+    "description": "Under a participant's name in a voice chat room: they host it."
+  },
+  "voice.role_cohost": {
+    "defaultMessage": "共同ホスト",
+    "description": "Under a participant's name in a voice chat room: they are a co-host."
+  },
+  "voice.speaking": {
+    "defaultMessage": "発話中",
+    "description": "Said of a participant of a voice chat room while they speak, for assistive technology; their avatar is ringed."
+  },
+  "voice.mic_off": {
+    "defaultMessage": "マイクオフ",
+    "description": "Said of a speaker of a voice chat room whose microphone is off; a crossed-out microphone on their avatar."
+  },
+  "voice.hand": {
+    "defaultMessage": "挙手中",
+    "description": "Said of a participant of a voice chat room who raised a hand to speak; a hand on their avatar."
+  },
+  "voice.blocked": {
+    "defaultMessage": "ブロック",
+    "description": "Under the name of a participant of a voice chat room whom the reader blocks or who blocks the reader; they are shown, marked, and their reactions are hidden."
+  },
+  "voice.join_note": {
+    "defaultMessage": "参加すると、このルームが見える人全員に、参加者の一覧であなたの名前が表示されます。",
+    "description": "Over the Join button of a voice chat room the reader is not in: what joining shows of them."
+  },
+  "voice.join_moves": {
+    "defaultMessage": "参加すると「{room}」から退出します。",
+    "description": "Over the Join button of a voice chat room while the reader is in another one ({room}, its name): one can be in one room at a time."
+  },
+  "voice.join_full": {
+    "defaultMessage": "ルームが満員です。しばらくしてからもう一度試してください。",
+    "description": "After pressing Join, when the voice chat room has as many people as the server allows."
+  },
+  "voice.join_hosting": {
+    "defaultMessage": "別のルームのホストです。そのルームを終了するか、ホストを渡してから参加してください。",
+    "description": "After pressing Join, when the reader hosts another open voice chat room."
+  },
+  "voice.join": {
+    "defaultMessage": "参加する",
+    "description": "The button that joins the reader to a voice chat room, as a listener."
+  },
+  "voice.join_unavailable": {
+    "defaultMessage": "このブラウザーでは、このページで通話を使えません。このサーバーのアドレスを https:// で開くか、別のブラウザーを使ってください。",
+    "description": "After pressing Join, when the browser gives the page no microphone or sound: the page is not served over HTTPS, or the browser does not support it."
+  },
+  "voice.join_failed": {
+    "defaultMessage": "ルームに参加できませんでした。もう一度試してください。",
+    "description": "After pressing Join, when joining failed for any other reason."
+  },
+  "voice.connecting": {
+    "defaultMessage": "接続しています…",
+    "description": "In a voice chat room the reader joined, until its connection is up."
+  },
+  "voice.reconnecting": {
+    "defaultMessage": "接続が切れました。再接続しています…",
+    "description": "In a voice chat room the reader is in, while its connection is down and comes back by itself."
+  },
+  "voice.muted_by": {
+    "defaultMessage": "{name} があなたのマイクをオフにしました。もう一度オンにできます。",
+    "description": "In a voice chat room the reader speaks in, after a host or a co-host ({name}, their display name) muted the reader."
+  },
+  "voice.muted_by_someone": {
+    "defaultMessage": "ホストがあなたのマイクをオフにしました。もう一度オンにできます。",
+    "description": "In a voice chat room the reader speaks in, after a host or co-host who is no longer listed muted the reader."
+  },
+  "voice.mic_failed": {
+    "defaultMessage": "{reason, select, denied {ブラウザーがマイクを使えません。サイトの設定で許可してから、もう一度試してください。} missing {マイクが見つかりません。つないでから、もう一度試してください。} busy {ほかのアプリがマイクを使っています。そのアプリを閉じてから、もう一度試してください。} refused {このルームの話者ではなくなりました。もう一度話すには、「挙手」か「話す」を使ってください。} other {マイクをオンにできませんでした。もう一度試してください。}}",
+    "description": "In a voice chat room, when the reader's microphone could not be turned on: the browser refused it ({reason} denied), there is none (missing), another app holds it (busy), the reader is a listener again and the server did not let them speak (refused; Raise hand and Speak are the controls that ask to speak), or anything else (other)."
+  },
+  "voice.hear_room": {
+    "defaultMessage": "音声を聞く",
+    "description": "The button in a voice chat room, and in the call's bar, while the browser holds the room's sound back until the reader presses something: pressing it plays the sound."
+  },
+  "voice.hear_held": {
+    "defaultMessage": "ブラウザーがルームの音声を止めています。",
+    "description": "Beside the Hear the room button in a voice chat room, while the browser holds its sound back until a press."
+  },
+  "voice.controls": {
+    "defaultMessage": "ルームの操作",
+    "description": "The name of the toolbar of a voice chat room's controls (the microphone, the hand, reactions, leaving), for assistive technology."
+  },
+  "voice.mute": {
+    "defaultMessage": "ミュート",
+    "description": "The microphone's control in a voice chat room while it is on: pressing it turns it off."
+  },
+  "voice.unmute": {
+    "defaultMessage": "ミュートを解除",
+    "description": "The microphone's control in a voice chat room while it is off: pressing it turns it on."
+  },
+  "voice.speak": {
+    "defaultMessage": "話す",
+    "description": "The control of a listener of a voice chat room who may speak without asking: pressing it makes them a speaker."
+  },
+  "voice.listen": {
+    "defaultMessage": "話すのをやめる",
+    "description": "The control of a speaker of a voice chat room that makes them a listener again."
+  },
+  "voice.raise_hand": {
+    "defaultMessage": "挙手",
+    "description": "The control of a listener of a voice chat room who may not speak without asking: pressing it asks the hosts to let them speak."
+  },
+  "voice.lower_hand": {
+    "defaultMessage": "挙手を取り下げる",
+    "description": "The control of a listener of a voice chat room whose hand is raised: pressing it takes the request back."
+  },
+  "voice.react": {
+    "defaultMessage": "リアクション",
+    "description": "The control of a voice chat room that opens the emoji picker to send a reaction, which everyone in the room sees for a moment."
+  },
+  "voice.leave": {
+    "defaultMessage": "退出",
+    "description": "The control of a voice chat room that leaves it."
+  },
+  "voice.act_failed": {
+    "defaultMessage": "{action, select, speak {話し始める操作} listen {話すのをやめる操作} raise {挙手} lower {挙手の取り下げ} leave {退出} other {リアクション}}を完了できませんでした。もう一度試してください。",
+    "description": "In a voice chat room, when the server refused or did not answer what the reader pressed: action is which of them (speak, listen to stop speaking, raise or lower the hand, leave, or other: sending a reaction)."
+  },
+  "voice.host_must_choose": {
+    "defaultMessage": "このルームのホストです。退出するには、ルームを終了するか、参加者のだれかにホストを渡してください。",
+    "description": "In a voice chat room, when its host pressed Leave while others are in it: the server keeps them in until they choose."
+  },
+  "voice.end_room": {
+    "defaultMessage": "ルームを終了",
+    "description": "The button beside the notice that the host must choose before leaving: it ends the voice chat room for everyone."
+  },
+  "voice.output": {
+    "defaultMessage": "音声の出力先",
+    "description": "The name of the choice, in a voice chat room, of the speakers or headphones the room's sound plays on."
+  },
+  "voice.output_default": {
+    "defaultMessage": "システムの既定",
+    "description": "The first choice of the sound output in a voice chat room: the device's default speakers."
+  },
+  "voice.output_unnamed": {
+    "defaultMessage": "出力先 {number}",
+    "description": "A choice of the sound output in a voice chat room whose device the browser does not name until the site may use the microphone ({number}, its place in the list)."
+  },
+  "voice.end": {
+    "defaultMessage": "{kind, select, removed {{reason, select, removed {ホストがあなたを「{room}」から退出させました。このルームにはもう参加できません。} blocked {ブロックのため「{room}」から退出しました。} suspended {アカウントが凍結されたため「{room}」から退出しました。} disconnected {接続が切れたため「{room}」から退出しました。} other {「{room}」から退出しました。}}} replaced {別の端末で「{room}」に参加したため、この端末では退出しました。} ended {{reason, select, host {ホストが「{room}」を終了しました。} moderator {モデレーターが「{room}」を終了しました。} time_limit {「{room}」は時間の上限に達して終了しました。} disabled {このサーバーで通話が無効になったため、「{room}」は終了しました。} host_disconnected {ホストの接続が切れたため、「{room}」は終了しました。} other {「{room}」は終了しました。}}} lost {「{room}」への接続が切れました。} other {「{room}」の音声が使えなくなったため、退出しました。}}",
+    "description": "Why the reader is no longer in the voice chat room {room} (its name), on its page and in a toast on the other screens: {kind} removed (with {reason}: removed by a host, blocked, suspended, disconnected), replaced (joined on another device), ended (with {reason}: why the room ended), lost (the server dropped the session), or other (the sound failed)."
+  },
+  "voice.end_close": {
+    "defaultMessage": "閉じる",
+    "description": "The button at the end of the toast that says why the reader is no longer in a voice chat room."
+  },
+  "voice.ended": {
+    "defaultMessage": "このルームは終了しました。",
+    "description": "On the page of a voice chat room that ended, under its name when the server shows it."
+  },
+  "voice.unavailable": {
+    "defaultMessage": "このルームは開いていないか、あなたには見えません。",
+    "description": "On the page of a voice chat room the reader does not see: it never was, or it is not shown to them."
+  },
+  "voice.local_only": {
+    "defaultMessage": "このサーバーにアカウントがある人だけが、ルームに参加できます。",
+    "description": "On the page of a voice chat room for a visitor who is not signed in, beside the sign-in button."
+  },
+  "voice.open_now": {
+    "defaultMessage": "開催中",
+    "description": "On a voice chat room's page for a visitor, while the room is open and the server shows its summary."
+  },
+  "voice.off": {
+    "defaultMessage": "このサーバーでは通話を使えません。",
+    "description": "On a voice chat page while the server has voice chat turned off."
+  },
+  "voice.open_hosted_by": {
+    "defaultMessage": "開催中 · ホスト: {host}",
+    "description": "On a voice chat room's page for a visitor, under its name, while the room is open and the server shows its summary with its host ({host}, a display name)."
+  },
+  "voice.end_open": {
+    "defaultMessage": "ルームを開く",
+    "description": "The action of the toast that says why the reader is no longer in a voice chat room: it opens the room's page, which says it again."
+  },
+  "voice.rooms_more": {
+    "defaultMessage": "さらに表示",
+    "description": "The button under the voice chat rooms that loads the next of them."
+  },
+  "voice.self": {
+    "defaultMessage": "あなた",
+    "description": "Under the name on the reader's own tile among the participants of a voice chat room: the tile is theirs. A line of its own, which a long name never cuts."
+  },
+  "voice.sign_in_join": {
+    "defaultMessage": "ログインして参加",
+    "description": "The button on a voice chat room's page for a visitor who is not signed in: the sign-in, which comes back to the room, where they can join it."
+  }
+}

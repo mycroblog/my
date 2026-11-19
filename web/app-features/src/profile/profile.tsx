@@ -29,6 +29,7 @@ import {
   ProfileHead,
   sentenceHandleOf,
   TagList,
+  VoiceRoomEntryLine,
 } from "@my/app-components";
 import { formatParts } from "../slots";
 import {
@@ -37,6 +38,8 @@ import {
   useAccount,
   useAccountLists,
   useAccountStatuses,
+  useAccountVoiceRoom,
+  useInstance,
   useChangeRelationship,
   useLists,
   useListWrites,
@@ -456,6 +459,17 @@ function Note({ account, note, t }: { account: Account; note: string; t: T }) {
   );
 }
 
+/**
+ * The open voice chat room where the account hosts or speaks, which the reader sees (ADR-0100 §8), as a line that
+ * leads to it; nothing for none, for a listener, without a session, or while the voice chat is off.
+ */
+function VoiceEntry({ account }: { account: Account }) {
+  const on = useInstance()?.voice_enabled === true;
+  const signedIn = useViewer() !== undefined;
+  const entry = useAccountVoiceRoom(account.id, on && signedIn);
+  return entry === undefined || entry === null ? null : <VoiceRoomEntryLine entry={entry} />;
+}
+
 function Head({
   account,
   relationship,
@@ -597,6 +611,7 @@ function Head({
           />
         )}
       </MetaLine>
+      {!blocked && <VoiceEntry account={account} />}
       {!own && relationship?.note !== undefined && <Note account={account} note={relationship.note} t={t} />}
       {mutedDomain !== undefined && (
         <CaptionLine

@@ -60,6 +60,7 @@ function Stage() {
       <ParticipantTile
         name="Someone with a display name far too long for a tile"
         size="stage"
+        self="You"
         role="Co-host"
         onPress={none}
       />
@@ -81,7 +82,7 @@ const listenerNames = [
   "Shun",
   "Kana",
   "Yuto",
-  "Rin",
+  "Alexandria Montgomery-Whitfield",
 ];
 
 /** The listeners: a hand raised, a co-host who listens, one the reader blocks, and the rest. */
@@ -96,7 +97,7 @@ function Listeners() {
           size="listener"
           role={i === 2 ? "Co-host" : undefined}
           hand={i === 0 || i === 5 ? "Hand raised" : undefined}
-          blocked={i === 7 ? "Blocked" : undefined}
+          blocked={i === 7 || i === 13 ? "Blocked" : undefined}
           onPress={none}
         />
       ))}
@@ -149,7 +150,10 @@ function Controls({ speaker, on = false }: { speaker: boolean; on?: boolean }) {
   return (
     <RoomControls label="Room controls" end={<RoomControl icon="leave" label="Leave" onPress={none} />}>
       {speaker ? (
-        <RoomControl icon="microphone" label={pressed ? "Unmute" : "Mute"} on={pressed} onPress={toggle} />
+        <>
+          <RoomControl icon="microphone" label={pressed ? "Unmute" : "Mute"} on={pressed} onPress={toggle} />
+          <RoomControl icon="hear" label="Stop speaking" onPress={none} />
+        </>
       ) : (
         <RoomControl icon="hand" label={pressed ? "Lower hand" : "Raise hand"} on={pressed} onPress={toggle} />
       )}
@@ -314,8 +318,8 @@ export const RoomLines: Story = {
 };
 
 /**
- * A speaker's controls: the microphone on, named Mute; then off, knocked out and crossed out, named Unmute; a reaction,
- * and leaving apart.
+ * A speaker's controls: the microphone on, named Mute; then off, knocked out and crossed out, named Unmute; Stop
+ * speaking, a reaction, and leaving apart: four, which a phone's 320 px holds, each narrower and its name wrapping.
  */
 export const SpeakerControls: Story = {
   render: () => (
@@ -336,6 +340,31 @@ export const ListenerControls: Story = {
         <Controls speaker={false} />
         <Controls speaker={false} on />
       </Stack>
+    </Column>
+  ),
+};
+
+/**
+ * Tiles a press does nothing on (a listener's view of the room, before a host's menu): no control, nothing pressed or
+ * focused, the same look at rest.
+ */
+export const TilesWithoutActions: Story = {
+  render: () => (
+    <Column>
+      <ParticipantGrid label="Speakers" size="stage">
+        <ParticipantTile name="Mika" src={images.dusk} size="stage" role="Host" speaking="Speaking" />
+        <ParticipantTile name="Ren" src={images.snow} size="stage" muted="Microphone off" blocked="Blocked" />
+        <ParticipantTile name="Aoi Tanaka" size="stage" hand="Hand raised" />
+      </ParticipantGrid>
+    </Column>
+  ),
+};
+
+/** A room's title without how many are in it, as a visitor's page and an ended room's show it. */
+export const TitleWithoutCount: Story = {
+  render: () => (
+    <Column>
+      <RoomTitle icon="☕" name="Morning coffee chat" />
     </Column>
   ),
 };

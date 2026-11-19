@@ -186,5 +186,9 @@
   "timeline.list_write_failed": {
     "defaultMessage": "This could not be saved. Try again.",
     "description": "When making, renaming or deleting a list, or putting an account in it or taking one out, got no answer from the server (the network): under the field of the name or of the accounts found, or at the bottom of the page."
+  },
+  "timeline.tag_rooms": {
+    "defaultMessage": "Voice chat rooms",
+    "description": "The heading, on a hashtag's page, of the open voice chat rooms that have the hashtag, over its posts."
   }
 }

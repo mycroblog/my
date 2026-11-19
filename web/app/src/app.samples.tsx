@@ -32,6 +32,7 @@ import type { StoryContext } from "@storybook/react-vite";
 import { useEffect, useState } from "react";
 import { addons } from "storybook/preview-api";
 import { AppRoot } from "./app";
+import { joinStoryCall, type StoryCall } from "./call.samples";
 import { createAppRouter } from "./router";
 
 type ScreenState = "normal" | "empty" | "loading" | "error" | "long" | "folded";
@@ -61,6 +62,8 @@ export type Fake = {
   server?: Omit<FakeOptions, "viewer" | "visitor" | "failFirst" | "lateMs">;
   /** The reader is in a call, which the shell's bar shows. */
   call?: boolean;
+  /** The reader joined a room of the fake, as a press of Join does, and the call went through its steps. */
+  joined?: StoryCall;
   /** A newer build of the app waits (the service worker's), which a toast offers. */
   updateReady?: boolean;
 };
@@ -130,11 +133,18 @@ function folded(body: unknown): unknown {
   return { ...body, ancestors: grown(context.ancestors, 5), descendants: grown(context.descendants, 25) };
 }
 
+/**
+ * Whether `url` is one of the shell's reads, which every state answers as normal: the open voice rooms only as the
+ * column beside the main one reads its first few (`limit`), so that the rooms' screen is in the story's state.
+ */
+const shellRequest = (url: URL) =>
+  shell.test(url.pathname) && (url.pathname !== "/api/v1/voice/rooms" || url.searchParams.has("limit"));
+
 /** The fake server's answers as a screen in `state` gets them. */
 function staged(serve: FakeApi["serve"], state: ScreenState): FakeApi["serve"] {
   if (state === "normal") return serve;
   return async (request) => {
-    if (request.method !== "GET" || shell.test(new URL(request.url).pathname)) return serve(request);
+    if (request.method !== "GET" || shellRequest(new URL(request.url))) return serve(request);
     if (state === "loading") return new Promise<Response>(() => undefined);
     if (state === "error")
       return Response.json(
@@ -171,7 +181,14 @@ function pathOf(fake: FakeApi, at: string): string {
       .replace(/\{app:(authorized|own):(\d+)\}/g, (_, list: "authorized" | "own", index: string) =>
         fake.appId(list, Number(index)),
       )
-      .replace(/\{invite:(\d+)\}/g, (_, index: string) => fake.inviteId(Number(index)));
+      .replace(/\{invite:(\d+)\}/g, (_, index: string) => fake.inviteId(Number(index)))
+      .replace(/\{room:(\d+|ended|hidden)\}/g, (_, room: string) =>
+        room === "ended"
+          ? fake.voice.endedRoomId()
+          : room === "hidden"
+            ? fake.voice.hiddenRoomId()
+            : fake.voice.roomId(Number(room)),
+      );
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
@@ -260,6 +277,7 @@ function StoryPage({
   viewer,
   server,
   call = false,
+  joined,
   updateReady = false,
   stream,
   onRestart,
@@ -304,6 +322,7 @@ function StoryPage({
     [watch],
   );
   useSampleCall(call);
+  useEffect(() => (joined === undefined ? undefined : joinStoryCall(data, fake, joined)), [data, fake, joined]);
   useStream(data, fake, stream);
   return <AppRoot router={router} visitor={data} />;
 }

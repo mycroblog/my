@@ -43,10 +43,26 @@ test("a participant's tile is a button named by the name first, then their role,
   expect(presses).toBe(2);
 });
 
+test("a participant's tile that a press does nothing on is no control: an image named as the button would be", () => {
+  render(<ParticipantTile name="Mika" size="stage" role="Host" />);
+
+  expect(screen.queryAllByRole("button")).toHaveLength(0);
+  const tile = screen.getByRole("img", { name: "Mika, Host" });
+  expect(tile.tabIndex).toBe(-1);
+});
+
+test("the reader's own tile says so on a line of its own, after the name, which its cut never takes", () => {
+  render(<ParticipantTile name="Someone with a very long name" size="listener" self="You" role="Co-host" />);
+
+  const tile = screen.getByRole("img", { name: "Someone with a very long name, You, Co-host" });
+  const lines = [...tile.children].map((child) => child.textContent).filter((text) => text !== "");
+  expect(lines).toEqual(["Someone with a very long name", "You", "Co-host"]);
+});
+
 test("a participant without a role or a state is named by their name alone, which it shows with no mark", () => {
   render(<ParticipantTile name="Sora" size="listener" />);
 
-  const tile = screen.getByRole("button", { name: "Sora" });
+  const tile = screen.getByRole("img", { name: "Sora" });
   expect(tile.textContent).toBe("Sora");
   expect(tile.querySelectorAll("svg")).toHaveLength(0);
 });
@@ -54,20 +70,20 @@ test("a participant without a role or a state is named by their name alone, whic
 test("a participant the reader blocks shows, marked by the block's glyph and its words", () => {
   render(<ParticipantTile name="Haruto" size="stage" blocked="Blocked" />);
 
-  const tile = screen.getByRole("button", { name: "Haruto, Blocked" });
+  const tile = screen.getByRole("img", { name: "Haruto, Blocked" });
   expect(tile.textContent).toBe("Haruto Blocked");
   expect(tile.querySelectorAll("svg")).toHaveLength(1);
 });
 
 test("a participant's states name the tile only while they hold, in the same order whichever are set", () => {
   const { rerender } = render(<ParticipantTile name="Ren" size="listener" role="Co-host" hand="Hand raised" />);
-  expect(screen.getByRole("button", { name: "Ren, Co-host, Hand raised" })).toBeDefined();
+  expect(screen.getByRole("img", { name: "Ren, Co-host, Hand raised" })).toBeDefined();
 
   rerender(<ParticipantTile name="Ren" size="listener" blocked="Blocked" muted="Microphone off" />);
-  expect(screen.getByRole("button", { name: "Ren, Blocked, Microphone off" })).toBeDefined();
+  expect(screen.getByRole("img", { name: "Ren, Blocked, Microphone off" })).toBeDefined();
 
   rerender(<ParticipantTile name="Ren" size="listener" />);
-  expect(screen.getByRole("button", { name: "Ren" })).toBeDefined();
+  expect(screen.getByRole("img", { name: "Ren" })).toBeDefined();
 });
 
 test("a headcount is read as its label, its glyph and figure hidden", () => {
@@ -87,7 +103,7 @@ test("the tiles of a kind are a list named by its label, an item a tile", () => 
 
   const list = screen.getByRole("list", { name: "Listeners" });
   const items = within(list).getAllByRole("listitem");
-  expect(items.map((item) => within(item).getByRole("button").getAttribute("aria-label"))).toEqual(["Yui", "Kenji"]);
+  expect(items.map((item) => within(item).getByRole("img").getAttribute("aria-label"))).toEqual(["Yui", "Kenji"]);
 });
 
 test("reactions rise over the stage hidden from assistive technology, and each is done once it has risen", () => {
@@ -104,8 +120,8 @@ test("reactions rise over the stage hidden from assistive technology, and each i
     </ReactionFlow>,
   );
 
-  // The stage stays pressable and heard; the reactions are not.
-  expect(screen.getByRole("button", { name: "Mika" })).toBeDefined();
+  // The stage stays heard; the reactions are not.
+  expect(screen.getByRole("img", { name: "Mika" })).toBeDefined();
   const clap = screen.getByText("👏");
   expect(clap.closest('[aria-hidden="true"]')).not.toBeNull();
   fireEvent.animationEnd(clap);
@@ -124,7 +140,7 @@ test("the reactions are no stop of Tab: from the stage the focus goes on past th
         ]}
         onDone={() => undefined}
       >
-        <ParticipantTile name="Mika" size="stage" />
+        <ParticipantTile name="Mika" size="stage" onPress={() => undefined} />
       </ReactionFlow>
       <button type="button">After the stage</button>
     </>,

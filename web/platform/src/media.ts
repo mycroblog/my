@@ -9,3 +9,23 @@ export function mediaDevices(): MediaDevices | undefined {
   const devices: MediaDevices | undefined = typeof navigator === "undefined" ? undefined : navigator.mediaDevices;
   return devices;
 }
+
+/** An output of sound the browser names: its ID, and its label (empty until the site may use the microphone). */
+export type AudioOutput = { readonly id: string; readonly label: string };
+
+/** The outputs of sound there are now (the speakers, the headphones); none where the browser gives none. */
+export async function audioOutputs(): Promise<readonly AudioOutput[]> {
+  const devices = mediaDevices();
+  if (devices === undefined) return [];
+  const all = await devices.enumerateDevices().catch((): MediaDeviceInfo[] => []);
+  return all.filter((d) => d.kind === "audiooutput").map((d) => ({ id: d.deviceId, label: d.label }));
+}
+
+/** Calls `onChange` when the media devices change (one plugged in or out), until the function it returns is called. */
+export function watchMediaDevices(onChange: () => void): () => void {
+  const devices = mediaDevices();
+  devices?.addEventListener("devicechange", onChange);
+  return () => {
+    devices?.removeEventListener("devicechange", onChange);
+  };
+}

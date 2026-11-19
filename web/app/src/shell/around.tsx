@@ -7,6 +7,7 @@
 // (not on their own screen); and the funding meter when the instance shows it here. The server's pages end it, as they
 // end the menu's sheet. Under `wide`, a line above the home timeline counts the unread announcements instead.
 
+import { RoomCaption, roomIcon, voiceRoomPath } from "@my/app-components";
 import { LatestNotifications } from "@my/app-features";
 import {
   useAnnouncements,
@@ -124,15 +125,12 @@ function EventLine({ event }: { event: ServerEvent }) {
 }
 
 function RoomLine({ room }: { room: VoiceRoom }) {
-  const t = useStrings();
   return (
     <SectionLine
-      href={`/voice/${room.id}`}
+      href={voiceRoomPath(room.id)}
       title={room.name}
-      caption={t("app.room_caption", {
-        host: room.host.display_name || room.host.username,
-        count: room.participants_count,
-      })}
+      glyph={roomIcon(room.icon)}
+      caption={<RoomCaption room={room} />}
     />
   );
 }

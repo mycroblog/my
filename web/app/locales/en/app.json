@@ -251,10 +251,6 @@
     "defaultMessage": "Reconnecting…",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call's connection is lost and comes back by itself."
   },
-  "app.call_playback_blocked": {
-    "defaultMessage": "Touch the page or press a key to hear the room",
-    "description": "In the bar of the call the reader is in, under the room's name, while the browser holds the call's audio back: any touch, click or key on the page lets it play."
-  },
   "app.maintenance_title": {
     "defaultMessage": "Under maintenance",
     "description": "The title of the page that replaces every screen while the server is under maintenance."
@@ -282,10 +278,6 @@
   "app.moderation_count": {
     "defaultMessage": "{count, plural, one {# waiting} other {# waiting}}",
     "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
-  },
-  "app.room_caption": {
-    "defaultMessage": "Hosted by {host} · {count, plural, one {# in the room} other {# in the room}}",
-    "description": "Under a voice room's name, in the column beside the timeline and in the bar of the call the reader is in: who hosts it ({host}, a display name) and how many are in it."
   },
   "app.event_elsewhere": {
     "defaultMessage": "{here} · {there} ({zone})",
@@ -370,5 +362,21 @@
   "app.compose.article": {
     "defaultMessage": "New article",
     "description": "The item of the primary action's menu that opens the article editor."
+  },
+  "app.voice_room": {
+    "defaultMessage": "Voice chat room",
+    "description": "The heading of a voice chat room's page until its name is known, or when it is not shown to the reader."
+  },
+  "app.call_host": {
+    "defaultMessage": "Hosted by {host}",
+    "description": "In the bar of the call the reader is in, under the room's name: who hosts it ({host}, a display name)."
+  },
+  "app.call_hear": {
+    "defaultMessage": "Hear the room",
+    "description": "The button of the bar of the call the reader is in, while the browser holds the room's sound back until a press: pressing it plays the sound."
+  },
+  "app.call_muted_by_host": {
+    "defaultMessage": "A host muted you",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, after a host or co-host turned the reader's microphone off, until they turn it on again."
   }
 }

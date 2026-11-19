@@ -30,6 +30,7 @@ import {
   type Instance,
 } from "@my/app-data";
 import {
+  CallEnds,
   ComposeLayer,
   leaveCall,
   muteCall,
@@ -37,8 +38,10 @@ import {
   resumeCallPlayback,
   UnsavedSettings,
   useCall,
+  useVoiceCallState,
   type Call,
 } from "@my/app-features";
+import { useHeadcount, voiceRoomPath } from "@my/app-components";
 import {
   CallBar,
   Frame,
@@ -200,12 +203,14 @@ function PlaceList({ items, pathname }: { items: readonly Place[]; pathname: str
 }
 
 /**
- * The bar of the call the reader is in: the room and who hosts it (or that it connects, or that its audio waits for a
- * gesture), the microphone, and leaving. While the browser blocks the call's audio, the reader's next tap or key
- * anywhere on the page lets it play.
+ * The bar of the call the reader is in: the room, how many are in it and who hosts it (or that it connects, or that a
+ * host muted the reader), the microphone, and leaving. While the browser holds the call's sound back, the bar's Hear
+ * the room plays it, as does the reader's next tap or key anywhere on the page.
  */
 function CallSlot({ call }: { call: Call }) {
   const t = useStrings();
+  const count = useHeadcount(call.participants);
+  const mutedBy = useVoiceCallState()?.mutedBy ?? null;
   const blocked = call.playbackBlocked === true;
   useEffect(() => {
     if (!blocked) return undefined;
@@ -219,23 +224,33 @@ function CallSlot({ call }: { call: Call }) {
       document.removeEventListener("keydown", resume, true);
     };
   }, [blocked]);
-  const detail = blocked
-    ? t("app.call_playback_blocked")
-    : call.phase === "connecting"
+  const busy = call.phase === "connecting" || call.phase === "reconnecting";
+  const detail =
+    call.phase === "connecting"
       ? t("app.call_connecting")
       : call.phase === "reconnecting"
         ? t("app.call_reconnecting")
-        : t("app.room_caption", { host: call.host, count: call.participants });
+        : mutedBy !== null && call.muted
+          ? t("app.call_muted_by_host")
+          : t("app.call_host", { host: call.host });
   return (
     <CallBar
-      href={`/voice/${call.roomId}`}
+      href={voiceRoomPath(call.roomId)}
       room={call.room}
+      count={count}
       detail={detail}
+      busy={busy}
+      hear={blocked ? { label: t("app.call_hear"), onPress: resumeCallPlayback } : undefined}
       muted={call.muted}
       micLabel={t(call.muted ? "app.call_unmute" : "app.call_mute")}
-      onMic={() => {
-        muteCall(!call.muted);
-      }}
+      // A listener has no microphone to turn on: only a speaker sends.
+      onMic={
+        call.speaks === false
+          ? undefined
+          : () => {
+              muteCall(!call.muted);
+            }
+      }
       leaveLabel={t("app.call_leave")}
       onLeave={leaveCall}
     />
@@ -337,7 +352,8 @@ export function Shell({
   );
   const { tabs, side, own, rights: staff } = placesFor(signedIn, instance, rights);
   const around = aroundPlacesFor(signedIn, instance, signInPath);
-  const callBar = call === null ? undefined : <CallSlot call={call} />;
+  // The room's own page holds its controls: the bar would only repeat them, with a second Leave.
+  const callBar = call === null || pathname === voiceRoomPath(call.roomId) ? undefined : <CallSlot call={call} />;
   const footer = <ServerFooter instance={instance} />;
   return (
     <MenuSheet sheet={narrow}>
@@ -403,6 +419,7 @@ export function Shell({
           toasts={
             <>
               {signedIn && <UnsavedSettings onOpen={go} />}
+              {signedIn && <CallEnds pathname={pathname} onOpen={go} />}
               <UpdateToast inCall={call !== null} />
             </>
           }

@@ -251,10 +251,6 @@
     "defaultMessage": "再接続しています…",
     "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call's connection is lost and comes back by itself."
   },
-  "app.call_playback_blocked": {
-    "defaultMessage": "ページに触れるかキーを押すと、ルームの音声が聞こえます",
-    "description": "In the bar of the call the reader is in, under the room's name, while the browser holds the call's audio back: any touch, click or key on the page lets it play."
-  },
   "app.maintenance_title": {
     "defaultMessage": "メンテナンス中",
     "description": "The title of the page that replaces every screen while the server is under maintenance."
@@ -282,10 +278,6 @@
   "app.moderation_count": {
     "defaultMessage": "{count, plural, other {対応待ち # 件}}",
     "description": "What the badge on Moderation in the navigation says, for assistive technology: how many reports, registrations and appeals wait for a moderator."
-  },
-  "app.room_caption": {
-    "defaultMessage": "{host}さんがホスト · {count, plural, other {# 人が参加中}}",
-    "description": "Under a voice room's name, in the column beside the timeline and in the bar of the call the reader is in: who hosts it ({host}, a display name) and how many are in it."
   },
   "app.event_elsewhere": {
     "defaultMessage": "{here} · {there} ({zone})",
@@ -370,5 +362,21 @@
   "app.compose.article": {
     "defaultMessage": "新しい記事",
     "description": "The item of the primary action's menu that opens the article editor."
+  },
+  "app.voice_room": {
+    "defaultMessage": "通話のルーム",
+    "description": "The heading of a voice chat room's page until its name is known, or when it is not shown to the reader."
+  },
+  "app.call_host": {
+    "defaultMessage": "ホスト: {host}",
+    "description": "In the bar of the call the reader is in, under the room's name: who hosts it ({host}, a display name)."
+  },
+  "app.call_hear": {
+    "defaultMessage": "音声を聞く",
+    "description": "The button of the bar of the call the reader is in, while the browser holds the room's sound back until a press: pressing it plays the sound."
+  },
+  "app.call_muted_by_host": {
+    "defaultMessage": "ホストがあなたをミュートしました",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, after a host or co-host turned the reader's microphone off, until they turn it on again."
   }
 }

@@ -7,9 +7,28 @@
 // answered as on every screen (post-actions.tsx), and a follow that fails is told in their notice. A visitor reads it
 // too, and Follow, like their posts' actions that need an account, leads them to sign in, coming back here.
 
-import { Column, statusPath, tagPath, type PostStatus } from "@my/app-components";
-import { tagTimelineQuery, useFollowTag, useTag, useTagTimeline, type AppData } from "@my/app-data";
-import { BackButton, Button, FeedNotice, ScreenStack, ScreenTitle, useLocale } from "@my/design-system";
+import { Column, statusPath, tagPath, VoiceRoomLine, type PostStatus } from "@my/app-components";
+import {
+  tagTimelineQuery,
+  useFollowTag,
+  useInstance,
+  useTag,
+  useTagTimeline,
+  useVoiceRooms,
+  type AppData,
+} from "@my/app-data";
+import {
+  BackButton,
+  Button,
+  FeedNotice,
+  GroupHeading,
+  RowItem,
+  RowList,
+  ScreenStack,
+  ScreenTitle,
+  Stack,
+  useLocale,
+} from "@my/design-system";
 import { useState } from "react";
 import { stringsIn } from "../locale";
 import { usePostActions, usePostNotice, usePostOwn, usePostPicker, usePostVoting } from "../post-actions";
@@ -72,6 +91,29 @@ function Follow({ name, signIn }: { name: string; signIn: ((returnTo: string) =>
 }
 
 /**
+ * The open voice chat rooms of the hashtag of `name` the reader sees (ADR-0100 §8), over its posts: the first page,
+ * in the server's order; nothing while there is none, for a visitor, or while the voice chat is off.
+ */
+function TagRooms({ name, signedIn }: { name: string; signedIn: boolean }) {
+  const { t } = stringsIn(useLocale().locale);
+  const on = useInstance()?.voice_enabled === true;
+  const { items } = useVoiceRooms(name, signedIn && on);
+  if (items.length === 0) return null;
+  return (
+    <Stack gap="entry-line">
+      <GroupHeading>{t("timeline.tag_rooms")}</GroupHeading>
+      <RowList label={t("timeline.tag_rooms")}>
+        {items.map((room) => (
+          <RowItem key={room.id}>
+            <VoiceRoomLine room={room} />
+          </RowItem>
+        ))}
+      </RowList>
+    </Stack>
+  );
+}
+
+/**
  * The screen of the hashtag of `name` (without `#`); `onBack` goes back to where the reader came from. With `signIn`,
  * for a visitor, Follow and the actions of its posts that need an account lead to sign in, given the address to come
  * back to.
@@ -104,6 +146,7 @@ export function TagTimeline({
         back={<BackButton onPress={onBack}>{t("timeline.tag_back")}</BackButton>}
         actions={<Follow name={name} signIn={signIn} />}
       >{`#${shown}`}</ScreenTitle>
+      <TagRooms name={name} signedIn={signIn === undefined} />
       <Column
         label={t("timeline.tag", { name: shown })}
         {...useTagTimeline(name)}
