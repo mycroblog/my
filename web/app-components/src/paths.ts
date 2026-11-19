@@ -117,6 +117,21 @@ export const supporterTipPath = "/settings/supporter/tip";
 /** The address of the held-back notifications of the account of `id`. */
 export const heldOfPath = (id: string) => `${heldPath}/${id}`;
 
+/** The root of the moderators' screens, which lists those the reader's permissions open. */
+export const moderationPath = "/moderation";
+
+/** The root of the server's administration, which lists the screens the reader's permissions open. */
+export const adminPath = "/admin";
+
+/** The moderators' queue of reports. */
+export const reportQueuePath = "/moderation/reports";
+
+/** The address of a report as a moderator opens it. */
+export const reportPath = (id: string) => `${reportQueuePath}/${encodeURIComponent(id)}`;
+
+/** The address of an account's moderation screen, where a moderator reviews it and acts on it. */
+export const moderatedAccountPath = (id: string) => `/moderation/accounts/${encodeURIComponent(id)}`;
+
 /** What a notification reads to decide where it leads: its kind and what it is about. */
 export type NotificationTarget = {
   readonly type: string;
@@ -126,6 +141,7 @@ export type NotificationTarget = {
   readonly announcement?: { readonly id: string } | undefined;
   readonly voice_room_id?: string | undefined;
   readonly event_id?: string | undefined;
+  readonly report_id?: string | undefined;
 };
 
 const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request", "quote_request"]);
@@ -139,6 +155,7 @@ const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request",
  */
 export function notificationPath(n: NotificationTarget): string {
   if (requests.has(n.type)) return waitingPath;
+  if (n.type === "admin_report") return n.report_id === undefined ? reportQueuePath : reportPath(n.report_id);
   if (n.type === "auto_delete_limit") return autoDeletePath;
   if (n.type.startsWith("voice_room_"))
     return n.voice_room_id === undefined ? "/notifications" : voiceRoomPath(n.voice_room_id);

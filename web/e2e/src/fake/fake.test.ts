@@ -820,11 +820,11 @@ describe("a visitor", () => {
 describe("an operation the fake does not implement", () => {
   test("fails by name, and is kept among those it refused", async () => {
     const fake = createFakeApi();
-    const failure: unknown = await fake.serve(request("GET", "/admin/reports")).catch((e: unknown) => e);
+    const failure: unknown = await fake.serve(request("GET", "/admin/relays")).catch((e: unknown) => e);
     expect(failure).toBeInstanceOf(UnimplementedError);
-    expect((failure as UnimplementedError).operation).toBe("GET /api/v1/admin/reports");
-    expect((failure as Error).message).toBe("fake: GET /api/v1/admin/reports is no operation the fake API implements");
-    expect(fake.unimplemented).toEqual(["GET /api/v1/admin/reports"]);
+    expect((failure as UnimplementedError).operation).toBe("GET /api/v1/admin/relays");
+    expect((failure as Error).message).toBe("fake: GET /api/v1/admin/relays is no operation the fake API implements");
+    expect(fake.unimplemented).toEqual(["GET /api/v1/admin/relays"]);
   });
 
   test("fails for a method the operation's path does not have", async () => {
@@ -835,9 +835,9 @@ describe("an operation the fake does not implement", () => {
 
   test("can still be scripted: the script counts its requests, and may answer for the fake", async () => {
     const fake = createFakeApi();
-    const reports = fake.script("GET /admin/reports", { fail: 403 });
-    const refused = await ask(fake, "GET", "/admin/reports");
-    expect([refused.status, reports.seen.length, fake.unimplemented]).toEqual([403, 1, []]);
+    const relays = fake.script("GET /admin/relays", { fail: 403 });
+    const refused = await ask(fake, "GET", "/admin/relays");
+    expect([refused.status, relays.seen.length, fake.unimplemented]).toEqual([403, 1, []]);
   });
 });
 

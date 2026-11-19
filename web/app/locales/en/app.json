@@ -406,5 +406,13 @@
   "app.supporters": {
     "defaultMessage": "Supporters",
     "description": "The name of the supporters' page (the plans, the tip and the supporters list): its heading, and its place in the menu."
+  },
+  "app.report": {
+    "defaultMessage": "Report",
+    "description": "The title of a report's screen for moderators, while the report loads or when it cannot be shown."
+  },
+  "app.report_queue": {
+    "defaultMessage": "Reports",
+    "description": "For assistive technology, the name of the column beside a report's screen, which lists the moderators' queue of reports."
   }
 }

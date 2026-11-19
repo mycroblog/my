@@ -166,6 +166,11 @@ export type PostProps = {
   defaultViewing?: number | undefined;
   /** Its more menu is open at first, before any press; closed by default. */
   defaultMenuOpen?: boolean | undefined;
+  /**
+   * It is shown as a moderator reviews it (a post a report points at): its text, its media and its translation, with
+   * none of its reactions and actions, which act as the reader would and not as the review does.
+   */
+  review?: boolean | undefined;
 };
 
 /**
@@ -924,6 +929,7 @@ export function Post({
   defaultShown = false,
   defaultViewing,
   defaultMenuOpen = false,
+  review = false,
 }: PostProps) {
   const { t, lang } = stringsIn(useLocale().locale);
   const name = useId();
@@ -1102,18 +1108,20 @@ export function Post({
       <Context status={status} shown={shown} t={t} lang={lang} replyingTo={replyingTo} />
       {article !== undefined && reading === undefined && byline}
       {body}
-      <Reactions status={shown} t={t} lang={lang} act={act} />
+      {!review && <Reactions status={shown} t={t} lang={lang} act={act} />}
       {details}
-      <Actions
-        status={shown}
-        own={own}
-        t={t}
-        lang={lang}
-        act={act}
-        picker={signIn === undefined ? picker : undefined}
-        authorMenu={authorMenu}
-        defaultMenuOpen={defaultMenuOpen}
-      />
+      {!review && (
+        <Actions
+          status={shown}
+          own={own}
+          t={t}
+          lang={lang}
+          act={act}
+          picker={signIn === undefined ? picker : undefined}
+          authorMenu={authorMenu}
+          defaultMenuOpen={defaultMenuOpen}
+        />
+      )}
     </>
   );
   return (

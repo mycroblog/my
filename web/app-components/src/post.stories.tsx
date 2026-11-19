@@ -3,7 +3,8 @@
 // The post of a timeline: Default, a sample post driven by the Controls (its visibility, counts, content warning, a
 // long text, the reader's boost, favourite and bookmark, and whether it is the reader's own), and a story per state:
 // plain, local, boosted, a reply, behind a content warning, with images, quoting, with reactions and with the reader's
-// own, translated (and the notes when the source language, the provider or both are unknown), offered for
+// own, translated (and the notes when the source language, the provider or both are unknown), reviewed by a moderator
+// (no reactions and no actions), offered for
 // translation, its translation on its way (and the browser's model downloading), refused for each reason, translated
 // behind a content warning with a poll and an image, hovered and focused
 // from the keyboard (shown at rest), long names and handles in en and ja, for a reader without an account, whose
@@ -305,7 +306,7 @@ function Shown({
   translationAs?: Translation;
   votingAt?: readonly number[];
   open?: SampleOpen | undefined;
-} & Pick<PostProps, "cardSize" | "defaultShown" | "defaultViewing" | "defaultMenuOpen">) {
+} & Pick<PostProps, "cardSize" | "defaultShown" | "defaultViewing" | "defaultMenuOpen" | "review">) {
   const lang = new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en";
   return (
     <Column>
@@ -608,6 +609,11 @@ export const ReactPickerFirst: Story = {
 };
 /** In the reader's language, with the language it came from and the provider that translated it. */
 export const Translated: Story = { ...fixed, render: () => <TranslatedPost /> };
+/**
+ * A post as a moderator reviews it, from a report that points at it: its text and its media as anyone reads them, and
+ * Translate, with no reactions and none of the reader's actions.
+ */
+export const Reviewed: Story = { ...fixed, render: () => <Shown post={byId("lena-quiet")} review /> };
 export const TranslatedNoSource: Story = { ...fixed, render: () => <TranslatedPost translationAs={withoutSource} /> };
 export const TranslatedNoProvider: Story = {
   ...fixed,

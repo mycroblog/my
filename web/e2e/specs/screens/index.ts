@@ -26,6 +26,7 @@ export { FilterEditor, foldedBy, KeywordFilters } from "./keyword-filters";
 export { Invites } from "./invites";
 export { ListIndex } from "./lists";
 export { LoginProvider } from "./login-provider";
+export { Moderation } from "./moderation";
 export { streamOpened } from "./stream";
 export { NotificationSettings } from "./notification-settings";
 export { FollowRequests, Notifications, WaitingRequests } from "./notifications";

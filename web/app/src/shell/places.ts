@@ -42,6 +42,12 @@ const directMessages: Place = {
 /** The settings: their menu, whose entries open screens under it. */
 const settings: Place = { href: "/settings", icon: "settings", label: "app.settings" };
 
+const moderation: Place = { href: "/moderation", icon: "moderation", label: "app.moderation", count: "moderation" };
+const admin: Place = { href: "/admin", icon: "admin", label: "app.admin" };
+
+/** The places whose screens are a tree under their address. */
+const trees: ReadonlySet<Place> = new Set([settings, moderation, admin]);
+
 /** The reader's own places, after the tab bar's in the rail and the sidebar, and in the menu's sheet on a phone. */
 const ownPlaces: readonly Place[] = [
   { href: "/profile", icon: "profile", label: "app.profile" },
@@ -50,11 +56,11 @@ const ownPlaces: readonly Place[] = [
 ];
 
 /**
- * Whether `place` is where the reader at `pathname` is: at its own address, or, for the settings, at a screen under
- * their menu, which the navigation marks as the settings too.
+ * Whether `place` is where the reader at `pathname` is: at its own address, or, for the settings, moderation and the
+ * server's administration, at a screen under their root, which the navigation marks as the place too.
  */
 export const isPlaceAt = (place: Place, pathname: string): boolean =>
-  place.href === pathname || (place === settings && pathname.startsWith(`${settings.href}/`));
+  place.href === pathname || (trees.has(place) && pathname.startsWith(`${place.href}/`));
 
 /**
  * The reader's lists, which the rail and the sidebar leave to the menu (ADR-0110 §11 names their places): a group of
@@ -62,8 +68,6 @@ export const isPlaceAt = (place: Place, pathname: string): boolean =>
  */
 export const listsPlace: Place = { href: "/lists", icon: "list", label: "app.lists" };
 
-const moderation: Place = { href: "/moderation", icon: "moderation", label: "app.moderation", count: "moderation" };
-const admin: Place = { href: "/admin", icon: "admin", label: "app.admin" };
 const finance: Place = { href: "/finance", icon: "finance", label: "app.finance" };
 
 // What is around the reader, whose sections the column beside the main one shows from `wide`: the menu leads to their
