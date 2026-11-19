@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
-import { render, screen, within } from "@testing-library/react";
+import { isInaccessible, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { RouterProvider } from "react-aria-components";
 import { Button } from "./button";
@@ -386,6 +386,27 @@ test("while the call connects again its bar is busy, and while its sound is held
   expect(document.activeElement).toBe(within(bar).getByRole("button", { name: "Mute" }));
 
   expect(did).toEqual(["hear"]);
+});
+
+test("a call's bar with a headcount names its link by the room, then the count's label and the detail, the figure hidden", () => {
+  render(
+    <CallBar
+      href="/voice/1"
+      room="Coffee"
+      detail="Hosted by Mika"
+      count={{ shown: "12", label: "12 in the room" }}
+      muted={false}
+      micLabel="Mute"
+      onMic={() => undefined}
+      leaveLabel="Leave"
+      onLeave={() => undefined}
+    />,
+  );
+
+  const bar = screen.getByRole("group", { name: "Coffee" });
+  const room = within(bar).getByRole("link", { name: /^Coffee\s*12 in the room\s*Hosted by Mika$/ });
+  expect(room.getAttribute("href")).toBe("/voice/1");
+  expect(isInaccessible(within(room).getByText("12"))).toBe(true);
 });
 
 test("a call's bar that connects is not busy and holds no hearing back", () => {
