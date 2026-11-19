@@ -8,8 +8,8 @@ import { probe } from "./test/probe";
 
 /**
  * The data of a person of the scenario, once the server answered who they are and what awaits the moderators: hana
- * administers the server, marco moderates it, yuki does neither. For marco the server counts 5 open reports (its queue's), 2
- * registrations to approve and 1 appeal to decide.
+ * administers the server, marco moderates it, yuki does neither. For marco the server counts 6 open reports (its queue's), 3
+ * registrations to approve and 2 appeals to decide (its moderation's).
  */
 async function viewer(username: "hana" | "marco" | "yuki", reportsOnly = false) {
   const { fake, data } = fakeData({ viewer: username });
@@ -39,11 +39,11 @@ test("the viewer's rights are those of their permissions, and none for a reader 
 });
 
 test("Moderation counts the open reports, the registrations to approve and the appeals to decide together", async () => {
-  expect(probe(await viewer("marco"), () => useModerationCount(true))).toBe(8);
+  expect(probe(await viewer("marco"), () => useModerationCount(true))).toBe(11);
 });
 
 test("a count the moderator's permissions do not show is left out of the sum", async () => {
-  expect(probe(await viewer("marco", true), () => useModerationCount(true))).toBe(5);
+  expect(probe(await viewer("marco", true), () => useModerationCount(true))).toBe(6);
 });
 
 test("a reader without the rights of moderation, or without a session, has no count", async () => {

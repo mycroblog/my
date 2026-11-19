@@ -346,3 +346,66 @@ test("the pages are a navigation that keeps Previous and Next in place, disabled
   rerender(<RecordPages />);
   expect(screen.queryByRole("navigation")).toBeNull();
 });
+
+/** The checkbox of select all, the head's on a wide table. */
+const selectAllBox = () => screen.getAllByRole("checkbox", { name: "Select all" })[0] as HTMLInputElement;
+
+test("a checkbox that stays mixed after a press keeps its dash for assistive technology: the press never clears it", async () => {
+  const user = userEvent.setup();
+  // An owner that keeps one of the rows picked whatever is pressed: select all stays mixed.
+  render(
+    <RecordTable
+      label="Reports"
+      head={{ label: "Account" }}
+      columns={columns}
+      rows={rows}
+      selection={{ selected: new Set(["1042"]), onChange: () => undefined, actions: [] }}
+    />,
+  );
+  expect(selectAllBox().indeterminate).toBe(true);
+
+  await user.click(selectAllBox());
+
+  expect(selectAllBox().indeterminate).toBe(true);
+  expect(selectAllBox().checked).toBe(false);
+});
+
+test("rows that may not be picked have no checkbox, and select all checks and clears those that may alone", async () => {
+  const user = userEvent.setup();
+  const onChange = mock<(selected: ReadonlySet<string>) => void>(() => undefined);
+  function Picked() {
+    const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(["1042", "1041"]));
+    return (
+      <RecordTable
+        label="Reports"
+        head={{ label: "Account" }}
+        columns={columns}
+        rows={rows}
+        selection={{
+          selected,
+          onChange: (next) => {
+            onChange(next);
+            setSelected(next);
+          },
+          actions: [],
+          selectable: (id) => id !== "1040",
+        }}
+      />
+    );
+  }
+  render(<Picked />);
+
+  expect(screen.queryByRole("checkbox", { name: "Select @newsbot@feeds.example" })).toBeNull();
+  // Every row that may be picked is: select all is checked, not mixed.
+  expect(selectAllBox().checked).toBe(true);
+  expect(selectAllBox().indeterminate).toBe(false);
+
+  await user.click(selectAllBox());
+
+  expect([...(onChange.mock.calls.at(-1)?.[0] ?? [])]).toEqual([]);
+  expect(selectAllBox().checked).toBe(false);
+
+  await user.click(selectAllBox());
+
+  expect([...(onChange.mock.calls.at(-1)?.[0] ?? [])].toSorted()).toEqual(["1041", "1042"]);
+});

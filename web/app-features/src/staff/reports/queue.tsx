@@ -21,7 +21,6 @@ import {
   FilterBar,
   FilterFacet,
   FrameSection,
-  RecordPages,
   RecordTable,
   RelativeTime,
   ScreenStack,
@@ -34,7 +33,7 @@ import {
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { ReadNotice, useStaffStrings, type T } from "../parts";
+import { Pages, ReadNotice, useStaffStrings, type T } from "../parts";
 
 type Category = (typeof reportCategories)[number];
 
@@ -50,19 +49,14 @@ export function queueOf(search: StaffSearch): ReportQueueQuery {
   };
 }
 
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
-
-/** The query of the queue's address for `q`, at the page after the `trail` of pages before it. */
-function searchOf(q: ReportQueueQuery, trail: readonly string[] = []): StaffSearch {
+/** The query of the queue's address for `q`, at its first page. */
+function searchOf(q: ReportQueueQuery): StaffSearch {
   return {
     ...(q.state === "open" ? {} : { state: q.state ?? "any" }),
     ...(q.category === undefined ? {} : { category: q.category }),
     ...(q.assignee === undefined ? {} : { assignee: q.assignee }),
     ...(q.order === "oldest" ? { order: "oldest" } : {}),
     ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
-    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
   };
 }
 
@@ -240,10 +234,9 @@ function QueueFilters({ q, onChange }: { q: ReportQueueQuery; onChange: (q: Repo
 export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode {
   const { t } = useStaffStrings();
   const q = queueOf(search);
-  const trail = trailOf(search);
   const page = useReportQueue(q);
-  const go = (next: ReportQueueQuery, nextTrail: readonly string[] = []) => {
-    onSearch(searchOf(next, nextTrail));
+  const go = (next: ReportQueueQuery) => {
+    onSearch(searchOf(next));
   };
   const filters = (
     <>
@@ -264,7 +257,6 @@ export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode
         />
       </ScreenStack>
     );
-  const previous = trail.at(-1);
   return (
     <ScreenStack busy={page.stale}>
       {filters}
@@ -285,26 +277,7 @@ export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode
           )
         }
       />
-      <RecordPages
-        previous={
-          previous === undefined
-            ? undefined
-            : {
-                onPress: () => {
-                  go({ ...q, cursor: previous === "" ? undefined : previous }, trail.slice(0, -1));
-                },
-              }
-        }
-        next={
-          page.next === undefined
-            ? undefined
-            : {
-                onPress: () => {
-                  go({ ...q, cursor: page.next }, [...trail, q.cursor ?? ""]);
-                },
-              }
-        }
-      />
+      <Pages address={{ search, onSearch }} next={page.next} />
     </ScreenStack>
   );
 }

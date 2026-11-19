@@ -4,8 +4,8 @@
 // reads it under /admin/reports, and what they do to a report (take it, leave it to nobody, write a note, resolve it,
 // reopen it, forward a remote one once, translate its comment and its posts). The queue is the fake's own, since the
 // seed files no report: a spam account reported with a post its author deleted since, a remote photographer's repost
-// assigned to the scenario's moderator with a note, a report another server sent, a voice chat room and an event, one
-// an external review filed and resolved, and one forwarded when filed and resolved. A report filed on the fake
+// assigned to the scenario's moderator with a note, a report another server sent, a voice chat room that ended and one
+// still open, an event, one an external review filed and resolved, and one forwarded when filed and resolved. A report filed on the fake
 // (`file`, POST /reports) joins it. The instance's rules are the fake's too, and one report cites a rule retired since.
 // What is translated reads "[ja] …" as the server's fake provider does, only while `translation.reports` lets the
 // server send a report's text; its comment counts as a private post.
@@ -49,7 +49,7 @@ export type ReportContext = {
 
 /** What a test does with the fake's reports. */
 export type FakeReports = {
-  /** The ID of the fake's report of `key` (deals, photo, flag, room, event, review, copied), or "none". */
+  /** The ID of the fake's report of `key` (deals, photo, flag, room, live, event, review, copied), or "none". */
   readonly id: (key: string) => string;
   /** The reports that are open now. */
   readonly openCount: () => number;
@@ -57,6 +57,14 @@ export type FakeReports = {
   readonly oldestOpen: () => string | undefined;
   /** Files a report of `reporter`'s, as POST /reports does, and returns its ID ("none" for an account it lacks). */
   readonly file: (reporter: string, request: Schema<"CreateReportRequest">) => string;
+  /** The newest reports of the account of `accountId`, as the queue lists them, newest first. */
+  readonly ofAccount: (accountId: string) => Schema<"AdminReport">[];
+  /** Whether the report of `id` is of the account of `accountId`; resolves it as `actioned` when it is open. */
+  readonly actioned: (id: string, accountId: string) => boolean;
+  /** Ends the open voice chat room of `id` that a report points at, as a moderator; false for none open. */
+  readonly endRoom: (id: string, note: string | undefined) => boolean;
+  /** Cancels the event of `id` that a report points at, as a moderator. */
+  readonly cancelEvent: (id: string, note: string | undefined) => "cancelled" | "closed" | "missing";
 };
 
 /** The rules of the fake's instance, in order; and one retired since a report cited it. */
@@ -94,7 +102,8 @@ type Plan = {
   assignee?: string;
   notes?: readonly { by?: string; body: string; minutesAgo: number }[];
   resolved?: { outcome: Schema<"AdminReportOutcome">; minutesAgo: number };
-  room?: boolean;
+  /** The voice chat room it points at, which its target hosted: ended before the report, or still open. */
+  room?: "ended" | "open";
   event?: string;
   review?: boolean;
 };
@@ -145,7 +154,17 @@ const plans: readonly Plan[] = [
     rules: [1, 0],
     minutesAgo: 5 * 60,
     assignee: "viewer",
-    room: true,
+    room: "ended",
+  },
+  {
+    key: "live",
+    reporter: "sam",
+    target: "ren",
+    category: "violation",
+    comment: "The host keeps playing a siren into the room and removes whoever asks them to stop.",
+    rules: [1],
+    minutesAgo: 8,
+    room: "open",
   },
   {
     key: "event",
@@ -207,10 +226,34 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
   const reportId = (ms: number) => idAt(ms, 45_000 + (ids += 1));
   const keyed = new Map<string, string>();
 
-  const voiceRoom = (filed: number, host: string): Schema<"AdminReportVoiceRoom"> => {
+  const voiceRoom = (filed: number, host: string, open: boolean): Schema<"AdminReportVoiceRoom"> => {
     const revision = idAt(filed - 60 * minute, 45_901);
     const opened = filed - 70 * minute;
     const kai = c.accountId(host);
+    const others = (["sam", "ren"] as const).filter((u) => u !== host);
+    if (open)
+      return {
+        id: idAt(opened, 45_920),
+        reported_revision_id: revision,
+        opened_at: iso(opened),
+        revisions: [
+          {
+            id: revision,
+            name: "Open mic night",
+            description: "Bring a song.",
+            hashtags: ["music"],
+            visibility: "local",
+            speakers: "everyone",
+            revised_by_account_id: kai,
+            revised_at: iso(opened),
+          },
+        ],
+        participations: [
+          { account_id: kai, joined_at: iso(opened) },
+          ...others.map((u, i) => ({ account_id: c.accountId(u), joined_at: iso(opened + (i + 1) * 5 * minute) })),
+        ],
+        bans: [],
+      };
     return {
       id: idAt(opened, 45_900),
       reported_revision_id: revision,
@@ -328,7 +371,7 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
     const reporter = plan.reporter === "actor" ? actorOf(plan.target) : c.accountOf(plan.reporter);
     const assignee = plan.assignee === "viewer" ? c.viewer : plan.assignee;
     const forwarded = plan.forwarded === true;
-    const forwardable = !plan.remote && remote(plan.target) && plan.room !== true && plan.event === undefined;
+    const forwardable = !plan.remote && remote(plan.target) && plan.room === undefined && plan.event === undefined;
     return {
       id,
       ...(plan.remote === true ? { uri: `https://far.example/flags/${id}` } : {}),
@@ -346,7 +389,7 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
       target_account_id: c.accountId(plan.target),
       target_account: c.accountOf(plan.target),
       status_ids: statuses.map((s) => s.status.id),
-      ...(plan.room === true ? { voice_room_id: voiceRoom(filed, plan.target).id } : {}),
+      ...(plan.room === undefined ? {} : { voice_room_id: voiceRoom(filed, plan.target, plan.room === "open").id }),
       ...(plan.event === undefined ? {} : { event_id: c.eventId(plan.event) }),
       ...(plan.review === true
         ? { hook_origin: { hook: "local.status", decision_id: idAt(filed, 45_700), reason: "spam" } }
@@ -360,7 +403,7 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
       })),
       target_history: { reports_count: 0, actions_count: plan.target === "quickdeals" ? 1 : 0 },
       statuses,
-      ...(plan.room === true ? { voice_room: voiceRoom(filed, plan.target) } : {}),
+      ...(plan.room === undefined ? {} : { voice_room: voiceRoom(filed, plan.target, plan.room === "open") }),
       ...(plan.event === undefined ? {} : { event: eventOf(plan.event, filed, plan.target) }),
     };
   };
@@ -598,6 +641,53 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
       openCount: () => open().length,
       oldestOpen: () => open().at(-1)?.filed_at,
       file: (reporter, request) => filed(reporter, request)?.id ?? "none",
+      ofAccount: (accountId) =>
+        reports
+          .filter((r) => r.target_account_id === accountId)
+          .slice(0, 20)
+          .map(listed),
+      actioned: (id, accountId) => {
+        const r = found(id);
+        if (r?.target_account_id !== accountId) return false;
+        if (r.state === "open") {
+          r.state = "resolved";
+          r.outcome = "actioned";
+          r.state_changed_at = iso(Date.now());
+        }
+        return true;
+      },
+      endRoom: (id, note) => {
+        const rooms = reports.flatMap((r) => (r.voice_room?.id === id ? [r.voice_room] : []));
+        if (rooms.length === 0 || rooms.some((room) => room.ended_at !== undefined)) return false;
+        const at = iso(Date.now());
+        for (const room of rooms) {
+          room.ended_at = at;
+          room.end_reason = "moderator";
+          room.ended_by_account_id = c.accountId(c.viewer);
+          if (note !== undefined && note !== "") room.end_note = note;
+          for (const p of room.participations)
+            if (p.left_at === undefined) {
+              p.left_at = at;
+              p.leave_reason = "room_ended";
+            }
+        }
+        return true;
+      },
+      cancelEvent: (id, note) => {
+        const events = reports.flatMap((r) => (r.event?.id === id ? [r.event] : []));
+        if (events.length === 0) return "missing";
+        if (events.some((e) => e.state === "cancelled")) return "closed";
+        for (const e of events) {
+          e.state = "cancelled";
+          e.cancellation = {
+            reason: "moderator",
+            cancelled_by_account_id: c.accountId(c.viewer),
+            ...(note === undefined || note === "" ? {} : { note }),
+            cancelled_at: iso(Date.now()),
+          };
+        }
+        return "cancelled";
+      },
     },
   };
 }

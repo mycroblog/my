@@ -22,13 +22,22 @@
 // Every word, figure and date is the app's but the few the parts say themselves (select all, how many are picked, the
 // pages, clear filters), which are the design system's catalog's.
 
-import { createContext, use, useId, type CSSProperties, type HTMLAttributes, type ReactNode } from "react";
-import { Button as AriaButton, CheckboxButton, CheckboxField, Link } from "react-aria-components";
+import {
+  createContext,
+  use,
+  useEffect,
+  useId,
+  useRef,
+  type CSSProperties,
+  type HTMLAttributes,
+  type ReactNode,
+} from "react";
+import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button, ButtonBase, LinkButton, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
-import { Box, Row, Spoken, Stack } from "./layout";
+import { Box, Pin, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { SearchField } from "./search-field";
@@ -37,13 +46,27 @@ import { SearchField } from "./search-field";
 
 /** The states a record of the staff's screens is in. */
 export type RecordState =
-  "open" | "assigned" | "resolved" | "active" | "expired" | "lifted" | "pending" | "failed" | "disabled";
+  | "open"
+  | "assigned"
+  | "resolved"
+  | "active"
+  | "limited"
+  | "suspended"
+  | "permanent"
+  | "expired"
+  | "lifted"
+  | "pending"
+  | "failed"
+  | "disabled";
 
 const stateGlyph: Record<RecordState, IconName> = {
   open: "stateOpen",
   assigned: "stateAssigned",
   resolved: "stateResolved",
   active: "stateActive",
+  limited: "hidden",
+  suspended: "block",
+  permanent: "block",
   expired: "stateExpired",
   lifted: "stateLifted",
   pending: "statePending",
@@ -52,8 +75,9 @@ const stateGlyph: Record<RecordState, IconName> = {
 };
 
 /**
- * How a state weighs: what waits for someone (open, pending, failed) in the text's color and a label's weight; what is
- * in force (assigned, active) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
+ * How a state weighs: what waits for someone (open, pending, failed) and what shuts something out (suspended, and
+ * permanent, which nothing lifts) in the text's color and a label's weight; what is in force (assigned, active,
+ * limited) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
  */
 const stateTone = {
   open: "waits",
@@ -61,6 +85,9 @@ const stateTone = {
   failed: "waits",
   assigned: "holds",
   active: "holds",
+  limited: "holds",
+  suspended: "waits",
+  permanent: "waits",
   resolved: "over",
   expired: "over",
   lifted: "over",
@@ -119,6 +146,11 @@ export type RecordRow<K extends string = string> = {
   caption?: string | undefined;
   href?: string | undefined;
   cells: Partial<Record<K, ReactNode>>;
+  /**
+   * What the record holds past its cells, across the whole of the row under them (a person's reason, their private
+   * facts, the actions on that one record): at any width a line of its own, the row's last.
+   */
+  detail?: ReactNode;
 };
 
 /** An action on every row picked: its words, what it does, and whether it is under way. */
@@ -147,6 +179,8 @@ export type RecordTableProps<K extends string> = {
         selected: ReadonlySet<string>;
         onChange: (selected: ReadonlySet<string>) => void;
         actions: readonly RecordAction[];
+        /** Whether the row of `id` may be picked (one not decided yet); every row where left out. */
+        selectable?: ((id: string) => boolean) | undefined;
       }
     | undefined;
   /** What it shows changes (sorted anew, the next page): its rows faint, and busy for assistive technology. */
@@ -234,6 +268,8 @@ function RecordLine({
 }
 
 const PLACE = {
+  // What a record holds across the row, under its cells: narrow, after its facts; wide, every column.
+  detail: "order-3 basis-full pt-entry-line @min-[30rem]:col-span-full",
   // A row's checkbox, or select all: on the first line's height, over the link that covers the row.
   pick: "relative z-1 flex h-[1lh] flex-none items-center self-start",
   // The head of a record: narrow, the first line's room; wide, its column.
@@ -302,9 +338,14 @@ function NarrowName({ children }: { children: ReactNode }) {
  * it covers the whole row, so that a press anywhere opens the record.
  */
 function HeadWords({ cover = false, children }: { cover?: boolean; children: string }) {
+  // Its own direction cuts it at its end in its reading order (a handle keeps its "@" and its start in a right-to-left
+  // page), standing at the start of its column all the same.
   return (
-    <span className={`block truncate ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}>
-      <bdi dir="auto">{children}</bdi>
+    <span
+      dir="auto"
+      className={`block truncate [text-align:match-parent] ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
+    >
+      {children}
     </span>
   );
 }
@@ -340,12 +381,18 @@ const table = tv({
       "data-hovered:bg-surface-hover data-hovered:text-text data-focus-visible:shadow-focus",
     ],
     sorted: "font-label text-text",
-    pick: "cursor-pointer rounded-control outline-hidden data-focus-visible:shadow-focus",
+    pick: "cursor-pointer rounded-control has-[:focus-visible]:shadow-focus",
+    // Not drawn: the mark beside it shows its state, the target its focus.
+    pickInput: "cursor-pointer opacity-0",
     pickWords: "text-caption text-muted-text",
   },
 });
 
-/** A checkbox of the table: its mark, knocked out while checked, a dash while some of the rows are. */
+/**
+ * A checkbox of the table: its mark, knocked out while checked, a dash while some of the rows are. The native checkbox
+ * takes the press over the whole of its target, not drawn, the mark under it showing its state and its focus, so that
+ * a press, a screen reader's pointer and a click by role all land on the control itself.
+ */
 function Pick({
   label,
   checked,
@@ -361,28 +408,37 @@ function Pick({
   words?: string | undefined;
 }) {
   const s = table();
+  const input = useRef<HTMLInputElement>(null);
+  // At every render: a press sets the native state to checked or not, and leaves no dash, whatever `mixed` says.
+  useEffect(() => {
+    if (input.current !== null) input.current.indeterminate = mixed;
+  });
   return (
-    <CheckboxField aria-label={label} isSelected={checked} isIndeterminate={mixed} onChange={onChange}>
-      <Row
-        inline
-        align="center"
-        gap="entry-caption"
+    <Row as="label" inline anchor align="center" gap="entry-caption" className={s.pick()}>
+      <Pin
+        cover
         as={
-          <CheckboxButton className={s.pick()}>
-            {({ isSelected, isIndeterminate }) => (
-              <>
-                <ChoiceMark multiple on={isSelected} mixed={isIndeterminate} />
-                {words !== undefined && (
-                  <NarrowOnly>
-                    <span className={s.pickWords()}>{words}</span>
-                  </NarrowOnly>
-                )}
-              </>
-            )}
-          </CheckboxButton>
+          <input
+            ref={input}
+            type="checkbox"
+            className={s.pickInput()}
+            aria-label={label}
+            checked={checked}
+            onChange={(event) => {
+              onChange(event.target.checked);
+              // The press cleared the native dash; it stays until what holds the table says otherwise.
+              event.target.indeterminate = mixed;
+            }}
+          />
         }
       />
-    </CheckboxField>
+      <ChoiceMark multiple on={checked} mixed={mixed} />
+      {words !== undefined && (
+        <NarrowOnly>
+          <span className={s.pickWords()}>{words}</span>
+        </NarrowOnly>
+      )}
+    </Row>
   );
 }
 
@@ -524,7 +580,9 @@ export function RecordTable<K extends string>({
   if (rows.length === 0 && empty !== undefined) return <>{empty}</>;
   const picks = selection !== undefined;
   const picked = selection?.selected;
-  const count = rows.filter((row) => picked?.has(row.id) === true).length;
+  // The rows that may be picked, which select all checks and counts: a row that may not is no part of it.
+  const pickable = rows.filter((row) => selection?.selectable?.(row.id) ?? true);
+  const count = pickable.filter((row) => picked?.has(row.id) === true).length;
   const share = "minmax(0,1fr)";
   const tracks = [
     picks ? "max-content" : "",
@@ -545,7 +603,7 @@ export function RecordTable<K extends string>({
   const ariaSort = (by: K | "head") => directionOf(by);
   // The selection is of the rows shown: an id of a row no longer shown (filtered out, another page) leaves it with
   // every change, so that the count and the actions always speak of the same rows.
-  const shown = new Set(rows.map((row) => row.id));
+  const shown = new Set(pickable.map((row) => row.id));
   const selectAll = (checked: boolean) => {
     selection?.onChange(new Set(checked ? shown : []));
   };
@@ -586,8 +644,8 @@ export function RecordTable<K extends string>({
               <Pick
                 label={t("records.select_all")}
                 words={t("records.select_all")}
-                checked={count > 0 && count === rows.length}
-                mixed={count > 0 && count < rows.length}
+                checked={count > 0 && count === pickable.length}
+                mixed={count > 0 && count < pickable.length}
                 onChange={selectAll}
               />
             )}
@@ -612,8 +670,8 @@ export function RecordTable<K extends string>({
                 <WideOnly>
                   <Pick
                     label={t("records.select_all")}
-                    checked={count > 0 && count === rows.length}
-                    mixed={count > 0 && count < rows.length}
+                    checked={count > 0 && count === pickable.length}
+                    mixed={count > 0 && count < pickable.length}
                     onChange={selectAll}
                   />
                 </WideOnly>
@@ -686,7 +744,13 @@ export function RecordTable<K extends string>({
             }}
           >
             {rows.map((row) => (
-              <Record key={row.id} row={row} columns={columns} picks={picks} />
+              <Record
+                key={row.id}
+                row={row}
+                columns={columns}
+                picks={picks}
+                pickable={selection?.selectable?.(row.id) ?? true}
+              />
             ))}
           </RowsContext>
         </RecordFrame>
@@ -700,10 +764,13 @@ function Record<K extends string>({
   row,
   columns,
   picks,
+  pickable,
 }: {
   row: RecordRow<K>;
   columns: readonly RecordColumn<K>[];
   picks: boolean;
+  /** Its checkbox is there: it may be picked. */
+  pickable: boolean;
 }) {
   const s = table();
   const { lang } = useReader(undefined);
@@ -716,13 +783,15 @@ function Record<K extends string>({
     <RecordLine role="row" className={s.line()}>
       {picks && (
         <RecordPlace at="pick" role="cell" className="">
-          <Pick
-            label={t("records.select_row", { name: row.head })}
-            checked={picked?.has(row.id) === true}
-            onChange={(checked) => {
-              onPick(row.id, checked);
-            }}
-          />
+          {pickable && (
+            <Pick
+              label={t("records.select_row", { name: row.head })}
+              checked={picked?.has(row.id) === true}
+              onChange={(checked) => {
+                onPick(row.id, checked);
+              }}
+            />
+          )}
         </RecordPlace>
       )}
       <RecordPlace at="head" role="rowheader" className="">
@@ -780,6 +849,11 @@ function Record<K extends string>({
           </RecordPlace>
         );
       })}
+      {row.detail !== undefined && (
+        <RecordPlace at="detail" role="cell" aria-colspan={columns.length + (picks ? 2 : 1)} className="">
+          {row.detail}
+        </RecordPlace>
+      )}
     </RecordLine>
   );
 }
@@ -956,7 +1030,16 @@ export type FilterBarProps = {
   /** What it filters, for assistive technology ("Filter reports"). */
   label: string;
   /** Its search: the field's label, which stands in it as its placeholder, its words, and the name of its clear. */
-  search?: { label: string; value: string; onChange: (value: string) => void; clearLabel: string } | undefined;
+  search?:
+    | {
+        label: string;
+        value: string;
+        onChange: (value: string) => void;
+        clearLabel: string;
+        /** What is wrong with its words (the server refused them as what it searches by), under it. */
+        error?: string | undefined;
+      }
+    | undefined;
   /** Its facets: `FilterFacet`s and `FilterToggle`s, in a row that wraps. */
   children: ReactNode;
   /** A filter or the search is applied: Clear filters ends the facets' row. */
@@ -993,6 +1076,7 @@ export function FilterBar({ label, search, children, applied, onClear, summary }
           value={search.value}
           onChange={search.onChange}
           clearLabel={search.clearLabel}
+          error={search.error}
         />
       )}
       <Row wrap align="center" gap="chip-spacing">
