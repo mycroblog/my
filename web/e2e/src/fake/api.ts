@@ -75,6 +75,7 @@ import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptio
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
+import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { moderationHandlers, type FakeModeration, type FakeModerationOptions } from "./accounts";
 import { createScripts, type Script, type Scripted } from "./script";
@@ -325,6 +326,8 @@ export type FakeOptions = {
   };
   /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
   reports?: FakeReportOptions;
+  /** The administration's relays, login providers and OAuth apps (admin-settings.ts): the fake's, or none. */
+  admin?: FakeAdminOptions;
   /**
    * The moderation of accounts (accounts.ts): the fake's own actions, appeals, registrations, decisions of the hooks,
    * sign-up blocks and invites by default, or none of them.
@@ -585,6 +588,8 @@ export type FakeApi = {
   readonly financeAdmin: FakeFinanceAdmin;
   /** The IDs of the plans and the subscriptions by the fake's keys (supporters-admin.ts). */
   readonly supportersAdmin: FakeSupportersAdmin;
+  /** The IDs of the rules, relays and login providers of the administration's fake (admin-settings.ts). */
+  readonly admin: FakeAdmin;
   /** The IDs of the moderation's actions, appeals, registrations and the rest by the fake's keys (accounts.ts). */
   readonly moderation: FakeModeration;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
@@ -1941,6 +1946,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...moderation,
       ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
       ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance", "manage_supporters"] as const),
+      ...(["manage_login_providers", "manage_oauth_apps"] as const),
       "manage_service_closure",
       "manage_login_recovery",
     ];
@@ -2106,12 +2112,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     options: o.financeAdmin,
     started,
     permissions: () => (visitor ? [] : permissionsOf(viewer)),
-    published: {
-      costs: finance.instance.finance_visibility,
-      income: finance.instance.income_visibility,
-      meter: fundingMeter?.visibility ?? "off",
-      list: supporting.instance.supporter_list_visibility,
-    },
     problem,
     notFound,
   });
@@ -2464,6 +2464,62 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     eventId: (key) => events.events.id(key),
     translates: o.translation?.reports === true && o.translation.provider === "answers",
+    host: fakeHost,
+  });
+
+  // The administration's settings, texts, rules, relays, login providers and OAuth apps (admin-settings.ts), as the
+  // instance says them.
+  const administered = adminHandlers({
+    started,
+    options: o.admin,
+    initial: {
+      registration_mode: o.registrations ?? "open",
+      single_user: String(o.singleUser === true),
+      login_providers_only: String(o.access?.providersOnly === true),
+      voice_room_starters: o.voiceStarters ?? "everyone",
+      event_creators: o.eventCreators ?? "everyone",
+      search_indexing: o.crawlers?.search ?? "allow",
+      ai_usage: o.crawlers?.ai ?? "allow",
+      link_cards: "false",
+      contact_email: "admins@demo.example",
+      // What the instance publishes of its finance and its supporters (finance.ts, supporters.ts), and the meter's target.
+      finance_visibility: finance.instance.finance_visibility,
+      income_visibility: finance.instance.income_visibility,
+      funding_meter_visibility: fundingMeter?.visibility ?? "off",
+      funding_meter_target_amount: "20000",
+      funding_meter_target_currency: "JPY",
+      funding_meter_rail: "true",
+      supporter_list_visibility: supporting.instance.supporter_list_visibility,
+      ...(o.thumbnail === true ? { thumbnail: idAt(started, 990_900) } : {}),
+      ...(o.translation?.provider === undefined ? {} : { translation_providers: translationProvider.id }),
+      ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
+      ...(o.translation?.reports === true ? { translation_reports_to_server: "true" } : {}),
+    },
+    texts: {
+      name: instanceBody.name,
+      short_description: instanceBody.short_description ?? "",
+      description:
+        "We are a small server for the people of the river town. Post about the park, the events, lost and found, " +
+        "and the seasons.",
+      terms: "## Terms of service\n\nBe kind, follow the rules, and keep your password to yourself.",
+      privacy_policy:
+        "## Privacy policy\n\nWe keep what you post and the addresses you sign in from, for as long as the settings say.",
+      ...(o.thumbnail === true ? { thumbnail_alt: "Green hills under a pale sun." } : {}),
+    },
+    brands:
+      o.logo === true
+        ? {
+            logo: { ...brandImage(logoSvg("#2f6f8f")), revised_at: new Date(started).toISOString() },
+            logo_dark: { ...brandImage(logoSvg("#8fc7e0")), revised_at: new Date(started).toISOString() },
+          }
+        : {},
+    translationProviders: [
+      { id: translationProvider.id, name: translationProvider.name },
+      { id: "libretranslate", name: "LibreTranslate" },
+    ],
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    viewer,
     host: fakeHost,
   });
 
@@ -3820,6 +3876,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...moderated.handlers,
     ...accounts.handlers,
 
+    // ---- The administration's settings, texts, rules, relays, login providers and OAuth apps -------------------------
+
+    ...administered.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -4042,6 +4102,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     reports: moderated.reports,
     financeAdmin: financeAdmin.admin,
     supportersAdmin: supportersAdmin.admin,
+    admin: administered.admin,
     moderation: accounts.moderation,
     unimplemented,
     revocations,

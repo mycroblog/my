@@ -272,7 +272,7 @@ func TestSanitizeBrandSVGWithoutNamespace(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if want := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1"><path d="M0 0"/></svg>` + "\n"; string(got.SVG) != want {
+	if want := `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1 1" width="1" height="1"><path d="M0 0"/></svg>` + "\n"; string(got.SVG) != want {
 		t.Errorf("SVG = %q, want %q", got.SVG, want)
 	}
 }
@@ -285,5 +285,26 @@ func TestSanitizeBrandSVGLimitsAtTheEdge(t *testing.T) {
 		if _, err := instance.SanitizeBrandSVG(instance.BrandIcon, []byte(wrapSVG(body))); err != nil {
 			t.Errorf("%s at the limit: %v", name, err)
 		}
+	}
+}
+
+// TestSanitizeBrandSVGSizesRoot checks that the sanitized SVG has the viewBox's size as its own,
+// replacing a width and height of other units, so that a browser draws it on a canvas.
+func TestSanitizeBrandSVGSizesRoot(t *testing.T) {
+	for _, tc := range []struct{ name, open, want string }{
+		{"no size", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100">`, `width="400" height="100"`},
+		{"relative size", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 100" width="100%" height="2em">`, `width="400" height="100"`},
+		{"fractional viewBox", `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120.5 30">`, `width="120.5" height="30"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := instance.SanitizeBrandSVG(instance.BrandLogo, []byte(tc.open+`<rect width="1" height="1"/></svg>`))
+			if err != nil {
+				t.Fatalf("SanitizeBrandSVG: %v", err)
+			}
+			root, _, _ := strings.Cut(string(got.SVG), ">")
+			if !strings.Contains(root, tc.want) || strings.Count(root, "width=") != 1 || strings.Count(root, "height=") != 1 {
+				t.Errorf("root = %q, want one width and height: %s", root, tc.want)
+			}
+		})
 	}
 }

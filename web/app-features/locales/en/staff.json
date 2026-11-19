@@ -39,6 +39,14 @@
     "defaultMessage": "What waits for moderators",
     "description": "The heading of the group of moderation screens that hold what waits for a moderator (reports, later appeals and registrations)."
   },
+  "staff.group.server": {
+    "defaultMessage": "This server",
+    "description": "The heading at /admin of the group of screens of the server's own settings, texts and rules. Read by administrators."
+  },
+  "staff.group.connections": {
+    "defaultMessage": "Connections",
+    "description": "The heading at /admin of the group of screens of what the server connects to: relays, login providers, OAuth apps. Read by administrators."
+  },
   "staff.entry.reports": {
     "defaultMessage": "Reports",
     "description": "The name of the moderators' queue of reports, in the list at /moderation and as the title of its screen."
@@ -50,6 +58,62 @@
   "staff.entry.reports.count": {
     "defaultMessage": "{count, plural, one {# open report} other {# open reports}}",
     "description": "For assistive technology, what the badge at the end of Reports in the list of moderation screens counts."
+  },
+  "staff.entry.settings": {
+    "defaultMessage": "Server settings",
+    "description": "The name of the screen of the instance's settings, by topic, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.settings.hint": {
+    "defaultMessage": "Name, sign-up, federation, discovery and more",
+    "description": "The line under Server settings in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.documents": {
+    "defaultMessage": "Terms and policies",
+    "description": "The name of the screen of the terms, the privacy policy and the commerce disclosure, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.documents.hint": {
+    "defaultMessage": "Terms of service, privacy policy, commerce disclosure",
+    "description": "The line under Terms and policies in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.rules": {
+    "defaultMessage": "Rules",
+    "description": "The name of the screen of the instance's rules, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.rules.hint": {
+    "defaultMessage": "The rules people follow here, which reports cite",
+    "description": "The line under Rules in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.translation": {
+    "defaultMessage": "Translation",
+    "description": "The name of the screen of the settings of post translation, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.translation.hint": {
+    "defaultMessage": "Providers, what they receive, and limits",
+    "description": "The line under Translation in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.relays": {
+    "defaultMessage": "Relays",
+    "description": "The name of the screen of the relays, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.relays.hint": {
+    "defaultMessage": "Sharing public posts with other servers",
+    "description": "The line under Relays in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.login_providers": {
+    "defaultMessage": "Login providers",
+    "description": "The name of the screen of the external login providers, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.login_providers.hint": {
+    "defaultMessage": "Signing in with other services",
+    "description": "The line under Login providers in the list at /admin: what its screen holds. Read by administrators."
+  },
+  "staff.entry.oauth_apps": {
+    "defaultMessage": "OAuth apps",
+    "description": "The name of the screen of the OAuth apps and the denied hosts of metadata documents, in the list at /admin and as the title of its screen. Read by administrators."
+  },
+  "staff.entry.oauth_apps.hint": {
+    "defaultMessage": "Apps that can sign in, and denied hosts",
+    "description": "The line under OAuth apps in the list at /admin: what its screen holds. Read by administrators."
   },
   "staff.missing": {
     "defaultMessage": "This address leads to no screen open to you.",

@@ -16,6 +16,7 @@ export { ArticleEditor, type Upload } from "./article-editor";
 export { Composer } from "./composer";
 export { Consent } from "./consent";
 export { conversationRead, Conversations } from "./conversations";
+export { Administration } from "./administration";
 export { Drafts } from "./drafts";
 export { EmojiPicker } from "./emoji-picker";
 export { EventForm, EventPage } from "./events";

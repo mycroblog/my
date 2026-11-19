@@ -3,15 +3,13 @@
 // The fake's finance as a holder of `manage_finance` keeps it (ADR-0067, ADR-0068): the cost items of the fake's
 // finance (finance.ts, whose totals they are), recorded, relabelled, revised from a date, ended and deleted as the
 // server checks them; the billing imports of AWS, an estimate for this month and final ones before it, and running
-// one now; and the instance settings of what the server publishes, which a holder of `manage_settings` reads and
-// changes together, refused as the server refuses them. The totals and the income are finance.ts's.
+// one now. The totals and the income are finance.ts's; the settings of what the server publishes, admin-settings.ts's.
 
 import { day, idAt, page } from "./common";
 import type { Answer, Handlers, Refusal, Schema } from "./spec";
 
 type CostItem = Schema<"CostItem">;
 type Money = Schema<"Money">;
-type SettingKey = Schema<"InstanceSettingKey">;
 
 /** What the administrators of a fake server keep of its finance. */
 export type FakeFinanceAdminOptions = {
@@ -33,13 +31,6 @@ export type FinanceAdminContext = {
   readonly started: number;
   /** The reader's permissions. */
   readonly permissions: () => readonly Schema<"Permission">[];
-  /** The settings of what the instance publishes, as the fake's finance and supporters options set them. */
-  readonly published: {
-    readonly costs: Schema<"FinanceVisibility">;
-    readonly income: Schema<"IncomeVisibility">;
-    readonly meter: "off" | "percent" | "amounts";
-    readonly list: Schema<"InstanceAudience">;
-  };
   readonly problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   readonly notFound: () => Refusal;
 };
@@ -128,28 +119,6 @@ const seed: readonly (Omit<CostItem, "id" | "prices" | "created_at"> & { key: st
   },
 ];
 
-/** The settings of the finance and the supporter list, and their choices, as the server defines them. */
-const enums: Partial<Record<SettingKey, readonly string[]>> = {
-  finance_visibility: ["private", "totals", "breakdown"],
-  income_visibility: ["private", "totals", "plans"],
-  funding_meter_visibility: ["off", "percent", "amounts"],
-  finance_viewer_income: ["totals", "plans"],
-  supporter_list_visibility: ["off", "signed_in", "everyone"],
-};
-const bools: readonly SettingKey[] = ["funding_meter_rail", "finance_viewer_item_names", "finance_viewer_item_memos"];
-const defaults: Partial<Record<SettingKey, string>> = {
-  finance_visibility: "private",
-  income_visibility: "private",
-  funding_meter_visibility: "off",
-  funding_meter_target_amount: "",
-  funding_meter_target_currency: "",
-  funding_meter_rail: "false",
-  finance_viewer_item_names: "false",
-  finance_viewer_item_memos: "false",
-  finance_viewer_income: "totals",
-  supporter_list_visibility: "off",
-};
-
 /** The handlers of the administrators' finance, and what a story does with them. */
 export function financeAdminHandlers(c: FinanceAdminContext): { handlers: Handlers; admin: FakeFinanceAdmin } {
   const o = c.options ?? {};
@@ -233,48 +202,6 @@ export function financeAdminHandlers(c: FinanceAdminContext): { handlers: Handle
         totals: [{ amount: (12.4 + (Number(monthOf(offset).slice(5)) % 4) * 1.35).toFixed(2), currency: "USD" }],
       })),
     };
-  };
-
-  // ---- The settings of what is published ----------------------------------------------------------------------------
-
-  const settings = new Map<SettingKey, string>([
-    ["finance_visibility", c.published.costs],
-    ["income_visibility", c.published.income],
-    ["funding_meter_visibility", c.published.meter],
-    ["funding_meter_target_amount", "20000"],
-    ["funding_meter_target_currency", "JPY"],
-    ["funding_meter_rail", "true"],
-    ["finance_viewer_item_names", "false"],
-    ["finance_viewer_item_memos", "false"],
-    ["finance_viewer_income", "totals"],
-    ["supporter_list_visibility", c.published.list],
-  ]);
-  const settingList = (): Schema<"AdminSettingList"> => ({
-    items: [...settings].map(([key, value]): Schema<"AdminSetting"> => {
-      const choices = enums[key];
-      const kind: Schema<"InstanceSettingKind"> =
-        choices !== undefined
-          ? "enum"
-          : bools.includes(key)
-            ? "bool"
-            : key === "funding_meter_target_amount"
-              ? "decimal"
-              : "currency";
-      return {
-        key,
-        kind,
-        value,
-        default: defaults[key] ?? "",
-        stored: value !== (defaults[key] ?? ""),
-        ...(choices === undefined ? {} : { choices: [...choices] }),
-      };
-    }),
-  });
-  /** Whether the publication allows the meter's value `meter` (ADR-0067 §22), judged after the whole change. */
-  const meterAllowed = (values: ReadonlyMap<SettingKey, string>, meter: string) => {
-    const costs = values.get("finance_visibility") !== "private";
-    const income = values.get("income_visibility") !== "private";
-    return meter === "off" || (meter === "percent" && !costs && !income) || (meter === "amounts" && costs && income);
   };
 
   const handlers: Handlers = {
@@ -365,36 +292,6 @@ export function financeAdminHandlers(c: FinanceAdminContext): { handlers: Handle
       if (o.importTooSoon === true)
         return c.problem(429, "Too Many Requests", { detail: "AWS was imported in the last hour." });
       return { status: 202 };
-    },
-
-    "GET /admin/settings": (): Answer<"GET /admin/settings"> => {
-      if (!may("manage_settings")) return missing("manage_settings");
-      return { status: 200, body: settingList() };
-    },
-    "PATCH /admin/settings": ({ body }): Answer<"PATCH /admin/settings"> => {
-      if (!may("manage_settings")) return missing("manage_settings");
-      const changed = new Map(settings);
-      for (const [key, value] of Object.entries(body.values)) {
-        const setting = key as SettingKey;
-        const choices = enums[setting];
-        const fits =
-          settings.has(setting) &&
-          (choices !== undefined
-            ? choices.includes(value)
-            : bools.includes(setting)
-              ? value === "true" || value === "false"
-              : setting === "funding_meter_target_amount"
-                ? value === "" || /^\d+(\.\d+)?$/.test(value)
-                : value === "" || /^[A-Z]{3}$/.test(value));
-        if (!fits) return invalid(`values.${key}`);
-        changed.set(setting, value);
-      }
-      if (!meterAllowed(changed, changed.get("funding_meter_visibility") ?? "off")) {
-        if ("funding_meter_visibility" in body.values) return invalid("values.funding_meter_visibility");
-        changed.set("funding_meter_visibility", "off");
-      }
-      for (const [key, value] of changed) settings.set(key, value);
-      return { status: 200, body: settingList() };
     },
   };
 

@@ -45,9 +45,11 @@ export type Fake = {
    * `{invite:0}` the ID of the reader's invite at that index of their list, `{room:1}` the ID of the fake's open room at
    * that index, `{room:opened}` of the room the story's reader opens, `{event:book-swap}` of the fake's event of that
    * key), `{tip:open}` and `{tip:paid}` of the reader's tip of the fake's supporters left open or paid, `{report:deals}`
-   * of the fake's report of that key in the moderators' queue, `{cost:vps}` of the administrators' cost item of that key,
-   * `{plan:supporter}` and `{subscription:sam}` of their plan and subscription of that key, `{account:kai}` of the account of the scenario's person
-   * of that username, `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
+   * of the fake's report of that key in the moderators' queue, `{admin:rule:0}`, `{admin:relay:0}` and
+   * `{admin:provider:0}` of the administration's rule, relay and login provider at that index of the fake's,
+   * `{cost:vps}` of the administrators' cost item of that key, `{plan:supporter}` and `{subscription:sam}` of their
+   * plan and subscription of that key, `{account:kai}` of the account of the scenario's person of that username,
+   * `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
    * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
@@ -205,6 +207,13 @@ function pathOf(fake: FakeApi, at: string): string {
       .replace(/\{cost:([\w-]+)\}/g, (_, key: string) => fake.financeAdmin.costId(key))
       .replace(/\{plan:([\w-]+)\}/g, (_, key: string) => fake.supportersAdmin.planId(key))
       .replace(/\{subscription:([\w-]+)\}/g, (_, key: string) => fake.supportersAdmin.subscriptionId(key))
+      .replace(/\{admin:(rule|relay|provider):(\d+)\}/g, (_, list: "rule" | "relay" | "provider", index: string) =>
+        list === "rule"
+          ? fake.admin.ruleId(Number(index))
+          : list === "relay"
+            ? fake.admin.relayId(Number(index))
+            : fake.admin.providerId(Number(index)),
+      )
       .replace(/\{account:([\w@.-]+)\}/g, (_, username: string) => fake.accountId(username))
       .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
