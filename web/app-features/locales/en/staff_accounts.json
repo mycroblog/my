@@ -8,7 +8,7 @@
     "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
   },
   "staff_accounts.entry.appeals.hint": {
-    "defaultMessage": "Appeals of actions, to uphold or overturn",
+    "defaultMessage": "Appeals of actions: uphold or overturn the action",
     "description": "The line under Appeals in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.appeals.count": {
@@ -92,11 +92,11 @@
     "description": "Said when the browser refused to copy a link to pass on. Read by moderators."
   },
   "staff_accounts.refused": {
-    "defaultMessage": "{why, select, outranks {You cannot do this to an account whose role ranks as high as yours.} last_admin {This would lock the only administrator out. Give another account the administrator's role first.} decided {Someone decided this meanwhile. Reload to see the decision.} not_appealable {The account was deleted, so its ban cannot be overturned. You can still uphold the appeal.} not_overridable {This decision cannot be cancelled here.} not_suppressed {Email to this account is not stopped any more.} no_two_factor {This account does not use two-factor authentication any more.} registration_closed {Registrations are closed, so no invite can be created. Open them in the server settings first.} closing {The service is closing, so no registration is approved any more.} event_closed {The event is cancelled already.} forbidden {Your account's permissions no longer allow this.} missing {It is gone: someone removed it meanwhile.} other {This could not be done. Reload the app and try again.}}",
+    "defaultMessage": "{why, select, outranks {You cannot do this to an account whose role ranks as high as yours.} last_admin {This would lock the only administrator out. Give another account the administrator's role first.} decided {Someone decided this meanwhile. Reload to see the decision.} not_appealable {The account was deleted, so its ban cannot be overturned. You can still uphold the ban.} not_overridable {This decision cannot be cancelled here.} not_suppressed {Email to this account is not stopped any more.} no_two_factor {This account does not use two-factor authentication any more.} registration_closed {Registrations are closed, so no invite can be created. Open them in the server settings first.} closing {The service is closing, so no registration can be approved any more.} event_closed {The event is cancelled already.} forbidden {Your account's permissions no longer allow this.} missing {Someone removed it meanwhile. Reload to see what is there now.} other {This could not be done. Reload the app and try again.}}",
     "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
   },
   "staff_accounts.kind": {
-    "defaultMessage": "{kind, select, warn {Warning} mark_statuses_sensitive {Posts marked sensitive} delete_statuses {Posts deleted} force_sensitive {Media always sensitive} limit {Limit} restrict_posting {No posting} restrict_interaction {No interaction} disable_login {No sign-in} suspend {Suspension} ban {Ban} other {Action}}",
+    "defaultMessage": "{kind, select, warn {Warning} mark_statuses_sensitive {Posts marked as sensitive} delete_statuses {Posts deleted} force_sensitive {Media always marked as sensitive} limit {Limit} restrict_posting {No posting} restrict_interaction {No interaction} disable_login {No sign-in} suspend {Suspension} ban {Ban} other {Action}}",
     "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
   },
   "staff_accounts.account_state": {
@@ -224,11 +224,11 @@
     "description": "At /moderation/accounts when no account matches the search and the filters. Read by moderators."
   },
   "staff_accounts.search.empty_more": {
-    "defaultMessage": "None on this page. The search goes on: show the next page.",
+    "defaultMessage": "None on this page. Show the next page to search on.",
     "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
   },
   "staff_accounts.account.missing": {
-    "defaultMessage": "This address names no account.",
+    "defaultMessage": "There is no account at this address.",
     "description": "At an account's moderation screen whose account the server does not have. Read by moderators."
   },
   "staff_accounts.account.all": {
@@ -380,7 +380,7 @@
     "description": "The question before a ban is taken. Read by moderators."
   },
   "staff_accounts.act.ban.about": {
-    "defaultMessage": "The account is suspended now and deleted in 30 days. A ban is never lifted: only overturning its appeal undoes it. Type the account's handle to confirm.",
+    "defaultMessage": "The account is suspended now and deleted in 30 days. A ban cannot be lifted: only an appeal can overturn it. Type the account's handle to confirm.",
     "description": "Under the question before a ban: what follows, and that only overturning its appeal undoes it. Read by moderators."
   },
   "staff_accounts.act.delete": {
@@ -460,7 +460,7 @@
     "description": "The way back from an action's page to the account's actions. Read by moderators."
   },
   "staff_accounts.action.missing": {
-    "defaultMessage": "This address names no action on this account.",
+    "defaultMessage": "There is no action of this account at this address.",
     "description": "At an action's page whose action the server does not have, or that is on another account. Read by moderators."
   },
   "staff_accounts.action.all": {
@@ -552,7 +552,7 @@
     "description": "The value of Posts in an action's facts: how many posts it acts on. Read by moderators."
   },
   "staff_accounts.action.ban_lifted_by_appeal": {
-    "defaultMessage": "A ban is never lifted. Only overturning its appeal undoes it, until the account is deleted.",
+    "defaultMessage": "A ban cannot be lifted. Only an appeal can overturn it, until the account is deleted.",
     "description": "On a ban's page, in the place of Lift. Read by moderators."
   },
   "staff_accounts.action.lift": {
@@ -576,7 +576,7 @@
     "description": "For assistive technology, the name of the table of an account's newest reports. Read by moderators."
   },
   "staff_accounts.reports.column.category": {
-    "defaultMessage": "Report",
+    "defaultMessage": "Category",
     "description": "The column of the reports' categories in the table of an account's newest reports. Read by moderators."
   },
   "staff_accounts.reports.column.filed": {
@@ -800,7 +800,7 @@
     "description": "The way back from an appeal to the list of appeals. Read by moderators."
   },
   "staff_accounts.appeal.missing": {
-    "defaultMessage": "This address names no appeal.",
+    "defaultMessage": "There is no appeal at this address.",
     "description": "At an appeal's screen whose appeal the server does not have. Read by moderators."
   },
   "staff_accounts.appeal.all": {
@@ -836,7 +836,7 @@
     "description": "A term of an appeal's facts: the action's kind of reason. Read by moderators."
   },
   "staff_accounts.appeal.fact.public_reason": {
-    "defaultMessage": "Reason told",
+    "defaultMessage": "Reason told for the action",
     "description": "A term of an appeal's facts: the reason the action told the account. Read by moderators."
   },
   "staff_accounts.appeal.fact.issued": {
@@ -852,7 +852,7 @@
     "description": "A term of an appeal's facts: who decided it. Read by moderators."
   },
   "staff_accounts.appeal.fact.decision_reason": {
-    "defaultMessage": "Reason given",
+    "defaultMessage": "Reason told for the decision",
     "description": "A term of an appeal's facts: the explanation the user was told of the decision. Read by moderators."
   },
   "staff_accounts.appeal.action": {
@@ -884,31 +884,31 @@
     "description": "The button that overturns an appeal, lifting its action, and its confirmation's button. Read by moderators."
   },
   "staff_accounts.appeal.uphold.confirm": {
-    "defaultMessage": "Uphold the appeal?",
-    "description": "The question before an appeal is upheld. Read by moderators."
+    "defaultMessage": "Uphold the original decision?",
+    "description": "The question before an appeal is decided by upholding what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
   },
   "staff_accounts.appeal.uphold.about": {
     "defaultMessage": "The action stays as it is, and they are told. This cannot be undone.",
     "description": "Under the question before an appeal is upheld. Read by moderators."
   },
   "staff_accounts.appeal.overturn.confirm": {
-    "defaultMessage": "Overturn the appeal?",
-    "description": "The question before an appeal is overturned. Read by moderators."
+    "defaultMessage": "Overturn the original decision?",
+    "description": "The question before an appeal is decided by overturning what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
   },
   "staff_accounts.appeal.overturn.about": {
     "defaultMessage": "The action is lifted at once, and they are told. Deleted posts stay deleted. This cannot be undone.",
     "description": "Under the question before an appeal of an action other than a ban is overturned. Read by moderators."
   },
   "staff_accounts.appeal.overturn.ban_about": {
-    "defaultMessage": "The ban is lifted and the account's deletion is cancelled; they are told and sign in again. This cannot be undone.",
+    "defaultMessage": "The ban is overturned and the account's deletion is cancelled; they are told and can sign in again. This cannot be undone.",
     "description": "Under the question before an appeal of a ban is overturned. Read by moderators."
   },
   "staff_accounts.appeal.upheld": {
-    "defaultMessage": "The appeal is upheld. The action stays.",
+    "defaultMessage": "The action is upheld.",
     "description": "Said after an appeal was upheld. Read by moderators."
   },
   "staff_accounts.appeal.overturned": {
-    "defaultMessage": "The appeal is overturned. The action is lifted.",
+    "defaultMessage": "The action is overturned and lifted.",
     "description": "Said after an appeal was overturned. Read by moderators."
   },
   "staff_accounts.registrations.table": {
@@ -972,7 +972,7 @@
     "description": "The question before the registrations picked are approved. Read by moderators."
   },
   "staff_accounts.registrations.approve.about": {
-    "defaultMessage": "They can sign in at once. A registration is decided once.",
+    "defaultMessage": "They can use the app at once. A registration is decided once.",
     "description": "The line under the note's field before registrations are approved. Read by moderators."
   },
   "staff_accounts.registrations.reject.confirm": {
@@ -980,7 +980,7 @@
     "description": "The question before the registrations picked are rejected. Read by moderators."
   },
   "staff_accounts.registrations.reject.about": {
-    "defaultMessage": "They cannot sign in. A registration is decided once.",
+    "defaultMessage": "They cannot use the account. A registration is decided once.",
     "description": "The line under the note's field before registrations are rejected. Read by moderators."
   },
   "staff_accounts.registrations.note": {
@@ -1156,7 +1156,7 @@
     "description": "The button after an import's result, to the list of sign-up blocks. Read by moderators."
   },
   "staff_accounts.block.missing": {
-    "defaultMessage": "This address names no sign-up block.",
+    "defaultMessage": "There is no sign-up block at this address.",
     "description": "At a sign-up block's page whose block the server does not have. Read by moderators."
   },
   "staff_accounts.block.all": {
@@ -1456,7 +1456,7 @@
     "description": "The way back from a decision, or the appeals of refused posts, to the decisions. Read by moderators."
   },
   "staff_accounts.decision.missing": {
-    "defaultMessage": "This address names no decision.",
+    "defaultMessage": "There is no decision at this address.",
     "description": "At a decision's page whose decision the server does not have. Read by moderators."
   },
   "staff_accounts.decision.all": {
@@ -1600,15 +1600,15 @@
     "description": "Under the question before an appeal of a refused post is upheld. Read by moderators."
   },
   "staff_accounts.hook_appeal.overturn.about": {
-    "defaultMessage": "The refusal is cancelled and their posts are no longer reviewed. The post is not restored: they post it again. This cannot be undone.",
+    "defaultMessage": "The refusal is cancelled and their posts are no longer reviewed. The post is not restored: they can post it again. This cannot be undone.",
     "description": "Under the question before an appeal of a refused post is overturned. Read by moderators."
   },
   "staff_accounts.hook_appeal.upheld": {
-    "defaultMessage": "The appeal is upheld. The refusal stays.",
+    "defaultMessage": "The refusal is upheld.",
     "description": "Said after an appeal of a refused post was upheld. Read by moderators."
   },
   "staff_accounts.hook_appeal.overturned": {
-    "defaultMessage": "The appeal is overturned. Their posts are no longer reviewed.",
+    "defaultMessage": "The refusal is overturned. Their posts are no longer reviewed.",
     "description": "Said after an appeal of a refused post was overturned. Read by moderators."
   },
   "staff_accounts.report.act": {

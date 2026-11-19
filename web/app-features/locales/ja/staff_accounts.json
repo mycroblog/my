@@ -8,7 +8,7 @@
     "description": "The name of the moderators' queue of appeals of actions, in the list at /moderation and as the title of its screen. Read by moderators."
   },
   "staff_accounts.entry.appeals.hint": {
-    "defaultMessage": "処分への異議申し立てを維持または撤回します",
+    "defaultMessage": "処分への異議申し立てを審査し、処分を維持または撤回します",
     "description": "The line under Appeals in the list at /moderation. Read by moderators."
   },
   "staff_accounts.entry.appeals.count": {
@@ -92,15 +92,15 @@
     "description": "Said when the browser refused to copy a link to pass on. Read by moderators."
   },
   "staff_accounts.refused": {
-    "defaultMessage": "{why, select, outranks {あなたのロールと同等以上のアカウントには、この操作はできません。} last_admin {ただ一人の管理者がログインできなくなります。先に別のアカウントに管理者のロールを付けてください。} decided {その間に別の人が決めました。再読み込みして結果を確かめてください。} not_appealable {アカウントが削除されたため、BAN を撤回できません。異議申し立ての維持はできます。} not_overridable {この判定はここでは取り消せません。} not_suppressed {このアカウントへのメールは、もう止まっていません。} no_two_factor {このアカウントは、もう二要素認証を使っていません。} registration_closed {登録が閉じているため、招待を作れません。先にサーバーの設定で登録を開いてください。} closing {サービスの閉鎖を予告したため、もう登録を承認できません。} event_closed {このイベントはすでに中止されています。} forbidden {あなたのアカウントの権限では、もうこの操作はできません。} missing {その間に削除されたため、見つかりません。} other {実行できませんでした。アプリを再読み込みして、もう一度試してください。}}",
+    "defaultMessage": "{why, select, outranks {あなたのロールと同等以上のアカウントには、この操作はできません。} last_admin {ただ一人の管理者がログインできなくなります。先に別のアカウントに管理者のロールを付けてください。} decided {その間に別の人が決めました。再読み込みして結果を確かめてください。} not_appealable {アカウントが削除されたため、BAN を撤回できません。BAN を維持することはできます。} not_overridable {この判定はここでは取り消せません。} not_suppressed {このアカウントへのメールは、もう止まっていません。} no_two_factor {このアカウントは、もう二要素認証を使っていません。} registration_closed {登録が閉じているため、招待を作れません。先にサーバーの設定で登録を開いてください。} closing {サービスの閉鎖を予告したため、もう登録を承認できません。} event_closed {このイベントはすでに中止されています。} forbidden {あなたのアカウントの権限では、もうこの操作はできません。} missing {その間に削除されました。再読み込みして、今の状態を確かめてください。} other {実行できませんでした。アプリを再読み込みして、もう一度試してください。}}",
     "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
   },
   "staff_accounts.kind": {
-    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {投稿のセンシティブ化} delete_statuses {投稿の削除} force_sensitive {メディアの強制センシティブ} limit {サイレンス} restrict_posting {投稿禁止} restrict_interaction {交流の禁止} disable_login {ログイン停止} suspend {凍結} ban {BAN} other {処分}}",
+    "defaultMessage": "{kind, select, warn {警告} mark_statuses_sensitive {投稿のセンシティブ指定} delete_statuses {投稿の削除} force_sensitive {メディアの常時センシティブ指定} limit {公開範囲の制限} restrict_posting {投稿禁止} restrict_interaction {交流の禁止} disable_login {ログインの停止} suspend {凍結} ban {BAN} other {処分}}",
     "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
   },
   "staff_accounts.account_state": {
-    "defaultMessage": "{state, select, active {有効} pending {承認待ち} rejected {登録を却下} limited {サイレンス中} disabled {ログイン停止中} deactivated {無効化} suspended {凍結中} deleted {削除済み} other {有効}}",
+    "defaultMessage": "{state, select, active {有効} pending {承認待ち} rejected {登録を却下} limited {公開範囲の制限中} disabled {ログイン停止中} deactivated {無効化} suspended {凍結中} deleted {削除済み} other {有効}}",
     "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts. Read by moderators."
   },
   "staff_accounts.action_state": {
@@ -124,7 +124,7 @@
     "description": "Where an appeal stands, in the appeals' list, its filter and its page. Read by moderators."
   },
   "staff_accounts.report_state": {
-    "defaultMessage": "{state, select, open {未対応} resolved {解決済み} other {未対応}}",
+    "defaultMessage": "{state, select, open {未対応} resolved {対応済み} other {未対応}}",
     "description": "Where a report stands, in an account's list of its reports. Read by moderators."
   },
   "staff_accounts.origin.local": {
@@ -148,7 +148,7 @@
     "description": "The value of Invite in an account's facts: who created the invite it signed up with. Read by moderators."
   },
   "staff_accounts.invited_by.cli": {
-    "defaultMessage": "サーバーのコマンドで作った招待",
+    "defaultMessage": "サーバーのコマンドラインで作った招待",
     "description": "The value of Invite in an account's facts when the invite was made on the command line. Read by moderators."
   },
   "staff_accounts.invited_by.gone": {
@@ -224,7 +224,7 @@
     "description": "At /moderation/accounts when no account matches the search and the filters. Read by moderators."
   },
   "staff_accounts.search.empty_more": {
-    "defaultMessage": "このページにはありません。検索は続いています。次のページを開いてください。",
+    "defaultMessage": "このページにはありません。次のページを開くと、続きを検索します。",
     "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
   },
   "staff_accounts.account.missing": {
@@ -380,7 +380,7 @@
     "description": "The question before a ban is taken. Read by moderators."
   },
   "staff_accounts.act.ban.about": {
-    "defaultMessage": "アカウントはすぐに凍結され、30 日後に削除されます。BAN は解除できず、異議申し立てを撤回したときだけ取り消されます。確かめるためにアカウントのハンドルを入力してください。",
+    "defaultMessage": "アカウントはすぐに凍結され、30 日後に削除されます。BAN は解除できず、取り消せるのは異議申し立てで撤回するときだけです。確かめるためにアカウントのハンドルを入力してください。",
     "description": "Under the question before a ban: what follows, and that only overturning its appeal undoes it. Read by moderators."
   },
   "staff_accounts.act.delete": {
@@ -496,7 +496,7 @@
     "description": "A term of an action's facts: the moderators' note. Read by moderators."
   },
   "staff_accounts.action.fact.issued": {
-    "defaultMessage": "日時",
+    "defaultMessage": "処分の日時",
     "description": "A term of an action's facts: when it was taken. Read by moderators."
   },
   "staff_accounts.action.fact.issuer": {
@@ -528,7 +528,7 @@
     "description": "A term of an action's facts: the posts an action on posts acts on. Read by moderators."
   },
   "staff_accounts.action.issuer.cli": {
-    "defaultMessage": "サーバーのコマンド",
+    "defaultMessage": "サーバーのコマンドライン",
     "description": "Who took an action or decided an appeal when it was done on the command line. Read by moderators."
   },
   "staff_accounts.action.issuer.someone": {
@@ -552,7 +552,7 @@
     "description": "The value of Posts in an action's facts: how many posts it acts on. Read by moderators."
   },
   "staff_accounts.action.ban_lifted_by_appeal": {
-    "defaultMessage": "BAN は解除できません。アカウントが削除されるまでの間、異議申し立てを撤回したときだけ取り消されます。",
+    "defaultMessage": "BAN は解除できません。取り消せるのは、アカウントが削除されるまでに異議申し立てで撤回するときだけです。",
     "description": "On a ban's page, in the place of Lift. Read by moderators."
   },
   "staff_accounts.action.lift": {
@@ -576,11 +576,11 @@
     "description": "For assistive technology, the name of the table of an account's newest reports. Read by moderators."
   },
   "staff_accounts.reports.column.category": {
-    "defaultMessage": "通報",
+    "defaultMessage": "カテゴリ",
     "description": "The column of the reports' categories in the table of an account's newest reports. Read by moderators."
   },
   "staff_accounts.reports.column.filed": {
-    "defaultMessage": "日時",
+    "defaultMessage": "通報日時",
     "description": "The column of when a report was filed, in the table of an account's newest reports. Read by moderators."
   },
   "staff_accounts.reports.column.state": {
@@ -684,7 +684,7 @@
     "description": "The question before a password reset link is issued. Read by moderators."
   },
   "staff_accounts.recovery.link.confirm.about": {
-    "defaultMessage": "リンクを持つ人は誰でもパスワードを設定できます。先に別の方法で本人と確かめ、本人にだけ渡してください。",
+    "defaultMessage": "リンクを持つ人は誰でもパスワードを設定できます。先に別の方法で本人であることを確かめ、本人にだけ渡してください。",
     "description": "Under the question before a password reset link is issued. Read by moderators."
   },
   "staff_accounts.recovery.link.issue": {
@@ -720,7 +720,7 @@
     "description": "The question before an account's two-factor authentication is removed. Read by moderators."
   },
   "staff_accounts.recovery.two_factor.confirm.about": {
-    "defaultMessage": "本人はパスワードだけでログインするようになります。先に別の方法で本人と確かめてください。",
+    "defaultMessage": "本人はパスワードだけでログインするようになります。先に別の方法で本人であることを確かめてください。",
     "description": "Under the question before two-factor authentication is removed. Read by moderators."
   },
   "staff_accounts.recovery.two_factor.remove": {
@@ -732,15 +732,15 @@
     "description": "Said after an account's two-factor authentication was removed. Read by moderators."
   },
   "staff_accounts.refetch.title": {
-    "defaultMessage": "サーバーからの投稿",
+    "defaultMessage": "相手のサーバーの投稿",
     "description": "The heading of the section that refetches a remote account's posts, on its Management page. Read by moderators."
   },
   "staff_accounts.refetch.submit": {
-    "defaultMessage": "投稿を取り直す",
+    "defaultMessage": "投稿を取得し直す",
     "description": "The button that queues the refetch of a remote account's newest posts from its server. Read by moderators."
   },
   "staff_accounts.refetch.done": {
-    "defaultMessage": "投稿を裏で取り直しています。毎分 100 件ずつです。",
+    "defaultMessage": "投稿を毎分 100 件ずつ、バックグラウンドで取得し直しています。",
     "description": "Said after the refetch of a remote account's posts was queued. Read by moderators."
   },
   "staff_accounts.appeals.filters": {
@@ -768,7 +768,7 @@
     "description": "The column of the action appealed, in the table of appeals. Read by moderators."
   },
   "staff_accounts.appeals.column.submitted": {
-    "defaultMessage": "日時",
+    "defaultMessage": "申し立ての日時",
     "description": "The column of when an appeal was sent, in a table of appeals. Read by moderators."
   },
   "staff_accounts.appeals.column.state": {
@@ -824,7 +824,7 @@
     "description": "A term of an appeal's facts. Read by moderators."
   },
   "staff_accounts.appeal.fact.submitted": {
-    "defaultMessage": "日時",
+    "defaultMessage": "申し立ての日時",
     "description": "A term of an appeal's facts: when it was sent. Read by moderators."
   },
   "staff_accounts.appeal.fact.action": {
@@ -836,7 +836,7 @@
     "description": "A term of an appeal's facts: the action's kind of reason. Read by moderators."
   },
   "staff_accounts.appeal.fact.public_reason": {
-    "defaultMessage": "伝えた理由",
+    "defaultMessage": "処分で伝えた理由",
     "description": "A term of an appeal's facts: the reason the action told the account. Read by moderators."
   },
   "staff_accounts.appeal.fact.issued": {
@@ -852,7 +852,7 @@
     "description": "A term of an appeal's facts: who decided it. Read by moderators."
   },
   "staff_accounts.appeal.fact.decision_reason": {
-    "defaultMessage": "伝えた理由",
+    "defaultMessage": "審査で伝えた理由",
     "description": "A term of an appeal's facts: the explanation the user was told of the decision. Read by moderators."
   },
   "staff_accounts.appeal.action": {
@@ -884,31 +884,31 @@
     "description": "The button that overturns an appeal, lifting its action, and its confirmation's button. Read by moderators."
   },
   "staff_accounts.appeal.uphold.confirm": {
-    "defaultMessage": "異議申し立てを維持しますか？",
-    "description": "The question before an appeal is upheld. Read by moderators."
+    "defaultMessage": "元の判断を維持しますか？",
+    "description": "The question before an appeal is decided by upholding what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
   },
   "staff_accounts.appeal.uphold.about": {
     "defaultMessage": "処分はそのまま残り、本人に伝えます。取り消せません。",
     "description": "Under the question before an appeal is upheld. Read by moderators."
   },
   "staff_accounts.appeal.overturn.confirm": {
-    "defaultMessage": "異議申し立てを撤回しますか？",
-    "description": "The question before an appeal is overturned. Read by moderators."
+    "defaultMessage": "元の判断を撤回しますか？",
+    "description": "The question before an appeal is decided by overturning what was appealed: an action, or an automated review's refusal of a post. Read by moderators."
   },
   "staff_accounts.appeal.overturn.about": {
     "defaultMessage": "処分はすぐに解除され、本人に伝えます。削除した投稿は戻りません。取り消せません。",
     "description": "Under the question before an appeal of an action other than a ban is overturned. Read by moderators."
   },
   "staff_accounts.appeal.overturn.ban_about": {
-    "defaultMessage": "BAN を解除し、アカウントの削除を取り消して、本人に伝えます。本人はもう一度ログインします。取り消せません。",
+    "defaultMessage": "BAN を撤回してアカウントの削除を取り消し、本人に伝えます。本人はまたログインできるようになります。取り消せません。",
     "description": "Under the question before an appeal of a ban is overturned. Read by moderators."
   },
   "staff_accounts.appeal.upheld": {
-    "defaultMessage": "異議申し立てを維持しました。処分はそのままです。",
+    "defaultMessage": "処分を維持しました。",
     "description": "Said after an appeal was upheld. Read by moderators."
   },
   "staff_accounts.appeal.overturned": {
-    "defaultMessage": "異議申し立てを撤回しました。処分を解除しました。",
+    "defaultMessage": "処分を撤回し、解除しました。",
     "description": "Said after an appeal was overturned. Read by moderators."
   },
   "staff_accounts.registrations.table": {
@@ -972,7 +972,7 @@
     "description": "The question before the registrations picked are approved. Read by moderators."
   },
   "staff_accounts.registrations.approve.about": {
-    "defaultMessage": "すぐにログインできるようになります。登録の審査は 1 回だけです。",
+    "defaultMessage": "すぐにアプリを使えるようになります。登録の審査は 1 回だけです。",
     "description": "The line under the note's field before registrations are approved. Read by moderators."
   },
   "staff_accounts.registrations.reject.confirm": {
@@ -980,7 +980,7 @@
     "description": "The question before the registrations picked are rejected. Read by moderators."
   },
   "staff_accounts.registrations.reject.about": {
-    "defaultMessage": "ログインできなくなります。登録の審査は 1 回だけです。",
+    "defaultMessage": "このアカウントは使えなくなります。登録の審査は 1 回だけです。",
     "description": "The line under the note's field before registrations are rejected. Read by moderators."
   },
   "staff_accounts.registrations.note": {
@@ -1224,7 +1224,7 @@
     "description": "Said after a sign-up block was lifted. Read by moderators."
   },
   "staff_accounts.invite_state": {
-    "defaultMessage": "{state, select, usable {使える} revoked {取り消し済み} expired {期限切れ} exhausted {使い切った} creator_ineligible {作った人が今は招待できません} other {使える}}",
+    "defaultMessage": "{state, select, usable {使える} revoked {取り消し済み} expired {期限切れ} exhausted {使い切った} creator_ineligible {作った人が今は招待できない} other {使える}}",
     "description": "Where an invite stands, in the list of invites. Read by moderators."
   },
   "staff_accounts.invites.table": {
@@ -1252,7 +1252,7 @@
     "description": "Under an invite's code: who created it, and whether as a member or as the staff. Read by moderators."
   },
   "staff_accounts.invites.by_cli": {
-    "defaultMessage": "サーバーのコマンドで作成",
+    "defaultMessage": "サーバーのコマンドラインで作成",
     "description": "Under an invite's code when it was made on the command line. Read by moderators."
   },
   "staff_accounts.invites.by_gone": {
@@ -1532,7 +1532,7 @@
     "description": "The button that asks to cancel a decision, and its confirmation's button. Read by moderators."
   },
   "staff_accounts.decision.keep": {
-    "defaultMessage": "取り消さない",
+    "defaultMessage": "そのままにする",
     "description": "The button of the confirmation of a decision's cancellation that keeps the decision. Read by moderators."
   },
   "staff_accounts.decision.cancel.confirm": {
@@ -1600,15 +1600,15 @@
     "description": "Under the question before an appeal of a refused post is upheld. Read by moderators."
   },
   "staff_accounts.hook_appeal.overturn.about": {
-    "defaultMessage": "拒否を取り消し、投稿の審査をやめます。投稿は戻らないため、本人がもう一度投稿します。取り消せません。",
+    "defaultMessage": "拒否を取り消し、投稿の審査をやめます。投稿は戻りませんが、本人はもう一度投稿できます。取り消せません。",
     "description": "Under the question before an appeal of a refused post is overturned. Read by moderators."
   },
   "staff_accounts.hook_appeal.upheld": {
-    "defaultMessage": "異議申し立てを維持しました。拒否はそのままです。",
+    "defaultMessage": "拒否を維持しました。",
     "description": "Said after an appeal of a refused post was upheld. Read by moderators."
   },
   "staff_accounts.hook_appeal.overturned": {
-    "defaultMessage": "異議申し立てを撤回しました。投稿の審査をやめました。",
+    "defaultMessage": "拒否を撤回しました。投稿の審査をやめました。",
     "description": "Said after an appeal of a refused post was overturned. Read by moderators."
   },
   "staff_accounts.report.act": {

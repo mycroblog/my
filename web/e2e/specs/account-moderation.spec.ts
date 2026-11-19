@@ -77,7 +77,7 @@ test("a moderator keeps a person from posting from the person's account screen; 
   await staff.openAppeal(handle);
   await expect(page.getByRole("main").getByText(appeal, { exact: true })).toBeVisible();
   await staff.decideAppeal("Overturn", "Sorry, we looked again: it was one post.");
-  await expect(staff.said("The appeal is overturned. The action is lifted.")).toBeVisible();
+  await expect(staff.said("The action is overturned and lifted.")).toBeVisible();
 
   // The action is lifted on the account's actions.
   await page.goto("/moderation/accounts");
