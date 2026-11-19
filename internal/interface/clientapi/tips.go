@@ -12,6 +12,7 @@ import (
 	"github.com/mycroblog/my/internal/app/kernel"
 	appsupporters "github.com/mycroblog/my/internal/app/supporters"
 	"github.com/mycroblog/my/internal/domain/finance"
+	"github.com/mycroblog/my/internal/domain/identity"
 	"github.com/mycroblog/my/internal/domain/instance"
 )
 
@@ -34,6 +35,7 @@ const supporterTipReturnPath = "/settings/supporter/tip"
 type Tips interface {
 	TipsEnabled(ctx context.Context) (bool, error)
 	TipAmounts(ctx context.Context) (string, []int64, error)
+	TipEligibility(ctx context.Context, userID string) (appsupporters.Eligibility, error)
 	TipSettings(ctx context.Context) (appsupporters.TipSettings, error)
 	SetTips(ctx context.Context, in appsupporters.TipSettingsInput, byUserID string) (appsupporters.TipSettings, error)
 	StartTip(ctx context.Context, in appsupporters.TipInput) (appsupporters.StartedTip, error)
@@ -107,13 +109,27 @@ func (s *Server) GetInstanceTipAmounts(ctx context.Context, _ GetInstanceTipAmou
 	if err != nil {
 		return nil, fmt.Errorf("clientapi: the amounts of the tips: %w", err)
 	}
+	out := TipAmounts{Amounts: tipMoneys(currency, amounts)}
 	cache := cachePublic
-	if _, ok := ViewerFrom(ctx); ok {
+	v, ok := ViewerFrom(ctx)
+	if ok {
 		cache = cachePrivate
 	}
-	return GetInstanceTipAmounts200JSONResponse{
-		Body: TipAmounts{Amounts: tipMoneys(currency, amounts)}, Headers: GetInstanceTipAmounts200ResponseHeaders{CacheControl: &cache},
-	}, nil
+	// The operation takes any token, so only one that grants read:supporters reads the user's
+	// own answer, which a confirmed address changes at once.
+	if ok && scopeGranted(v, identity.ScopeReadSupporters) {
+		cache = cacheNoStore
+		// The answer of the check that StartTip makes, so that the two never disagree.
+		reason, err := tips.TipEligibility(ctx, v.UserID)
+		if err != nil {
+			return nil, fmt.Errorf("clientapi: whether %s may tip: %w", v.UserID, err)
+		}
+		if reason != "" {
+			r := SupporterIneligibleReason(reason)
+			out.IneligibleReason = &r
+		}
+	}
+	return GetInstanceTipAmounts200JSONResponse{Body: out, Headers: GetInstanceTipAmounts200ResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // instanceName returns the display name of the instance, its host without one.

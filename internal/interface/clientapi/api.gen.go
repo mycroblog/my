@@ -14983,10 +14983,10 @@ type OwnInvitePage struct {
 
 // OwnSupporterSubscription The authenticated user's subscription that goes on, and whether they may subscribe.
 type OwnSupporterSubscription struct {
-	// IneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
+	// IneligibleReason Why the user may not subscribe to a supporter plan or tip: `not_local`, not a user
 	// of this server; `email_unverified`, the primary email address is not verified;
 	// `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
-	// the user may subscribe.
+	// the user may.
 	IneligibleReason *SupporterIneligibleReason `json:"ineligible_reason,omitempty"`
 
 	// Subscription The authenticated user's subscription to a supporter plan. `price` is what it renews at,
@@ -16752,10 +16752,10 @@ type SupporterCheckout struct {
 // it. `canceled`: it was canceled, or it ended at the payment provider.
 type SupporterEndReason string
 
-// SupporterIneligibleReason Why the user may not subscribe to a supporter plan: `not_local`, not a user
+// SupporterIneligibleReason Why the user may not subscribe to a supporter plan or tip: `not_local`, not a user
 // of this server; `email_unverified`, the primary email address is not verified;
 // `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
-// the user may subscribe.
+// the user may.
 type SupporterIneligibleReason string
 
 // SupporterInterval How often a subscription renews.
@@ -17118,6 +17118,12 @@ type ThemeTokenValue struct {
 // TipAmounts The amounts that a tip may be, smallest first, all in one currency.
 type TipAmounts struct {
 	Amounts []Money `json:"amounts"`
+
+	// IneligibleReason Why the user may not subscribe to a supporter plan or tip: `not_local`, not a user
+	// of this server; `email_unverified`, the primary email address is not verified;
+	// `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
+	// the user may.
+	IneligibleReason *SupporterIneligibleReason `json:"ineligible_reason,omitempty"`
 }
 
 // TipAmountsProblem The problem of amounts of the tips that break a rule (422,

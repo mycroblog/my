@@ -69,8 +69,8 @@ function tipRefusal(error: unknown, t: T): string {
       ? t("settings.supporter.tip.limited.later")
       : t("settings.supporter.tip.limited", { minutes: Math.max(1, Math.ceil(ms / 60_000)) });
   }
-  // Where the program is off the screen cannot know beforehand why the reader may not tip (no read of the API says
-  // whether their address is confirmed): the server's words say it.
+  // The screen says beforehand why the reader may not tip, from the tip amounts; a bar the server finds only as the
+  // tip starts (the account restricted since they were read) its words say.
   if (kind === "ineligible") return refusalDetail(error) ?? t("settings.supporter.tip.refused", { kind: "ineligible" });
   switch (kind) {
     case "tip-amount":

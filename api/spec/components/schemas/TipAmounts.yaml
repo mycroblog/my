@@ -9,3 +9,5 @@ properties:
     maxItems: 6
     items:
       $ref: ./Money.yaml
+  ineligible_reason:
+    $ref: ./SupporterIneligibleReason.yaml

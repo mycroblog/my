@@ -416,8 +416,17 @@ export function supporterHandlers(c: SupporterContext): {
       };
     },
 
+    // A signed-in reader's token grants read:supporters: the answer says why they may not tip.
     "GET /instance/tip_amounts": () =>
-      tipsOn ? { status: 200, body: { amounts: amounts.map((a) => ({ ...a })) } } : c.notFound(),
+      tipsOn
+        ? {
+            status: 200,
+            body: {
+              amounts: amounts.map((a) => ({ ...a })),
+              ...(c.visitor || o.ineligible === undefined ? {} : { ineligible_reason: o.ineligible }),
+            },
+          }
+        : c.notFound(),
 
     "POST /supporter/tips": ({ body }) => {
       if (!tipsOn) return c.notFound();

@@ -231,6 +231,12 @@ func (s *Service) TipAmounts(ctx context.Context) (string, []int64, error) {
 	return c.Currency, slices.Clone(c.Amounts), nil
 }
 
+// TipEligibility returns why a user may not tip (ADR-0162 §7), "" for a user who may: the check
+// of the user that StartTip makes, the subscriptions' without a subscription that goes on.
+func (s *Service) TipEligibility(ctx context.Context, userID string) (Eligibility, error) {
+	return s.Eligibility(ctx, userID)
+}
+
 // checkTipAmounts returns the amounts in ascending order, or a *TipAmountsError.
 func checkTipAmounts(ot OneTimePayments, currency string, amounts []int64) ([]int64, error) {
 	out := slices.Clone(amounts)
