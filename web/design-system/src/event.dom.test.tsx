@@ -64,6 +64,27 @@ test("an event's line is one link to it, named by its date, its title, its state
   expect(link.textContent).toBe("Nov 28Morning walkCancelledSat, Nov 28, 5:00 PMIn personBy Aoi44 going");
 });
 
+test("an event's line says an ended event and one whose date is polled, each still one link", () => {
+  const { unmount } = render(
+    <EventLine
+      href="/events/6"
+      title="Sketch night"
+      date={{ month: "Nov", day: "9" }}
+      time="Mon, Nov 9, 7:00 PM"
+      organizer="By Kai"
+      going={{ shown: "7", label: "7 went" }}
+      state={{ kind: "ended", label: "Ended" }}
+    />,
+  );
+  expect(screen.getAllByRole("link")).toHaveLength(1);
+  expect(screen.getByRole("link").textContent).toBe("Nov 9Sketch nightEndedMon, Nov 9, 7:00 PMBy Kai77 went");
+  unmount();
+
+  render(<EventLine href="/events/3" title="Winter meetup" time="Date to be decided · 4 dates proposed" />);
+  expect(screen.getAllByRole("link")).toHaveLength(1);
+  expect(screen.getByRole("link").textContent).toBe("Winter meetupDate to be decided · 4 dates proposed");
+});
+
 test("the reader's answer is a radio group of three that a press and the arrow keys change", async () => {
   const user = userEvent.setup();
   const chosen: Answer[] = [];
@@ -116,6 +137,52 @@ test("the save state stands in a status region there from the start", () => {
 
   rerender(<AnswerChoice label="Your answer" names={going} value="yes" onChange={() => undefined} save="Saved" />);
   expect(screen.getByRole("status").textContent).toBe("Saved");
+});
+
+test("an answer that cannot be chosen now is passed by the arrow keys, and a press on it chooses nothing", async () => {
+  const user = userEvent.setup();
+  const chosen: Answer[] = [];
+  render(
+    <AnswerChoice
+      label="Your answer"
+      names={going}
+      value={null}
+      onChange={(a) => chosen.push(a)}
+      disabled={["yes"]}
+      note="The event is full: no one more can go."
+    />,
+  );
+
+  await user.tab();
+  expect(document.activeElement === screen.getByRole("radio", { name: "Maybe" })).toBe(true);
+  await user.keyboard("{ArrowRight}");
+  await user.keyboard("{ArrowRight}");
+  await user.click(screen.getByRole("radio", { name: "Going" }));
+
+  expect(chosen).toEqual(["no", "maybe"]);
+  expect(screen.getByRole("radiogroup", { name: "Your answer" }).getAttribute("aria-describedby")).not.toBeNull();
+  expect(screen.getAllByRole("radiogroup", { description: "The event is full: no one more can go." })).toHaveLength(1);
+});
+
+test("while the save state shows in the note's place, the note still describes the group", () => {
+  render(
+    <AnswerChoice
+      label="Your answer"
+      names={going}
+      value="maybe"
+      onChange={() => undefined}
+      note="Your name shows in the list of who answered."
+      save="Saving…"
+    />,
+  );
+
+  expect(
+    screen.getAllByRole("radiogroup", {
+      name: "Your answer",
+      description: "Your name shows in the list of who answered.",
+    }),
+  ).toHaveLength(1);
+  expect(screen.getByRole("status").textContent).toBe("Saving…");
 });
 
 /** The date poll of two dates, the reader's answers told to `answered`, with the organizers' actions or not. */
@@ -205,6 +272,127 @@ test("for the organizers a column of each date's actions ends the table", () => 
   ).toBeTruthy();
 });
 
+/** A cell or a header as it is read: its words, the spaces between them folded. */
+const words = (element: HTMLElement) => element.textContent.replace(/\s+/g, " ").trim();
+
+/**
+ * The poll's every cell as a screen reader reads it on its way through the table, cell by cell: the header of its row
+ * (its date), the header of its column (counted by its place in the row), then the cell; a row whose cells do not
+ * line up with the columns' headers is told as such.
+ */
+function heard(table: HTMLElement): string[] {
+  const [head, ...rows] = within(table).getAllByRole("row");
+  if (head === undefined) return ["no row"];
+  const columns = within(head).getAllByRole("columnheader").map(words);
+  return rows.flatMap((row) => {
+    // The row's headers and cells in the order they are read, which is the document's.
+    const read = [...within(row).queryAllByRole("rowheader"), ...within(row).queryAllByRole("cell")].sort((a, b) =>
+      a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING ? -1 : 1,
+    );
+    const [date] = within(row).getAllByRole("rowheader");
+    if (read.length !== columns.length || date === undefined || read[0] !== date)
+      return [`a row of ${read.length} cells under ${columns.length} columns, headed by ${words(date ?? row)}`];
+    return read.slice(1).map((cell, i) => `${words(date)} | ${columns[i + 1] ?? ""} | ${words(cell)}`);
+  });
+}
+
+test("the date poll is read cell by cell, each cell with its date and its column's name", () => {
+  render(
+    <CandidateTable label="Date poll" time="Date" names={poll} yours="Your answer" actions="Actions" save={null}>
+      <CandidateRow
+        time={
+          <EventTime
+            dateTime="2026-12-05T09:00:00Z"
+            shown="Sat, Dec 5, 1:00 PM"
+            own={{ shown: "Sat 6:00 PM", zone: "Tokyo" }}
+          />
+        }
+        counts={{ yes: "5", maybe: "2", no: "1" }}
+        answer="yes"
+        onAnswer={() => undefined}
+        confirmed="Confirmed"
+        actions={<button type="button">Options for Sat, Dec 5</button>}
+      />
+      <CandidateRow
+        time={<EventTime dateTime="2026-12-13T02:00:00Z" shown="Sat, Dec 12, 6:00 PM" />}
+        counts={{ yes: "0", maybe: "0", no: "0" }}
+        answer={null}
+        onAnswer={() => undefined}
+        actions={<button type="button">Options for Sat, Dec 12</button>}
+      />
+    </CandidateTable>,
+  );
+  const table = screen.getByRole("table", { name: "Date poll" });
+
+  const first = "Sat, Dec 5, 1:00 PMSat 6:00 PM (Tokyo)Confirmed";
+  const second = "Sat, Dec 12, 6:00 PM";
+  expect(heard(table)).toEqual([
+    `${first} | Can go | 5`,
+    `${first} | Maybe | 2`,
+    `${first} | Cannot | 1`,
+    `${first} | Your answer | Can goMaybeCannot`,
+    `${first} | Actions | Options for Sat, Dec 5`,
+    `${second} | Can go | 0`,
+    `${second} | Maybe | 0`,
+    `${second} | Cannot | 0`,
+    `${second} | Your answer | Can goMaybeCannot`,
+    `${second} | Actions | Options for Sat, Dec 12`,
+  ]);
+  // The answer's group, met in a cell, is named as the cell is read: its date, then its column.
+  const yours = within(table).getAllByRole("radiogroup");
+  expect(yours).toHaveLength(2);
+  expect(within(table).getAllByRole("radiogroup", { name: /^Sat, Dec 5, 1:00 PM.*Your answer$/ })).toHaveLength(1);
+  expect(within(table).getAllByRole("radiogroup", { name: /^Sat, Dec 12, 6:00 PM\s*Your answer$/ })).toHaveLength(1);
+});
+
+test("the poll's save state stands in a status region outside the table, there from the start", () => {
+  const poll2 = (save: string | null) => (
+    <CandidateTable label="Date poll" time="Date" names={poll} yours="Your answer" save={save}>
+      <CandidateRow
+        time="Sat, Dec 5, 1:00 PM"
+        counts={{ yes: "5", maybe: "2", no: "1" }}
+        answer="yes"
+        onAnswer={() => undefined}
+      />
+    </CandidateTable>
+  );
+  const { rerender } = render(poll2(null));
+  expect(screen.getAllByRole("status").map(words)).toEqual([""]);
+  expect(within(screen.getByRole("table", { name: "Date poll" })).queryAllByRole("status")).toHaveLength(0);
+
+  rerender(poll2("Saved"));
+  expect(screen.getAllByRole("status").map(words)).toEqual(["Saved"]);
+});
+
+test("once the poll is closed each date's answer is held: its radios cannot be chosen, the reader's stays", async () => {
+  const user = userEvent.setup();
+  const answered: Answer[] = [];
+  render(
+    <CandidateTable label="Date poll" time="Date" names={poll} yours="Your answer">
+      <CandidateRow
+        time="Sat, Dec 5, 1:00 PM"
+        counts={{ yes: "5", maybe: "2", no: "1" }}
+        answer="maybe"
+        onAnswer={(a) => answered.push(a)}
+        isDisabled
+        confirmed="Confirmed"
+      />
+    </CandidateTable>,
+  );
+
+  const radios = screen.getAllByRole("radio");
+  expect(
+    radios.map((r) => [r.getAttribute("aria-label") ?? words(r.closest("label") ?? r), r.matches(":disabled")]),
+  ).toEqual([
+    ["Can go", true],
+    ["Maybe", true],
+    ["Cannot", true],
+  ]);
+  expect(screen.getByRole("radio", { name: "Maybe" })).toHaveProperty("checked", true);
+  await user.click(screen.getByRole("radio", { name: "Can go" }));
+  expect(answered).toEqual([]);
+});
+
 test("a place's link that leaves the site opens in a new tab, says so and where, and tells nothing of this one", () => {
   render(
     <PlaceList label="Where">
@@ -251,6 +439,44 @@ test("a place the reader may not see shows its kind alone, and why", () => {
 
   expect(screen.queryAllByRole("link")).toHaveLength(0);
   expect(screen.getByRole("listitem").textContent).toBe("OnlineShown to approved participants");
+});
+
+test("a place in person the reader may not see shows neither its name nor its address nor its map", () => {
+  render(
+    <PlaceList label="Where">
+      <PlaceLine
+        kind="physical"
+        label="In person"
+        name="Community hall, room 3"
+        address={"1-2-3 Jingumae\nShibuya, Tokyo 150-0001"}
+        link={{ href: "https://maps.example.com/?q=hall", text: "Open the map", host: "maps.example.com" }}
+        hidden
+        note="Shown to approved participants"
+      />
+    </PlaceList>,
+  );
+
+  expect(screen.queryAllByRole("link")).toHaveLength(0);
+  expect(screen.getByRole("listitem").textContent).toBe("In personShown to approved participants");
+});
+
+test("a voice room that could not open says why, and offers no way in", () => {
+  render(
+    <PlaceList label="Where">
+      <PlaceLine
+        kind="voice"
+        label="Voice chat room"
+        unavailable
+        note="Could not open: the organizer was hosting another room"
+      />
+    </PlaceList>,
+  );
+
+  expect(screen.getByRole("listitem").textContent).toBe(
+    "Voice chat roomCould not open: the organizer was hosting another room",
+  );
+  expect(screen.queryAllByRole("link")).toHaveLength(0);
+  expect(screen.queryAllByRole("button")).toHaveLength(0);
 });
 
 test("the voice room shows its state, and the way in while it is open", () => {
