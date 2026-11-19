@@ -14,7 +14,7 @@
 
 import { useId, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
-import { raisedSurface } from "./button";
+import { ActsOn, raisedSurface } from "./button";
 import { Icon, type IconName } from "./icons";
 import { Box, Column, Row, Stack } from "./layout";
 
@@ -111,8 +111,9 @@ export type PlanCardProps = {
   /** The perks of its own, a line each, as the app words them ("Create 10 custom emoji a month"). */
   perks: readonly string[];
   /**
-   * What the reader may do with it (a `Button` of size `target`, primary: Choose, Switch), at the card's foot; none on
-   * the reader's plan, whose mark stands there, whatever is given.
+   * What the reader may do with it (a `Button` of size `target`, primary: Choose, Switch), at the card's foot, named
+   * after its words by the plan ("Choose Supporter"); none on the reader's plan, whose mark stands there, whatever is
+   * given.
    */
   action?: ReactNode;
 };
@@ -169,7 +170,12 @@ export function PlanCard({ name, current, price, priceNote, description, include
           <span>{current}</span>
         </Row>
       ) : (
-        action !== undefined && <Stack push="bottom">{action}</Stack>
+        action !== undefined && (
+          // Its action names its plan after its words, so that the cards' actions are told apart.
+          <Stack push="bottom">
+            <ActsOn value={name}>{action}</ActsOn>
+          </Stack>
+        )
       )}
     </Column>
   );

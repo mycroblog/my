@@ -73,7 +73,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       await expect(plansOf(page)).toHaveCount(1);
       await expect(plansOf(page).getByRole("list")).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Choose", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: /^Choose(\s.*)?$/ })).toBeVisible();
     },
   ],
   [

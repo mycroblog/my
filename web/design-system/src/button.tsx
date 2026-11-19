@@ -8,10 +8,10 @@
 // the text link a link drawn as it is.
 
 import { motion } from "@my/design-tokens";
-import type { ComponentProps, ReactNode } from "react";
+import { createContext, use, type ComponentProps, type ReactNode } from "react";
 import { Button as AriaButton, Link as AriaLink, type ButtonProps as AriaButtonProps } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
-import { Box, Pin, Row, type Gap, type RowProps } from "./layout";
+import { Box, Pin, Row, Spoken, type Gap, type RowProps } from "./layout";
 import { usePreviewState } from "./preview";
 
 export type ButtonKind = "primary" | "secondary" | "quiet";
@@ -183,6 +183,24 @@ function Label({
 export const heardPointerDown = (props: ComponentProps<"button">) =>
   props.disabled === true ? undefined : props.onPointerDown;
 
+/**
+ * What the buttons and the link buttons inside act on, where several alike stand side by side (a card's plan): each
+ * says it after its words to assistive technology alone, so that its name begins with the words shown and tells it
+ * from the others ("Choose Supporter", WCAG 2.5.3). A button with a name of its own (`aria-label`) keeps that.
+ */
+export const ActsOn = createContext<string | undefined>(undefined);
+
+/** The words shown, and after them, for assistive technology alone, what the button acts on. */
+function Words({ children }: { children: ReactNode }) {
+  const target = use(ActsOn);
+  return (
+    <>
+      {children}
+      {target !== undefined && <Spoken>{` ${target}`}</Spoken>}
+    </>
+  );
+}
+
 /** The base of the button and the icon button: a kind and a size, and a toggle's state. */
 export function ButtonBase({
   kind,
@@ -228,7 +246,7 @@ export function ButtonBase({
       }
     >
       <Label kind={kind} size={size} className={s.label()}>
-        {children}
+        <Words>{children}</Words>
       </Label>
       {busy && <Pin as="span" center className={s.spinner()} aria-hidden="true" />}
     </Row>
@@ -255,7 +273,7 @@ export function LinkButton({ href, kind = "secondary", size = "form", children }
   return (
     <Row {...arrangement(kind, size)} as={<AriaLink href={href} className={`${s.base()} no-underline`} />}>
       <Label kind={kind} size={size} className={s.label()}>
-        {children}
+        <Words>{children}</Words>
       </Label>
     </Row>
   );
