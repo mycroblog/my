@@ -6,13 +6,14 @@
 // it then asks for, or something else), for an account the posts of it to include (the one it was opened from chosen
 // already, more of its posts on request, 20 at most), a comment, and for a remote account whether to send the report
 // to its server too, without the reader's name. What is missing is said under what it is about when the reader sends,
-// and what the server refused right before Send. Once sent, it says so and that the reader will be told when the
-// moderators resolved it, never how, and offers to mute or to block the account, each done at once and said in its
-// place. It only displays: the feature holds what the reader chose and sends it.
+// and what the server refused right before Send. The forward choice, the refusal and the buttons are the panel's foot,
+// in sight under the choices as they scroll. Once sent, it says so in its title and offers to mute the account, done
+// at once, or to block it, which the feature asks first; each said in its place once done. It only displays: the
+// feature holds what the reader chose and sends it.
 //
 // For assistive technology: the choices are groups named by their headings; a missing choice or a comment the server
 // refused takes the focus with its error; once sent, the panel's live region, there from the start, says so, and the
-// focus goes to the first button after it; a mute or a block done says so in its button's place, with its focus.
+// focus goes to Done; a mute or a block done says so in its button's place, with its focus.
 
 import {
   Box,
@@ -240,8 +241,8 @@ function Posts({
 }
 
 /**
- * Mute or block once sent: what it does and its button, or, once done, that it was, in the button's place and with
- * the focus the button leaves; a failure says so, over the button.
+ * Mute or Block… once sent, named with the account for assistive technology, or, once done, that it was, in the
+ * button's place and with the focus the button leaves; a failure says so, over the button.
  */
 function After({ what, after, handle, t }: { what: "mute" | "block"; after: ReportAfter; handle: string; t: T }) {
   const done = useRef<HTMLSpanElement>(null);
@@ -258,61 +259,60 @@ function After({ what, after, handle, t }: { what: "mute" | "block"; after: Repo
     );
   return (
     <Stack gap="entry-line">
-      <Box as="p" tone="muted">
-        {t(what === "mute" ? "report.mute_hint" : "report.block_hint")}
-      </Box>
       {after.state === "failed" && (
         <FormAlert regular>{t(what === "mute" ? "report.mute_failed" : "report.block_failed", { handle })}</FormAlert>
       )}
       <Box>
-        <Button size="form" busy={after.state === "busy"} onPress={after.onPress}>
-          {t(what === "mute" ? "report.mute" : "report.block", { handle })}
+        <Button
+          size="form"
+          busy={after.state === "busy"}
+          aria-label={t(what === "mute" ? "report.mute" : "report.block", { handle })}
+          onPress={after.onPress}
+        >
+          {t(what === "mute" ? "report.mute_short" : "report.block_short")}
         </Button>
       </Box>
     </Stack>
   );
 }
 
-/**
- * What follows the sending: that it was sent and what comes of it (for the eye: the panel's live region says it),
- * then mute and block, and Done. The focus goes to its first button, since the one pressed went with the form.
- */
+/** What follows the sending: under its heading, which names the account, mute and Block…; Done is the panel's foot. */
 function Sent({
   target,
   mute,
   block,
-  onClose,
   t,
 }: {
   target: ReportTarget;
   mute: ReportAfter | undefined;
   block: ReportAfter | undefined;
-  onClose: () => void;
   t: T;
 }) {
-  const place = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    place.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus();
-  }, []);
   const handle = sentenceHandleOf(target.account);
+  if (mute === undefined && block === undefined) return null;
   return (
-    <Stack as={<div ref={place} />} gap="entry-room">
-      <Box as="p" dir="auto" aria-hidden="true">
-        {t("report.sent_text")}
-      </Box>
-      {(mute !== undefined || block !== undefined) && (
-        <Stack gap="entry-room">
-          <GroupHeading>{t("report.also", { handle })}</GroupHeading>
-          {mute !== undefined && <After what="mute" after={mute} handle={handle} t={t} />}
-          {block !== undefined && <After what="block" after={block} handle={handle} t={t} />}
-        </Stack>
-      )}
-      <Row justify="end">
-        <Button kind="primary" size="form" onPress={onClose}>
-          {t("report.done")}
-        </Button>
+    <Stack gap="entry-line">
+      <GroupHeading>{t("report.also", { handle })}</GroupHeading>
+      <Row wrap align="start" gap="dialog-row">
+        {mute !== undefined && <After what="mute" after={mute} handle={handle} t={t} />}
+        {block !== undefined && <After what="block" after={block} handle={handle} t={t} />}
       </Row>
     </Stack>
+  );
+}
+
+/** Done, the sent panel's foot, which takes the focus once the form that was sent has gone. */
+function DoneFoot({ onClose, t }: { onClose: () => void; t: T }) {
+  const place = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    place.current?.querySelector<HTMLElement>("button")?.focus();
+  }, []);
+  return (
+    <Row as={<div ref={place} />} justify="end">
+      <Button kind="primary" size="form" onPress={onClose}>
+        {t("report.done")}
+      </Button>
+    </Row>
   );
 }
 
@@ -356,18 +356,24 @@ export function ReportPanel({
       ? t("report.sent_title")
       : target.kind === "account"
         ? t("report.title_account", { handle })
-        : t(target.kind === "room" ? "report.title_room" : "report.title_event");
+        : t(target.kind === "room" ? "report.title_room" : "report.title_event", { name: target.name });
   // The panel's one polite live region, there from the start: it says that the report was sent.
   const said = (
     <Box role="status">
-      <Spoken>{phase === "sent" ? t("report.sent_text") : ""}</Spoken>
+      <Spoken>{phase === "sent" ? t("report.sent_title") : ""}</Spoken>
     </Box>
   );
   if (phase === "sent")
     return (
-      <PanelDialog title={title} closeLabel={t("report.close")} onClose={onClose} layer={layer}>
+      <PanelDialog
+        title={title}
+        closeLabel={t("report.close")}
+        onClose={onClose}
+        layer={layer}
+        foot={<DoneFoot onClose={onClose} t={t} />}
+      >
         {said}
-        <Sent target={target} mute={mute} block={block} onClose={onClose} t={t} />
+        <Sent target={target} mute={mute} block={block} t={t} />
       </PanelDialog>
     );
   const offered = rules.length > 0 ? categories : categories.filter((c) => c !== "violation");
@@ -395,6 +401,38 @@ export function ReportPanel({
         if (!sending) onClose();
       }}
       layer={layer}
+      foot={
+        <Stack gap="entry-line">
+          {remote && (
+            <Stack gap="entry-line">
+              <CheckField
+                id={forwardId}
+                name="forward"
+                value="1"
+                label={t("report.forward", { domain: target.account.domain })}
+                checked={draft.forward}
+                disabled={sending}
+                describedBy={`${forwardId}-hint`}
+                onChange={(forward) => {
+                  onChange({ ...draft, forward });
+                }}
+              />
+              <Box as="p" id={`${forwardId}-hint`} tone="muted">
+                {t("report.forward_hint")}
+              </Box>
+            </Stack>
+          )}
+          {refusal !== undefined && <FormAlert>{refusal}</FormAlert>}
+          <Row wrap align="center" justify="end" gap="dialog-row">
+            <Button kind="quiet" size="form" isDisabled={sending} onPress={onClose}>
+              {t("report.cancel")}
+            </Button>
+            <Button kind="primary" size="form" busy={sending} onPress={send}>
+              {t("report.send")}
+            </Button>
+          </Row>
+        </Stack>
+      }
     >
       {said}
       <Stack gap="entry-room">
@@ -414,7 +452,7 @@ export function ReportPanel({
               label: (
                 <Named
                   name={t("report.category_name", { category: c })}
-                  hint={t("report.category_hint", { category: c })}
+                  hint={c === "spam" ? t("report.spam_hint") : undefined}
                 />
               ),
             }))}
@@ -448,48 +486,24 @@ export function ReportPanel({
         {target.kind === "account" && posts !== undefined && (
           <Posts posts={posts} draft={draft} onChange={onChange} disabled={sending} t={t} />
         )}
-        <TextField
-          id={commentId}
-          name="comment"
-          label={t("report.comment")}
-          hint={commentError ? undefined : t("report.comment_hint", { max: reportPanelLimits.comment })}
-          error={commentError ? t("report.comment_rule", { max: reportPanelLimits.comment }) : undefined}
-          defaultValue={draft.comment}
-          multiline
-          rows={3}
-          readOnly={sending}
-          onChange={(comment) => {
-            onChange({ ...draft, comment });
-          }}
-        />
-        {remote && (
-          <Stack gap="entry-line">
-            <CheckField
-              id={forwardId}
-              name="forward"
-              value="1"
-              label={t("report.forward", { domain: target.account.domain })}
-              checked={draft.forward}
-              disabled={sending}
-              describedBy={`${forwardId}-hint`}
-              onChange={(forward) => {
-                onChange({ ...draft, forward });
-              }}
-            />
-            <Box as="p" id={`${forwardId}-hint`} tone="muted">
-              {t("report.forward_hint")}
-            </Box>
-          </Stack>
-        )}
-        {refusal !== undefined && <FormAlert>{refusal}</FormAlert>}
-        <Row wrap align="center" justify="end" gap="dialog-row">
-          <Button kind="quiet" size="form" isDisabled={sending} onPress={onClose}>
-            {t("report.cancel")}
-          </Button>
-          <Button kind="primary" size="form" busy={sending} onPress={send}>
-            {t("report.send")}
-          </Button>
-        </Row>
+        <Stack gap="entry-line">
+          <GroupHeading>{t("report.comment")}</GroupHeading>
+          <TextField
+            id={commentId}
+            name="comment"
+            label={t("report.comment")}
+            labelHidden
+            hint={commentError ? undefined : t("report.comment_hint", { max: reportPanelLimits.comment })}
+            error={commentError ? t("report.comment_rule", { max: reportPanelLimits.comment }) : undefined}
+            defaultValue={draft.comment}
+            multiline
+            rows={3}
+            readOnly={sending}
+            onChange={(comment) => {
+              onChange({ ...draft, comment });
+            }}
+          />
+        </Stack>
       </Stack>
     </PanelDialog>
   );

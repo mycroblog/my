@@ -5,13 +5,15 @@
 // was reading, which this holds. It reads the server's rules (the instance's information) and, for an account, its
 // posts the reader sees, the one it was opened from chosen first even where it is older than the posts read; it sends
 // the report through @my/app-data and says what the server refused, in its words, the panel staying as it was. Once
-// sent, the reader may mute or block the account from it: by the relationship's write, or by what the caller does for
-// it (a post's menu leaves its line in the post's place, post-actions.tsx). It is shared by the features, not a feature
+// sent, the reader may mute the account from it, or block it after the confirmation the profile asks: by the
+// relationship's write, or by what the caller does for it (a post's menu leaves its line in the post's place,
+// post-actions.tsx). It is shared by the features, not a feature
 // of its own: a feature never imports another.
 
 import {
   reportDraft,
   ReportPanel,
+  sentenceHandleOf,
   type ReportAccount,
   type ReportAfter,
   type ReportDraft,
@@ -28,7 +30,7 @@ import {
   useRelationship,
   type CreateReport,
 } from "@my/app-data";
-import { useLocale } from "@my/design-system";
+import { ConfirmDialog, ModalPresence, useLocale } from "@my/design-system";
 import { useState } from "react";
 import { stringsIn } from "./locale";
 
@@ -109,6 +111,8 @@ export function ReportDialog({
   );
   const [phase, setPhase] = useState<"writing" | "sending" | "sent">("writing");
   const [refused, setRefused] = useState<{ words: string; comment: boolean } | undefined>(undefined);
+  // Block…, asked first as the profile's is.
+  const [asking, setAsking] = useState(false);
   const [after, setAfter] = useState<Readonly<Record<"mute" | "block", AfterState>>>({ mute: "ready", block: "ready" });
   const target: ReportTarget =
     subject.kind === "account"
@@ -143,24 +147,54 @@ export function ReportDialog({
   const blocking = relationship?.blocking === true && after.block !== "done";
   const muting = relationship?.muting === true && after.mute !== "done";
   return (
-    <ReportPanel
-      target={target}
-      instance={instance?.name || instance?.domain || ""}
-      rules={instance?.rules ?? []}
-      posts={posts}
-      draft={draft}
-      onChange={(next) => {
-        setDraft(next);
-        if (refused?.comment === true && next.comment !== draft.comment) setRefused(undefined);
-      }}
-      phase={phase}
-      refusal={refused?.words}
-      commentRefused={refused?.comment === true}
-      onSend={send}
-      onClose={onClose}
-      mute={muting || blocking ? undefined : { state: after.mute, onPress: doAfter("mute") }}
-      block={blocking ? undefined : { state: after.block, onPress: doAfter("block") }}
-      layer={layer}
-    />
+    <>
+      <ReportPanel
+        target={target}
+        instance={instance?.name || instance?.domain || ""}
+        rules={instance?.rules ?? []}
+        posts={posts}
+        draft={draft}
+        onChange={(next) => {
+          setDraft(next);
+          if (refused?.comment === true && next.comment !== draft.comment) setRefused(undefined);
+        }}
+        phase={phase}
+        refusal={refused?.words}
+        commentRefused={refused?.comment === true}
+        onSend={send}
+        onClose={onClose}
+        mute={muting || blocking ? undefined : { state: after.mute, onPress: doAfter("mute") }}
+        block={
+          blocking
+            ? undefined
+            : {
+                state: after.block,
+                onPress: () => {
+                  if (after.block !== "busy" && after.block !== "done") setAsking(true);
+                },
+              }
+        }
+        layer={layer}
+      />
+      <ModalPresence>
+        {asking && (
+          <ConfirmDialog
+            key="block"
+            title={t("profile.block_confirm_title", { handle: sentenceHandleOf(subject.account) })}
+            cancel={t("profile.cancel")}
+            confirm={t("profile.block_confirm")}
+            onCancel={() => {
+              setAsking(false);
+            }}
+            onConfirm={() => {
+              setAsking(false);
+              doAfter("block")();
+            }}
+          >
+            {t("profile.block_confirm_text")}
+          </ConfirmDialog>
+        )}
+      </ModalPresence>
+    </>
   );
 }

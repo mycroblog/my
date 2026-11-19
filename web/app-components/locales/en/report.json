@@ -4,12 +4,12 @@
     "description": "The title of the panel that reports an account to the moderators. {handle} is the account's handle (@name@server)."
   },
   "report.title_room": {
-    "defaultMessage": "Report this voice chat room",
-    "description": "The title of the panel that reports a voice chat room to the moderators."
+    "defaultMessage": "Report the room “{name}”",
+    "description": "The title of the panel that reports a voice chat room to the moderators. {name} is the room's name as its host wrote it."
   },
   "report.title_event": {
-    "defaultMessage": "Report this event",
-    "description": "The title of the panel that reports an event to the moderators."
+    "defaultMessage": "Report the event “{name}”",
+    "description": "The title of the panel that reports an event to the moderators. {name} is the event's title as its organizer wrote it."
   },
   "report.close": {
     "defaultMessage": "Close",
@@ -31,9 +31,9 @@
     "defaultMessage": "{category, select, spam {Spam} legal {Illegal content} violation {Breaks the server's rules} other {Something else}}",
     "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
   },
-  "report.category_hint": {
-    "defaultMessage": "{category, select, spam {Unwanted ads, the same post over and over, or misleading links} legal {Content that breaks the law} violation {You choose the rules this breaks next} other {Say what is wrong in the comment}}",
-    "description": "What a reason for a report covers, under its name in the report panel. {category} is spam, legal, violation or other."
+  "report.spam_hint": {
+    "defaultMessage": "Unwanted ads, the same post over and over, or misleading links",
+    "description": "What the reason Spam covers, under its name in the report panel; the other reasons have none."
   },
   "report.category_missing": {
     "defaultMessage": "Choose why you are reporting this.",
@@ -111,29 +111,25 @@
     "defaultMessage": "Report sent",
     "description": "The title of the report panel once the report was sent."
   },
-  "report.sent_text": {
-    "defaultMessage": "Thank you. The moderators will look into it. You will be notified once they have dealt with it, but not of what they decided.",
-    "description": "What the report panel says once the report was sent: the moderators look into it, and the reader is told when they resolved it, never how."
-  },
   "report.also": {
     "defaultMessage": "What else you can do about {handle}",
     "description": "The heading over muting and blocking the reported account, once the report was sent. {handle} is the account's handle."
   },
   "report.mute": {
     "defaultMessage": "Mute {handle}",
-    "description": "The button that mutes the reported account, once the report was sent."
+    "description": "The name for assistive technology of the button Mute once the report was sent: it mutes the reported account. {handle} is the account's handle."
   },
-  "report.mute_hint": {
-    "defaultMessage": "Their posts stay out of your timelines. They are not told.",
-    "description": "What muting the reported account does, over its button."
+  "report.mute_short": {
+    "defaultMessage": "Mute",
+    "description": "The button that mutes the reported account once the report was sent; the heading over it names the account."
   },
   "report.block": {
-    "defaultMessage": "Block {handle}",
-    "description": "The button that blocks the reported account, once the report was sent."
+    "defaultMessage": "Block {handle}…",
+    "description": "The name for assistive technology of the button Block… once the report was sent: it blocks the reported account, after a confirmation. {handle} is the account's handle."
   },
-  "report.block_hint": {
-    "defaultMessage": "Follows between you end, and neither of you can follow the other or see their posts.",
-    "description": "What blocking the reported account does, over its button."
+  "report.block_short": {
+    "defaultMessage": "Block…",
+    "description": "The button that blocks the reported account once the report was sent, after a confirmation; the heading over it names the account."
   },
   "report.muted": {
     "defaultMessage": "You muted {handle}.",

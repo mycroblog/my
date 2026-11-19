@@ -109,10 +109,21 @@ export class ReportPanel {
     return this.page.getByRole("dialog", { name: "Report sent", exact: true });
   }
 
-  /** Mutes or blocks the account from the panel once sent, and returns once the server has answered. */
+  /**
+   * Mutes the account from the panel once sent, or blocks it through Block… and its confirmation, and returns once the
+   * server has answered.
+   */
   async after(action: "Mute" | "Block"): Promise<void> {
     await answered(this.page, { methods: ["POST"], path: /\/accounts\/[^/]+\/(?:mute|block)$/ }, async () => {
-      await this.sent.getByRole("button", { name: new RegExp(`^${action} @\\S+$`) }).click();
+      if (action === "Mute") {
+        await this.sent.getByRole("button", { name: /^Mute @\S+$/ }).click();
+        return;
+      }
+      await this.sent.getByRole("button", { name: /^Block @\S+…$/ }).click();
+      await this.page
+        .getByRole("alertdialog", { name: /^Block @\S+\?$/ })
+        .getByRole("button", { name: "Block", exact: true })
+        .click();
     });
   }
 

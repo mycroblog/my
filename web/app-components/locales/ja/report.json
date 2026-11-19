@@ -4,12 +4,12 @@
     "description": "The title of the panel that reports an account to the moderators. {handle} is the account's handle (@name@server)."
   },
   "report.title_room": {
-    "defaultMessage": "この通話のルームを通報",
-    "description": "The title of the panel that reports a voice chat room to the moderators."
+    "defaultMessage": "ルーム「{name}」を通報",
+    "description": "The title of the panel that reports a voice chat room to the moderators. {name} is the room's name as its host wrote it."
   },
   "report.title_event": {
-    "defaultMessage": "このイベントを通報",
-    "description": "The title of the panel that reports an event to the moderators."
+    "defaultMessage": "イベント「{name}」を通報",
+    "description": "The title of the panel that reports an event to the moderators. {name} is the event's title as its organizer wrote it."
   },
   "report.close": {
     "defaultMessage": "閉じる",
@@ -31,9 +31,9 @@
     "defaultMessage": "{category, select, spam {スパム} legal {違法な内容} violation {サーバーのルール違反} other {その他}}",
     "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
   },
-  "report.category_hint": {
-    "defaultMessage": "{category, select, spam {迷惑な宣伝、同じ内容の繰り返し、誤解を招くリンク} legal {法律に反する内容} violation {次に、違反しているルールを選びます} other {何が問題かをコメントに書いてください}}",
-    "description": "What a reason for a report covers, under its name in the report panel. {category} is spam, legal, violation or other."
+  "report.spam_hint": {
+    "defaultMessage": "迷惑な宣伝、同じ内容の繰り返し、誤解を招くリンク",
+    "description": "What the reason Spam covers, under its name in the report panel; the other reasons have none."
   },
   "report.category_missing": {
     "defaultMessage": "通報する理由を選んでください。",
@@ -111,29 +111,25 @@
     "defaultMessage": "通報しました",
     "description": "The title of the report panel once the report was sent."
   },
-  "report.sent_text": {
-    "defaultMessage": "ありがとうございます。モデレーターが確認します。対応が済んだら通知でお知らせしますが、どう対応したかはお知らせしません。",
-    "description": "What the report panel says once the report was sent: the moderators look into it, and the reader is told when they resolved it, never how."
-  },
   "report.also": {
     "defaultMessage": "{handle} について、ほかにできること",
     "description": "The heading over muting and blocking the reported account, once the report was sent. {handle} is the account's handle."
   },
   "report.mute": {
     "defaultMessage": "{handle} をミュート",
-    "description": "The button that mutes the reported account, once the report was sent."
+    "description": "The name for assistive technology of the button Mute once the report was sent: it mutes the reported account. {handle} is the account's handle."
   },
-  "report.mute_hint": {
-    "defaultMessage": "タイムラインにその人の投稿が表示されなくなります。相手には伝わりません。",
-    "description": "What muting the reported account does, over its button."
+  "report.mute_short": {
+    "defaultMessage": "ミュート",
+    "description": "The button that mutes the reported account once the report was sent; the heading over it names the account."
   },
   "report.block": {
-    "defaultMessage": "{handle} をブロック",
-    "description": "The button that blocks the reported account, once the report was sent."
+    "defaultMessage": "{handle} をブロック…",
+    "description": "The name for assistive technology of the button Block… once the report was sent: it blocks the reported account, after a confirmation. {handle} is the account's handle."
   },
-  "report.block_hint": {
-    "defaultMessage": "お互いのフォローは解除され、どちらも相手をフォローできず、相手の投稿も見られなくなります。",
-    "description": "What blocking the reported account does, over its button."
+  "report.block_short": {
+    "defaultMessage": "ブロック…",
+    "description": "The button that blocks the reported account once the report was sent, after a confirmation; the heading over it names the account."
   },
   "report.muted": {
     "defaultMessage": "{handle} をミュートしました。",
