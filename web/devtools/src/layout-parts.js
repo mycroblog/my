@@ -57,7 +57,7 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/feed.tsx": ["NewItemsPlace"],
   "web/design-system/src/media.tsx": ["PictureGrid"],
   "web/design-system/src/switch.tsx": ["ToggleFrame", "TogglePlace", "ToggleNote"],
-  "web/design-system/src/settings.tsx": ["SettingFrame", "FieldLineFrame"],
+  "web/design-system/src/settings.tsx": ["SettingFrame", "FieldLineFrame", "CodeFrame"],
   "web/design-system/src/channels.tsx": ["ChannelFrame", "ChannelLine", "ChannelPlace"],
   "web/design-system/src/field.tsx": ["SelectFrame", "NumberFrame"],
   "web/design-system/src/disclosure.tsx": ["DisclosureFrame", "DisclosureSummary"],
@@ -97,6 +97,8 @@ export const LAYOUT_PARTS = {
     "CandidatePlace",
     "AnswerPlace",
   ],
+  "web/design-system/src/facts.tsx": ["FactFrame", "FactLine", "TileGrid"],
+  "web/design-system/src/color-field.tsx": ["SchemeGrid", "HexFrame"],
   // The fixtures that prove the rules (restrictions.test.js).
   "web/design-system/fixtures/layout.tsx": ["Row", "Shelf", "Gone"],
   "web/design-system/fixtures/viewport.tsx": ["Page", "Column"],

@@ -379,7 +379,8 @@ export function Form({
 export type TextFieldProps = {
   id: string;
   name: string;
-  label: string;
+  /** Its name: words, or words with a part of them set apart (the text a confirmation has the reader type). */
+  label: ReactNode;
   /** `search`: a field that finds as it is written (a searchbox). */
   type?: "text" | "email" | "password" | "search" | undefined;
   /** Left out while an error says the same rule. */

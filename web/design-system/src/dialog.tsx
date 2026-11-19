@@ -12,19 +12,25 @@
 // text's color, then what the proof lets them do, the field of the proof (the password, a two-factor code) or none
 // where the confirmation itself proves it (a passkey, going to an external provider), the other ways to prove it, each
 // a row of its own a finger's target tall, what the server refused right before the pair, and the pair; where the
-// reader has no way to prove it here, it says so and has Cancel alone. The head of every modal ends with close, after
-// its title; a confirmation's close cancels, as its Cancel does.
+// reader has no way to prove it here, it says so and has Cancel alone. A confirmation before what is grave as well as
+// final (banning an account, closing the server, deleting a role) has the reader type a stated text first (ADR-0110,
+// NFR-MOD-7): under what follows, a field labelled with the text, in the code's face; the confirmation stays disabled
+// until the field holds it. The head of every modal ends with close, after its title; a confirmation's close cancels,
+// as its Cancel does.
 //
 // For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
-// the page behind is out of reach. The confirmation that asks to authenticate again is a form: the focus starts in
-// the field of the proof, Enter in it confirms, what the server refused is an alert that also describes the field,
-// and the focus goes back to the field for another try; while the proof is in flight nothing confirms it again.
+// the page behind is out of reach. The confirmation with a text to type is a form: the focus starts in its field, and
+// Enter there confirms once the field holds the text. The confirmation that asks to authenticate again is a form: the
+// focus starts in the field of the proof, Enter in it confirms, what the server refused is an alert that also
+// describes the field, and the focus goes back to the field for another try; while the proof is in flight nothing
+// confirms it again.
 
-import { Children, isValidElement, useEffect, useId, useRef, type ReactElement, type ReactNode } from "react";
+import { Children, isValidElement, useEffect, useId, useRef, useState, type ReactElement, type ReactNode } from "react";
 import { Dialog, Heading } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Button } from "./button";
 import { FieldContext } from "./field";
+import { TextField } from "./form-page";
 import { IconButton } from "./icon-button";
 import { Box, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
@@ -42,8 +48,26 @@ const confirm = tv({
     // The other ways to prove it, one under another, each a finger's target tall.
     ways: "list-none p-0",
     way: "min-h-icon-button-touch",
+    // The text to type, inside the field's label: in the code's face, breaking anywhere where it does not fit.
+    phrase: "font-mono font-strong [overflow-wrap:anywhere]",
   },
 });
+
+/** What the reader typed, as it is compared with the text to type: its edges trimmed, its full-width forms folded. */
+const folded = (text: string) => text.normalize("NFKC").trim();
+
+/** The label of the field of a text to type: the catalog's sentence, the text in the code's face in its place. */
+function PhraseLabel({ lang, phrase, className }: { lang: string; phrase: string; className: string }) {
+  const mark = "\u0000";
+  const [before = "", after = ""] = stringsIn(lang).t("dialog.type_to_confirm", { phrase: mark }).split(mark);
+  return (
+    <>
+      {before}
+      <bdi className={className}>{phrase}</bdi>
+      {after}
+    </>
+  );
+}
 
 /**
  * The head of a small dialog: its title, which names the dialog (the slot of React Aria's over the page, `titleId`
@@ -98,13 +122,19 @@ export type ConfirmDialogProps = {
   onConfirm: () => void;
   /** The confirmed action in flight: the confirmation spins and the dialog stays. */
   busy?: boolean | undefined;
+  /**
+   * The text the reader types to unlock the confirmation, before what is grave as well as final (the account's handle
+   * before a ban, the server's domain before closing it, the role's name before deleting it): the confirmation stays
+   * disabled until the field holds it, its edges and full-width forms aside.
+   */
+  phrase?: string | undefined;
   /** Over the page, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
 };
 
 /**
- * Asks before an action that cannot be undone: the question and close, what follows, then Cancel and the
- * confirmation.
+ * Asks before an action that cannot be undone: the question and close, what follows, the field of the text to type
+ * where there is one, then Cancel and the confirmation.
  */
 export function ConfirmDialog({
   title,
@@ -115,12 +145,22 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   busy = false,
+  phrase,
   layer = true,
 }: ConfirmDialogProps) {
   const s = confirm();
   const { lang, direction } = useReader(undefined);
   const titleId = useId();
   const textId = useId();
+  const fieldId = useId();
+  const [entered, setEntered] = useState("");
+  // Without a text to type, the confirmation is open from the start.
+  const unlocked = phrase === undefined || folded(entered) === folded(phrase);
+  // Over the page, the focus starts in the field of the text to type: the reader came to type it.
+  const typing = phrase !== undefined;
+  useEffect(() => {
+    if (layer && typing) document.getElementById(fieldId)?.focus();
+  }, [layer, typing, fieldId]);
   const body = (
     <>
       <DialogHead
@@ -134,16 +174,51 @@ export function ConfirmDialog({
       <p id={textId} className={s.text()}>
         {children}
       </p>
+      {phrase !== undefined && (
+        <TextField
+          id={fieldId}
+          name="phrase"
+          label={<PhraseLabel lang={lang} phrase={phrase} className={s.phrase()} />}
+          autoComplete="off"
+          autoCapitalize="none"
+          onChange={setEntered}
+        />
+      )}
       <Row wrap align="center" justify="end" gap="dialog-row">
         <Button kind="quiet" size="form" onPress={onCancel} isDisabled={busy}>
           {cancel}
         </Button>
-        <Button kind="primary" size="form" busy={busy} onPress={onConfirm}>
-          {confirmLabel}
-        </Button>
+        {phrase === undefined ? (
+          <Button kind="primary" size="form" busy={busy} onPress={onConfirm}>
+            {confirmLabel}
+          </Button>
+        ) : (
+          <Button kind="primary" size="form" busy={busy} isDisabled={!unlocked} type="submit">
+            {confirmLabel}
+          </Button>
+        )}
       </Row>
     </>
   );
+  // With a text to type, the dialog is a form, which Enter in the field sends once the field holds the text.
+  const content =
+    phrase === undefined ? (
+      body
+    ) : (
+      <Stack
+        gap="dialog-gap"
+        as={
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (unlocked && !busy) onConfirm();
+            }}
+          />
+        }
+      >
+        {body}
+      </Stack>
+    );
   // A specimen in a page stands as the modal's frame would place it: as wide as its column, a dialog's width at most.
   if (!layer)
     return (
@@ -158,7 +233,7 @@ export function ConfirmDialog({
         dir={direction}
       >
         <Stack gap="dialog-gap" className={s.dialog()}>
-          {body}
+          {content}
         </Stack>
       </Box>
     );
@@ -169,7 +244,7 @@ export function ConfirmDialog({
         gap="dialog-gap"
         as={<Dialog role="alertdialog" aria-describedby={textId} className={s.dialog()} dir={direction} />}
       >
-        {body}
+        {content}
       </Stack>
     </ModalLayer>
   );

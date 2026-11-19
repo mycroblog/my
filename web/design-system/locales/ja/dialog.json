@@ -2,5 +2,9 @@
   "dialog.close": {
     "defaultMessage": "閉じる",
     "description": "The button at the end of the head of a confirmation (a small dialog that asks before something that cannot be undone), after its title, that closes it without confirming, as its Cancel does."
+  },
+  "dialog.type_to_confirm": {
+    "defaultMessage": "確認のため {phrase} と入力してください",
+    "description": "The label of the field in a confirmation before something grave that cannot be undone (banning an account, closing the server, deleting a role): the confirmation stays disabled until the reader types the text. phrase is that text, shown in a code face (an account's handle such as spam_bot@social.example, the server's domain, a role's name)."
   }
 }

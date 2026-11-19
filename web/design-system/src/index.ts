@@ -232,6 +232,9 @@ export {
   type FinanceRowProps,
   type FinanceTableProps,
 } from "./finance";
+export { FactList, FigureTiles, type Fact, type Figure } from "./facts";
+export { LogEntry, LogList, type LogEntryProps } from "./log";
+export { ColorField, type ColorFieldProps, type ColorPair, type SchemeColors } from "./color-field";
 export {
   Money,
   PlanCard,

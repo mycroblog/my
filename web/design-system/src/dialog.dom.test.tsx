@@ -403,3 +403,31 @@ test("authenticating again in the flow of a page is a dialog too, and leaves the
   expect(screen.getByRole("button", { name: "Behind" })).not.toBeNull();
   expect(answers).toEqual([]);
 });
+
+test("a confirmation with a text to type keeps its confirmation disabled until the field holds the text", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ phrase: "spam_bot@social.example", confirm: "Ban account" });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const field = within(dialog).getByRole("textbox", { name: "To confirm, type spam_bot@social.example" });
+  const ban = within(dialog).getByRole("button", { name: "Ban account" });
+  expect(document.activeElement).toBe(field);
+  expect(ban.hasAttribute("disabled")).toBe(true);
+
+  await user.type(field, "spam_bot{Enter}");
+  expect(ban.hasAttribute("disabled")).toBe(true);
+  expect(answers).toEqual([]);
+
+  // Its edges and full-width forms aside, as a Japanese input method may type it.
+  await user.type(field, "@ｓｏｃｉａｌ.example ");
+  expect(ban.hasAttribute("disabled")).toBe(false);
+  await user.type(field, "{Enter}");
+  expect(answers).toEqual(["confirm"]);
+});
+
+test("a confirmation with a text to type in flight confirms no more", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ phrase: "Moderator", busy: true });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  await user.type(within(dialog).getByRole("textbox"), "Moderator{Enter}");
+  expect(answers).toEqual([]);
+});

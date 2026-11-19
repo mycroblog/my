@@ -32,7 +32,16 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import { createContext, Fragment, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
+import {
+  createContext,
+  Fragment,
+  use,
+  useId,
+  type HTMLAttributes,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+} from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface, TextLink } from "./button";
@@ -1067,15 +1076,28 @@ const note = tv({
   slots: {
     root: "[word-break:auto-phrase]",
     link: "whitespace-nowrap",
-    // The values to copy, on the page's surface, in the code's face; a long one breaks anywhere.
-    values: "list-none rounded-control bg-surface p-screen-row-inline font-mono text-body text-text select-all",
+    // The values to copy, in the code's face, on the raised surface, and on the page's in a raised section; a long one
+    // breaks anywhere.
+    values: [
+      "list-none rounded-control bg-surface-raised p-screen-row-inline font-mono text-body text-text select-all",
+      "[[data-surface-raised]_&]:bg-surface",
+    ],
     value: "wrap-anywhere tabular-nums",
+    // A block of code (a payload): its lines and indents kept, a long line wrapped anywhere and never scrolled
+    // sideways, at the caption's size; past a screenful of lines it scrolls in place, a stop of the keyboard's.
+    code: [
+      "box-border rounded-control bg-surface-raised p-screen-row-inline",
+      "font-mono text-caption text-text whitespace-pre-wrap wrap-anywhere outline-hidden focus-visible:shadow-focus",
+      // A wrapped line's continuation is indented, as a code block's in a post.
+      "[text-indent:var(--content-code-hang)_hanging_each-line]",
+      "[[data-surface-raised]_&]:bg-surface",
+    ],
     result: "text-caption text-muted-text",
     // What a section says came of a change: where the screen moves the focus to it, the ring a keyboard's focus shows.
     said: "rounded-control outline-hidden focus-visible:shadow-focus",
     // A QR code is dark on light whatever the scheme, or a camera does not read it.
     qr: "rounded-control bg-surface p-screen-air text-text [color-scheme:light]",
-    code: "size-screen-qr fill-current",
+    modules: "size-screen-qr fill-current",
   },
   variants: {
     instead: {
@@ -1143,41 +1165,61 @@ export function SettingsResult({
   );
 }
 
+/** A block of code, as tall as its lines up to a screenful of them, past which it scrolls in place. */
+function CodeFrame({ className, ...rest }: HTMLAttributes<HTMLPreElement> & { className: string }) {
+  return <pre {...rest} className={`${className} max-h-[24lh] overflow-y-auto`} />;
+}
+
 /**
  * What the reader copies and keeps (recovery codes, the key of an authenticator app, a secret shown once), named by
- * `label`: the values in the code's face on the page's surface, each on a line of its own, two side by side where
- * they fit, and under them the action that copies them all (`action`, a `Button`) with what came of it right after
- * (`result`, read as it comes). A press on the values selects them all, for a reader who copies by hand.
+ * `label`: the values in the code's face on the raised surface (the page's in a raised section), each on a line of
+ * its own, two side by side where they fit, and under them the action that copies them all (`action`, a `Button`)
+ * with what came of it right after (`result`, read as it comes). A press on the values selects them all, for a reader
+ * who copies by hand. A block of `code` in their place (a webhook's payload, the errors of an import) keeps its lines
+ * and indents, wraps a long line, and scrolls in place past a screenful of lines.
  */
 export function CopyBlock({
   label,
-  values,
   action,
   result,
+  ...shown
 }: {
   label: string;
-  values: readonly string[];
   action: ReactNode;
   /** What came of copying, in a word or two (Copied). */
   result?: string | undefined;
-}) {
+} & (
+  | { values: readonly string[]; code?: undefined }
+  | {
+      /** A block of code or a payload, as its lines are to be copied. */
+      code: string;
+      values?: undefined;
+    }
+)) {
   const s = note();
   return (
     <Stack gap="screen-row-gap">
-      <Grid
-        as="ul"
-        columns={values.length > 1 ? 2 : 1}
-        gap="screen-air"
-        gapX="shell-edge"
-        aria-label={label}
-        className={s.values()}
-      >
-        {values.map((value) => (
-          <li key={value} className={s.value()}>
-            {value}
-          </li>
-        ))}
-      </Grid>
+      {shown.code === undefined ? (
+        <Grid
+          as="ul"
+          columns={shown.values.length > 1 ? 2 : 1}
+          gap="screen-air"
+          gapX="shell-edge"
+          aria-label={label}
+          className={s.values()}
+        >
+          {shown.values.map((value) => (
+            <li key={value} className={s.value()}>
+              {value}
+            </li>
+          ))}
+        </Grid>
+      ) : (
+        // A stop of the keyboard's, so that a block longer than its room scrolls without a pointer.
+        <CodeFrame role="group" aria-label={label} tabIndex={0} className={s.code()} dir="ltr">
+          <code>{shown.code}</code>
+        </CodeFrame>
+      )}
       <Row wrap align="center" gap="screen-row-gap">
         <Row as="span" inline rigid>
           {action}
@@ -1208,7 +1250,7 @@ export function QrFrame({ label, size, path }: { label: string; size: number; pa
               aria-label={label}
               viewBox={`0 0 ${String(size)} ${String(size)}`}
               shapeRendering="crispEdges"
-              className={s.code()}
+              className={s.modules()}
             />
           }
         >
