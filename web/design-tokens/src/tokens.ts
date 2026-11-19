@@ -579,7 +579,7 @@ export const voice = {
   lane: 2.25,
   rise: 9,
   control: 3,
-  controlWidth: 4.5,
+  controlWidth: 5.5,
   controlGap: 0.5,
   roomBox: 2.5,
   roomEmoji: 1.5,
