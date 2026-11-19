@@ -47,7 +47,9 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       for (const name of ["Supporter", "Patron", "Benefactor"])
         await expect(planNamed(page, name)).not.toHaveAttribute("aria-current");
       await expect(page.getByRole("radio", { name: "Monthly", exact: true })).toBeChecked();
-      await expect(page.getByRole("button", { name: "Choose", exact: true })).toHaveCount(3);
+      // A Choose a plan, its name beginning with the word shown; that each names its plan is the part's test.
+      for (const name of ["Supporter", "Patron", "Benefactor"])
+        await expect(planNamed(page, name).getByRole("button", { name: /^Choose(\s.*)?$/ })).toHaveCount(1);
       await expect(planNamed(page, "Supporter")).toContainText("¥300 / month");
       // The period's choice changes every plan's price; a press anywhere on a segment lands on its radio.
       await page.getByRole("radio", { name: "Yearly Save 10%", exact: true }).click();
@@ -61,7 +63,8 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(yours).toHaveAttribute("aria-current", "true");
       await expect(yours).toContainText("Your plan");
       await expect(yours.getByRole("button")).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Switch", exact: true })).toHaveCount(2);
+      for (const name of ["Supporter", "Benefactor"])
+        await expect(planNamed(page, name).getByRole("button", { name: /^Switch(\s.*)?$/ })).toHaveCount(1);
       await expect(planNamed(page, "Benefactor")).toContainText("Everything in Patron, plus:");
     },
   ],

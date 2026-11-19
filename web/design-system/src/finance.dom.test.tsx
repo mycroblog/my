@@ -55,12 +55,21 @@ test("the totals are a table: the columns' names first, then a row a period head
   for (const bar of table.querySelectorAll('[aria-hidden="true"]')) expect(bar.textContent).toBe("");
 });
 
-/** The cells of the table named `name` that hold a bar (what is hidden from assistive technology), by their words. */
+/**
+ * The cells of the table named `name` that hold a bar, each as its words and the length of the bar's fill: a bar is
+ * what is hidden from assistive technology and holds a fill as long as its share, unlike an estimate's glyph.
+ */
 const cellsWithBars = (name: string) =>
   within(screen.getByRole("table", { name }))
     .getAllByRole("cell")
-    .filter((cell) => cell.querySelector('[aria-hidden="true"]') !== null)
-    .map((cell) => cell.textContent);
+    .flatMap((cell) =>
+      [...cell.querySelectorAll('[aria-hidden="true"]')].flatMap((hidden) => {
+        const fill = hidden.firstElementChild;
+        return fill instanceof HTMLElement && fill.style.inlineSize !== ""
+          ? [`${cell.textContent} · ${fill.style.inlineSize}`]
+          : [];
+      }),
+    );
 
 test("every figure a bar draws is read in the bar's cell, and a figure in two currencies draws no bar", () => {
   render(
@@ -81,7 +90,7 @@ test("every figure a bar draws is read in the bar's cell, and a figure in two cu
   );
 
   // A bar of yen and dollars together would add a sum no table cell says: the currencies are never converted.
-  expect(cellsWithBars("Totals by year")).toEqual(["¥118,080", "¥142,800"]);
+  expect(cellsWithBars("Totals by year")).toEqual(["¥118,080 · 80%", "¥142,800 · 100%"]);
 });
 
 test("a breakdown's total is its last row, its cells in the columns' order", () => {

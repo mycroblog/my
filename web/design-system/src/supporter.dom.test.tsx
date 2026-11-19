@@ -2,14 +2,16 @@
 
 // The parts of the supporters' screens (#3244), as assistive technology gets them: an amount with its period, one
 // text; the plans, a list named by its label, each plan an item named by its heading, read from its name to its
-// action, the reader's marked current where the action would be; a single choice of a few segments, a radio group a
-// press and the arrow keys change, its line about it describing it, and when disabled out of reach; and a
-// subscription's state, in each kind its sentence, its line and its action, its sign hidden. How they stand at a width is their stories' (Supporters).
+// action, each action named by its plan, the reader's marked current where the action would be; a single choice of a
+// few segments, a radio group a press and the arrow keys change, its line about it describing it, and when disabled
+// out of reach; and a subscription's state, in each kind its sentence, its line and its action, its sign hidden. How
+// they stand at a width is their stories' (Supporters).
 
 import { expect, test } from "bun:test";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useState } from "react";
+import { Button } from "./button";
 import { SegmentChoice } from "./choice";
 import { Money, PlanCard, PlanList, SubscriptionState } from "./supporter";
 
@@ -138,6 +140,29 @@ test("a plan reads its name, a heading of the third level, then its price, what 
     "Your plan",
   ]);
   expect(within(patron as HTMLElement).queryAllByRole("button")).toHaveLength(0);
+});
+
+test("plans side by side each with a Choose tell their actions apart by name, each beginning with the word shown", () => {
+  render(
+    <PlanList label="Plans">
+      {["Supporter", "Patron", "Benefactor"].map((name) => (
+        <PlanCard
+          key={name}
+          name={name}
+          price={<Money amount="¥300" per="/ month" />}
+          perks={[]}
+          action={<Button onPress={() => undefined}>Choose</Button>}
+        />
+      ))}
+    </PlanList>,
+  );
+
+  // One button a plan, named by the word it shows first and then by its plan, so a list of buttons tells them apart.
+  expect(
+    ["Supporter", "Patron", "Benefactor"].map(
+      (name) => screen.queryAllByRole("button", { name: new RegExp(`^Choose\\b.*\\b${name}\\b`) }).length,
+    ),
+  ).toEqual([1, 1, 1]);
 });
 
 test("the segments are reached by Tab on the chosen one, and the arrow keys choose the next", async () => {
