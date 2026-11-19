@@ -358,6 +358,18 @@ describe("the direction of a participant who does not speak", () => {
     expect(r.rejected).toEqual([]);
   });
 
+  test("turning the microphone on rejects when the browser refuses it, and sends nothing", async () => {
+    microphone.refused = true;
+    const r = room();
+    const a = r.join("a");
+    r.join("b");
+    r.state({ a: true, b: false });
+    await settle();
+    expect(await rejection(a.setMicrophone(true))).toMatchObject({ name: "NotAllowedError" });
+    expect(a.snapshot().microphone).toBe(false);
+    expect(r.pcs("a")[0]?.transceivers[0]?.sender.track ?? null).toBeNull();
+  });
+
   test("the microphone turns off without stopping, and on again", async () => {
     const r = room();
     const a = r.join("a");
@@ -451,6 +463,35 @@ describe("playback", () => {
     r.state({ a: false, b: true, c: false });
     await settle();
     expect(audible()).toBe(2);
+  });
+
+  test("a participant who leaves the roster loses its pair and its audio", async () => {
+    const r = room();
+    const heard: FakeRemoteAudio[] = [];
+    const a = r.join("a", {
+      environment: {
+        createRemoteAudio: () => {
+          const audio = new FakeRemoteAudio();
+          heard.push(audio);
+          return audio;
+        },
+      },
+    });
+    r.join("b");
+    r.join("c");
+    r.state({ a: true, b: true, c: false });
+    await settle();
+    const [toB, toC] = r.pcs("a");
+    // Of b and c, only b sends audio to a.
+    const fromB = heard.filter((audio) => !audio.closed && audio.audible);
+    expect(fromB).toHaveLength(1);
+
+    a.update({ speaker: true, members: [{ session: "c", speaker: false }] });
+    await settle();
+    expect(toB?.closed).toBe(true);
+    expect(toC?.closed).toBe(false);
+    expect(fromB.map((audio) => audio.closed)).toEqual([true]);
+    expect(a.snapshot().connection.participants.map((p) => p.session)).toEqual(["c"]);
   });
 
   test("says when the browser blocks the audio, and that it plays again on resume", async () => {

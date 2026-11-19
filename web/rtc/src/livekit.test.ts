@@ -6,9 +6,9 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "bun:test";
 import { createRoomSession } from "./session";
 import { sendWait } from "./sfu";
-import { browser, FakeRemoteAudio, fakeEnvironment, resetFakes, settle, statsReport } from "./test/fake";
+import { browser, FakeRemoteAudio, fakeEnvironment, rejection, resetFakes, settle, statsReport } from "./test/fake";
 import { DisconnectReason, FakeRoom, loadFakeLiveKit, resetFakeLiveKit, room } from "./test/livekit";
-import type { RoomEnvironment, RoomGrant, RoomRoster, RoomSession, RoomSessionFailure } from "./types";
+import { type RoomEnvironment, type RoomGrant, type RoomRoster, type RoomSession, RoomSessionFailure } from "./types";
 
 const grant: RoomGrant = {
   kind: "livekit",
@@ -180,6 +180,18 @@ describe("the microphone", () => {
     expect(room().localParticipant.setMicrophoneEnabled).not.toHaveBeenCalled();
   });
 
+  test("rejects when the browser refuses it, and says the microphone is off", async () => {
+    const session = join();
+    session.update(speaking);
+    await settle();
+    room().permit(true);
+    room().localParticipant.setMicrophoneEnabled.mockImplementationOnce(() =>
+      Promise.reject(new DOMException("denied", "NotAllowedError")),
+    );
+    expect(await rejection(session.setMicrophone(true))).toMatchObject({ name: "NotAllowedError" });
+    expect(session.snapshot().microphone).toBe(false);
+  });
+
   test("is unpublished and stopped when the user goes back to listening", async () => {
     const session = join();
     session.update(speaking);
@@ -256,6 +268,32 @@ describe("the connection", () => {
     expect(failures.map((failure) => failure.reason)).toEqual(["removed"]);
     expect(session.snapshot().connection.state).toBe("closed");
     expect(browser.closed).toBe(1);
+  });
+
+  test.each([
+    ["another session took its identity", DisconnectReason.DUPLICATE_IDENTITY],
+    ["the room was deleted", DisconnectReason.ROOM_DELETED],
+  ])("fails as removed, and closes, when %s", async (_why, reason) => {
+    const session = join();
+    await settle();
+    const failures: RoomSessionFailure[] = [];
+    session.on("failed", (failure) => failures.push(failure));
+    room().emit("disconnected", reason);
+    expect(failures.map((failure) => failure.reason)).toEqual(["removed"]);
+    expect(failures[0]).toBeInstanceOf(RoomSessionFailure);
+    expect(session.snapshot().connection.state).toBe("closed");
+    expect(browser.closed).toBe(1);
+  });
+
+  test("is lost, without failing, when it is disconnected for another reason", async () => {
+    const session = join();
+    await settle();
+    const failures: RoomSessionFailure[] = [];
+    session.on("failed", (failure) => failures.push(failure));
+    room().emit("disconnected", DisconnectReason.UNKNOWN_REASON);
+    expect(failures).toEqual([]);
+    expect(session.snapshot().connection.state).toBe("lost");
+    expect(browser.closed).toBe(0);
   });
 
   test("fails as unavailable when the SDK does not load", async () => {

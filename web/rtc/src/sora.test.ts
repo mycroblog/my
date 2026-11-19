@@ -276,6 +276,36 @@ describe("stability", () => {
     expect(session.snapshot().connection.state).toBe("connected");
   });
 
+  test("stays lost when the network comes back after the grant expired", async () => {
+    const session = await joined(listening, { ...grant, expiresAt: Date.now() - 1 });
+    sora(0).emit("disconnect", { type: "abend", title: "WEBSOCKET-ONCLOSE" });
+    browser.networkChange();
+    await settle();
+    expect(FakeSoraConnection.all).toHaveLength(1);
+    expect(session.snapshot().connection.state).toBe("lost");
+  });
+
+  test("a disconnect is lost, never a failure", async () => {
+    const session = await joined(listening);
+    const failures: unknown[] = [];
+    session.on("failed", (failure) => failures.push(failure));
+    sora(0).emit("disconnect", { type: "abend", title: "WEBSOCKET-ONCLOSE" });
+    expect(failures).toEqual([]);
+    expect(browser.closed).toBe(0);
+  });
+
+  test("fails as unavailable when the SDK does not load", async () => {
+    const session = createRoomSession({
+      session: "s1",
+      grant,
+      environment: fakeEnvironment({ loadSora: () => Promise.reject(new Error("offline")) }),
+    });
+    session.update(listening);
+    await settle();
+    expect(session.snapshot().failure?.reason).toBe("unavailable");
+    expect(session.snapshot().connection.state).toBe("closed");
+  });
+
   test("a renewed grant is kept, without joining again", async () => {
     const session = await joined(listening);
     session.renew({ ...grant, token: "join-4" });
