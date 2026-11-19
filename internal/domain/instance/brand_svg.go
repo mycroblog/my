@@ -471,7 +471,8 @@ func sizeRoot(root *svgNode, w, h float64) {
 		}
 	}
 	format := func(n float64) string { return strconv.FormatFloat(n, 'f', -1, 64) }
-	root.attrs = append(attrs, svgAttr{name: "width", value: format(w)}, svgAttr{name: "height", value: format(h)})
+	attrs = append(attrs, svgAttr{name: "width", value: format(w)}, svgAttr{name: "height", value: format(h)})
+	root.attrs = attrs
 }
 
 // checkAspectRatio checks the viewBox of kind: square for an icon, 1:1 to 8:1 for a logo.
