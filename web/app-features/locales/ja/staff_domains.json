@@ -87,6 +87,10 @@
     "defaultMessage": "ドメインを消す",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that empties the domain's search field. Read by moderators."
   },
+  "staff_domains.actions.domain.invalid": {
+    "defaultMessage": "spam.example のようなドメインを、https:// やパスを付けずに入力してください。",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the domain's search when the server takes what was written for no domain. Read by moderators."
+  },
   "staff_domains.actions.all": {
     "defaultMessage": "解除・期限切れも表示",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the toggle that shows the actions no longer in effect. Read by moderators."
@@ -120,7 +124,7 @@
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the column of each action's state. Read by moderators."
   },
   "staff_domains.actions.empty": {
-    "defaultMessage": "有効な処分はありません。リモートのドメインへの処分はここに表示されます。",
+    "defaultMessage": "有効な処分はありません。",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when no action is in effect. Read by moderators."
   },
   "staff_domains.actions.empty.filtered": {
@@ -247,25 +251,17 @@
     "defaultMessage": "公開する理由",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the reason others may read. Read by moderators."
   },
-  "staff_domains.form.public_comment.hint": {
-    "defaultMessage": "処分したドメインを公開しているとき、そこに表示されます。",
-    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of the public reason. Read by moderators."
-  },
   "staff_domains.form.private_note": {
     "defaultMessage": "モデレーターのメモ",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the field of the note only the moderators read. Read by moderators."
-  },
-  "staff_domains.form.private_note.hint": {
-    "defaultMessage": "モデレーターだけが読めます。",
-    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under a field that only the moderators read. Read by moderators."
   },
   "staff_domains.form.obfuscate": {
     "defaultMessage": "公開するときにドメインの一部を伏せる",
     "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the checkbox of whether a published list hides part of the domain. Read by moderators."
   },
   "staff_domains.form.submit": {
-    "defaultMessage": "処分する",
-    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that takes the new action (a suspend asks first). Read by moderators."
+    "defaultMessage": "{kind, select, suspend {凍結する…} limit {制限する} reject_media {メディアを拒否する} reject_reports {通報を拒否する} force_sensitive {メディアをセンシティブにする} other {処分する}}",
+    "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), the button that takes the new action, named by its kind; a suspend asks first (…). Read by moderators."
   },
   "staff_domains.suspend.title": {
     "defaultMessage": "{domain} を凍結しますか？",
@@ -324,7 +320,7 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field when the server refused it as too large. Read by moderators."
   },
   "staff_domains.import.file.hint": {
-    "defaultMessage": "Mastodon がエクスポートしたドメインブロックの CSV か、1 行に 1 つのドメインの一覧 (すべて凍結)。インポートするまで何も変わりません。",
+    "defaultMessage": "1 行に 1 つのドメインの一覧は、どれも凍結します。",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), under the file's field. Read by moderators."
   },
   "staff_domains.import.file.unread": {
@@ -400,8 +396,20 @@
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), the question of the confirmation before rows that suspend domains are imported. Read by moderators."
   },
   "staff_domains.import.confirm.about": {
-    "defaultMessage": "{count, plural, other {うち # 件はドメインを凍結し、そのアカウントとのフォローをすべて解除します。凍結を解除してもフォローは戻りません。取り消せません。}}",
+    "defaultMessage": "{count, plural, other {うち # 件はドメインを凍結し、受信・配送・取得をすべて止めます。}}",
     "description": "On the moderators' screen of Mastodon's domain block CSV (/moderation/domain-actions/import), in the confirmation of an import, what its suspends end. Read by moderators."
+  },
+  "staff_domains.import.submit.ask": {
+    "defaultMessage": "{count, plural, other {# 行をインポートする…}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, the button that imports the rows kept when a suspend among them asks first. Read by moderators."
+  },
+  "staff_domains.import.cuts": {
+    "defaultMessage": "{follows, plural, =0 {このサーバーの人とそれらのアカウントとのフォローはありません。} other {このサーバーの {people, plural, other {# 人}}とそれらのアカウントとのフォロー # 件が解除されます。凍結を解除してもフォローは戻りません。取り消せません。}}",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, how many follows its suspends end, as the server counts them now. Read by moderators."
+  },
+  "staff_domains.import.uncounted": {
+    "defaultMessage": "このサーバーの人とそれらのアカウントとのフォローはすべて解除されます。件数は数えられませんでした。凍結を解除してもフォローは戻りません。取り消せません。",
+    "description": "On the moderators' screen of Mastodon's domain block CSV, in the confirmation of an import, when the follows its suspends end could not be counted (too many domains, or a count failed). Read by moderators."
   },
   "staff_domains.imported.skipped.table": {
     "defaultMessage": "飛ばした行",
@@ -456,7 +464,7 @@
     "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), the column of when each domain was allowed. Read by moderators."
   },
   "staff_domains.allows.empty": {
-    "defaultMessage": "許可したドメインはありません。許可したドメインとだけ連合する設定のあいだは、どこのサーバーとも連合しません。",
+    "defaultMessage": "許可したドメインはありません。",
     "description": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when no domain is allowed. Read by moderators."
   },
   "staff_domains.allows.remove": {
@@ -512,7 +520,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), for a subscription never fetched. Read by moderators."
   },
   "staff_domains.lists.empty": {
-    "defaultMessage": "購読しているブロックリストはありません。購読したリストは毎日取得し、その差分はここで確認できます。",
+    "defaultMessage": "購読しているブロックリストはありません。",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription. Read by moderators."
   },
   "staff_domains.lists.failing": {
@@ -548,7 +556,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), the field of the list's URL. Read by moderators."
   },
   "staff_domains.list.form.url.hint": {
-    "defaultMessage": "https のアドレス。あとから変えられません。",
+    "defaultMessage": "あとから変えられません。",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL's field. Read by moderators."
   },
   "staff_domains.list.form.url.blank": {
@@ -692,7 +700,7 @@
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when the drafts could not be read; Try again follows. Read by moderators."
   },
   "staff_domains.drafts.empty": {
-    "defaultMessage": "確認を待つ差分はありません。リストが足したり外したりしたものはここに並びます。",
+    "defaultMessage": "確認を待つ差分はありません。",
     "description": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when no draft waits. Read by moderators."
   },
   "staff_domains.drafts.column.domain": {
@@ -804,7 +812,7 @@
     "description": "On the moderators' list of remote servers (/moderation/instances), the column of each server's state. Read by moderators."
   },
   "staff_domains.servers.empty": {
-    "defaultMessage": "どのサーバーにも配送が届いています。配送が失敗したサーバーがここに表示されます。",
+    "defaultMessage": "どのサーバーにも配送が届いています。",
     "description": "On the moderators' list of remote servers (/moderation/instances), when no server has failures. Read by moderators."
   },
   "staff_domains.servers.empty.filtered": {
@@ -896,11 +904,11 @@
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), the filter field of one local account's deliveries, by username. Read by moderators."
   },
   "staff_domains.deliveries.account.hint": {
-    "defaultMessage": "このサーバーのユーザー名。アカウントの配送の一覧は監査ログに記録されます。",
+    "defaultMessage": "アカウントの配送の一覧は監査ログに記録されます。",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account, before it is sent. Read by moderators."
   },
   "staff_domains.deliveries.account.chosen": {
-    "defaultMessage": "{handle} の配送を表示しています。アカウントの配送の一覧は監査ログに記録されます。",
+    "defaultMessage": "{handle} の配送を表示しています。",
     "description": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account while its deliveries are shown. Read by moderators."
   },
   "staff_domains.deliveries.account.unknown": {

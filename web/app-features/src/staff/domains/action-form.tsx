@@ -181,7 +181,6 @@ export function NewDomainActionScreen({ domain = "", onBack, onIssued }: NewDoma
           id={ids.public}
           name="public_comment"
           label={t("staff_domains.form.public_comment")}
-          hint={t("staff_domains.form.public_comment.hint")}
           multiline
           rows={2}
           maxLength={domainCommentLimit}
@@ -194,7 +193,6 @@ export function NewDomainActionScreen({ domain = "", onBack, onIssued }: NewDoma
           id={ids.private}
           name="private_note"
           label={t("staff_domains.form.private_note")}
-          hint={t("staff_domains.form.private_note.hint")}
           multiline
           rows={2}
           maxLength={domainCommentLimit}
@@ -217,7 +215,7 @@ export function NewDomainActionScreen({ domain = "", onBack, onIssued }: NewDoma
         {alert !== undefined && <FormAlert regular>{alert}</FormAlert>}
         <Row>
           <Button type="submit" kind="primary" busy={busy && !asking}>
-            {t("staff_domains.form.submit")}
+            {t("staff_domains.form.submit", { kind: draft.kind })}
           </Button>
         </Row>
       </Stack>
@@ -241,16 +239,19 @@ export function NewDomainActionScreen({ domain = "", onBack, onIssued }: NewDoma
  * The confirmation of a suspend of `domain`: what it stops, the follows it cuts for good as the server counts them now
  * (while it counts, that it does; where it could not, that it cuts them, uncounted), and the domain to type.
  */
-function SuspendConfirm({
+export function SuspendConfirm({
   domain,
   busy,
   onCancel,
   onConfirm,
+  layer,
 }: {
   domain: string;
   busy: boolean;
   onCancel: () => void;
   onConfirm: () => void;
+  /** Over the page, or in the flow of a page (a story's specimen). */
+  layer?: boolean | undefined;
 }) {
   const { t } = useStaffStrings();
   const impact = useDomainSuspendImpact(domain);
@@ -270,6 +271,9 @@ function SuspendConfirm({
       confirm={t("staff_domains.suspend.confirm")}
       phrase={domain}
       busy={busy}
+      // The suspend waits for the count of what it ends; where the count failed, the dialog says so and lets it go.
+      pending={impact.status === "pending"}
+      layer={layer}
       onCancel={onCancel}
       onConfirm={onConfirm}
     >

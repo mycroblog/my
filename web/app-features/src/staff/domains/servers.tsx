@@ -28,8 +28,8 @@ import {
 import {
   BackButton,
   Box,
-  dateFormat,
   Button,
+  dateFormat,
   FactList,
   FeedNotice,
   FilterBar,
@@ -51,7 +51,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import {
   auditLogPath,
   cursorOf,
@@ -62,8 +62,11 @@ import {
   Pages,
   refusalWords,
   remoteServerPath,
+  Section,
   tied,
   useSaid,
+  Way,
+  Ways,
 } from "./parts";
 
 /**
@@ -290,7 +293,7 @@ function ServerHead({ server }: { server: RemoteServer }) {
     );
   };
   const items: Fact[] = [
-    { term: t("staff_domains.server.fact.state"), value: t("staff_domains.server.state", { state: server.state }) },
+    { term: t("staff_domains.server.fact.state"), value: <ServerStateMark state={server.state} /> },
     ...(server.state_changed_at === undefined
       ? []
       : [{ term: t("staff_domains.server.fact.since"), value: moment(server.state_changed_at) }]),
@@ -304,7 +307,6 @@ function ServerHead({ server }: { server: RemoteServer }) {
   ];
   return (
     <Stack gap="entry-room">
-      <FactList label={t("staff_domains.server.facts")} items={items} />
       <Row wrap gap="screen-tab-gap">
         {(server.state === "unavailable" || server.failure_days > 0) && (
           <Button
@@ -326,19 +328,18 @@ function ServerHead({ server }: { server: RemoteServer }) {
         >
           {t("staff_domains.server.refetch")}
         </Button>
-        <GoButton href={domainActionsOf(server.domain)} icon="moderation">
-          {t("staff_domains.server.actions")}
-        </GoButton>
-        <GoButton href={newDomainActionPath(server.domain)} icon="add">
-          {t("staff_domains.actions.new")}
-        </GoButton>
-        {audits && (
-          <GoButton href={staffHref(auditLogPath, { target_kind: "domain", target: server.domain })} icon="history">
-            {t("staff_domains.to_audit")}
-          </GoButton>
-        )}
       </Row>
       {status}
+      <FactList label={t("staff_domains.server.facts")} items={items} />
+      <Ways>
+        <Way href={domainActionsOf(server.domain)}>{t("staff_domains.server.actions")}</Way>
+        <Way href={newDomainActionPath(server.domain)}>{t("staff_domains.actions.new")}</Way>
+        {audits && (
+          <Way href={staffHref(auditLogPath, { target_kind: "domain", target: server.domain })}>
+            {t("staff_domains.to_audit")}
+          </Way>
+        )}
+      </Ways>
     </Stack>
   );
 }
@@ -352,7 +353,7 @@ function Availability({ domain, address }: { domain: string; address: StaffAddre
   const { t } = useStaffStrings();
   const page = useAvailabilityEvents(domain, cursorOf(address.search, eventPages.cursor));
   return (
-    <Titled title={t("staff_domains.availability.title")}>
+    <Section title={t("staff_domains.availability.title")}>
       {page.status !== "success" ? (
         <ReadNotice
           status={page.status}
@@ -366,11 +367,7 @@ function Availability({ domain, address }: { domain: string; address: StaffAddre
         <Stack gap="entry-room">
           <LogList label={t("staff_domains.availability.title")}>
             {page.items.map((e) => (
-              <LogEntry
-                key={e.id}
-                icon={e.kind === "marked_available" ? "stateActive" : "stateDisabled"}
-                date={e.occurred_at}
-              >
+              <LogEntry key={e.id} icon={e.kind === "marked_available" ? "play" : "pause"} date={e.occurred_at}>
                 {eventWords(t, e)}
               </LogEntry>
             ))}
@@ -378,7 +375,7 @@ function Availability({ domain, address }: { domain: string; address: StaffAddre
           <Pages address={address} next={page.next} of={eventPages} />
         </Stack>
       )}
-    </Titled>
+    </Section>
   );
 }
 
@@ -395,7 +392,7 @@ function Deliveries({ domain, address }: { domain: string; address: StaffAddress
   const q = deliveryQueryOf(address.search);
   const page = useDeliveries(domain, q);
   return (
-    <Titled title={t("staff_domains.deliveries")}>
+    <Section title={t("staff_domains.deliveries")}>
       <Stack gap="entry-room">
         <DeliveryFilters address={address} />
         {page.refused ? (
@@ -426,7 +423,7 @@ function Deliveries({ domain, address }: { domain: string; address: StaffAddress
           </>
         )}
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 

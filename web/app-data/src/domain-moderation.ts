@@ -7,7 +7,7 @@
 // drafts, and accepting and rejecting those. Every write reads again what it changes: the lists, the thing written,
 // and the counts of what awaits the moderators.
 import { type components } from "@mycroblog/mykit";
-import { keepPreviousData, skipToken, useQuery } from "@tanstack/react-query";
+import { keepPreviousData, skipToken, useQueries, useQuery } from "@tanstack/react-query";
 import { whileOpen, type AppData } from "./app-data";
 import type { SavedFile } from "./exports";
 import { useAppData } from "./provider";
@@ -128,9 +128,9 @@ export async function loadDomainAction(data: AppData, id: string): Promise<void>
   await data.queryClient.query(domainActionQuery(data, id)).catch(() => undefined);
 }
 
-/** What the domain actions change, read again after a write: their lists and the actions, and the remote servers. */
+/** What the domain actions change, read again after a write: their lists and the actions, and the audit log. */
 const domainActionsChanged = (data: AppData) => {
-  staffChanged(data, ["/admin/domain_actions", "/admin/instances", "/admin/audit_log"]);
+  staffChanged(data, ["/admin/domain_actions", "/admin/audit_log"]);
 };
 
 /** Puts the action a write answered into the cache, and reads again what it changes. */
@@ -205,6 +205,41 @@ export function useDomainSuspendImpact(domain: string): StaffOne<DomainSuspendIm
   return oneOf(useQuery({ ...domainSuspendImpactQuery(useAppData(), domain), staleTime: 0, gcTime: 0, retry: false }));
 }
 
+/** The most domains whose suspends a confirmation counts the follows of; past them, it says they are uncounted. */
+export const domainImpactCountLimit = 20;
+
+/** What the suspends of several domains would end, summed, and where its read is. */
+export type DomainSuspendImpacts = {
+  readonly follows: number;
+  readonly localAccounts: number;
+  /** `pending` while any count is on its way; `error` when one failed or there are too many domains to count. */
+  readonly status: "pending" | "error" | "success";
+};
+
+/**
+ * What the suspends of `domains` would end now, each counted as `useDomainSuspendImpact` counts it and summed (a
+ * person who loses follows on two domains counted on each); past `domainImpactCountLimit` domains nothing is asked.
+ */
+export function useDomainSuspendImpacts(domains: readonly string[]): DomainSuspendImpacts {
+  const data = useAppData();
+  const counted = domains.length <= domainImpactCountLimit;
+  const reads = useQueries({
+    queries: (counted ? domains : []).map((domain) => ({
+      ...domainSuspendImpactQuery(data, domain),
+      staleTime: 0,
+      gcTime: 0,
+      retry: false,
+    })),
+  });
+  if (!counted || reads.some((r) => r.status === "error")) return { follows: 0, localAccounts: 0, status: "error" };
+  if (reads.some((r) => r.status === "pending")) return { follows: 0, localAccounts: 0, status: "pending" };
+  return {
+    follows: reads.reduce((n, r) => n + (r.data?.follows ?? 0), 0),
+    localAccounts: reads.reduce((n, r) => n + (r.data?.local_accounts ?? 0), 0),
+    status: "success",
+  };
+}
+
 /** The preview of a CSV as a screen follows it. */
 export type DomainImportPreviewState = {
   /** What importing the CSV given would do; undefined until the server answered for it. */
@@ -222,7 +257,9 @@ export type DomainImportPreviewState = {
 export function useDomainImportPreview(csv: string | undefined): DomainImportPreviewState {
   const data = useAppData();
   const query = useQuery({
-    queryKey: ["post", "/admin/domain_actions/import/preview", csv] as const,
+    // A key of its own, outside the domain actions' paths, which a write reads again: the preview is no list of them,
+    // and asking for it again sends the whole file.
+    queryKey: ["domain-import-preview", csv] as const,
     queryFn:
       csv === undefined
         ? skipToken
@@ -380,7 +417,7 @@ export function domainListWrites(data: AppData): DomainListWrites {
     staffChanged(data, [
       "/admin/domain_list_subscriptions",
       "/admin/audit_log",
-      ...(actions ? ["/admin/domain_actions", "/admin/instances"] : []),
+      ...(actions ? ["/admin/domain_actions"] : []),
     ]);
   };
   const written = async (subscription: DomainListSubscription | undefined): Promise<DomainListSubscription> => {

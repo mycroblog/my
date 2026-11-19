@@ -14,6 +14,7 @@ import {
   FormAlert,
   Icon,
   LinkButton,
+  ListTitle,
   RecordPages,
   Row,
   Select,
@@ -213,6 +214,40 @@ export function useEnd(): (expires: string | undefined) => string {
   const { t } = useStaffStrings();
   const moment = useMoment();
   return (expires) => (expires === undefined ? t("staff_domains.until_lifted") : moment(expires));
+}
+
+/**
+ * A section of a screen that holds fields or lists (the import, the drafts, the deliveries), under a title of the
+ * list's size: never smaller than the labels of the fields under it.
+ */
+export function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack gap="entry-room">
+      <ListTitle>{title}</ListTitle>
+      {children}
+    </Stack>
+  );
+}
+
+/**
+ * The places a screen leads to about what it shows (its server, its other actions, the audit log), apart from what the
+ * reader does to it and quieter: quiet buttons that lead on (`Way`), a finger's target each, in a row that wraps.
+ */
+export function Ways({ children }: { children: ReactNode }) {
+  return (
+    <Row wrap gap="screen-tab-gap">
+      {children}
+    </Row>
+  );
+}
+
+/** A place a screen leads to, among its `Ways`. */
+export function Way({ href, children }: { href: string; children: string }) {
+  return (
+    <LinkButton href={href} kind="quiet" size="timeline">
+      {children}
+    </LinkButton>
+  );
 }
 
 /** A neutral button that leads to another screen, its glyph before its words. */

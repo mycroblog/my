@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The moderators' screens of domains and the audit log: Domain actions and Audit log in Moderation's list of screens,
+// The moderators' screens of domains and the audit log: Domain actions in Moderation's list of screens,
 // the form of a new domain action with the confirmation of a suspend (the follows it ends, the domain to type), the
 // action's page, and the entries of the audit log. Each write returns once the server has answered it.
 
@@ -28,11 +28,6 @@ export class StaffDomains {
     return this.screens.getByRole("link", { name: /^Domain actions .+$/ });
   }
 
-  /** The root's link to the audit log, with its hint. */
-  get auditLogLink(): Locator {
-    return this.screens.getByRole("link", { name: /^Audit log .+$/ });
-  }
-
   /** Opens the form of a new domain action from the list. */
   async newAction(): Promise<void> {
     await this.main.getByRole("link", { name: "New action", exact: true }).click();
@@ -44,9 +39,9 @@ export class StaffDomains {
     await this.main.getByRole("textbox", { name: "Public reason", exact: true }).fill(reason);
   }
 
-  /** Sends the form, which asks first for a suspend. */
-  async takeAction(): Promise<void> {
-    await this.main.getByRole("button", { name: "Take action", exact: true }).click();
+  /** Sends the form of a suspend, which asks first. */
+  async suspend(): Promise<void> {
+    await this.main.getByRole("button", { name: "Suspend…", exact: true }).click();
   }
 
   /** The confirmation of a suspend of `domain`. */
@@ -71,6 +66,11 @@ export class StaffDomains {
   /** The facts of an action on its page. */
   get actionFacts(): Locator {
     return this.main.getByLabel("About this action", { exact: true });
+  }
+
+  /** Opens the audit log of the operations on an action's domain, from the action's page. */
+  async auditLogOfDomain(): Promise<void> {
+    await this.main.getByRole("link", { name: "Audit log", exact: true }).click();
   }
 
   /** The entries of the audit log. */

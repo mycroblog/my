@@ -8,13 +8,14 @@
 // of the same actor and on the same target. A one-person server has one actor, so the log is not filtered by it
 // (ADR-0152).
 
-import { moderatedAccountPath, reportPath, sentenceHandleOf, eventPath, voiceRoomPath } from "@my/app-components";
+import { eventPath, moderatedAccountPath, reportPath, sentenceHandleOf } from "@my/app-components";
 import {
   auditActions,
   auditActionTargets,
   auditTargetKinds,
   useAuditLog,
   useDeliveryAccount,
+  useEvent,
   useInstance,
   useViewer,
   type AuditEntry,
@@ -39,7 +40,7 @@ import {
 import type { ReactNode } from "react";
 import type { MessageId } from "../../messages.gen";
 import { formatParts } from "../../slots";
-import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
+import { staffHref, useStaffEntries, type StaffAddress, type StaffArea, type StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings, type T } from "../parts";
 import { auditLogPath, cursorOf, domainAllowsPath, domainListPath, filtered, Pages, remoteServerPath } from "./parts";
 
@@ -72,7 +73,7 @@ const glyphs: Readonly<Record<AuditTargetKind, IconName>> = {
   user: "signUp",
   role: "security",
   setting: "settings",
-  rule: "list",
+  rule: "about",
   signup_block: "block",
   custom_emoji: "emojiCustom",
   webhook: "webhookOff",
@@ -93,120 +94,185 @@ const glyphs: Readonly<Record<AuditTargetKind, IconName>> = {
   login_provider: "signIn",
   link_card_domain: "link",
   hook_decision: "reviewFailing",
-  domain_allow: "accepted",
+  domain_allow: "included",
   domain_list_subscription: "list",
   event: "events",
 };
 
+/** A screen of the staff's an entry links to: the entry of its area it is under, and its address. */
+type Place = { readonly area: StaffArea; readonly entry: string; readonly href: string };
+
 /**
- * Where the target of an entry is looked at, by its kind (ADR-0058 §1), while it is there: its own screen, or the list
- * that holds it where it has none of its own; a remote post's own address (its label is its URI).
+ * Where the target of an entry is looked at, by its kind (ADR-0058 §1), while it is there: the screen of its own, or the
+ * list that holds it, under the entry of the staff's screens it belongs to, which the reader's permissions must open;
+ * an event's page; a remote post's own address (its label is its URI). A kind whose screens the app does not have yet
+ * names its entry all the same: it links once that entry is there.
  */
-function targetHref(e: AuditEntry): string | undefined {
+function placeOf(e: AuditEntry): Place | { readonly href: string } | undefined {
   if (!e.target_exists) return undefined;
   const id = encodeURIComponent(e.target_id);
+  const moderation = (entry: string, href: string): Place => ({ area: "moderation", entry, href });
+  const admin = (entry: string, href: string): Place => ({ area: "admin", entry, href });
   switch (e.target_kind) {
     case "account":
-      return moderatedAccountPath(e.target_id);
+      return moderation("accounts", moderatedAccountPath(e.target_id));
     case "status":
-      return /^https?:\/\//.test(e.target_label) ? e.target_label : undefined;
+      return /^https?:\/\//.test(e.target_label) ? { href: e.target_label } : undefined;
     case "domain":
-      return remoteServerPath(e.target_id);
+      return moderation("instances", remoteServerPath(e.target_id));
     case "report":
-      return reportPath(e.target_id);
+      return moderation("reports", reportPath(e.target_id));
     case "appeal":
-      return `/moderation/appeals/${id}`;
+      return moderation("appeals", `/moderation/appeals/${id}`);
     case "user":
-      return "/moderation/registrations";
+      return moderation("registrations", "/moderation/registrations");
     case "role":
-      return "/admin/roles";
+      return admin("roles", "/admin/roles");
     case "setting":
-      return "/admin/settings";
+      return admin("settings", "/admin/settings");
     case "rule":
-      return `/admin/rules/${id}`;
+      return admin("rules", `/admin/rules/${id}`);
     case "signup_block":
-      return `/moderation/signup-blocks/${id}`;
+      return moderation("signup-blocks", `/moderation/signup-blocks/${id}`);
     case "custom_emoji":
-      return `/admin/custom-emojis/${id}`;
+      return admin("custom-emojis", `/admin/custom-emojis/${id}`);
     case "webhook":
-      return `/admin/webhooks/${id}`;
+      return admin("webhooks", `/admin/webhooks/${id}`);
     case "announcement":
-      return `/admin/announcements/${id}`;
+      return admin("announcements", `/admin/announcements/${id}`);
     case "invite":
-      return "/moderation/invites";
+      return moderation("invites", "/moderation/invites");
     case "relay":
-      return `/admin/relays/${id}`;
+      return admin("relays", `/admin/relays/${id}`);
     case "billing_source":
-      return "/admin/finance/imports";
+      return admin("finance", "/admin/finance/imports");
     case "cost_item":
-      return `/admin/finance/costs/${id}`;
+      return admin("finance", `/admin/finance/costs/${id}`);
     case "supporter_program":
     case "payment_provider":
-      return "/admin/supporters";
+      return admin("supporters", "/admin/supporters");
     case "supporter_plan":
-      return `/admin/supporters/plans/${id}`;
+      return admin("supporters", `/admin/supporters/plans/${id}`);
     case "supporter_subscription":
-      return `/admin/supporters/subscriptions/${id}`;
+      return admin("supporters", `/admin/supporters/subscriptions/${id}`);
     case "custom_emoji_request":
-      return "/admin/custom-emojis/requests";
+      return admin("custom-emojis", "/admin/custom-emojis/requests");
     case "oauth_client":
-      return "/admin/oauth-apps";
+      return admin("oauth-apps", "/admin/oauth-apps");
     case "oauth_client_host":
-      return "/admin/oauth-apps/hosts";
+      return admin("oauth-apps", "/admin/oauth-apps/hosts");
     case "instance":
-      return "/admin/closure";
+      return admin("closure", "/admin/closure");
     case "voice_room":
-      return voiceRoomPath(e.target_id);
+      return undefined;
     case "login_provider":
-      return `/admin/login-providers/${id}`;
+      return admin("login-providers", `/admin/login-providers/${id}`);
     case "link_card_domain":
-      return `/admin/link-card-domains/${id}`;
+      return admin("link-card-domains", `/admin/link-card-domains/${id}`);
     case "hook_decision":
-      return `/moderation/hook-decisions/${id}`;
+      return moderation("hook-decisions", `/moderation/hook-decisions/${id}`);
     case "domain_allow":
-      return domainAllowsPath;
+      return moderation("domain-actions", domainAllowsPath);
     case "domain_list_subscription":
-      return domainListPath(e.target_id);
+      return moderation("domain-actions", domainListPath(e.target_id));
     case "event":
-      return eventPath(e.target_id);
+      return { href: eventPath(e.target_id) };
   }
 }
 
-/** Who did it, as the sentence names them: the user's account, linked to its screen; else the command line, the server, or another server. */
-function actorOf(t: T, e: AuditEntry): ReactNode {
+/** The address of a place of `e` the reader may open: one of the staff's under an entry open to them, or another. */
+function useTargetHref(e: AuditEntry): string | undefined {
+  const moderation = useStaffEntries("moderation");
+  const admin = useStaffEntries("admin");
+  const place = placeOf(e);
+  if (place === undefined || !("area" in place)) return place?.href;
+  const open = (place.area === "moderation" ? moderation : admin).some((entry) => entry.path === place.entry);
+  return open ? place.href : undefined;
+}
+
+/** The words of a setting's key ("registration_mode" → "Registration mode"), until the settings name their own. */
+const keyWords = (key: string): string => {
+  const words = key.replace(/[_.]+/g, " ").trim();
+  return words.charAt(0).toUpperCase() + words.slice(1);
+};
+
+/**
+ * What an entry names its target by: its name when it happened, as the server kept it, in the reader's words where
+ * the server kept a system's value (a sign-up block's kind and value, a setting's key, a role's key and a handle); an
+ * event's title, which its ID stands for.
+ */
+function useTargetWords(e: AuditEntry): { readonly target: string; readonly person?: string } {
+  const { t } = useStaffStrings();
+  const event = useEvent(e.target_id, e.target_kind === "event" && e.target_exists).event;
+  switch (e.target_kind) {
+    case "signup_block": {
+      const [kind = "", ...value] = e.target_label.split(" ");
+      return { target: t("staff_audit.signup_block", { kind, value: value.join(" ") }) };
+    }
+    case "setting":
+      return { target: keyWords(e.target_label) };
+    case "role": {
+      // A role granted or revoked is its key and the handle of whom; the others are its key.
+      const at = e.target_label.lastIndexOf(" @");
+      const key = at < 0 ? e.target_label : e.target_label.slice(0, at);
+      return {
+        target: t("staff_audit.role", { key }),
+        ...(at < 0 ? {} : { person: e.target_label.slice(at + 1) }),
+      };
+    }
+    case "event":
+      return { target: event?.title ?? t("staff_audit.event") };
+    default:
+      return { target: e.target_label };
+  }
+}
+
+/** Who did it, as the sentence names them: the user's account, linked while its screen is open to the reader. */
+function useActor(t: T, e: AuditEntry): ReactNode {
+  const open = useStaffEntries("moderation").some((entry) => entry.path === "accounts");
   if (e.actor_kind !== "user") return t("staff_audit.actor", { kind: e.actor_kind });
   if (e.actor_account === undefined) return t("staff_audit.actor.gone");
+  const handle = sentenceHandleOf(e.actor_account);
   return (
     <SentenceName>
-      <TextLink href={moderatedAccountPath(e.actor_account.id)}>{sentenceHandleOf(e.actor_account)}</TextLink>
+      {open ? <TextLink href={moderatedAccountPath(e.actor_account.id)}>{handle}</TextLink> : handle}
     </SentenceName>
   );
 }
 
-/** What it acted on, as the sentence names it: its name when it happened, linked to where it is looked at. */
-function targetOf(e: AuditEntry): ReactNode {
-  const href = targetHref(e);
-  return (
-    <SentenceName>
-      {href === undefined ? e.target_label : <TextLink href={href}>{e.target_label}</TextLink>}
-    </SentenceName>
-  );
-}
+/** The kinds of operation the app words; a kind of a newer server reads as a sentence of no kind. */
+const worded: ReadonlySet<string> = new Set(auditActions);
 
-/** The sentence of an entry, who did what to what, the actor and the target linked. */
-export function auditSentence(t: T, e: AuditEntry): ReactNode {
+/**
+ * The sentence of an entry, who did what to what: the actor and the target linked to their screens where the reader
+ * may open them, else named; the closure of the service with no target, which is the service itself.
+ */
+export function AuditSentence({ entry: e }: { entry: AuditEntry }): ReactNode {
+  const { t } = useStaffStrings();
+  const actor = useActor(t, e);
+  const href = useTargetHref(e);
+  const words = useTargetWords(e);
+  const target = (
+    <SentenceName>{href === undefined ? words.target : <TextLink href={href}>{words.target}</TextLink>}</SentenceName>
+  );
+  const id = worded.has(e.action) ? (`staff_audit.action.${e.action}` as MessageId) : "staff_audit.action.other";
   return formatParts(
     t,
-    `staff_audit.action.${e.action}` as MessageId,
+    id,
     {},
-    { actor: actorOf(t, e), target: targetOf(e) },
+    {
+      actor,
+      target,
+      person: <SentenceName>{words.person ?? ""}</SentenceName>,
+    },
   );
 }
 
 /** An entry of the log: its glyph, its sentence, and under Details the ways to the same actor's and the same target's operations. */
-function Entry({ entry: e, search }: { entry: AuditEntry; search: StaffSearch }) {
+function Entry({ entry: e, search, alone }: { entry: AuditEntry; search: StaffSearch; alone: boolean }) {
   const { t } = useStaffStrings();
-  const actorId = e.actor_kind === "user" ? e.actor_account_id : undefined;
+  // On a one-person server every operation is the one person's: there is no other actor to tell apart.
+  const actorId = e.actor_kind === "user" && !alone ? e.actor_account_id : undefined;
   const ways = (
     <Row wrap gap="screen-tab-gap">
       {actorId !== undefined && search["actor"] !== actorId && (
@@ -220,8 +286,12 @@ function Entry({ entry: e, search }: { entry: AuditEntry; search: StaffSearch })
     </Row>
   );
   return (
-    <LogEntry icon={glyphs[e.target_kind]} date={e.occurred_at} detail={ways}>
-      {auditSentence(t, e)}
+    <LogEntry
+      icon={(glyphs as Partial<Record<string, IconName>>)[e.target_kind] ?? "history"}
+      date={e.occurred_at}
+      detail={ways}
+    >
+      <AuditSentence entry={e} />
     </LogEntry>
   );
 }
@@ -310,6 +380,7 @@ function AuditFilters({ address, q }: { address: StaffAddress; q: AuditQuery }) 
 /** The audit log: its filters, the page of entries, and the pages. */
 export function AuditLogScreen(address: StaffAddress): ReactNode {
   const { t } = useStaffStrings();
+  const alone = useInstance()?.single_user === true;
   const q = auditQueryOf(address.search);
   const page = useAuditLog(q);
   const head = (
@@ -340,7 +411,7 @@ export function AuditLogScreen(address: StaffAddress): ReactNode {
       ) : (
         <LogList label={t("staff_audit.entry.audit_log")}>
           {page.items.map((e) => (
-            <Entry key={e.id} entry={e} search={address.search} />
+            <Entry key={e.id} entry={e} search={address.search} alone={alone} />
           ))}
         </LogList>
       )}

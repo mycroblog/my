@@ -18,6 +18,7 @@ import {
   Button,
   FactList,
   FeedNotice,
+  FieldError,
   FilterBar,
   FilterToggle,
   LinkButton,
@@ -30,7 +31,7 @@ import {
   type RecordColumn,
   type RecordRow,
 } from "@my/design-system";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { ReadNotice, useMoment, useStaffStrings } from "../parts";
 import {
@@ -46,13 +47,14 @@ import {
   domainListPath,
   domainListsPath,
   filtered,
-  GoButton,
   newDomainActionPath,
   Pages,
   refusalWords,
   remoteServerPath,
   useEnd,
   useSaid,
+  Way,
+  Ways,
 } from "./parts";
 
 /** What the list shows at an address's query: the actions in effect, of every domain, unless it says otherwise. */
@@ -67,6 +69,9 @@ export function actionQueryOf(search: StaffSearch) {
 
 type Column = "kind" | "ends" | "state";
 
+/** How long the reader pauses in the domain's search before the list follows it. */
+const searchPause = 400;
+
 /** The list of domain actions: the ways on, its filters, the page, and the pages. */
 export function DomainActionsScreen(address: StaffAddress): ReactNode {
   const { search, onSearch } = address;
@@ -74,6 +79,24 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
   const end = useEnd();
   const q = actionQueryOf(search);
   const page = useDomainActions(q);
+  // The domain written is the field's until the reader pauses: only then does the address, and the list, follow it.
+  const [written, setWritten] = useState(q.domain ?? "");
+  const shown = q.domain ?? "";
+  // An address that changed by another way (back, a link) is what the field holds from then on.
+  const [followed, setFollowed] = useState(shown);
+  if (followed !== shown) {
+    setFollowed(shown);
+    setWritten(shown);
+  }
+  useEffect(() => {
+    if (written.trim() === shown) return;
+    const later = setTimeout(() => {
+      onSearch(filtered(search, { domain: written.trim() === "" ? undefined : written.trim() }));
+    }, searchPause);
+    return () => {
+      clearTimeout(later);
+    };
+  }, [written, shown, search, onSearch]);
   const head = (
     <>
       <ScreenTitle
@@ -90,26 +113,21 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
       >
         {t("staff_domains.entry.domain_actions")}
       </ScreenTitle>
-      <Row wrap gap="screen-tab-gap">
-        <GoButton href={domainAllowsPath} icon="accepted">
-          {t("staff_domains.allows")}
-        </GoButton>
-        <GoButton href={domainListsPath} icon="list">
-          {t("staff_domains.lists")}
-        </GoButton>
-      </Row>
+      <Ways>
+        <Way href={domainAllowsPath}>{t("staff_domains.allows")}</Way>
+        <Way href={domainListsPath}>{t("staff_domains.lists")}</Way>
+      </Ways>
       <FilterBar
         label={t("staff_domains.actions.filters")}
         search={{
           label: t("staff_domains.actions.domain"),
-          value: q.domain ?? "",
-          onChange: (domain) => {
-            onSearch(filtered(search, { domain: domain.trim() === "" ? undefined : domain }));
-          },
+          value: written,
+          onChange: setWritten,
           clearLabel: t("staff_domains.actions.domain.clear"),
         }}
         applied={q.domain !== undefined || !q.active}
         onClear={() => {
+          setWritten("");
           onSearch({});
         }}
       >
@@ -121,9 +139,12 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
           }}
         />
       </FilterBar>
+      {/* What the server takes for no domain is said under the search, as a field's error is. */}
+      {page.invalid && <FieldError>{t("staff_domains.actions.domain.invalid")}</FieldError>}
     </>
   );
   if (page.forbidden) return <FeedNotice lead>{t("staff_domains.forbidden")}</FeedNotice>;
+  if (page.invalid) return <ScreenStack>{head}</ScreenStack>;
   if (page.status !== "success")
     return (
       <ScreenStack>
@@ -216,10 +237,8 @@ function ActionView({ action, onBack }: { action: DomainAction; onBack: () => vo
       <ScreenTitle back={<BackButton onPress={onBack}>{t("staff_domains.actions.back")}</BackButton>}>
         {action.domain}
       </ScreenTitle>
-      <ActionFacts action={action} />
-      {status}
-      <Row wrap gap="screen-tab-gap">
-        {action.state === "active" && (
+      {action.state === "active" && (
+        <Row>
           <Button
             size="timeline"
             busy={busy}
@@ -239,19 +258,19 @@ function ActionView({ action, onBack }: { action: DomainAction; onBack: () => vo
           >
             {t("staff_domains.action.lift")}
           </Button>
-        )}
-        <GoButton href={remoteServerPath(action.domain)} icon="federated">
-          {t("staff_domains.to_server")}
-        </GoButton>
-        <GoButton href={domainActionsOf(action.domain)} icon="moderation">
-          {t("staff_domains.action.others")}
-        </GoButton>
+        </Row>
+      )}
+      {status}
+      <ActionFacts action={action} />
+      <Ways>
+        <Way href={remoteServerPath(action.domain)}>{t("staff_domains.to_server")}</Way>
+        <Way href={domainActionsOf(action.domain)}>{t("staff_domains.action.others")}</Way>
         {audits && (
-          <GoButton href={staffHref(auditLogPath, { target_kind: "domain", target: action.domain })} icon="history">
+          <Way href={staffHref(auditLogPath, { target_kind: "domain", target: action.domain })}>
             {t("staff_domains.to_audit")}
-          </GoButton>
+          </Way>
         )}
-      </Row>
+      </Ways>
     </ScreenStack>
   );
 }
@@ -262,7 +281,7 @@ function ActionFacts({ action }: { action: DomainAction }) {
   const moment = useMoment();
   const end = useEnd();
   const items: Fact[] = [
-    { term: t("staff_domains.action.fact.state"), value: t("staff_domains.action_state", { state: action.state }) },
+    { term: t("staff_domains.action.fact.state"), value: <DomainActionStateMark action={action} /> },
     { term: t("staff_domains.action.fact.kind"), value: domainKindWords(t, action.kind) },
     { term: t("staff_domains.action.fact.issued"), value: moment(action.issued_at) },
     { term: t("staff_domains.action.fact.ends"), value: end(action.expires_at) },

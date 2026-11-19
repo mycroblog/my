@@ -635,6 +635,35 @@ export const DomainActions: Story = {
   ),
 };
 
+/** Subscriptions to block lists: each one's address under its title, in the code's face, breaking after a slash. */
+export const CodeCaptions: Story = {
+  render: () => (
+    <RecordTable
+      label="Block list subscriptions"
+      head={{ label: "Subscription" }}
+      columns={[{ key: "mode", label: "Mode", kind: "fit", beside: true }]}
+      rows={[
+        {
+          id: "s1",
+          head: "Neighbours' published blocks",
+          caption: "https://moderation.example/api/v1/instance/domain_blocks",
+          captionCode: true,
+          href: "#/moderation/domain-actions/subscriptions/s1",
+          cells: { mode: "Automatic" },
+        },
+        {
+          id: "s2",
+          head: "Shared block list",
+          caption: "https://lists.example/blocklist.csv",
+          captionCode: true,
+          href: "#/moderation/domain-actions/subscriptions/s2",
+          cells: { mode: "Drafts" },
+        },
+      ]}
+    />
+  ),
+};
+
 /**
  * The jobs of the server, for the operators: running, failed and waiting to run again, how many times each was
  * tried; the list grows in place under Show more, busy while the next jobs come, the table faint meanwhile.

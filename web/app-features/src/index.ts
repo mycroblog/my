@@ -224,9 +224,9 @@ export {
 export { queueHref, queueOf, ReportQueueBeside, ReportQueueScreen, reportHref } from "./staff/reports/queue";
 export { ReportScreen, useReportTitle, type ReportScreenProps } from "./staff/reports/report";
 export { DomainActionScreen, useDomainActionTitle } from "./staff/domains/actions";
-export { NewDomainActionScreen, type NewDomainActionProps } from "./staff/domains/action-form";
+export { NewDomainActionScreen, SuspendConfirm, type NewDomainActionProps } from "./staff/domains/action-form";
 export { DomainAllowsScreen } from "./staff/domains/allowed";
-export { auditSentence } from "./staff/domains/audit";
+export { AuditSentence } from "./staff/domains/audit";
 export { DomainImportScreen } from "./staff/domains/import";
 export {
   auditLogPath,

@@ -144,7 +144,11 @@ export function remoteServerWrites(data: AppData, domain: string): RemoteServerW
       const key = remoteServerQuery(data, domain).queryKey;
       await data.queryClient.cancelQueries({ queryKey: key });
       data.queryClient.setQueryData(key, health);
-      staffChanged(data, ["/admin/instances", "/admin/audit_log"]);
+      // The list of servers and the audit log, never the deliveries: reading one account's again would be audited.
+      void data.queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          queryKey[1] === "/admin/instances" || queryKey[1] === "/admin/audit_log" || queryKey[1] === "/admin/counts",
+      });
       return health;
     },
     refetchPosts: async () => {

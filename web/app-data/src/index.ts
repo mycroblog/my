@@ -783,6 +783,7 @@ export {
   domainAllowsQuery,
   domainAllowWrites,
   domainCommentLimit,
+  domainImpactCountLimit,
   domainImportRowLimit,
   domainLimit,
   domainListDraftsQuery,
@@ -814,6 +815,7 @@ export {
   useDomainListSubscriptions,
   useDomainListWrites,
   useDomainSuspendImpact,
+  useDomainSuspendImpacts,
   type DomainAction,
   type DomainActionKind,
   type DomainActionQuery,
@@ -839,6 +841,7 @@ export {
   type DomainListSuspendAs,
   type DomainListWrites,
   type DomainSuspendImpact,
+  type DomainSuspendImpacts,
 } from "./domain-moderation";
 export {
   availabilityEventsQuery,

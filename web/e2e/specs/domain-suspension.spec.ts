@@ -3,8 +3,8 @@
 // A domain suspended and read in the audit log, on the real server (#3261, FR-702, FR-704, FR-717): a moderator opens
 // Domain actions through Moderation in the navigation and its list of screens, fills in a new action on a domain,
 // and is asked, before the suspend is taken, how many follows it ends and to type the domain; the action's page then
-// says it is in effect. The audit log says, newest first, that the moderator took an action on the domain, the
-// moderator and the domain linked; the domain's link opens its server's screen. What each screen shows in every state
+// says it is in effect. Its Audit log opens the operations on the domain, which say that the moderator took an
+// action on it, the domain linked; the domain's link opens its server's screen. What each screen shows in every state
 // is the stories' and the route tests' on the fake (web/app, domains.stories.tsx).
 
 import { randomUUID } from "node:crypto";
@@ -30,7 +30,7 @@ test("a moderator suspends a domain after reading what it ends, and reads it in 
   // The suspend asks first: what it stops, the follows it ends as the server counts them, and the domain to type.
   await domains.newAction();
   await domains.fill(domain, "Spam from every account.");
-  await domains.takeAction();
+  await domains.suspend();
   const confirmation = domains.confirmation(domain);
   await expect(confirmation).toBeVisible();
   await expect(confirmation).toContainText("No follow between people here and its accounts ends.");
@@ -41,9 +41,8 @@ test("a moderator suspends a domain after reading what it ends, and reads it in 
   await expect(domains.actionFacts).toContainText("In effect");
   await expect(domains.actionFacts).toContainText("Suspend");
 
-  // The audit log says who took it, on which domain, the domain linked to its server.
-  await moderation.place.click();
-  await domains.auditLogLink.click();
+  // The audit log, opened from the action's page on the operations on its domain, says who took it.
+  await domains.auditLogOfDomain();
   const entry = domains.entry(`@${moderator.username} took an action on the domain ${domain}`);
   await expect(entry).toBeVisible();
   await entry.getByRole("link", { name: domain, exact: true }).click();

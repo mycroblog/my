@@ -649,6 +649,8 @@ export function domainHandlers(c: DomainContext): { handlers: Handlers; domains:
       const refused = domains();
       if (refused !== undefined) return refused;
       const domain = query.get("domain");
+      if (domain !== null && domainOf(domain) === undefined)
+        return problem(400, "Bad Request", { detail: "domain is not a domain.", field: "domain" });
       const kept = actions.filter(
         (a) => (domain === null || a.domain === domainOf(domain)) && (query.get("active") !== "true" || active(a)),
       );

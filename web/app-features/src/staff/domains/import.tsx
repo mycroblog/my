@@ -11,6 +11,7 @@ import {
   domainCommentLimit,
   useDomainActionWrites,
   useDomainImportPreview,
+  useDomainSuspendImpacts,
   type DomainImportResult,
   type DomainImportRow,
 } from "@my/app-data";
@@ -33,8 +34,8 @@ import {
 } from "@my/design-system";
 import { useId, useRef, useState, type ReactNode, type Ref } from "react";
 import { saveFile } from "../../save-file";
-import { Titled, useStaffStrings, type T } from "../parts";
-import { domainActionsPath, domainKindWords, refusalWords, tied, useSaid } from "./parts";
+import { useStaffStrings, type T } from "../parts";
+import { domainActionsPath, domainKindWords, refusalWords, Section, tied, useSaid } from "./parts";
 
 /** The kinds a row would issue, joined as the reader's language joins a list. */
 function kindsOf(t: T, locale: string, row: DomainImportRow): string {
@@ -73,7 +74,7 @@ function Export() {
   const { say, status } = useSaid();
   const [busy, setBusy] = useState(false);
   return (
-    <Titled title={t("staff_domains.export")}>
+    <Section title={t("staff_domains.export")}>
       <Stack gap="screen-field-gap">
         <Row>
           <Button
@@ -100,7 +101,7 @@ function Export() {
         </Row>
         {status}
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -194,7 +195,7 @@ function Import({ onImported }: { onImported: (result: DomainImportResult) => vo
     cells: { line: t("staff_domains.import.line", { line: r.line }), status: statusWords(t, locale, r) },
   }));
   return (
-    <Titled title={t("staff_domains.import")}>
+    <Section title={t("staff_domains.import")}>
       <Stack gap="screen-field-gap">
         <FileField
           id={fileId}
@@ -215,7 +216,7 @@ function Import({ onImported }: { onImported: (result: DomainImportResult) => vo
         )}
         {previewed.preview !== undefined && (
           <>
-            <Titled title={tied(t("staff_domains.import.importable", { count: importable.length }))}>
+            <Section title={tied(t("staff_domains.import.importable", { count: importable.length }))}>
               <RecordTable
                 label={t("staff_domains.import.importable.table")}
                 head={{ label: t("staff_domains.import.column.domain") }}
@@ -233,9 +234,9 @@ function Import({ onImported }: { onImported: (result: DomainImportResult) => vo
                 }}
                 empty={<FeedNotice start>{t("staff_domains.import.importable.none")}</FeedNotice>}
               />
-            </Titled>
+            </Section>
             {others.length > 0 && (
-              <Titled title={tied(t("staff_domains.import.others", { count: others.length }))}>
+              <Section title={tied(t("staff_domains.import.others", { count: others.length }))}>
                 <RecordTable
                   label={t("staff_domains.import.others.table")}
                   head={{ label: t("staff_domains.import.column.domain") }}
@@ -245,14 +246,13 @@ function Import({ onImported }: { onImported: (result: DomainImportResult) => vo
                   ]}
                   rows={otherRows}
                 />
-              </Titled>
+              </Section>
             )}
             {importable.length > 0 && (
               <TextField
                 id={noteId}
                 name="private_note"
                 label={t("staff_domains.import.note")}
-                hint={t("staff_domains.form.private_note.hint")}
                 multiline
                 rows={2}
                 maxLength={domainCommentLimit}
@@ -265,28 +265,72 @@ function Import({ onImported }: { onImported: (result: DomainImportResult) => vo
         {importable.length > 0 && (
           <Row>
             <Button kind="primary" busy={busy && !asking} isDisabled={kept.length === 0} onPress={start}>
-              {tied(t("staff_domains.import.submit", { count: kept.length }))}
+              {tied(
+                t(suspends > 0 ? "staff_domains.import.submit.ask" : "staff_domains.import.submit", {
+                  count: kept.length,
+                }),
+              )}
             </Button>
           </Row>
         )}
       </Stack>
       <ModalPresence>
         {asking && (
-          <ConfirmDialog
-            title={tied(t("staff_domains.import.confirm.title", { count: kept.length }))}
-            cancel={t("staff_domains.cancel")}
-            confirm={t("staff_domains.import.confirm")}
+          <ImportConfirm
+            rows={kept.length}
+            suspended={kept.flatMap((r) =>
+              r.issue.includes("suspend") && r.block !== undefined ? [r.block.domain] : [],
+            )}
             busy={busy}
             onCancel={() => {
               setAsking(false);
             }}
             onConfirm={send}
-          >
-            {tied(t("staff_domains.import.confirm.about", { count: suspends }))}
-          </ConfirmDialog>
+          />
         )}
       </ModalPresence>
-    </Titled>
+    </Section>
+  );
+}
+
+/**
+ * The confirmation of an import that suspends domains: what the suspends end for good, the follows they cut as the
+ * server counts them now (while it counts, Import waits; where it could not, that they end, uncounted).
+ */
+function ImportConfirm({
+  rows,
+  suspended,
+  busy,
+  onCancel,
+  onConfirm,
+}: {
+  rows: number;
+  suspended: readonly string[];
+  busy: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const { t } = useStaffStrings();
+  const impact = useDomainSuspendImpacts(suspended);
+  const cut =
+    impact.status === "success"
+      ? tied(t("staff_domains.import.cuts", { follows: impact.follows, people: impact.localAccounts }))
+      : t(impact.status === "pending" ? "staff_domains.suspend.counting" : "staff_domains.import.uncounted");
+  return (
+    <ConfirmDialog
+      title={tied(t("staff_domains.import.confirm.title", { count: rows }))}
+      cancel={t("staff_domains.cancel")}
+      confirm={t("staff_domains.import.confirm")}
+      busy={busy}
+      pending={impact.status === "pending"}
+      onCancel={onCancel}
+      onConfirm={onConfirm}
+    >
+      <Stack gap="entry-line">
+        <span>{tied(t("staff_domains.import.confirm.about", { count: suspended.length }))}</span>
+        <span role="status">{cut}</span>
+      </Stack>
+    </ConfirmDialog>
   );
 }
 
@@ -307,7 +351,7 @@ function Imported({
       <ScreenTitle back={back} ref={titleRef}>
         {tied(t("staff_domains.imported", { count: result.issued.length, domains }))}
       </ScreenTitle>
-      <Titled title={tied(t("staff_domains.imported.skipped", { count: result.skipped.length }))}>
+      <Section title={tied(t("staff_domains.imported.skipped", { count: result.skipped.length }))}>
         <RecordTable
           label={t("staff_domains.imported.skipped.table")}
           head={{ label: t("staff_domains.import.column.domain") }}
@@ -319,7 +363,7 @@ function Imported({
           }))}
           empty={<FeedNotice start>{t("staff_domains.imported.skipped.none")}</FeedNotice>}
         />
-      </Titled>
+      </Section>
       <Row>
         <LinkButton href={domainActionsPath}>{t("staff_domains.imported.to_list")}</LinkButton>
       </Row>

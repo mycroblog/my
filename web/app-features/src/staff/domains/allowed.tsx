@@ -22,8 +22,8 @@ import {
   type RecordRow,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
-import { ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
-import { refusalWords, tied, useSaid } from "./parts";
+import { ReadNotice, useMoment, useStaffStrings } from "../parts";
+import { refusalWords, Section, tied, useSaid } from "./parts";
 
 /** The allowlist: allowing a domain, and the domains allowed, which the reader removes. */
 export function DomainAllowsScreen({ onBack }: { onBack: () => void }): ReactNode {
@@ -76,7 +76,7 @@ export function DomainAllowsScreen({ onBack }: { onBack: () => void }): ReactNod
         }}
       />
       {status}
-      <Titled title={t("staff_domains.allows.list")}>
+      <Section title={t("staff_domains.allows.list")}>
         {read.value === undefined ? (
           <ReadNotice
             status={read.status === "error" ? "error" : "pending"}
@@ -107,7 +107,7 @@ export function DomainAllowsScreen({ onBack }: { onBack: () => void }): ReactNod
             empty={<FeedNotice start>{t("staff_domains.allows.empty")}</FeedNotice>}
           />
         )}
-      </Titled>
+      </Section>
       <ModalPresence>
         {asking && (
           <ConfirmDialog
@@ -175,7 +175,7 @@ function AllowForm({ onAllowed }: { onAllowed: (domain: string) => void }) {
     );
   };
   return (
-    <Titled title={t("staff_domains.allows.add")}>
+    <Section title={t("staff_domains.allows.add")}>
       <Stack
         key={round}
         gap="screen-field-gap"
@@ -202,7 +202,6 @@ function AllowForm({ onAllowed }: { onAllowed: (domain: string) => void }) {
           id={ids.comment}
           name="comment"
           label={t("staff_domains.allows.comment")}
-          hint={t("staff_domains.form.private_note.hint")}
           multiline
           rows={2}
           maxLength={domainCommentLimit}
@@ -216,6 +215,6 @@ function AllowForm({ onAllowed }: { onAllowed: (domain: string) => void }) {
           </Button>
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }

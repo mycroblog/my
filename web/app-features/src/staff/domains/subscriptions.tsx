@@ -52,7 +52,7 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import type { StaffAddress } from "../entries";
-import { ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import {
   cursorOf,
   domainKindWords,
@@ -62,6 +62,7 @@ import {
   newDomainListPath,
   Pages,
   refusalWords,
+  Section,
   tied,
   useSaid,
 } from "./parts";
@@ -81,7 +82,7 @@ function fetchWords(t: T, fetch: DomainListFetch): string {
 
 /** The glyph of a fetch, by what came of it. */
 const fetchGlyph = (fetch: DomainListFetch): IconName =>
-  fetch.outcome === "failed" ? "listFailing" : fetch.outcome === "applied" ? "accepted" : "list";
+  fetch.outcome === "failed" ? "error" : fetch.outcome === "applied" ? "update" : "read";
 
 type Column = "mode" | "fetched";
 
@@ -433,22 +434,18 @@ function ListHead({ subscription: s }: { subscription: DomainListSubscription })
       term: t("staff_domains.list.fact.last_fetch"),
       value: s.last_fetch === undefined ? t("staff_domains.lists.never") : moment(s.last_fetch.fetched_at),
     },
-    ...(s.last_fetch === undefined
-      ? []
-      : [{ term: t("staff_domains.list.fact.outcome"), value: fetchWords(t, s.last_fetch) }]),
-    ...(s.consecutive_failures > 0
-      ? [
-          {
-            term: t("staff_domains.list.fact.failures"),
-            value: tied(t("staff_domains.lists.failing", { count: s.consecutive_failures })),
-          },
-        ]
-      : []),
     { term: t("staff_domains.list.fact.created"), value: moment(s.created_at) },
   ];
   return (
     <Stack gap="entry-room">
-      <FactList label={t("staff_domains.list.facts")} items={items} />
+      {/* That its fetches fail is said once, here, as the list of subscriptions marks it. */}
+      {s.consecutive_failures > 0 && (
+        <Row>
+          <StateMark state="failed">
+            {tied(t("staff_domains.lists.failing", { count: s.consecutive_failures }))}
+          </StateMark>
+        </Row>
+      )}
       <Row>
         <Button
           size="timeline"
@@ -471,6 +468,7 @@ function ListHead({ subscription: s }: { subscription: DomainListSubscription })
         </Button>
       </Row>
       {status}
+      <FactList label={t("staff_domains.list.facts")} items={items} />
     </Stack>
   );
 }
@@ -520,7 +518,7 @@ function Drafts({ id }: { id: string }) {
     },
   }));
   return (
-    <Titled title={t("staff_domains.drafts")}>
+    <Section title={t("staff_domains.drafts")}>
       <Stack gap="entry-line">
         {read.value === undefined ? (
           <ReadNotice
@@ -585,7 +583,7 @@ function Drafts({ id }: { id: string }) {
           </ConfirmDialog>
         )}
       </ModalPresence>
-    </Titled>
+    </Section>
   );
 }
 
@@ -594,7 +592,7 @@ function Fetches({ id, address }: { id: string; address: StaffAddress }) {
   const { t } = useStaffStrings();
   const page = useDomainListFetches(id, cursorOf(address.search, fetchPages.cursor));
   return (
-    <Titled title={t("staff_domains.fetches")}>
+    <Section title={t("staff_domains.fetches")}>
       {page.status !== "success" ? (
         <ReadNotice
           status={page.status}
@@ -616,7 +614,7 @@ function Fetches({ id, address }: { id: string; address: StaffAddress }) {
           <Pages address={address} next={page.next} of={fetchPages} />
         </Stack>
       )}
-    </Titled>
+    </Section>
   );
 }
 
@@ -659,7 +657,7 @@ function ListSettings({ subscription: s }: { subscription: DomainListSubscriptio
     );
   };
   return (
-    <Titled title={t("staff_domains.list.settings")}>
+    <Section title={t("staff_domains.list.settings")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -689,7 +687,7 @@ function ListSettings({ subscription: s }: { subscription: DomainListSubscriptio
         </Row>
         {status}
       </Stack>
-    </Titled>
+    </Section>
   );
 }
 
@@ -703,7 +701,7 @@ function StopSubscribing({ subscription, onRemoved }: { subscription: DomainList
   const [busy, setBusy] = useState(false);
   const [alert, setAlert] = useState<string | undefined>(undefined);
   return (
-    <Titled title={t("staff_domains.list.stop")}>
+    <Section title={t("staff_domains.list.stop")}>
       <Stack gap="screen-field-gap">
         {alert !== undefined && <FormAlert regular>{alert}</FormAlert>}
         <Row>
@@ -760,6 +758,6 @@ function StopSubscribing({ subscription, onRemoved }: { subscription: DomainList
           </ConfirmDialog>
         )}
       </ModalPresence>
-    </Titled>
+    </Section>
   );
 }
