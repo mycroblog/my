@@ -97,6 +97,11 @@ export type RecordColumn<K extends string = string> = {
   kind?: "words" | "figures" | "fit" | undefined;
   sorts?: RecordDirection | undefined;
   beside?: boolean | undefined;
+  /**
+   * On a narrow table, its value alone in the line of facts, muted at the caption's size, without its column's name: a
+   * fact that says what it is by itself (a category, a time).
+   */
+  bare?: boolean | undefined;
 };
 
 export type RecordDirection = "ascending" | "descending";
@@ -148,6 +153,11 @@ export type RecordTableProps<K extends string> = {
   busy?: boolean | undefined;
   /** In place of the table, while it has no row: a `FeedNotice` of why (nothing yet, nothing matches) and what to do. */
   empty?: ReactNode;
+  /**
+   * The heads' column and the columns of words share the room evenly, whatever the rows hold, so that the columns stand
+   * in one place from one filter or page to the next; the heads' captions wrap only at that share.
+   */
+  even?: boolean | undefined;
 };
 
 // A column of words keeps its longest word and shares the room left; the heads' column takes what its heads need, up
@@ -225,6 +235,11 @@ const PLACE = {
   beside: "flex-none",
   // A fact: narrow, after the first line, its column's name before it, in a line that wraps; wide, its column.
   fact: "order-2 inline-flex min-w-0 items-baseline gap-x-entry-caption @min-[30rem]:order-none @min-[30rem]:block",
+  // A fact that says what it is by itself: narrow, as a fact, muted at the caption's size, with no column's name.
+  bare: [
+    "order-2 inline-flex min-w-0 items-baseline gap-x-entry-caption @min-[30rem]:order-none @min-[30rem]:block",
+    "@max-[30rem]:text-caption @max-[30rem]:text-muted-text",
+  ].join(" "),
   // A fact of figures: wide, at its column's end.
   figures: [
     "order-2 inline-flex min-w-0 items-baseline gap-x-entry-caption",
@@ -493,6 +508,7 @@ export function RecordTable<K extends string>({
   selection,
   busy = false,
   empty,
+  even = false,
 }: RecordTableProps<K>) {
   const s = table();
   const { lang } = useReader(undefined);
@@ -501,7 +517,12 @@ export function RecordTable<K extends string>({
   const picks = selection !== undefined;
   const picked = selection?.selected;
   const count = rows.filter((row) => picked?.has(row.id) === true).length;
-  const tracks = [picks ? "max-content" : "", "minmax(0,max-content)", ...columns.map((c) => TRACK[c.kind ?? "words"])]
+  const share = "minmax(0,1fr)";
+  const tracks = [
+    picks ? "max-content" : "",
+    even ? share : "minmax(0,max-content)",
+    ...columns.map((c) => (even && (c.kind ?? "words") === "words" ? share : TRACK[c.kind ?? "words"])),
+  ]
     .filter((track) => track !== "")
     .join(" ");
   const sortable = onSort !== undefined;
@@ -737,11 +758,11 @@ function Record<K extends string>({
         return (
           <RecordPlace
             key={column.key}
-            at={column.beside === true ? "beside" : figures ? "figures" : "fact"}
+            at={column.beside === true ? "beside" : figures ? "figures" : column.bare === true ? "bare" : "fact"}
             role="cell"
             className=""
           >
-            {column.beside !== true && (
+            {column.beside !== true && column.bare !== true && (
               <NarrowOnly>
                 <span className={s.factName()}>{column.label}</span>
               </NarrowOnly>

@@ -94,11 +94,30 @@ export const staffEntries: readonly StaffEntry[] = [
   },
 ];
 
-/** What the root reads of the reader (`StaffFacts`), and whether the server said who they are yet. */
-export function useStaffFacts(): StaffFacts & { readonly known: boolean } {
-  const permissions = usePermissions();
-  const openReports = useOpenReportCount();
-  return { permissions, openReports, known: useViewer() !== undefined };
+/**
+ * What the root reads of the reader (`StaffFacts`), and whether the server said who they are yet; nothing asked while
+ * `enabled` is false (a reader without a session).
+ */
+export function useStaffFacts(enabled = true): StaffFacts & { readonly known: boolean } {
+  const known = useViewer(enabled) !== undefined;
+  const permissions = usePermissions(enabled);
+  const openReports = useOpenReportCount(enabled);
+  return { permissions, openReports, known };
+}
+
+/**
+ * How many things wait for the reader in `area`: the sum of the counts of the entries its root lists them, which the
+ * navigation's badge shows, so that the two always agree; undefined while none of them counts anything yet.
+ */
+export function useStaffWaiting(area: StaffArea, enabled = true): number | undefined {
+  const facts = useStaffFacts(enabled);
+  const counts = staffEntries
+    .filter((e) => e.area === area && facts.permissions.includes(e.permission))
+    .flatMap((e) => {
+      const n = e.count?.of(facts);
+      return n === undefined ? [] : [n];
+    });
+  return counts.length === 0 ? undefined : counts.reduce((a, b) => a + b, 0);
 }
 
 /** The entries of `area` open to the reader, in their order; none until the server said who they are. */

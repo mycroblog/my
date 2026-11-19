@@ -22,7 +22,6 @@ import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
 import {
   useArticleAuthoring,
   useInstance,
-  useModerationCount,
   useNotificationSounds,
   useRights,
   useUnreadConversations,
@@ -40,6 +39,7 @@ import {
   resumeCallPlayback,
   UnsavedSettings,
   useCall,
+  useStaffWaiting,
   useVoiceCallState,
   type Call,
 } from "@my/app-features";
@@ -148,7 +148,7 @@ function DirectPlace({ place, current }: { place: Place; current: boolean }) {
 function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: ReactNode; children: ReactNode }) {
   const t = useStrings();
   const { locale } = useLocale();
-  const waiting = useModerationCount(signedIn) ?? 0;
+  const waiting = useStaffWaiting("moderation", signedIn) ?? 0;
   const unread = useUnreadConversations(signedIn) ?? 0;
   const said = [
     ...(unread > 0 ? [t("app.menu_direct", { count: unread })] : []),
@@ -170,7 +170,7 @@ function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: Re
 /** A place whose badge counts what awaits the reader as a moderator. */
 function ModerationPlace({ place, current }: { place: Place; current: boolean }) {
   const t = useStrings();
-  const count = useModerationCount();
+  const count = useStaffWaiting("moderation");
   return (
     <NavItem
       href={place.href}

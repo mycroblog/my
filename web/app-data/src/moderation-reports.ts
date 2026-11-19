@@ -10,7 +10,7 @@
 import { type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
-import { accountByIdQuery, type Account } from "./accounts";
+import { accountByIdQuery, viewerQuery, type Account } from "./accounts";
 import { moderationCountsQuery } from "./rights";
 import { useAppData } from "./provider";
 import { TranslationRefusal, translationRefusalOf, type StatusTranslation } from "./translation";
@@ -156,9 +156,15 @@ export async function loadReport(data: AppData, id: string): Promise<void> {
   await data.queryClient.query(reportQuery(data, id)).catch(() => undefined);
 }
 
-/** How many reports are open, of the counts of what awaits the moderators; undefined until the server said. */
-export function useOpenReportCount(): number | undefined {
-  return useQuery(moderationCountsQuery(useAppData())).data?.open_reports;
+/**
+ * How many reports are open, of the counts of what awaits the moderators; undefined until the server said, for a
+ * reader without `manage_reports`, and with nothing asked while `enabled` is false (a reader without a session).
+ */
+export function useOpenReportCount(enabled = true): number | undefined {
+  const data = useAppData();
+  const viewer = useQuery({ ...viewerQuery(data), enabled }).data;
+  const may = enabled && viewer?.permissions.includes("manage_reports") === true;
+  return useQuery({ ...moderationCountsQuery(data), enabled: may }).data?.open_reports;
 }
 
 /**

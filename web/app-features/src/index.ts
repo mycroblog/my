@@ -212,6 +212,7 @@ export {
   useStaffEntries,
   useStaffEntry,
   useStaffFacts,
+  useStaffWaiting,
   type StaffAddress,
   type StaffArea,
   type StaffEntry,

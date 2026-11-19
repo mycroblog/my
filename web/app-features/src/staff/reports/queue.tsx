@@ -10,6 +10,7 @@ import { reportPath, sentenceHandleOf } from "@my/app-components";
 import {
   reportCategories,
   useReportAccount,
+  useReport,
   useReportQueue,
   useViewer,
   type QueuedReport,
@@ -19,13 +20,13 @@ import {
   FeedNotice,
   FilterBar,
   FilterFacet,
+  FrameSection,
   RecordPages,
   RecordTable,
   RelativeTime,
   ScreenStack,
   ScreenTitle,
   StateMark,
-  TextButton,
   type FilterValue,
   type RecordColumn,
   type RecordRow,
@@ -145,14 +146,15 @@ function QueueTable({
   const columns: RecordColumn<Column>[] = compact
     ? [{ key: "state", label: t("staff.reports.column.state"), kind: "fit", beside: true }]
     : [
-        { key: "category", label: t("staff.reports.column.category") },
-        { key: "filed", label: t("staff.reports.column.filed"), kind: "fit", sorts: "descending" },
+        { key: "category", label: t("staff.reports.column.category"), bare: true },
+        { key: "filed", label: t("staff.reports.column.filed"), kind: "fit", sorts: "descending", bare: true },
         { key: "state", label: t("staff.reports.column.state"), kind: "fit", beside: true },
       ];
   const rows = reports.map((r): RecordRow<Column> => ({
     id: r.id,
     head: r.target_account === undefined ? t("staff.account_gone") : sentenceHandleOf(r.target_account),
-    caption: compact ? undefined : filedBy(t, r),
+    // Beside a report, two reports of one account are told apart by their categories.
+    caption: compact ? categoryWords(t, r.category) : filedBy(t, r),
     href: reportHref(r.id, search),
     cells: {
       category: categoryWords(t, r.category),
@@ -177,6 +179,7 @@ function QueueTable({
       current={current}
       busy={busy}
       empty={empty}
+      even={!compact}
     />
   );
 }
@@ -281,20 +284,9 @@ export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode
           go({ ...q, order, cursor: undefined });
         }}
         empty={
+          // The filters' own Clear filters, over the notice, is the way back.
           filtered(q) ? (
-            <FeedNotice
-              action={
-                <TextButton
-                  onPress={() => {
-                    go({ state: "open", order: q.order });
-                  }}
-                >
-                  {t("staff.reports.clear")}
-                </TextButton>
-              }
-            >
-              {t("staff.reports.empty.filtered")}
-            </FeedNotice>
+            <FeedNotice>{t("staff.reports.empty.filtered")}</FeedNotice>
           ) : (
             <FeedNotice>{t("staff.reports.empty.open")}</FeedNotice>
           )
@@ -325,12 +317,20 @@ export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode
 }
 
 /**
- * The queue beside a report's screen, from the frame's `wide`: the page the reader came from, compact (each report's
- * account and its state), the report at `current` marked; nothing while it loads or could not be read, since the
- * report's screen says so of its own read.
+ * The queue beside a report's screen, from the frame's `wide`, under its heading, which leads to it: the page the
+ * reader came from, compact (each report's account, its category and its state), the report at `current` marked; a
+ * report opened from no queue's page (a link, a notification) beside the first page of the reports in its state, where
+ * it is. Nothing while it loads or could not be read, since the report's screen says so of its own read.
  */
 export function ReportQueueBeside({ search, current }: { search: StaffSearch; current: string }): ReactNode {
-  const page = useReportQueue(queueOf(search));
+  const { t } = useStaffStrings();
+  const state = useReport(current).report?.state;
+  const shown: StaffSearch = search["state"] === undefined && state === "resolved" ? { ...search, state } : search;
+  const page = useReportQueue(queueOf(shown));
   if (page.status !== "success") return null;
-  return <QueueTable reports={page.reports} search={search} compact current={current} />;
+  return (
+    <FrameSection id="beside-reports" icon="moderation" href={queueHref(shown)} heading={t("staff.entry.reports")}>
+      <QueueTable reports={page.reports} search={shown} compact current={current} />
+    </FrameSection>
+  );
 }

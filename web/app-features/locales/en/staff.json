@@ -140,16 +140,12 @@
     "description": "Under a reported account's handle in the queue of reports: the account that filed it is gone."
   },
   "staff.reports.empty.open": {
-    "defaultMessage": "No open reports. A report waits here until a moderator resolves it.",
+    "defaultMessage": "No open reports.",
     "description": "In the place of the queue of reports when no report is open and no filter is applied."
   },
   "staff.reports.empty.filtered": {
     "defaultMessage": "No reports match these filters.",
     "description": "In the place of the queue of reports when the filters match none; Clear filters follows."
-  },
-  "staff.reports.clear": {
-    "defaultMessage": "Clear filters",
-    "description": "The button after the sentence that no report matches the filters: back to the open reports."
   },
   "staff.reports.loading": {
     "defaultMessage": "Loading the reports…",
@@ -295,6 +291,10 @@
     "defaultMessage": "The account's record",
     "description": "The term, in a report's facts, of what the moderators had about the reported account: its other reports and actions."
   },
+  "staff.report.fact.resolved_at": {
+    "defaultMessage": "When resolved",
+    "description": "The term, in a report's facts, of when a resolved report was resolved."
+  },
   "staff.report.rule_retired": {
     "defaultMessage": "A rule no longer in force",
     "description": "In the list of rules a report cites, in the place of a rule the server retired since."
@@ -368,27 +368,23 @@
     "description": "Under the posts of a report, for those the server deleted for good since."
   },
   "staff.report.deleted": {
-    "defaultMessage": "Deleted {date}",
-    "description": "Over a post a report points at whose author or a moderator deleted it since. {date} is a date and a time."
-  },
-  "staff.report.room": {
-    "defaultMessage": "Voice chat room",
-    "description": "The heading of the section of a report's screen about the voice chat room it points at."
+    "defaultMessage": "Deleted",
+    "description": "Over a post a report points at that was deleted since; when it was deleted follows at the line's end."
   },
   "staff.report.room.name": {
-    "defaultMessage": "Name",
+    "defaultMessage": "Room name",
     "description": "The term of a voice chat room's name, in a report's facts of the room."
   },
   "staff.report.room.description": {
-    "defaultMessage": "Description",
+    "defaultMessage": "Room description",
     "description": "The term of a voice chat room's description, in a report's facts of the room."
   },
   "staff.report.room.opened": {
-    "defaultMessage": "Opened",
+    "defaultMessage": "Room opened",
     "description": "The term of when a voice chat room opened, in a report's facts of the room."
   },
   "staff.report.room.ended": {
-    "defaultMessage": "Ended",
+    "defaultMessage": "Room ended",
     "description": "The term of when and how a voice chat room ended, in a report's facts of the room."
   },
   "staff.report.room.open_now": {
@@ -404,28 +400,28 @@
     "description": "For assistive technology, the name of the facts of one change of a voice chat room's settings."
   },
   "staff.report.room.log": {
-    "defaultMessage": "What happened in the room",
-    "description": "For assistive technology, the name of the log of a voice chat room on a report's screen."
-  },
-  "staff.report.room.took_part": {
-    "defaultMessage": "{handle} took part",
-    "description": "An entry of a voice chat room's log on a report's screen. {handle} is who joined."
-  },
-  "staff.report.room.still": {
-    "defaultMessage": "Still in the room",
-    "description": "Under an entry of a voice chat room's log: the account has not left."
+    "defaultMessage": "In the room",
+    "description": "The heading, and the name for assistive technology, of the log of the voice chat room a report points at."
   },
   "staff.report.room.left": {
-    "defaultMessage": "{reason, select, moved {Moved to another room {date}} disconnected {Lost the connection {date}} removed {Removed from the room {date}} blocked {Left after a block {date}} suspended {Left when suspended {date}} room_ended {Stayed until the end {date}} other {Left {date}}}",
-    "description": "Under an entry of a voice chat room's log: how and when the account left. {date} is a date and a time."
+    "defaultMessage": "{reason, select, moved {{handle} moved to another room} disconnected {{handle} lost the connection} removed {{handle} was removed from the room} blocked {{handle} left after a block} suspended {{handle} left when suspended} room_ended {{handle} stayed until the room ended} other {{handle} left}}",
+    "description": "An entry of a voice chat room's log on a report's screen: how the account of {handle} left."
   },
   "staff.report.room.removed": {
     "defaultMessage": "{by} removed {handle} from the room",
     "description": "An entry of a voice chat room's log on a report's screen. {by} removed {handle}, who may not join again."
   },
   "staff.report.room.end": {
-    "defaultMessage": "{reason, select, host {{date}, by the host} moderator {{date}, by a moderator} other {{date}}}",
-    "description": "When and how a voice chat room ended, in a report's facts of the room. {date} is a date and a time."
+    "defaultMessage": "{reason, select, host {By the host} moderator {By a moderator} other {On its own}}",
+    "description": "In a report's facts: how the voice chat room ended."
+  },
+  "staff.report.room.how": {
+    "defaultMessage": "How it ended",
+    "description": "The term, in a report's facts, of how the voice chat room it points at ended."
+  },
+  "staff.report.room.joined": {
+    "defaultMessage": "{handle} joined",
+    "description": "An entry of a voice chat room's log on a report's screen. {handle} is who joined."
   },
   "staff.report.revision.by": {
     "defaultMessage": "{handle} changed the settings",
@@ -435,16 +431,12 @@
     "defaultMessage": "What the reporter saw",
     "description": "Under the change of a room's or an event's settings that was in effect when it was reported."
   },
-  "staff.report.event": {
-    "defaultMessage": "Event",
-    "description": "The heading of the section of a report's screen about the event it points at."
-  },
   "staff.report.event.title": {
-    "defaultMessage": "Title",
+    "defaultMessage": "Event title",
     "description": "The term of an event's title, in a report's facts of the event."
   },
   "staff.report.event.description": {
-    "defaultMessage": "Description",
+    "defaultMessage": "Event description",
     "description": "The term of an event's description, in a report's facts of the event."
   },
   "staff.report.event.places": {
@@ -460,24 +452,16 @@
     "description": "In the list of an event's places on a report's screen, for a voice chat room."
   },
   "staff.report.event.when": {
-    "defaultMessage": "Date",
+    "defaultMessage": "Event date",
     "description": "The term of when an event starts, in a report's facts of the event."
   },
   "staff.report.event.no_date": {
     "defaultMessage": "Not decided yet",
     "description": "In a report's facts of an event that has no date yet."
   },
-  "staff.report.event.state": {
-    "defaultMessage": "State",
-    "description": "The term of whether an event is scheduled or cancelled, in a report's facts of the event."
-  },
-  "staff.report.event.state_value": {
-    "defaultMessage": "{state, select, unscheduled {Polling for a date} other {Scheduled}}",
-    "description": "An event's state in a report's facts of the event, when it is not cancelled."
-  },
   "staff.report.event.cancelled": {
-    "defaultMessage": "{reason, select, moderator {Cancelled by a moderator {date}} organizer_suspended {Cancelled when the organizer was suspended {date}} organizer_deleted {Cancelled when the organizer was deleted {date}} other {Cancelled by the organizer {date}}}",
-    "description": "A cancelled event's state in a report's facts of the event: by whom and when. {date} is a date and a time."
+    "defaultMessage": "Cancelled",
+    "description": "The term, in a report's facts, of who or what cancelled the event it points at."
   },
   "staff.report.event.open": {
     "defaultMessage": "Open the event",
@@ -489,7 +473,15 @@
   },
   "staff.report.event.log": {
     "defaultMessage": "Changes of the event",
-    "description": "For assistive technology, the name of the log of an event's changes on a report's screen."
+    "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
+  },
+  "staff.report.event.cancelled_by": {
+    "defaultMessage": "{reason, select, moderator {By a moderator} organizer_suspended {When the organizer was suspended} organizer_deleted {When the organizer was deleted} other {By the organizer}}",
+    "description": "In a report's facts of a cancelled event: who or what cancelled it."
+  },
+  "staff.report.event.cancelled_at": {
+    "defaultMessage": "When cancelled",
+    "description": "The term, in a report's facts, of when the event it points at was cancelled."
   },
   "staff.report.notes": {
     "defaultMessage": "Notes",
@@ -511,10 +503,6 @@
     "defaultMessage": "New note",
     "description": "The label of the field of a new note on a report."
   },
-  "staff.report.note.hint": {
-    "defaultMessage": "Only moderators read notes. A note cannot be edited or removed.",
-    "description": "The line under the field of a new note on a report."
-  },
   "staff.report.note.blank": {
     "defaultMessage": "Write the note first.",
     "description": "Under the field of a new note when Add note was pressed with nothing written."
@@ -527,53 +515,57 @@
     "defaultMessage": "The note was not added. Try again.",
     "description": "Before Add note when the server did not add the note; what was written stays in the field."
   },
+  "staff.report.note.final": {
+    "defaultMessage": "A note cannot be edited or removed.",
+    "description": "Beside Add note on a report's screen."
+  },
   "staff.report.forward": {
     "defaultMessage": "Send to their server",
     "description": "The heading of the section of a report of a remote account that forwards it to the account's server."
-  },
-  "staff.report.forward.about": {
-    "defaultMessage": "This sends {domain}'s moderators the account and the posts, with the text below. Nothing of the reporter is sent: not their account, not their comment. A report can be sent only once.",
-    "description": "What forwarding a report does, on its screen. {domain} is the reported account's server."
   },
   "staff.report.forward.field": {
     "defaultMessage": "Text for their moderators",
     "description": "The label of the field of the text a forwarded report carries to the account's server."
   },
   "staff.report.forward.send": {
-    "defaultMessage": "Send to their server",
-    "description": "The button that asks to forward a report, and the confirmation's button that sends it."
+    "defaultMessage": "Send",
+    "description": "The button of the confirmation that sends a report to the reported account's server."
   },
   "staff.report.forward.confirm": {
     "defaultMessage": "Send this report to {domain}?",
     "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
   },
   "staff.report.forward.confirm.about": {
-    "defaultMessage": "A report can be sent only once. This cannot be undone.",
-    "description": "What follows forwarding a report, in its confirmation."
+    "defaultMessage": "Their moderators get the account, the posts and your text, and nothing of the reporter. A report can be sent only once. This cannot be undone.",
+    "description": "What the confirmation of sending a report to the account's server says it sends, and that it goes once."
   },
   "staff.report.forward.refused": {
     "defaultMessage": "This report can no longer be sent to their server.",
     "description": "Before the button that forwards a report, when the server refused: it was sent meanwhile, or can no longer be."
   },
-  "staff.report.forward.hint": {
-    "defaultMessage": "Up to 1,000 characters. Left empty, no text is sent.",
-    "description": "The line under the field of the text a forwarded report carries."
-  },
   "staff.report.forward.too_long": {
     "defaultMessage": "Shorten the text to 1,000 characters or fewer.",
     "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
+  },
+  "staff.report.forward.ask": {
+    "defaultMessage": "Send to their server…",
+    "description": "The button that asks, in a confirmation, before a report goes to the reported account's server."
   },
   "staff.report.cancel": {
     "defaultMessage": "Cancel",
     "description": "The button of a confirmation on a report's screen that does nothing."
   },
   "staff.report.resolved": {
-    "defaultMessage": "{outcome, select, actioned {Resolved, action taken, {date}} other {Resolved, no action needed, {date}}}",
-    "description": "A resolved report's state in its facts, with how and when it was resolved. {date} is a date and a time."
+    "defaultMessage": "{outcome, select, actioned {Resolved, action taken} other {Resolved, no action needed}}",
+    "description": "A resolved report's state in its facts, with how it was resolved."
   },
   "staff.report.reporter.review": {
     "defaultMessage": "An automated review of this server ({hook})",
     "description": "Who filed a report that an external review filed, in its facts. {hook} names the review's hook (local.status)."
+  },
+  "staff.report.reporter.server": {
+    "defaultMessage": "The server {domain}",
+    "description": "Who filed a report that another server sent, in its facts. {domain} is that server."
   },
   "staff.report.title": {
     "defaultMessage": "Report on {handle}",

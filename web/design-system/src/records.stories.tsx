@@ -549,6 +549,25 @@ export const ReportsScreen: Story = {
 };
 
 /**
+ * The queue with its columns of words and its heads sharing the room evenly (`even`), so that they stand in one place
+ * whatever the rows hold, and its category and time bare on a phone: under each account, its category and when, muted,
+ * with no column's name.
+ */
+export const EvenAndBare: Story = {
+  render: () => (
+    <Column>
+      <RecordTable
+        label="Reports"
+        head={{ label: "Account" }}
+        columns={reportColumns.map((c) => (c.key === "category" || c.key === "received" ? { ...c, bare: true } : c))}
+        rows={reports.map(reportRow)}
+        even
+      />
+    </Column>
+  ),
+};
+
+/**
  * The queue filtered: reports of harassment assigned to the reader, the search's words, every facet applied and the
  * toggle on, and Clear filters at the facets' end.
  */
