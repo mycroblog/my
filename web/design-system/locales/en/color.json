@@ -12,12 +12,12 @@
     "description": "The name of a color swatch in the theme editor that opens the system's color picker, for the light or the dark value of a token (read with Light or Dark)."
   },
   "color.meets": {
-    "defaultMessage": "{ratio}:1, meets AA",
-    "description": "A contrast pair's verdict in the theme editor: ratio is the contrast ratio of the token's color with the other token of the pair (4.62), which meets the minimum of WCAG 2 level AA. Shown after the pair's name (On Surface)."
+    "defaultMessage": "{ratio}:1, meets AA ({minimum}:1)",
+    "description": "A contrast pair's verdict in the theme editor: ratio is the contrast ratio of the token's color with the other token of the pair (4.62), minimum the ratio WCAG 2 level AA asks of the pair (4.5 for text, 3 for a mark), which it meets. Shown after the pair's name (On surface); parallel to color.below."
   },
   "color.below": {
-    "defaultMessage": "{ratio}:1, needs {minimum}:1",
-    "description": "A contrast pair's verdict in the theme editor when its contrast is under the minimum of WCAG 2 level AA, an error that keeps the theme from being saved: ratio is the pair's contrast ratio (2.8), minimum the ratio it needs (4.5 for text, 3 for a mark). Shown after the pair's name (On Surface)."
+    "defaultMessage": "{ratio}:1, below AA ({minimum}:1)",
+    "description": "A contrast pair's verdict in the theme editor when its contrast is under the minimum of WCAG 2 level AA, an error that keeps the theme from being saved: ratio is the pair's contrast ratio (2.77), minimum the ratio it needs (4.5 for text, 3 for a mark). Shown after the pair's name (On surface); parallel to color.meets."
   },
   "color.format": {
     "defaultMessage": "Enter a color as # and 6 characters from 0 to 9 and a to f, such as #ff6b6b.",

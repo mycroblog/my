@@ -32,19 +32,11 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import {
-  createContext,
-  Fragment,
-  use,
-  useId,
-  type HTMLAttributes,
-  type ReactElement,
-  type ReactNode,
-  type Ref,
-} from "react";
+import { createContext, Fragment, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface, TextLink } from "./button";
+import { CodeLines } from "./code-text";
 import { describedBy, FieldContext } from "./field";
 import { FieldError } from "./form-page";
 import { Icon, type IconName } from "./icons";
@@ -1083,13 +1075,11 @@ const note = tv({
       "[[data-surface-raised]_&]:bg-surface",
     ],
     value: "wrap-anywhere tabular-nums",
-    // A block of code (a payload): its lines and indents kept, a long line wrapped anywhere and never scrolled
-    // sideways, at the caption's size; past a screenful of lines it scrolls in place, a stop of the keyboard's.
+    // A block of code (a payload), whole: its lines and indents kept, a long line wrapped where code-text.tsx breaks it and
+    // never scrolled sideways, at the caption's size.
     code: [
       "box-border rounded-control bg-surface-raised p-screen-row-inline",
-      "font-mono text-caption text-text whitespace-pre-wrap wrap-anywhere outline-hidden focus-visible:shadow-focus",
-      // A wrapped line's continuation is indented, as a code block's in a post.
-      "[text-indent:var(--content-code-hang)_hanging_each-line]",
+      "font-mono text-caption text-text whitespace-pre-wrap",
       "[[data-surface-raised]_&]:bg-surface",
     ],
     result: "text-caption text-muted-text",
@@ -1165,18 +1155,13 @@ export function SettingsResult({
   );
 }
 
-/** A block of code, as tall as its lines up to a screenful of them, past which it scrolls in place. */
-function CodeFrame({ className, ...rest }: HTMLAttributes<HTMLPreElement> & { className: string }) {
-  return <pre {...rest} className={`${className} max-h-[24lh] overflow-y-auto`} />;
-}
-
 /**
  * What the reader copies and keeps (recovery codes, the key of an authenticator app, a secret shown once), named by
  * `label`: the values in the code's face on the raised surface (the page's in a raised section), each on a line of
  * its own, two side by side where they fit, and under them the action that copies them all (`action`, a `Button`)
  * with what came of it right after (`result`, read as it comes). A press on the values selects them all, for a reader
- * who copies by hand. A block of `code` in their place (a webhook's payload, the errors of an import) keeps its lines
- * and indents, wraps a long line, and scrolls in place past a screenful of lines.
+ * who copies by hand. A block of `code` in their place (a webhook's payload, the errors of an import) stands whole,
+ * keeps its lines and indents, and wraps a long line under its own indent.
  */
 export function CopyBlock({
   label,
@@ -1215,10 +1200,11 @@ export function CopyBlock({
           ))}
         </Grid>
       ) : (
-        // A stop of the keyboard's, so that a block longer than its room scrolls without a pointer.
-        <CodeFrame role="group" aria-label={label} tabIndex={0} className={s.code()} dir="ltr">
-          <code>{shown.code}</code>
-        </CodeFrame>
+        <pre role="group" aria-label={label} className={s.code()} dir="ltr">
+          <code>
+            <CodeLines code={shown.code} />
+          </code>
+        </pre>
       )}
       <Row wrap align="center" gap="screen-row-gap">
         <Row as="span" inline rigid>

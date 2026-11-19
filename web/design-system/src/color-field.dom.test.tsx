@@ -38,8 +38,12 @@ function field(start: SchemeColors) {
 test("each scheme's color is a field described by its pair's ratio, and a pair under its minimum makes it invalid", () => {
   field({ light: "#ff6b6b", dark: "#ff6b6b" });
   const token = screen.getByRole("group", { name: "Accent text" });
-  const light = within(within(token).getByRole("group", { name: "Light" })).getByRole("textbox", { name: "Light" });
-  const dark = within(within(token).getByRole("group", { name: "Dark" })).getByRole("textbox", { name: "Dark" });
+  const light = within(within(token).getByRole("group", { name: "Light" })).getByRole("textbox", {
+    name: "Accent text Light",
+  });
+  const dark = within(within(token).getByRole("group", { name: "Dark" })).getByRole("textbox", {
+    name: "Accent text Dark",
+  });
 
   expect(light.getAttribute("aria-invalid")).toBe("true");
   expect(dark.getAttribute("aria-invalid")).toBeNull();
@@ -56,14 +60,14 @@ test("each scheme's color is a field described by its pair's ratio, and a pair u
       })
       .join(" ");
   // Cut, never rounded up: 2.77 stays under 2.78.
-  expect(said(light)).toBe("On surface2.77:1, needs 4.5:1");
-  expect(said(dark)).toBe("On surface6.05:1, meets AA");
+  expect(said(light)).toBe("On surface2.77:1, below AA (4.5:1)");
+  expect(said(dark)).toBe("On surface6.05:1, meets AA (4.5:1)");
 });
 
 test("a whole color typed tells the owner; what is no color is said once the reader leaves the field", async () => {
   const user = userEvent.setup();
   const told = field({ light: "#a64646", dark: "#ff6b6b" });
-  const light = screen.getByRole("textbox", { name: "Light" });
+  const light = screen.getByRole("textbox", { name: "Accent text Light" });
 
   await user.clear(light);
   await user.type(light, "#ff6b6");
@@ -79,4 +83,17 @@ test("a whole color typed tells the owner; what is no color is said once the rea
   await user.type(light, "B");
   expect(told).toEqual([{ light: "#ff6b6b", dark: "#ff6b6b" }]);
   expect(screen.queryByText(/characters from 0 to 9 and a to f/)).toBeNull();
+});
+
+test("each control is named by the token and its scheme, and what the reader typed stays as typed", async () => {
+  const user = userEvent.setup();
+  const told = field({ light: "#a64646", dark: "#ff6b6b" });
+  expect(screen.getByRole("textbox", { name: "Accent text Dark" })).not.toBeNull();
+  expect(screen.getAllByLabelText("Choose a color Accent text Light")).toHaveLength(1);
+
+  const light = screen.getByRole("textbox", { name: "Accent text Light" });
+  await user.clear(light);
+  await user.type(light, "FF6B6B");
+  expect(told.at(-1)).toEqual({ light: "#ff6b6b", dark: "#ff6b6b" });
+  expect((light as HTMLInputElement).value).toBe("FF6B6B");
 });

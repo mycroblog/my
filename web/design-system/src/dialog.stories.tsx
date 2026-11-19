@@ -3,12 +3,13 @@
 // The confirmation with a text to type (#3258, ADR-0110, NFR-MOD-7), before what is grave as well as final: banning an
 // account, the text its handle; closing the server, its domain; deleting a role, its name. Each in the flow of the page
 // as the modal would place it, and once over the page: empty, its confirmation disabled; a text that is not the one
-// stated, still disabled; the text typed, enabled; and the ban in flight. The words are samples in English, as the
-// moderation and administration screens would write them.
+// stated, still disabled; the text typed, enabled; and the ban in flight. The words are samples in the toolbar's
+// language (ja, else en), as the moderation and administration screens would write them.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useEffect, useRef, type ReactNode } from "react";
+import { useLocale } from "react-aria-components";
 import { ConfirmDialog } from "./dialog";
 import { Stack } from "./layout";
 
@@ -32,28 +33,100 @@ function TypedIn({ text, children }: { text: string; children: ReactNode }) {
   return <div ref={root}>{children}</div>;
 }
 
-const ban = {
-  title: "Ban @spam_bot_7731@social.example?",
-  text: "Their account is suspended on this server, their posts and media are deleted, and the servers that follow them are told. This cannot be undone.",
-  phrase: "spam_bot_7731@social.example",
-  confirm: "Ban account",
+/** The stories' words, in the toolbar's language (ja, else en), as the screens would write them. */
+const words = {
+  en: {
+    cancel: "Cancel",
+    ban: {
+      title: "Ban @spam_bot_7731@social.example?",
+      text: "Their account is suspended on this server, their posts and media are deleted, and the servers that follow them are told. This cannot be undone.",
+      confirm: "Ban account",
+    },
+    close: {
+      title: "Close this server?",
+      text: "Every account is suspended, sign-ups stop, and other servers are told this server is gone. This cannot be undone.",
+      confirm: "Close server",
+    },
+    role: {
+      title: "Delete the role Trusted reviewer?",
+      text: "The 4 people who have it lose its permissions, and the invitations that grant it stop working. This cannot be undone.",
+      confirm: "Delete role",
+      phrase: "Trusted reviewer",
+    },
+  },
+  ja: {
+    cancel: "キャンセル",
+    ban: {
+      title: "@spam_bot_7731@social.example を BAN しますか?",
+      text: "このサーバーでアカウントを凍結し、投稿とメディアを削除して、フォローしているサーバーに知らせます。取り消せません。",
+      confirm: "BAN する",
+    },
+    close: {
+      title: "このサーバーを閉じますか?",
+      text: "すべてのアカウントを凍結し、新規登録を止め、ほかのサーバーにこのサーバーがなくなることを知らせます。取り消せません。",
+      confirm: "サーバーを閉じる",
+    },
+    role: {
+      title: "ロール「信頼できる審査者」を削除しますか?",
+      text: "このロールを持つ 4 人は権限を失い、このロールを与える招待も使えなくなります。取り消せません。",
+      confirm: "ロールを削除",
+      phrase: "信頼できる審査者",
+    },
+  },
 } as const;
 
-/** The ban's confirmation, in the flow of the page. */
-function Ban({ busy = false }: { busy?: boolean }) {
+const useWords = () => words[new Intl.Locale(useLocale().locale).language === "ja" ? "ja" : "en"];
+
+/** The handle the ban asks to type, the same in every language. */
+const handle = "spam_bot_7731@social.example";
+
+/** The ban's confirmation, in the flow of the page, or over it. */
+function Ban({ busy = false, layer = false }: { busy?: boolean; layer?: boolean }) {
+  const w = useWords();
   return (
     <ConfirmDialog
-      layer={false}
-      title={ban.title}
-      cancel="Cancel"
-      confirm={ban.confirm}
-      phrase={ban.phrase}
+      layer={layer}
+      title={w.ban.title}
+      cancel={w.cancel}
+      confirm={w.ban.confirm}
+      phrase={handle}
       busy={busy}
       onCancel={none}
       onConfirm={none}
     >
-      {ban.text}
+      {w.ban.text}
     </ConfirmDialog>
+  );
+}
+
+/** Closing the server, its domain to type; deleting a role, its name, which has a space. */
+function Others() {
+  const w = useWords();
+  return (
+    <Stack gap="entry-room">
+      <ConfirmDialog
+        layer={false}
+        title={w.close.title}
+        cancel={w.cancel}
+        confirm={w.close.confirm}
+        phrase="mycroblog.example"
+        onCancel={none}
+        onConfirm={none}
+      >
+        {w.close.text}
+      </ConfirmDialog>
+      <ConfirmDialog
+        layer={false}
+        title={w.role.title}
+        cancel={w.cancel}
+        confirm={w.role.confirm}
+        phrase={w.role.phrase}
+        onCancel={none}
+        onConfirm={none}
+      >
+        {w.role.text}
+      </ConfirmDialog>
+    </Stack>
   );
 }
 
@@ -86,7 +159,7 @@ export const TypedConfirmNotYet: Story = {
 export const TypedConfirmTyped: Story = {
   render: () => (
     <Column>
-      <TypedIn text={ban.phrase}>
+      <TypedIn text={handle}>
         <Ban />
       </TypedIn>
     </Column>
@@ -97,7 +170,7 @@ export const TypedConfirmTyped: Story = {
 export const TypedConfirmBusy: Story = {
   render: () => (
     <Column>
-      <TypedIn text={ban.phrase}>
+      <TypedIn text={handle}>
         <Ban busy />
       </TypedIn>
     </Column>
@@ -108,48 +181,12 @@ export const TypedConfirmBusy: Story = {
 export const TypedConfirmOthers: Story = {
   render: () => (
     <Column>
-      <Stack gap="entry-room">
-        <ConfirmDialog
-          layer={false}
-          title="Close this server?"
-          cancel="Cancel"
-          confirm="Close server"
-          phrase="mycroblog.example"
-          onCancel={none}
-          onConfirm={none}
-        >
-          Every account is suspended, sign-ups stop, and other servers are told this server is gone. This cannot be
-          undone.
-        </ConfirmDialog>
-        <ConfirmDialog
-          layer={false}
-          title="Delete the role Trusted reviewer?"
-          cancel="Cancel"
-          confirm="Delete role"
-          phrase="Trusted reviewer"
-          onCancel={none}
-          onConfirm={none}
-        >
-          The 4 people who have it lose its permissions, and the invitations that grant it stop working. This cannot be
-          undone.
-        </ConfirmDialog>
-      </Stack>
+      <Others />
     </Column>
   ),
 };
 
 /** The ban's confirmation over the page, the focus in its field. */
 export const TypedConfirmOverThePage: Story = {
-  render: () => (
-    <ConfirmDialog
-      title={ban.title}
-      cancel="Cancel"
-      confirm={ban.confirm}
-      phrase={ban.phrase}
-      onCancel={none}
-      onConfirm={none}
-    >
-      {ban.text}
-    </ConfirmDialog>
-  ),
+  render: () => <Ban layer />,
 };

@@ -4,7 +4,8 @@
 // operations screens show it: its entries, the newest first, as the notices are. Each is the glyph of its kind, the
 // sentence of who did what to what, the app's, its names isolated (`SentenceName`), with the time at the end of its
 // first line; the muted line about it under it (a reason, a response's status); and, where it has more (the payload,
-// the request), Details at that line's end, a button of the text, which shows that under it. Entries stand apart by space alone, no line between them.
+// the request), Details at that line's end, a button of the text with a chevron that turns as it opens, which shows
+// that under it. Entries stand apart by space alone, no line between them.
 //
 // For assistive technology: the log is an ordered list named by the screen; Details is a disclosure's button, its
 // state read with it, and what it folds stays out of the page while folded.
@@ -29,6 +30,8 @@ const log = tv({
     text: "[text-wrap:pretty] [word-break:auto-phrase]",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
     toggle: "whitespace-nowrap",
+    // The chevron after Details points down while folded and up while open.
+    chevron: "motion-safe:transition-transform motion-safe:duration-fast [[aria-expanded=true]_&]:rotate-180",
     // What it folds stands a little apart from the lines over it, as a group of its own.
     panel: "pt-screen-air [&[hidden]]:hidden",
   },
@@ -81,10 +84,18 @@ export function LogEntry({ icon, date, children, about, detail }: LogEntryProps)
           {about}
           {more && (
             <>
-              {said && actionJoint(about)}
+              {/* The dot between the line and Details is shown alone: they are read apart already. */}
+              {said && <span aria-hidden="true">{actionJoint(about)}</span>}
               {/* Its few words hold together: the line wraps before it, never inside it. */}
               <span className={s.toggle()} lang={strings.lang}>
-                <TextButton slot="trigger">{strings.t("log.details")}</TextButton>
+                <TextButton slot="trigger">
+                  <Row as="span" inline align="center" gap="hair">
+                    {strings.t("log.details")}
+                    <Row as="span" inline rigid className={s.chevron()}>
+                      <Icon name="expand" place="caption" />
+                    </Row>
+                  </Row>
+                </TextButton>
               </span>
             </>
           )}

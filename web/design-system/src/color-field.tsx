@@ -1,16 +1,19 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The field of a color token in the server's theme (ADR-0059): its name, the line about what it colors, and its color
-// in each scheme, light then dark, side by side where the field has the room (a tablet's column and wider), one under
-// the other on a phone. A scheme's color is a swatch, which opens the platform's own picker, and the color as
+// in each scheme, light then dark, side by side where the field has the room for both pairs' lines on one line each
+// (wider than the app's main column), one under the other elsewhere, each at the top of its column. A scheme's color is a swatch, which opens the platform's own picker, and the color as
 // #rrggbb, typed or pasted; under them, each pair the token makes with another (text on a surface) as the pair looks,
 // its contrast ratio and whether it meets WCAG AA's minimum for the pair. A pair under its minimum is the field's
 // error: the glyph of an error and the text's color, never a hue, and the field of that scheme is invalid, as the
 // server refuses the theme then too (ADR-0059 §2, which counts the same ratios). The ratio is cut, never rounded up,
-// so that a pair just under its minimum never reads as meeting it.
+// so that a pair just under its minimum never reads as meeting it. While what was typed is no color, the swatch and
+// the pairs' pictures are dimmed and their verdicts blank: they would speak of a color the field no longer holds.
 //
-// For assistive technology: the field is a group named by the token and described by what it colors, each scheme a group named by the scheme, its
-// color's field described by the pairs' verdicts, and its picker named as such. What the pair looks like is shown
+// For assistive technology: the field is a group named by the token and described by what it colors, each scheme a
+// group named by the scheme, its color's field named by the token and the scheme (Accent text, Light) and described by
+// the pairs' verdicts, and its picker named as such with them (Choose a color, Accent text, Light), so that a list of a
+// screen's controls tells each token's apart. What the pair looks like is shown
 // alone: its ratio and verdict say it.
 
 import { contrast } from "@my/design-tokens";
@@ -69,7 +72,7 @@ function SchemeGrid({ className, ...rest }: HTMLAttributes<HTMLDivElement> & { c
     <div className="@container">
       <div
         {...rest}
-        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-screen-row-gap @min-[30rem]:grid-cols-2 @min-[30rem]:gap-x-shell-edge`}
+        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-screen-row-gap @min-[40rem]:grid-cols-2 @min-[40rem]:gap-x-shell-edge`}
       />
     </div>
   );
@@ -95,6 +98,8 @@ const field = tv({
       "[&::-webkit-color-swatch]:border-0 [&::-moz-color-swatch]:rounded-[calc(var(--radius-control)-1px)]",
       "[&::-moz-color-swatch]:border-0",
     ],
+    // What speaks of the last whole color while the field holds none.
+    stale: "opacity-disabled",
     hex: [
       "box-border h-control-form rounded-control border-0 bg-surface-raised px-control-timeline-inline",
       "font-mono text-body text-text outline-hidden focus-visible:shadow-focus",
@@ -129,11 +134,14 @@ function PairSample({ fg, bg, className }: { fg: string; bg: string; className: 
 /** A scheme's color: its swatch and its #rrggbb, and the verdicts of its pairs. */
 function SchemeColor({
   scheme,
+  nameId,
   value,
   pairs,
   onChange,
 }: {
   scheme: Scheme;
+  /** The id of the token's name, which names its controls with the scheme's. */
+  nameId: string;
   value: SchemeColors;
   pairs: readonly ColorPair[];
   onChange: (color: string) => void;
@@ -145,13 +153,15 @@ function SchemeColor({
   const fieldId = useId();
   const pairsId = useId();
   const formatId = useId();
+  const pickId = useId();
   const color = value[scheme];
-  // What the reader typed, until it is a whole color; the token's value whenever that changes from outside.
+  // What the reader typed, as they typed it; the token's value where that changes to another color than the text says
+  // (from the swatch, or from outside), never rewriting the text under the caret.
   const [typed, setTyped] = useState(color);
   const [given, setGiven] = useState(color);
   if (given !== color) {
     setGiven(color);
-    setTyped(color);
+    if (hexOf(typed) !== color) setTyped(color);
   }
   const [left, setLeft] = useState(false);
   const whole = hexOf(typed) !== undefined;
@@ -165,16 +175,19 @@ function SchemeColor({
   const fails = verdicts.some((v) => !v.meets);
   const format = (n: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(n);
   return (
-    <Stack gap="entry-line" role="group" aria-labelledby={titleId}>
+    <Stack gap="entry-line" pack="start" role="group" aria-labelledby={titleId}>
       <span id={titleId} className={s.scheme()}>
         {t(scheme === "light" ? "color.light" : "color.dark")}
       </span>
       <Row align="center" gap="entry-caption">
+        <span id={pickId} hidden>
+          {t("color.pick")}
+        </span>
         <input
           type="color"
           value={color}
-          aria-label={t("color.pick")}
-          className={s.swatch()}
+          aria-labelledby={`${pickId} ${nameId} ${titleId}`}
+          className={whole ? s.swatch() : `${s.swatch()} ${s.stale()}`}
           onChange={(e) => {
             setTyped(e.currentTarget.value);
             setLeft(false);
@@ -188,9 +201,9 @@ function SchemeColor({
           spellCheck={false}
           autoComplete="off"
           dir="ltr"
-          aria-labelledby={titleId}
-          aria-invalid={fails || misformed ? true : undefined}
-          aria-describedby={misformed ? `${formatId} ${pairsId}` : pairsId}
+          aria-labelledby={`${nameId} ${titleId}`}
+          aria-invalid={(whole && fails) || misformed ? true : undefined}
+          aria-describedby={misformed ? formatId : whole ? pairsId : undefined}
           className={s.hex()}
           onChange={(e) => {
             const next = e.currentTarget.value;
@@ -213,21 +226,23 @@ function SchemeColor({
           return (
             <Row as="li" key={pair.label} align="center" gap="entry-caption">
               <Row as="span" inline rigid>
-                <PairSample fg={fg} bg={bg} className={s.sample()} />
+                <PairSample fg={fg} bg={bg} className={whole ? s.sample() : `${s.sample()} ${s.stale()}`} />
               </Row>
               <Row as="span" grow wrap align="center" gapX="entry-caption" gapY="0">
                 <span>{pair.label}</span>
-                <Row as="span" inline align="center" gap="entry-caption" className={meets ? s.pass() : s.fail()}>
-                  <Row as="span" inline rigid>
-                    <Icon name={meets ? "chosen" : "error"} place="caption" />
+                {whole && (
+                  <Row as="span" inline align="center" gap="entry-caption" className={meets ? s.pass() : s.fail()}>
+                    <Row as="span" inline rigid>
+                      <Icon name={meets ? "chosen" : "error"} place="caption" />
+                    </Row>
+                    <span className={s.ratio()}>
+                      {t(meets ? "color.meets" : "color.below", {
+                        ratio: format(ratio),
+                        minimum: format(pair.minimum),
+                      })}
+                    </span>
                   </Row>
-                  <span className={s.ratio()}>
-                    {t(meets ? "color.meets" : "color.below", {
-                      ratio: format(ratio),
-                      minimum: format(pair.minimum),
-                    })}
-                  </span>
-                </Row>
+                )}
               </Row>
             </Row>
           );
@@ -268,6 +283,7 @@ export function ColorField({ label, about, value, onChange, pairs }: ColorFieldP
           <SchemeColor
             key={scheme}
             scheme={scheme}
+            nameId={nameId}
             value={value}
             pairs={pairs}
             onChange={(color) => {

@@ -2,7 +2,8 @@
 
 // The logs of a record (#3258), the newest first: the audit log, its entries folded and one opened; a webhook's
 // deliveries, a failed one opened on its request's payload and its response; a job's attempts; and a block of code to
-// copy, alone: a payload long enough to scroll in place, a signing secret shown once, and the errors of an import. The
+// copy, alone: a long payload shown whole, its long lines wrapped under their own indent, a signing secret shown once,
+// and the errors of an import. The
 // words are samples in English, as the moderation and administration screens would write them.
 
 import { rootPx } from "@my/design-tokens";
@@ -48,7 +49,7 @@ function Audit() {
       >
         <SentenceName>mika</SentenceName> suspended <SentenceName>@spam_bot_7731@social.example</SentenceName>
       </LogEntry>
-      <LogEntry icon="hidden" date={ago(38 * minute)} about="Email address and IP address">
+      <LogEntry icon="revealed" date={ago(38 * minute)} about="Email address and IP address">
         <SentenceName>admin_sato</SentenceName> showed the private data of <SentenceName>@river_tanaka</SentenceName>
       </LogEntry>
       <LogEntry
@@ -69,7 +70,7 @@ function Audit() {
       <LogEntry icon="accepted" date={ago(26 * hour)} about="Appeal 318 accepted">
         <SentenceName>mika</SentenceName> lifted the limit on <SentenceName>@kenji@photos.example</SentenceName>
       </LogEntry>
-      <LogEntry icon="block" date={ago(3 * 24 * hour)} about="Reason: Harassment, coordinated from this server">
+      <LogEntry icon="moderation" date={ago(3 * 24 * hour)} about="Reason: Harassment, coordinated from this server">
         <SentenceName>yuki</SentenceName> suspended the domain <SentenceName>bad-actors.example</SentenceName>
       </LogEntry>
     </LogList>
@@ -90,7 +91,7 @@ const delivered = "HTTP/1.1 204 No Content";
 /** A delivery's request and its response. */
 function Delivery({ payload, response }: { payload: string; response: string }) {
   return (
-    <Stack gap="screen-row-gap">
+    <Stack gap="entry-room">
       <CopyBlock label="Payload" code={payload} action={<Button size="timeline">Copy payload</Button>} />
       <CopyBlock label="Response" code={response} action={<Button size="timeline">Copy response</Button>} />
     </Stack>
@@ -242,8 +243,8 @@ const longPayload = JSON.stringify(
 );
 
 /**
- * Blocks of code to copy, alone: a payload longer than its room, which scrolls in place, a line of it wrapped; a
- * signing secret shown once, with what came of copying; and the errors of an import.
+ * Blocks of code to copy, alone: a long payload, whole, its long lines wrapped after a slash or a mark under their own
+ * indent; a signing secret shown once, with what came of copying; and the errors of an import.
  */
 export const CodeBlocks: Story = {
   render: () => (

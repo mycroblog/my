@@ -125,6 +125,15 @@ export const Endpoint: Story = {
   ),
 };
 
+/** The registration in a column narrower than a phone's (a detail inside a log's entry): each term over its value. */
+export const NarrowColumn: Story = {
+  render: () => (
+    <div style={{ maxWidth: rem(208), padding: rem(16) }}>
+      <FactList label="Registration" items={registration({ email: "shown", ip: "shown" })} />
+    </div>
+  ),
+};
+
 /** The facts inside a raised section, under its heading, Show on the page's surface. */
 export const InASection: Story = {
   render: () => (

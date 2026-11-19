@@ -14,8 +14,8 @@
 // a row of its own a finger's target tall, what the server refused right before the pair, and the pair; where the
 // reader has no way to prove it here, it says so and has Cancel alone. A confirmation before what is grave as well as
 // final (banning an account, closing the server, deleting a role) has the reader type a stated text first (ADR-0110,
-// NFR-MOD-7): under what follows, a field labelled with the text, in the code's face; the confirmation stays disabled
-// until the field holds it. The head of every modal ends with close, after its title; a confirmation's close cancels,
+// NFR-MOD-7): under what follows, a field labelled with the text, on a line of its own in the code's face; the
+// confirmation stays disabled until the field holds it. A handle in a title breaks before its server, never inside. The head of every modal ends with close, after its title; a confirmation's close cancels,
 // as its Cancel does.
 //
 // For assistive technology and the keyboard: a modal keeps the focus inside it and gives it back as it leaves, and
@@ -48,25 +48,47 @@ const confirm = tv({
     // The other ways to prove it, one under another, each a finger's target tall.
     ways: "list-none p-0",
     way: "min-h-icon-button-touch",
-    // The text to type, inside the field's label: in the code's face, breaking anywhere where it does not fit.
+    // The text to type, inside the field's label, on a line of its own: in the code's face, breaking anywhere only
+    // where it is longer than the line.
     phrase: "font-mono font-strong [overflow-wrap:anywhere]",
   },
 });
 
-/** What the reader typed, as it is compared with the text to type: its edges trimmed, its full-width forms folded. */
-const folded = (text: string) => text.normalize("NFKC").trim();
+/**
+ * What the reader typed, as it is compared with the text to type: its edges trimmed, its full-width forms folded, and
+ * its case, as handles, domains and a role's name are told apart by none (`toLowerCase` reads no locale).
+ */
+const folded = (text: string) => text.normalize("NFKC").trim().toLowerCase();
 
 /** The label of the field of a text to type: the catalog's sentence, the text in the code's face in its place. */
 function PhraseLabel({ lang, phrase, className }: { lang: string; phrase: string; className: string }) {
   const mark = "\u0000";
   const [before = "", after = ""] = stringsIn(lang).t("dialog.type_to_confirm", { phrase: mark }).split(mark);
+  // The text to type stands on a line of its own, so that neither it nor the sentence around it breaks inside a word.
   return (
     <>
-      {before}
-      <bdi className={className}>{phrase}</bdi>
-      {after}
+      <span className="[word-break:auto-phrase]">{before.trim()}</span>{" "}
+      <Box as="bdi" display="block" className={className}>
+        {phrase}
+      </Box>
+      {after.trim() !== "" && (
+        <>
+          {" "}
+          <span className="[word-break:auto-phrase]">{after.trim()}</span>
+        </>
+      )}
     </>
   );
+}
+
+/**
+ * A title with a chance to break before each handle's server (@name@server.example), so that a handle too long for a
+ * line wraps at its second @, never inside a word; its text is unchanged for assistive technology.
+ */
+function titleBreaks(title: string): ReactNode {
+  const parts = title.split(/(?<=\S)(?=@)/u);
+  if (parts.length === 1) return title;
+  return parts.flatMap((part, i) => (i === 0 ? [part] : [<wbr key={i} />, part]));
 }
 
 /**
@@ -93,11 +115,11 @@ function DialogHead({
     <Row align="start" justify="between" gap="entry-caption">
       {titleId === undefined ? (
         <Heading slot="title" className={className}>
-          {title}
+          {titleBreaks(title)}
         </Heading>
       ) : (
         <h2 id={titleId} className={className}>
-          {title}
+          {titleBreaks(title)}
         </h2>
       )}
       <Row as="span" inline rigid bleedEnd="icon-button-inline">
@@ -125,7 +147,7 @@ export type ConfirmDialogProps = {
   /**
    * The text the reader types to unlock the confirmation, before what is grave as well as final (the account's handle
    * before a ban, the server's domain before closing it, the role's name before deleting it): the confirmation stays
-   * disabled until the field holds it, its edges and full-width forms aside.
+   * disabled until the field holds it, its edges, full-width forms and case aside.
    */
   phrase?: string | undefined;
   /** Over the page, or in the flow of a page (a story's specimen). */

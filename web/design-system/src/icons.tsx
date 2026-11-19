@@ -50,8 +50,8 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
-  IconCircleCheck,
   IconCircle,
+  IconCircleCheck,
   IconCircleDot,
   IconCircleMinus,
   IconCircleX,
@@ -66,6 +66,7 @@ import {
   IconDoorExit,
   IconDots,
   IconExternalLink,
+  IconEye,
   IconEyeOff,
   IconFile,
   IconFilePencil,
@@ -257,6 +258,8 @@ export const icons = {
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
   // On, while the composer holds a content warning.
   hidden: { off: IconEyeOff, on: "tile" },
+  // Private data shown (an email address, an IP address), as a staff member revealed it.
+  revealed: { off: IconEye },
   // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll (poll,
   // above), the moderators' notice; and a post its author pinned to their profile.
   follow: { off: IconUserPlus, directional: true },
