@@ -16,7 +16,7 @@
     "description": "In a settings screen of /admin while the settings are read. Read by administrators."
   },
   "staff_settings.failed": {
-    "defaultMessage": "設定を読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "設定を読み込めませんでした。",
     "description": "In a settings screen of /admin when the settings could not be read, before Try again. Read by administrators."
   },
   "staff_settings.missing": {
@@ -56,7 +56,7 @@
     "description": "The button that saves the switch to the allowlist. Read by administrators."
   },
   "staff_settings.ask.scope.text": {
-    "defaultMessage": "ほかの {servers, plural, other {#}} サーバーとの {follows, plural, other {#}} 件のフォローが終わり、ここの {accounts, plural, other {#}} アカウントがフォローを失います。多いのは {top} です。取り消せません。",
+    "defaultMessage": "ほかの {servers, plural, other {#}} サーバーとの {follows, plural, other {#}} 件のフォローが終わり、ここの {accounts, plural, other {#}} アカウントがフォローを失います。多いのは {top} とのフォローです。取り消せません。",
     "description": "The text of the question before switching to the allowlist, with the server's count; top is a list of domains. Read by administrators."
   },
   "staff_settings.ask.providers_only.title": {
@@ -80,11 +80,11 @@
     "description": "The question before saving a maximum age of the server's posts that is new or shorter. Read by administrators."
   },
   "staff_settings.ask.auto_delete_max.confirm": {
-    "defaultMessage": "保存して削除する",
+    "defaultMessage": "保存して削除",
     "description": "The button that saves a maximum age of the server's posts. Read by administrators."
   },
   "staff_settings.ask.auto_delete_max.text": {
-    "defaultMessage": "{days, plural, other {#}} 日より古いこのサーバーの投稿を削除します。{grace, plural, =0 {すぐに始まります。} other {各自にお知らせしてから {grace} 日後に始まります。}}削除した投稿は戻せません。",
+    "defaultMessage": "{days, plural, other {#}} 日を過ぎたこのサーバーの投稿を削除します。{grace, plural, =0 {すぐに始まります。} other {各自にお知らせしてから {grace} 日後に始まります。}}取り消せません。",
     "description": "The text of the question before saving a maximum age of posts. Read by administrators."
   },
   "staff_settings.copied": {
@@ -108,7 +108,7 @@
     "description": "Under a setting the server refused or the form found empty: the rule its value follows, by the setting's kind. Read by administrators."
   },
   "staff_settings.single_user.hidden": {
-    "defaultMessage": "一人のサーバーなので、ほかの人は登録できません。参加できるようにするには、下でオフにしてください。",
+    "defaultMessage": "一人のためのサーバーなので、ほかの人は登録できません。参加できるようにするには、下でオフにしてください。",
     "description": "In place of the settings of signing up and of member invites while the server is a one-person server. Read by administrators."
   },
   "staff_settings.image.choose": {
@@ -176,7 +176,7 @@
     "description": "The line under Search engines and AI in the list of Server settings: what its page holds. Read by administrators."
   },
   "staff_settings.topic.voice": {
-    "defaultMessage": "ボイスチャット",
+    "defaultMessage": "通話",
     "description": "The name of a page of Server settings (/admin/settings), in its list and as its title. Read by administrators."
   },
   "staff_settings.topic.voice.hint": {
@@ -208,7 +208,7 @@
     "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
   },
   "staff_settings.group.reach": {
-    "defaultMessage": "連合と公開",
+    "defaultMessage": "連合と検索",
     "description": "The heading of a group of pages in the list of Server settings (/admin/settings). Read by administrators."
   },
   "staff_settings.group.moderation": {
@@ -240,7 +240,7 @@
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.single_user": {
-    "defaultMessage": "一人のサーバー",
+    "defaultMessage": "一人のためのサーバー",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.invites": {
@@ -476,7 +476,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.thumbnail.about": {
-    "defaultMessage": "サーバー情報のページとトップページに表示されます。リンクプレビューの画像がないときはプレビューにも使います。",
+    "defaultMessage": "「このサーバーについて」のページとトップページに表示されます。リンクプレビューの画像がないときはプレビューにも使います。",
     "description": "The line about the setting Thumbnail: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.preview_image": {
@@ -492,7 +492,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.single_user": {
-    "defaultMessage": "一人のサーバー",
+    "defaultMessage": "一人のためのサーバー",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.single_user.about": {
@@ -548,7 +548,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.oauth_metadata_document_clients": {
-    "defaultMessage": "メタデータ文書によるアプリ",
+    "defaultMessage": "メタデータ文書のアプリを受け付ける",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.oauth_metadata_document_clients.about": {
@@ -648,11 +648,11 @@
     "description": "The line about the setting Who can create events: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.event_records_retention_days": {
-    "defaultMessage": "イベントの回答の保存",
+    "defaultMessage": "イベントの出欠の保存",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.event_records_retention_days.about": {
-    "defaultMessage": "イベントが終わってから、回答・承認・招待・投票の記録を残す日数です。",
+    "defaultMessage": "イベントが終わってから、出欠の回答・承認・招待・投票の記録を残す日数です。",
     "description": "The line about the setting Keep answers to events: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.public_counts": {
@@ -804,7 +804,7 @@
     "description": "The line about the setting Refuse a sign-up it rejects: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.hook_local_status_account_age_days": {
-    "defaultMessage": "審査するアカウントの日数",
+    "defaultMessage": "この日数より新しいアカウントを審査",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.hook_local_status_account_age_days.about": {
@@ -812,7 +812,7 @@
     "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.hook_local_profile_account_age_days": {
-    "defaultMessage": "審査するアカウントの日数",
+    "defaultMessage": "この日数より新しいアカウントを審査",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.hook_local_profile_account_age_days.about": {
@@ -828,11 +828,11 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.indexable_default": {
-    "defaultMessage": "新しいアカウントを索引に載せる",
+    "defaultMessage": "新しいアカウントを検索に載せる",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.indexable_default.about": {
-    "defaultMessage": "新しいアカウントの選択の既定です。いまあるアカウントは変わりません。",
+    "defaultMessage": "新しいアカウントの最初の設定です。各自で変えられます。いまあるアカウントは変わりません。",
     "description": "The line about the setting New accounts can be indexed: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.ai_usage": {
@@ -868,19 +868,19 @@
     "description": "The line about the setting Keep who took part: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_enabled": {
-    "defaultMessage": "古い投稿を削除",
+    "defaultMessage": "自動削除",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_enabled.about": {
     "defaultMessage": "新しいアカウントで最初からオンにするかどうかです。",
-    "description": "The line about the setting Delete old posts: what it does where that is not plain. Read by administrators."
+    "description": "The line about the setting Automatic deletion: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_min_age_days": {
-    "defaultMessage": "削除する投稿の古さ",
+    "defaultMessage": "この日数を過ぎた投稿を削除",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_pinned": {
-    "defaultMessage": "固定した投稿",
+    "defaultMessage": "ピン留めした投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_bookmarked": {
@@ -888,15 +888,15 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_favourited": {
-    "defaultMessage": "お気に入りした投稿",
+    "defaultMessage": "お気に入りにした投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_media": {
-    "defaultMessage": "メディアつきの投稿",
+    "defaultMessage": "メディア付きの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_polls": {
-    "defaultMessage": "投票つきの投稿",
+    "defaultMessage": "投票付きの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_articles": {
@@ -924,11 +924,11 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_min_boosts": {
-    "defaultMessage": "ブーストの数で残す",
+    "defaultMessage": "この回数以上ブーストされた投稿を残す",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_min_favourites": {
-    "defaultMessage": "お気に入りの数で残す",
+    "defaultMessage": "この回数以上お気に入りにされた投稿を残す",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_age_days": {
@@ -948,7 +948,7 @@
     "description": "The line about the setting Grace period: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_pinned": {
-    "defaultMessage": "固定した投稿",
+    "defaultMessage": "ピン留めした投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_bookmarked": {
@@ -956,15 +956,15 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_favourited": {
-    "defaultMessage": "お気に入りした投稿",
+    "defaultMessage": "お気に入りにした投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_media": {
-    "defaultMessage": "メディアつきの投稿",
+    "defaultMessage": "メディア付きの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_polls": {
-    "defaultMessage": "投票つきの投稿",
+    "defaultMessage": "投票付きの投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_articles": {
@@ -976,15 +976,15 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_thresholds": {
-    "defaultMessage": "ブーストとお気に入りの数で残す投稿",
+    "defaultMessage": "ブーストやお気に入りの数で残す投稿",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_kept_pins": {
-    "defaultMessage": "投稿を残す固定の数",
+    "defaultMessage": "投稿を残すピン留めの数",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_kept_pins.about": {
-    "defaultMessage": "新しく固定したものから数えます。5 ですべての固定した投稿を残します。",
+    "defaultMessage": "最近ピン留めしたものから数えます。5 でピン留めしたすべての投稿を残します。",
     "description": "The line about the setting Pins that keep posts: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.appeal_window_days": {
@@ -1120,7 +1120,7 @@
     "description": "An option of the setting voice_room_starters, a radio in the list of its options. Read by administrators."
   },
   "staff_settings.choice.voice_room_starters.about": {
-    "defaultMessage": "{value, select, everyone {停止や制限を受けていない、このサーバーにログインしている人なら誰でも開けます。} other {ボイスチャットのルームを開く権限を持つ人だけです。サポーターのプランで付けることもできます。}}",
+    "defaultMessage": "{value, select, everyone {停止や制限を受けていない、このサーバーにログインしている人なら誰でも開けます。} other {通話のルームを開く権限を持つ人だけです。サポーターのプランで付けることもできます。}}",
     "description": "The line under an option of the setting voice_room_starters: what choosing it does, read before saving. Read by administrators."
   },
   "staff_settings.option.audience": {
@@ -1156,7 +1156,7 @@
     "description": "At /admin/settings/branding while the brand images are read. Read by administrators."
   },
   "staff_settings.brand.failed": {
-    "defaultMessage": "アイコンとロゴを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "アイコンとロゴを読み込めませんでした。",
     "description": "At /admin/settings/branding when the brand images could not be read. Read by administrators."
   },
   "staff_settings.brand.kind": {
@@ -1172,7 +1172,7 @@
     "description": "The button that picks the SVG file of a brand image. Read by administrators."
   },
   "staff_settings.brand.remove": {
-    "defaultMessage": "標準の画像に戻す",
+    "defaultMessage": "標準の画像にする",
     "description": "The button that brings a brand image back to the built-in one when saved. Read by administrators."
   },
   "staff_settings.brand.builtin": {
@@ -1236,7 +1236,7 @@
     "description": "While the rules are read, on the rules' screens at /admin/rules. Read by administrators."
   },
   "staff_settings.rules.failed": {
-    "defaultMessage": "ルールを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "ルールを読み込めませんでした。",
     "description": "When the rules could not be read, on the rules' screens at /admin/rules. Read by administrators."
   },
   "staff_settings.rules.missing": {
@@ -1260,7 +1260,7 @@
     "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
   },
   "staff_settings.rules.empty": {
-    "defaultMessage": "まだルールはありません。ルールはサーバー情報のページと、登録と通報のときに表示されます。",
+    "defaultMessage": "まだルールはありません。ルールは「このサーバーについて」のページと、登録と通報のときに表示されます。",
     "description": "In place of the list of rules while there is none. Read by administrators."
   },
   "staff_settings.rules.numbered": {
@@ -1340,7 +1340,7 @@
     "description": "While the relays are read at /admin/relays. Read by administrators."
   },
   "staff_settings.relays.failed": {
-    "defaultMessage": "リレーを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "リレーを読み込めませんでした。",
     "description": "When the relays could not be read. Read by administrators."
   },
   "staff_settings.relays.missing": {
@@ -1360,7 +1360,7 @@
     "description": "The button that leads to the form of a new relay. Read by administrators."
   },
   "staff_settings.relays.empty": {
-    "defaultMessage": "まだリレーはありません。追加すると、参加しているサーバーと公開の投稿を共有します。",
+    "defaultMessage": "まだリレーはありません。参加すると、参加しているほかのサーバーと公開の投稿を共有します。",
     "description": "In place of the list of relays while there is none. Read by administrators."
   },
   "staff_settings.relays.state": {
@@ -1440,7 +1440,7 @@
     "description": "The text of the question before leaving a relay. Read by administrators."
   },
   "staff_settings.relays.rejoin": {
-    "defaultMessage": "参加し直す",
+    "defaultMessage": "もう一度参加",
     "description": "The heading of the section of joining a relay again. Read by administrators."
   },
   "staff_settings.relays.rejoin.about": {
@@ -1448,7 +1448,7 @@
     "description": "The line under Join again. Read by administrators."
   },
   "staff_settings.relays.rejoin.press": {
-    "defaultMessage": "参加し直す",
+    "defaultMessage": "もう一度参加する",
     "description": "The button that joins a relay again. Read by administrators."
   },
   "staff_settings.relays.delete": {
@@ -1480,7 +1480,7 @@
     "description": "While the providers are read, on the login providers' screens at /admin/login-providers. Read by administrators."
   },
   "staff_settings.providers_admin.failed": {
-    "defaultMessage": "ログインプロバイダーを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "ログインプロバイダーを読み込めませんでした。",
     "description": "When the providers could not be read, on the login providers' screens at /admin/login-providers. Read by administrators."
   },
   "staff_settings.providers_admin.missing": {
@@ -1664,7 +1664,7 @@
     "description": "A visibility a translation provider may receive, the same words as a post's visibility. Read by administrators."
   },
   "staff_settings.providers.first": {
-    "defaultMessage": "{name} を最初に使う",
+    "defaultMessage": "{name} を先頭にする",
     "description": "The button that moves a translation provider to the front of the order. Read by administrators."
   },
   "staff_settings.apps.loading": {
@@ -1672,7 +1672,7 @@
     "description": "While the OAuth apps are read at /admin/oauth-apps. Read by administrators."
   },
   "staff_settings.apps.failed": {
-    "defaultMessage": "アプリを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "アプリを読み込めませんでした。",
     "description": "When the OAuth apps could not be read. Read by administrators."
   },
   "staff_settings.apps.filter": {
@@ -1752,7 +1752,7 @@
     "description": "The question before denying a host. Read by administrators."
   },
   "staff_settings.hosts.deny.text": {
-    "defaultMessage": "{host} のアプリはログインできなくなり、トークンはすぐに失効します。拒否をやめてもトークンは戻りません。取り消せません。",
+    "defaultMessage": "{host} のアプリはログインできなくなり、トークンはすぐに失効します。拒否を解除してもトークンは戻りません。取り消せません。",
     "description": "The text of the question before denying a host. Read by administrators."
   },
   "staff_settings.hosts.host": {
@@ -1768,7 +1768,7 @@
     "description": "After a host was denied. Read by administrators."
   },
   "staff_settings.hosts.lifted": {
-    "defaultMessage": "{host} の拒否をやめました。",
+    "defaultMessage": "{host} の拒否を解除しました。",
     "description": "In a denied host's row after its denial was lifted. Read by administrators."
   },
   "staff_settings.hosts.list": {
@@ -1780,7 +1780,7 @@
     "description": "While the denied hosts are read. Read by administrators."
   },
   "staff_settings.hosts.read_failed": {
-    "defaultMessage": "拒否したホストを読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "拒否したホストを読み込めませんでした。",
     "description": "When the denied hosts could not be read. Read by administrators."
   },
   "staff_settings.hosts.empty": {
@@ -1792,11 +1792,11 @@
     "description": "When a host was denied. Read by administrators."
   },
   "staff_settings.hosts.lift": {
-    "defaultMessage": "拒否をやめる",
+    "defaultMessage": "解除する",
     "description": "The button of a denied host's row that lifts the denial. Read by administrators."
   },
   "staff_settings.act_failed": {
-    "defaultMessage": "できませんでした。もう一度試してください。",
+    "defaultMessage": "実行できませんでした。もう一度試してください。",
     "description": "Where an action on the administration screens (a relay joined or left, an app enabled or disabled, a host denied or lifted) failed for no reason the server named. Read by administrators."
   },
   "staff_settings.translation_usage": {
@@ -1824,7 +1824,7 @@
     "description": "While the month's use of translation is read. Read by administrators."
   },
   "staff_settings.translation_usage.failed": {
-    "defaultMessage": "今月の使用量を読み込めませんでした。もう一度試してください。",
+    "defaultMessage": "今月の使用量を読み込めませんでした。",
     "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
   }
 }

@@ -92,7 +92,7 @@
     "description": "The name of the screen of the relays, in the list at /admin and as the title of its screen. Read by administrators."
   },
   "staff.entry.relays.hint": {
-    "defaultMessage": "The relays this server joins",
+    "defaultMessage": "Sharing public posts with other servers",
     "description": "The line under Relays in the list at /admin: what its screen holds. Read by administrators."
   },
   "staff.entry.login_providers": {

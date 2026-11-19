@@ -60,7 +60,7 @@
     "description": "The name of the screen of the instance's settings, by topic, in the list at /admin and as the title of its screen. Read by administrators."
   },
   "staff.entry.settings.hint": {
-    "defaultMessage": "名前・登録・連合・公開など",
+    "defaultMessage": "名前・登録・連合・検索など",
     "description": "The line under Server settings in the list at /admin: what its screen holds. Read by administrators."
   },
   "staff.entry.documents": {
@@ -92,7 +92,7 @@
     "description": "The name of the screen of the relays, in the list at /admin and as the title of its screen. Read by administrators."
   },
   "staff.entry.relays.hint": {
-    "defaultMessage": "このサーバーが参加するリレー",
+    "defaultMessage": "ほかのサーバーとの公開の投稿の共有",
     "description": "The line under Relays in the list at /admin: what its screen holds. Read by administrators."
   },
   "staff.entry.login_providers": {

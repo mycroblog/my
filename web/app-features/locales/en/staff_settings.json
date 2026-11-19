@@ -16,11 +16,11 @@
     "description": "In a settings screen of /admin while the settings are read. Read by administrators."
   },
   "staff_settings.failed": {
-    "defaultMessage": "The settings could not be loaded. Try again.",
+    "defaultMessage": "The settings could not be loaded.",
     "description": "In a settings screen of /admin when the settings could not be read, before Try again. Read by administrators."
   },
   "staff_settings.missing": {
-    "defaultMessage": "This address names no page of the settings.",
+    "defaultMessage": "There is no settings page at this address.",
     "description": "At /admin/settings/<topic> or /admin/documents/<document> for an address that names none. Read by administrators."
   },
   "staff_settings.leave.title": {
@@ -56,7 +56,7 @@
     "description": "The button that saves the switch to the allowlist. Read by administrators."
   },
   "staff_settings.ask.scope.text": {
-    "defaultMessage": "{follows, plural, one {# follow} other {# follows}} with {servers, plural, one {# other server} other {# other servers}} end, and {accounts, plural, one {# account} other {# accounts}} here lose some. Most of them: {top}. This cannot be undone.",
+    "defaultMessage": "{follows, plural, one {# follow} other {# follows}} with {servers, plural, one {# other server} other {# other servers}} end, and {accounts, plural, one {# account} other {# accounts}} here lose some. Most are with {top}. This cannot be undone.",
     "description": "The text of the question before switching to the allowlist, with the server's count; top is a list of domains. Read by administrators."
   },
   "staff_settings.ask.providers_only.title": {
@@ -84,7 +84,7 @@
     "description": "The button that saves a maximum age of the server's posts. Read by administrators."
   },
   "staff_settings.ask.auto_delete_max.text": {
-    "defaultMessage": "Posts of this server older than {days, plural, one {# day} other {# days}} are deleted, starting {grace, plural, =0 {at once} one {# day after each person is told} other {# days after each person is told}}. Deleted posts cannot be restored.",
+    "defaultMessage": "Posts of this server older than {days, plural, one {# day} other {# days}} are deleted, starting {grace, plural, =0 {at once} one {# day after each person is told} other {# days after each person is told}}. This cannot be undone.",
     "description": "The text of the question before saving a maximum age of posts. Read by administrators."
   },
   "staff_settings.copied": {
@@ -476,7 +476,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.thumbnail.about": {
-    "defaultMessage": "Shown on the about page and the front page, and in link previews when there is no link preview image.",
+    "defaultMessage": "Shown on this server's About page and the front page, and in link previews when there is no link preview image.",
     "description": "The line about the setting Thumbnail: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.preview_image": {
@@ -548,7 +548,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.oauth_metadata_document_clients": {
-    "defaultMessage": "Apps by their metadata document",
+    "defaultMessage": "Accept apps by their metadata document",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.oauth_metadata_document_clients.about": {
@@ -828,11 +828,11 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.indexable_default": {
-    "defaultMessage": "New accounts can be indexed",
+    "defaultMessage": "Include new accounts in search",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.indexable_default.about": {
-    "defaultMessage": "The default of a new account's own choice. Accounts that exist keep theirs.",
+    "defaultMessage": "What new accounts start with; each person can change it. Accounts that exist keep theirs.",
     "description": "The line about the setting New accounts can be indexed: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.ai_usage": {
@@ -868,12 +868,12 @@
     "description": "The line about the setting Keep who took part: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_enabled": {
-    "defaultMessage": "Delete old posts",
+    "defaultMessage": "Automatic deletion",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_enabled.about": {
     "defaultMessage": "Whether new accounts start with it on.",
-    "description": "The line about the setting Delete old posts: what it does where that is not plain. Read by administrators."
+    "description": "The line about the setting Automatic deletion: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_min_age_days": {
     "defaultMessage": "Delete posts older than",
@@ -888,7 +888,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_favourited": {
-    "defaultMessage": "Favorited posts",
+    "defaultMessage": "Favourited posts",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_media": {
@@ -928,7 +928,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_keep_min_favourites": {
-    "defaultMessage": "Keep posts favorited at least",
+    "defaultMessage": "Keep posts favourited at least",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_age_days": {
@@ -956,7 +956,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_favourited": {
-    "defaultMessage": "Favorited posts",
+    "defaultMessage": "Favourited posts",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_media": {
@@ -976,7 +976,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_allow_thresholds": {
-    "defaultMessage": "Posts kept by boosts and favorites",
+    "defaultMessage": "Posts kept by boosts and favourites",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.auto_delete_max_kept_pins": {
@@ -1156,7 +1156,7 @@
     "description": "At /admin/settings/branding while the brand images are read. Read by administrators."
   },
   "staff_settings.brand.failed": {
-    "defaultMessage": "The icon and logo could not be loaded. Try again.",
+    "defaultMessage": "The icon and logo could not be loaded.",
     "description": "At /admin/settings/branding when the brand images could not be read. Read by administrators."
   },
   "staff_settings.brand.kind": {
@@ -1236,11 +1236,11 @@
     "description": "While the rules are read, on the rules' screens at /admin/rules. Read by administrators."
   },
   "staff_settings.rules.failed": {
-    "defaultMessage": "The rules could not be loaded. Try again.",
+    "defaultMessage": "The rules could not be loaded.",
     "description": "When the rules could not be read, on the rules' screens at /admin/rules. Read by administrators."
   },
   "staff_settings.rules.missing": {
-    "defaultMessage": "This address names no rule.",
+    "defaultMessage": "There is no rule at this address.",
     "description": "At /admin/rules/{id} for an ID that names no rule. Read by administrators."
   },
   "staff_settings.rules.in_effect": {
@@ -1260,7 +1260,7 @@
     "description": "Under the heading of the rules in effect while they are at the limit. Read by administrators."
   },
   "staff_settings.rules.empty": {
-    "defaultMessage": "No rule yet. The rules show on the about page and when people sign up and report.",
+    "defaultMessage": "No rule yet. The rules show on this server's About page and when people sign up and report.",
     "description": "In place of the list of rules while there is none. Read by administrators."
   },
   "staff_settings.rules.numbered": {
@@ -1340,11 +1340,11 @@
     "description": "While the relays are read at /admin/relays. Read by administrators."
   },
   "staff_settings.relays.failed": {
-    "defaultMessage": "The relays could not be loaded. Try again.",
+    "defaultMessage": "The relays could not be loaded.",
     "description": "When the relays could not be read. Read by administrators."
   },
   "staff_settings.relays.missing": {
-    "defaultMessage": "This address names no relay.",
+    "defaultMessage": "There is no relay at this address.",
     "description": "At /admin/relays/{id} for an ID that names no relay. Read by administrators."
   },
   "staff_settings.relays.list": {
@@ -1360,7 +1360,7 @@
     "description": "The button that leads to the form of a new relay. Read by administrators."
   },
   "staff_settings.relays.empty": {
-    "defaultMessage": "No relay yet. Add one to share public posts with the servers that join it.",
+    "defaultMessage": "No relay yet. Join one to share public posts with the other servers that join it.",
     "description": "In place of the list of relays while there is none. Read by administrators."
   },
   "staff_settings.relays.state": {
@@ -1376,7 +1376,7 @@
     "description": "Whether the server takes in the public posts a relay relays. Read by administrators."
   },
   "staff_settings.relays.last_day": {
-    "defaultMessage": "Last 24 hours: {taken} taken in, {dropped} dropped",
+    "defaultMessage": "Last 24 hours: {taken} taken in, {dropped} dropped over the limit",
     "description": "What a relay brought in during the last 24 hours, and what was dropped over the hourly limit. Read by administrators."
   },
   "staff_settings.relays.new": {
@@ -1480,11 +1480,11 @@
     "description": "While the providers are read, on the login providers' screens at /admin/login-providers. Read by administrators."
   },
   "staff_settings.providers_admin.failed": {
-    "defaultMessage": "The login providers could not be loaded. Try again.",
+    "defaultMessage": "The login providers could not be loaded.",
     "description": "When the providers could not be read, on the login providers' screens at /admin/login-providers. Read by administrators."
   },
   "staff_settings.providers_admin.missing": {
-    "defaultMessage": "This address names no login provider.",
+    "defaultMessage": "There is no login provider at this address.",
     "description": "At /admin/login-providers/{id} for an ID that names none. Read by administrators."
   },
   "staff_settings.providers_admin.list": {
@@ -1672,7 +1672,7 @@
     "description": "While the OAuth apps are read at /admin/oauth-apps. Read by administrators."
   },
   "staff_settings.apps.failed": {
-    "defaultMessage": "The apps could not be loaded. Try again.",
+    "defaultMessage": "The apps could not be loaded.",
     "description": "When the OAuth apps could not be read. Read by administrators."
   },
   "staff_settings.apps.filter": {
@@ -1780,7 +1780,7 @@
     "description": "While the denied hosts are read. Read by administrators."
   },
   "staff_settings.hosts.read_failed": {
-    "defaultMessage": "The denied hosts could not be loaded. Try again.",
+    "defaultMessage": "The denied hosts could not be loaded.",
     "description": "When the denied hosts could not be read. Read by administrators."
   },
   "staff_settings.hosts.empty": {
@@ -1824,7 +1824,7 @@
     "description": "While the month's use of translation is read. Read by administrators."
   },
   "staff_settings.translation_usage.failed": {
-    "defaultMessage": "This month's use could not be loaded. Try again.",
+    "defaultMessage": "This month's use could not be loaded.",
     "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
   }
 }
