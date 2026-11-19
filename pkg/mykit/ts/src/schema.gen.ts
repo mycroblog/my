@@ -387,7 +387,9 @@ export interface paths {
          * Get the amounts of the tips
          * @description The amounts that a tip, a one-time payment to the server's operation with nothing in
          *     return, may be: the operator's choices, smallest first, in one currency. A 404 while the
-         *     server takes no tips (`Instance.tips_enabled`).
+         *     server takes no tips (`Instance.tips_enabled`). To an authenticated user, it also says why
+         *     they may not tip when they may not (`ineligible_reason`), the check that `POST /supporter/tips`
+         *     makes.
          */
         get: operations["getInstanceTipAmounts"];
         put?: never;
@@ -18629,10 +18631,10 @@ export interface components {
             redirect_url: string;
         };
         /**
-         * @description Why the user may not subscribe to a supporter plan: `not_local`, not a user
+         * @description Why the user may not subscribe to a supporter plan or tip: `not_local`, not a user
          *     of this server; `email_unverified`, the primary email address is not verified;
          *     `restricted`, the account is suspended or its deletion is done or scheduled. Omitted when
-         *     the user may subscribe.
+         *     the user may.
          * @enum {string}
          */
         SupporterIneligibleReason: "not_local" | "email_unverified" | "restricted";
@@ -18769,6 +18771,7 @@ export interface components {
         /** @description The amounts that a tip may be, smallest first, all in one currency. */
         TipAmounts: {
             amounts: components["schemas"]["Money"][];
+            ineligible_reason?: components["schemas"]["SupporterIneligibleReason"];
         };
         /**
          * @description The problem of amounts of the tips that break a rule (422,

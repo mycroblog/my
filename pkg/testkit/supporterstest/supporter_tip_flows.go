@@ -419,6 +419,43 @@ func supporterTipExpiry(t *testing.T, se *supporterEnv) {
 	}
 }
 
+// TipEligibility says what StartTip refuses a user for, and says it with the program off too.
+func supporterTipEligibility(t *testing.T, se *supporterEnv) {
+	ctx := t.Context()
+	e := newTipEnv(t, se)
+	e.users.put(supporters.User{ID: testkit.NamedID("unverified"), Handle: "@u", Email: "u@example.com"})
+	e.users.put(supporters.User{ID: testkit.NamedID("suspended"), Handle: "@s", Email: "s@example.com", EmailVerified: true, Suspended: true})
+	alice := e.user("alice")
+	for _, tc := range []struct {
+		userID string
+		want   supporters.Eligibility
+	}{
+		{testkit.NamedID("nobody"), supporters.IneligibleNotLocal},
+		{testkit.NamedID("unverified"), supporters.IneligibleEmail},
+		{testkit.NamedID("suspended"), supporters.IneligibleRestricted},
+		{alice, ""},
+	} {
+		got, err := e.svc.TipEligibility(ctx, tc.userID)
+		if err != nil || got != tc.want {
+			t.Errorf("TipEligibility(%s) = %q, %v, want %q", tc.userID, got, err, tc.want)
+		}
+		_, err = e.svc.StartTip(ctx, supporters.TipInput{UserID: tc.userID, AmountMinor: 300, Currency: "JPY", ReturnURL: "https://" + testkit.ContractHost + "/settings/supporter/tip"})
+		var ie *supporters.IneligibleError
+		switch {
+		case tc.want == "" && err != nil:
+			t.Errorf("StartTip(%s) = %v, want a start", tc.userID, err)
+		case tc.want != "" && (!errors.As(err, &ie) || ie.Reason != tc.want):
+			t.Errorf("StartTip(%s) = %v, want the reason %s", tc.userID, err, tc.want)
+		}
+	}
+	if _, err := e.svc.SetProgram(ctx, false, ""); err != nil {
+		t.Fatalf("SetProgram(false) = %v", err)
+	}
+	if got, err := e.svc.TipEligibility(ctx, testkit.NamedID("unverified")); err != nil || got != supporters.IneligibleEmail {
+		t.Errorf("TipEligibility with the program off = %q, %v, want %s", got, err, supporters.IneligibleEmail)
+	}
+}
+
 // The starts of a user are limited by the hour.
 func supporterTipLimits(t *testing.T, se *supporterEnv) {
 	ctx := t.Context()

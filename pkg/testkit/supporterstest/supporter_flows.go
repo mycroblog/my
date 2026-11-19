@@ -104,6 +104,7 @@ func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
 		{"ExpiresTheOpenTipOnAStartAgain", supporterTipAgain},
 		{"ExpiresTipsWithTheirCheckouts", supporterTipExpiry},
 		{"LimitsTheStartsOfTips", supporterTipLimits},
+		{"SaysWhyAUserMayNotTip", supporterTipEligibility},
 		{"ErasesTheTipsOfAnAccount", supporterTipErasure},
 		{"RebuildsTheOpenTips", supporterTipRebuild},
 		{"ReconcilesATipAndASubscriptionInOneWindow", supporterTipReconciled},

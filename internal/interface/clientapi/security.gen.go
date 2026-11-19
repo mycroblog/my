@@ -198,7 +198,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/instance/overview":                                                 {Operation: "getInstanceOverview", Anonymous: true},
 	"GET /api/v1/instance/supporter_plans":                                          {Operation: "listSupporterPlans", Anonymous: true},
 	"GET /api/v1/instance/supporters":                                               {Operation: "listInstanceSupporters", Anonymous: true, Scopes: []string{"read:accounts"}},
-	"GET /api/v1/instance/tip_amounts":                                              {Operation: "getInstanceTipAmounts", Anonymous: true},
+	"GET /api/v1/instance/tip_amounts":                                              {Operation: "getInstanceTipAmounts", Anonymous: true, Scopes: []string{"read:supporters"}},
 	"GET /api/v1/interaction_requests":                                              {Operation: "listInteractionRequests", Scopes: []string{"read:statuses"}},
 	"GET /api/v1/invites":                                                           {Operation: "listOwnInvites", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},
 	"GET /api/v1/linked_identities":                                                 {Operation: "listLinkedIdentities", FirstPartyOnly: true, Scopes: []string{"read:accounts"}},

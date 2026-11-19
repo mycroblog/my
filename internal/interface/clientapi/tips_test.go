@@ -24,6 +24,9 @@ type fakeTips struct {
 	startErr error
 	starts   []appsupporters.TipInput
 	tip      appsupporters.TipView
+	// reason is why every user may not tip, "" when they may.
+	reason appsupporters.Eligibility
+	asked  []string
 }
 
 func (f *fakeTips) TipsEnabled(context.Context) (bool, error) { return !f.disabled, nil }
@@ -33,6 +36,11 @@ func (f *fakeTips) TipAmounts(context.Context) (string, []int64, error) {
 		return "", nil, appsupporters.ErrTipsDisabled
 	}
 	return "JPY", []int64{300, 500, 1000}, nil
+}
+
+func (f *fakeTips) TipEligibility(_ context.Context, userID string) (appsupporters.Eligibility, error) {
+	f.asked = append(f.asked, userID)
+	return f.reason, nil
 }
 
 func (f *fakeTips) TipSettings(context.Context) (appsupporters.TipSettings, error) {
@@ -137,5 +145,39 @@ func TestTips(t *testing.T) {
 	f.tip.UserID = "someone-else"
 	if res := e.send(t, http.MethodGet, "/supporter/tips/"+ownTipID, "supporters", ""); res.StatusCode != http.StatusNotFound {
 		t.Errorf("GET another's tip = %d, want 404", res.StatusCode)
+	}
+}
+
+// TestTipEligibility checks that the amounts of the tips say to an authenticated user why they may
+// not tip, from the check of the start, and say nothing of it to an anonymous request or a user
+// who may tip.
+func TestTipEligibility(t *testing.T) {
+	f := &fakeTips{}
+	e := newAuthEnv(t, func(o *clientapi.Options) { o.Tips = f })
+	e.auth.tokens["supporters"] = bearer("read:supporters", aliceAccountID)
+	e.auth.tokens["other"] = bearer("read:statuses", aliceAccountID)
+	f.reason = appsupporters.IneligibleEmail
+	if got := decode[clientapi.TipAmounts](t, e.send(t, http.MethodGet, "/instance/tip_amounts", "", "")); got.IneligibleReason != nil || len(f.asked) != 0 {
+		t.Errorf("anonymous: ineligible_reason = %v, asked %v, want none", got.IneligibleReason, f.asked)
+	}
+	for _, want := range []appsupporters.Eligibility{appsupporters.IneligibleEmail, appsupporters.IneligibleRestricted, appsupporters.IneligibleNotLocal, ""} {
+		f.reason = want
+		res := e.send(t, http.MethodGet, "/instance/tip_amounts", "supporters", "")
+		if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" {
+			t.Fatalf("GET /instance/tip_amounts as alice = %d, Cache-Control %q", res.StatusCode, res.Header.Get("Cache-Control"))
+		}
+		got := decode[clientapi.TipAmounts](t, res)
+		switch {
+		case want == "" && got.IneligibleReason != nil:
+			t.Errorf("a user who may tip: ineligible_reason = %s, want none", *got.IneligibleReason)
+		case want != "" && (got.IneligibleReason == nil || string(*got.IneligibleReason) != string(want)):
+			t.Errorf("ineligible_reason = %v, want %s", got.IneligibleReason, want)
+		}
+	}
+	if f.asked[len(f.asked)-1] != userOf(aliceAccountID) {
+		t.Errorf("asked for %v, want alice", f.asked)
+	}
+	if res := e.send(t, http.MethodGet, "/instance/tip_amounts", "other", ""); res.StatusCode != http.StatusForbidden {
+		t.Errorf("GET /instance/tip_amounts without read:supporters = %d, want 403", res.StatusCode)
 	}
 }
