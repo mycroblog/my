@@ -22,6 +22,7 @@ import {
   text,
   toggle,
   voice,
+  event,
 } from "@my/design-tokens";
 import plugin from "tailwindcss/plugin";
 import { transitionRules } from "./motion-css";
@@ -109,6 +110,7 @@ const theme = {
         .filter((name) => typeof voice[name] === "number" && name !== "haloShare")
         .map((name) => [`voice-${kebab(name)}`, ref(`--voice-${kebab(name)}`)]),
     ),
+    ...Object.fromEntries(names(event).map((name) => [`event-${kebab(name)}`, ref(`--event-${kebab(name)}`)])),
     // The room above an entry of a feed from what stands before it outside the feed (a heading, the tabs): the
     // entry's surface reaches past its content and its focus ring past the surface, neither touching what is above.
     "entry-room":

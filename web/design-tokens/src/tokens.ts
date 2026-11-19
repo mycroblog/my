@@ -586,6 +586,17 @@ export const voice = {
   duration: { reaction: 3200, speaking: 900 },
 } as const;
 
+/**
+ * An event's parts, in rem: the box of its date at the start of a line of a list; and in the table of a date poll, the
+ * width of a column of how many answered one way, wide enough for a short word over four figures, and of the column of
+ * the reader's answer, three answers a finger's target each (`iconButton.touch`), the least space apart.
+ */
+export const event = {
+  dateBox: 3,
+  count: 4,
+  answers: 8.5,
+} as const;
+
 const channels = (hex: string) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
 
 /** The WCAG 2 relative luminance of a #rrggbb color. */
@@ -629,7 +640,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*`, `--event-*` and `--form-page-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -800,6 +811,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
       ? [[`--voice-${kebab(name)}`, name === "haloShare" ? percent(value) : `${value}rem`]]
       : Object.entries(value).map(([kind, ms]): [string, string] => [`--voice-${kind}-duration`, `${ms}ms`]),
   ),
+  ...Object.entries(event).map(([name, value]): [string, string] => [`--event-${kebab(name)}`, `${value}rem`]),
   ...Object.entries(formPage).map(([name, value]): [string, string] => [
     `--form-page-${kebab(name)}`,
     name === "bannerRatio" ? `${value}` : `${value}rem`,
