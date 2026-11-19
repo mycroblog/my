@@ -39,11 +39,11 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 
 | Group | Permissions | Screens |
 | --- | --- | --- |
-| Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Reports (`/moderation/reports`), Appeals (`/moderation/appeals`), Accounts (`/moderation/accounts`), Registrations (`/moderation/registrations`), Sign-up blocks (`/moderation/signup-blocks`), Invites (`/moderation/invites`), Domain actions (`/moderation/domain-actions`), Remote servers (`/moderation/instances`), Audit log (`/moderation/audit-log`) |
+| Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Reports (`/moderation/reports`), Appeals (`/moderation/appeals`), Registrations (`/moderation/registrations`), Automated reviews (`/moderation/hook-decisions`), Accounts (`/moderation/accounts`), Sign-up blocks (`/moderation/signup-blocks`), Invites (`/moderation/invites`), Domain actions (`/moderation/domain-actions`), Remote servers (`/moderation/instances`), Audit log (`/moderation/audit-log`) |
 | Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), Finance (`/admin/finance`, `manage_finance`), Supporters (`/admin/supporters`, `manage_supporters`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) and `manage_roles` (granting and revoking an account's roles) appear as sections of an account's Management page (`/moderation/accounts/{id}/manage`, which also needs `manage_accounts`) |
 
 - The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
-- Each group opens on a list of its screens that your role's permissions open, each with a line of what it holds and, for a queue, how many things wait there (Reports counts the open reports); a group none of whose screens is open to you says why.
+- Each group opens on a list of its screens that your role's permissions open, each with a line of what it holds and, for a queue, how many things wait there (Reports counts the open reports, Appeals those waiting for review, Registrations those waiting for approval); a group none of whose screens is open to you says why.
   An address of a screen your role does not open says so, with a link to the group's list.
 - The built-in `moderator` has only `manage_reports`, `manage_accounts` and `view_audit`, and does not see "Administration". It also does not see the Domain actions and Remote servers screens (`manage_domains`),
   so to delegate those, create a role with that permission and grant it ([granting and revoking roles](admin-cli.md#granting-and-revoking-roles)).
@@ -173,6 +173,7 @@ A user under `disable_login`, `suspend` or `ban` cannot get an access token and 
 While [sign-in is limited to login providers](login-providers.md#limit-sign-in-to-login-providers), such a user reaches the form only through a linked provider.
 The page shows the form and the deadline for an action that can be appealed, the content and outcome for an action already appealed, and the reason for an action whose deadline has passed or that cannot be appealed. For a rejected appeal it shows the reason.
 In the admin API: `GET /api/v1/admin/appeals` (filter with `state`), `GET .../{id}`, and `POST .../{id}/uphold` and `POST .../{id}/overturn` (the body `{"public_reason": "..."}` is optional). They need the `manage_accounts` permission.
+In the web client, Moderation → Appeals (`/moderation/appeals`) lists the appeals waiting for review, or all of them; an appeal's page (`/moderation/appeals/{id}`) shows what the user wrote and the action, with the reason to tell the user and "Uphold" and "Overturn", each asked first.
 
 - An action can be appealed once, and the text is 1 to 2,000 characters. The deadline is the number of days in the instance setting `appeal_window_days` after the action (default 180 days, 20 to 365; see [instance settings](instance-settings.md)).
   An action past the deadline and a second appeal give `422` (`/api/v1/problems/appeal-window-closed` and `/api/v1/problems/already-appealed`).
@@ -189,9 +190,9 @@ Searching accounts, viewing their details and revealing IP addresses and email a
 
 In the web client, an account has three pages, with links between them under the page title:
 
-- **Review** (`/moderation/accounts/{id}`): the account's state and restrictions, the form for a new action, the newest actions on it with their reasons, and its newest 20 reports. Older reports are only in the report list (`/moderation/reports`), which has no filter by account.
-- **Actions** (`/moderation/accounts/{id}/actions`): every action on the account, a page at a time, with "Lift" for those in effect. Each action opens its own page (`/moderation/accounts/{id}/actions/{action id}`) with all its details.
-- **Management** (`/moderation/accounts/{id}/manage`, local accounts only): the account's roles (`manage_roles`), its email suppression, removing two-factor authentication and issuing a password reset link (`manage_login_recovery`), and its email and IP addresses. Each section appears only to people with its permission.
+- **Review** (`/moderation/accounts/{id}`): the account's state and restrictions, its registration and who invited it, the form for a new action (opened from a report with "Act on this account", the form also offers the actions on the report's posts, and the action resolves the report), the newest actions on it with their reasons, and its newest 20 reports. Older reports are only in the report list (`/moderation/reports`), which has no filter by account.
+- **Actions** (`/moderation/accounts/{id}/actions`): every action on the account, or those in effect, a page at a time. Each action opens its own page (`/moderation/accounts/{id}/actions/{action id}`) with all its details and, while it is in effect, "Lift" with a reason for the moderators. A ban's page has no "Lift": only overturning its appeal undoes it.
+- **Management** (`/moderation/accounts/{id}/manage`): for a local account, its roles (`manage_roles`), its email suppression, removing two-factor authentication and issuing a password reset link (`manage_login_recovery`), and its email and IP addresses, shown only after "Show", with the accounts that used the same IP addresses and a link to those of the same email domain; for a remote account, fetching its posts again from its server (`manage_domains`). Each section appears only to people with its permission.
 
 Staff act only on lower ranks: issuing or lifting an action, deciding an appeal, lifting an email suppression, revealing private data, issuing a password reset link, and removing two-factor authentication need the highest `position` among your roles to be above that of every role of the target.
 A higher or equal rank, your own account included, returns `403` with the problem type `/api/v1/problems/target-outranks-actor`, so a moderator cannot ban an administrator and one administrator cannot ban another. The `my admin` commands have no such limit.
@@ -538,6 +539,7 @@ leaves the report as it is.
   There are no recordings and no text chat, so these records are the only evidence.
 - A holder of `manage_reports` can end an open room for every participant with `POST /api/v1/admin/voice_rooms/{id}/end` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is only for the moderators; the participants see only that the room ended. It works while the voice chat is off too, and the audit log records `voice_room_ended`.
+  In the web client, the report's page of an open room has "End the room", which asks first, with the reason.
 
 ### Events
 
@@ -547,7 +549,7 @@ leaves the report as it is.
   `reported_revision_id` is the version the reporter saw, so a title or an address changed after the report is still in front of you.
 - A holder of `manage_reports` can cancel an event with `POST /api/v1/admin/events/{id}/cancel` (body `{"reason": "..."}`, optional, up to 500 characters).
   The reason is shown with the cancellation to everyone who sees the event. The users who answered going or maybe and the invited users are notified, as of the organizer's own cancellation, and the audit log records `event_cancelled`.
-  An event cancelled already answers `409` `event-closed`.
+  An event cancelled already answers `409` `event-closed`. In the web client, the report's page of an event has "Cancel the event", which asks first, with the reason.
 - Suspending or deleting the organizer cancels the organizer's events that have not started yet, including those still polling for a date (`gathering.cancel_organized`), and notifies their attendees. These cancellations name nobody as the one who cancelled them, and lifting the suspension does not restore them. Events that started already are not cancelled.
 
 ## Notifications for moderators and the pending counts

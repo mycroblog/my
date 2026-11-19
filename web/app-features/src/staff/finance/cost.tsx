@@ -37,11 +37,11 @@ import {
   TextLink,
   type Fact,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus } from "../parts";
+import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid } from "../parts";
 import { FinanceBack, financePaths, scheduleWords, useDay, useTodayDate } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -82,24 +82,23 @@ export function CostItemScreen({ id, go }: StaffUnderProps & { id: string }): Re
 }
 
 function CostItemView({ item, go }: { item: CostItem; go: (href: string) => void }) {
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   return (
     <ScreenStack>
       <Stack gap="entry-line">
         <ScreenTitle back={<FinanceBack to="costs" go={go} />}>{item.name}</ScreenTitle>
-        <StatusRegion said={status.said} region={region} />
+        {status}
       </Stack>
       <CostFacts item={item} />
-      <Prices item={item} say={status.say} />
-      <Label item={item} say={status.say} />
-      {item.schedule !== "once" && <End item={item} say={status.say} />}
+      <Prices item={item} say={say} />
+      <Label item={item} say={say} />
+      {item.schedule !== "once" && <End item={item} say={say} />}
       <Delete
         item={item}
         onDeleted={() => {
           go(financePaths.costs);
         }}
-        say={status.say}
+        say={say}
       />
     </ScreenStack>
   );

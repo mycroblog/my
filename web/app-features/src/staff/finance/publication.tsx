@@ -37,11 +37,11 @@ import {
   Stack,
   TextField,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, StatusRegion, Titled, useStaffStrings, useStatus, type T } from "../parts";
+import { errorOf, Field, ReadNotice, Titled, useStaffStrings, useSaid, type T } from "../parts";
 import { FinanceBack, currencyOptions } from "./parts";
 
 /** The settings of this screen. */
@@ -165,8 +165,7 @@ function PublicationForm({ saved }: { saved: Values }) {
   const { t, locale } = useStaffStrings();
   const save = useSaveAdminSettings();
   const currencies = currencyOptions();
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   const ids = useId();
   const idOf = (key: Key) => `${ids}-${key}`;
   const [values, setValues] = useState<Values>(saved);
@@ -200,14 +199,14 @@ function PublicationForm({ saved }: { saved: Values }) {
       }),
     );
     if (Object.keys(changed).length === 0) {
-      status.say(t("staff_finance.publication.unchanged"));
+      say(t("staff_finance.publication.unchanged"));
       return;
     }
     setBusy(true);
     save(changed).then(
       () => {
         setBusy(false);
-        status.say(t("staff_finance.publication.saved"));
+        say(t("staff_finance.publication.saved"));
       },
       (e: unknown) => {
         setBusy(false);
@@ -245,7 +244,7 @@ function PublicationForm({ saved }: { saved: Values }) {
         />
       }
     >
-      <StatusRegion said={status.said} region={region} />
+      {status}
       <Titled title={t("staff_finance.publication.costs")}>
         <Choice
           id={idOf("finance_visibility")}

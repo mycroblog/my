@@ -27,10 +27,10 @@ import {
   StateMark,
   type Fact,
 } from "@my/design-system";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
-import { ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus, type T } from "../parts";
+import { ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { FinanceBack } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -165,12 +165,11 @@ function Source({ source, say }: { source: BillingImport; say: Say }) {
 export function BillingImportsScreen({ go }: StaffUnderProps): ReactNode {
   const { t } = useStaffStrings();
   const read = useBillingImports();
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   const head = (
     <Stack gap="entry-line">
       <ScreenTitle back={<FinanceBack to="root" go={go} />}>{t("staff_finance.imports")}</ScreenTitle>
-      <StatusRegion said={status.said} region={region} />
+      {status}
     </Stack>
   );
   if (read.forbidden)
@@ -198,7 +197,7 @@ export function BillingImportsScreen({ go }: StaffUnderProps): ReactNode {
       {read.value.length === 0 ? (
         <FeedNotice lead>{t("staff_finance.imports.none")}</FeedNotice>
       ) : (
-        read.value.map((source) => <Source key={source.source} source={source} say={status.say} />)
+        read.value.map((source) => <Source key={source.source} source={source} say={say} />)
       )}
     </ScreenStack>
   );

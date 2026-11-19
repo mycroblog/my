@@ -2,7 +2,8 @@
 
 // What the staff's screens share: their strings in the reader's locale, how a moment is written (the reader's zone, a
 // date and its time held together), a heading over what it heads, a notice that a screen's read loads or failed, the
-// status that says what a press did and takes the focus, and a field with its label and the error under it.
+// pages of a list by the server's cursor with the way back along them kept in the address, and the status a press says
+// what it did in.
 
 import { sentenceHandleOf } from "@my/app-components";
 import type { Account } from "@my/app-data";
@@ -15,12 +16,14 @@ import {
   FieldLabel,
   FormAlert,
   GroupHeading,
+  RecordPages,
   Stack,
   TextButton,
   useLocale,
   useTimeZone,
 } from "@my/design-system";
-import { useState, type ReactNode, type RefObject } from "react";
+import { useRef, useState, type ReactNode } from "react";
+import type { StaffAddress, StaffSearch } from "./entries";
 import { stringsIn } from "../locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
@@ -83,38 +86,76 @@ export function ReadNotice({
   );
 }
 
-/** What a press said, in the screen's status. */
-type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
+// The pages of a list by the server's cursor, kept in the address, and the status a press says what it did in.
 
-/**
- * The status of a screen, a polite live region there from the start (`StatusRegion`, whose element is `region`, made
- * by the component), which says what a press did, or that it failed, each time a new element, and takes the focus as
- * it does.
- */
-export function useStatus(region: RefObject<HTMLDivElement | null>): {
-  readonly said: Said | undefined;
-  readonly say: (words: string, alert?: boolean) => void;
-} {
-  const [said, setSaid] = useState<Said | undefined>(undefined);
+/** The cursor of the page an address's query asks for; the first page without one. */
+export const cursorOf = (search: StaffSearch): string | undefined =>
+  search["cursor"] === undefined || search["cursor"] === "" ? undefined : search["cursor"];
+
+/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
+const trailOf = (search: StaffSearch): string[] =>
+  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
+
+/** `search` at the page of `cursor`, after the `trail` of pages before it. */
+function atPage(search: StaffSearch, cursor: string | undefined, trail: readonly string[]): StaffSearch {
+  const { cursor: _cursor, trail: _trail, ...rest } = search;
   return {
-    said,
-    say: (words, alert = false) => {
-      setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
-      requestAnimationFrame(() => region.current?.focus());
-    },
+    ...rest,
+    ...(cursor === undefined ? {} : { cursor }),
+    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
   };
 }
 
-/** The region of `useStatus`, where it stands on the screen. */
-export function StatusRegion({
-  said,
-  region,
-}: {
-  said: Said | undefined;
-  region: RefObject<HTMLDivElement | null>;
-}): ReactNode {
+/** `search` with `change` made and at the first page, as a change of the filters starts. */
+export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch {
+  return atPage({ ...search, ...change }, undefined, []);
+}
+
+/** Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`. */
+export function Pages({ address, next }: { address: StaffAddress; next: string | undefined }) {
+  const { search, onSearch } = address;
+  const trail = trailOf(search);
+  const previous = trail.at(-1);
   return (
-    <Box as={<div ref={region} role="status" tabIndex={-1} />}>
+    <RecordPages
+      previous={
+        previous === undefined
+          ? undefined
+          : {
+              onPress: () => {
+                onSearch(atPage(search, previous === "" ? undefined : previous, trail.slice(0, -1)));
+              },
+            }
+      }
+      next={
+        next === undefined
+          ? undefined
+          : {
+              onPress: () => {
+                onSearch(atPage(search, next, [...trail, cursorOf(search) ?? ""]));
+              },
+            }
+      }
+    />
+  );
+}
+
+/** What a press said: its words, whether they say it failed, and a count that makes each saying a new element. */
+type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
+
+/**
+ * A status of a screen that says what a press did, or that it failed: `say` puts the words in it and moves the focus
+ * there, since the press may have taken its own button away; `status` is the region, there from the start.
+ */
+export function useSaid(): { say: (words: string, alert?: boolean) => void; status: ReactNode } {
+  const [said, setSaid] = useState<Said | undefined>(undefined);
+  const ref = useRef<HTMLDivElement>(null);
+  const say = (words: string, alert = false) => {
+    setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
+    requestAnimationFrame(() => ref.current?.focus());
+  };
+  const status = (
+    <Box grow as={<div ref={ref} role="status" tabIndex={-1} />}>
       {said !== undefined &&
         (said.alert ? (
           <FormAlert key={said.n} regular>
@@ -127,6 +168,7 @@ export function StatusRegion({
         ))}
     </Box>
   );
+  return { say, status };
 }
 
 /**

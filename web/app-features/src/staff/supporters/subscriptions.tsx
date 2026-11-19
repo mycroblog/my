@@ -43,19 +43,10 @@ import {
   type RecordColumn,
   type RecordRow,
 } from "@my/design-system";
-import { useRef, useState, type ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { staffHref, type StaffSearch, type StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import {
-  ReadNotice,
-  StatusRegion,
-  Titled,
-  useMoment,
-  useMomentDay,
-  useStaffStrings,
-  useStatus,
-  type T,
-} from "../parts";
+import { ReadNotice, Titled, useMoment, useMomentDay, useStaffStrings, useSaid, type T } from "../parts";
 import { stateWords, subscriberOf, subscriptionMark, supportersPaths } from "./parts";
 
 /** The subscriptions an address's query asks for: of a plan and a state, each of every kind where left out. */
@@ -244,8 +235,7 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
   const { t, locale } = useStaffStrings();
   const moment = useMoment();
   const end = useEndSubscription();
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const subscriber = subscriberOf(t, s);
@@ -288,7 +278,7 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
       <ScreenTitle back={<BackButton onPress={onBack}>{t("staff_supporters.back.subscriptions")}</BackButton>}>
         {subscriber}
       </ScreenTitle>
-      <StatusRegion said={status.said} region={region} />
+      {status}
       <FactList label={subscriber} items={facts} />
       {goesOn(s.state) && (
         <Titled title={t("staff_supporters.subscription.end")}>
@@ -325,12 +315,12 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
                 () => {
                   setBusy(false);
                   setAsking(false);
-                  status.say(t("staff_supporters.subscription.done.ended"));
+                  say(t("staff_supporters.subscription.done.ended"));
                 },
                 () => {
                   setBusy(false);
                   setAsking(false);
-                  status.say(t("staff_supporters.write_failed"), true);
+                  say(t("staff_supporters.write_failed"), true);
                 },
               );
             }}

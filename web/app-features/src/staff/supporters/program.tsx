@@ -49,9 +49,9 @@ import {
   TextLink,
   type Fact,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { moneyText } from "../../finance-totals";
-import { Field, ReadNotice, StatusRegion, Titled, useMoment, useStaffStrings, useStatus, type T } from "../parts";
+import { Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { supporterCurrencies, supportersPaths, tipAmountsOf } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -60,8 +60,7 @@ type Say = (words: string, alert?: boolean) => void;
 export function SupportersAdminScreen(): ReactNode {
   const { t } = useStaffStrings();
   const program = useSupporterProgram();
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   const title = <ScreenTitle>{t("staff_supporters.entry")}</ScreenTitle>;
   if (program.forbidden) return <FeedNotice lead>{t("staff_supporters.forbidden")}</FeedNotice>;
   if (program.value === undefined)
@@ -79,14 +78,14 @@ export function SupportersAdminScreen(): ReactNode {
   return (
     <ScreenStack>
       {title}
-      <StatusRegion said={status.said} region={region} />
+      {status}
       <Warnings program={program.value} />
       <Doors />
-      <Program program={program.value} say={status.say} />
+      <Program program={program.value} say={say} />
       <Disclosure program={program.value} />
-      <ListAudience say={status.say} />
-      <Tips say={status.say} />
-      <Payments say={status.say} />
+      <ListAudience say={say} />
+      <Tips say={say} />
+      <Payments say={say} />
     </ScreenStack>
   );
 }

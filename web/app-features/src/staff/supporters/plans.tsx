@@ -53,20 +53,10 @@ import {
   type RecordRow,
   type RecordState,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import type { StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import {
-  errorOf,
-  Field,
-  ReadNotice,
-  StatusRegion,
-  Titled,
-  useMoment,
-  useStaffStrings,
-  useStatus,
-  type T,
-} from "../parts";
+import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
 import { supporterCurrencies, supportersPaths } from "./parts";
 
 type PlanPermission = (typeof planPermissions)[number];
@@ -625,15 +615,14 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
   const { t, locale } = useStaffStrings();
   const moment = useMoment();
   const { retire } = usePlanActions();
-  const region = useRef<HTMLDivElement>(null);
-  const status = useStatus(region);
+  const { say, status } = useSaid();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [round, setRound] = useState(0);
   return (
     <ScreenStack>
       <ScreenTitle back={<Back to="plans" go={go} />}>{plan.name}</ScreenTitle>
-      <StatusRegion said={status.said} region={region} />
+      {status}
       <FactList label={plan.name} items={planFacts(t, locale, moment, plan)} />
       {!plan.retired && (
         <>
@@ -643,7 +632,7 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
               plan={plan}
               onSaved={() => {
                 setRound((n) => n + 1);
-                status.say(t("staff_supporters.plan.done.saved"));
+                say(t("staff_supporters.plan.done.saved"));
               }}
             />
           </Titled>
@@ -682,12 +671,12 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
                 () => {
                   setBusy(false);
                   setAsking(false);
-                  status.say(t("staff_supporters.plan.done.retired"));
+                  say(t("staff_supporters.plan.done.retired"));
                 },
                 () => {
                   setBusy(false);
                   setAsking(false);
-                  status.say(t("staff_supporters.write_failed"), true);
+                  say(t("staff_supporters.write_failed"), true);
                 },
               );
             }}
