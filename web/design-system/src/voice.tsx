@@ -72,11 +72,11 @@ export type ParticipantTileProps = {
   onPress?: (() => void) | undefined;
 };
 
-/** A badge knocked out of the text's color on a corner of the avatar. */
-function Badge({ size, icon }: { size: ParticipantSize; icon: IconName }) {
+/** A badge knocked out of the text's color on a corner of the avatar, its glyph in its on shape when `on`. */
+function Badge({ size, icon, on = false }: { size: ParticipantSize; icon: IconName; on?: boolean }) {
   return (
     <Row as="span" inline rigid align="center" justify="center" className={tile({ size }).badge()}>
-      <Icon name={icon} place="caption" />
+      <Icon name={icon} place="caption" on={on} />
     </Row>
   );
 }
@@ -114,14 +114,17 @@ export function ParticipantTile({
         )}
         {muted !== undefined && (
           <Pin as="span" bottom="0" end="0">
-            <Badge size={size} icon="microphone" />
+            <Badge size={size} icon="microphone" on />
           </Pin>
         )}
       </Box>
+      {/* The words shown are apart by spaces, so that they read as words of its name (WCAG 2.5.3). */}
       <Box as="span" lines={1} className={s.name()} dir="auto">
         {name}
       </Box>
+      {role !== undefined && " "}
       {role !== undefined && <span className={s.caption()}>{role}</span>}
+      {blocked !== undefined && " "}
       {blocked !== undefined && (
         <Row as="span" inline align="center" gap="hair" className={s.caption()}>
           <Icon name="block" place="caption" />

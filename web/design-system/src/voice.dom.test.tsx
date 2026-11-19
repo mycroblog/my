@@ -39,7 +39,7 @@ test("a participant the reader blocks shows, marked by the block's glyph and its
   render(<ParticipantTile name="Haruto" size="stage" blocked="Blocked" />);
 
   const tile = screen.getByRole("button", { name: "Haruto, Blocked" });
-  expect(tile.textContent).toBe("HarutoBlocked");
+  expect(tile.textContent).toBe("Haruto Blocked");
   expect(tile.querySelectorAll("svg")).toHaveLength(1);
 });
 
@@ -111,17 +111,19 @@ test("the room's controls are a toolbar the arrow keys move along, leaving last,
 
   const bar = screen.getByRole("toolbar", { name: "Room controls" });
   const buttons = within(bar).getAllByRole("button");
+  const [mute, react, leave] = buttons;
+  if (mute === undefined || react === undefined || leave === undefined) throw new Error("three controls");
   expect(buttons.map((b) => b.textContent)).toEqual(["Mute", "React", "Leave"]);
-  expect(within(bar).getByRole("button", { name: "Mute", pressed: true })).toBe(buttons[0]);
-  expect(buttons[1]?.hasAttribute("aria-pressed")).toBe(false);
+  expect(within(bar).getByRole("button", { name: "Mute", pressed: true })).toBe(mute);
+  expect(react.hasAttribute("aria-pressed")).toBe(false);
 
   await user.tab();
-  expect(document.activeElement).toBe(buttons[0]);
+  expect(document.activeElement).toBe(mute);
   await user.keyboard(" ");
   await user.keyboard("{ArrowRight}");
-  expect(document.activeElement).toBe(buttons[1]);
+  expect(document.activeElement).toBe(react);
   await user.keyboard("{ArrowRight}");
-  expect(document.activeElement).toBe(buttons[2]);
+  expect(document.activeElement).toBe(leave);
   await user.keyboard("{Enter}");
   expect(did).toEqual(["mute", "leave"]);
 });
