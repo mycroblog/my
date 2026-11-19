@@ -9,7 +9,7 @@
 import "@my/design-system/styles.css";
 import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
-import { parsePayPage, PayScreen, type PayPage } from "@my/app-features";
+import { parsePayPage, PayScreen, type PayPage } from "@my/app-features/pay";
 import { I18nProvider } from "@my/design-system";
 import { StrictMode, useEffect } from "react";
 import { createRoot } from "react-dom/client";

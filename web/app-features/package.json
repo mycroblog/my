@@ -5,6 +5,7 @@
   "license": "AGPL-3.0-only",
   "exports": {
     ".": "./src/index.ts",
+    "./pay": "./src/pay/index.ts",
     "./test/chunks": "./src/test/chunks.ts"
   },
   "scripts": {

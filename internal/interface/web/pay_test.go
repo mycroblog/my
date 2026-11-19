@@ -21,25 +21,30 @@ func sri(data []byte) string {
 	return "sha384-" + base64.StdEncoding.EncodeToString(sum[:])
 }
 
-// payBuild is fakeBuild with the payment entry, which shares the app's chunk and imports one on
-// demand, and the inventory of its scripts that edit leaves as the web build writes it or changes.
-func payBuild(t *testing.T, edit func(scripts []map[string]string) []map[string]string) fstest.MapFS {
+// payBuild is fakeBuild with the payment entry, which shares the app's chunk (and with lazy imports
+// the app's lazy chunk on demand), and the inventory of its scripts that edit leaves as the web
+// build writes it or changes.
+func payBuild(t *testing.T, lazy bool, edit func(scripts []map[string]string) []map[string]string) fstest.MapFS {
 	t.Helper()
 	b := fakeBuild()
+	dynamic, files := "", []string{"assets/pay-HHHH.js", "assets/shared-BBBB.js"}
+	if lazy {
+		dynamic, files = `, "dynamicImports": ["src/lazy.tsx"]`, append(files, "assets/lazy-EEEE.js")
+	}
 	b[".vite/manifest.json"] = &fstest.MapFile{Data: []byte(`{
 		"index.html": {"file": "assets/index-AAAA.js", "src": "index.html", "isEntry": true,
 			"imports": ["_shared-BBBB.js"], "dynamicImports": ["src/lazy.tsx"], "css": ["assets/index-CCCC.css"]},
 		"_shared-BBBB.js": {"file": "assets/shared-BBBB.js", "css": ["assets/shared-DDDD.css"]},
 		"src/lazy.tsx": {"file": "assets/lazy-EEEE.js", "src": "src/lazy.tsx", "isDynamicEntry": true},
 		"pay.html": {"file": "assets/pay-HHHH.js", "src": "pay.html", "isEntry": true,
-			"imports": ["_shared-BBBB.js"], "dynamicImports": ["src/lazy.tsx"], "css": ["assets/pay-IIII.css"]}
+			"imports": ["_shared-BBBB.js"]` + dynamic + `, "css": ["assets/pay-IIII.css"]}
 	}`)}
 	b["pay.html"] = &fstest.MapFile{Data: []byte("<!doctype html><title>vite pay</title>")}
 	b["assets/pay-HHHH.js"] = &fstest.MapFile{Data: []byte("console.log('pay')")}
 	b["assets/pay-IIII.css"] = &fstest.MapFile{Data: []byte("form{}")}
 	delete(b, web.ETagsPath)
 	scripts := []map[string]string{}
-	for _, f := range []string{"assets/pay-HHHH.js", "assets/shared-BBBB.js", "assets/lazy-EEEE.js"} {
+	for _, f := range files {
 		scripts = append(scripts, map[string]string{"url": "/" + f, "integrity": sri(b[f].Data)})
 	}
 	scripts = append(scripts, map[string]string{"url": "https://js.pay.jp/v2/pay.js", "loads": "third party"})
@@ -57,7 +62,7 @@ func payBuild(t *testing.T, edit func(scripts []map[string]string) []map[string]
 // TestPayEntry checks that the handler reads the payment entry of the build with the integrity of
 // its scripts from the inventory, and never serves Vite's pay.html.
 func TestPayEntry(t *testing.T) {
-	build := payBuild(t, nil)
+	build := payBuild(t, false, nil)
 	h, mux := newHandler(t, web.Options{Build: build})
 	got := h.PayEntry()
 	want := web.Entry{
@@ -66,7 +71,6 @@ func TestPayEntry(t *testing.T) {
 		Integrity: map[string]string{
 			"/assets/pay-HHHH.js":    sri(build["assets/pay-HHHH.js"].Data),
 			"/assets/shared-BBBB.js": sri(build["assets/shared-BBBB.js"].Data),
-			"/assets/lazy-EEEE.js":   sri(build["assets/lazy-EEEE.js"].Data),
 		},
 	}
 	if !reflect.DeepEqual(got, want) {
@@ -102,14 +106,24 @@ func TestPayEntryRefusesAStaleInventory(t *testing.T) {
 			return s
 		},
 	} {
-		if _, err := web.New(web.Options{Build: payBuild(t, edit), Host: "my.example"}); err == nil || !strings.Contains(err.Error(), web.PaymentScriptsPath) {
+		if _, err := web.New(web.Options{Build: payBuild(t, false, edit), Host: "my.example"}); err == nil || !strings.Contains(err.Error(), web.PaymentScriptsPath) {
 			t.Errorf("%s: New = %v, want a refusal of the inventory", name, err)
 		}
 	}
-	build := payBuild(t, nil)
+	build := payBuild(t, false, nil)
 	delete(build, web.PaymentScriptsPath)
 	delete(build, web.ETagsPath)
 	if _, err := web.New(web.Options{Build: listed(build), Host: "my.example"}); err == nil || !strings.Contains(err.Error(), "is missing") {
 		t.Errorf("no inventory: New = %v, want a refusal", err)
+	}
+}
+
+// TestPayEntryRefusesLazyImports checks that a build whose payment entry imports a chunk on demand
+// is refused even with that chunk in its inventory: neither the chunk nor the modulepreload that
+// Vite adds for it would carry its integrity.
+func TestPayEntryRefusesLazyImports(t *testing.T) {
+	_, err := web.New(web.Options{Build: payBuild(t, true, nil), Host: "my.example"})
+	if err == nil || !strings.Contains(err.Error(), "imports chunks on demand from assets/pay-HHHH.js") {
+		t.Errorf("New = %v, want a refusal of the lazy import", err)
 	}
 }

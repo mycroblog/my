@@ -6,7 +6,7 @@
 // the samples word what the server words (the title, the price, an outcome, the card and the payments). PAY.JP's script
 // is a stand-in that draws nothing into the card element's place and takes no card, so that no story reaches PAY.JP.
 
-import { PayScreen, type PayjpFactory, type PayPage } from "@my/app-features";
+import { PayScreen, type PayjpFactory, type PayPage } from "@my/app-features/pay";
 import { useLocale } from "@my/design-system";
 import type { StoryObj } from "@storybook/react-vite";
 import wordmarkDark from "../../brand/Wordmark-DarkBg.svg";

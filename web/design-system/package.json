@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
+  "sideEffects": ["*.css"],
   "exports": {
     ".": "./src/index.ts",
     "./test/chunks": "./src/test/chunks.ts",

@@ -124,10 +124,12 @@ type scriptInventory struct {
 
 // paymentScripts reads the integrity of the payment entry's own scripts from the inventory at
 // PaymentScriptsPath and checks it against the manifest and the files: it lists every chunk that the
-// entry loads, with the page or on demand, with the integrity of its file, and no other script of
-// this site. A build whose inventory is missing or stale is refused, so that no release serves a
-// payment page whose scripts its inventory does not name. The entry's chunks are read once, when
-// the server starts: they are small, unlike the fonts that the ETags spare it.
+// entry loads, with the integrity of its file, and no other script of this site. A build whose
+// inventory is missing or stale is refused, so that no release serves a payment page whose scripts
+// its inventory does not name, and so is a build whose payment entry imports a chunk on demand:
+// such a chunk, and the modulepreload that Vite's helper adds for it, would run unchecked by its
+// hash (web/app/scripts/payment-scripts.ts says why no import map checks it). The entry's chunks
+// are read once, when the server starts: they are small, unlike the fonts that the ETags spare it.
 func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, error) {
 	stale := func(why string) error {
 		return fmt.Errorf("web: %s %s; run scripts/task.sh web:build", PaymentScriptsPath, why)
@@ -147,6 +149,7 @@ func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, 
 		return nil, stale(fmt.Sprintf("is the inventory of %q, not of %s", inv.Entry, payEntryKey))
 	}
 	loaded := map[string]bool{}
+	var lazy []string
 	var visit func(key string)
 	visit = func(key string) {
 		c, ok := manifest[key]
@@ -154,11 +157,19 @@ func paymentScripts(build fs.FS, manifest map[string]chunk) (map[string]string, 
 			return
 		}
 		loaded[fileURL(c.File)] = true
-		for _, k := range append(slices.Clone(c.Imports), c.DynamicImports...) {
+		if len(c.DynamicImports) > 0 {
+			lazy = append(lazy, c.File)
+		}
+		for _, k := range c.Imports {
 			visit(k)
 		}
 	}
 	visit(payEntryKey)
+	if len(lazy) > 0 {
+		slices.Sort(lazy)
+		return nil, fmt.Errorf("web: %s imports chunks on demand from %s, which no integrity checks; keep lazy imports out of the payment pages' modules",
+			payEntryKey, strings.Join(lazy, ", "))
+	}
 	integrity := map[string]string{}
 	for _, s := range inv.Scripts {
 		if !strings.HasPrefix(s.URL, "/") {
