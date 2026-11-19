@@ -280,7 +280,8 @@ test("a heartbeat that gets no answer for 45 seconds ends the call with its reas
 
 test("the grant the server gave again is the one handed to the audio, and it is taken again before it expires in turn", async () => {
   const s = server();
-  const expiresIn = (ms: number) => new Date(on.clock.now() + grantRenewalLead + ms).toISOString();
+  // Grants that live longer than twice the lead, so that each is taken again the lead before it expires.
+  const expiresIn = (ms: number) => new Date(on.clock.now() + 2 * grantRenewalLead + ms).toISOString();
   s.fake.script("POST /voice/rooms/{id}/participation", {
     change: (join) => ({ ...join, grant: { ...join.grant, expires_at: expiresIn(60_000) } }),
   });
@@ -293,10 +294,12 @@ test("the grant the server gave again is the one handed to the audio, and it is 
     },
   });
   const call = await joinCall(s.data, s.fake.voice.roomId(0));
-  await on.clock.advance(61_000);
+  await on.clock.advance(grantRenewalLead + 59_000);
+  expect(grants.seen).toHaveLength(0);
+  await on.clock.advance(2_000);
   expect(grants.seen).toHaveLength(1);
   expect(on.sessions[0]?.renewed).toEqual(answered.map(roomGrant));
-  await on.clock.advance(118_000);
+  await on.clock.advance(grantRenewalLead + 117_000);
   expect(grants.seen).toHaveLength(1);
   await on.clock.advance(4_000);
   expect(grants.seen).toHaveLength(2);
