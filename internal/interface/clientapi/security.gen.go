@@ -100,6 +100,7 @@ var operationSecurity = map[string]operationAccess{
 	"GET /api/v1/admin/custom_emojis/{id}":                                          {Operation: "getAdminCustomEmoji", Permission: "manage_custom_emojis", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/domain_actions":                                              {Operation: "listDomainActions", Permission: "manage_domains", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/domain_actions/export":                                       {Operation: "exportDomainBlocks", Permission: "manage_domains", Scopes: []string{"admin:read"}},
+	"GET /api/v1/admin/domain_actions/impact":                                       {Operation: "getDomainSuspendImpact", Permission: "manage_domains", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/domain_actions/{id}":                                         {Operation: "getDomainAction", Permission: "manage_domains", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/domain_allows":                                               {Operation: "listDomainAllows", Permission: "manage_domains", Scopes: []string{"admin:read"}},
 	"GET /api/v1/admin/domain_list_subscriptions":                                   {Operation: "listDomainListSubscriptions", Permission: "manage_domains", Scopes: []string{"admin:read"}},
