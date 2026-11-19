@@ -148,9 +148,9 @@ export class Post {
     return this.poll(name).getByRole("paragraph");
   }
 
-  /** Chooses the option of the poll titled `title`, from its label. */
-  async choose(title: string): Promise<void> {
-    await this.poll().getByText(title, { exact: true }).click();
+  /** Chooses the option of the poll titled `title`: a press on the option itself, which covers its whole label. */
+  async choose(title: string, kind: "radio" | "checkbox" = "radio"): Promise<void> {
+    await this.option(title, kind).click();
   }
 
   /** Presses Vote, and returns once the server has answered the vote. */
