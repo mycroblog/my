@@ -77,15 +77,24 @@ const subscribe = (listener: () => void) => {
   };
 };
 
+/** Counts the runtimes given back: a join that began on one given back since is undone when it lands. */
+let generation = 0;
+
 /**
  * Runs the calls on `given` in place of what it names (a native RoomSession's factory, a test's fakes), until the
- * function it returns is called.
+ * function it returns is called. Nothing that ran on `given` outlives it: the call ends as a page that closes does,
+ * a join on its way is undone when it lands, and no end of theirs is left behind.
  */
 export function runCallsOn(given: Partial<CallRuntime>): () => void {
   const before = runtime;
   runtime = { ...runtime, ...given };
   return () => {
+    generation += 1;
+    joining = null;
+    current?.unload();
+    lastEnd = null;
     runtime = before;
+    notify();
   };
 }
 
@@ -139,6 +148,7 @@ function begin(
 ): Promise<VoiceCall> {
   const before = joining?.call.catch(() => undefined);
   const given = runtime;
+  const began = generation;
   let environment: RoomEnvironment;
   try {
     // Inside the reader's gesture: the audio's context starts there, or stays blocked until another.
@@ -160,9 +170,11 @@ function begin(
     }
     let made: VoiceCall;
     try {
+      if (began !== generation) throw new Error("calls: the runtime this join began on was given back");
       made = new VoiceCall(data, join, environment, given);
     } catch (error) {
-      // A grant this client cannot connect with: the session the server made goes again, and the room left stays left.
+      // A grant this client cannot connect with, or a runtime given back meanwhile: the session the server made goes
+      // again, and the room left stays left.
       leaving?.switched();
       environment.close?.();
       void leaveVoiceRoom(data, join.room.id, join.session).catch(() => undefined);
