@@ -128,8 +128,11 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
   ],
 ];
 
-for (const [name, shows] of states)
-  test(`the story ${name} of the voice chat rooms shows its state`, async ({ page, open }) => {
-    await open(story(name), { width: pc });
-    await shows(page);
-  });
+// One page walks the stories, a step each: a page of its own per story would cost the catalog's run its time limit.
+test("each story of the voice chat rooms shows its state", async ({ page, open }) => {
+  for (const [name, shows] of states)
+    await test.step(name, async () => {
+      await open(story(name), { width: pc });
+      await shows(page);
+    });
+});
