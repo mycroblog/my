@@ -17,7 +17,7 @@ const story = (title: string, name: string) => `design-system-${title}--${name}`
 const banOf = (page: Page) =>
   page.getByRole("alertdialog", { name: "Ban @spam_bot_7731@social.example?", exact: true });
 const banField = (page: Page) =>
-  banOf(page).getByRole("textbox", { name: "To confirm, type spam_bot_7731@social.example", exact: true });
+  banOf(page).getByRole("textbox", { name: "To confirm, enter spam_bot_7731@social.example", exact: true });
 const banButton = (page: Page) => banOf(page).getByRole("button", { name: "Ban account", exact: true });
 
 const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
@@ -46,9 +46,11 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     story("dialogs", "typed-confirm-others"),
     async (page) => {
       await expect(
-        page.getByRole("textbox", { name: "To confirm, type mycroblog.example", exact: true }),
+        page.getByRole("textbox", { name: "To confirm, enter mycroblog.example", exact: true }),
       ).toBeVisible();
-      await expect(page.getByRole("textbox", { name: "To confirm, type Trusted reviewer", exact: true })).toBeVisible();
+      await expect(
+        page.getByRole("textbox", { name: "To confirm, enter Trusted reviewer", exact: true }),
+      ).toBeVisible();
       await expect(page.getByRole("button", { name: /^(Close server|Delete role)$/ })).toHaveCount(2);
       await expect(page.getByRole("button", { name: /^(Close server|Delete role)$/, disabled: false })).toHaveCount(0);
     },

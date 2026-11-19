@@ -68,13 +68,15 @@ test("a whole color typed tells the owner; what is no color is said once the rea
   await user.clear(light);
   await user.type(light, "#ff6b6");
   expect(told).toEqual([]);
-  expect(screen.queryByText(/hexadecimal digits/)).toBeNull();
+  expect(screen.queryByText(/characters from 0 to 9 and a to f/)).toBeNull();
 
   await user.tab();
   expect(light.getAttribute("aria-invalid")).toBe("true");
-  expect(screen.getByText("Enter a color as # and 6 hexadecimal digits, such as #ff6b6b.")).not.toBeNull();
+  expect(
+    screen.getByText("Enter a color as # and 6 characters from 0 to 9 and a to f, such as #ff6b6b."),
+  ).not.toBeNull();
 
   await user.type(light, "B");
   expect(told).toEqual([{ light: "#ff6b6b", dark: "#ff6b6b" }]);
-  expect(screen.queryByText(/hexadecimal digits/)).toBeNull();
+  expect(screen.queryByText(/characters from 0 to 9 and a to f/)).toBeNull();
 });

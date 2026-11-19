@@ -20,7 +20,7 @@
     "description": "A contrast pair's verdict in the theme editor when its contrast is under the minimum of WCAG 2 level AA, an error that keeps the theme from being saved: ratio is the pair's contrast ratio (2.8), minimum the ratio it needs (4.5 for text, 3 for a mark). Shown after the pair's name (On Surface)."
   },
   "color.format": {
-    "defaultMessage": "色は #ff6b6b のように、# と 6 桁の英数字で入力してください。",
-    "description": "The error under a color's field in the theme editor when what was typed is no color: the field takes # and six hexadecimal digits."
+    "defaultMessage": "色は #ff6b6b のように、# と 0〜9・a〜f の 6 文字で入力してください。",
+    "description": "The error under a color's field in the theme editor when what was typed is no color: the field takes # and six hexadecimal digits (0 to 9, a to f)."
   }
 }

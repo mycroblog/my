@@ -408,7 +408,7 @@ test("a confirmation with a text to type keeps its confirmation disabled until t
   const user = userEvent.setup();
   const answers = confirmation({ phrase: "spam_bot@social.example", confirm: "Ban account" });
   const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
-  const field = within(dialog).getByRole("textbox", { name: "To confirm, type spam_bot@social.example" });
+  const field = within(dialog).getByRole("textbox", { name: "To confirm, enter spam_bot@social.example" });
   const ban = within(dialog).getByRole("button", { name: "Ban account" });
   expect(document.activeElement).toBe(field);
   expect(ban.hasAttribute("disabled")).toBe(true);
