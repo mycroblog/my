@@ -46,7 +46,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       for (const name of ["Supporter", "Patron", "Benefactor"])
         await expect(planNamed(page, name)).not.toHaveAttribute("aria-current");
       await expect(page.getByRole("radio", { name: "Monthly", exact: true })).toBeChecked();
-      await expect(page.getByRole("button", { name: /^Choose .+$/ })).toHaveCount(3);
+      await expect(page.getByRole("button", { name: "Choose", exact: true })).toHaveCount(3);
       await expect(planNamed(page, "Supporter")).toContainText("¥300 / month");
       // The period's choice changes every plan's price; a press anywhere on a segment lands on its radio.
       await page.getByRole("radio", { name: "Yearly Save 10%", exact: true }).click();
@@ -60,7 +60,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(yours).toHaveAttribute("aria-current", "true");
       await expect(yours).toContainText("Your plan");
       await expect(yours.getByRole("button")).toHaveCount(0);
-      await expect(page.getByRole("button", { name: /^Switch to .+$/ })).toHaveCount(2);
+      await expect(page.getByRole("button", { name: "Switch", exact: true })).toHaveCount(2);
       await expect(planNamed(page, "Benefactor")).toContainText("Everything in Patron, plus:");
     },
   ],
@@ -69,7 +69,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       await expect(plansOf(page)).toHaveCount(1);
       await expect(plansOf(page).getByRole("list")).toHaveCount(0);
-      await expect(page.getByRole("button", { name: "Choose this plan", exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: "Choose", exact: true })).toBeVisible();
     },
   ],
   [
@@ -165,6 +165,10 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect
         .poll(async () => (await readCellByCell(page, name)).slice(-2))
         .toEqual(["Total | Category | ", "Total | Amount | ¥12,300 US$45.67 Estimate"]);
+      // A provider named once on the page is still the header of each of its rows, and an estimate is read on its figure.
+      await expect
+        .poll(async () => (await readCellByCell(page, name)).slice(2, 4))
+        .toEqual(["AWS | Category | Storage", "AWS | Amount | US$7.47 Estimate"]);
     },
   ],
   [

@@ -110,6 +110,7 @@ import {
   IconPlayerPlayFilled,
   IconPlugConnectedX,
   IconPlus,
+  IconProgress,
   IconQuestionMark,
   IconQuote,
   IconRefresh,
@@ -210,6 +211,8 @@ export const icons = {
   menu: { off: IconMenu2 },
   // The readers' support of the server (its funding meter), apart from the staff's finance.
   funding: { off: IconHeartHandshake },
+  // A figure from an estimate, not final yet (a cost imported while its month is open).
+  estimate: { off: IconProgress },
   // What is coming on the server: its events.
   events: { off: IconCalendarEvent, on: IconCalendarEventFilled },
   quote: { off: IconQuote },

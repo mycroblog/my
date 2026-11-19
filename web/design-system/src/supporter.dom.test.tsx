@@ -106,3 +106,21 @@ test("a subscription's state is its sentence, a line under it, and the one thing
   expect(screen.getByText("Your perks stay until then.")).toBeTruthy();
   expect(screen.getByRole("button", { name: "Resume" })).toBeTruthy();
 });
+
+test("the reader's plan shows its mark and no action, whatever action is given", () => {
+  render(
+    <PlanList label="Plans">
+      <PlanCard
+        name="Patron"
+        current="Your plan"
+        price={<Money amount="¥1,000" per="/ month" />}
+        perks={[]}
+        action={<button type="button">Switch</button>}
+      />
+    </PlanList>,
+  );
+
+  const plan = screen.getByRole("listitem", { name: "Patron" });
+  expect(plan.textContent).toContain("Your plan");
+  expect(within(plan).queryByRole("button")).toBeNull();
+});

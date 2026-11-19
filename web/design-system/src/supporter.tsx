@@ -110,7 +110,10 @@ export type PlanCardProps = {
   includes?: string | undefined;
   /** The perks of its own, a line each, as the app words them ("Create 10 custom emoji a month"). */
   perks: readonly string[];
-  /** What the reader may do with it (a `Button` of size `target`: Subscribe, Switch to this plan), at the card's foot. */
+  /**
+   * What the reader may do with it (a `Button` of size `target`, primary: Choose, Switch), at the card's foot; none on
+   * the reader's plan, whose mark stands there, whatever is given.
+   */
   action?: ReactNode;
 };
 
@@ -160,16 +163,13 @@ export function PlanCard({ name, current, price, priceNote, description, include
           )}
         </Stack>
       )}
-      {(action !== undefined || current !== undefined) && (
-        <Stack push="bottom" gap="entry-line">
-          {current !== undefined && (
-            <Row align="center" justify="center" gap="entry-caption" className={s.current()}>
-              <Icon name="accepted" place="action" />
-              <span>{current}</span>
-            </Row>
-          )}
-          {action}
-        </Stack>
+      {current !== undefined ? (
+        <Row push="bottom" align="center" justify="center" gap="entry-caption" className={s.current()}>
+          <Icon name="accepted" place="action" />
+          <span>{current}</span>
+        </Row>
+      ) : (
+        action !== undefined && <Stack push="bottom">{action}</Stack>
       )}
     </Column>
   );

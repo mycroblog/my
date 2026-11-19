@@ -49,7 +49,7 @@ test("the totals are a table: the columns' names first, then a row a period head
     within(rows[0] as HTMLElement)
       .getAllByRole("cell")
       .map((c) => c.textContent),
-  ).toEqual(["¥12,300US$45.67Estimate", "¥9,840", "−¥2,460"]);
+  ).toEqual(["¥12,300 EstimateUS$45.67 Estimate", "¥9,840", "−¥2,460"]);
   // The bars draw what the figures say, and assistive technology hears the figures alone.
   for (const bar of table.querySelectorAll('[aria-hidden="true"]')) expect(bar.textContent).toBe("");
 });
@@ -73,4 +73,44 @@ test("a breakdown's total is its last row, its cells in the columns' order", () 
     "SakuraServers¥10,650",
     "Total¥10,650",
   ]);
+});
+
+test("a provider's next category keeps its provider as its row's header, and an estimate is read on its figure alone", () => {
+  render(
+    <FinanceTable
+      label="Costs by provider"
+      head="Provider"
+      columns={[{ label: "Category" }, { label: "Amount", figures: true }]}
+      estimated="Estimate"
+      about="Calendar months, by date."
+    >
+      <FinanceRow head="AWS" cells={["Servers", { figures: ["US$38.20"] }]} />
+      <FinanceRow
+        head="AWS"
+        continued
+        cells={["Storage", { figures: ["¥100", { shown: "US$7.47", estimated: true }] }]}
+      />
+    </FinanceTable>,
+  );
+
+  const table = screen.getByRole("table", { name: "Costs by provider", description: "Calendar months, by date." });
+  const rows = within(table).getAllByRole("row");
+  expect(rows.map((row) => within(row).queryByRole("rowheader")?.textContent ?? null)).toEqual([null, "AWS", "AWS"]);
+  expect(
+    within(rows[2] as HTMLElement)
+      .getAllByRole("cell")
+      .map((c) => c.textContent),
+  ).toEqual(["Storage", "¥100US$7.47 Estimate"]);
+});
+
+test("a cell of figures in two currencies draws no bar, whatever its share", () => {
+  render(
+    <FinanceTable label="Totals" head="Month" columns={[{ label: "Costs", figures: true }]}>
+      <FinanceRow head="November 2026" cells={[{ figures: ["¥12,300", "US$45.67"], share: 0.5 }]} />
+      <FinanceRow head="October 2026" cells={[{ figures: ["¥14,950"], share: 1 }]} />
+    </FinanceTable>,
+  );
+
+  const rows = within(screen.getByRole("table", { name: "Totals" })).getAllByRole("row");
+  expect(rows.map((row) => row.querySelectorAll('span[aria-hidden="true"]').length)).toEqual([0, 0, 1]);
 });

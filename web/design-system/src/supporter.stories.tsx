@@ -92,18 +92,14 @@ function Plans({ period, current }: { period: Period; current?: string }) {
               per={period === "month" ? "/ month" : "/ year"}
             />
           }
-          priceNote={
-            period === "month"
-              ? `Or ${plan.year} a year, and save 10%`
-              : `${plan.yearPerMonth} a month, billed yearly · Save 10%`
-          }
+          priceNote={period === "month" ? `Or ${plan.year} a year` : `${plan.yearPerMonth} a month, billed yearly`}
           description={plan.description}
           includes={plan.includes}
           perks={plan.perks}
           action={
             plan.name === current ? undefined : (
-              <Button size="target" onPress={none}>
-                {current === undefined ? `Choose ${plan.name}` : `Switch to ${plan.name}`}
+              <Button kind="primary" size="target" onPress={none}>
+                {current === undefined ? "Choose" : "Switch"}
               </Button>
             )
           }
@@ -168,9 +164,7 @@ export const SupporterScreen: Story = {
       <Stack gap="entry-room">
         <Stack gap="entry-line">
           <GroupHeading>Your subscription</GroupHeading>
-          <SubscriptionState state="renewing" detail="Patron, yearly · ¥10,800 / year">
-            Renews on Dec 1, 2026
-          </SubscriptionState>
+          <SubscriptionState state="renewing">Renews on Dec 1, 2026</SubscriptionState>
         </Stack>
         <Stack gap="entry-line">
           <GroupHeading>Plans</GroupHeading>
@@ -182,10 +176,10 @@ export const SupporterScreen: Story = {
             <TipAmounts
               amounts={["¥300", "¥500", "¥1,000", "¥3,000"]}
               initial="¥500"
-              about="A thank-you for the server's service: no perks and no role come with it."
+              about="A thank-you to the server, not a donation: no perks and no role."
             />
             <Row>
-              <Button size="target" onPress={none}>
+              <Button kind="primary" size="target" onPress={none}>
                 Tip ¥500
               </Button>
             </Row>
@@ -206,8 +200,8 @@ export const PlansMonthly: Story = {
 };
 
 /**
- * The plans for a reader who has one, yearly: each its price a year and what that is a month, what it saves; the
- * reader's plan marked, with no action, the others' a switch.
+ * The plans for a reader who has one, yearly: each its price a year and what that is a month, the saving said once,
+ * in the Yearly segment; the reader's plan marked, neutral, in the place of an action, the others' a switch.
  */
 export const PlansYearlyWithYours: Story = {
   render: () => (
@@ -225,14 +219,14 @@ export const PlanAlone: Story = {
         <PlanCard
           name="The supporters of a small server by the sea, who keep its lights on"
           price={<Money size="headline" amount="US$4.50" per="/ month" />}
-          priceNote="Or US$48.60 a year, and save 10%"
+          priceNote="Or US$48.60 a year"
           description={
             "Every month the server pays for its machine, its storage and the backups of both.\nWhat is left goes to the next year's domain."
           }
           perks={[]}
           action={
-            <Button size="target" onPress={none}>
-              Choose this plan
+            <Button kind="primary" size="target" onPress={none}>
+              Choose
             </Button>
           }
         />

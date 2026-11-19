@@ -226,6 +226,7 @@ export {
   FinanceTable,
   type FinanceCell,
   type FinanceColumn,
+  type FinanceFigure,
   type FinanceFigures,
   type FinanceRowProps,
   type FinanceTableProps,
