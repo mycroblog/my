@@ -116,6 +116,91 @@ func (s *Service) enqueueDomainSeverance(ctx context.Context, tx uow.Tx, a moder
 	return s.d.Outbox.EnqueueTx(ctx, tx, queue.NewJob{Type: JobSeverDomain, Payload: payload, IdempotencyKey: JobSeverDomain + ":" + a.ID})
 }
 
+// SuspendImpact is what a suspension of a domain would end now (FR-717, ADR-0058 §6): the accepted
+// follows, in both directions, between the local accounts and the accounts of the domain and its
+// subdomains.
+type SuspendImpact struct {
+	// Follows counts the follows that would end, LocalAccounts the local accounts that would lose
+	// one.
+	Follows, LocalAccounts int
+}
+
+// DomainSuspendImpact counts what a suspension of domain, a canonical host
+// (federation.CanonicalHost), would end, for the confirmation before it is issued. It reads every
+// local account and its follows, a page at a time, as SeverDomain does, and changes nothing; a
+// domain with no follows, or a Service without the graph and account modules, counts zeros. It
+// fails with moderation.ErrOwnDomain for this instance's domain.
+func (s *Service) DomainSuspendImpact(ctx context.Context, domain string) (SuspendImpact, error) {
+	if s.ownDomain(domain) {
+		return SuspendImpact{}, fmt.Errorf("%w: %q", moderation.ErrOwnDomain, domain)
+	}
+	var out SuspendImpact
+	follows, ok := s.d.Follows.(ActiveFollows)
+	if !ok || s.d.Directory == nil {
+		return out, nil
+	}
+	after := ""
+	for {
+		locals, err := s.d.Directory.LocalAccountIDs(ctx, after, scopeImpactPage)
+		if err != nil {
+			return SuspendImpact{}, err
+		}
+		if len(locals) == 0 {
+			break
+		}
+		err = s.d.UnitOfWork.Tx(ctx, func(tx uow.Tx) error {
+			return s.countSuspendImpact(ctx, tx, follows, domain, locals, &out)
+		})
+		if err != nil {
+			return SuspendImpact{}, err
+		}
+		if len(locals) < scopeImpactPage {
+			break
+		}
+		after = locals[len(locals)-1]
+	}
+	return out, nil
+}
+
+// countSuspendImpact adds to out the accepted follows of locals that a suspension of domain would end.
+func (s *Service) countSuspendImpact(ctx context.Context, tx uow.Tx, follows ActiveFollows, domain string, locals []string, out *SuspendImpact) error {
+	fs, err := follows.ActiveFollowsOf(ctx, tx, locals)
+	if err != nil || len(fs) == 0 {
+		return err
+	}
+	var others []string
+	for _, f := range fs {
+		others = append(others, f.FollowerAccountID, f.FolloweeAccountID)
+	}
+	slices.Sort(others)
+	onDomain, err := s.d.Directory.AccountsOnDomain(ctx, tx, domain, slices.Compact(others))
+	if err != nil || len(onDomain) == 0 {
+		return err
+	}
+	isLocal := make(map[string]bool, len(locals))
+	for _, l := range locals {
+		isLocal[l] = true
+	}
+	covered := make(map[string]bool, len(onDomain))
+	for _, id := range onDomain {
+		covered[id] = true
+	}
+	affected := map[string]bool{}
+	for _, f := range fs {
+		switch {
+		case isLocal[f.FollowerAccountID] && covered[f.FolloweeAccountID]:
+			affected[f.FollowerAccountID] = true
+		case isLocal[f.FolloweeAccountID] && covered[f.FollowerAccountID]:
+			affected[f.FolloweeAccountID] = true
+		default:
+			continue
+		}
+		out.Follows++
+	}
+	out.LocalAccounts += len(affected)
+	return nil
+}
+
 // severAccountIn cuts, inside the transaction of action a, the follows between its remote target
 // and the local accounts, telling the target's server, and records a severance for each local
 // account that lost an active follow.

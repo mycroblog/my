@@ -255,8 +255,22 @@ func severanceOfDomain(t *testing.T, e *severanceEnv) {
 	e.followedBy(t, bad, bob, "https://bad.example/follows/1")
 	e.followedBy(t, sub, bob, "https://sub.bad.example/follows/2")
 	e.accepted(t, carol, good)
-	for _, id := range []string{outgoing.ID, incoming.ID} {
+	request := e.requested(t, carol, sub) // a follow request only
+	for _, id := range []string{outgoing.ID, incoming.ID, request.ID} {
 		e.Sent(t, id)
+	}
+
+	// Before the suspension, its impact counts the accepted follows with the domain and its
+	// subdomains, in both directions, and not those with a domain that only ends alike.
+	for domain, want := range map[string]appmoderation.SuspendImpact{
+		"bad.example":     {Follows: 4, LocalAccounts: 2},
+		"sub.bad.example": {Follows: 2, LocalAccounts: 2},
+		"notbad.example":  {Follows: 2, LocalAccounts: 2},
+		"quiet.example":   {},
+	} {
+		if got, err := e.mod.DomainSuspendImpact(ctx, domain); err != nil || got != want {
+			t.Errorf("DomainSuspendImpact(%s) = %+v, %v; want %+v", domain, got, err, want)
+		}
 	}
 
 	e.Clock.Advance(time.Minute)

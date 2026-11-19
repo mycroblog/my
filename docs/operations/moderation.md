@@ -244,7 +244,8 @@ my admin domain lift <action id>
 ```
 
 In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` and `expires_in` in seconds),
-`GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, and `POST .../{id}/lift`.
+`GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, `POST .../{id}/lift`,
+and `GET .../impact?domain=`, which counts the follows that a `suspend` of the domain would end.
 
 In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, kind, state and end, in effect or all;
 "New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its comments and dates, where "Lift" ends it.

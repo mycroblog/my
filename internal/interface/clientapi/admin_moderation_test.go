@@ -31,6 +31,9 @@ type fakeModeration struct {
 	notes   []moderation.ReportNote
 	// reviewed are the statuses that ReportStatuses presents, by report.
 	reviewed map[string][]appcontent.ReviewedStatus
+	// impacts are what DomainSuspendImpact counts, by domain; impactAsked the domains it was asked.
+	impacts     map[string]appmoderation.SuspendImpact
+	impactAsked []string
 }
 
 func (f *fakeModeration) id() string {
@@ -104,6 +107,14 @@ func (f *fakeModeration) LiftDomainAction(_ context.Context, id, by string) erro
 		}
 	}
 	return appmoderation.ErrNotFound
+}
+
+func (f *fakeModeration) DomainSuspendImpact(_ context.Context, domain string) (appmoderation.SuspendImpact, error) {
+	if domain == "self.example" {
+		return appmoderation.SuspendImpact{}, moderation.ErrOwnDomain
+	}
+	f.impactAsked = append(f.impactAsked, domain)
+	return f.impacts[domain], nil
 }
 
 func (f *fakeModeration) Reports(_ context.Context, q appmoderation.ReportQuery, limit int) ([]moderation.ReportRecord, error) {
@@ -231,6 +242,7 @@ func TestModerationOperationsNeedAPermission(t *testing.T) {
 		{http.MethodPost, "/admin/domain_actions", `{"domain":"bad.example","kind":"suspend"}`, "manage_domains"},
 		{http.MethodGet, "/admin/domain_actions/" + reportOne, "", "manage_domains"},
 		{http.MethodPost, "/admin/domain_actions/" + reportOne + "/lift", "", "manage_domains"},
+		{http.MethodGet, "/admin/domain_actions/impact?domain=bad.example", "", "manage_domains"},
 		{http.MethodGet, "/admin/reports", "", "manage_reports"},
 		{http.MethodGet, "/admin/reports/" + reportOne, "", "manage_reports"},
 		{http.MethodPost, "/admin/reports/" + reportOne + "/assign_to_self", "", "manage_reports"},
@@ -248,7 +260,7 @@ func TestModerationOperationsNeedAPermission(t *testing.T) {
 			t.Errorf("%s %s by bob = %d %+v, want 403 for %s", op.method, op.path, res.StatusCode, p, op.permission)
 		}
 	}
-	if len(f.issued) != 0 || f.reports[0].Status.State != moderation.ReportOpen {
+	if len(f.issued) != 0 || len(f.impactAsked) != 0 || f.reports[0].Status.State != moderation.ReportOpen {
 		t.Error("a refused operation changed something")
 	}
 	res := e.send(t, http.MethodPost, "/admin/domain_actions", "admin-read", `{"domain":"bad.example","kind":"suspend"}`)
@@ -324,6 +336,35 @@ func TestCreateDomainActionRejectsInvalidInput(t *testing.T) {
 	}
 	if len(f.actions) != 0 {
 		t.Errorf("actions = %+v, want none", f.actions)
+	}
+}
+
+func TestGetDomainSuspendImpact(t *testing.T) {
+	e, f := newModerationEnv(t)
+	f.impacts = map[string]appmoderation.SuspendImpact{
+		"bad.example":    {Follows: 3, LocalAccounts: 2},
+		"xn--r8jz45g.jp": {Follows: 1, LocalAccounts: 1},
+	}
+	for path, want := range map[string]clientapi.DomainSuspendImpact{
+		"/admin/domain_actions/impact?domain=Bad.Example.":          {Domain: "bad.example", Follows: 3, LocalAccounts: 2},
+		"/admin/domain_actions/impact?domain=%E4%BE%8B%E3%81%88.jp": {Domain: "xn--r8jz45g.jp", Follows: 1, LocalAccounts: 1},
+		"/admin/domain_actions/impact?domain=quiet.example":         {Domain: "quiet.example"},
+	} {
+		res := e.sendJSON(t, http.MethodGet, path, "admin-read", "")
+		got := decodeJSON[clientapi.DomainSuspendImpact](t, res)
+		if res.StatusCode != http.StatusOK || res.Header.Get("Cache-Control") != "no-store" || got != want {
+			t.Errorf("GET %s = %d (%s) %+v, want %+v", path, res.StatusCode, res.Header.Get("Cache-Control"), got, want)
+		}
+	}
+	f.impactAsked = nil
+	for _, domain := range []string{"https%3A%2F%2Fbad.example%2F", "bad..example", "self.example"} {
+		res := e.sendJSON(t, http.MethodGet, "/admin/domain_actions/impact?domain="+domain, "admin-read", "")
+		if p := decodeProblem(t, res); res.StatusCode != http.StatusUnprocessableEntity || p.Field == nil || *p.Field != "domain" {
+			t.Errorf("impact of %s = %d %+v, want 422 naming domain", domain, res.StatusCode, p)
+		}
+	}
+	if len(f.impactAsked) != 0 {
+		t.Errorf("counted for %v, want an invalid domain refused before counting", f.impactAsked)
 	}
 }
 

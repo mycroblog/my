@@ -30,6 +30,7 @@ type Moderation interface {
 	DomainAction(ctx context.Context, id string) (appmoderation.DomainActionView, error)
 	IssueDomainAction(ctx context.Context, in appmoderation.DomainActionInput) (moderation.DomainAction, error)
 	LiftDomainAction(ctx context.Context, actionID, liftedByUserID string) error
+	DomainSuspendImpact(ctx context.Context, domain string) (appmoderation.SuspendImpact, error)
 	Reports(ctx context.Context, q appmoderation.ReportQuery, limit int) ([]moderation.ReportRecord, error)
 	ReportRecord(ctx context.Context, id string) (moderation.ReportRecord, error)
 	AssignReport(ctx context.Context, reportID, assigneeUserID, byUserID string) (moderation.ReportRecord, error)
@@ -186,6 +187,36 @@ func (s *Server) CreateDomainAction(ctx context.Context, req CreateDomainActionR
 		return nil, fmt.Errorf("clientapi: domain action %s: %w", a.ID, err)
 	}
 	return CreateDomainAction201JSONResponse{domainActionResponse(view)}, nil
+}
+
+// GetDomainSuspendImpact serves GET /api/v1/admin/domain_actions/impact: what a suspension of the
+// domain would end, before the moderator confirms it.
+func (s *Server) GetDomainSuspendImpact(ctx context.Context, req GetDomainSuspendImpactRequestObject) (GetDomainSuspendImpactResponseObject, error) {
+	if p, err := s.requirePermission(ctx, identity.PermManageDomains); err != nil {
+		return nil, err
+	} else if p != nil {
+		return GetDomainSuspendImpactdefaultApplicationProblemPlusJSONResponse(*p), nil
+	}
+	invalid := func() (GetDomainSuspendImpactResponseObject, error) {
+		return GetDomainSuspendImpactdefaultApplicationProblemPlusJSONResponse(
+			s.fieldProblem(ctx, "domain", s.Localizer(ctx).ServerErrorsInvalidValue())), nil
+	}
+	domain, err := appfederation.CanonicalHost(req.Params.Domain)
+	if err != nil || !moderation.ValidDomain(domain) {
+		return invalid()
+	}
+	impact, err := s.o.Moderation.DomainSuspendImpact(ctx, domain)
+	switch {
+	case errors.Is(err, moderation.ErrOwnDomain):
+		return invalid()
+	case err != nil:
+		return nil, fmt.Errorf("clientapi: count what suspending %s would end: %w", domain, err)
+	}
+	cache := cacheNoStore
+	return GetDomainSuspendImpact200JSONResponse{
+		Body:    DomainSuspendImpact{Domain: domain, Follows: impact.Follows, LocalAccounts: impact.LocalAccounts},
+		Headers: GetDomainSuspendImpact200ResponseHeaders{CacheControl: &cache},
+	}, nil
 }
 
 // GetDomainAction serves GET /api/v1/admin/domain_actions/{id}.
