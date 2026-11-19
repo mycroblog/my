@@ -481,6 +481,52 @@ export class Fresh {
     return (await this.#adminAccount(who.username)).email_verified === true;
   }
 
+  /**
+   * The supporter program on the server's fake payment provider, with the tips (¥500, ¥1,000, ¥3,000) and the
+   * supporters list shown to everyone: two plans, Supporter (¥500 a month) and Patron (¥1,500), each 10% off yearly,
+   * made once for the run on roles of their own, and returned once both take subscriptions (their prices are made by a
+   * job of the server). Every later call finds them. The program stays on for the run, as nothing reads it off.
+   */
+  async supporterProgram(): Promise<{ supporter: string; patron: string }> {
+    const api = await this.#staff("admin");
+    const listed = body((await api.GET("/admin/supporter_plans")).data, "the plans").items;
+    const plans = [
+      { role: "e2e_supporter", name: "Supporter", amount: "500", rank: 1 },
+      { role: "e2e_patron", name: "Patron", amount: "1500", rank: 2 },
+    ] as const;
+    for (const plan of plans) {
+      if (listed.some((p) => p.name === plan.name)) continue;
+      await api.POST("/admin/roles", { body: { key: plan.role, position: plan.rank, permissions: [] } });
+      const { error } = await api.POST("/admin/supporter_plans", {
+        body: {
+          role: plan.role,
+          name: plan.name,
+          description: `The ${plan.name} plan of the tests.`,
+          monthly_price: { amount: plan.amount, currency: "JPY" },
+          annual_discount_percent: 10,
+          emoji_limit: 0,
+          rank: plan.rank,
+          visibility: "public",
+        },
+      });
+      if (error !== undefined) throw new Error(`fresh: the plan ${plan.name} was refused`);
+    }
+    if ((await api.PUT("/admin/supporter_program", { body: { enabled: true } })).error !== undefined)
+      throw new Error("fresh: the supporter program was not enabled");
+    const amounts = ["500", "1000", "3000"].map((amount) => ({ amount, currency: "JPY" }));
+    if ((await api.PUT("/admin/supporter_tips", { body: { enabled: true, amounts } })).error !== undefined)
+      throw new Error("fresh: the tips were not enabled");
+    // The plans take subscriptions once the server made their prices at the provider.
+    for (let attempt = 0; attempt < 100; attempt++) {
+      const { data } = await api.GET("/instance/supporter_plans");
+      const ids = Object.fromEntries((data?.items ?? []).map((p) => [p.name, p.id]));
+      if (ids["Supporter"] !== undefined && ids["Patron"] !== undefined)
+        return { supporter: ids["Supporter"], patron: ids["Patron"] };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error("fresh: the plans never took subscriptions");
+  }
+
   /** A follow request of `from` to the locked `to`, which waits for `to` to decide it. */
   async followRequest(from: Person, to: Person): Promise<void> {
     if (to.locked !== true) throw new Error(`fresh: ${to.username} is not locked, so a follow is no request`);

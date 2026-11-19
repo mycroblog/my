@@ -124,7 +124,7 @@ func newSupporterSubscription(v appsupporters.SubscriptionView) SupporterSubscri
 	cur := v.Current
 	out := SupporterSubscription{
 		Id: v.ID, State: SupporterSubscriptionState(cur.State), PlanId: cur.PlanID, PlanName: v.Plan.Revision.Name,
-		Interval: SupporterInterval(v.Price.Interval), Price: minorMoney(v.Price.AmountMinor, v.Price.Currency),
+		PlanRank: v.Plan.Revision.Rank, Interval: SupporterInterval(v.Price.Interval), Price: minorMoney(v.Price.AmountMinor, v.Price.Currency),
 		StartedAt: v.CreatedAt.UTC(),
 	}
 	if !cur.PeriodEndsAt.IsZero() {

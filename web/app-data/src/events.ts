@@ -10,15 +10,15 @@
 // date confirmed) changed it. The `.ics` file needs the access token, so it is
 // fetched and handed on as a file to save, never linked. The refusals the server names are told apart by kind.
 import { ProblemError, type components } from "@mycroblog/mykit";
-import { useQuery, type QueryClient, type QueryKey } from "@tanstack/react-query";
+import { useQuery, type QueryKey } from "@tanstack/react-query";
 import { viewerQuery } from "./accounts";
 import { whileOpen, type AppData } from "./app-data";
 import type { ServerEvent } from "./around";
 import type { SavedFile } from "./exports";
-import { inOrder } from "./in-order";
 import { instanceQuery } from "./instance";
 import { pagedQuery, usePagedList, wholeList, type Page, type PagedList, type Pages } from "./paged";
 import { useAppData } from "./provider";
+import { answered, shownWrite } from "./shown-write";
 
 type Schemas = components["schemas"];
 
@@ -487,74 +487,6 @@ export async function receiveEvent(data: AppData, event: ServerEvent): Promise<v
 /** The lists of events may hold another set or order (an event made, its date or visibility changed): read again. */
 function eventListsChanged({ queryClient }: AppData): Promise<void> {
   return queryClient.invalidateQueries({ predicate: (query) => isEventList(query.queryKey) });
-}
-
-/**
- * What was on its way of a key of each written thing, what the server said of it last, and whether the server refused
- * the last of them: what it holds then may have changed since (an event that filled up, started, or got its date), so
- * it is read again rather than put back.
- */
-type Writing = { count: number; server: unknown; refused: boolean };
-
-const writings = new WeakMap<QueryClient, Map<string, Writing>>();
-
-/**
- * Runs `write`, a write of the thing named `key`, once its writes made before have ended (`inOrder`), with what the
- * reader chose shown from now on (`show`); once no write of it is on its way, the reads of `keys` on their way are
- * cancelled, and the cache holds what the server last said of it (`put`, given what `read` held before the first of
- * them where every one failed for want of an answer), or reads it again (`refresh`) where the server refused the last
- * one, or the cache held nothing before. It resolves or rejects as the write does.
- */
-async function shownWrite<S, T>(
-  data: AppData,
-  key: string,
-  w: {
-    readonly keys: readonly QueryKey[];
-    readonly read: () => S | undefined;
-    readonly show: () => void;
-    readonly write: () => Promise<T>;
-    readonly server: (answer: T) => S;
-    readonly put: (server: S) => void;
-    readonly refresh: () => void;
-  },
-): Promise<T> {
-  let all = writings.get(data.queryClient);
-  if (all === undefined) {
-    all = new Map();
-    writings.set(data.queryClient, all);
-  }
-  const writing = all.get(key) ?? { count: 0, server: w.read(), refused: false };
-  all.set(key, writing);
-  writing.count += 1;
-  w.show();
-  try {
-    const answer = await inOrder(data, key, w.write);
-    writing.server = w.server(answer);
-    writing.refused = false;
-    return answer;
-  } catch (error) {
-    if (error instanceof ProblemError) writing.refused = true;
-    throw error;
-  } finally {
-    writing.count -= 1;
-    // Read anew after the wait: a write begun meanwhile joins this one, and puts what comes of them once it ends.
-    const last = () => writing.count === 0;
-    if (last()) {
-      // A read of the thing started before the write answered would put back what the server held before it.
-      await Promise.all(w.keys.map((queryKey) => data.queryClient.cancelQueries({ queryKey })));
-      if (last()) {
-        all.delete(key);
-        if (writing.refused || writing.server === undefined) w.refresh();
-        else w.put(writing.server as S);
-      }
-    }
-  }
-}
-
-/** The body of an answer, which the client sets whenever the request resolves. */
-function answered<T>({ data }: { data?: T }, what: string): T {
-  if (data === undefined) throw new Error(`app-data: ${what} answered without a body`);
-  return data;
 }
 
 // ---- The attendee's writes --------------------------------------------------------------------------------------------

@@ -149,6 +149,8 @@ export { SecurityPasskey } from "./settings/security/passkey";
 export { SecurityPassword } from "./settings/security/password";
 export { loadSecuritySettings, SecuritySettings } from "./settings/security/security";
 export { SecurityTwoFactor } from "./settings/security/two-factor";
+export { loadSupporterTip, SupporterTip, useSupporterTipTitle } from "./settings/supporter-tip";
+export { loadSupporters, SupportersScreen } from "./supporters/page";
 export {
   loadModerationAction,
   ModerationActionScreen,

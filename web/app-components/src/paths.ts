@@ -102,6 +102,18 @@ export const eventCoorganizersPath = (id: string) => `${eventPath(id)}/coorganiz
 /** The address of the settings' screen of the reminders of events (ADR-0161 §12). */
 export const eventRemindersPath = "/settings/events";
 
+/** The address of the costs page, which the funding meter's month is of (FR-905). */
+export const costsPagePath = "/about/costs";
+
+/** The address of the supporters' page: the plans, the tip, and the supporters list (ADR-0070 §13, ADR-0072 §14). */
+export const supportersPagePath = "/about/supporters";
+
+/** The address of the settings' screen of the reader's support: their subscription, the plans, the listing. */
+export const supporterSettingsPath = "/settings/supporter";
+
+/** The address of the screen that pays a tip, where its checkout returns (ADR-0162 §13). */
+export const supporterTipPath = "/settings/supporter/tip";
+
 /** The address of the held-back notifications of the account of `id`. */
 export const heldOfPath = (id: string) => `${heldPath}/${id}`;
 

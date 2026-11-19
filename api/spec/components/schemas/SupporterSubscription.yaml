@@ -5,7 +5,7 @@ description: |
   subscriptions that go on). The plan's name is written by the administrators in any
   language; render it with `dir="auto"`.
 type: object
-required: [id, state, plan_id, plan_name, interval, price, started_at]
+required: [id, state, plan_id, plan_name, plan_rank, interval, price, started_at]
 properties:
   id:
     $ref: ./Id.yaml
@@ -15,6 +15,11 @@ properties:
     $ref: ./Id.yaml
   plan_name:
     type: string
+  plan_rank:
+    description: |
+      The plan's `rank`, given also for a hidden plan, which the plan list leaves out: a change
+      to a plan of a higher rank applies at once, to a lower one at the end of the period.
+    type: integer
   interval:
     $ref: ./SupporterInterval.yaml
   price:

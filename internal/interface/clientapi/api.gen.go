@@ -16959,6 +16959,10 @@ type SupporterSubscription struct {
 	PlanId   Id     `json:"plan_id"`
 	PlanName string `json:"plan_name"`
 
+	// PlanRank The plan's `rank`, given also for a hidden plan, which the plan list leaves out: a change
+	// to a plan of a higher rank applies at once, to a lower one at the end of the period.
+	PlanRank int `json:"plan_rank"`
+
 	// Price An amount of money: a decimal string in the major unit with the digits of
 	// its currency (`12.34` USD, `1650` JPY), never a JSON number, and its ISO 4217 code.
 	Price Money `json:"price"`

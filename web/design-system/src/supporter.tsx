@@ -209,8 +209,8 @@ const state = tv({
  * The state of the reader's subscription, a line: the state's glyph, then the sentence the app words with its date
  * ("Renews on Dec 1, 2026", "Ends on Dec 1, 2026", "Changes to Patron, yearly, on Dec 1, 2026", "Your payment failed:
  * your perks end on Nov 26 unless it goes through"), in the strong weight where the reader must act (a failed payment);
- * a line under it, muted (the plan and period, the price kept from before); and the one thing to do about it at the
- * line's end (Resume, Keep my plan, Update the card), under it where the line has no room.
+ * a line under it, muted (the plan, the period and the amount); and the one thing to do about it at the line's end
+ * (Resume, Keep my plan, Update the card) from a tablet's width, and under the words in a narrower frame.
  */
 export function SubscriptionState({
   state: kind,
@@ -231,18 +231,31 @@ export function SubscriptionState({
       <Row as="span" inline line rigid align="center" className={s.glyph()}>
         <Icon name={stateIcon[kind]} place="action" />
       </Row>
-      {/* The action wraps under the words, from where they start, not under the glyph. */}
-      <Row grow wrap align="center" gapX="entry-avatar" gap="entry-line">
-        <Stack grow="names" gap="hair">
-          <p className={s.sentence()}>{children}</p>
-          {detail !== undefined && <p className={s.detail()}>{detail}</p>}
-        </Stack>
-        {action !== undefined && (
-          <Row inline rigid>
-            {action}
-          </Row>
-        )}
-      </Row>
+      <StateLineFrame
+        words={
+          <Stack gap="hair">
+            <p className={s.sentence()}>{children}</p>
+            {detail !== undefined && <p className={s.detail()}>{detail}</p>}
+          </Stack>
+        }
+        action={action}
+      />
     </Row>
+  );
+}
+
+/**
+ * The frame of a state line's words and its action, in a frame that knows its own width: on one line from 32 rem, the
+ * words taking the room left and the action at the line's end; under it, as on a phone, the action under the words,
+ * from where they start, not under the glyph, in every state alike.
+ */
+function StateLineFrame({ words, action }: { words: ReactNode; action: ReactNode }) {
+  return (
+    <div className="@container min-w-0 grow">
+      <div className="flex flex-wrap items-center gap-x-entry-avatar gap-y-entry-line @min-[32rem]:flex-nowrap">
+        <div className="min-w-0 grow basis-full @min-[32rem]:basis-0">{words}</div>
+        {action !== undefined && <div className="flex flex-none">{action}</div>}
+      </div>
+    </div>
   );
 }

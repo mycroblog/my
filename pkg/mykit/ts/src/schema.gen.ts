@@ -18815,6 +18815,11 @@ export interface components {
             state: components["schemas"]["SupporterSubscriptionState"];
             plan_id: components["schemas"]["Id"];
             plan_name: string;
+            /**
+             * @description The plan's `rank`, given also for a hidden plan, which the plan list leaves out: a change
+             *     to a plan of a higher rank applies at once, to a lower one at the end of the period.
+             */
+            plan_rank: number;
             interval: components["schemas"]["SupporterInterval"];
             price: components["schemas"]["Money"];
             /**

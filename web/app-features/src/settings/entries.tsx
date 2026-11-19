@@ -21,6 +21,7 @@ import {
   type Permission,
 } from "@my/app-data";
 import type { IconName } from "@my/design-system";
+import { inNativeShell } from "@my/platform";
 import type { ComponentType, ReactNode } from "react";
 import type { MessageId } from "../messages.gen";
 import { AccountSettings, loadAccountSettings, useAppealableActions } from "./account";
@@ -33,6 +34,7 @@ import { loadNotificationSettings, NotificationSettings } from "./notifications"
 import { loadProfileSettings, ProfileSettings } from "./profile";
 import { loadRelationshipSettings, RelationshipSettings } from "./relationships";
 import { loadSecuritySettings, SecuritySettings } from "./security/security";
+import { loadSupporterSettings, SupporterSettings } from "./supporter";
 import { loadVoiceSettings, VoiceSettings } from "./voice";
 
 /** The groups of the menu, in its order, each under its heading. */
@@ -56,7 +58,14 @@ export type SettingsAddress = {
   fragment: string;
   /** Takes the fragment off the address, once the screen has read it, so that a reload does not read it again. */
   onFragmentRead: () => void;
-  /** Leaves the app for `href`, a page that loads anew (a login provider's). */
+  /**
+   * The query of the screen's address, with its `?`: what a payment provider's return leaves there
+   * (`?checkout=success`, `?tip=…&checkout=…`), empty otherwise; none where the screen is given no address.
+   */
+  search?: string | undefined;
+  /** Takes the query off the address, once the screen has read it, as `onFragmentRead` takes the fragment. */
+  onSearchRead?: (() => void) | undefined;
+  /** Leaves the app for `href`, a page that loads anew (a login provider's, a payment provider's). */
   leave: (href: string) => void;
 };
 
@@ -102,6 +111,11 @@ export type SettingsFacts = {
   readonly mayInvite: boolean;
   /** Whether the server has voice chat (ADR-0100 §2); false until the server said so. */
   readonly voice: boolean;
+  /**
+   * Whether the server takes the readers' support here: its supporter program or its tips are on, and the app is no
+   * native shell, which shows no purchase (ADR-0072 §14, ADR-0162 §3); false until the server said so.
+   */
+  readonly supporters: boolean;
 };
 
 /** An entry of the settings. */
@@ -180,6 +194,17 @@ export const settingsEntries: readonly SettingsEntry[] = [
     load: loadEventSettings,
   },
   {
+    // The reader's subscription, the plans and the tips, while the server takes them, never in the native shell.
+    path: "supporter",
+    group: "general",
+    icon: "funding",
+    name: "settings.entry.supporter",
+    hint: "settings.entry.supporter.hint",
+    shown: (facts) => facts.supporters,
+    Screen: SupporterSettings,
+    load: loadSupporterSettings,
+  },
+  {
     path: "relationships",
     group: "people",
     icon: "members",
@@ -248,7 +273,14 @@ function useSettingsFacts(): SettingsFacts {
     singleUser: useInstance()?.single_user === true,
     mayInvite: useMayInvite(),
     voice: useInstance()?.voice_enabled === true,
+    supporters: useSupportersOffered(),
   };
+}
+
+/** Whether the server takes the readers' support in this app: its program or its tips are on, out of the native shell. */
+function useSupportersOffered(): boolean {
+  const instance = useInstance();
+  return !inNativeShell() && (instance?.supporters_enabled === true || instance?.tips_enabled === true);
 }
 
 /**

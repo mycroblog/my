@@ -70,6 +70,8 @@ import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } 
 import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { eventHandlers, fakeEventPlans, type FakeEventPlan, type FakeEvents } from "./events";
+import { financeHandlers, type FakeFinanceOptions } from "./finance";
+import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
@@ -442,6 +444,16 @@ export type FakeOptions = {
    * (`save: "name"`), refused by the server's review (`save: "refused"`), or never answered (`save: "waits"`).
    */
   profile?: { start?: "empty"; save?: "name" | "refused" | "waits" };
+  /**
+   * The supporter program (supporters.ts): off by default; given, on with two plans, and the reader's subscription,
+   * the tips, the supporters list and the reader's place on it as it says.
+   */
+  supporters?: FakeSupporterOptions;
+  /**
+   * The finance (finance.ts): what the instance publishes of its costs and income (nothing by default), estimates,
+   * the funding meter, and the reader as a holder of `view_finance`.
+   */
+  finance?: FakeFinanceOptions;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -545,6 +557,8 @@ export type FakeApi = {
   readonly voice: FakeVoice;
   /** The events' IDs by the seed's keys, and an event as the reader sees it now (events.ts). */
   readonly events: FakeEvents;
+  /** The plans' and the tips' IDs, and the reader's subscription as the server holds it now (supporters.ts). */
+  readonly supporters: FakeSupporters;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1891,8 +1905,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const permissionsOf = (username: string): Schema<"Permission">[] => {
     const staff = personOf(username).staff;
     const moderation = ["manage_reports", "manage_accounts", "manage_domains", "manage_invites", "view_audit"] as const;
-    if (staff === "moderator") return [...moderation];
-    if (staff !== "admin") return [];
+    // A holder of `view_finance` by a role of their own, as a plan's role may grant it.
+    const finance = username === viewer && o.finance?.viewer !== undefined ? (["view_finance"] as const) : [];
+    if (staff === "moderator") return [...moderation, ...finance];
+    if (staff !== "admin") return [...finance];
     return [
       ...moderation,
       ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
@@ -2025,6 +2041,37 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   // An uncompressed P-256 point, as a server's VAPID key is: a key of no server, which no push service is asked for.
   const pushServerKey = "BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM";
   const month = new Date(started).toISOString().slice(0, 7);
+
+  // The supporter program and the finance (supporters.ts, finance.ts), which the instance says are on or published.
+  const supporting = supporterHandlers({
+    options: o.supporters,
+    started,
+    visitor,
+    closing: o.closure !== undefined,
+    origin: fakeOrigin,
+    known: (username) => people.some((p) => p.username === username) && username !== deactivated,
+    visibleAccount: (username) =>
+      people.some((p) => p.username === username) &&
+      username !== deactivated &&
+      (visitor || (!blocking.has(`${viewer}>${username}`) && !blocking.has(`${username}>${viewer}`)))
+        ? accountOf(username)
+        : undefined,
+    viewerAccount: () => accountOf(viewer),
+    problem,
+    notFound,
+    page,
+  });
+  const finance = financeHandlers({
+    options: o.finance,
+    started,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    planCounts: () => supporting.supporters.planCounts(),
+    tips: supporting.instance.tips_enabled,
+    problem,
+    notFound,
+  });
+  const fundingMeter = o.finance === undefined ? undefined : finance.meter(month);
+
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
     name: "mycroblog demo",
@@ -2055,11 +2102,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
     link_cards_ignore_robots_txt: false,
-    finance_visibility: "private",
-    income_visibility: "private",
-    supporters_enabled: false,
-    tips_enabled: false,
-    supporter_list_visibility: "off",
+    ...finance.instance,
+    ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: o.voiceStarters ?? "everyone",
     event_creators: o.eventCreators ?? "everyone",
@@ -2094,21 +2138,26 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             message: "Thank you for the good years together. — the admins",
           },
         }),
-    ...(around === "all"
-      ? {
-          funding_meter: {
-            visibility: "percent" as const,
-            label: month,
-            starts_on: `${month}-01`,
-            ends_on: `${month}-28`,
-            percent: 72,
-            covered: false,
-            // A usage charge of the month is not closed yet, so the share may still change.
-            estimated: true,
-            rail: true,
-          },
-        }
-      : {}),
+    // With `finance`, the meter of its costs and income; else one of its own, unless nothing is around the reader.
+    ...(o.finance !== undefined
+      ? fundingMeter === undefined
+        ? {}
+        : { funding_meter: fundingMeter }
+      : around === "all"
+        ? {
+            funding_meter: {
+              visibility: "percent" as const,
+              label: month,
+              starts_on: `${month}-01`,
+              ends_on: `${month}-28`,
+              percent: 72,
+              covered: false,
+              // A usage charge of the month is not closed yet, so the share may still change.
+              estimated: true,
+              rail: true,
+            },
+          }
+        : {}),
   });
 
   // The announcements, newest first, each read by whom the seed says; reads are kept.
@@ -3655,6 +3704,11 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...events.handlers,
 
+    // ---- The supporters and the finance -------------------------------------------------------------------------------
+
+    ...supporting.handlers,
+    ...finance.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3724,7 +3778,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 
@@ -3873,6 +3927,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     send,
     voice: voiceRooms.voice,
     events: events.events,
+    supporters: supporting.supporters,
     unimplemented,
     revocations,
     newPosts,

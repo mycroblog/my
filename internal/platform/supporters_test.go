@@ -324,6 +324,76 @@ func subscribeOnFake(t *testing.T, app *platform.App, prov *fake.Provider, accou
 	return co.SubscriptionID
 }
 
+// TestSupporterSubscriptionPlanRank gives the subscription its plan's rank, the rank that
+// ChangeTiming compares (ADR-0072 §8), for a public plan and for a hidden one, which the plan
+// list leaves out (ADR-0072 §9): the client compares it with the listed plans' ranks.
+func TestSupporterSubscriptionPlanRank(t *testing.T) {
+	t.Parallel()
+	e, prov := newSupportersEnv(t)
+	ctx := t.Context()
+	admin, bob := e.user("alice"), e.user("bob")
+	plans := map[string]clientapi.AdminSupporterPlan{}
+	for i, name := range []string{"bronze", "gold"} {
+		e.want(e.do(http.MethodPost, "/admin/roles", admin.token, map[string]any{"key": name, "position": 10 + i, "permissions": []string{}}, nil),
+			http.StatusCreated, "POST /admin/roles "+name)
+		var p clientapi.AdminSupporterPlan
+		e.want(e.do(http.MethodPost, "/admin/supporter_plans", admin.token, map[string]any{
+			"role": name, "name": name, "monthly_price": map[string]string{"amount": strconv.Itoa(500 * (i + 1)), "currency": "JPY"},
+			"annual_discount_percent": 0, "emoji_limit": 0, "rank": 2 + 3*i, "visibility": "public",
+		}, &p), http.StatusCreated, "POST /admin/supporter_plans "+name)
+		plans[name] = p
+	}
+	e.want(e.do(http.MethodPut, "/admin/supporter_program", admin.token, map[string]any{"enabled": true}, nil), http.StatusOK, "enable")
+	subID := subscribeOnFake(t, e.app, prov, bob.id, plans["gold"].Id, "sub_rank")
+
+	listed := func() map[string]int {
+		t.Helper()
+		var list clientapi.SupporterPlanList
+		e.want(e.do(http.MethodGet, "/instance/supporter_plans", "", nil, &list), http.StatusOK, "GET /instance/supporter_plans")
+		ranks := map[string]int{}
+		for _, p := range list.Items {
+			ranks[p.Id] = p.Rank
+		}
+		return ranks
+	}
+	own := func(when string) clientapi.SupporterSubscription {
+		t.Helper()
+		var o clientapi.OwnSupporterSubscription
+		e.want(e.do(http.MethodGet, "/supporter/subscription", bob.token, nil, &o), http.StatusOK, "GET /supporter/subscription "+when)
+		if o.Subscription == nil {
+			t.Fatalf("%s: no subscription", when)
+		}
+		return *o.Subscription
+	}
+	v, err := e.app.Supporters.OwnSubscription(ctx, userOfAccount(t, e.app, bob.id))
+	if err != nil || v.ID != subID {
+		t.Fatalf("OwnSubscription = %+v, %v", v, err)
+	}
+
+	// A public plan: the subscription's rank is the listed rank of its plan.
+	if sub, ranks := own("on a public plan"), listed(); sub.PlanRank != ranks[plans["gold"].Id] || sub.PlanRank != v.Plan.Revision.Rank {
+		t.Errorf("plan_rank %d, want the listed %d and the compared %d", sub.PlanRank, ranks[plans["gold"].Id], v.Plan.Revision.Rank)
+	}
+
+	// The plan is hidden: the list leaves it out, and the subscription still carries its rank.
+	e.want(e.do(http.MethodPatch, "/admin/supporter_plans/"+plans["gold"].Id, admin.token, map[string]any{"visibility": "hidden"}, nil),
+		http.StatusOK, "hide gold")
+	ranks := listed()
+	if _, ok := ranks[plans["gold"].Id]; ok {
+		t.Fatalf("the hidden plan is listed: %v", ranks)
+	}
+	sub := own("on a hidden plan")
+	if sub.PlanRank != plans["gold"].Rank {
+		t.Errorf("plan_rank %d on the hidden plan, want %d", sub.PlanRank, plans["gold"].Rank)
+	}
+	// The client's comparison with a listed plan is the server's.
+	bronze := ranks[plans["bronze"].Id]
+	want, err := domain.ChangeTiming(domain.Choice{Rank: v.Plan.Revision.Rank, Interval: domain.IntervalMonth}, domain.Choice{Rank: bronze, Interval: domain.IntervalMonth})
+	if err != nil || want != domain.TimingPeriodEnd || bronze >= sub.PlanRank {
+		t.Errorf("ChangeTiming to bronze = %s, %v; the client compares %d < %d", want, err, bronze, sub.PlanRank)
+	}
+}
+
 // TestSupporterSuspension cancels the subscription of a suspended account at the end of its
 // period, keeping its role until then (ADR-0072 §10).
 func TestSupporterSuspension(t *testing.T) {
