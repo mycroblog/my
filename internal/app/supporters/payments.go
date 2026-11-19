@@ -454,26 +454,17 @@ func (p *Payments) HandleNotice(ctx context.Context, n Notice) queue.Result {
 		subs = append(subs, n.Subscription)
 	}
 	if ch.Checkout != "" {
-		res, err := prov.GetCheckout(ctx, ch.Checkout)
+		sub, err := p.readCheckout(ctx, ch.Checkout)
 		if err != nil {
-			return p.providerFailure(ctx, "get checkout", err)
+			return p.jobFailure(ctx, "get checkout", err)
 		}
-		if _, err := p.d.Syncer.SyncCheckout(ctx, name, res); err != nil {
-			return queue.Retry(0, err)
-		}
-		if res.Subscription != "" {
-			subs = append(subs, res.Subscription)
+		if sub != "" {
+			subs = append(subs, sub)
 		}
 	}
 	if ch.OneTimeCheckout != "" {
-		if ot, ok := prov.(OneTimePayments); ok {
-			res, err := ot.GetOneTimeCheckout(ctx, ch.OneTimeCheckout)
-			if err != nil {
-				return p.providerFailure(ctx, "get one-time checkout", err)
-			}
-			if _, err := p.d.Syncer.SyncTip(ctx, name, res); err != nil {
-				return queue.Retry(0, err)
-			}
+		if err := p.readTip(ctx, ch.OneTimeCheckout); err != nil {
+			return p.jobFailure(ctx, "get one-time checkout", err)
 		}
 	}
 	slices.Sort(subs)
@@ -491,13 +482,50 @@ func (p *Payments) HandleNotice(ctx context.Context, n Notice) queue.Result {
 	}
 	if len(ch.Money) > 0 {
 		if err := p.recordMoney(ctx, ch.Money, func() bool { return true }); err != nil {
-			if errors.Is(err, errSyncer) {
-				return queue.Retry(0, err)
-			}
-			return p.providerFailure(ctx, "get money", err)
+			return p.jobFailure(ctx, "get money", err)
 		}
 	}
 	return queue.Done()
+}
+
+// jobFailure returns the result of a job whose step failed: a retry for an error of the
+// Syncer, providerFailure for one of the provider.
+func (p *Payments) jobFailure(ctx context.Context, what string, err error) queue.Result {
+	if errors.Is(err, errSyncer) {
+		return queue.Retry(0, err)
+	}
+	return p.providerFailure(ctx, what, err)
+}
+
+// readCheckout re-reads a subscription's checkout and hands it to the Syncer; it returns the
+// subscription a completed checkout created. An error of the Syncer wraps errSyncer.
+func (p *Payments) readCheckout(ctx context.Context, ref CheckoutRef) (SubscriptionRef, error) {
+	res, err := p.d.Provider.GetCheckout(ctx, ref)
+	if err != nil {
+		return "", err
+	}
+	if _, err := p.d.Syncer.SyncCheckout(ctx, p.d.Provider.Name(), res); err != nil {
+		return "", fmt.Errorf("%w: %w", errSyncer, err)
+	}
+	return res.Subscription, nil
+}
+
+// readTip re-reads a one-time checkout and hands it to the record of the tips (SyncTip,
+// ADR-0162 §14), never to SyncCheckout; on a provider without OneTimePayments it does nothing.
+// An error of the Syncer wraps errSyncer.
+func (p *Payments) readTip(ctx context.Context, ref CheckoutRef) error {
+	ot, ok := p.d.Provider.(OneTimePayments)
+	if !ok {
+		return nil
+	}
+	res, err := ot.GetOneTimeCheckout(ctx, ref)
+	if err != nil {
+		return err
+	}
+	if _, err := p.d.Syncer.SyncTip(ctx, p.d.Provider.Name(), res); err != nil {
+		return fmt.Errorf("%w: %w", errSyncer, err)
+	}
+	return nil
 }
 
 // errSyncer marks an error of the Syncer, which the jobs retry.

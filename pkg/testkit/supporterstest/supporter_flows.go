@@ -27,10 +27,12 @@ import (
 
 // SupporterHarness is what SupporterRepositoryContract and SupporterFlows need from a database
 // adapter: the harness of the identity and account repositories, the supporters repository, and
-// a PaymentWorld for the provider's side.
+// a PaymentWorld for the provider's side. Payments, the payment records, is what the flows of the
+// reconciliation need; they skip without it.
 type SupporterHarness struct {
 	identitytest.AccountHarness
 	Supporters supporters.Repository
+	Payments   supporters.PaymentRepository
 	NewWorld   func(o PaymentWorldOptions) PaymentWorld
 }
 
@@ -104,6 +106,8 @@ func SupporterFlows(t *testing.T, newHarness SupporterFactory) {
 		{"LimitsTheStartsOfTips", supporterTipLimits},
 		{"ErasesTheTipsOfAnAccount", supporterTipErasure},
 		{"RebuildsTheOpenTips", supporterTipRebuild},
+		{"ReconcilesATipAndASubscriptionInOneWindow", supporterTipReconciled},
+		{"SkipsACheckoutTheProviderDoesNotHave", supporterReconcileSkipsMissing},
 	}
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) { tc.run(t, newSupporterEnv(t, newHarness)) })
