@@ -336,15 +336,20 @@ func (s *Service) rejoin(ctx context.Context, p Participant) (Joined, error) {
 }
 
 // LeaveInput is the choice of a host who leaves a room with participants (ADR-0100 §6): the
-// next host, an eligible participant, or ending the room.
+// next host, an eligible participant, or ending the room. Session, when set, is the session
+// that leaves: the leave of a session that no longer holds the account's place does nothing.
 type LeaveInput struct {
 	NextHostID string
 	End        bool
+	Session    string
 }
 
 // Leave takes accountID out of a room (left). The host of a room with other participants
 // chooses the next host among the eligible participants or ends the room
-// (ErrHostMustChoose, ErrInvalidNextHost); a room that nobody is left in ends (empty).
+// (ErrHostMustChoose, ErrInvalidNextHost); a room that nobody is left in ends (empty). With
+// in.Session, a leave whose session is not the current one of the account's participation in
+// the room (another device joined since, or it is gone) succeeds and changes nothing, so that
+// a stale tab does not take out a newer session.
 func (s *Service) Leave(ctx context.Context, accountID, roomID string, in LeaveInput) error {
 	if err := s.enabled(); err != nil {
 		return err
@@ -366,11 +371,17 @@ func (s *Service) Leave(ctx context.Context, accountID, roomID string, in LeaveI
 		}
 	}
 	if me == nil {
+		if in.Session != "" {
+			return nil
+		}
 		return ErrNotFound
 	}
 	session, err := s.d.Heartbeats.current(ctx, me.ParticipationID)
 	if err != nil {
 		return err
+	}
+	if in.Session != "" && in.Session != session {
+		return nil
 	}
 	host := v.Head.HostAccountID == accountID
 	var next *Participant

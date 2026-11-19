@@ -19351,6 +19351,9 @@ type ListVoiceInvitationsParams struct {
 
 // LeaveVoiceRoomParams defines parameters for LeaveVoiceRoom.
 type LeaveVoiceRoomParams struct {
+	// Session The `session` of the join that leaves.
+	Session *string `form:"session,omitempty" json:"session,omitempty"`
+
 	// NextHostId The participant who becomes the host when the host leaves.
 	NextHostId *Id `form:"next_host_id,omitempty" json:"next_host_id,omitempty"`
 
@@ -29303,7 +29306,9 @@ type ClientInterface interface {
 	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-	// ends when nobody is left in it.
+	// ends when nobody is left in it. With `session`, only that session leaves: a session that no
+	// longer holds the user's place in the room (another device joined since) changes nothing,
+	// and the answer is a 204.
 	//
 	// Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
 	LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error)
@@ -42769,7 +42774,9 @@ func (c *Client) GrantVoiceSpeaking(ctx context.Context, id VoiceRoomId, account
 // next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 // 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 // `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-// ends when nobody is left in it.
+// ends when nobody is left in it. With `session`, only that session leaves: a session that no
+// longer holds the user's place in the room (another device joined since) changes nothing,
+// and the answer is a 204.
 //
 // Corresponds with DELETE /voice/rooms/{id}/participation (the `LeaveVoiceRoom` operationId).
 func (c *Client) LeaveVoiceRoom(ctx context.Context, id VoiceRoomId, params *LeaveVoiceRoomParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -63068,6 +63075,18 @@ func NewLeaveVoiceRoomRequest(server string, id VoiceRoomId, params *LeaveVoiceR
 		// per the OpenAPI spec (e.g. "color=blue,black,brown").
 		var rawQueryFragments []string
 
+		if params.Session != nil {
+
+			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "session", *params.Session, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			} else {
+				for _, qp := range strings.Split(queryFrag, "&") {
+					rawQueryFragments = append(rawQueryFragments, qp)
+				}
+			}
+
+		}
+
 		if params.NextHostId != nil {
 
 			if queryFrag, err := runtime.StyleParamWithOptions("form", true, "next_host_id", *params.NextHostId, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: "uuid"}); err != nil {
@@ -71449,7 +71468,9 @@ type ClientWithResponsesInterface interface {
 	// next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 	// 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 	// `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-	// ends when nobody is left in it.
+	// ends when nobody is left in it. With `session`, only that session leaves: a session that no
+	// longer holds the user's place in the room (another device joined since) changes nothing,
+	// and the answer is a 204.
 	//
 	// Returns a wrapper object for the known response body format(s).
 	//
@@ -113356,7 +113377,9 @@ func (c *ClientWithResponses) GrantVoiceSpeakingWithResponse(ctx context.Context
 // next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
 // 409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
 // `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-// ends when nobody is left in it.
+// ends when nobody is left in it. With `session`, only that session leaves: a session that no
+// longer holds the user's place in the room (another device joined since) changes nothing,
+// and the answer is a 204.
 //
 // Returns a wrapper object for the known response body format(s).
 //

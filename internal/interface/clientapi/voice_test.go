@@ -152,8 +152,12 @@ func TestVoiceRooms(t *testing.T) {
 		t.Errorf("join = %d", res.StatusCode)
 	}
 	if res := e.send(t, http.MethodDelete, "/voice/rooms/"+voiceRoomID+"/participation?next_host_id="+bobAccountID, "voice", ""); res.StatusCode != http.StatusNoContent ||
-		f.leaves[0].NextHostID != bobAccountID || f.leaves[0].End {
+		f.leaves[0].NextHostID != bobAccountID || f.leaves[0].End || f.leaves[0].Session != "" {
 		t.Errorf("leave = %d, %+v", res.StatusCode, f.leaves)
+	}
+	if res := e.send(t, http.MethodDelete, "/voice/rooms/"+voiceRoomID+"/participation?session=session-1", "voice", ""); res.StatusCode != http.StatusNoContent ||
+		len(f.leaves) != 2 || f.leaves[1].Session != "session-1" {
+		t.Errorf("leave of a session = %d, %+v", res.StatusCode, f.leaves)
 	}
 	if res := e.sendJSON(t, http.MethodPost, "/voice/rooms/"+voiceRoomID+"/heartbeat", "voice", `{"session":"session-1"}`); res.StatusCode != http.StatusNoContent || f.beats[0] != "session-1" {
 		t.Errorf("heartbeat = %d", res.StatusCode)

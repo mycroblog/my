@@ -11,6 +11,7 @@ import (
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"testing"
 	"time"
@@ -198,6 +199,59 @@ func TestVoiceRoomsThroughAPI(t *testing.T) {
 	if code := postWebhook(t, app.Handler(), "", []byte("{}")); code != http.StatusNotFound {
 		t.Errorf("LiveKit webhook with voice = p2p = %d, want 404", code)
 	}
+}
+
+// TestVoiceLeaveWithSession drives the leave of a session (ADR-0101 §6): a stale tab's leave,
+// whose session another device replaced, answers 204 and leaves the newer session in the room;
+// the leave of the current session, and a leave without one, take the user out.
+func TestVoiceLeaveWithSession(t *testing.T) {
+	t.Parallel()
+	cfg := loadConfig(t, map[string]string{
+		"MY_DATABASE_URL": newDatabase(t, true), "MY_WEB_ORIGIN": webOrigin, "MY_VOICE": "p2p", "MY_VOICE_STUN_URLS": "stun:stun.example.org",
+	})
+	app, err := platform.NewApp(t.Context(), cfg, platform.AppOptions{Logger: slog.New(slog.DiscardHandler)})
+	if err != nil {
+		t.Fatalf("NewApp: %v", err)
+	}
+	t.Cleanup(func() { _ = app.Close() })
+	e := &accountsEnv{t: t, app: app, h: app.Handler(), spec: apitest.Load(t)}
+	alice := e.user("alice")
+	r, err := app.Identity.RegisterLocalUser(t.Context(), identity.RegisterInput{Username: "bob", Password: "correct horse battery staple"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	bob := issueTokens(t, app, r.User.ID, "").AccessToken
+
+	var opened clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, "/voice/rooms", alice.token, map[string]any{"name": "Talk"}, &opened), http.StatusCreated, "open")
+	room := "/voice/rooms/" + opened.Room.Id
+	count := func(what string, want int) {
+		t.Helper()
+		var got clientapi.VoiceRoom
+		e.want(e.do(http.MethodGet, room, alice.token, nil, &got), http.StatusOK, what)
+		if got.ParticipantsCount != want {
+			t.Errorf("%s: participants = %d, want %d", what, got.ParticipantsCount, want)
+		}
+	}
+	var laptop, phone clientapi.VoiceRoomJoin
+	e.want(e.do(http.MethodPost, room+"/participation", bob, nil, &laptop), http.StatusOK, "join on the laptop")
+	e.want(e.do(http.MethodPost, room+"/participation", bob, nil, &phone), http.StatusOK, "join on the phone")
+	if laptop.Session == phone.Session {
+		t.Fatalf("the phone's session = the laptop's %q", phone.Session)
+	}
+
+	e.want(e.do(http.MethodDelete, room+"/participation?session="+url.QueryEscape(laptop.Session), bob, nil, nil), http.StatusNoContent, "leave of the laptop")
+	count("after the laptop's leave", 2)
+	e.want(e.do(http.MethodPost, room+"/heartbeat", bob, map[string]any{"session": phone.Session}, nil), http.StatusNoContent, "heartbeat of the phone")
+
+	e.want(e.do(http.MethodDelete, room+"/participation?session="+url.QueryEscape(phone.Session), bob, nil, nil), http.StatusNoContent, "leave of the phone")
+	count("after the phone's leave", 1)
+	e.want(e.do(http.MethodDelete, room+"/participation?session="+url.QueryEscape(phone.Session), bob, nil, nil), http.StatusNoContent, "leave of the phone again")
+
+	e.want(e.do(http.MethodPost, room+"/participation", bob, nil, nil), http.StatusOK, "join again")
+	e.want(e.do(http.MethodDelete, room+"/participation", bob, nil, nil), http.StatusNoContent, "leave without a session")
+	count("after the leave without a session", 1)
+	e.want(e.do(http.MethodDelete, room+"/participation", bob, nil, nil), http.StatusNotFound, "leave without a session, out of the room")
 }
 
 // postWebhook posts body to the endpoint of LiveKit's events with the Authorization header auth
