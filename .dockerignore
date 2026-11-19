@@ -25,6 +25,8 @@ internal/interface/web/dist/*
 !package.json
 !bun.lock
 !bunfig.toml
+# The patches of dependencies that bun install applies (patchedDependencies of package.json).
+!patches/
 !tsconfig.base.json
 !tools/i18n/
 !web/
