@@ -92,7 +92,6 @@ const aBeat = (calls: FakeCalls) => calls.clock.advance(heartbeatInterval);
 test("a call is the same call, with the same audio, stream and heartbeat, on every screen, at either width and with the app unmounted", async () => {
   const width = changingWidth();
   const calls = callsOnFakes();
-  const endBefore = lastCallEnd();
   const { app, call, room } = await inACall(calls);
   const { audio, stream, heartbeat, session } = call;
   const beats = app.fake.script("POST /voice/rooms/{id}/heartbeat");
@@ -163,7 +162,8 @@ test("a call is the same call, with the same audio, stream and heartbeat, on eve
   expect(state("unmounted")).toEqual(same("unmounted", false));
 
   expect(beats.seen.map((beat) => beat.body)).toEqual(Array.from({ length: 7 }, () => ({ session })));
-  expect(lastCallEnd()).toEqual(endBefore);
+  // The call has not ended: a join forgets the end of the call before it, whatever test left one.
+  expect(lastCallEnd()).toBeNull();
 });
 
 /** The ways a call is ended for the reader, each with what the end says. */

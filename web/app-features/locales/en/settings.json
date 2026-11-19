@@ -99,6 +99,14 @@
     "defaultMessage": "{count, plural, one {# item to check} other {# items to check}}",
     "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
   },
+  "settings.entry.voice": {
+    "defaultMessage": "Voice chat",
+    "description": "An entry of the settings menu, and the title of its page, which lists the voice chat rooms the reader hosted."
+  },
+  "settings.entry.voice.hint": {
+    "defaultMessage": "The rooms you hosted",
+    "description": "The line under Voice chat in the settings menu."
+  },
   "settings.sign_out": {
     "defaultMessage": "Sign out…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
@@ -3374,5 +3382,33 @@
   "settings.invites.missing.all": {
     "defaultMessage": "See your invites",
     "description": "The link after settings.invites.missing that opens the Invites page of the settings."
+  },
+  "settings.voice.hosted": {
+    "defaultMessage": "Rooms you hosted",
+    "description": "The heading of the list of the voice chat rooms the reader hosted, on the Voice chat page of the settings; also the list's name."
+  },
+  "settings.voice.hosted.about": {
+    "defaultMessage": "The rooms you opened or took over, newest first.",
+    "description": "Under the heading of the rooms the reader hosted, in the settings."
+  },
+  "settings.voice.none": {
+    "defaultMessage": "You have not hosted a room yet. Rooms you open show here.",
+    "description": "In place of the rooms the reader hosted, in the settings, while there are none."
+  },
+  "settings.voice.ended": {
+    "defaultMessage": "{reason, select, host {The host ended it} empty {Ended when everyone left} host_disconnected {Ended when the host lost the connection} host_ineligible {Ended when the host could no longer open rooms} moderator {A moderator ended it} time_limit {Ended at its time limit} disabled {Ended when voice chat was turned off} host_absent {Ended when the host did not come} other {Ended when no one came}}",
+    "description": "Where a voice chat room the reader hosted stands, in the settings, once it ended: reason is why (host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled, host_absent, or other: unattended)."
+  },
+  "settings.voice.opened_at": {
+    "defaultMessage": "Opened {date}",
+    "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it opened, its day and hour."
+  },
+  "settings.voice.ended_at": {
+    "defaultMessage": "Ended {date}",
+    "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it ended, its day and hour."
+  },
+  "settings.voice.failed_more": {
+    "defaultMessage": "More rooms could not be loaded.",
+    "description": "Under the rooms the reader hosted, in the settings, when more could not be loaded, beside a button to try again."
   }
 }

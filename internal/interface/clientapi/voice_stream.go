@@ -261,7 +261,7 @@ func (vs *voiceStream) send(ctx context.Context, state appvoice.StreamState) (do
 	if state.End != "" {
 		return true, vs.event(string(state.End), VoiceStreamEnd{Reason: VoiceStreamEndReason(state.Reason)})
 	}
-	rooms, err := vs.s.newVoiceRoomsMarked(ctx, []appvoice.RoomView{state.Room}, state.Blocked)
+	rooms, err := vs.s.newVoiceRoomsMarked(ctx, []appvoice.RoomView{state.Room}, &voiceMarks{blocked: state.Blocked, canSpeak: state.CanSpeak})
 	if err != nil {
 		return false, err
 	}

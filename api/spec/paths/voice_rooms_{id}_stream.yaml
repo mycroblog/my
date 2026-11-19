@@ -22,9 +22,9 @@ get:
     alive: keep sending its heartbeats. Events:
 
     - `state`: the room and its participants changed. `data` is a `VoiceRoom`; each
-      participant has its `session` while it is alive, and `blocked` marks the participants in
-      a block relation with the user. At most one `state` arrives each second, with the newest
-      room.
+      participant has its `session` while it is alive, `blocked` marks the participants in a
+      block relation with the user, and `can_speak` is the user's. At most one `state` arrives
+      each second, with the newest room.
     - `mic`: a participant turned the microphone on or off. `data` is a `VoiceStreamMic`.
     - `reaction`: a participant reacted. `data` is a `VoiceStreamReaction`. The reactions of the
       participants in a block relation with the user do not arrive.

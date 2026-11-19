@@ -20,6 +20,11 @@ func (f *fakeVoiceRooms) BlockedAmong(context.Context, string, []string) (map[st
 	return map[string]bool{}, nil
 }
 
+func (f *fakeVoiceRooms) CanSpeak(_ context.Context, accountID string, _ appvoice.RoomView) (bool, error) {
+	f.canSpeakOf = append(f.canSpeakOf, accountID)
+	return f.canSpeak, nil
+}
+
 func (f *fakeVoiceRooms) OpenStream(context.Context, string, string, string) (appvoice.RoomStream, error) {
 	return appvoice.RoomStream{}, f.err
 }

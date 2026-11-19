@@ -471,6 +471,59 @@ func (s *Service) facts(ctx context.Context, v RoomView, viewer voice.Viewer, m 
 	return f, nil
 }
 
+// CanSpeak reports whether accountID may become a speaker in a room now without asking
+// (voice.CanSpeakFreely, ADR-0100 §4): always for its host, and for a participant by the facts
+// of the rule, its explicit permission included; never for anyone else. It marks the room as
+// the API presents it to accountID.
+func (s *Service) CanSpeak(ctx context.Context, accountID string, v RoomView) (bool, error) {
+	if err := s.enabled(); err != nil {
+		return false, err
+	}
+	return s.canSpeak(ctx, accountID, v)
+}
+
+// canSpeak is CanSpeak, reading only the facts that voice.CanSpeakFreely decides by.
+func (s *Service) canSpeak(ctx context.Context, accountID string, v RoomView) (bool, error) {
+	room := policyRoom(v)
+	if accountID == "" || room.Ended {
+		return false, nil
+	}
+	if accountID == room.HostAccountID {
+		return true, nil
+	}
+	i := slices.IndexFunc(v.Participants, func(p Participant) bool { return p.AccountID == accountID })
+	if i < 0 {
+		return false, nil
+	}
+	if v.Participants[i].Cohost() {
+		return true, nil
+	}
+	viewer, m, err := s.viewer(ctx, accountID)
+	if err != nil {
+		return false, err
+	}
+	f := voice.Facts{Participant: true, Limited: m.Limited}
+	if f.SpeakGranted, err = s.d.Repository.SpeakGranted(ctx, nil, v.ID, accountID); err != nil {
+		return false, err
+	}
+	if !f.SpeakGranted && !f.Limited {
+		host := room.HostAccountID
+		switch room.Speakers {
+		case voice.SpeakersFollowers, voice.SpeakersMutuals:
+			if f.FollowsHost, err = s.d.Relations.Follows(ctx, accountID, host); err != nil {
+				return false, err
+			}
+		}
+		switch room.Speakers {
+		case voice.SpeakersFollowing, voice.SpeakersMutuals:
+			if f.FollowedByHost, err = s.d.Relations.Follows(ctx, host, accountID); err != nil {
+				return false, err
+			}
+		}
+	}
+	return voice.CanSpeakFreely(room, viewer, f), nil
+}
+
 // memberBatch is a Members that reads what seeing a room takes of many accounts at once, as the
 // composition root's does.
 type memberBatch interface {

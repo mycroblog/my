@@ -33,6 +33,8 @@ import {
   CallEnds,
   ComposeLayer,
   leaveCall,
+  leaveNeedsChoice,
+  askLeave,
   muteCall,
   PostActions,
   resumeCallPlayback,
@@ -207,7 +209,7 @@ function PlaceList({ items, pathname }: { items: readonly Place[]; pathname: str
  * host muted the reader), the microphone, and leaving. While the browser holds the call's sound back, the bar's Hear
  * the room plays it, as does the reader's next tap or key anywhere on the page.
  */
-function CallSlot({ call }: { call: Call }) {
+function CallSlot({ call, onOpen }: { call: Call; onOpen: (href: string) => void }) {
   const t = useStrings();
   const count = useHeadcount(call.participants);
   const mutedBy = useVoiceCallState()?.mutedBy ?? null;
@@ -252,7 +254,16 @@ function CallSlot({ call }: { call: Call }) {
             }
       }
       leaveLabel={t("app.call_leave")}
-      onLeave={leaveCall}
+      onLeave={() => {
+        // A host with others in the room chooses on its page who hosts next, or ends it.
+        const room = leaveNeedsChoice();
+        if (room === null) {
+          leaveCall();
+          return;
+        }
+        askLeave(room);
+        onOpen(voiceRoomPath(room));
+      }}
     />
   );
 }
@@ -353,7 +364,8 @@ export function Shell({
   const { tabs, side, own, rights: staff } = placesFor(signedIn, instance, rights);
   const around = aroundPlacesFor(signedIn, instance, signInPath);
   // The room's own page holds its controls: the bar would only repeat them, with a second Leave.
-  const callBar = call === null || pathname === voiceRoomPath(call.roomId) ? undefined : <CallSlot call={call} />;
+  const callBar =
+    call === null || pathname === voiceRoomPath(call.roomId) ? undefined : <CallSlot call={call} onOpen={go} />;
   const footer = <ServerFooter instance={instance} />;
   return (
     <MenuSheet sheet={narrow}>

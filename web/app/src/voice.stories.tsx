@@ -8,6 +8,10 @@
 // the host ended the room), on its page and in the toast of another screen; a room that ended and one the reader does
 // not see; the page for a visitor, with and without the room's summary, and of a room that ended; the voice chat off;
 // and the ways in: a hashtag's page with its rooms, the profile of a room's host, and the notifications of a room.
+// And for the host: the form that opens a room (its address for a reader who may not, and the server's refusals),
+// the room just opened, a room hosted with others in it, a hand let speak, a co-host named, the room handed over, its
+// settings and invitations (and their addresses for a reader who does not host it), and the rooms one hosted in the
+// settings.
 
 import { PreviewStill } from "@my/design-system/preview";
 import type { Meta, StoryObj } from "@storybook/react-vite";
@@ -126,3 +130,62 @@ export const HashtagRooms: Story = { parameters: screen({ at: "/tags/coffee" }) 
 export const ProfileEntry: Story = { parameters: screen({ at: "/@sam" }) };
 /** The notifications: a room's start and an invitation lead to the room. */
 export const Notifications: Story = { parameters: screen({ at: "/notifications" }) };
+
+// ---- The host's side (ADR-0100 §3, §5, §6, §7, §9, §13; FR-922, FR-923, FR-925, FR-926, FR-927, FR-929) ----------
+
+/** The rooms of a server where only some may open rooms: no way to open one for this reader. */
+export const RoomsCannotOpen: Story = {
+  parameters: screen({ at: "/voice", server: { voiceStarters: "permitted" } }),
+};
+/**
+ * The form that opens a room: its name, icon, description, hashtags, who sees it and who speaks, and the start post,
+ * checked, whose draft holds the room's name as it is written.
+ */
+export const OpenRoom: Story = { parameters: screen({ at: "/voice/new" }) };
+/** The form's address for a reader who may not open rooms. */
+export const OpenRoomNotAllowed: Story = {
+  parameters: screen({ at: "/voice/new", server: { voiceStarters: "permitted" } }),
+};
+/** The room the reader just opened, alone on its stage, its menu in its head. */
+export const Opened: Story = {
+  parameters: screen({ at: "/voice/{room:opened}", joined: { room: "opened" } }),
+};
+/**
+ * The reader hosts a room with others in it: a co-host and a speaker on the stage, a raised hand among the
+ * listeners; each tile but the reader's opens what the host may do with them.
+ */
+export const Hosting: Story = { parameters: screen({ at: "/voice/{room:2}", joined: { room: 2 } }) };
+/** The host let the raised hand speak: the hand is down. */
+export const HostGranted: Story = {
+  parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["granted"] } }),
+};
+/** The host named a listener co-host. */
+export const HostCohost: Story = {
+  parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["cohost"] } }),
+};
+/** The host handed the room over: the reader stays in it, another hosts it, and the room's menu is gone. */
+export const HandedOver: Story = {
+  parameters: screen({ at: "/voice/{room:2}", joined: { room: 2, steps: ["handed-over"] } }),
+};
+/** The settings of the room the reader hosts, as the room has them. */
+export const RoomSettings: Story = { parameters: screen({ at: "/voice/{room:2}/settings" }) };
+/** The settings' address of a room the reader does not host. */
+export const RoomSettingsNotHost: Story = { parameters: screen({ at: "/voice/{room:0}/settings" }) };
+/** The invitations of the room the reader hosts, none yet, with the search of who to invite. */
+export const Invitations: Story = {
+  parameters: screen({ at: "/voice/{room:2}/invitations", joined: { room: 2 } }),
+};
+/** Two invitations, a speaker's and a listener's, each with Revoke. */
+export const Invited: Story = {
+  parameters: screen({ at: "/voice/{room:2}/invitations", joined: { room: 2, steps: ["invited"] } }),
+};
+/** The invitations' address of a room the reader neither hosts nor co-hosts. */
+export const InvitationsNotHost: Story = {
+  parameters: screen({ at: "/voice/{room:0}/invitations", joined: { room: 0 } }),
+};
+/** The rooms the reader hosted, in the settings: one open now, two that ended and why. */
+export const History: Story = { parameters: screen({ at: "/settings/voice", joined: { room: "opened" } }) };
+/** None hosted yet. */
+export const HistoryEmpty: Story = { parameters: screen({ at: "/settings/voice", state: "empty" }) };
+export const HistoryLoading: Story = { parameters: screen({ at: "/settings/voice", state: "loading" }) };
+export const HistoryError: Story = { parameters: screen({ at: "/settings/voice", state: "error" }) };

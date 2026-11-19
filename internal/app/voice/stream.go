@@ -176,6 +176,9 @@ type StreamState struct {
 	// Blocked holds the participants in a block relation, either way, with the viewer
 	// (ADR-0100 §10).
 	Blocked map[string]bool
+	// CanSpeak reports whether the viewer may become a speaker now without asking (CanSpeak),
+	// read for each stream like Blocked.
+	CanSpeak bool
 }
 
 // StreamState reads the room of st as its viewer sees it, from a read of the room that started
@@ -232,7 +235,11 @@ func (s *Service) StreamState(ctx context.Context, st RoomStream, notBefore time
 			sessions[p.AccountID] = snap.live.session[p.ParticipationID]
 		}
 	}
-	return StreamState{Room: v, Sessions: sessions, Blocked: blocked}, nil
+	canSpeak, err := s.canSpeak(ctx, st.AccountID, v)
+	if err != nil {
+		return StreamState{}, err
+	}
+	return StreamState{Room: v, Sessions: sessions, Blocked: blocked, CanSpeak: canSpeak}, nil
 }
 
 // BlockedAmong returns which of the accounts ids are in a block relation, either way, with

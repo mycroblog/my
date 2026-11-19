@@ -4,9 +4,9 @@
 // removed them, they joined on another device, the room ended) and the shell says it on every other screen. What the
 // reader did themselves (leaving, joining another room, signing out, leaving the page) says nothing. Kept until the
 // reader joins a room again or closes what said it; once the room's page said it, the shell says it no more.
-import type { AppData } from "@my/app-data";
+import type { AppData, VoiceRoomSettings } from "@my/app-data";
 import { useSyncExternalStore } from "react";
-import { joinCall } from "./calls";
+import { joinCall, openCall } from "./calls";
 import type { CallEnd, VoiceCall } from "./voice-call";
 
 /**
@@ -42,7 +42,17 @@ function toldOf(end: CallEnd): boolean {
  */
 export async function joinRoom(data: AppData, roomId: string): Promise<VoiceCall> {
   if (last !== null) changed(null);
-  const call = await joinCall(data, roomId);
+  return watch(await joinCall(data, roomId));
+}
+
+/** Opens a room with `settings` from the reader's gesture (`openCall`), and keeps why that call ends, as `joinRoom`. */
+export async function openRoom(data: AppData, settings: VoiceRoomSettings): Promise<VoiceCall> {
+  if (last !== null) changed(null);
+  return watch(await openCall(data, settings));
+}
+
+/** Keeps why `call` ends with its room, once. */
+function watch(call: VoiceCall): VoiceCall {
   if (!watched.has(call)) {
     watched.add(call);
     let name = call.getState().room.name;

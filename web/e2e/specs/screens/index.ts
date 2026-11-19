@@ -39,7 +39,7 @@ export { signInAs, SignIn, type Passkey } from "./sign-in";
 export { SignUp } from "./sign-up";
 export { Thread } from "./thread";
 export { VerifyEmail } from "./verify";
-export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoom } from "./voice";
+export { connectedPeers, keepPeerConnections, openPeers, receivedAudio, VoiceRoom, VoiceRoomOpen } from "./voice";
 export { Welcome } from "./welcome";
 export { Notice } from "./notice";
 export { bookmarks, homeTimeline, localTimeline, Post, Timeline } from "./timeline";

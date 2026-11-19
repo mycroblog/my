@@ -69,6 +69,18 @@ export const voiceRoomsPath = "/voice";
 /** The address of a voice chat room's page (ADR-0100 §9). */
 export const voiceRoomPath = (id: string) => `/voice/${encodeURIComponent(id)}`;
 
+/** The address of the form that opens a voice chat room. */
+export const voiceOpenPath = "/voice/new";
+
+/** The address of the settings of an open voice chat room, which its host changes. */
+export const voiceRoomSettingsPath = (id: string) => `${voiceRoomPath(id)}/settings`;
+
+/** The address of the invitations of an open voice chat room, for its host and co-hosts. */
+export const voiceInvitationsPath = (id: string) => `${voiceRoomPath(id)}/invitations`;
+
+/** The address of the settings' screen of the voice chat: the rooms the reader hosted (ADR-0100 §13). */
+export const voiceHistoryPath = "/settings/voice";
+
 /** The address of the held-back notifications of the account of `id`. */
 export const heldOfPath = (id: string) => `${heldPath}/${id}`;
 

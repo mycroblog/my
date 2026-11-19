@@ -14,6 +14,9 @@
 //   through is said under the host: connecting, the connection lost, a host who muted the reader, a microphone the
 //   browser refused, the sound the browser holds back (with the press that plays it), a press that did not finish, a
 //   leave the server refused to a host. The shell shows no call bar on this page: the room's controls are its own.
+// - For its host and co-hosts (host.tsx): a participant's tile opens what they may do with them, the room's menu in
+//   its head leads to its settings and invitations and ends it, and the host's Leave asks who hosts next or to end it
+//   while others are in the room.
 // - A participant the reader blocks, or who blocks the reader, is shown and marked, never hidden.
 // - After the call: why the reader is no longer in it, when it was not their own doing (room-end.ts), over the room as
 //   it is now, or over that it ended.
@@ -25,19 +28,18 @@
 // element of it each time); the lines shown say it again for the eye, and are no live region of their own. After a
 // join the focus goes to the room's controls, and after a leave to Join, or to the way back where the room is gone.
 
-import { nameOf, useHeadcount, roomIcon } from "@my/app-components";
+import { nameOf, roomIcon, useHeadcount, voiceInvitationsPath, voiceRoomSettingsPath } from "@my/app-components";
 import {
   instanceQuery,
   isVoiceLeaveRefused,
   useCustomEmojis,
   useInstance,
-  useRelationship,
   useViewer,
   useVoiceRoom,
+  useVoiceRoomEndedHere,
   useVoiceRoomSummary,
   voiceRoomQuery,
   type AppData,
-  type Relationship,
   type VoiceRoom,
   type VoiceRoomParticipant,
   type VoiceSelfOperation,
@@ -53,6 +55,7 @@ import {
   FeedNotice,
   FrameFoot,
   GroupHeading,
+  ModalPresence,
   ParticipantGrid,
   ParticipantTile,
   ReactionFlow,
@@ -77,6 +80,18 @@ import { usePickerData, rememberReaction } from "../emoji/picker";
 import { emojiStrings } from "../emoji/strings";
 import { stringsIn } from "../locale";
 import { CallUnavailableError, useVoiceCall, useVoiceCallState } from "./calls";
+import {
+  EndRoomDialog,
+  HostAskDialog,
+  hostsOthers,
+  LeaveDialog,
+  opKey,
+  ParticipantMenu,
+  RoomMenu,
+  type AskedOperation,
+  type HostFailure,
+} from "./host";
+import { clearLeaveAsk, useLeaveAsk } from "./leave-ask";
 import { joinRoom, sawRoomEnd, useRoomEnd, type RoomEnd } from "./room-end";
 import type { VoiceCall, VoiceCallState } from "./voice-call";
 
@@ -109,28 +124,6 @@ export function useVoiceOff(): boolean {
   return useInstance()?.voice_enabled === false;
 }
 
-/**
- * Whether the reader may become a speaker without asking (ADR-0100 §4 `CanSpeakFreely`), as far as the client knows:
- * the host and the co-hosts, everyone in a room of `everyone`, and by the reader's relationship with the host in a
- * room of `followers`, `following` and `mutuals`. The API says it of no one (VoiceRoom, VoiceRoomParticipant), so an
- * explicit grant is not seen here; the server decides, and what it refuses is said as it answers.
- */
-function maySpeak(room: VoiceRoom, self: VoiceRoomParticipant, host: Relationship | undefined): boolean {
-  if (self.hosting || self.cohosting) return true;
-  switch (room.speakers) {
-    case "everyone":
-      return true;
-    case "followers":
-      return host?.following === true;
-    case "following":
-      return host?.followed_by === true;
-    case "mutuals":
-      return host?.following === true && host.followed_by === true;
-    case "manual":
-      return false;
-  }
-}
-
 /** A reaction's emoji as it is drawn: a custom emoji of this server by its `:shortcode:`, else the Unicode emoji. */
 function useReactionEmoji(): (emoji: string) => ReactNode {
   const custom = useCustomEmojis();
@@ -152,10 +145,21 @@ function useFocusInto(place: RefObject<HTMLElement | null>, now: boolean): void 
   }, [place, now]);
 }
 
-/** What the call knows of the participants beyond the room: who talks, whose microphone is on, who the reader is. */
-type Live = { readonly state: VoiceCallState };
+/**
+ * What the call knows of the participants beyond the room: who talks, whose microphone is on, who the reader is; the
+ * call, which a host's operation goes through; and what says an operation that did not finish.
+ */
+type Live = {
+  readonly state: VoiceCallState;
+  readonly call?: VoiceCall | undefined;
+  readonly onHostFailed?: ((failure: HostFailure | null) => void) | undefined;
+  readonly onHostAsk?: ((op: AskedOperation, target: VoiceRoomParticipant) => void) | undefined;
+};
 
-/** The participants of `room`: the speakers on its stage, under the reactions while in the call, then the listeners. */
+/**
+ * The participants of `room`: the speakers on its stage, under the reactions while in the call, then the listeners;
+ * in the call, the tile of a participant the reader hosts or co-hosts for opens what they may do with them.
+ */
 function Participants({ room, live, t }: { room: VoiceRoom; live: Live | undefined; t: T }) {
   const state = live?.state;
   const viewer = useViewer();
@@ -171,18 +175,30 @@ function Participants({ room, live, t }: { room: VoiceRoom; live: Live | undefin
         (p.session !== undefined && state.talking.has(p.session)));
     const micOff =
       state !== undefined && p.role === "speaker" && (own ? !state.microphone : state.mics.get(p.account.id) !== true);
-    return (
-      <ParticipantTile
+    const shown = {
+      name: nameOf(p.account),
+      src: p.account.avatar?.small.url,
+      size,
+      self: own ? t("voice.self") : undefined,
+      role: p.hosting ? t("voice.role_host") : p.cohosting ? t("voice.role_cohost") : undefined,
+      speaking: talking ? t("voice.speaking") : undefined,
+      muted: micOff ? t("voice.mic_off") : undefined,
+      hand: p.hand_raised ? t("voice.hand") : undefined,
+      blocked: p.blocked ? t("voice.blocked") : undefined,
+    };
+    return live?.call === undefined || live.onHostFailed === undefined || live.onHostAsk === undefined ? (
+      <ParticipantTile key={p.account.id} {...shown} />
+    ) : (
+      <ParticipantMenu
         key={p.account.id}
-        name={nameOf(p.account)}
-        src={p.account.avatar?.small.url}
-        size={size}
-        self={own ? t("voice.self") : undefined}
-        role={p.hosting ? t("voice.role_host") : p.cohosting ? t("voice.role_cohost") : undefined}
-        speaking={talking ? t("voice.speaking") : undefined}
-        muted={micOff ? t("voice.mic_off") : undefined}
-        hand={p.hand_raised ? t("voice.hand") : undefined}
-        blocked={p.blocked ? t("voice.blocked") : undefined}
+        call={live.call}
+        room={room}
+        self={state?.self}
+        target={p}
+        tile={shown}
+        onAsk={live.onHostAsk}
+        onFailed={live.onHostFailed}
+        t={t}
       />
     );
   };
@@ -230,23 +246,38 @@ function Back({ onBack, t }: { onBack: () => void; t: T }) {
   return <BackButton onPress={onBack}>{t("voice.back")}</BackButton>;
 }
 
-/** The head of a room's page: back to the rooms, then its title. */
-function Head({ room, onBack, t }: { room: VoiceRoom; onBack: () => void; t: T }) {
+/** The head of a room's page: back to the rooms, then its title, and the host's menu of the room at its end. */
+function Head({ room, onBack, menu, t }: { room: VoiceRoom; onBack: () => void; menu?: ReactNode; t: T }) {
   const count = useHeadcount(room.participants_count);
+  const title = <RoomTitle icon={roomIcon(room.icon)} name={room.name} count={count} />;
   return (
     <ScreenHead back={<Back onBack={onBack} t={t} />}>
-      <RoomTitle icon={roomIcon(room.icon)} name={room.name} count={count} />
+      {menu === undefined || menu === null ? (
+        title
+      ) : (
+        <Row align="start" gap="entry-caption">
+          <Box grow>{title}</Box>
+          <Box rigid>{menu}</Box>
+        </Row>
+      )}
     </ScreenHead>
   );
 }
 
-/** Who hosts the room, and its description as the host wrote it. */
+/**
+ * Who hosts the room, while the host is not on its stage (whose tile says Host), and its description as the host
+ * wrote it.
+ */
 function About({ room, t }: { room: VoiceRoom; t: T }) {
+  const hostShown = room.participants.some((p) => p.hosting);
+  if (hostShown && room.description === "") return null;
   return (
     <Stack gap="hair">
-      <Box as="p" tone="muted" dir="auto">
-        {t("voice.hosted_by", { host: nameOf(room.host) })}
-      </Box>
+      {!hostShown && (
+        <Box as="p" tone="muted" dir="auto">
+          {t("voice.hosted_by", { host: nameOf(room.host) })}
+        </Box>
+      )}
       {room.description !== "" && (
         <Box as="p" keeps="lines" dir="auto">
           {room.description}
@@ -489,8 +520,17 @@ function callStatus(state: VoiceCallState, t: T): string[] {
   return said;
 }
 
+/** A dialog of the host's over the room, and whom it is about. */
+type Asking =
+  { readonly kind: "leave" | "end" } | { readonly kind: AskedOperation; readonly target: VoiceRoomParticipant };
+
+/** The sentence of a host's operation that did not finish. */
+function failedWords(failure: HostFailure, t: T): string {
+  return t("voice.host.failed", { op: opKey(failure.op), name: failure.name, cause: failure.cause });
+}
+
 /** A press of the reader's in the room that did not finish, as `voice.act_failed` names it. */
-type FailedAction = "speak" | "listen" | "raise" | "lower" | "leave" | "reaction";
+type FailedAction = "speak" | "listen" | "raise" | "lower" | "leave" | "reaction" | "end";
 
 const failedOf: Readonly<Record<VoiceSelfOperation, FailedAction>> = {
   speak: "speak",
@@ -522,10 +562,14 @@ function InRoom({
   t: T;
 }) {
   const { room, self } = state;
-  const host = useRelationship(self === undefined || self.hosting ? undefined : room.host.id);
   // Which of the reader's presses failed last, as the line names it.
   const [failed, setFailed] = useState<FailedAction | null>(null);
-  const [mustChoose, setMustChoose] = useState(false);
+  const [hostFailed, setHostFailed] = useState<HostFailure | null>(null);
+  // The host's dialogs: who hosts next as they leave, ending the room, removing someone or handing the room over. The
+  // call's bar of another screen asks for the first as it leads here (leave-ask.ts).
+  const [asking, setAsking] = useState<Asking | null>(null);
+  const askedFromBar = useLeaveAsk(room.id);
+  const leaving = asking?.kind === "leave" || (askedFromBar && asking === null);
   const controls = useRef<HTMLDivElement>(null);
   const speaker = self?.role === "speaker";
   const connecting = state.phase === "connecting" || self === undefined;
@@ -541,14 +585,28 @@ function InRoom({
       fail(failedOf[operation]);
     });
   };
+  const hostFail = (failure: HostFailure | null) => {
+    setHostFailed(failure);
+    if (failure !== null) say(failedWords(failure, t));
+  };
+  /** The room's controls take the focus once a dialog has left: what it acted from may be gone with it. */
+  const focusControls = () => {
+    requestAnimationFrame(() => {
+      controls.current?.querySelector<HTMLElement>("button:not([disabled])")?.focus();
+    });
+  };
   const leave = (end?: true) => {
     setFailed(null);
+    // A host with others in the room chooses who hosts next, or ends it.
+    if (end === undefined && hostsOthers(room, self)) {
+      setAsking({ kind: "leave" });
+      return;
+    }
     onLeaving();
     call.leave(end === undefined ? undefined : { end }).catch((error: unknown) => {
-      if (isVoiceLeaveRefused(error)) {
-        setMustChoose(true);
-        say(t("voice.host_must_choose"));
-      } else fail("leave");
+      // Someone joined since the press: the host chooses who hosts next.
+      if (isVoiceLeaveRefused(error)) setAsking({ kind: "leave" });
+      else fail("leave");
     });
   };
   const own = speaker ? (
@@ -571,7 +629,7 @@ function InRoom({
         }}
       />
     </>
-  ) : self !== undefined && maySpeak(room, self, host) ? (
+  ) : self !== undefined && room.can_speak ? (
     <RoomControl
       icon="microphone"
       label={t("voice.speak")}
@@ -593,7 +651,22 @@ function InRoom({
   );
   return (
     <ScreenStack busy={state.phase === "connecting"}>
-      <Head room={room} onBack={onBack} t={t} />
+      <Head
+        room={room}
+        onBack={onBack}
+        menu={
+          <RoomMenu
+            self={self}
+            settingsHref={voiceRoomSettingsPath(room.id)}
+            invitationsHref={voiceInvitationsPath(room.id)}
+            onEnd={() => {
+              setAsking({ kind: "end" });
+            }}
+            t={t}
+          />
+        }
+        t={t}
+      />
       <About room={room} t={t} />
       {callStatus(state, t).map((words) => (
         <Line
@@ -614,22 +687,19 @@ function InRoom({
         </Line>
       ))}
       {failed !== null && <Line>{t("voice.act_failed", { action: failed })}</Line>}
-      {mustChoose && (
-        <Line
-          action={
-            <TextButton
-              onPress={() => {
-                leave(true);
-              }}
-            >
-              {t("voice.end_room")}
-            </TextButton>
-          }
-        >
-          {t("voice.host_must_choose")}
-        </Line>
-      )}
-      <Participants room={room} live={{ state }} t={t} />
+      {hostFailed !== null && <Line>{failedWords(hostFailed, t)}</Line>}
+      <Participants
+        room={room}
+        live={{
+          state,
+          call,
+          onHostFailed: hostFail,
+          onHostAsk: (op, target) => {
+            setAsking({ kind: op, target });
+          },
+        }}
+        t={t}
+      />
       {call.audio.capabilities.outputSelection && <Output call={call} t={t} />}
       <FrameFoot>
         <div ref={controls}>
@@ -657,6 +727,52 @@ function InRoom({
           </RoomControls>
         </div>
       </FrameFoot>
+      <ModalPresence onExited={focusControls}>
+        {leaving && self !== undefined && (
+          <LeaveDialog
+            key="leave"
+            call={call}
+            room={room}
+            self={self}
+            onLeft={onLeaving}
+            onClose={() => {
+              setAsking(null);
+              clearLeaveAsk();
+            }}
+            t={t}
+          />
+        )}
+        {asking?.kind === "end" && (
+          <EndRoomDialog
+            key="end"
+            end={() => call.endRoom()}
+            onEnding={onLeaving}
+            onClose={() => {
+              setAsking(null);
+            }}
+            onFailed={() => {
+              fail("end");
+            }}
+            t={t}
+          />
+        )}
+        {(asking?.kind === "remove" || asking?.kind === "hand-over") && (
+          <HostAskDialog
+            key={asking.kind}
+            call={call}
+            op={asking.kind}
+            target={asking.target}
+            onDone={(outcome) => {
+              const op = asking.kind;
+              const name = nameOf(asking.target.account);
+              setAsking(null);
+              if (outcome === "done") say(t("voice.host.done", { op: opKey(op), name }));
+              else if (outcome !== "cancelled") hostFail(outcome);
+            }}
+            t={t}
+          />
+        )}
+      </ModalPresence>
     </ScreenStack>
   );
 }
@@ -768,8 +884,10 @@ export function VoiceRoomScreen({
   };
   const inIt = call !== null && state !== null && state.roomId === id && state.end === null;
   // A room whose call ended with the room is gone, whatever the cache still holds of it.
+  // A room the reader ended here is gone at once, whatever the next read says.
+  const endedByReader = useVoiceRoomEndedHere(id);
   const endedHere = end?.end.kind === "ended";
-  const { room, error, refetch } = useVoiceRoom(id, !off && !inIt && !endedHere);
+  const { room, error, refetch } = useVoiceRoom(id, !off && !inIt && !endedHere && !endedByReader);
   const endSaid = end === null ? null : endSentence(end, t);
   useEffect(() => {
     if (end !== null) sawRoomEnd(end.roomId);
@@ -792,7 +910,7 @@ export function VoiceRoomScreen({
           t={t}
         />
       );
-    if (endedHere || (error instanceof ProblemError && error.status === 404))
+    if (endedHere || endedByReader || (error instanceof ProblemError && error.status === 404))
       return <Gone id={id} end={end} focus={moved === "left"} onBack={onBack} t={t} />;
     if (error !== null)
       return (

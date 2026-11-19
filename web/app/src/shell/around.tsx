@@ -129,7 +129,8 @@ function RoomLine({ room }: { room: VoiceRoom }) {
     <SectionLine
       href={voiceRoomPath(room.id)}
       title={room.name}
-      glyph={roomIcon(room.icon)}
+      // A room without an icon emoji shows the room's glyph, as its line in the list does.
+      {...(room.icon === undefined ? { icon: "room" as const } : { glyph: roomIcon(room.icon) })}
       caption={<RoomCaption room={room} />}
     />
   );

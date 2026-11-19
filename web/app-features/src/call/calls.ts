@@ -9,7 +9,15 @@
 // session of the app ending (signed out here or in another tab); joining another room; the page going away
 // (`pagehide`, which sends the leave with the page's last request). While a call lasts, the browser asks before the
 // page unloads (a reload, a link outside the app), and the app does not load the page anew by itself (`inCall`).
-import { joinVoiceRoom, leaveVoiceRoom, type AppData } from "@my/app-data";
+import {
+  joinVoiceRoom,
+  leaveVoiceRoom,
+  openVoiceRoom,
+  type AppData,
+  type ServerTime,
+  type VoiceJoin,
+  type VoiceRoomSettings,
+} from "@my/app-data";
 import { holdUnload, mediaDevices, watchOnline, watchPageHide } from "@my/platform";
 import { browserEnvironment, createRoomSession, type RoomEnvironment } from "@my/rtc";
 import { useSyncExternalStore } from "react";
@@ -55,7 +63,7 @@ let current: VoiceCall | null = null;
 let currentState: VoiceCallState | null = null;
 let lastEnd: CallEnd | null = null;
 /** The join on its way, and its room: one at a time. */
-let joining: { readonly roomId: string; readonly call: Promise<VoiceCall> } | null = null;
+let joining: { readonly roomId: string | null; readonly call: Promise<VoiceCall> } | null = null;
 const listeners = new Set<() => void>();
 
 const notify = () => {
@@ -110,6 +118,25 @@ function summaryOf({ room, self, micWanted, phase, connection, playbackBlocked }
 export function joinCall(data: AppData, roomId: string): Promise<VoiceCall> {
   if (current !== null && current.roomId === roomId && !current.ended) return Promise.resolve(current);
   if (joining !== null && joining.roomId === roomId) return joining.call;
+  return begin(data, roomId, () => joinVoiceRoom(data, roomId));
+}
+
+/**
+ * Opens a room with `settings` on the session of `data`, which the reader hosts and is joined to as a speaker, and
+ * makes it the reader's call, which it resolves with; call it from the reader's gesture (the form's Open), as
+ * `joinCall`. A call of another room ends once the server opened the room (it left that room), and stays when it
+ * refused (a reader who may not open rooms, too many open, a host of another open room, settings it does not take).
+ */
+export function openCall(data: AppData, settings: VoiceRoomSettings): Promise<VoiceCall> {
+  return begin(data, null, () => openVoiceRoom(data, settings));
+}
+
+/** Joins by `request` (a join of `roomId`, or an opening of a room whose ID the server gives), as `joinCall` says. */
+function begin(
+  data: AppData,
+  roomId: string | null,
+  request: () => Promise<VoiceJoin & ServerTime>,
+): Promise<VoiceCall> {
   const before = joining?.call.catch(() => undefined);
   const given = runtime;
   let environment: RoomEnvironment;
@@ -125,7 +152,7 @@ export function joinCall(data: AppData, roomId: string): Promise<VoiceCall> {
     leaving?.switching(true);
     let join;
     try {
-      join = await joinVoiceRoom(data, roomId);
+      join = await request();
     } catch (error) {
       leaving?.switching(false);
       environment.close?.();
@@ -138,7 +165,7 @@ export function joinCall(data: AppData, roomId: string): Promise<VoiceCall> {
       // A grant this client cannot connect with: the session the server made goes again, and the room left stays left.
       leaving?.switched();
       environment.close?.();
-      void leaveVoiceRoom(data, roomId, join.session).catch(() => undefined);
+      void leaveVoiceRoom(data, join.room.id, join.session).catch(() => undefined);
       throw error;
     }
     leaving?.switched();

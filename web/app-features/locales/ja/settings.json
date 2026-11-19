@@ -99,6 +99,14 @@
     "defaultMessage": "{count, plural, other {確認が必要な項目 # 件}}",
     "description": "What the count at the end of an entry of the settings menu means, for assistive technology, read after the entry's name: how many things on its page wait for the reader (a moderation action to read, an export ready to download). count is that number, 1 or more."
   },
+  "settings.entry.voice": {
+    "defaultMessage": "通話",
+    "description": "An entry of the settings menu, and the title of its page, which lists the voice chat rooms the reader hosted."
+  },
+  "settings.entry.voice.hint": {
+    "defaultMessage": "ホストをしたルーム",
+    "description": "The line under Voice chat in the settings menu."
+  },
   "settings.sign_out": {
     "defaultMessage": "ログアウト…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
@@ -3374,5 +3382,33 @@
   "settings.invites.missing.all": {
     "defaultMessage": "招待の一覧を見る",
     "description": "The link after settings.invites.missing that opens the Invites page of the settings."
+  },
+  "settings.voice.hosted": {
+    "defaultMessage": "ホストをしたルーム",
+    "description": "The heading of the list of the voice chat rooms the reader hosted, on the Voice chat page of the settings; also the list's name."
+  },
+  "settings.voice.hosted.about": {
+    "defaultMessage": "開いたルームとホストを引き継いだルームです。新しい順に並びます。",
+    "description": "Under the heading of the rooms the reader hosted, in the settings."
+  },
+  "settings.voice.none": {
+    "defaultMessage": "まだルームのホストをしたことはありません。ルームを開くと、ここに表示されます。",
+    "description": "In place of the rooms the reader hosted, in the settings, while there are none."
+  },
+  "settings.voice.ended": {
+    "defaultMessage": "{reason, select, host {ホストが終了しました} empty {全員が退出したため終了しました} host_disconnected {ホストの接続が切れたため終了しました} host_ineligible {ホストがルームを開けなくなったため終了しました} moderator {モデレーターが終了しました} time_limit {時間の上限に達して終了しました} disabled {通話が無効になったため終了しました} host_absent {ホストが来なかったため終了しました} other {誰も来なかったため終了しました}}",
+    "description": "Where a voice chat room the reader hosted stands, in the settings, once it ended: reason is why (host, empty, host_disconnected, host_ineligible, moderator, time_limit, disabled, host_absent, or other: unattended)."
+  },
+  "settings.voice.opened_at": {
+    "defaultMessage": "{date} に開始",
+    "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it opened, its day and hour."
+  },
+  "settings.voice.ended_at": {
+    "defaultMessage": "{date} に終了",
+    "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it ended, its day and hour."
+  },
+  "settings.voice.failed_more": {
+    "defaultMessage": "続きのルームを読み込めませんでした。",
+    "description": "Under the rooms the reader hosted, in the settings, when more could not be loaded, beside a button to try again."
   }
 }
