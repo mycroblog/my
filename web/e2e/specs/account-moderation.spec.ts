@@ -4,8 +4,8 @@
 // person through Moderation's Accounts, keeps them from posting for a week with a reason, and sees the action among
 // the account's actions; the person appeals it from their settings; the moderator finds the appeal in the queue of
 // appeals, reads what the person wrote, and overturns it, which lifts the action. A person whose registration waits
-// for a moderator is let in once a moderator approves it from Registrations. What each screen shows in every state is
-// the stories' on the fake (web/app, accounts.stories.tsx).
+// for a moderator is let in once a moderator approves it from Registrations. Each of these operations is in the audit
+// log. What each screen shows in every state is the stories' on the fake (web/app, accounts.stories.tsx).
 
 import { randomUUID } from "node:crypto";
 import type { Browser, Page } from "@playwright/test";
@@ -85,7 +85,28 @@ test("a moderator keeps a person from posting from the person's account screen; 
   await staff.openAccount(handle);
   await staff.tab("Actions");
   await expect(staff.action("No posting")).toContainText("Lifted");
+
+  // The audit log holds the action, the appeal's decision and the lift it made.
+  await expect
+    .poll(() =>
+      missingFrom(fresh, moderator, [
+        "account_action_issued account",
+        "appeal_overturned appeal",
+        "account_action_lifted account",
+      ]),
+    )
+    .toEqual([]);
 });
+
+/** Which of the operations `wanted` the audit log does not hold of `staff`'s, each as its kind and its target's. */
+async function missingFrom(
+  fresh: { audited: (staff: FreshPerson) => Promise<string[]> },
+  staff: FreshPerson,
+  wanted: readonly string[],
+): Promise<string[]> {
+  const audited = await fresh.audited(staff);
+  return wanted.filter((operation) => !audited.includes(operation));
+}
 
 test("a person whose registration waits for a moderator is let in once a moderator approves it from Registrations", async ({
   page,
@@ -116,6 +137,7 @@ test("a person whose registration waits for a moderator is let in once a moderat
     await staff.approve(handle);
     await expect(staff.said("1 registration approved.")).toBeVisible();
     await expect(staff.registration(handle)).toContainText("Approved");
+    await expect.poll(() => missingFrom(fresh, moderator, ["registration_approved user"])).toEqual([]);
   } finally {
     await theirs.close();
   }
