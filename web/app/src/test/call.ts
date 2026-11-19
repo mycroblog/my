@@ -15,7 +15,7 @@ type RoomSessionOptions = Parameters<Runtime["createSession"]>[0];
 type Snapshot = ReturnType<RoomSession["snapshot"]>;
 
 /** A RoomSession that keeps what it was asked. */
-export type FakeRoomSession = RoomSession & {
+type FakeRoomSession = RoomSession & {
   readonly options: RoomSessionOptions;
   /** The grants given to it without connecting again, in their order. */
   readonly renewed: Parameters<RoomSession["renew"]>[0][];
@@ -69,7 +69,7 @@ function fakeRoomSession(options: RoomSessionOptions): FakeRoomSession {
 }
 
 /** A clock that moves only by `advance`. */
-export type ManualClock = Clock & {
+type ManualClock = Clock & {
   /** Moves the clock on by `ms`, running each timer as it comes due and letting what it started settle. */
   readonly advance: (ms: number) => Promise<void>;
 };
