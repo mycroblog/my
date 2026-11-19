@@ -123,27 +123,37 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       await expect(answers(page, "Your answer").getByRole("radio")).toHaveCount(3);
       await expect(page.getByRole("radio", { checked: true })).toHaveCount(0);
-      await expect(page.getByText("Your name shows in the list of who answered.", { exact: true })).toBeVisible();
+      // The choice carries no explanatory words: its answers alone.
+      await expect(answers(page, "Your answer")).toHaveText(/^Going\s*Maybe\s*Not going\s*$/);
+      // Each radio covers its whole answer, so a press on the control itself chooses it.
+      const maybe = page.getByRole("radio", { name: "Maybe", exact: true });
+      await maybe.click();
+      await expect(maybe).toBeChecked();
     },
   ],
   [
     "answer-saving",
     async (page) => {
-      // Each answer's save state stands where its note stood: the note is shown by the answer that saves nothing.
       await expect(answers(page, "Your answer")).toHaveCount(4);
       const said = page.getByRole("status");
       await expect(said.filter({ hasText: /^Saving…$/ })).toHaveCount(1);
       await expect(said.filter({ hasText: /^Saved$/ })).toHaveCount(1);
       await expect(said.filter({ hasText: /^This could not be saved\.\s*Try again$/ })).toHaveCount(1);
       await expect(page.getByRole("button", { name: "Try again", exact: true })).toBeVisible();
-      const notes = page.getByText("Your name shows in the list of who answered.", { exact: true });
-      await expect(notes).toHaveCount(4);
-      await expect(notes.filter({ visible: true })).toHaveCount(1);
     },
   ],
   [
     "answer-at-capacity",
     async (page) => {
+      // The short reason of a disabled answer stays, and describes the choice.
+      await expect(
+        page.getByRole("radiogroup", {
+          name: "Your answer",
+          exact: true,
+          description: "The event is full: no one more can go.",
+        }),
+      ).toBeVisible();
+      await expect(page.getByText("The event is full: no one more can go.", { exact: true })).toBeVisible();
       await expect(page.getByRole("radio", { name: "Going", exact: true })).toBeDisabled();
       await expect(page.getByRole("radio", { name: "Maybe", exact: true })).toBeEnabled();
       await expect(page.getByRole("radio", { name: "Not going", exact: true })).toBeEnabled();
@@ -155,6 +165,10 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(answers(page, "Your answer")).toHaveCount(2);
       await everyRadioDisabled(page, 6);
       await expect(page.getByRole("radio", { checked: true })).toHaveCount(1);
+      await expect(page.getByText("You can answer once a date is fixed.", { exact: true })).toBeVisible();
+      await expect(
+        page.getByText("The event has started: answers can no longer change.", { exact: true }),
+      ).toBeVisible();
     },
   ],
   [
@@ -220,7 +234,10 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     "places-hidden",
     async (page) => {
       await expect(page.getByRole("list", { name: "Where", exact: true })).toHaveCount(2);
-      await expect(page.getByText("Shown to approved participants", { exact: true })).toHaveCount(2);
+      // A place the reader may not see shows its kind alone, with no words of why.
+      const items = page.getByRole("listitem");
+      await expect(items.filter({ hasText: /^In person$/ })).toHaveCount(1);
+      await expect(items.filter({ hasText: /^Online$/ })).toHaveCount(1);
       await expect(page.getByRole("link")).toHaveCount(0);
     },
   ],
@@ -263,9 +280,34 @@ test("each story of an event's parts shows its state, and the date poll is read 
         .poll(async () => (await shownTexts(columnsRow(page))).length > 0, { message: "the columns' row is shown" })
         .toBe(columnsShown);
       await expect.poll(() => readCellByCell(page, "Date poll")).toEqual(expected);
-      for (const date of dates)
-        await expect(
-          answers(page, new RegExp(`^${date.replace(/[()]/g, "\\$&").replace(/ /g, "\\s*")}\\s*Your answer$`)),
-        ).toHaveCount(1);
+      for (const date of dates) await expect(answers(page, yoursOn(date))).toHaveCount(1);
+      // Each radio covers its whole answer, so a press on the control itself answers, in either layout.
+      const cannot = answers(page, yoursOn("Sat, Dec 12, 6:00 PM")).getByRole("radio", { name: "Cannot", exact: true });
+      await cannot.click();
+      await expect(cannot).toBeChecked();
     });
+
+  await test.step("on a phone, each answer of the poll and each date's actions are a 44 px target", async () => {
+    await open(story("date-poll-for-organizer"), { width: minimum });
+    await expect.poll(() => smallestSide(pollOf(page).getByRole("radio"))).toEqual({ count: 12, below: [] });
+    await expect
+      .poll(() => smallestSide(pollOf(page).getByRole("button", { name: /^Options for .+$/ })))
+      .toEqual({ count: 4, below: [] });
+  });
 });
+
+/** The group of the reader's answer on the date whose header reads `date`, then the column's name. */
+const yoursOn = (date: string) => new RegExp(`^${date.replace(/[()]/g, "\\$&").replace(/ /g, "\\s*")}\\s*Your answer$`);
+
+/**
+ * How many elements `targets` finds, and the sides of those smaller than the decided target (44 CSS px in both
+ * directions; the decider's decision on #3236), as `<width>×<height>`.
+ */
+const smallestSide = (targets: Locator) =>
+  targets.evaluateAll((elements) => {
+    const below = elements
+      .map((element) => element.getBoundingClientRect())
+      .filter(({ width, height }) => width < 44 || height < 44)
+      .map(({ width, height }) => `${Math.round(width)}×${Math.round(height)}`);
+    return { count: elements.length, below };
+  });

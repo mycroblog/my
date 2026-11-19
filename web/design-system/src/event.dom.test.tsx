@@ -88,21 +88,11 @@ test("an event's line says an ended event and one whose date is polled, each sti
 test("the reader's answer is a radio group of three that a press and the arrow keys change", async () => {
   const user = userEvent.setup();
   const chosen: Answer[] = [];
-  render(
-    <AnswerChoice
-      label="Your answer"
-      names={going}
-      value="yes"
-      onChange={(a) => chosen.push(a)}
-      note="Your name shows in the list of who answered."
-    />,
-  );
+  render(<AnswerChoice label="Your answer" names={going} value="yes" onChange={(a) => chosen.push(a)} />);
 
-  const group = screen.getByRole("radiogroup", { name: "Your answer" });
-  expect(group.getAttribute("aria-describedby")).not.toBeNull();
-  expect(document.getElementById(group.getAttribute("aria-describedby") ?? "")?.textContent).toBe(
-    "Your name shows in the list of who answered.",
-  );
+  // The choice carries no words of its own beside its answers: with no reason given, nothing describes it.
+  const group = screen.getByRole("radiogroup", { name: "Your answer", description: "" });
+  expect(group.textContent).toBe("GoingMaybeNot going");
   const radios = within(group).getAllByRole("radio");
   expect(radios.map((r) => r.getAttribute("aria-label") ?? r.closest("label")?.textContent)).toEqual([
     "Going",
@@ -164,14 +154,15 @@ test("an answer that cannot be chosen now is passed by the arrow keys, and a pre
   expect(screen.getAllByRole("radiogroup", { description: "The event is full: no one more can go." })).toHaveLength(1);
 });
 
-test("while the save state shows in the note's place, the note still describes the group", () => {
+test("while the save state shows in the reason's place, the reason still describes the group", () => {
   render(
     <AnswerChoice
       label="Your answer"
       names={going}
       value="maybe"
       onChange={() => undefined}
-      note="Your name shows in the list of who answered."
+      disabled={["yes"]}
+      note="The event is full: no one more can go."
       save="Saving…"
     />,
   );
@@ -179,7 +170,7 @@ test("while the save state shows in the note's place, the note still describes t
   expect(
     screen.getAllByRole("radiogroup", {
       name: "Your answer",
-      description: "Your name shows in the list of who answered.",
+      description: "The event is full: no one more can go.",
     }),
   ).toHaveLength(1);
   expect(screen.getByRole("status").textContent).toBe("Saving…");
@@ -423,25 +414,7 @@ test("a place's link that leaves the site opens in a new tab, says so and where,
   expect(screen.getAllByRole("listitem")[0]?.textContent).toStartWith("In person: Community hall");
 });
 
-test("a place the reader may not see shows its kind alone, and why", () => {
-  render(
-    <PlaceList label="Where">
-      <PlaceLine
-        kind="url"
-        label="Online"
-        name="The stream"
-        link={{ href: "https://video.example.org/live", text: "", host: "video.example.org" }}
-        hidden
-        note="Shown to approved participants"
-      />
-    </PlaceList>,
-  );
-
-  expect(screen.queryAllByRole("link")).toHaveLength(0);
-  expect(screen.getByRole("listitem").textContent).toBe("OnlineShown to approved participants");
-});
-
-test("a place in person the reader may not see shows neither its name nor its address nor its map", () => {
+test("a place the reader may not see shows its kind alone: no name, no address, no link", () => {
   render(
     <PlaceList label="Where">
       <PlaceLine
@@ -451,13 +424,19 @@ test("a place in person the reader may not see shows neither its name nor its ad
         address={"1-2-3 Jingumae\nShibuya, Tokyo 150-0001"}
         link={{ href: "https://maps.example.com/?q=hall", text: "Open the map", host: "maps.example.com" }}
         hidden
-        note="Shown to approved participants"
+      />
+      <PlaceLine
+        kind="url"
+        label="Online"
+        name="The stream"
+        link={{ href: "https://video.example.org/live", text: "", host: "video.example.org" }}
+        hidden
       />
     </PlaceList>,
   );
 
   expect(screen.queryAllByRole("link")).toHaveLength(0);
-  expect(screen.getByRole("listitem").textContent).toBe("In personShown to approved participants");
+  expect(screen.getAllByRole("listitem").map((item) => item.textContent)).toEqual(["In person", "Online"]);
 });
 
 test("a voice room that could not open says why, and offers no way in", () => {
