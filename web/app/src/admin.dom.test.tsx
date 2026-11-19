@@ -604,6 +604,8 @@ const everyEntry = [
   "/admin/relays",
   "/admin/login-providers",
   "/admin/oauth-apps",
+  "/admin/finance",
+  "/admin/supporters",
 ];
 
 for (const [permission, entries, address, read] of [
