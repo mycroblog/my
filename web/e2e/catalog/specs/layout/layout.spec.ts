@@ -40,34 +40,27 @@ const also: Record<string, (page: Page) => Promise<void>> = {
   },
 };
 
-const stories = [
-  "row-long-word",
-  "row-bare-long-word",
-  "row-large-text",
-  "row-inline-long-word",
-  "row-words",
-  "row-many-children",
-  "row-many-children-scrolling",
-  "column-long-word",
-  "stack-of-blocks",
-  "stack-many-children",
-  "stack-large-text",
-  "grid-long-word",
-  "grid-many-children",
-  "layers-long-word",
-  "pin-long-word",
+// The stories, in groups that one page walks, a step per story and direction: a page of its own per story costs a
+// context and a cold load each.
+const groups = [
+  ["row-long-word", "row-bare-long-word", "row-large-text", "row-inline-long-word"],
+  ["row-words", "row-many-children", "row-many-children-scrolling"],
+  ["column-long-word", "stack-of-blocks", "stack-many-children", "stack-large-text"],
+  ["grid-long-word", "grid-many-children", "layers-long-word", "pin-long-word"],
 ];
 
-for (const name of stories)
-  test(`${name}: at the minimum width the part keeps its page's width and what it holds inside it, in both directions`, async ({
+for (const stories of groups)
+  test(`${stories.join(", ")}: at the minimum width the part keeps its page's width and what it holds inside it, in both directions`, async ({
     page,
     open,
   }) => {
-    for (const locale of ["en", "ar-XB"] as const) {
-      await open(`design-system-layout--${name}`, { locale });
-      await expectNoSidewaysScroll(page);
-      const reaching = await atRest(() => reachingOut(page));
-      expect({ locale, reaching }).toEqual({ locale, reaching: [] });
-      await also[name]?.(page);
-    }
+    for (const name of stories)
+      for (const locale of ["en", "ar-XB"] as const)
+        await test.step(`${name} (${locale})`, async () => {
+          await open(`design-system-layout--${name}`, { locale });
+          await expectNoSidewaysScroll(page);
+          const reaching = await atRest(() => reachingOut(page));
+          expect({ name, locale, reaching }).toEqual({ name, locale, reaching: [] });
+          await also[name]?.(page);
+        });
   });

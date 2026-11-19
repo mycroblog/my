@@ -58,38 +58,40 @@ test("the rows of images stand one under another with remove at their end, and a
   await expectMirrored(page, ltr, parts);
 });
 
-for (const [id, locale, page_, text] of [
-  ["design-system-composer--ended-left-to-right-text", "ar-XB", "right to left", "English"],
-  ["design-system-composer--ended-right-to-left-text", "en", "left to right", "Arabic"],
-] as const)
-  test(`on a ${page_} page the emoji button at its end covers no character of the first line of a text in ${text}`, async ({
-    page,
-    open,
-  }) => {
-    await open(id, { locale });
-    const box = page.getByRole("textbox");
-    const button = page.getByRole("button", { name: "Add emoji", exact: true });
-    await expect(box).toBeVisible();
-    await expect
-      .poll(async () => {
-        const at = await boxOf(button);
-        return box.evaluate((el, over) => {
-          // The glyphs of its first text, not the boxes of the paragraphs around them.
-          const first = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
-          if (first === null) return "the text box holds no text";
-          const range = el.ownerDocument.createRange();
-          range.selectNodeContents(first);
-          const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
-          if (rects.length === 0) return "the text has no first line";
-          const top = Math.min(...rects.map((r) => r.top));
-          const covered = rects
-            .filter((r) => r.top < top + 1)
-            .some((r) => r.left < over.right && over.left < r.right && r.top < over.bottom && over.top < r.bottom);
-          return covered ? "the emoji button covers the text's first line" : "clear";
-        }, at);
-      })
-      .toBe("clear");
-  });
+test("the emoji button at the end of the text covers no character of its first line, of a text in English on a right to left page and of one in Arabic on a left to right page", async ({
+  page,
+  open,
+}) => {
+  for (const [id, locale, page_, text] of [
+    ["design-system-composer--ended-left-to-right-text", "ar-XB", "right to left", "English"],
+    ["design-system-composer--ended-right-to-left-text", "en", "left to right", "Arabic"],
+  ] as const)
+    await test.step(`a text in ${text} on a ${page_} page`, async () => {
+      await open(id, { locale });
+      const box = page.getByRole("textbox");
+      const button = page.getByRole("button", { name: "Add emoji", exact: true });
+      await expect(box).toBeVisible();
+      await expect
+        .poll(async () => {
+          const at = await boxOf(button);
+          return box.evaluate((el, over) => {
+            // The glyphs of its first text, not the boxes of the paragraphs around them.
+            const first = el.ownerDocument.createTreeWalker(el, NodeFilter.SHOW_TEXT).nextNode();
+            if (first === null) return "the text box holds no text";
+            const range = el.ownerDocument.createRange();
+            range.selectNodeContents(first);
+            const rects = Array.from(range.getClientRects()).filter((r) => r.width > 0 && r.height > 0);
+            if (rects.length === 0) return "the text has no first line";
+            const top = Math.min(...rects.map((r) => r.top));
+            const covered = rects
+              .filter((r) => r.top < top + 1)
+              .some((r) => r.left < over.right && over.left < r.right && r.top < over.bottom && over.top < r.bottom);
+            return covered ? "the emoji button covers the text's first line" : "clear";
+          }, at);
+        })
+        .toBe("clear");
+    });
+});
 
 // The accounts the story suggests for `@sa`, in its own words: the names it shows in en and right to left, and the
 // handles, the last one longer than its line.
@@ -104,29 +106,31 @@ const suggested = {
   ],
 } as const;
 
-for (const locale of ["en", "ar-XB"] as const)
-  test(`a suggested account's name and handle share its line without covering each other (${locale === "en" ? "left to right" : "right to left"})`, async ({
-    page,
-    open,
-  }) => {
-    await open("design-system-composer--accounts", { locale });
-    const options = page.getByRole("listbox").getByRole("option");
-    await expect(options).toHaveCount(suggested.handles.length);
-    for (const [i, handle] of suggested.handles.entries()) {
-      const option = options.filter({ has: page.getByText(handle, { exact: true }) });
-      const at = await boxesAtRest({
-        option,
-        name: option.getByText(suggested[locale][i] ?? "", { exact: true }),
-        handle: option.getByText(handle, { exact: true }),
-      });
-      expect({ handle, out: outside(at.name, at.option) }).toEqual({ handle, out: [] });
-      expect({ handle, out: outside(at.handle, at.option) }).toEqual({ handle, out: [] });
-      // Side by side: one ends where the other begins, or before.
-      const apart = Math.max(at.handle.left - at.name.right, at.name.left - at.handle.right);
-      expect({ handle, apart: apart >= -0.75 }).toEqual({ handle, apart: true });
-    }
-    await expectNoSidewaysScroll(page);
-  });
+test("a suggested account's name and handle share its line without covering each other, left to right and right to left", async ({
+  page,
+  open,
+}) => {
+  for (const locale of ["en", "ar-XB"] as const)
+    await test.step(locale === "en" ? "left to right" : "right to left", async () => {
+      await open("design-system-composer--accounts", { locale });
+      const options = page.getByRole("listbox").getByRole("option");
+      await expect(options).toHaveCount(suggested.handles.length);
+      for (const [i, handle] of suggested.handles.entries()) {
+        const option = options.filter({ has: page.getByText(handle, { exact: true }) });
+        const at = await boxesAtRest({
+          option,
+          name: option.getByText(suggested[locale][i] ?? "", { exact: true }),
+          handle: option.getByText(handle, { exact: true }),
+        });
+        expect({ handle, out: outside(at.name, at.option) }).toEqual({ handle, out: [] });
+        expect({ handle, out: outside(at.handle, at.option) }).toEqual({ handle, out: [] });
+        // Side by side: one ends where the other begins, or before.
+        const apart = Math.max(at.handle.left - at.name.right, at.name.left - at.handle.right);
+        expect({ handle, apart: apart >= -0.75 }).toEqual({ handle, apart: true });
+      }
+      await expectNoSidewaysScroll(page);
+    });
+});
 
 // A notice's action is rigid beside its sentence: the sentence gives way, the action's words do not.
 test("a notice's short action keeps its words on one line at the minimum width", async ({ page, open }) => {

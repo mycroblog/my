@@ -36,7 +36,9 @@ export default defineConfig({
     locale: "en",
     // Without motion: a test asserts on a page at rest, never mid-transition (restrict/e2e-flaky).
     reducedMotion: "reduce",
-    trace: "retain-on-failure",
+    // The trace of a failure holds its actions and the screenshots of the page, not a copy of the page's DOM at each
+    // action: the copies took a sixth of a layout test's time, and a layout test reads the boxes it asserts on itself.
+    trace: { mode: "retain-on-failure", snapshots: false },
   },
   projects: [
     { name: "layout", testDir: "specs/layout", use: chrome },

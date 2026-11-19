@@ -8,7 +8,7 @@ import { expect, test } from "../test";
 
 const story = "design-system-layout-parts--chip-row-wrapping";
 
-test("more chips than a row holds wrap onto further rows inside it, from the start side in either direction", async ({
+test("more chips than a row holds wrap onto further rows inside it, from the start side in either direction, and a chip link's word no line holds breaks inside it", async ({
   page,
   open,
 }) => {
@@ -30,19 +30,17 @@ test("more chips than a row holds wrap onto further rows inside it, from the sta
   await open(story, { locale: "ar-XB" });
   await expectNoSidewaysScroll(page);
   await expectMirrored(page, ltr, parts);
-});
 
-test("a chip link whose name is a word no line holds stays inside its list, the word broken inside the chip, in both directions", async ({
-  page,
-  open,
-}) => {
-  const list = page.getByRole("list");
-  const long = list.getByRole("link", { name: /^#Donaudampfschifffahrts\S+ 24$/ });
-  for (const locale of ["en", "ar-XB"] as const) {
-    await open("design-system-links--chips", { locale });
-    await expectNoSidewaysScroll(page);
-    await expectInside(long, list);
-    await expectInside(long.getByText(/^#Donaudampfschifffahrts\S+$/), long);
-    await expectInside(long.getByText("24", { exact: true }), long);
-  }
+  // The same page opens the chip links' story.
+  await test.step("a chip link whose name is a word no line holds stays inside its list, the word broken inside the chip, in both directions", async () => {
+    const list = page.getByRole("list");
+    const long = list.getByRole("link", { name: /^#Donaudampfschifffahrts\S+ 24$/ });
+    for (const locale of ["en", "ar-XB"] as const) {
+      await open("design-system-links--chips", { locale });
+      await expectNoSidewaysScroll(page);
+      await expectInside(long, list);
+      await expectInside(long.getByText(/^#Donaudampfschifffahrts\S+$/), long);
+      await expectInside(long.getByText("24", { exact: true }), long);
+    }
+  });
 });
