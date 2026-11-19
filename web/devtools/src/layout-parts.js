@@ -85,6 +85,9 @@ export const LAYOUT_PARTS = {
   ],
   "web/design-system/src/article-editor.tsx": ["EditorFrame", "ArticlePane", "ModeRow", "PreviewBody"],
   "web/design-system/src/voice.tsx": ["ParticipantGrid", "ReactionPlace", "ReactionLane", "ControlsPlace"],
+  "web/design-system/src/choice.tsx": ["SegmentGrid", "SegmentPlace"],
+  "web/design-system/src/supporter.tsx": ["PlanList"],
+  "web/design-system/src/finance.tsx": ["FinanceFrame", "FinanceLine", "FinancePlace"],
   "web/design-system/src/event.tsx": [
     "ChoicePlace",
     "SegmentPlace",

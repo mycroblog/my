@@ -345,3 +345,16 @@ export const glyphsOf = (holder: Locator): Promise<(Box & { mirrored: boolean })
       return { left, top, right, bottom, width, height, mirrored: (svg.getScreenCTM()?.a ?? 1) < 0 };
     }),
   );
+
+/**
+ * How many elements `targets` finds, and the sides of those smaller than the decided target (44 CSS px in both
+ * directions; the decider's decision on #3236), as `<width>×<height>`.
+ */
+export const smallestSide = (targets: Locator) =>
+  targets.evaluateAll((elements) => {
+    const below = elements
+      .map((element) => element.getBoundingClientRect())
+      .filter(({ width, height }) => width < 44 || height < 44)
+      .map(({ width, height }) => `${Math.round(width)}×${Math.round(height)}`);
+    return { count: elements.length, below };
+  });

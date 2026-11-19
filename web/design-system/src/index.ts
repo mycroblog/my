@@ -212,7 +212,33 @@ export {
   type MenuPlacement,
   type MenuSurfaceProps,
 } from "./menu";
-export { ChoiceField, ChoiceList, ChoiceMark, ShareBar, type ChoiceItem } from "./choice";
+export {
+  ChoiceField,
+  ChoiceList,
+  ChoiceMark,
+  SegmentChoice,
+  ShareBar,
+  type ChoiceItem,
+  type SegmentOption,
+} from "./choice";
+export {
+  FinanceRow,
+  FinanceTable,
+  type FinanceCell,
+  type FinanceColumn,
+  type FinanceFigure,
+  type FinanceFigures,
+  type FinanceRowProps,
+  type FinanceTableProps,
+} from "./finance";
+export {
+  Money,
+  PlanCard,
+  PlanList,
+  SubscriptionState,
+  type PlanCardProps,
+  type SubscriptionStateKind,
+} from "./supporter";
 export { Box, Pin, Row, Spoken, Stack } from "./layout";
 export { DetailLines, GlyphText, ThreadFocus, ThreadReply } from "./thread";
 export {
