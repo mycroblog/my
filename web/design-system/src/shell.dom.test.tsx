@@ -351,6 +351,49 @@ test("the call's microphone is off while the reader is not muted, and a click as
   expect(did).toEqual(["mute", "leave"]);
 });
 
+test("while the call connects again its bar is busy, and while its sound is held back hearing comes first", async () => {
+  const user = userEvent.setup();
+  const did: string[] = [];
+  render(
+    <CallBar
+      href="/voice/1"
+      room="Coffee"
+      detail="Reconnecting…"
+      busy
+      hear={{ label: "Tap to hear", onPress: () => did.push("hear") }}
+      muted={false}
+      muteLabel="Mute"
+      onMute={() => did.push("mute")}
+      leaveLabel="Leave"
+      onLeave={() => did.push("leave")}
+    />,
+  );
+
+  const bar = screen.getByRole("group", { name: "Coffee" });
+  expect(bar.getAttribute("aria-busy")).toBe("true");
+  expect(within(bar).getByRole("link").textContent).toBe("Coffee Reconnecting…");
+  await user.tab();
+  await user.tab();
+  expect(document.activeElement).toBe(within(bar).getByRole("button", { name: "Tap to hear" }));
+  await user.keyboard("{Enter}");
+  await user.tab();
+  expect(document.activeElement).toBe(within(bar).getByRole("button", { name: "Mute" }));
+
+  expect(did).toEqual(["hear"]);
+});
+
+test("a call's bar that connects is not busy and holds no hearing back", () => {
+  callBar(false);
+
+  const bar = screen.getByRole("group", { name: "Coffee" });
+  expect(bar.hasAttribute("aria-busy")).toBe(false);
+  expect(
+    within(bar)
+      .getAllByRole("button")
+      .map((b) => b.textContent),
+  ).toEqual(["Mute", "Leave"]);
+});
+
 test("a toast is a status that says its words, with its action and its close", async () => {
   const user = userEvent.setup();
   const did: string[] = [];

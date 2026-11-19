@@ -19,6 +19,7 @@
 // other surface is the page's; the dock stands apart from what scrolls under it by a shadow, not a line. A link of the
 // frame navigates through the app's router when the app places NavigationProvider.
 
+import { motion } from "@my/design-tokens";
 import {
   createContext,
   use,
@@ -658,14 +659,16 @@ export function SectionList({ children }: { children: ReactNode }) {
 
 /**
  * A line of a section: its title, a link to it, on two lines at most, with a caption under it (a room's host and
- * listeners, an event's time), and the glyph of its kind before it when it has one (a notification's). `unread` marks
- * it with the unread mark at its end, in the text's color; `read` mutes it. `onPress` runs as the link is followed.
+ * listeners, an event's time), and the glyph of its kind before it when it has one (a notification's), or an emoji of
+ * its own (a room's). `unread` marks it with the unread mark at its end, in the text's color; `read` mutes it.
+ * `onPress` runs as the link is followed.
  */
 export function SectionLine({
   href,
   title,
   caption,
   icon,
+  glyph,
   unread,
   read = false,
   onPress,
@@ -674,6 +677,8 @@ export function SectionLine({
   title: ReactNode;
   caption?: ReactNode;
   icon?: IconName | undefined;
+  /** An emoji of its own in place of a kind's glyph (a room's icon emoji), hidden from assistive technology. */
+  glyph?: ReactNode;
   /** The unread mark's label while it is unread. */
   unread?: string | undefined;
   read?: boolean;
@@ -685,6 +690,11 @@ export function SectionLine({
       {icon !== undefined && (
         <Row as="span" inline line rigid align="center" className={s.glyph()}>
           <Icon name={icon} place="caption" />
+        </Row>
+      )}
+      {icon === undefined && glyph !== undefined && (
+        <Row as="span" inline line rigid align="center" aria-hidden="true">
+          {glyph}
         </Row>
       )}
       <Stack as="span" grow>
@@ -1247,6 +1257,9 @@ const call = tv({
     actions: "flex flex-none items-center gap-shell-inset",
     button: ["box-border inline-flex flex-none items-center justify-center gap-icon-button-gap", callTarget],
     buttonLabel: "sr-only",
+    // Turning on the sound the browser held back: a button of its glyph and its words wherever there is room for them.
+    hear: "box-border inline-flex flex-none items-center justify-center gap-icon-button-gap",
+    hearLabel: "",
     tooltip: "max-w-[var(--menu-min-width)]",
   },
   variants: {
@@ -1255,6 +1268,7 @@ const call = tv({
       dock: {
         root: "h-shell-call-bar bg-surface-raised ps-shell-edge pe-shell-inset",
         button: "bg-transparent data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
+        hear: "h-control-timeline px-control-timeline-inline pointer-coarse:h-icon-button-touch",
       },
       // At the rail's end: a raised tile of three controls on the page's surface, apart, each pressable at rest: the
       // room's link (its name in a tooltip), then its two buttons; from `desktop`, a raised card of the room's name and
@@ -1272,7 +1286,14 @@ const call = tv({
         ],
         // In the rail, the room's name and detail name its link for assistive technology, and its tooltip shows them.
         lines: "sr-only desktop:not-sr-only desktop:grid",
-        actions: "flex-col desktop:flex-row",
+        actions: "flex-col desktop:flex-row desktop:flex-wrap",
+        // In the rail, a tile of its glyph alone, named; from `desktop`, a line of its own over the two buttons.
+        hear: [
+          callTarget,
+          "desktop:h-control-timeline desktop:w-auto desktop:basis-full desktop:px-control-timeline-inline",
+          "desktop:pointer-coarse:h-icon-button-touch",
+        ],
+        hearLabel: "sr-only desktop:not-sr-only",
         button: [
           "bg-surface data-hovered:bg-surface-hover data-pressed:bg-surface-pressed",
           "desktop:h-control-timeline desktop:w-auto desktop:flex-1 desktop:px-control-timeline-inline",
@@ -1301,7 +1322,18 @@ const callLook = tv({
       "data-selected:bg-text data-selected:text-surface data-selected:data-hovered:bg-text",
       "data-selected:data-pressed:bg-text",
     ],
+    // Knocked out of the text's color, as a toggle on is: it is what the reader must do to hear the room.
+    hear: [
+      "cursor-pointer rounded-control border-0 bg-text font-sans text-caption font-label text-surface",
+      "outline-hidden data-focus-visible:shadow-focus",
+    ],
     tooltip: "rounded-control bg-text px-shell-inset py-shell-toast-inset text-caption text-surface",
+    // The room's glyph while the call connects again: a spinner of its size.
+    spinner: [
+      "box-border size-icon-action rounded-full border-spinner border-solid border-spinner-track border-t-current",
+      "animate-spin",
+      motion.spin.reduced === "still" ? "motion-reduce:animate-none" : "",
+    ],
   },
 });
 
@@ -1315,7 +1347,19 @@ function CallPart({
   as,
   children,
 }: {
-  part: "root" | "room" | "glyph" | "lines" | "name" | "detail" | "actions" | "button" | "buttonLabel" | "tooltip";
+  part:
+    | "root"
+    | "room"
+    | "glyph"
+    | "lines"
+    | "name"
+    | "detail"
+    | "actions"
+    | "button"
+    | "buttonLabel"
+    | "hear"
+    | "hearLabel"
+    | "tooltip";
   as: ReactElement<{ className?: unknown }>;
   children?: ReactNode;
 }) {
@@ -1331,12 +1375,15 @@ function CallPart({
  * The bar of the call the reader is in, kept while they move between screens: above the tab bar on a phone, ending the
  * navigation from `tablet`. The room's glyph, name and detail (who hosts it, how many listen) lead to its screen (in the
  * rail, its name in a tooltip); then the microphone, on while muted, and leaving last, each named, and labelled from
- * `desktop`.
+ * `desktop`. While the call connects or connects again, a spinner stands in the room's glyph and the detail says so;
+ * while the browser holds the room's sound back until a press, `hear` comes first, knocked out, with its words.
  */
 export function CallBar({
   href,
   room,
   detail,
+  busy = false,
+  hear,
   muted,
   muteLabel,
   onMute,
@@ -1345,7 +1392,12 @@ export function CallBar({
 }: {
   href: string;
   room: string;
+  /** Who hosts it and how many are in it, or what the call is going through ("Reconnecting…", "Muted by the host"). */
   detail: string;
+  /** The call connects, or connects again. */
+  busy?: boolean | undefined;
+  /** The browser holds the room's sound back until the reader presses this ("Tap to hear"). */
+  hear?: { label: string; onPress: () => void } | undefined;
   muted: boolean;
   /** The microphone's toggle, pressed while muted ("Mute"). */
   muteLabel: string;
@@ -1358,7 +1410,7 @@ export function CallBar({
   const link = (
     <CallPart part="room" as={<Link className={look.room()} href={href} />}>
       <CallPart part="glyph" as={<span />}>
-        <Icon name="live" place="action" />
+        {busy ? <span className={look.spinner()} aria-hidden="true" /> : <Icon name="live" place="action" />}
       </CallPart>
       <CallPart part="lines" as={<span />}>
         <CallPart part="name" as={<span className={look.name()} dir="auto" />}>
@@ -1373,7 +1425,14 @@ export function CallBar({
   return (
     <CallPart
       part="root"
-      as={<div data-frame-call={place === "dock" ? "" : undefined} role="group" aria-label={room} />}
+      as={
+        <div
+          data-frame-call={place === "dock" ? "" : undefined}
+          role="group"
+          aria-label={room}
+          aria-busy={busy || undefined}
+        />
+      }
     >
       {place === "side" ? (
         <TooltipTrigger delay={300}>
@@ -1389,6 +1448,14 @@ export function CallBar({
         link
       )}
       <CallPart part="actions" as={<span />}>
+        {hear !== undefined && (
+          <CallPart part="hear" as={<AriaButton className={look.hear()} onPress={hear.onPress} />}>
+            <Icon name="hear" place="action" />
+            <CallPart part="hearLabel" as={<span />}>
+              {hear.label}
+            </CallPart>
+          </CallPart>
+        )}
         <CallPart part="button" as={<ToggleButton className={look.button()} isSelected={muted} onChange={onMute} />}>
           <Icon name="microphone" place="action" on={muted} />
           <CallPart part="buttonLabel" as={<span />}>
