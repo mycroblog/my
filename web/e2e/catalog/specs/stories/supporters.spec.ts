@@ -4,12 +4,13 @@
 // finance.stories.tsx, #3244) each show the state they are named by; each segment of a choice is a finger's target on
 // a phone; and the totals' table reaches a screen reader as a table in both its layouts, wide, a period a row under
 // the columns' names, and narrow, each period on a line of its own over its figures and the name of the periods'
-// column for assistive technology alone, every figure its bar draws read in its cell. What each part says of its roles
+// column for assistive technology alone, every figure its bar draws read in its cell, and a figure in two currencies a
+// line a currency at both widths. What each part says of its roles
 // and names is its component tests' (supporter.dom.test.tsx, finance.dom.test.tsx); the stories' accessibility
 // checks are the check of every story.
 
 import type { Page } from "@playwright/test";
-import { smallestSide } from "../boxes";
+import { smallestSide, textLines } from "../boxes";
 import { readCellByCell } from "../tables";
 import { expect, minimum, pc, test } from "../test";
 
@@ -209,6 +210,18 @@ test("each story of the supporters' and the finance parts shows its state, and t
     await test.step(`the totals by month, ${layout}`, async () => {
       await open(finance("totals-by-month"), { width });
       await expect.poll(() => readCellByCell(page, "Totals by month")).toEqual(expected);
+    });
+
+  for (const [layout, width] of [
+    ["wide", pc],
+    ["narrow", minimum],
+  ] as const)
+    await test.step(`a figure in two currencies, ${layout}: each currency on a line of its own`, async () => {
+      await open(finance("totals-in-currencies"), { width });
+      const cell = page
+        .getByRole("table", { name: "Totals by year", exact: true })
+        .getByRole("cell", { name: /^¥142,800\s*US\$1,204\.88$/ });
+      await expect.poll(() => textLines(cell)).toEqual(["¥142,800", "US$1,204.88"]);
     });
 
   await test.step("on a phone, each segment of a choice is a 44 px target", async () => {

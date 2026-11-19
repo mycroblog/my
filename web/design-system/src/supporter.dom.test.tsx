@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The parts of the supporters' screens (#3244), as assistive technology gets them: an amount with its period, one
-// text; the plans, a list named by its label, each plan an item named by its heading, the reader's marked current; a
-// single choice of a few segments, a radio group a press and the arrow keys change, its line about it describing it;
-// and a subscription's state, its sentence and its action. How they stand at a width is their stories' (Supporters).
+// text; the plans, a list named by its label, each plan an item named by its heading, read from its name to its
+// action, the reader's marked current where the action would be; a single choice of a few segments, a radio group a
+// press and the arrow keys change, its line about it describing it, and when disabled out of reach; and a
+// subscription's state, in each kind its sentence, its line and its action, its sign hidden. How they stand at a width is their stories' (Supporters).
 
 import { expect, test } from "bun:test";
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useState } from "react";
 import { SegmentChoice } from "./choice";
 import { Money, PlanCard, PlanList, SubscriptionState } from "./supporter";
 
@@ -72,6 +74,159 @@ test("a single choice of segments is a radio group a press and the arrow keys ch
 
   await user.click(screen.getByRole("radio", { name: "Yearly Save 10%" }));
   expect(chosen).toEqual(["year"]);
+});
+
+/** The words of `element` a screen reader reads, in its order: each text outside what is hidden from it. */
+function readOut(element: Element): string[] {
+  const words: string[] = [];
+  const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+  for (let node = walker.nextNode(); node !== null; node = walker.nextNode()) {
+    const text = (node.textContent ?? "").trim();
+    if (text !== "" && node.parentElement?.closest('[aria-hidden="true"]') == null) words.push(text);
+  }
+  return words;
+}
+
+test("a plan reads its name, a heading of the third level, then its price, what it is for, its perks, and last its action or the reader's mark", () => {
+  render(
+    <PlanList label="Plans">
+      <PlanCard
+        name="Supporter"
+        price={<Money amount="¥300" per="/ month" />}
+        priceNote="Or ¥3,240 a year, and save 10%"
+        description="Keeps the server running."
+        perks={["A supporter badge on your profile"]}
+        action={<button type="button">Switch to Supporter</button>}
+      />
+      <PlanCard
+        name="Patron"
+        current="Your plan"
+        price={<Money amount="¥1,000" per="/ month" />}
+        priceNote="Or ¥10,800 a year, and save 10%"
+        description="Covers a share of the storage."
+        includes="Everything in Supporter, plus:"
+        perks={["Create 5 custom emoji a month", "Start voice chat rooms"]}
+      />
+    </PlanList>,
+  );
+
+  expect(screen.getAllByRole("heading", { level: 3 }).map((heading) => heading.textContent)).toEqual([
+    "Supporter",
+    "Patron",
+  ]);
+  const [supporter, patron] = within(screen.getByRole("list", { name: "Plans" })).getAllByRole("listitem", {
+    name: /^(Supporter|Patron)$/,
+  });
+  expect(readOut(supporter as HTMLElement)).toEqual([
+    "Supporter",
+    "¥300",
+    "/ month",
+    "Or ¥3,240 a year, and save 10%",
+    "Keeps the server running.",
+    "A supporter badge on your profile",
+    "Switch to Supporter",
+  ]);
+  expect(readOut(patron as HTMLElement)).toEqual([
+    "Patron",
+    "¥1,000",
+    "/ month",
+    "Or ¥10,800 a year, and save 10%",
+    "Covers a share of the storage.",
+    "Everything in Supporter, plus:",
+    "Create 5 custom emoji a month",
+    "Start voice chat rooms",
+    "Your plan",
+  ]);
+  expect(within(patron as HTMLElement).queryAllByRole("button")).toHaveLength(0);
+});
+
+test("the segments are reached by Tab on the chosen one, and the arrow keys choose the next", async () => {
+  const user = userEvent.setup();
+  const chosen: string[] = [];
+  function Held() {
+    const [value, setValue] = useState("month");
+    return (
+      <SegmentChoice
+        label="Period"
+        options={[
+          { value: "week", label: "Week" },
+          { value: "month", label: "Month" },
+          { value: "year", label: "Year" },
+        ]}
+        value={value}
+        onChange={(next) => {
+          chosen.push(next);
+          setValue(next);
+        }}
+      />
+    );
+  }
+  render(
+    <>
+      <button type="button">Before</button>
+      <Held />
+    </>,
+  );
+
+  await user.click(screen.getByRole("button", { name: "Before" }));
+  await user.tab();
+  expect(document.activeElement === screen.getByRole("radio", { name: "Month" })).toBe(true);
+  await user.keyboard("{ArrowRight}{ArrowLeft}{ArrowLeft}");
+  expect(chosen).toEqual(["year", "month", "week"]);
+  expect(screen.getByRole("radio", { name: "Week" })).toHaveProperty("checked", true);
+});
+
+test("a disabled choice takes no press and no focus, and keeps its chosen segment", async () => {
+  const user = userEvent.setup();
+  const chosen: string[] = [];
+  render(
+    <>
+      <button type="button">Before</button>
+      <SegmentChoice
+        label="Amount"
+        options={[
+          { value: "300", label: "¥300" },
+          { value: "1000", label: "¥1,000" },
+        ]}
+        value="1000"
+        onChange={(value) => chosen.push(value)}
+        isDisabled
+        about="A tip is under way in another tab."
+      />
+      <button type="button">After</button>
+    </>,
+  );
+
+  await user.click(screen.getByRole("radio", { name: "¥300" }));
+  await user.click(screen.getByRole("button", { name: "Before" }));
+  await user.tab();
+  expect(document.activeElement === screen.getByRole("button", { name: "After" })).toBe(true);
+  expect(chosen).toEqual([]);
+  expect(screen.getByRole("radio", { name: "¥1,000" })).toHaveProperty("checked", true);
+  expect(
+    screen.getByRole("radiogroup", { name: "Amount", description: "A tip is under way in another tab." }),
+  ).toBeTruthy();
+});
+
+test("each state of a subscription reads as its words alone, its sign hidden, its action after them", () => {
+  for (const state of ["renewing", "ending", "changing", "failed"] as const) {
+    cleanup();
+    const { container } = render(
+      <SubscriptionState
+        state={state}
+        detail="Patron, monthly · ¥1,000 / month"
+        action={<button type="button">Do it</button>}
+      >
+        {`The sentence of ${state}`}
+      </SubscriptionState>,
+    );
+    expect(readOut(container)).toEqual([`The sentence of ${state}`, "Patron, monthly · ¥1,000 / month", "Do it"]);
+  }
+
+  cleanup();
+  const { container } = render(<SubscriptionState state="renewing">Renews on Dec 1, 2026</SubscriptionState>);
+  expect(readOut(container)).toEqual(["Renews on Dec 1, 2026"]);
+  expect(screen.queryAllByRole("button")).toHaveLength(0);
 });
 
 test("no segment may be chosen while the choice is disabled", () => {

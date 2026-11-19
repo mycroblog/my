@@ -2,7 +2,8 @@
 
 // The finance table (#3244), as assistive technology gets it: a table named by its label, whose first row names the
 // columns and whose every other row is headed by its period or its provider, its cells in the columns' order, a figure
-// a currency and the word of an estimate read in its cell, the bars hidden; the total last. How it stands at a width
+// a currency and the word of an estimate read in its cell, the bars hidden, each in the cell of the figure it draws and
+// none for a figure in two currencies; the total last. How it stands at a width
 // is its stories' (Finance), and how Chromium reads it cell by cell is the catalog's (web/e2e/catalog).
 
 import { expect, test } from "bun:test";
@@ -52,6 +53,35 @@ test("the totals are a table: the columns' names first, then a row a period head
   ).toEqual(["¥12,300 EstimateUS$45.67 Estimate", "¥9,840", "−¥2,460"]);
   // The bars draw what the figures say, and assistive technology hears the figures alone.
   for (const bar of table.querySelectorAll('[aria-hidden="true"]')) expect(bar.textContent).toBe("");
+});
+
+/** The cells of the table named `name` that hold a bar (what is hidden from assistive technology), by their words. */
+const cellsWithBars = (name: string) =>
+  within(screen.getByRole("table", { name }))
+    .getAllByRole("cell")
+    .filter((cell) => cell.querySelector('[aria-hidden="true"]') !== null)
+    .map((cell) => cell.textContent);
+
+test("every figure a bar draws is read in the bar's cell, and a figure in two currencies draws no bar", () => {
+  render(
+    <FinanceTable label="Totals by year" head="Year" columns={flow} estimated="Estimate">
+      <FinanceRow
+        head="2026"
+        cells={[
+          { figures: ["¥131,400", "US$512.30"], estimated: true, share: 0.9 },
+          { figures: ["¥118,080"], share: 0.8 },
+          { figures: ["−¥13,320", "US$416.30"], share: 0.1 },
+        ]}
+      />
+      <FinanceRow
+        head="2025"
+        cells={[{ figures: ["¥142,800"], share: 1 }, { figures: ["¥96,000"] }, { figures: ["−¥46,800"] }]}
+      />
+    </FinanceTable>,
+  );
+
+  // A bar of yen and dollars together would add a sum no table cell says: the currencies are never converted.
+  expect(cellsWithBars("Totals by year")).toEqual(["¥118,080", "¥142,800"]);
 });
 
 test("a breakdown's total is its last row, its cells in the columns' order", () => {
