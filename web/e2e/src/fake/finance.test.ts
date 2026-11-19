@@ -100,10 +100,44 @@ describe("the public finance", () => {
     const meter = async (options: FakeFinanceOptions) =>
       (await ask<Schemas["Instance"]>(fakeWith(options), "/instance")).body.funding_meter;
     expect([(await meter({}))?.visibility, (await meter({}))?.income]).toEqual(["percent", undefined]);
-    expect((await meter({ meter: "amounts", estimated: true }))?.estimated).toBe(true);
-    expect((await meter({ meter: "amounts" }))?.target?.currency).toBe("JPY");
+    const both = await meter({ costs: "totals", income: "totals", meter: "amounts" });
+    expect(both?.target).toEqual({ amount: "20000", currency: "JPY" });
     const none = await meter({ meter: "none" });
     expect(none).toBeUndefined();
+  });
+
+  test("the meter shows only as the visibility of both sides allows (FR-905)", async () => {
+    const meter = async (options: FakeFinanceOptions) =>
+      (await ask<Schemas["Instance"]>(fakeWith(options), "/instance")).body.funding_meter;
+    // The share alone only while both sides are private; the amounts only while both are public; none for one side.
+    const shown = [
+      await meter({ costs: "totals", meter: "percent" }),
+      await meter({ meter: "amounts" }),
+      await meter({ income: "totals", meter: "amounts" }),
+    ];
+    expect(shown).toEqual([undefined, undefined, undefined]);
+  });
+
+  test("the month's costs are a target only in one currency, and their estimate is the meter's only then", async () => {
+    const meter = async (options: FakeFinanceOptions) =>
+      (await ask<Schemas["Instance"]>(fakeWith(options), "/instance")).body.funding_meter;
+    const both = { costs: "totals", income: "totals", meter: "amounts", estimated: true } as const;
+    // In yen and dollars the costs make no target; an amount the operators set has no estimate in it.
+    const mixed = await meter({ ...both, meterTarget: "costs" });
+    const set = await meter(both);
+    expect([mixed, set?.estimated]).toEqual([undefined, false]);
+    const dollars = await meter({ ...both, meterTarget: "costs", currencies: ["USD"] });
+    expect([dollars?.target?.currency, dollars?.target_is_costs, dollars?.estimated]).toEqual(["USD", true, true]);
+  });
+
+  test("the income counts no movement after today", async () => {
+    const fake = fakeWith({ viewer: {} });
+    const year = new Date().getUTCFullYear() + 1;
+    const ahead = await ask<Schemas["IncomeTotals"]>(
+      fake,
+      `/finance/income_totals?granularity=year&from=${String(year)}-01-01&to=${String(year)}-12-31&basis=cash`,
+    );
+    expect(ahead.body.periods.map((p) => p.net)).toEqual([[]]);
   });
 });
 

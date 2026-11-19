@@ -131,13 +131,14 @@ const granularities: readonly SegmentOption<Granularity>[] = [
 ];
 
 const bases: readonly SegmentOption<Basis>[] = [
-  { value: "amortized", label: "Spread over its period" },
-  { value: "cash", label: "When paid" },
+  { value: "amortized", label: "Spread over their cycle" },
+  { value: "cash", label: "In the period paid" },
 ];
 
 const basisAbout: Record<Basis, string> = {
-  amortized: "A cost for more than a month counts a share each day it covers.",
-  cash: "Each cost counts on the day it is paid.",
+  amortized:
+    "A payment that covers more than a month is split by day over the time it covers, to show what a month costs.",
+  cash: "Each payment counts on the day it was paid, as on a statement.",
 };
 
 // Tagged `themes`: the check of every story shows it in dark too.
@@ -160,9 +161,17 @@ export const FinanceScreen: Story = {
         <Column>
           <Stack gap="entry-room">
             <Stack gap="screen-row-gap">
-              <SegmentChoice label="Period" options={granularities} value={granularity} onChange={setGranularity} />
               <SegmentChoice
-                label="Count costs"
+                label="Period"
+                shown
+                options={granularities}
+                value={granularity}
+                onChange={setGranularity}
+              />
+              <SegmentChoice
+                label="How payments count"
+                shown
+                fit
                 options={bases}
                 value={basis}
                 onChange={setBasis}
@@ -309,13 +318,15 @@ export const Choices: Story = {
       return (
         <Stack gap="entry-room">
           <SegmentChoice
-            label="Count costs"
+            label="How payments count"
+            shown
+            fit
             options={bases}
             value={basis}
             onChange={setBasis}
             about={basisAbout[basis]}
           />
-          <SegmentChoice label="Period" options={granularities} value={granularity} onChange={setGranularity} />
+          <SegmentChoice label="Period" shown options={granularities} value={granularity} onChange={setGranularity} />
         </Stack>
       );
     }

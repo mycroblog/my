@@ -33,7 +33,7 @@ web/docs/
 # What the stage installs or generates itself.
 **/node_modules
 **/dist
-web/*/src/messages.gen.ts
+web/*/src/messages*.gen.ts
 web/app/src/routeTree.gen.ts
 !internal/interface/web/dist/.gitkeep
 # The pointers for coding agents: no build reads them, so a change to one keeps the layers.

@@ -103,7 +103,7 @@ type Place = {
     | "/announcements"
     | "/voice"
     | "/events"
-    | "/about#funding"
+    | "/about/costs"
     | "/articles/new"
     | "/login";
   icon: IconName;
@@ -357,7 +357,7 @@ function Around({ who = "reader", at = "/", around = "all" }: ShellState) {
       )}
       {reader && at !== "/notifications" && <Notifications none={around === "none"} />}
       {all && (
-        <FrameSection id="around-funding" icon="funding" href="/about#funding" heading="Funding">
+        <FrameSection id="around-funding" icon="funding" href="/about/costs" heading="Funding">
           <Meter value={0.72} label="Share of this month's costs covered" caption="of November's costs covered" />
         </FrameSection>
       )}
@@ -558,7 +558,7 @@ function Shell(state: ShellState) {
         ...(around === "all"
           ? [
               {
-                href: "/about#funding",
+                href: "/about/costs",
                 icon: "funding",
                 label: "Funding",
               } as const,

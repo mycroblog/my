@@ -175,18 +175,6 @@
     "defaultMessage": "Funding",
     "description": "The heading of the section of the server's funding meter in the column beside the timeline; it links to the server's about page."
   },
-  "app.funding_label": {
-    "defaultMessage": "Share of this month's costs covered",
-    "description": "The name of the funding meter, for assistive technology: how much of the server's costs this month its income covers."
-  },
-  "app.funding_caption": {
-    "defaultMessage": "{covered, select, yes {{month} is covered} other {of {month}'s costs covered}}",
-    "description": "Under the share of the funding meter: the month it is about ({month}, a month name in the reader's language), and whether its costs are covered."
-  },
-  "app.funding_estimated": {
-    "defaultMessage": "The costs are still being counted, so this may change.",
-    "description": "Under the funding meter while this month's costs include a bill the provider has not closed yet."
-  },
   "app.notices": {
     "defaultMessage": "Server and connection status",
     "description": "The name, for assistive technology, of the notices at the top of every screen: the server's closure, the reader offline, the server down."
@@ -410,6 +398,10 @@
   "app.event_date_polled": {
     "defaultMessage": "Date to be decided",
     "description": "In place of an event's time in the column beside the timeline, while its organizers poll its date."
+  },
+  "app.finance_public": {
+    "defaultMessage": "Costs and income",
+    "description": "The heading of the page of the server's published costs and income, which anyone can read."
   },
   "app.supporters": {
     "defaultMessage": "Supporters",

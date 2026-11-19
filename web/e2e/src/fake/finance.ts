@@ -29,10 +29,18 @@ export type FakeFinanceOptions = {
    */
   viewer?: { itemNames?: boolean; itemMemos?: boolean; income?: Schema<"FinanceViewerIncome"> };
   /**
-   * The funding meter of the month: the share alone (`percent`, by default), with the income and the target
-   * (`amounts`), or none (`none`).
+   * The funding meter of the month as the settings ask for it: the share alone (`percent`, by default), with the income
+   * and the target (`amounts`), or none (`none`). As the server does (ADR-0067 §22), the share alone shows only while
+   * the costs and the income are both private, the amounts only while both are public, and nothing while one side is.
    */
   meter?: "percent" | "amounts" | "none";
+  /**
+   * The month's target: an amount the operators set (¥20,000 by default), or the month's costs (`costs`), which make a
+   * target only while they are in one currency.
+   */
+  meterTarget?: Money | "costs";
+  /** The currencies the costs are paid in, both of JPY and USD by default: one alone leaves out the other's costs. */
+  currencies?: readonly string[];
 };
 
 /** What the finance handlers take from the fake. */
@@ -219,8 +227,16 @@ function importedIn(start: number, end: number, today: number, estimated: boolea
 type Line = { provider: string; category: Category; minor: number; currency: string; name: string; memo?: string };
 
 /** The cost lines of `[start, end]`, each item's and the imported charge's. */
-function linesIn(basis: Basis, start: number, end: number, today: number, estimated: boolean) {
+function linesIn(
+  basis: Basis,
+  start: number,
+  end: number,
+  today: number,
+  estimated: boolean,
+  currencies: readonly string[],
+) {
   const lines: Line[] = items.flatMap((item) => {
+    if (!currencies.includes(item.currency)) return [];
     const minor = itemIn(item, basis, start, end);
     return minor === undefined
       ? []
@@ -235,7 +251,7 @@ function linesIn(basis: Basis, start: number, end: number, today: number, estima
           },
         ];
   });
-  const imported = importedIn(start, end, today, estimated);
+  const imported = currencies.includes("USD") ? importedIn(start, end, today, estimated) : undefined;
   if (imported !== undefined)
     lines.push({ provider: "AWS", category: "compute", minor: imported.total, currency: "USD", name: "Amazon EC2" });
   return { lines, estimate: imported?.estimate === true };
@@ -313,6 +329,7 @@ export function financeHandlers(c: FinanceContext): {
   const costsShown = o.costs ?? "private";
   const incomeShown = o.income ?? "private";
   const estimated = o.estimated === true;
+  const currencies = o.currencies ?? ["JPY", "USD"];
   const today = Math.floor(c.started / day);
   const invalid = (field: string) =>
     c.problem(422, "This could not be done.", { detail: "This value is not valid. Check what you entered.", field });
@@ -353,18 +370,19 @@ export function financeHandlers(c: FinanceContext): {
   /** The cost periods of `q`, with their lines. */
   const costPeriods = (q: Exclude<ReturnType<typeof periods>, Refusal>) =>
     q.periods.map((p) => {
-      const { lines, estimate } = linesIn(q.basis, p.start, p.end, today, estimated);
+      const { lines, estimate } = linesIn(q.basis, p.start, p.end, today, estimated, currencies);
       return { p, lines, estimate };
     });
 
   /** The income periods of `q`, with the balance against the costs where `balance`. */
   function incomeOf(q: Exclude<ReturnType<typeof periods>, Refusal>, balance: boolean): Schema<"IncomePeriodTotal">[] {
-    const moves = movements(q.periods.at(-1)?.end ?? today, c.tips);
+    // No movement after today: a period ahead of it has none yet.
+    const moves = movements(Math.min(q.periods.at(-1)?.end ?? today, today), c.tips);
     return q.periods.map((p) => {
       const minor = incomeIn(moves, q.basis, p.start, p.end);
       const net = minor === undefined ? [] : [money(minor, "JPY")];
       if (!balance) return { label: p.label, starts_on: dateOf(p.start), ends_on: dateOf(p.end), net };
-      const { lines } = linesIn(q.basis, p.start, p.end, today, estimated);
+      const { lines } = linesIn(q.basis, p.start, p.end, today, estimated, currencies);
       const sides = [
         ...(minor === undefined ? [] : [{ minor, currency: "JPY" }]),
         ...lines.map((l) => ({ minor: -l.minor, currency: l.currency })),
@@ -477,27 +495,50 @@ export function financeHandlers(c: FinanceContext): {
     },
   };
 
-  /** The funding meter of the month `month` (`2026-11`): this month's net income over its costs in yen. */
+  /**
+   * The funding meter of the month `month` (`2026-11`), as ADR-0067 §22 shows it: this month's net income up to today
+   * over the target, the operators' amount or the month's costs while they are in one currency; an estimate only where
+   * the target is those costs and an imported charge among them is one; and only as the visibility of both sides allows.
+   */
   const meter = (month: string): Schema<"FundingMeter"> | undefined => {
-    if (o.meter === "none") return undefined;
+    const asked = o.meter ?? "percent";
+    const bothPrivate = costsShown === "private" && incomeShown === "private";
+    const bothPublic = costsShown !== "private" && incomeShown !== "private";
+    if (asked === "none" || (asked === "percent" && !bothPrivate) || (asked === "amounts" && !bothPublic))
+      return undefined;
     const start = dayOf(`${month}-01`);
     const end = periodOf("month", start).end;
-    const target = linesIn("amortized", start, end, today, estimated)
-      .lines.filter((l) => l.currency === "JPY")
-      .reduce((s, l) => s + l.minor, 0);
-    const income = incomeIn(movements(end, c.tips), "amortized", start, end) ?? 0;
-    const percent = target <= 0 || income <= 0 ? 0 : Math.floor((income * 100) / target);
+    const spentThisMonth = linesIn("amortized", start, end, today, estimated, currencies);
+    const setTarget = o.meterTarget ?? { amount: "20000", currency: "JPY" };
+    let target: { minor: number; currency: string };
+    if (setTarget === "costs") {
+      const spent = sumByCurrency(spentThisMonth.lines);
+      const [only] = spent;
+      if (spent.length !== 1 || only === undefined) return undefined;
+      target = { minor: Number(only.amount.replace(".", "")), currency: only.currency };
+      if (target.minor <= 0) return undefined;
+    } else {
+      const scale = digits[setTarget.currency] ?? 2;
+      target = { minor: Math.round(Number(setTarget.amount) * 10 ** scale), currency: setTarget.currency };
+    }
+    // The income in the target's currency alone, the fake's being in yen; none after today.
+    const income = target.currency === "JPY" ? (incomeIn(movements(today, c.tips), "amortized", start, end) ?? 0) : 0;
+    const percent = income <= 0 ? 0 : Math.floor((income * 100) / target.minor);
     return {
-      visibility: o.meter === "amounts" ? "amounts" : "percent",
+      visibility: asked,
       label: month,
       starts_on: dateOf(start),
       ends_on: dateOf(end),
       percent,
-      covered: income >= target && target > 0,
-      estimated,
+      covered: income >= target.minor,
+      estimated: setTarget === "costs" && spentThisMonth.estimate,
       rail: true,
-      ...(o.meter === "amounts"
-        ? { income: money(income, "JPY"), target: money(target, "JPY"), target_is_costs: true }
+      ...(asked === "amounts"
+        ? {
+            income: money(income, target.currency),
+            target: money(target.minor, target.currency),
+            target_is_costs: setTarget === "costs",
+          }
         : {}),
     };
   };

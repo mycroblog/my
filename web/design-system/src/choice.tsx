@@ -298,9 +298,22 @@ const SEGMENT_TRACKS = {
   6: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(6,minmax(0,9rem))]",
 } as const;
 
-/** The segments, `count` of them, in the tracks of their count. */
-function SegmentGrid({ count, children }: { count: number; children: ReactNode }) {
-  const tracks = SEGMENT_TRACKS[Math.min(6, Math.max(1, count)) as keyof typeof SEGMENT_TRACKS];
+/**
+ * The tracks of segments of a few words each (Spread over their cycle | In the period paid): alike on a phone, and
+ * from a tablet's column each as wide as its words, so that they stand on one line where there is room.
+ */
+const SEGMENT_FIT = {
+  1: "grid-cols-[minmax(0,1fr)] @min-[32rem]:grid-cols-[minmax(0,max-content)]",
+  2: "grid-cols-[repeat(2,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(2,minmax(0,max-content))]",
+  3: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(3,minmax(0,max-content))]",
+} as const;
+
+/** The segments, `count` of them, in the tracks of their count; `fit`, each as wide as its words where there is room. */
+function SegmentGrid({ count, fit, children }: { count: number; fit: boolean; children: ReactNode }) {
+  const tracks =
+    fit && count <= 3
+      ? SEGMENT_FIT[Math.max(1, count) as keyof typeof SEGMENT_FIT]
+      : SEGMENT_TRACKS[Math.min(6, Math.max(1, count)) as keyof typeof SEGMENT_TRACKS];
   return (
     <div className="@container">
       <div className={`grid gap-entry-caption ${tracks}`}>{children}</div>
@@ -320,6 +333,7 @@ function SegmentPlace({ as, children }: { as: ReactElement<{ className?: unknown
 const segments = tv({
   slots: {
     label: "[word-break:auto-phrase]",
+    name: "text-caption text-muted-text [word-break:auto-phrase]",
     note: "text-caption font-normal [word-break:auto-phrase]",
     about: "text-caption text-muted-text [word-break:auto-phrase]",
   },
@@ -329,7 +343,9 @@ const segments = tv({
  * A single choice among one to six short options, named `label`, side by side as segments (Monthly | Yearly, the
  * amounts of a tip): a radio group the arrow keys move along, each radio over the whole of its segment, a finger's
  * target tall; each its words, and a short note under them; the chosen one knocked out. `about`, under them, says what
- * the choice means and describes it.
+ * the choice means and describes it. `shown`, its name stands over it, muted, where the segments alone do not say what
+ * is chosen (the period's length beside how payments count); `fit`, each segment is as wide as its words where there
+ * is room (three at most), for options of a few words.
  */
 export function SegmentChoice<T extends string>({
   label,
@@ -338,6 +354,8 @@ export function SegmentChoice<T extends string>({
   onChange,
   isDisabled = false,
   about,
+  shown = false,
+  fit = false,
 }: {
   label: string;
   options: readonly SegmentOption<T>[];
@@ -347,18 +365,26 @@ export function SegmentChoice<T extends string>({
   /** No option may be chosen now. */
   isDisabled?: boolean | undefined;
   about?: string | undefined;
+  shown?: boolean | undefined;
+  fit?: boolean | undefined;
 }) {
   const s = segments();
   const name = useId();
   const aboutId = useId();
+  const labelId = useId();
   return (
     <Stack
       gap="entry-line"
       role="radiogroup"
-      aria-label={label}
+      {...(shown ? { "aria-labelledby": labelId } : { "aria-label": label })}
       {...(about === undefined ? {} : { "aria-describedby": aboutId })}
     >
-      <SegmentGrid count={options.length}>
+      {shown && (
+        <span id={labelId} className={s.name()}>
+          {label}
+        </span>
+      )}
+      <SegmentGrid count={options.length} fit={fit}>
         {options.map((option) => (
           <SegmentPlace key={option.value} as={<label className={segmentClassName({ size: "target" })} />}>
             <CoverRadio

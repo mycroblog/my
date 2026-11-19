@@ -249,6 +249,7 @@ export {
   type IncomeTotals,
   type IncomeTotalsRules,
   type IncomeVisibility,
+  type PublicTotalsRead,
   type TotalsRead,
 } from "./finance";
 export { moneyIn, moneyLess, moneyPercent, moneySign, moneyTimes, type Money } from "./money";

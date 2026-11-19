@@ -1,0 +1,226 @@
+{
+  "finance.loading": {
+    "defaultMessage": "Loading the totals…",
+    "description": "In place of the finance totals while they load."
+  },
+  "finance.failed": {
+    "defaultMessage": "The totals could not be loaded.",
+    "description": "In place of the finance totals when they could not be loaded, beside a button to try again."
+  },
+  "finance.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after the sentence that says the finance totals could not be loaded."
+  },
+  "finance.period": {
+    "defaultMessage": "Period",
+    "description": "The name of the choice of how long a period of the finance totals is: a week, a month or a year."
+  },
+  "finance.period.week": {
+    "defaultMessage": "Week",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the weeks in the totals' table."
+  },
+  "finance.period.month": {
+    "defaultMessage": "Month",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the months in the totals' table."
+  },
+  "finance.period.year": {
+    "defaultMessage": "Year",
+    "description": "An option of the choice of the finance totals' period, and the name of the column of the years in the totals' table."
+  },
+  "finance.basis": {
+    "defaultMessage": "How payments count",
+    "description": "The name of the choice of how a payment that covers more than a month counts in the finance totals: spread over what it covers, or on the day it was paid."
+  },
+  "finance.basis.amortized": {
+    "defaultMessage": "Spread over their cycle",
+    "description": "An option of how the finance totals count a payment that covers more than a month: a share on each day it covers (the default)."
+  },
+  "finance.basis.cash": {
+    "defaultMessage": "In the period paid",
+    "description": "An option of how the finance totals count a payment: all of it on the day it was paid."
+  },
+  "finance.basis.amortized_about": {
+    "defaultMessage": "A payment that covers more than a month is split by day over the time it covers, to show what a month costs.",
+    "description": "Under the choice of how payments count, while Spread over their cycle is chosen: what it means."
+  },
+  "finance.basis.cash_about": {
+    "defaultMessage": "Each payment counts on the day it was paid, as on a statement.",
+    "description": "Under the choice of how payments count, while In the period paid is chosen: what it means."
+  },
+  "finance.totals": {
+    "defaultMessage": "{granularity, select, week {Totals by week} month {Totals by month} other {Totals by year}}",
+    "description": "The name of the table of the finance totals, for assistive technology, by the period chosen ({granularity}: week, month or year)."
+  },
+  "finance.column.costs": {
+    "defaultMessage": "Costs",
+    "description": "The name of the column of a period's costs in the finance totals' table."
+  },
+  "finance.column.income": {
+    "defaultMessage": "Income",
+    "description": "The name of the column of a period's income (after the payment provider's fees) in the finance totals' table."
+  },
+  "finance.column.balance": {
+    "defaultMessage": "Balance",
+    "description": "The name of the column of a period's income less its costs in the finance totals' table."
+  },
+  "finance.column.provider": {
+    "defaultMessage": "Provider",
+    "description": "The name of the column of the providers (a cloud, a registrar) that a server's costs are paid to, in a table of a period's costs."
+  },
+  "finance.column.category": {
+    "defaultMessage": "Category",
+    "description": "The name of the column of what a cost is for (servers, storage, email…), in a table of a period's costs."
+  },
+  "finance.column.amount": {
+    "defaultMessage": "Amount",
+    "description": "The name of the column of the amounts, in a table of a period's costs."
+  },
+  "finance.column.item": {
+    "defaultMessage": "Item",
+    "description": "The name of the column of the cost items' names (as the operators wrote them), in the table of a period's cost items."
+  },
+  "finance.column.plan": {
+    "defaultMessage": "Plan",
+    "description": "The name of the column of the supporter plans, in the table of how many members each plan has."
+  },
+  "finance.column.members": {
+    "defaultMessage": "Members",
+    "description": "The name of the column of how many members a supporter plan has now."
+  },
+  "finance.total": {
+    "defaultMessage": "Total",
+    "description": "The head of the last row of a period's costs by provider, which sums them, a figure a currency."
+  },
+  "finance.estimate": {
+    "defaultMessage": "Estimate",
+    "description": "Read with a figure of the finance totals that comes from a bill its provider has not closed yet."
+  },
+  "finance.none": {
+    "defaultMessage": "None",
+    "description": "In a cell of the finance totals' table for a period with no costs, or no income."
+  },
+  "finance.so_far": {
+    "defaultMessage": "So far",
+    "description": "Under the period of today in the finance totals' table: its figures are up to today."
+  },
+  "finance.week_label": {
+    "defaultMessage": "Week {week}, {year}",
+    "description": "The head of a week's row in the finance totals: its ISO 8601 week number ({week}) and the year that week belongs to ({year})."
+  },
+  "finance.week_dates_so_far": {
+    "defaultMessage": "{dates}, so far",
+    "description": "Under this week in the finance totals' table: its dates ({dates}, a range such as Nov 16 – 22) and that its figures are up to today."
+  },
+  "finance.earlier": {
+    "defaultMessage": "{granularity, select, week {Earlier weeks} month {Earlier months} other {Earlier years}}",
+    "description": "The button under the finance totals that shows the periods before those shown ({granularity}: week, month or year)."
+  },
+  "finance.later": {
+    "defaultMessage": "{granularity, select, week {Later weeks} month {Later months} other {Later years}}",
+    "description": "The button under the finance totals that shows the periods after those shown, up to today's ({granularity}: week, month or year)."
+  },
+  "finance.showing": {
+    "defaultMessage": "Showing {from} to {to}.",
+    "description": "Said to assistive technology after the reader changed the period, how payments count, or moved to earlier or later periods: the first and last periods shown ({from}, {to}: a week, a month or a year as the table heads them)."
+  },
+  "finance.breakdown": {
+    "defaultMessage": "{period} by provider",
+    "description": "The heading and the table name of a period's costs by provider, category and currency ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.items": {
+    "defaultMessage": "{period} by item",
+    "description": "The heading and the table name of a period's cost items, with their names or notes where the server shows them ({period}: a week, a month or a year as the totals' table heads it)."
+  },
+  "finance.category": {
+    "defaultMessage": "{category, select, compute {Servers} database {Database} storage {Storage} network {Network} domain {Domain} email {Email} software {Software} other {Other}}",
+    "description": "What a cost is for, in a cell of the Category column ({category}: compute, database, storage, network, domain, email, software or other)."
+  },
+  "finance.rules.dates": {
+    "defaultMessage": "Periods are calendar dates with no time zone, and a week starts on Monday.",
+    "description": "Under the finance totals: how their periods are cut."
+  },
+  "finance.rules.currencies": {
+    "defaultMessage": "Each currency is counted on its own and never converted.",
+    "description": "Under the finance totals: amounts in different currencies are never added together."
+  },
+  "finance.rules.billing": {
+    "defaultMessage": "{provider} bills by calendar month in {zone}, and its bills count as billed.",
+    "description": "Under the finance totals, one a provider whose bills are imported: the time zone of its billing months ({provider}: a name such as AWS; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.income_zone": {
+    "defaultMessage": "Income through {provider} counts on its date in {zone}.",
+    "description": "Under the finance totals, one a payment provider: the time zone in which its payments fall on their dates ({provider}: a name such as Stripe; {zone}: an IANA time zone such as UTC)."
+  },
+  "finance.rules.net": {
+    "defaultMessage": "Income is payments less the payment provider's fees, and a refund is taken off in the period it was made.",
+    "description": "Under the finance totals while income is shown: what the income figures are."
+  },
+  "finance.rules.payers": {
+    "defaultMessage": "Who paid what is never shown.",
+    "description": "Under the finance totals while income is shown: nobody's own payments are shown, only totals."
+  },
+  "finance.unpublished": {
+    "defaultMessage": "This server does not publish its costs or income.",
+    "description": "On the page of the server's costs and income when it publishes neither."
+  },
+  "finance.unpublished_costs": {
+    "defaultMessage": "This server does not publish its costs.",
+    "description": "On the page of the server's costs and income when it publishes its income but not its costs."
+  },
+  "finance.unpublished_income": {
+    "defaultMessage": "This server does not publish its income.",
+    "description": "On the page of the server's costs and income when it publishes its costs but not its income."
+  },
+  "finance.forbidden": {
+    "defaultMessage": "Only people allowed to read this server's finances can see this page. To read them, ask the server's administrators.",
+    "description": "On the finance page for a signed-in reader who may not read the server's finances."
+  },
+  "finance.plans": {
+    "defaultMessage": "Members by plan",
+    "description": "The heading and the table name of how many members each supporter plan has now."
+  },
+  "finance.members": {
+    "defaultMessage": "{count, plural, one {# member} other {# members}}",
+    "description": "In the Members column: how many members a supporter plan has now."
+  },
+  "finance.tips": {
+    "defaultMessage": "The income includes tips.",
+    "description": "Under the members by plan while the server takes tips, which its income totals include."
+  },
+  "finance.meter": {
+    "defaultMessage": "This month's funding",
+    "description": "The heading of the section of the funding meter on the page of the server's costs and income."
+  },
+  "finance.meter.label": {
+    "defaultMessage": "Share of this month's costs covered",
+    "description": "The name of the funding meter, for assistive technology: how much of the server's costs this month its income covers."
+  },
+  "finance.meter.caption": {
+    "defaultMessage": "{covered, select, yes {{month} is covered} other {of {month}'s costs covered}}",
+    "description": "Under the share of the funding meter: the month it is about ({month}, a month name in the reader's language), and whether its costs are covered."
+  },
+  "finance.meter.estimated": {
+    "defaultMessage": "This month's costs include an estimate, so this may change.",
+    "description": "Under the funding meter while this month's costs include a bill the provider has not closed yet."
+  },
+  "finance.meter.amounts": {
+    "defaultMessage": "{income} of {target}",
+    "description": "Under the funding meter where the server publishes its amounts: this month's income ({income}) and the target ({target}), each an amount in its currency."
+  },
+  "finance.meter.target_costs": {
+    "defaultMessage": "The target is this month's costs.",
+    "description": "Under the funding meter's amounts when the target is this month's costs rather than an amount the operators set."
+  },
+  "finance.meter.caption_in": {
+    "defaultMessage": "{covered, select, yes {{month} is covered, counted in {currency}} other {of {month}'s costs covered, counted in {currency}}}",
+    "description": "Under the share of the funding meter where the server publishes its amounts: the month it is about ({month}, a month name in the reader's language), whether its costs are covered, and the currency the share is counted in ({currency}, an ISO 4217 code such as JPY), since income in other currencies does not count."
+  },
+  "finance.plans_none": {
+    "defaultMessage": "No plan has members yet.",
+    "description": "In place of the table of members by plan when no plan has members now."
+  },
+  "finance.unpublished_totals": {
+    "defaultMessage": "This server does not publish its totals.",
+    "description": "On the page of the server's costs and income, under the funding meter, when the server publishes the meter but neither its costs nor its income."
+  }
+}

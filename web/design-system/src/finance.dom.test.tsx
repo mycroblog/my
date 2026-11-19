@@ -8,6 +8,7 @@
 
 import { expect, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
+import { SegmentChoice } from "./choice";
 import { FinanceRow, FinanceTable } from "./finance";
 
 const flow = [
@@ -152,4 +153,24 @@ test("a cell of figures in two currencies draws no bar, whatever its share", () 
 
   const rows = within(screen.getByRole("table", { name: "Totals" })).getAllByRole("row");
   expect(rows.map((row) => row.querySelectorAll('span[aria-hidden="true"]').length)).toEqual([0, 0, 1]);
+});
+
+test("a choice whose name is shown is named by those words, which stand over its segments", () => {
+  render(
+    <SegmentChoice
+      label="How payments count"
+      shown
+      fit
+      options={[
+        { value: "amortized", label: "Spread over their cycle" },
+        { value: "cash", label: "In the period paid" },
+      ]}
+      value="amortized"
+      onChange={() => undefined}
+    />,
+  );
+  const group = screen.getByRole("radiogroup", { name: "How payments count" });
+  expect(group.getAttribute("aria-label")).toBeNull();
+  expect(group.firstElementChild?.textContent).toBe("How payments count");
+  expect(within(group).getAllByRole("radio")).toHaveLength(2);
 });

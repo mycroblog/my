@@ -4,7 +4,7 @@
 
 import { setupI18n, type Messages } from "@lingui/core";
 import { afterAll, beforeEach, expect, test } from "bun:test";
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 
@@ -66,6 +66,32 @@ test("each locale's messages compile to a module Lingui formats, with en for a k
   expect(pseudo).toContain("Ada");
   expect(pseudo).not.toBe("Hello, Ada");
   expect(t("ar-XB", "post.more")).toStartWith("‮");
+});
+
+test("each locale's messages are a module of their own, which messages.gen.ts imports statically", async () => {
+  expect(compile().code).toBe(0);
+  const src = join(root, "web/parts/src");
+  expect(readdirSync(src).toSorted()).toEqual([
+    "messages.ar-XB.gen.ts",
+    "messages.en-XA.gen.ts",
+    "messages.en.gen.ts",
+    "messages.gen.ts",
+    "messages.ja.gen.ts",
+  ]);
+  const record = readFileSync(join(src, "messages.gen.ts"), "utf8");
+  expect(record).toContain('from "./messages.ja.gen";');
+  expect(record).not.toContain("import(");
+  const { messages: ja } = (await import(join(src, "messages.ja.gen.ts"))) as { messages: Messages };
+  expect(setupI18n({ locale: "ja", messages: { ja } })._("post.greeting", { name: "Ada" })).toBe("Adaさん、こんにちは");
+});
+
+test("a locale the catalog no longer has leaves no module behind", () => {
+  expect(compile().code).toBe(0);
+  rmSync(join(root, "web/parts/locales/ja"), { recursive: true });
+  const r = compile();
+  expect(r.code).toBe(0);
+  expect(r.out).toContain("removed web/parts/src/messages.ja.gen.ts");
+  expect(readdirSync(join(root, "web/parts/src"))).not.toContain("messages.ja.gen.ts");
 });
 
 test("it names the message Lingui cannot compile", () => {
