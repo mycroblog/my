@@ -8,7 +8,7 @@
 // pending first, and one at …/appeals/{id}, with the text the author tried to post and their comment when there is
 // one, upheld or overturned, asked first.
 
-import { moderatedAccountPath, sentenceHandleOf } from "@my/app-components";
+import { moderatedAccountPath } from "@my/app-components";
 import {
   hookAppealStates,
   hookDecisionModes,
@@ -20,6 +20,7 @@ import {
   useHookWrites,
   useModeratedHookAppeal,
   useModeratedHookAppeals,
+  usePermissions,
   useStaffAccounts,
   type HookDecision,
   type HookDecisionQuery,
@@ -52,9 +53,9 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
 import { AppealStateMark } from "./appeals";
-import { cursorOf, filtered, Pages, refusalWords, useSaid } from "./parts";
+import { cursorOf, filtered, whoIn, Pages, refusalWords, useSaid } from "./parts";
 
 /** The address of the decisions, and of their appeals. */
 const decisionsPath = "/moderation/hook-decisions";
@@ -197,7 +198,7 @@ export function HookDecisionsScreen(address: StaffAddress): ReactNode {
   const rows = page.items.map((d): RecordRow<Column> => ({
     id: d.id,
     head: hookWords(t, d.hook),
-    caption: d.account_id === undefined ? undefined : handleIn(t, accounts.get(d.account_id)),
+    caption: d.account_id === undefined ? undefined : whoIn(t, accounts, d.account_id),
     href: decisionPath(d.id),
     cells: {
       outcome: outcomeWords(t, d.outcome),
@@ -330,7 +331,8 @@ export function HookDecisionScreen({ id, onBack }: { id: string; onBack: () => v
 function DecisionFacts({ decision }: { decision: HookDecision }) {
   const { t, locale } = useStaffStrings();
   const moment = useMoment();
-  const account = useStaffAccounts([decision.account_id]).get(decision.account_id ?? "");
+  const accounts = useStaffAccounts([decision.account_id]);
+  const manages = usePermissions().includes("manage_accounts");
   const items: Fact[] = [
     { term: t("staff_accounts.decision.fact.state"), value: <DecisionStateMark decision={decision} /> },
     { term: t("staff_accounts.decision.fact.hook"), value: hookWords(t, decision.hook) },
@@ -352,10 +354,13 @@ function DecisionFacts({ decision }: { decision: HookDecision }) {
       : [
           {
             term: t("staff_accounts.decision.fact.account"),
-            value: (
+            // Its moderation screen leads on only for a reader whose permissions open it.
+            value: manages ? (
               <TextLink href={moderatedAccountPath(decision.account_id)}>
-                {account === undefined ? t("staff.account_gone") : sentenceHandleOf(account)}
+                {whoIn(t, accounts, decision.account_id)}
               </TextLink>
+            ) : (
+              whoIn(t, accounts, decision.account_id)
             ),
           },
         ]),
@@ -435,7 +440,7 @@ export function HookAppealsScreen({ onBack, ...address }: StaffAddress & { onBac
   ];
   const rows = page.items.map((a): RecordRow<AppealColumn> => ({
     id: a.id,
-    head: handleIn(t, accounts.get(a.account_id)),
+    head: whoIn(t, accounts, a.account_id),
     caption: a.status_text.slice(0, 80),
     href: hookAppealHref(a.id, search),
     cells: { submitted: <RelativeTime date={a.submitted_at} />, state: <AppealStateMark state={a.state} /> },
@@ -468,8 +473,10 @@ export function HookAppealsScreen({ onBack, ...address }: StaffAddress & { onBac
 export function useHookAppealTitle(id: string): string | undefined {
   const { t } = useStaffStrings();
   const appeal = useModeratedHookAppeal(id).value;
-  const account = useStaffAccounts([appeal?.account_id]).get(appeal?.account_id ?? "");
-  return appeal === undefined ? undefined : t("staff_accounts.hook_appeal.title", { handle: handleIn(t, account) });
+  const accounts = useStaffAccounts([appeal?.account_id]);
+  return appeal === undefined
+    ? undefined
+    : t("staff_accounts.hook_appeal.title", { handle: whoIn(t, accounts, appeal.account_id) });
 }
 
 /** The appeal of a refused post of `id`, upheld or overturned while it is pending; or why it shows none. */

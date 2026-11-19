@@ -6,7 +6,6 @@
 // is told, then Uphold (the action stays) or Overturn (the action is lifted; overturning a ban also cancels the
 // account's deletion), each asked first, since an appeal is decided once.
 
-import { sentenceHandleOf } from "@my/app-components";
 import {
   appealReasonLimit,
   appealStates,
@@ -14,7 +13,7 @@ import {
   useDecideAppeal,
   useModeratedAppeal,
   useModeratedAppeals,
-  useModeratedAccounts,
+  useStaffAccounts,
   type ModeratedAppeal,
   type ModeratedAppealState,
 } from "@my/app-data";
@@ -46,9 +45,19 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
+import { ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
 import { accountActionPath } from "./account";
-import { actionCategoryWords, cursorOf, filtered, kindWords, Pages, refusalWords, useSaid, Section } from "./parts";
+import {
+  actionCategoryWords,
+  cursorOf,
+  whoIn,
+  filtered,
+  kindWords,
+  Pages,
+  refusalWords,
+  useSaid,
+  Section,
+} from "./parts";
 
 /** The state of the appeals the queue shows at an address's query: pending unless it says otherwise. */
 export function appealStateOf(search: StaffSearch): ModeratedAppealState | undefined {
@@ -77,7 +86,7 @@ export function AppealQueueScreen(address: StaffAddress): ReactNode {
   const { t } = useStaffStrings();
   const state = appealStateOf(search);
   const page = useModeratedAppeals(state, cursorOf(search));
-  const accounts = useModeratedAccounts(page.items.map((a) => a.account_id));
+  const accounts = useStaffAccounts(page.items.map((a) => a.account_id));
   const states: FilterValue[] = appealStates.map((s) => ({
     id: s,
     label: t("staff_accounts.appeal_state", { state: s }),
@@ -125,7 +134,7 @@ export function AppealQueueScreen(address: StaffAddress): ReactNode {
   ];
   const rows = page.items.map((a): RecordRow<Column> => ({
     id: a.id,
-    head: handleIn(t, accounts.get(a.account_id)?.account),
+    head: whoIn(t, accounts, a.account_id),
     href: appealHref(a.id, search),
     cells: {
       action: kindWords(t, a.action.kind),
@@ -164,8 +173,10 @@ export type AppealScreenProps = {
 export function useAppealTitle(id: string): string | undefined {
   const { t } = useStaffStrings();
   const appeal = useModeratedAppeal(id).value;
-  const account = useModeratedAccounts([appeal?.account_id]).get(appeal?.account_id ?? "")?.account;
-  return appeal === undefined ? undefined : t("staff_accounts.appeal.title", { handle: handleIn(t, account) });
+  const accounts = useStaffAccounts([appeal?.account_id]);
+  return appeal === undefined
+    ? undefined
+    : t("staff_accounts.appeal.title", { handle: whoIn(t, accounts, appeal.account_id) });
 }
 
 /** The appeal of `id`, or why it shows none. */
@@ -216,9 +227,8 @@ export function AppealScreen({ id, onBack }: AppealScreenProps): ReactNode {
 function AppealFacts({ appeal }: { appeal: ModeratedAppeal }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
-  const people = useModeratedAccounts([appeal.account_id, appeal.decided_by_account_id]);
-  const account = people.get(appeal.account_id)?.account;
-  const decider = people.get(appeal.decided_by_account_id ?? "")?.account;
+  const people = useStaffAccounts([appeal.account_id, appeal.decided_by_account_id]);
+  const handle = whoIn(t, people, appeal.account_id);
   const items: Fact[] = [
     { term: t("staff_accounts.appeal.fact.state"), value: <AppealStateMark state={appeal.state} /> },
     { term: t("staff_accounts.appeal.fact.submitted"), value: moment(appeal.submitted_at) },
@@ -228,7 +238,7 @@ function AppealFacts({ appeal }: { appeal: ModeratedAppeal }) {
         <TextLink href={accountActionPath(appeal.account_id, appeal.action.id)}>
           {t("staff_accounts.appeal.action", {
             kind: kindWords(t, appeal.action.kind),
-            handle: account === undefined ? t("staff.account_gone") : sentenceHandleOf(account),
+            handle,
           })}
         </TextLink>
       ),
@@ -249,9 +259,7 @@ function AppealFacts({ appeal }: { appeal: ModeratedAppeal }) {
             value:
               appeal.decided_by_account_id === undefined
                 ? t("staff_accounts.action.issuer.cli")
-                : decider === undefined
-                  ? t("staff_accounts.action.issuer.someone")
-                  : sentenceHandleOf(decider),
+                : whoIn(t, people, appeal.decided_by_account_id),
           },
         ]),
     ...(appeal.decision_reason === undefined
@@ -275,7 +283,7 @@ function Decide({ appeal, say }: { appeal: ModeratedAppeal; say: (words: string,
   const ban = appeal.action.kind === "ban";
   // A ban deletes its account 30 days after it was taken, which upholding the original decision makes final.
   const deleted = moment(new Date(Date.parse(appeal.action.issued_at) + 30 * 86_400_000).toISOString());
-  const handle = handleIn(t, useModeratedAccounts([appeal.account_id]).get(appeal.account_id)?.account);
+  const handle = whoIn(t, useStaffAccounts([appeal.account_id]), appeal.account_id);
   const send = () => {
     if (asking === undefined) return;
     const decision = asking;

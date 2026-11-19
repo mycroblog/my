@@ -4,110 +4,31 @@
 // the server's cursor, the way back along them kept in the address; the status a press says what it did in, which takes
 // the focus; the words of a refused write; a labelled choice; and the words of an action's kind, its state and its end.
 
-import { staffRefusalOf, type AccountAction, type AccountActionKind, type ModeratedAccountState } from "@my/app-data";
+import { sentenceHandleOf } from "@my/app-components";
+import {
+  staffRefusalOf,
+  type Account,
+  type AccountAction,
+  type AccountActionKind,
+  type ModeratedAccountState,
+} from "@my/app-data";
 import { copyText } from "@my/platform";
 import {
-  Box,
   Button,
   ListTitle,
-  CaptionLine,
   CopyBlock,
   FieldError,
   FieldLabel,
-  FormAlert,
-  RecordPages,
   Select,
   Stack,
   StateMark,
   type RecordState,
   type SelectOption,
 } from "@my/design-system";
-import { useId, useRef, useState, type ReactNode } from "react";
-import type { StaffAddress, StaffSearch } from "../entries";
+import { useId, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
-/** The cursor of the page an address's query asks for; the first page without one. */
-export const cursorOf = (search: StaffSearch): string | undefined =>
-  search["cursor"] === undefined || search["cursor"] === "" ? undefined : search["cursor"];
-
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
-
-/** `search` at the page of `cursor`, after the `trail` of pages before it. */
-function atPage(search: StaffSearch, cursor: string | undefined, trail: readonly string[]): StaffSearch {
-  const { cursor: _cursor, trail: _trail, ...rest } = search;
-  return {
-    ...rest,
-    ...(cursor === undefined ? {} : { cursor }),
-    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
-  };
-}
-
-/** `search` with `change` made and at the first page, as a change of the filters starts. */
-export function filtered(search: StaffSearch, change: StaffSearch): StaffSearch {
-  return atPage({ ...search, ...change }, undefined, []);
-}
-
-/** Previous and Next under a list, along the pages of the address of `address`, Next to the page of `next`. */
-export function Pages({ address, next }: { address: StaffAddress; next: string | undefined }) {
-  const { search, onSearch } = address;
-  const trail = trailOf(search);
-  const previous = trail.at(-1);
-  return (
-    <RecordPages
-      previous={
-        previous === undefined
-          ? undefined
-          : {
-              onPress: () => {
-                onSearch(atPage(search, previous === "" ? undefined : previous, trail.slice(0, -1)));
-              },
-            }
-      }
-      next={
-        next === undefined
-          ? undefined
-          : {
-              onPress: () => {
-                onSearch(atPage(search, next, [...trail, cursorOf(search) ?? ""]));
-              },
-            }
-      }
-    />
-  );
-}
-
-/** What a press said: its words, whether they say it failed, and a count that makes each saying a new element. */
-type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
-
-/**
- * A status of a screen that says what a press did, or that it failed: `say` puts the words in it and moves the focus
- * there, since the press may have taken its own button away; `status` is the region, there from the start.
- */
-export function useSaid(): { say: (words: string, alert?: boolean) => void; status: ReactNode } {
-  const [said, setSaid] = useState<Said | undefined>(undefined);
-  const ref = useRef<HTMLDivElement>(null);
-  const say = (words: string, alert = false) => {
-    setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
-    requestAnimationFrame(() => ref.current?.focus());
-  };
-  const status = (
-    <Box as={<div ref={ref} role="status" tabIndex={-1} />}>
-      {said !== undefined &&
-        (said.alert ? (
-          <FormAlert key={said.n} regular>
-            {said.words}
-          </FormAlert>
-        ) : (
-          <CaptionLine key={said.n} icon="accepted">
-            {said.words}
-          </CaptionLine>
-        ))}
-    </Box>
-  );
-  return { say, status };
-}
+export { cursorOf, filtered, Pages, useSaid } from "../parts";
 
 /** What the reader is told of a refused write of theirs, by what the server's problem means. */
 export function refusalWords(t: T, error: unknown): string {
@@ -251,4 +172,15 @@ export function Section({ title, children }: { title: string; children: ReactNod
       {children}
     </Stack>
   );
+}
+
+/**
+ * The handle a staff screen names the account of `id` by, from what `useStaffAccounts` read: while it is read, the
+ * words for that, never that it is gone; the words for a gone account once the server said so.
+ */
+export function whoIn(t: T, accounts: ReadonlyMap<string, Account | null>, id: string | undefined): string {
+  if (id === undefined) return t("staff.account_gone");
+  const account = accounts.get(id);
+  if (account === undefined) return t("staff_accounts.account.loading");
+  return account === null ? t("staff.account_gone") : sentenceHandleOf(account);
 }

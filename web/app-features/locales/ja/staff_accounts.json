@@ -227,6 +227,10 @@
     "defaultMessage": "このページにはありません。次のページを開くと、続きを検索します。",
     "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
   },
+  "staff_accounts.search.invalid": {
+    "defaultMessage": "{key, select, domain {ドメインではありません。example.com のように入力してください。} email {メールアドレスではありません。name@example.com のように入力してください。} email_domain {メールのドメインではありません。example.com のように @ の後ろを入力してください。} ip {IP アドレスではありません。192.0.2.1 のように入力してください。} other {ユーザー名ではありません。kai のように先頭を入力してください。}}",
+    "description": "Under the search field of accounts when the server refused its words for what the search finds by. Read by moderators."
+  },
   "staff_accounts.account.missing": {
     "defaultMessage": "このアドレスのアカウントはありません。",
     "description": "At an account's moderation screen whose account the server does not have. Read by moderators."

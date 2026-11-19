@@ -227,6 +227,10 @@
     "defaultMessage": "None on this page. Show the next page to search on.",
     "description": "At /moderation/accounts when a page of the search found none but the search goes on to a next page. Read by moderators."
   },
+  "staff_accounts.search.invalid": {
+    "defaultMessage": "{key, select, domain {This is not a domain. Write one such as example.com.} email {This is not an email address. Write one such as name@example.com.} email_domain {This is not an email domain. Write the part after @, such as example.com.} ip {This is not an IP address. Write one such as 192.0.2.1.} other {This is not a username. Write the start of one, such as kai.}}",
+    "description": "Under the search field of accounts when the server refused its words for what the search finds by. Read by moderators."
+  },
   "staff_accounts.account.missing": {
     "defaultMessage": "There is no account at this address.",
     "description": "At an account's moderation screen whose account the server does not have. Read by moderators."

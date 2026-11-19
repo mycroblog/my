@@ -262,6 +262,12 @@ function SettingsFields({
   );
 }
 
+/**
+ * The members of a refused request that a field of the forms says under it; one of the choices (`kind`,
+ * `severity`) offers only what the server takes, so its refusal is said beside the button.
+ */
+const fielded: ReadonlySet<string> = new Set(["comment", "expires_in"]);
+
 const start: Settings = { kind: "email_domain", severity: "reject", length: "0", comment: "" };
 
 /** The request's settings of `settings`. */
@@ -307,7 +313,7 @@ export function NewSignupBlockScreen({ onBack, onAdded }: { onBack: () => void; 
         if (member?.member === "value") {
           setFaults({ value: t("staff_accounts.blocks.value.invalid", { kind: settings.kind }) });
           document.getElementById(valueId)?.focus();
-        } else if (member !== undefined) {
+        } else if (member !== undefined && fielded.has(member.member)) {
           setFaults({ [member.member]: member.said });
           if (member.member === "comment") document.getElementById(commentId)?.focus();
         } else setAlert(refusalWords(t, e));
@@ -384,7 +390,7 @@ export function ImportSignupBlocksScreen({ onBack }: { onBack: () => void }) {
       (e: unknown) => {
         setBusy(false);
         const member = refusedMember(e);
-        if (member !== undefined) {
+        if (member !== undefined && (fielded.has(member.member) || member.member === "text")) {
           setFaults({ [member.member]: member.said });
           document.getElementById(member.member === "comment" ? commentId : textId)?.focus();
         } else setAlert(refusalWords(t, e));

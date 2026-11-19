@@ -159,9 +159,9 @@ export function InvitesScreen(address: StaffAddress): ReactNode {
             ? undefined
             : {
                 selected,
-                onChange: (next) => {
-                  setSelected(new Set([...next].filter((id) => usable.some((i) => i.id === id))));
-                },
+                onChange: setSelected,
+                // A revoked, expired or used-up invite is not revoked again.
+                selectable: (id) => usable.some((i) => i.id === id),
                 actions: [
                   {
                     id: "revoke",

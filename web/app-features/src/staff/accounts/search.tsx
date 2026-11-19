@@ -109,8 +109,14 @@ export function AccountSearchScreen(address: StaffAddress): ReactNode {
   const q = searchQueryOf(search);
   const key = keyOf(search);
   const page = useModeratedAccountSearch(q);
-  // The words as written, sent to the address a moment after the reader stops writing.
+  // The words as written, sent to the address a moment after the reader stops writing; the address's own when it
+  // changes from outside (Back, the navigation's link), which the screen stays mounted through.
   const [words, setWords] = useState(search["q"] ?? "");
+  const [seen, setSeen] = useState(search["q"]);
+  if (search["q"] !== seen) {
+    setSeen(search["q"]);
+    setWords(search["q"] ?? "");
+  }
   useEffect(() => {
     if (words === (search["q"] ?? "")) return;
     const timer = setTimeout(() => {
@@ -145,6 +151,8 @@ export function AccountSearchScreen(address: StaffAddress): ReactNode {
           value: words,
           onChange: setWords,
           clearLabel: t("staff_accounts.search.clear"),
+          // The server refuses words that are not what the search finds by (an IP, an email domain): said under them.
+          error: page.invalid ? t("staff_accounts.search.invalid", { key }) : undefined,
         }}
         applied={applied}
         onClear={() => {
@@ -158,7 +166,9 @@ export function AccountSearchScreen(address: StaffAddress): ReactNode {
           values={keys.filter((k) => k.id !== "username")}
           chosen={key === "username" ? undefined : key}
           onChoose={(by) => {
-            onSearch(filtered(search, { by }));
+            // Words of one kind are seldom what another finds by: a change of what it finds by starts empty.
+            setWords("");
+            onSearch(filtered(search, { by, q: undefined }));
           }}
         />
         <FilterFacet
@@ -183,6 +193,7 @@ export function AccountSearchScreen(address: StaffAddress): ReactNode {
     </>
   );
   if (page.forbidden) return <FeedNotice lead>{t("staff_accounts.forbidden")}</FeedNotice>;
+  if (page.invalid) return <ScreenStack>{head}</ScreenStack>;
   if (page.status !== "success")
     return (
       <ScreenStack>

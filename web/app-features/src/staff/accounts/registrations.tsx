@@ -187,10 +187,9 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
             ? undefined
             : {
                 selected,
-                onChange: (next) => {
-                  // A decided row is not picked again.
-                  setSelected(new Set([...next].filter((id) => pending.some((r) => r.id === id))));
-                },
+                onChange: setSelected,
+                // A decided row is not picked again.
+                selectable: (id) => pending.some((r) => r.id === id),
                 actions: [
                   {
                     id: "approve",

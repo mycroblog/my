@@ -72,7 +72,9 @@ export function ActionForm({ account, report }: { account: ModeratedAccountDetai
   const [privateNote, setPrivateNote] = useState("");
   const [notify, setNotify] = useState(true);
   const [blockEmail, setBlockEmail] = useState(false);
-  const [picked, setPicked] = useState<ReadonlySet<string>>(new Set());
+  const [chosen, setPicked] = useState<ReadonlySet<string>>(new Set());
+  // The posts chosen that the report still lists: one deleted since is neither sent nor counted.
+  const picked = new Set(posts.flatMap((p) => (chosen.has(p.status.id) ? [p.status.id] : [])));
   const [faults, setFaults] = useState<Faults>({});
   const [alert, setAlert] = useState<string | undefined>(undefined);
   const [asking, setAsking] = useState(false);

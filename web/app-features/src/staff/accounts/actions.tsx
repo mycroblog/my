@@ -51,6 +51,7 @@ import {
   useEnd,
   useSaid,
   Section,
+  whoIn,
 } from "./parts";
 
 /** The actions page of an account: every action, or those in effect, a page at a time. */
@@ -199,7 +200,7 @@ function ActionFacts({ action }: { action: AccountAction }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
   const end = useEnd();
-  const by = useStaffAccounts([action.issued_by_account_id]).get(action.issued_by_account_id ?? "");
+  const people = useStaffAccounts([action.issued_by_account_id]);
   const items: Fact[] = [
     { term: t("staff_accounts.action.fact.state"), value: <ActionStateMark action={action} /> },
     { term: t("staff_accounts.action.fact.category"), value: actionCategoryWords(t, action.reason_category) },
@@ -216,9 +217,7 @@ function ActionFacts({ action }: { action: AccountAction }) {
       value:
         action.issued_by_account_id === undefined
           ? t("staff_accounts.action.issuer.cli")
-          : by === undefined
-            ? t("staff_accounts.action.issuer.someone")
-            : sentenceHandleOf(by),
+          : whoIn(t, people, action.issued_by_account_id),
     },
     {
       term: t("staff_accounts.action.fact.notified"),

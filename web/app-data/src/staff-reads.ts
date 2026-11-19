@@ -18,6 +18,8 @@ export type StaffPage<T> = {
   readonly stale: boolean;
   /** The server refused the reader the list (403): their roles no longer have its permission. */
   readonly forbidden: boolean;
+  /** The server refused what the list was asked for (400): a filter's value it cannot search by, the same again. */
+  readonly invalid: boolean;
   readonly refetch: () => void;
 };
 
@@ -54,6 +56,7 @@ export function pageOf<T>(query: Query<{ items: T[]; next_cursor?: string }>): S
     status: query.status,
     stale: query.isPlaceholderData,
     forbidden: answered(query.error, 403),
+    invalid: answered(query.error, 400),
     refetch: () => {
       void query.refetch();
     },

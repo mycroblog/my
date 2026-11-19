@@ -179,6 +179,8 @@ export type RecordTableProps<K extends string> = {
         selected: ReadonlySet<string>;
         onChange: (selected: ReadonlySet<string>) => void;
         actions: readonly RecordAction[];
+        /** Whether the row of `id` may be picked (one not decided yet); every row where left out. */
+        selectable?: ((id: string) => boolean) | undefined;
       }
     | undefined;
   /** What it shows changes (sorted anew, the next page): its rows faint, and busy for assistive technology. */
@@ -407,9 +409,10 @@ function Pick({
 }) {
   const s = table();
   const input = useRef<HTMLInputElement>(null);
+  // At every render: a press sets the native state to checked or not, and leaves no dash, whatever `mixed` says.
   useEffect(() => {
     if (input.current !== null) input.current.indeterminate = mixed;
-  }, [mixed]);
+  });
   return (
     <Row as="label" inline anchor align="center" gap="entry-caption" className={s.pick()}>
       <Pin
@@ -423,6 +426,8 @@ function Pick({
             checked={checked}
             onChange={(event) => {
               onChange(event.target.checked);
+              // The press cleared the native dash; it stays until what holds the table says otherwise.
+              event.target.indeterminate = mixed;
             }}
           />
         }
@@ -575,7 +580,9 @@ export function RecordTable<K extends string>({
   if (rows.length === 0 && empty !== undefined) return <>{empty}</>;
   const picks = selection !== undefined;
   const picked = selection?.selected;
-  const count = rows.filter((row) => picked?.has(row.id) === true).length;
+  // The rows that may be picked, which select all checks and counts: a row that may not is no part of it.
+  const pickable = rows.filter((row) => selection?.selectable?.(row.id) ?? true);
+  const count = pickable.filter((row) => picked?.has(row.id) === true).length;
   const share = "minmax(0,1fr)";
   const tracks = [
     picks ? "max-content" : "",
@@ -596,7 +603,7 @@ export function RecordTable<K extends string>({
   const ariaSort = (by: K | "head") => directionOf(by);
   // The selection is of the rows shown: an id of a row no longer shown (filtered out, another page) leaves it with
   // every change, so that the count and the actions always speak of the same rows.
-  const shown = new Set(rows.map((row) => row.id));
+  const shown = new Set(pickable.map((row) => row.id));
   const selectAll = (checked: boolean) => {
     selection?.onChange(new Set(checked ? shown : []));
   };
@@ -637,8 +644,8 @@ export function RecordTable<K extends string>({
               <Pick
                 label={t("records.select_all")}
                 words={t("records.select_all")}
-                checked={count > 0 && count === rows.length}
-                mixed={count > 0 && count < rows.length}
+                checked={count > 0 && count === pickable.length}
+                mixed={count > 0 && count < pickable.length}
                 onChange={selectAll}
               />
             )}
@@ -663,8 +670,8 @@ export function RecordTable<K extends string>({
                 <WideOnly>
                   <Pick
                     label={t("records.select_all")}
-                    checked={count > 0 && count === rows.length}
-                    mixed={count > 0 && count < rows.length}
+                    checked={count > 0 && count === pickable.length}
+                    mixed={count > 0 && count < pickable.length}
                     onChange={selectAll}
                   />
                 </WideOnly>
@@ -737,7 +744,13 @@ export function RecordTable<K extends string>({
             }}
           >
             {rows.map((row) => (
-              <Record key={row.id} row={row} columns={columns} picks={picks} />
+              <Record
+                key={row.id}
+                row={row}
+                columns={columns}
+                picks={picks}
+                pickable={selection?.selectable?.(row.id) ?? true}
+              />
             ))}
           </RowsContext>
         </RecordFrame>
@@ -751,10 +764,13 @@ function Record<K extends string>({
   row,
   columns,
   picks,
+  pickable,
 }: {
   row: RecordRow<K>;
   columns: readonly RecordColumn<K>[];
   picks: boolean;
+  /** Its checkbox is there: it may be picked. */
+  pickable: boolean;
 }) {
   const s = table();
   const { lang } = useReader(undefined);
@@ -767,13 +783,15 @@ function Record<K extends string>({
     <RecordLine role="row" className={s.line()}>
       {picks && (
         <RecordPlace at="pick" role="cell" className="">
-          <Pick
-            label={t("records.select_row", { name: row.head })}
-            checked={picked?.has(row.id) === true}
-            onChange={(checked) => {
-              onPick(row.id, checked);
-            }}
-          />
+          {pickable && (
+            <Pick
+              label={t("records.select_row", { name: row.head })}
+              checked={picked?.has(row.id) === true}
+              onChange={(checked) => {
+                onPick(row.id, checked);
+              }}
+            />
+          )}
         </RecordPlace>
       )}
       <RecordPlace at="head" role="rowheader" className="">
@@ -1012,7 +1030,16 @@ export type FilterBarProps = {
   /** What it filters, for assistive technology ("Filter reports"). */
   label: string;
   /** Its search: the field's label, which stands in it as its placeholder, its words, and the name of its clear. */
-  search?: { label: string; value: string; onChange: (value: string) => void; clearLabel: string } | undefined;
+  search?:
+    | {
+        label: string;
+        value: string;
+        onChange: (value: string) => void;
+        clearLabel: string;
+        /** What is wrong with its words (the server refused them as what it searches by), under it. */
+        error?: string | undefined;
+      }
+    | undefined;
   /** Its facets: `FilterFacet`s and `FilterToggle`s, in a row that wraps. */
   children: ReactNode;
   /** A filter or the search is applied: Clear filters ends the facets' row. */
@@ -1049,6 +1076,7 @@ export function FilterBar({ label, search, children, applied, onClear, summary }
           value={search.value}
           onChange={search.onChange}
           clearLabel={search.clearLabel}
+          error={search.error}
         />
       )}
       <Row wrap align="center" gap="chip-spacing">

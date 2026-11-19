@@ -68,10 +68,10 @@ import {
   type Fact,
   type IconName,
 } from "@my/design-system";
-import { Fragment, useId, useRef, useState, type ReactNode } from "react";
+import { Fragment, useId, useState, type ReactNode } from "react";
 import { charsOf } from "../../chars";
 import { readerLanguage, usePostTranslation } from "../../post-translation";
-import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { handleIn, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
 import { ActOnAccount, CancelEvent, EndRoom } from "../accounts/places";
@@ -121,22 +121,14 @@ export function useReportTitle(id: string): string | undefined {
   return report === undefined ? undefined : t("staff.report.title", { handle: handleIn(t, report.target_account) });
 }
 
-/** What a press on the report did, said in the screen's status. */
-type Said = { readonly n: number; readonly words: string; readonly alert: boolean };
-
 function ReportView({ report, onBack }: { report: ReportDetail; onBack: () => void }) {
   const { t } = useStaffStrings();
   const actions = useReportActions(report.id);
   const me = useViewer()?.id;
   const [busy, setBusy] = useState<string | undefined>(undefined);
-  const [said, setSaid] = useState<Said | undefined>(undefined);
-  const status = useRef<HTMLDivElement>(null);
+  // What a press did, or that it failed, said in the screen's status, which takes the focus.
+  const { say, status } = useSaid();
   const target = handleIn(t, report.target_account);
-  /** Says what a press did, or that it failed, and moves the focus to that. */
-  const say = (words: string, alert: boolean) => {
-    setSaid((s) => ({ n: (s?.n ?? 0) + 1, words, alert }));
-    requestAnimationFrame(() => status.current?.focus());
-  };
   /** Runs a write of `kind`, then says what it did. */
   const run = (kind: string, write: () => Promise<unknown>, done: string) => {
     if (busy !== undefined) return;
@@ -229,18 +221,7 @@ function ReportView({ report, onBack }: { report: ReportDetail; onBack: () => vo
         <ScreenTitle back={<BackButton onPress={onBack}>{t("staff.report.back")}</BackButton>}>{target}</ScreenTitle>
         <Row wrap align="center" gap="screen-tab-gap">
           {head}
-          <Box grow as={<div ref={status} role="status" tabIndex={-1} />}>
-            {said !== undefined &&
-              (said.alert ? (
-                <FormAlert key={said.n} regular>
-                  {said.words}
-                </FormAlert>
-              ) : (
-                <CaptionLine key={said.n} icon="accepted">
-                  {said.words}
-                </CaptionLine>
-              ))}
-          </Box>
+          {status}
         </Row>
       </Stack>
       <ReportFacts report={report} me={me} />

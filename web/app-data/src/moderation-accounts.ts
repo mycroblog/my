@@ -6,7 +6,7 @@
 // remote account's posts; and the login recovery of `manage_login_recovery` (a password reset link, two-factor
 // removed). A moderator of reports (`manage_reports`) also ends a voice chat room and cancels an event a report points
 // at. Every write reads again what it changes (the lists, the things, the counts of what awaits the moderators).
-import type { components } from "@mycroblog/mykit";
+import { ProblemError, type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { useAppData } from "./provider";
@@ -387,14 +387,32 @@ export function usePlaceWrites(): PlaceWrites {
 }
 
 /**
- * The accounts of `ids` that a list of the moderators names by ID alone (who appealed, who decided), each read once
- * and kept by the cache; an account not read yet, or gone, is not in the map.
+ * The accounts of `ids` that a staff screen names by ID alone (who appealed, who decided, whom a decision is about),
+ * each read once and kept by the cache: through the moderators' read for a reader with `manage_accounts`, which also
+ * answers for an account that is suspended, deactivated or blocks the reader, else the public one. An account still
+ * read is not in the map yet; one the server does not have is `null`.
  */
-export function useStaffAccounts(ids: readonly (string | undefined)[]): ReadonlyMap<string, Account> {
+export function useStaffAccounts(ids: readonly (string | undefined)[]): ReadonlyMap<string, Account | null> {
   const data = useAppData();
+  const viewer = useQuery(viewerQuery(data)).data;
+  const known = viewer !== undefined;
+  const may = viewer?.permissions.includes("manage_accounts") === true;
   const unique = [...new Set(ids.filter((id): id is string => id !== undefined))];
-  const results = useQueries({ queries: unique.map((id) => accountByIdQuery(data, id)) });
-  return new Map(unique.flatMap((id, i) => (results[i]?.data === undefined ? [] : [[id, results[i].data] as const])));
+  const moderated = useQueries({
+    queries: unique.map((id) => ({ ...moderatedAccountQuery(data, id), enabled: known && may })),
+  });
+  const public_ = useQueries({
+    queries: unique.map((id) => ({ ...accountByIdQuery(data, id), enabled: known && !may })),
+  });
+  const gone = (error: unknown) => error instanceof ProblemError && error.status === 404;
+  return new Map(
+    unique.flatMap((id, i): [string, Account | null][] => {
+      const read = may ? moderated[i] : public_[i];
+      if (read === undefined) return [];
+      if (read.data !== undefined) return [[id, "account" in read.data ? read.data.account : read.data]];
+      return gone(read.error) ? [[id, null]] : [];
+    }),
+  );
 }
 
 /**
@@ -405,16 +423,4 @@ export function useActionReport(id: string | undefined): ReportDetail | undefine
   const data = useAppData();
   const may = useQuery(viewerQuery(data)).data?.permissions.includes("manage_reports") === true;
   return useQuery({ ...reportQuery(data, id ?? ""), enabled: id !== undefined && id !== "" && may }).data;
-}
-
-/**
- * The accounts of `ids` as the moderators see them (`manage_accounts`), which a list of appeals names by ID alone: an
- * account suspended or banned is among them, where the public read of it answers that it is gone. An account not read
- * yet, or gone, is not in the map.
- */
-export function useModeratedAccounts(ids: readonly (string | undefined)[]): ReadonlyMap<string, ModeratedAccount> {
-  const data = useAppData();
-  const unique = [...new Set(ids.filter((id): id is string => id !== undefined))];
-  const results = useQueries({ queries: unique.map((id) => moderatedAccountQuery(data, id)) });
-  return new Map(unique.flatMap((id, i) => (results[i]?.data === undefined ? [] : [[id, results[i].data] as const])));
 }

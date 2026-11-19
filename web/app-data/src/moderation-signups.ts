@@ -251,6 +251,13 @@ export function useStaffInviteWrites(): StaffInviteWrites {
         ...page,
         items: page.items.map((i) => revoked.get(i.id) ?? i),
       }));
+      // The other pages of the list, and a member's own invites, which a revocation changes too.
+      void data.queryClient.invalidateQueries({
+        predicate: ({ queryKey }) =>
+          (queryKey[1] === "/admin/invites" &&
+            JSON.stringify(queryKey) !== JSON.stringify(staffInvitesQuery(data, cursor).queryKey)) ||
+          queryKey[1] === "/invites",
+      });
       return results;
     },
   };
