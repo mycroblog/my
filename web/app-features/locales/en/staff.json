@@ -1,0 +1,574 @@
+{
+  "staff.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button after a sentence on a moderator's screen that says something could not be loaded or done."
+  },
+  "staff.account_gone": {
+    "defaultMessage": "An account that is gone",
+    "description": "On a moderator's screen, in the place of an account's handle when the server no longer has the account."
+  },
+  "staff.root.moderation": {
+    "defaultMessage": "Moderation screens",
+    "description": "The name, for assistive technology, of the list of moderation screens at /moderation."
+  },
+  "staff.root.admin": {
+    "defaultMessage": "Administration screens",
+    "description": "The name, for assistive technology, of the list of server administration screens at /admin."
+  },
+  "staff.root.loading": {
+    "defaultMessage": "Loading the screens open to you…",
+    "description": "At /moderation or /admin while the server has not yet said which screens the reader's permissions open."
+  },
+  "staff.root.none.moderation": {
+    "defaultMessage": "Your account has no moderation permissions, so no moderation screen is open to you.",
+    "description": "At /moderation, for a reader whose account has no moderation permission."
+  },
+  "staff.root.none.admin": {
+    "defaultMessage": "Your account has no server administration permissions, so no administration screen is open to you.",
+    "description": "At /admin, for a reader whose account has no server administration permission."
+  },
+  "staff.root.none_yet": {
+    "defaultMessage": "None of the screens here is open to your permissions yet.",
+    "description": "At /moderation or /admin, for a reader who has permissions of the area but whom no screen built so far is open to."
+  },
+  "staff.group.queues": {
+    "defaultMessage": "What waits for moderators",
+    "description": "The heading of the group of moderation screens that hold what waits for a moderator (reports, later appeals and registrations)."
+  },
+  "staff.entry.reports": {
+    "defaultMessage": "Reports",
+    "description": "The name of the moderators' queue of reports, in the list at /moderation and as the title of its screen."
+  },
+  "staff.entry.reports.hint": {
+    "defaultMessage": "What people reported, to review and resolve",
+    "description": "The line under Reports in the list of moderation screens: what the screen holds."
+  },
+  "staff.entry.reports.count": {
+    "defaultMessage": "{count, plural, one {# open report} other {# open reports}}",
+    "description": "For assistive technology, what the badge at the end of Reports in the list of moderation screens counts."
+  },
+  "staff.missing": {
+    "defaultMessage": "This address leads to no screen open to you.",
+    "description": "In a moderation or administration screen's place, at an address that names no screen, or one the reader's permissions do not open; a link to the area's screens follows."
+  },
+  "staff.missing.moderation": {
+    "defaultMessage": "All moderation screens",
+    "description": "The link after the sentence that an address names no moderation screen, to /moderation."
+  },
+  "staff.missing.admin": {
+    "defaultMessage": "All administration screens",
+    "description": "The link after the sentence that an address names no administration screen, to /admin."
+  },
+  "staff.reports.filters": {
+    "defaultMessage": "Filter reports",
+    "description": "For assistive technology, the name of the filters over the moderators' queue of reports."
+  },
+  "staff.reports.state": {
+    "defaultMessage": "State",
+    "description": "The filter of the queue of reports by whether a report is open or resolved; its button and its menu."
+  },
+  "staff.reports.state.any": {
+    "defaultMessage": "Any state",
+    "description": "The first value of the state filter of the queue of reports: no filter."
+  },
+  "staff.reports.state.open": {
+    "defaultMessage": "Open",
+    "description": "A value of the state filter of the queue of reports: the reports that wait for a moderator."
+  },
+  "staff.reports.state.resolved": {
+    "defaultMessage": "Resolved",
+    "description": "A value of the state filter of the queue of reports: the reports a moderator resolved."
+  },
+  "staff.reports.category": {
+    "defaultMessage": "Category",
+    "description": "The filter of the queue of reports by why the account was reported; its button and its menu."
+  },
+  "staff.reports.category.any": {
+    "defaultMessage": "Any category",
+    "description": "The first value of the category filter of the queue of reports: no filter."
+  },
+  "staff.reports.assignee": {
+    "defaultMessage": "Handled by",
+    "description": "The filter of the queue of reports by which moderator handles a report; its button and its menu."
+  },
+  "staff.reports.assignee.any": {
+    "defaultMessage": "Anyone or nobody",
+    "description": "The first value of the Handled by filter of the queue of reports: no filter."
+  },
+  "staff.reports.assignee.me": {
+    "defaultMessage": "You",
+    "description": "A value of the Handled by filter of the queue of reports: the reports the reader handles."
+  },
+  "staff.reports.assignee.none": {
+    "defaultMessage": "Nobody",
+    "description": "A value of the Handled by filter of the queue of reports: the reports no moderator handles."
+  },
+  "staff.reports.table": {
+    "defaultMessage": "Reports",
+    "description": "For assistive technology, the name of the table of the moderators' queue of reports."
+  },
+  "staff.reports.column.account": {
+    "defaultMessage": "Account",
+    "description": "The name of the column of the queue of reports that holds the reported account's handle."
+  },
+  "staff.reports.column.category": {
+    "defaultMessage": "Category",
+    "description": "The name of the column of the queue of reports that holds why the account was reported."
+  },
+  "staff.reports.column.filed": {
+    "defaultMessage": "Filed",
+    "description": "The name of the column of the queue of reports that holds when a report was filed; it sorts the queue."
+  },
+  "staff.reports.column.state": {
+    "defaultMessage": "State",
+    "description": "The name of the column of the queue of reports that holds whether a report is open, who handles it, or that it is resolved."
+  },
+  "staff.reports.by": {
+    "defaultMessage": "Reported by {handle}",
+    "description": "Under a reported account's handle in the queue of reports: who filed the report. {handle} is their handle."
+  },
+  "staff.reports.by_server": {
+    "defaultMessage": "Sent by {domain}",
+    "description": "Under a reported account's handle in the queue of reports: another server sent the report. {domain} is that server."
+  },
+  "staff.reports.by_review": {
+    "defaultMessage": "Filed by an automated review",
+    "description": "Under a reported account's handle in the queue of reports: an external review of this server filed it."
+  },
+  "staff.reports.by_gone": {
+    "defaultMessage": "Reported by an account that is gone",
+    "description": "Under a reported account's handle in the queue of reports: the account that filed it is gone."
+  },
+  "staff.reports.empty.open": {
+    "defaultMessage": "No open reports.",
+    "description": "In the place of the queue of reports when no report is open and no filter is applied."
+  },
+  "staff.reports.empty.filtered": {
+    "defaultMessage": "No reports match these filters.",
+    "description": "In the place of the queue of reports when the filters match none; Clear filters follows."
+  },
+  "staff.reports.loading": {
+    "defaultMessage": "Loading the reports…",
+    "description": "In the place of the queue of reports while it loads."
+  },
+  "staff.reports.failed": {
+    "defaultMessage": "The reports could not be loaded.",
+    "description": "In the place of the queue of reports when it could not be loaded; Try again follows."
+  },
+  "staff.reports.forbidden": {
+    "defaultMessage": "Your account can no longer handle reports.",
+    "description": "In the place of the queue of reports or a report when the server refuses it: the reader's account lost the permission meanwhile."
+  },
+  "staff.report.state.open": {
+    "defaultMessage": "Open",
+    "description": "The state of a report that waits for a moderator and that nobody handles; in the queue and in the report's facts."
+  },
+  "staff.report.state.assigned_you": {
+    "defaultMessage": "Assigned to you",
+    "description": "The state of an open report that the reader handles, in the queue of reports."
+  },
+  "staff.report.state.assigned": {
+    "defaultMessage": "Assigned to {handle}",
+    "description": "The state of an open report that another moderator handles, in the queue of reports. {handle} is their handle."
+  },
+  "staff.report.state.assigned_someone": {
+    "defaultMessage": "Assigned",
+    "description": "The state of an open report that another moderator handles, in the queue, while their account loads or once it is gone."
+  },
+  "staff.report.state.resolved": {
+    "defaultMessage": "Resolved",
+    "description": "The state of a report a moderator resolved, in the queue of reports."
+  },
+  "staff.report.category": {
+    "defaultMessage": "{category, select, spam {Spam} legal {Illegal content} violation {Breaks the server's rules} other {Something else}}",
+    "description": "Why an account was reported, in the queue of reports, its filter, and the report's facts."
+  },
+  "staff.report.back": {
+    "defaultMessage": "Reports",
+    "description": "The way back from a report's screen to the queue of reports."
+  },
+  "staff.report.loading": {
+    "defaultMessage": "Loading the report…",
+    "description": "In the place of a report's screen while it loads."
+  },
+  "staff.report.failed": {
+    "defaultMessage": "The report could not be loaded.",
+    "description": "In the place of a report's screen when it could not be loaded; Try again follows."
+  },
+  "staff.report.missing": {
+    "defaultMessage": "There is no report at this address.",
+    "description": "In the place of a report's screen when the server has no such report; a link to the queue follows."
+  },
+  "staff.report.missing.all": {
+    "defaultMessage": "All reports",
+    "description": "The link to the queue of reports after the sentence that an address names no report."
+  },
+  "staff.report.assign": {
+    "defaultMessage": "Assign to me",
+    "description": "The button of a report's screen that makes the reader the moderator who handles it."
+  },
+  "staff.report.unassign": {
+    "defaultMessage": "Unassign",
+    "description": "The button of a report's screen that leaves the report the reader handles to nobody."
+  },
+  "staff.report.resolve": {
+    "defaultMessage": "Resolve",
+    "description": "The button of an open report's screen that opens the choice of how it was resolved."
+  },
+  "staff.report.resolve.menu": {
+    "defaultMessage": "How was it resolved?",
+    "description": "The name of the menu that Resolve opens on a report's screen."
+  },
+  "staff.report.resolve.actioned": {
+    "defaultMessage": "Action taken",
+    "description": "An item of the Resolve menu of a report: a moderator acted on the account."
+  },
+  "staff.report.resolve.dismissed": {
+    "defaultMessage": "No action needed",
+    "description": "An item of the Resolve menu of a report: there was nothing to act on."
+  },
+  "staff.report.reopen": {
+    "defaultMessage": "Reopen",
+    "description": "The button of a resolved report's screen that puts it back in the queue, open."
+  },
+  "staff.report.done.assigned": {
+    "defaultMessage": "You handle this report now.",
+    "description": "Said on a report's screen once the reader took it."
+  },
+  "staff.report.done.unassigned": {
+    "defaultMessage": "Nobody handles this report now.",
+    "description": "Said on a report's screen once the reader left it to nobody."
+  },
+  "staff.report.done.resolved": {
+    "defaultMessage": "The report is resolved.",
+    "description": "Said on a report's screen once the reader resolved it. The reporter, if local, is notified, without how."
+  },
+  "staff.report.done.reopened": {
+    "defaultMessage": "The report is open again.",
+    "description": "Said on a report's screen once the reader reopened it."
+  },
+  "staff.report.done.forwarded": {
+    "defaultMessage": "The report was sent to {domain}.",
+    "description": "Said on a report's screen once it was forwarded. {domain} is the reported account's server."
+  },
+  "staff.report.write_failed": {
+    "defaultMessage": "This could not be done. Try again.",
+    "description": "Said on a report's screen when the server did not do what the reader pressed."
+  },
+  "staff.report.facts": {
+    "defaultMessage": "About the report",
+    "description": "For assistive technology, the name of the list of a report's facts."
+  },
+  "staff.report.fact.state": {
+    "defaultMessage": "State",
+    "description": "The term of a report's state in its facts."
+  },
+  "staff.report.fact.category": {
+    "defaultMessage": "Category",
+    "description": "The term of why an account was reported, in the report's facts."
+  },
+  "staff.report.fact.rules": {
+    "defaultMessage": "Rules",
+    "description": "The term of the server's rules a report cites, in its facts."
+  },
+  "staff.report.fact.filed": {
+    "defaultMessage": "Filed",
+    "description": "The term of when a report was filed, in its facts."
+  },
+  "staff.report.fact.reporter": {
+    "defaultMessage": "Reported by",
+    "description": "The term of who filed a report, in its facts."
+  },
+  "staff.report.fact.assignee": {
+    "defaultMessage": "Handled by",
+    "description": "The term of which moderator handles a report, in its facts."
+  },
+  "staff.report.fact.forwarded": {
+    "defaultMessage": "Their server",
+    "description": "The term, in a report's facts, of whether a report of a remote account went to that account's server."
+  },
+  "staff.report.fact.history": {
+    "defaultMessage": "The account's record",
+    "description": "The term, in a report's facts, of what the moderators had about the reported account: its other reports and actions."
+  },
+  "staff.report.fact.resolved_at": {
+    "defaultMessage": "When resolved",
+    "description": "The term, in a report's facts, of when a resolved report was resolved."
+  },
+  "staff.report.rule_retired": {
+    "defaultMessage": "A rule no longer in force",
+    "description": "In the list of rules a report cites, in the place of a rule the server retired since."
+  },
+  "staff.report.nobody": {
+    "defaultMessage": "Nobody",
+    "description": "Who handles a report that no moderator handles, in its facts."
+  },
+  "staff.report.you": {
+    "defaultMessage": "You",
+    "description": "Who handles a report the reader handles, in its facts."
+  },
+  "staff.report.someone": {
+    "defaultMessage": "A moderator",
+    "description": "Who handles a report, in its facts, while their account loads or once it is gone."
+  },
+  "staff.report.forwarded.yes": {
+    "defaultMessage": "Sent to {domain}",
+    "description": "In a report's facts: the report went to the reported account's server. {domain} is that server."
+  },
+  "staff.report.forwarded.no": {
+    "defaultMessage": "Not sent to {domain}",
+    "description": "In a report's facts: the report did not go to the reported account's server. {domain} is that server."
+  },
+  "staff.report.history": {
+    "defaultMessage": "{reports, plural, =0 {No other reports} one {# other report} other {# other reports}}, {actions, plural, =0 {no moderation actions} one {# moderation action} other {# moderation actions}}",
+    "description": "In a report's facts: how many other reports the account has, open or resolved, and how many moderation actions it had, ended ones included."
+  },
+  "staff.report.account": {
+    "defaultMessage": "Reported account",
+    "description": "The heading of the section of a report's screen that names the reported account."
+  },
+  "staff.report.comment": {
+    "defaultMessage": "Comment",
+    "description": "The heading of the reporter's comment on a report's screen."
+  },
+  "staff.report.comment.none": {
+    "defaultMessage": "The reporter wrote no comment.",
+    "description": "In the place of the comment of a report that has none."
+  },
+  "staff.report.translate": {
+    "defaultMessage": "Translate",
+    "description": "The button under a report's comment that translates it into the reader's language."
+  },
+  "staff.report.original": {
+    "defaultMessage": "Show original",
+    "description": "The button under a translated comment of a report that shows the comment as written."
+  },
+  "staff.report.translating": {
+    "defaultMessage": "Translating…",
+    "description": "Under a report's comment while it is translated."
+  },
+  "staff.report.translated": {
+    "defaultMessage": "Translated from {language} by {provider}",
+    "description": "Under a report's translated comment. {language} is the language it was written in, {provider} the provider that translated it."
+  },
+  "staff.report.translate_failed": {
+    "defaultMessage": "{reason, select, limit {This server's monthly translation limit is reached. Translation is available again next month.} visibility {This comment cannot be sent to this server's translation service.} language {This server's translation service does not translate between these languages.} other {The comment could not be translated.}}",
+    "description": "Under a report's comment when the server did not translate it, by why: limit (the reader or the whole server used up this month's characters), visibility (no translation service of the server may receive a report's text), language (none translates from the comment's language into the reader's), other (the service failed). Try again follows only other. Read by moderators, who still read the comment as written."
+  },
+  "staff.report.posts": {
+    "defaultMessage": "{count, plural, one {# post} other {# posts}}",
+    "description": "The heading of the posts a report points at, on its screen: how many it points at."
+  },
+  "staff.report.posts.gone": {
+    "defaultMessage": "{count, plural, one {# post of the report is no longer on the server.} other {# posts of the report are no longer on the server.}}",
+    "description": "Under the posts of a report, for those the server deleted for good since."
+  },
+  "staff.report.deleted": {
+    "defaultMessage": "Deleted",
+    "description": "Over a post a report points at that was deleted since; when it was deleted follows at the line's end."
+  },
+  "staff.report.room.name": {
+    "defaultMessage": "Room name",
+    "description": "The term of a voice chat room's name, in a report's facts of the room."
+  },
+  "staff.report.room.description": {
+    "defaultMessage": "Room description",
+    "description": "The term of a voice chat room's description, in a report's facts of the room."
+  },
+  "staff.report.room.opened": {
+    "defaultMessage": "Room opened",
+    "description": "The term of when a voice chat room opened, in a report's facts of the room."
+  },
+  "staff.report.room.ended": {
+    "defaultMessage": "Room ended",
+    "description": "The term of when and how a voice chat room ended, in a report's facts of the room."
+  },
+  "staff.report.room.open_now": {
+    "defaultMessage": "Still open",
+    "description": "In a report's facts of a voice chat room that is still open."
+  },
+  "staff.report.room.end_note": {
+    "defaultMessage": "Why it was ended",
+    "description": "The term of the reason a moderator gave for ending a voice chat room."
+  },
+  "staff.report.room.settings": {
+    "defaultMessage": "Settings of the room",
+    "description": "For assistive technology, the name of the facts of one change of a voice chat room's settings."
+  },
+  "staff.report.room.log": {
+    "defaultMessage": "Who was in the room",
+    "description": "The heading, and the name for assistive technology, of the log of the voice chat room a report points at."
+  },
+  "staff.report.room.left": {
+    "defaultMessage": "{reason, select, moved {{handle} moved to another room} disconnected {{handle} lost the connection} removed {{handle} was removed from the room} blocked {{handle} left after a block} suspended {{handle} left when suspended} room_ended {{handle} stayed until the room ended} other {{handle} left}}",
+    "description": "An entry of a voice chat room's log on a report's screen: how the account of {handle} left."
+  },
+  "staff.report.room.removed": {
+    "defaultMessage": "{by} removed {handle} from the room",
+    "description": "An entry of a voice chat room's log on a report's screen. {by} removed {handle}, who may not join again."
+  },
+  "staff.report.room.end": {
+    "defaultMessage": "{reason, select, host {By the host} moderator {By a moderator} other {On its own}}",
+    "description": "In a report's facts: how the voice chat room ended."
+  },
+  "staff.report.room.how": {
+    "defaultMessage": "How it ended",
+    "description": "The term, in a report's facts, of how the voice chat room it points at ended."
+  },
+  "staff.report.room.joined": {
+    "defaultMessage": "{handle} joined",
+    "description": "An entry of a voice chat room's log on a report's screen. {handle} is who joined."
+  },
+  "staff.report.revision.by": {
+    "defaultMessage": "{handle} changed the settings",
+    "description": "An entry of the log of a voice chat room or an event on a report's screen: a change of its settings. Details shows them."
+  },
+  "staff.report.revision.reported": {
+    "defaultMessage": "What the reporter saw",
+    "description": "Under the change of a room's or an event's settings that was in effect when it was reported."
+  },
+  "staff.report.event.title": {
+    "defaultMessage": "Event title",
+    "description": "The term of an event's title, in a report's facts of the event."
+  },
+  "staff.report.event.description": {
+    "defaultMessage": "Event description",
+    "description": "The term of an event's description, in a report's facts of the event."
+  },
+  "staff.report.event.places": {
+    "defaultMessage": "Places",
+    "description": "The term of an event's places, every one whoever they were shown to, in a report's facts of the event."
+  },
+  "staff.report.event.no_places": {
+    "defaultMessage": "None",
+    "description": "In a report's facts of an event that has no places."
+  },
+  "staff.report.event.voice_place": {
+    "defaultMessage": "A voice chat room of this server",
+    "description": "In the list of an event's places on a report's screen, for a voice chat room."
+  },
+  "staff.report.event.when": {
+    "defaultMessage": "Event date",
+    "description": "The term of when an event starts, in a report's facts of the event."
+  },
+  "staff.report.event.no_date": {
+    "defaultMessage": "Not decided yet",
+    "description": "In a report's facts of an event that has no date yet."
+  },
+  "staff.report.event.cancelled": {
+    "defaultMessage": "Cancelled",
+    "description": "The term, in a report's facts, of who or what cancelled the event it points at."
+  },
+  "staff.report.event.open": {
+    "defaultMessage": "Open the event",
+    "description": "The link of a report's screen to the page of the event it points at."
+  },
+  "staff.report.event.settings": {
+    "defaultMessage": "Settings of the event",
+    "description": "For assistive technology, the name of the facts of one change of an event's settings."
+  },
+  "staff.report.event.log": {
+    "defaultMessage": "Changes of the event",
+    "description": "The heading, and the name for assistive technology, of the log of the changes of the event a report points at."
+  },
+  "staff.report.event.cancelled_by": {
+    "defaultMessage": "{reason, select, moderator {By a moderator} organizer_suspended {When the organizer was suspended} organizer_deleted {When the organizer was deleted} other {By the organizer}}",
+    "description": "In a report's facts of a cancelled event: who or what cancelled it."
+  },
+  "staff.report.event.cancelled_at": {
+    "defaultMessage": "When cancelled",
+    "description": "The term, in a report's facts, of when the event it points at was cancelled."
+  },
+  "staff.report.notes": {
+    "defaultMessage": "Notes",
+    "description": "The heading of the moderators' internal notes on a report's screen."
+  },
+  "staff.report.notes.none": {
+    "defaultMessage": "No notes yet.",
+    "description": "In the place of a report's notes while it has none."
+  },
+  "staff.report.note.by": {
+    "defaultMessage": "By {handle}",
+    "description": "Under a note on a report: who wrote it. {handle} is their handle."
+  },
+  "staff.report.note.cli": {
+    "defaultMessage": "From the command line",
+    "description": "Under a note on a report that was written with the command line."
+  },
+  "staff.report.note.field": {
+    "defaultMessage": "New note",
+    "description": "The label of the field of a new note on a report."
+  },
+  "staff.report.note.blank": {
+    "defaultMessage": "Write the note first.",
+    "description": "Under the field of a new note when Add note was pressed with nothing written."
+  },
+  "staff.report.note.add": {
+    "defaultMessage": "Add note",
+    "description": "The button that adds the note written to a report."
+  },
+  "staff.report.note.failed": {
+    "defaultMessage": "The note was not added. Try again.",
+    "description": "Before Add note when the server did not add the note; what was written stays in the field."
+  },
+  "staff.report.note.final": {
+    "defaultMessage": "A note cannot be edited or removed.",
+    "description": "Beside Add note on a report's screen."
+  },
+  "staff.report.forward": {
+    "defaultMessage": "Send to their server",
+    "description": "The heading of the section of a report of a remote account that forwards it to the account's server."
+  },
+  "staff.report.forward.field": {
+    "defaultMessage": "Text for their moderators",
+    "description": "The label of the field of the text a forwarded report carries to the account's server."
+  },
+  "staff.report.forward.send": {
+    "defaultMessage": "Send",
+    "description": "The button of the confirmation that sends a report to the reported account's server."
+  },
+  "staff.report.forward.confirm": {
+    "defaultMessage": "Send this report to {domain}?",
+    "description": "The question of the confirmation of forwarding a report. {domain} is the reported account's server."
+  },
+  "staff.report.forward.confirm.about": {
+    "defaultMessage": "Their moderators get the account, the posts and your text, but nothing about the reporter. A report can be sent only once. This cannot be undone.",
+    "description": "What the confirmation of sending a report to the account's server says it sends, and that it goes once."
+  },
+  "staff.report.forward.refused": {
+    "defaultMessage": "This report can no longer be sent to their server.",
+    "description": "Before the button that forwards a report, when the server refused: it was sent meanwhile, or can no longer be."
+  },
+  "staff.report.forward.too_long": {
+    "defaultMessage": "Shorten the text to 1,000 characters or fewer.",
+    "description": "Under the field of the text a forwarded report carries, when it is longer than the server takes."
+  },
+  "staff.report.forward.ask": {
+    "defaultMessage": "Send to their server…",
+    "description": "The button that asks, in a confirmation, before a report goes to the reported account's server."
+  },
+  "staff.report.cancel": {
+    "defaultMessage": "Cancel",
+    "description": "The button of a confirmation on a report's screen that does nothing."
+  },
+  "staff.report.resolved": {
+    "defaultMessage": "{outcome, select, actioned {Resolved, action taken} other {Resolved, no action needed}}",
+    "description": "A resolved report's state in its facts, with how it was resolved."
+  },
+  "staff.report.reporter.review": {
+    "defaultMessage": "An automated review of this server ({hook})",
+    "description": "Who filed a report that an external review filed, in its facts. {hook} names the review's hook (local.status)."
+  },
+  "staff.report.reporter.server": {
+    "defaultMessage": "The server {domain}",
+    "description": "Who filed a report that another server sent, in its facts. {domain} is that server."
+  },
+  "staff.report.title": {
+    "defaultMessage": "Report on {handle}",
+    "description": "The title of a report's screen, for assistive technology and the browser's tab. {handle} is the reported account's handle."
+  },
+  "staff.report.translated_unnamed": {
+    "defaultMessage": "Translated from {language}",
+    "description": "Under a report's translated comment when the server names no provider. {language} is the language it was written in."
+  }
+}

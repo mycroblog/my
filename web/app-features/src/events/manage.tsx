@@ -3,7 +3,8 @@
 // What the organizers do with an event from its page (ADR-0161 §4, FR-940, FR-944): its menu in the page's head,
 // "Manage the event", for the organizer and the co-organizers of an event that was not cancelled: changing it, its
 // invitations, and for the organizer alone its co-organizers and cancelling it, asked first with a note the attendees
-// read. The menu is a sheet on a phone (the app's MenuSheet) and a popover from a tablet, as a voice room's is.
+// read. The menu is a sheet on a phone (the app's MenuSheet) and a popover from a tablet, as a voice room's is. Another
+// reader has More there, which reports the event and its organizer (report.tsx); a co-organizer, the menu's last group.
 
 import { eventCoorganizersPath, eventEditPath, eventInvitationsPath } from "@my/app-components";
 import { eventFaultField, eventLimits, eventRefusal, type EventWrites, type ServerEvent } from "@my/app-data";
@@ -12,6 +13,7 @@ import {
   Button,
   focusRefusedField,
   FormAlert,
+  MenuButton,
   MenuGroup,
   MenuItem,
   MenuSurface,
@@ -29,11 +31,13 @@ const managesEvent = (event: ServerEvent) =>
 
 /**
  * The event's menu in its page's head, for its organizers: Change the event, Invitations, and for the organizer
- * Co-organizers and Cancel the event…, last and apart; nothing for another reader or a cancelled event.
+ * Co-organizers and Cancel the event…, last and apart, and for a co-organizer Report the event…; for another reader
+ * More, which holds Report the event… alone (`onReport`); nothing for its organizer once it was cancelled.
  */
 export function EventMenu({
   event,
   onCancel,
+  onReport,
   open,
   onOpenChange,
   t,
@@ -41,12 +45,29 @@ export function EventMenu({
   event: ServerEvent;
   /** The organizer chose Cancel the event…: the page asks. */
   onCancel: () => void;
+  /** Opens the report of the event; none for its organizer, who does not report their own event. */
+  onReport?: (() => void) | undefined;
   /** The menu is open (a story's), with `onOpenChange`; else its button alone opens it. */
   open?: boolean | undefined;
   onOpenChange?: ((open: boolean) => void) | undefined;
   t: T;
 }) {
-  if (!managesEvent(event)) return null;
+  const report =
+    onReport !== undefined && !event.viewer.organizer ? (
+      <MenuGroup>
+        <MenuItem id="report" icon="report" onAction={onReport}>
+          {t("report.menu_event")}
+        </MenuItem>
+      </MenuGroup>
+    ) : null;
+  if (!managesEvent(event)) {
+    if (report === null) return null;
+    return (
+      <MenuButton icon="more" label={t("report.more")} open={open} onOpenChange={onOpenChange}>
+        {report}
+      </MenuButton>
+    );
+  }
   const organizer = event.viewer.organizer;
   return (
     <MenuSurface
@@ -76,6 +97,7 @@ export function EventMenu({
           </MenuItem>
         </MenuGroup>
       )}
+      {report}
     </MenuSurface>
   );
 }

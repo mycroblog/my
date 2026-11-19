@@ -12,8 +12,8 @@
 // floats over the tab bar on the timelines and the profiles alone, and signing in, with its label, on every screen. The
 // server's notices stand at the top of the main column, the update's toast and that of a setting that was not saved in
 // the dock; the column beside the main one
-// holds what is around the reader, and beside a screen of the settings their menu (settings.tsx), the settings staying
-// the marked place. Where the reader is comes from the router; the frame lays the regions out by the
+// holds what is around the reader, beside a screen of the settings their menu (settings.tsx), the settings staying
+// the marked place, and beside a report the page of the moderators' queue it was opened from (staff.tsx). Where the reader is comes from the router; the frame lays the regions out by the
 // viewport, and every menu and the emoji picker of a post and of the composer open as a sheet on a phone's
 // (viewport.ts).
 
@@ -22,7 +22,6 @@ import wordmarkLight from "../../../brand/Wordmark-Primary-Color.svg";
 import {
   useArticleAuthoring,
   useInstance,
-  useModerationCount,
   useNotificationSounds,
   useRights,
   useUnreadConversations,
@@ -40,6 +39,7 @@ import {
   resumeCallPlayback,
   UnsavedSettings,
   useCall,
+  useStaffWaiting,
   useVoiceCallState,
   type Call,
 } from "@my/app-features";
@@ -73,6 +73,7 @@ import { useCompose } from "./compose";
 import { ServerBanners, UpdateToast } from "./notices";
 import { aroundPlacesFor, composesAt, isPlaceAt, listsPlace, placesFor, type Place } from "./places";
 import { SettingsAside, settingsEntryAt } from "./settings";
+import { ReportAside, reportAt } from "./staff";
 import { useNarrowViewport } from "./viewport";
 
 /** The article editor, first in the menu's sheet on a phone, where New post floats alone. */
@@ -147,7 +148,7 @@ function DirectPlace({ place, current }: { place: Place; current: boolean }) {
 function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: ReactNode; children: ReactNode }) {
   const t = useStrings();
   const { locale } = useLocale();
-  const waiting = useModerationCount(signedIn) ?? 0;
+  const waiting = useStaffWaiting("moderation", signedIn) ?? 0;
   const unread = useUnreadConversations(signedIn) ?? 0;
   const said = [
     ...(unread > 0 ? [t("app.menu_direct", { count: unread })] : []),
@@ -169,7 +170,7 @@ function TabMenu({ signedIn, footer, children }: { signedIn: boolean; footer: Re
 /** A place whose badge counts what awaits the reader as a moderator. */
 function ModerationPlace({ place, current }: { place: Place; current: boolean }) {
   const t = useStrings();
-  const count = useModerationCount();
+  const count = useStaffWaiting("moderation");
   return (
     <NavItem
       href={place.href}
@@ -401,6 +402,8 @@ export function Shell({
         </FrameMain>
         {signedIn && settingsEntryAt(pathname) !== undefined ? (
           <SettingsAside pathname={pathname} instance={instance} />
+        ) : signedIn && reportAt(pathname) !== undefined ? (
+          <ReportAside id={reportAt(pathname) ?? ""} pathname={pathname} instance={instance} />
         ) : (
           <Around signedIn={signedIn} pathname={pathname} instance={instance} />
         )}

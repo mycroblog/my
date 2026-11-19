@@ -28,3 +28,4 @@ export type { FakeVoice, FakeVoiceEvent } from "./voice";
 export type { FakeEventPlan, FakeEvents } from "./events";
 export type { FakeFinanceOptions } from "./finance";
 export type { FakeSupporterOptions, FakeSupporters } from "./supporters";
+export type { FakeReportOptions, FakeReports } from "./reports";

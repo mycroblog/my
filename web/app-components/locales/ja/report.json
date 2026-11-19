@@ -1,0 +1,154 @@
+{
+  "report.title_account": {
+    "defaultMessage": "{handle} を通報",
+    "description": "The title of the panel that reports an account to the moderators. {handle} is the account's handle (@name@server)."
+  },
+  "report.title_room": {
+    "defaultMessage": "ルーム「{name}」を通報",
+    "description": "The title of the panel that reports a voice chat room to the moderators. {name} is the room's name as its host wrote it."
+  },
+  "report.title_event": {
+    "defaultMessage": "イベント「{name}」を通報",
+    "description": "The title of the panel that reports an event to the moderators. {name} is the event's title as its organizer wrote it."
+  },
+  "report.close": {
+    "defaultMessage": "閉じる",
+    "description": "The name of the button that closes the report panel without sending it."
+  },
+  "report.cancel": {
+    "defaultMessage": "キャンセル",
+    "description": "The button of the report panel that closes it without sending the report."
+  },
+  "report.intro": {
+    "defaultMessage": "{kind, select, room {通報は {instance} のモデレーターが読みます。公開されることはなく、ルームのホストの {handle} に、誰が通報したかが伝わることもありません。} event {通報は {instance} のモデレーターが読みます。公開されることはなく、イベントの主催者の {handle} に、誰が通報したかが伝わることもありません。} other {通報は {instance} のモデレーターが読みます。公開されることはなく、{handle} に、誰が通報したかが伝わることもありません。}}",
+    "description": "The first sentences of the report panel: who reads the report, and that the reported account never learns who sent it. {kind} is room (a voice chat room, reported with its host), event (an event, reported with its organizer) or account. {instance} is the server's display name, or its domain name. {handle} is the account's handle."
+  },
+  "report.category": {
+    "defaultMessage": "通報する理由",
+    "description": "The heading of the choice of why the reader reports the account, the room or the event."
+  },
+  "report.category_name": {
+    "defaultMessage": "{category, select, spam {スパム} legal {違法な内容} violation {サーバーのルール違反} other {その他}}",
+    "description": "The name of a reason for a report, one choice of the report panel. {category} is spam, legal (content that breaks the law), violation (breaks the server's rules, which the reader then chooses) or other."
+  },
+  "report.spam_hint": {
+    "defaultMessage": "迷惑な宣伝、同じ内容の繰り返し、誤解を招くリンク",
+    "description": "What the reason Spam covers, under its name in the report panel; the other reasons have none."
+  },
+  "report.category_missing": {
+    "defaultMessage": "通報する理由を選んでください。",
+    "description": "The error under the reasons of the report panel, when the reader sends it without choosing one."
+  },
+  "report.rules": {
+    "defaultMessage": "違反しているルール",
+    "description": "The heading of the choice of the server's rules that the reported account breaks, shown once the reader chose that reason."
+  },
+  "report.rules_missing": {
+    "defaultMessage": "違反しているルールを 1 つ以上選んでください。",
+    "description": "The error under the server's rules in the report panel, when the reader sends it without choosing any."
+  },
+  "report.posts": {
+    "defaultMessage": "通報に含める投稿",
+    "description": "The heading of the choice of the account's posts that the report points the moderators at."
+  },
+  "report.posts_hint": {
+    "defaultMessage": "{count, plural, =0 {{max} 件まで選べます。まだ選んでいません。} other {{max} 件まで選べます。# 件を選んでいます。}}",
+    "description": "Under the heading of the posts to include in a report: how many may be chosen ({max}, 20) and how many are ({count})."
+  },
+  "report.posts_more": {
+    "defaultMessage": "前の投稿を表示",
+    "description": "The button under the account's posts in the report panel that shows older posts to choose from."
+  },
+  "report.posts_loading": {
+    "defaultMessage": "投稿を読み込んでいます…",
+    "description": "Said in the place of the account's posts in the report panel while they load."
+  },
+  "report.posts_none": {
+    "defaultMessage": "含められる投稿はありません。このまま通報できます。",
+    "description": "Said in the place of the account's posts in the report panel when the reader sees none of them."
+  },
+  "report.posts_failed": {
+    "defaultMessage": "投稿を読み込めませんでした。接続を確認して、もう一度試してください。",
+    "description": "Said in the place of the account's posts in the report panel when they could not be read; Try again follows it."
+  },
+  "report.retry": {
+    "defaultMessage": "もう一度試す",
+    "description": "The button that reads the account's posts again in the report panel."
+  },
+  "report.post_warning": {
+    "defaultMessage": "注意書き: {warning}",
+    "description": "A post behind a content warning, among the posts to include in a report: its warning in place of its text. {warning} is the warning its author wrote."
+  },
+  "report.post_no_text": {
+    "defaultMessage": "本文のない投稿",
+    "description": "A post that has no text (its images alone), among the posts to include in a report."
+  },
+  "report.comment": {
+    "defaultMessage": "モデレーターへのコメント",
+    "description": "The label of the field of the report panel where the reader writes to the moderators."
+  },
+  "report.comment_hint": {
+    "defaultMessage": "任意です。{max, number} 文字まで書けます。",
+    "description": "The hint under the comment of a report. {max} is 1000."
+  },
+  "report.comment_rule": {
+    "defaultMessage": "コメントを {max, number} 文字以内にしてください。",
+    "description": "The error under the comment of a report when it is too long. {max} is 1000."
+  },
+  "report.forward": {
+    "defaultMessage": "{domain} のモデレーターにも通報を送る",
+    "description": "The checkbox of the report panel, for an account of another server: send the report to that server's moderators too. {domain} is that server's domain name."
+  },
+  "report.forward_hint": {
+    "defaultMessage": "あなたの名前は含めずに送ります。",
+    "description": "Under the checkbox that sends a report to another server's moderators: the report goes without naming the reader."
+  },
+  "report.send": {
+    "defaultMessage": "通報する",
+    "description": "The button that sends the report to the moderators."
+  },
+  "report.sent_title": {
+    "defaultMessage": "通報しました",
+    "description": "The title of the report panel once the report was sent."
+  },
+  "report.also": {
+    "defaultMessage": "{handle} について、ほかにできること",
+    "description": "The heading over muting and blocking the reported account, once the report was sent. {handle} is the account's handle."
+  },
+  "report.mute": {
+    "defaultMessage": "{handle} をミュート",
+    "description": "The name for assistive technology of the button Mute once the report was sent: it mutes the reported account. {handle} is the account's handle."
+  },
+  "report.mute_short": {
+    "defaultMessage": "ミュート",
+    "description": "The button that mutes the reported account once the report was sent; the heading over it names the account."
+  },
+  "report.block": {
+    "defaultMessage": "{handle} をブロック…",
+    "description": "The name for assistive technology of the button Block… once the report was sent: it blocks the reported account, after a confirmation. {handle} is the account's handle."
+  },
+  "report.block_short": {
+    "defaultMessage": "ブロック…",
+    "description": "The button that blocks the reported account once the report was sent, after a confirmation; the heading over it names the account."
+  },
+  "report.muted": {
+    "defaultMessage": "{handle} をミュートしました。",
+    "description": "Said in the place of the mute button once the reported account was muted."
+  },
+  "report.blocked": {
+    "defaultMessage": "{handle} をブロックしました。",
+    "description": "Said in the place of the block button once the reported account was blocked."
+  },
+  "report.mute_failed": {
+    "defaultMessage": "{handle} をミュートできませんでした。接続を確認して、もう一度試してください。",
+    "description": "Said over the mute button when muting the reported account failed."
+  },
+  "report.block_failed": {
+    "defaultMessage": "{handle} をブロックできませんでした。接続を確認して、もう一度試してください。",
+    "description": "Said over the block button when blocking the reported account failed."
+  },
+  "report.done": {
+    "defaultMessage": "完了",
+    "description": "The button that closes the report panel once the report was sent."
+  }
+}

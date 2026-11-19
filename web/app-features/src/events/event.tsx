@@ -14,6 +14,7 @@
 //   and the calendar file of the event to download, a cancelled one's too. While its date is polled, the poll
 //   (poll.tsx) in their place.
 // - Its organizers, and who is going and maybe (people.tsx).
+// - For another reader, More in its head, which reports the event and its organizer (manage.tsx, report.tsx).
 // - For its organizers (manage.tsx): the menu in its head, which leads to changing it, its invitations and its
 //   co-organizers, and cancels it, asked first; the approval of each attendee going or maybe (people.tsx); the poll's
 //   dates added, withdrawn and confirmed from its table (poll.tsx); and why its voice room could not open, in the
@@ -61,6 +62,7 @@ import {
   type Answer,
 } from "@my/design-system";
 import { useEffect, useRef, useState } from "react";
+import { ReportDialog } from "../report";
 import { saveFile } from "../save-file";
 import { descriptionParts } from "./description";
 import { CancelDialog, EventMenu } from "./manage";
@@ -322,6 +324,7 @@ function Shown({
   const room = eventRoom(event, now);
   const title = useRef<HTMLHeadingElement>(null);
   const [cancelling, setCancelling] = useState(false);
+  const [reporting, setReporting] = useState(false);
   // The cancellation was done: the title takes the focus once the dialog is out of the document.
   const cancelled = useRef(false);
   const poll = useRef<HTMLDivElement>(null);
@@ -339,6 +342,9 @@ function Shown({
             event={event}
             onCancel={() => {
               setCancelling(true);
+            }}
+            onReport={() => {
+              setReporting(true);
             }}
             t={t}
           />
@@ -373,6 +379,15 @@ function Shown({
       <Attendees event={event} phase={phase} say={say} t={t} />
       {room.state === "open" && <RoomFoot roomId={room.roomId} join={join} say={say} t={t} />}
       <ModalPresence>
+        {reporting && (
+          <ReportDialog
+            key="report"
+            subject={{ kind: "event", account: event.organizer, id: event.id, name: event.title }}
+            onClose={() => {
+              setReporting(false);
+            }}
+          />
+        )}
         {cancelling && (
           <CancelDialog
             key="cancel"

@@ -446,36 +446,44 @@ export function ReauthDialog({
 const panel = tv({ slots: { title: "text-title" } });
 
 /**
- * The frame of a panel: a column, its head over its body. Under `tablet` it is a screen of its own, as tall as the
- * viewport, its body scrolling under its head; from `tablet` a dialog of the main column's width on its own surface,
- * as tall as what it holds, the modal's overlay scrolling it. A `specimen` in a page is as tall as what it holds at
- * every width. One of the frames of a page: it reads the viewport.
+ * The frame of a panel: a column, its head over its body, and its foot under it where it has one. Under `tablet` it is
+ * a screen of its own, as tall as the viewport, its body scrolling between its head and its foot; from `tablet` a
+ * dialog of the main column's width on its own surface, as tall as what it holds: without a foot the modal's overlay
+ * scrolls it, with one it is at most as tall as the room the overlay leaves, and its body scrolls between the head and
+ * the foot, so that the foot's actions stay in sight. A `specimen` in a page is as tall as what it holds at every
+ * width. One of the frames of a page: it reads the viewport.
  */
 function PanelFrame({
   as,
   specimen,
   head,
+  foot,
   children,
 }: {
   /** The dialog's element. */
   as: ReactElement<{ className?: unknown }>;
   specimen: boolean;
   head: ReactNode;
+  foot?: ReactNode;
   children: ReactNode;
 }) {
+  const footed = foot !== undefined && foot !== null;
   const frame = [
     "relative box-border flex h-dvh flex-col bg-surface font-sans text-body text-text outline-hidden",
     "tablet:mx-auto tablet:h-auto tablet:w-[min(var(--shell-column),100%)] tablet:rounded-overlay",
     "tablet:shadow-overlay",
+    footed && !specimen ? "tablet:max-h-[calc(100dvh-var(--composer-top)-var(--composer-bottom))]" : "",
   ].join(" ");
+  const body = footed
+    ? "min-h-0 flex-1 overflow-y-auto px-shell-edge pb-entry tablet:px-dialog"
+    : "min-h-0 flex-1 overflow-y-auto px-shell-edge pb-entry tablet:overflow-visible tablet:px-dialog tablet:pb-dialog";
   return (
     <Box as={as} className={specimen ? `${frame} h-auto` : frame}>
       <div className="flex items-center justify-between gap-entry-caption px-shell-edge pt-entry-line pb-entry tablet:px-dialog">
         {head}
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto px-shell-edge pb-entry tablet:overflow-visible tablet:px-dialog tablet:pb-dialog">
-        {children}
-      </div>
+      <div className={body}>{children}</div>
+      {footed && <div className="px-shell-edge pt-entry pb-entry tablet:px-dialog tablet:pb-dialog">{foot}</div>}
     </Box>
   );
 }
@@ -488,11 +496,19 @@ export type PanelDialogProps = {
   onClose: () => void;
   /** Over the page, or in the flow of a page (a story's specimen). */
   layer?: boolean | undefined;
+  /**
+   * What stays in sight under what scrolls (a form's last choice, its alert and its buttons): at the screen's bottom on
+   * a phone, at the dialog's from `tablet`.
+   */
+  foot?: ReactNode;
   children: ReactNode;
 };
 
-/** Something to read over the page: its title and close at the end of its head, then what it shows, which scrolls. */
-export function PanelDialog({ title, closeLabel, onClose, layer = true, children }: PanelDialogProps) {
+/**
+ * Something to read over the page: its title and close at the end of its head, then what it shows, which scrolls, and
+ * what stays under it (`foot`).
+ */
+export function PanelDialog({ title, closeLabel, onClose, layer = true, foot, children }: PanelDialogProps) {
   const s = panel();
   const { direction } = useReader(undefined);
   const titleId = useId();
@@ -500,11 +516,11 @@ export function PanelDialog({ title, closeLabel, onClose, layer = true, children
     <>
       {layer ? (
         <Heading slot="title" className={s.title()}>
-          {title}
+          {titleBreaks(title)}
         </Heading>
       ) : (
         <h2 id={titleId} className={s.title()}>
-          {title}
+          {titleBreaks(title)}
         </h2>
       )}
       <Row as="span" inline bleedEnd="icon-button-inline">
@@ -514,13 +530,13 @@ export function PanelDialog({ title, closeLabel, onClose, layer = true, children
   );
   if (!layer)
     return (
-      <PanelFrame specimen head={head} as={<div role="dialog" aria-labelledby={titleId} dir={direction} />}>
+      <PanelFrame specimen head={head} foot={foot} as={<div role="dialog" aria-labelledby={titleId} dir={direction} />}>
         {children}
       </PanelFrame>
     );
   return (
     <ModalLayer onDismiss={onClose} backdrop="tablet" place="screen">
-      <PanelFrame specimen={false} head={head} as={<Dialog dir={direction} />}>
+      <PanelFrame specimen={false} head={head} foot={foot} as={<Dialog dir={direction} />}>
         {children}
       </PanelFrame>
     </ModalLayer>

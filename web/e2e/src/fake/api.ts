@@ -73,6 +73,7 @@ import { eventHandlers, fakeEventPlans, type FakeEventPlan, type FakeEvents } fr
 import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
+import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -313,7 +314,14 @@ export type FakeOptions = {
   translation?: {
     provider?: "answers" | "limit" | "unavailable" | "language" | "failed";
     browser?: boolean;
+    /**
+     * The server sends a report's text to its provider for the moderators (`translation_reports_to_server`): the
+     * provider then receives private posts too, as a report's comment counts.
+     */
+    reports?: boolean;
   };
+  /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
+  reports?: FakeReportOptions;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
@@ -559,6 +567,8 @@ export type FakeApi = {
   readonly events: FakeEvents;
   /** The plans' and the tips' IDs, and the reader's subscription as the server holds it now (supporters.ts). */
   readonly supporters: FakeSupporters;
+  /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
+  readonly reports: FakeReports;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1424,7 +1434,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
   const translationProvider: Schema<"InstanceTranslationProvider"> = {
     id: "fake",
     name: "Demo Translate",
-    visibilities: ["public", "local", "unlisted"],
+    visibilities: ["public", "local", "unlisted", ...(o.translation?.reports === true ? ["private" as const] : [])],
   };
 
   /**
@@ -2097,7 +2107,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     federation: { mode: "off" },
     sends_email: o.email === true,
     ...(o.push === true ? { push_server_key: pushServerKey } : {}),
-    rules: [],
+    rules: fakeRules(started).rules,
     search_indexing: o.crawlers?.search ?? "allow",
     ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
@@ -2114,6 +2124,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     translation: {
       browser: o.translation?.browser === true,
       providers: o.translation?.provider === undefined ? [] : [translationProvider],
+      ...(o.translation?.reports === true ? { reports_to_server: true } : {}),
     },
     single_user: o.singleUser === true,
     ...(o.singleUser === true ? { single_user_account: fullAccount(personOf(admin)) } : {}),
@@ -2386,6 +2397,33 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     problem,
     notFound,
     page,
+  });
+
+  /** When the oldest open report was filed, as the counts say it: nothing while none is open. */
+  const oldestOpen = (at: string | undefined) => (at === undefined ? {} : { oldest_open_report_filed_at: at });
+
+  // The moderators' queue of reports (reports.ts), the fake's own, and the reports the reader files.
+  const moderated = reportHandlers({
+    started,
+    options: o.reports,
+    viewer,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    known: (username) => people.some((p) => p.username === username),
+    knownPost: (key) => posts.some((p) => p.key === key),
+    accountId: idOf,
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    statusOf: (key) => statusOf(postOf(key)),
+    statusById: (id) => {
+      const key = keyOf.get(id);
+      return key === undefined ? undefined : statusOf(postOf(key));
+    },
+    eventId: (key) => events.events.id(key),
+    translates: o.translation?.reports === true && o.translation.provider === "answers",
+    host: fakeHost,
   });
 
   // With `everyKind`, a notification of each kind of its group in place of the seed's, an hour apart: from people
@@ -2857,7 +2895,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /admin/counts": () => {
       const granted = permissionsOf(viewer);
       const counts = exact<Schema<"AdminCounts">>()({
-        ...(granted.includes("manage_reports") ? { open_reports: 3 } : {}),
+        ...(granted.includes("manage_reports") ? { open_reports: moderated.reports.openCount() } : {}),
+        ...(granted.includes("manage_reports") ? oldestOpen(moderated.reports.oldestOpen()) : {}),
         ...(granted.includes("manage_accounts") ? { pending_registrations: 2, pending_appeals: 1 } : {}),
       });
       return { status: 200, body: counts };
@@ -3709,6 +3748,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...supporting.handlers,
     ...finance.handlers,
 
+    // ---- The moderators' reports ------------------------------------------------------------------------------------
+
+    ...moderated.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3928,6 +3971,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     voice: voiceRooms.voice,
     events: events.events,
     supporters: supporting.supporters,
+    reports: moderated.reports,
     unimplemented,
     revocations,
     newPosts,

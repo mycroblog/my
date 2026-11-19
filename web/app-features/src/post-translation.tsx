@@ -21,7 +21,13 @@ import {
   type PostTranslation,
 } from "@my/app-components";
 import type { TranslationFailure } from "@my/app-components";
-import { serverTranslates, TranslationRefusal, useInstance, useTranslateStatus } from "@my/app-data";
+import {
+  serverTranslates,
+  TranslationRefusal,
+  useInstance,
+  useTranslateStatus,
+  type StatusTranslation,
+} from "@my/app-data";
 import { CaptionLine, Entry, MenuGroup, MenuItem, TextButton, useLocale } from "@my/design-system";
 import {
   browserName,
@@ -37,7 +43,7 @@ import { usePostAuthor, usePostCardSize, type AuthorAction, type AuthorDone, typ
 import { ApprovalLine } from "./post-approval";
 
 /** The language tag of the reader's locale that a translation goes into: its language, and its script if it names one. */
-function readerLanguage(locale: string): string {
+export function readerLanguage(locale: string): string {
   const l = new Intl.Locale(locale);
   return l.script === undefined ? l.language : `${l.language}-${l.script}`;
 }
@@ -152,6 +158,15 @@ const refusalReason = {
   denied: "failed",
 } as const satisfies Record<TranslationRefusal["reason"], TranslationFailure["reason"]>;
 
+/**
+ * Where the server translates a post for a screen that asks it otherwise than the reader's own posts do (a post a report
+ * points at, which the moderators ask through the report): whether the server may send it at all, and the request.
+ */
+export type ServerTranslation = {
+  readonly allowed: boolean;
+  readonly translate: (id: string, language: string, version?: string) => Promise<StatusTranslation>;
+};
+
 /** The props of a post's translation, and the handler of its Translate and Show original. */
 export type PostTranslationState = {
   readonly props: Pick<PostProps, "translatable" | "translation" | "translating" | "translationFailure">;
@@ -161,17 +176,23 @@ export type PostTranslationState = {
 
 /**
  * The translation of the post that `status` shows (a boost's boosted status), for a reader signed in, or a visitor
- * (`visitor`), whom only the browser translates for.
+ * (`visitor`), whom only the browser translates for; `through`, where the server is asked otherwise (a report's post),
+ * whether it may be and how, the browser's translator offered as for any post.
  */
-export function usePostTranslation(status: PostStatus, visitor = false): PostTranslationState {
+export function usePostTranslation(
+  status: PostStatus,
+  visitor = false,
+  through?: ServerTranslation,
+): PostTranslationState {
   const shown = status.boost ?? status;
   const target = readerLanguage(useLocale().locale);
   const source = shown.language;
   const version = shown.edited_at ?? shown.created_at;
   const offer = useInstance()?.translation;
-  const translateOnServer = useTranslateStatus();
+  const ownServer = useTranslateStatus();
+  const translateOnServer = through?.translate ?? ownServer;
   const foreign = inAnotherLanguage(source, target);
-  const server = !visitor && foreign && serverTranslates(offer, shown.visibility);
+  const server = !visitor && foreign && (through?.allowed ?? true) && serverTranslates(offer, shown.visibility);
   const browserAllowed = foreign && offer?.browser === true && hasBrowserTranslator();
   const availability = useBrowserAvailability(source, target, browserAllowed);
   const browser = browserAllowed && availability !== undefined && availability !== "unavailable";
@@ -255,8 +276,8 @@ export function usePostTranslation(status: PostStatus, visitor = false): PostTra
 }
 
 /**
- * The groups of another's post's menu that act on its author (mute, block…) and on a remote author's server (mute
- * server), headed by whom they act on; for a signed-in reader only.
+ * The groups of another's post's menu that act on its author (mute, block…, report…, the post chosen in the report)
+ * and on a remote author's server (mute server), headed by whom they act on; for a signed-in reader only.
  */
 function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor }) {
   const { t } = stringsIn(useLocale().locale);
@@ -272,6 +293,15 @@ function AuthorMenu({ status, author }: { status: PostStatus; author: PostAuthor
         </MenuItem>
         <MenuItem id="block-author" icon="block" onAction={on("block")}>
           {t("profile.block")}
+        </MenuItem>
+        <MenuItem
+          id="report-author"
+          icon="report"
+          onAction={() => {
+            author.report(status);
+          }}
+        >
+          {t("report.menu")}
         </MenuItem>
       </MenuGroup>
       {account.acct.includes("@") && (

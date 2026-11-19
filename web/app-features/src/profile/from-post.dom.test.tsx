@@ -71,17 +71,17 @@ async function menuOpen(author: Author) {
   return { ...made, user, menu, place, items };
 }
 
-test("the More menu of a post of another server names its author, with their server, and the server: Mute and Block… under the one, Mute server under the other", async () => {
+test("the More menu of a post of another server names its author, with their server, and the server: Mute, Block… and Report… under the one, Mute server under the other", async () => {
   const { items } = await menuOpen("remote");
 
-  expect(items("@sora@photos.example")).toEqual(["Mute", "Block…"]);
+  expect(items("@sora@photos.example")).toEqual(["Mute", "Block…", "Report…"]);
   expect(items("photos.example")).toEqual(["Mute server"]);
 });
 
 test("the More menu of a post of this server names its author without a server, and offers no mute of a server", async () => {
   const { menu, items } = await menuOpen("local");
 
-  expect(items("@sam")).toEqual(["Mute", "Block…"]);
+  expect(items("@sam")).toEqual(["Mute", "Block…", "Report…"]);
   expect(menu.queryAllByRole("menuitem", { name: "Mute server" })).toHaveLength(0);
 });
 
