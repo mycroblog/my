@@ -10,6 +10,7 @@ import { ProblemError, type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import type { FinanceQuery } from "./finance";
+import { adminSettingsQuery, type AdminSetting } from "./admin-settings";
 import { instanceQuery } from "./instance";
 import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
@@ -38,8 +39,6 @@ export type IncomeKind = Schemas["IncomeKind"];
 export type BillingImport = Schemas["BillingImport"];
 /** A billing source: a cloud provider whose usage charges the server imports. */
 export type BillingSourceName = Schemas["BillingSourceName"];
-/** An instance setting as a holder of `manage_settings` reads it. */
-export type AdminSetting = Schemas["AdminSetting"];
 
 /** The schedules of a cost item, once first. */
 export const costSchedules = ["once", "weeks", "months", "years"] as const satisfies readonly CostSchedule[];
@@ -320,16 +319,11 @@ export function useBillingImportRun(): (source: BillingSourceName) => Promise<Im
 
 // ---- What the server publishes ----------------------------------------------------------------------------------------
 
-/** Every instance setting, for a holder of `manage_settings`. */
-export function adminSettingsQuery({ queries }: AppData) {
-  return queries.queryOptions("get", "/admin/settings");
-}
-
 /**
  * The instance settings of `keys`, by key, for a holder of `manage_settings`; nothing is read while `enabled` is false
  * (a reader without it).
  */
-export function useAdminSettings<K extends AdminSetting["key"]>(
+export function useFinanceSettings<K extends AdminSetting["key"]>(
   keys: readonly K[],
   enabled = true,
 ): OneRead<Readonly<Record<K, AdminSetting>>> {
@@ -345,17 +339,12 @@ export function useAdminSettings<K extends AdminSetting["key"]>(
   };
 }
 
-/** Reads every instance setting, for a route's loader. */
-export async function loadAdminSettings(data: AppData): Promise<void> {
-  await data.queryClient.query(adminSettingsQuery(data)).catch(() => undefined);
-}
-
 /**
  * Changes the settings of `values` together, all of them or none: the cache then holds what the server answered, and
  * the instance (what it publishes, its funding meter) and every total are read again. Rejects with the server's
  * problem, a 422 naming the key it refused.
  */
-export async function saveAdminSettings(data: AppData, values: Readonly<Record<string, string>>): Promise<void> {
+export async function saveFinanceSettings(data: AppData, values: Readonly<Record<string, string>>): Promise<void> {
   const { data: list } = await data.api.PATCH("/admin/settings", { body: { values: { ...values } } });
   const key = adminSettingsQuery(data).queryKey;
   await data.queryClient.cancelQueries({ queryKey: key });
@@ -364,7 +353,7 @@ export async function saveAdminSettings(data: AppData, values: Readonly<Record<s
 }
 
 /** Changes instance settings together, for a screen. */
-export function useSaveAdminSettings(): (values: Readonly<Record<string, string>>) => Promise<void> {
+export function useSaveFinanceSettings(): (values: Readonly<Record<string, string>>) => Promise<void> {
   const data = useAppData();
-  return (values) => saveAdminSettings(data, values);
+  return (values) => saveFinanceSettings(data, values);
 }

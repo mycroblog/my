@@ -11,10 +11,10 @@
 import {
   amountFits,
   loadAdminSettings,
-  useAdminSettings,
+  useFinanceSettings,
   useInstance,
   usePermissions,
-  useSaveAdminSettings,
+  useSaveFinanceSettings,
   viewerQuery,
   type AdminSetting,
   type AppData,
@@ -163,7 +163,7 @@ const viewerIncomeWords = (t: T, value: string): Words => ({
 /** The form of what is published, for a holder of `manage_settings`. */
 function PublicationForm({ saved }: { saved: Values }) {
   const { t, locale } = useStaffStrings();
-  const save = useSaveAdminSettings();
+  const save = useSaveFinanceSettings();
   const currencies = currencyOptions();
   const { say, status } = useSaid();
   const ids = useId();
@@ -418,7 +418,7 @@ function PublishedNow(): ReactNode {
 export function FinancePublicationScreen({ go }: StaffUnderProps): ReactNode {
   const { t } = useStaffStrings();
   const may = usePermissions().includes("manage_settings");
-  const read = useAdminSettings(keys, may);
+  const read = useFinanceSettings(keys, may);
   const title = <ScreenTitle back={<FinanceBack to="root" go={go} />}>{t("staff_finance.publication")}</ScreenTitle>;
   if (!may)
     return (

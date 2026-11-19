@@ -47,6 +47,7 @@ import { useState, type ReactNode } from "react";
 import { staffHref, type StaffSearch, type StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
 import { ReadNotice, Titled, useMoment, useMomentDay, useStaffStrings, useSaid, type T } from "../parts";
+import { Irreversible } from "../settings/parts";
 import { stateWords, subscriberOf, subscriptionMark, supportersPaths } from "./parts";
 
 /** The subscriptions an address's query asks for: of a plan and a state, each of every kind where left out. */
@@ -283,9 +284,7 @@ function SubscriptionView({ subscription: s, onBack }: { subscription: AdminSubs
       {goesOn(s.state) && (
         <Titled title={t("staff_supporters.subscription.end")}>
           <Stack gap="screen-field-gap">
-            <FeedNotice start lead>
-              {t("staff_supporters.subscription.end.about")}
-            </FeedNotice>
+            <Irreversible>{t("staff_supporters.subscription.end.about")}</Irreversible>
             <Row>
               <Button
                 onPress={() => {

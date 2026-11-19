@@ -340,7 +340,7 @@
     "description": "An option of what the server publishes of its costs, and the fact of what it publishes now."
   },
   "staff_finance.publication.costs.about": {
-    "defaultMessage": "{value, select, private {Nobody outside the administrators sees the costs.} totals {Everyone sees the total of each period, in each currency, on the about page.} breakdown {Everyone also sees the costs by provider and category, which tells which cloud the server runs on.} other {}}",
+    "defaultMessage": "{value, select, private {Nobody outside the administrators sees the costs.} totals {Everyone sees the total of each period, in each currency, on the About page.} breakdown {Everyone also sees the costs by provider and category, which tells which cloud the server runs on.} other {}}",
     "description": "Under an option of what the server publishes of its costs: what it publishes. Item names, memos and payments are never published."
   },
   "staff_finance.publication.income": {

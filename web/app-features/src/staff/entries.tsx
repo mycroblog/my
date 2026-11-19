@@ -207,6 +207,7 @@ export const staffEntries: readonly StaffEntry[] = [
     hint: "staff.entry.oauth_apps.hint",
     Screen: AdminOAuthAppsScreen,
     load: (data, search) => loadOAuthApps(data, search),
+  },
   {
     // The server's running costs and income (FR-901–FR-905, FR-917): the totals, the cost items, the money movements,
     // the billing imports, and what the server publishes of them.

@@ -14,12 +14,12 @@ import {
   loadSupporterProgram,
   programRefusal,
   useAdminPlans,
-  useAdminSettings,
+  useFinanceSettings,
   useInstance,
   usePaymentStatus,
   usePermissions,
   useProgramActions,
-  useSaveAdminSettings,
+  useSaveFinanceSettings,
   useSupporterProgram,
   useSupporterTips,
   viewerQuery,
@@ -287,8 +287,8 @@ function ListAudience({ say }: { say: Say }) {
   const { t } = useStaffStrings();
   const may = usePermissions().includes("manage_settings");
   const instance = useInstance();
-  const settings = useAdminSettings(["supporter_list_visibility"], may);
-  const save = useSaveAdminSettings();
+  const settings = useFinanceSettings(["supporter_list_visibility"], may);
+  const save = useSaveFinanceSettings();
   const id = useId();
   const [chosen, setChosen] = useState<Audience | undefined>(undefined);
   const [busy, setBusy] = useState(false);

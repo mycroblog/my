@@ -42,6 +42,7 @@ import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
 import type { StaffUnderProps } from "../entries";
 import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid } from "../parts";
+import { Irreversible } from "../settings/parts";
 import { FinanceBack, financePaths, scheduleWords, useDay, useTodayDate } from "./parts";
 
 type Say = (words: string, alert?: boolean) => void;
@@ -493,9 +494,7 @@ function Delete({ item, onDeleted, say }: { item: CostItem; onDeleted: () => voi
   return (
     <Titled title={t("staff_finance.cost.delete")}>
       <Stack gap="screen-field-gap">
-        <FeedNotice start lead>
-          {t("staff_finance.cost.delete.about")}
-        </FeedNotice>
+        <Irreversible>{t("staff_finance.cost.delete.about")}</Irreversible>
         <Row>
           <Button
             onPress={() => {

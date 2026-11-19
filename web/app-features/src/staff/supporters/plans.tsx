@@ -57,6 +57,7 @@ import { useId, useState, type ReactNode } from "react";
 import type { StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
 import { errorOf, Field, ReadNotice, Titled, useMoment, useStaffStrings, useSaid, type T } from "../parts";
+import { Irreversible } from "../settings/parts";
 import { supporterCurrencies, supportersPaths } from "./parts";
 
 type PlanPermission = (typeof planPermissions)[number];
@@ -638,9 +639,7 @@ function PlanView({ plan, go }: { plan: AdminSupporterPlan; go: (href: string) =
           </Titled>
           <Titled title={t("staff_supporters.plan.retire")}>
             <Stack gap="screen-field-gap">
-              <FeedNotice start lead>
-                {t("staff_supporters.plan.retire.about", { count: plan.members })}
-              </FeedNotice>
+              <Irreversible>{t("staff_supporters.plan.retire.about", { count: plan.members })}</Irreversible>
               <Row>
                 <Button
                   onPress={() => {

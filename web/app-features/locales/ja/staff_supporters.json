@@ -452,7 +452,7 @@
     "description": "Why the last reconciliation stopped, with what to do."
   },
   "staff_supporters.permission": {
-    "defaultMessage": "{permission, select, view_finance {サーバーの会計を見る} create_custom_emojis {カスタム絵文字を申請する} start_voice_rooms {ボイスチャットのルームを開く} create_invites {人を招待する} keep_posts_longer {削除の上限を超えて投稿を残す} create_articles {記事を書く} create_events {イベントを作る} other {ほかの権限}}",
+    "defaultMessage": "{permission, select, view_finance {サーバーの会計を見る} create_custom_emojis {カスタム絵文字を申請する} start_voice_rooms {通話のルームを開く} create_invites {人を招待する} keep_posts_longer {削除の上限を超えて投稿を残す} create_articles {記事を書く} create_events {イベントを作る} other {ほかの権限}}",
     "description": "A permission a supporter plan's role may give, by its name."
   },
   "staff_supporters.plan.standing": {
