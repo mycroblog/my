@@ -38,6 +38,7 @@ import {
   IconCalendarEvent,
   IconCalendarEventFilled,
   IconCalendarExclamation,
+  IconCalendarMinus,
   IconCalendarTime,
   IconCalendarX,
   IconChartBar,
@@ -85,6 +86,7 @@ import {
   IconLogout2,
   IconMail,
   IconMailFilled,
+  IconMapPin,
   IconMaximize,
   IconMenu2,
   IconMessageCircle,
@@ -108,6 +110,7 @@ import {
   IconPlayerPlayFilled,
   IconPlugConnectedX,
   IconPlus,
+  IconQuestionMark,
   IconQuote,
   IconRefresh,
   IconRepeat,
@@ -341,6 +344,17 @@ export const icons = {
   eventReminder: { off: IconAlarm },
   eventStarted: { off: IconCalendarBolt },
   roomUnavailable: { off: IconMicrophoneOff },
+  // The places of an event by kind (its voice chat room is `room`, an address online `link`): a place in person, a
+  // pin on a map. The answers to it and to its date poll: going or can go, maybe, not going or cannot, each a shape
+  // of its own, so that a column of counts and the reader's own answer say which by shape as well as by word.
+  inPerson: { off: IconMapPin },
+  // An event's date fixed among its poll's (a check in a ring, apart from the calendars of its notifications), and an
+  // event that ended, a calendar struck through as the cancelled one is crossed out: two ends, marked alike.
+  dateFixed: { off: IconCircleCheck },
+  eventEnded: { off: IconCalendarMinus },
+  answerYes: { off: IconCheck },
+  answerMaybe: { off: IconQuestionMark },
+  answerNo: { off: IconX },
   // The screens of the settings with no glyph of their own elsewhere (ADR-0110 §5): how the app shows and posts
   // (sliders), the keyword filters (a funnel), signing in and who is signed in (a lock, as what only the reader
   // opens), the apps the account lets in (a grid of them), the invitations (a ticket), the account's data (a store of

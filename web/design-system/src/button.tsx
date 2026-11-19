@@ -112,6 +112,8 @@ const button = tv({
       timeline: { base: "min-h-control-timeline px-control-timeline-inline py-control-timeline-block" },
       form: { base: "min-h-control-form px-control-form-inline py-control-form-block" },
       icon: { base: "h-control-timeline px-icon-button-inline py-0 whitespace-nowrap" },
+      // A glyph alone that is a finger's target at every pointer: the action of a row of a table.
+      square: { base: "size-icon-button-touch px-0 py-0 whitespace-nowrap" },
       chip: { base: "h-chip px-chip-inline py-0 whitespace-nowrap" },
       // The app frame's primary action (shell.tsx): the width of the rail or the sidebar, or floating over the tab bar.
       side: { base: "h-shell-item px-0 py-0 whitespace-nowrap" },
@@ -125,7 +127,7 @@ const button = tv({
 });
 
 type Kind = ButtonKind | "icon" | "chip";
-type Size = ButtonSize | "icon" | "chip" | "side" | "float" | "notice";
+type Size = ButtonSize | "icon" | "square" | "chip" | "side" | "float" | "notice";
 
 /**
  * How a button places what it holds: its label in its middle, under the spinner while busy. It keeps its size, which

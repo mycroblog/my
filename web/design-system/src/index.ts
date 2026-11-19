@@ -267,6 +267,25 @@ export {
   type RoomControlProps,
   type RoomLineProps,
 } from "./voice";
+export {
+  AnswerChoice,
+  CandidateRow,
+  CandidateTable,
+  EventLine,
+  EventTime,
+  PlaceLine,
+  PlaceList,
+  type Answer,
+  type AnswerChoiceProps,
+  type CandidateRowProps,
+  type CandidateTableProps,
+  type EventLineProps,
+  type EventState,
+  type EventTimeProps,
+  type OutLink,
+  type PlaceKind,
+  type PlaceLineProps,
+} from "./event";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { SaveState, type SaveStateProps } from "./save-state";
 export {

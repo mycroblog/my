@@ -325,12 +325,21 @@ export type Headcount = {
  * How many are in a room: the people's glyph and the figure, the same wherever a room shows it (its title, its line
  * in a list, the call's bar), heard as its label.
  */
-export function HeadcountMark({ count, place = "caption" }: { count: Headcount; place?: "caption" | "action" }) {
+export function HeadcountMark({
+  count,
+  place = "caption",
+  glyph = "members",
+}: {
+  count: Headcount;
+  place?: "caption" | "action";
+  /** Whom it counts, where not who is there: the glyph of an answer to an event (maybe). */
+  glyph?: IconName;
+}) {
   const s = headcount();
   return (
     <Row as="span" inline rigid align="center" gap="hair" className={s.root()}>
       <Row as="span" inline className={s.glyph()} aria-hidden="true">
-        <Icon name="members" place={place} />
+        <Icon name={glyph} place={place} />
       </Row>
       <span className={s.figure()} aria-hidden="true">
         {count.shown}

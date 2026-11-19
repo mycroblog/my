@@ -23,13 +23,15 @@ export type IconButtonProps = Omit<ButtonProps, "kind" | "size" | "children" | "
   pressed?: boolean | undefined;
   /** The reader's locale, for the count; the I18nProvider's by default. */
   locale?: string | undefined;
+  /** A finger's target, square, at every pointer, its glyph alone: the action of a row of a table (a date poll's). */
+  square?: boolean | undefined;
 };
 
 /** The count as the button shows it, compact in `locale`: "1.2K", "1.3万". */
 export const compactCount = (n: number, locale: string) =>
   new Intl.NumberFormat(locale, { notation: "compact", maximumFractionDigits: 1 }).format(n);
 
-export function IconButton({ icon, label, count, pressed, locale, ...rest }: IconButtonProps) {
+export function IconButton({ icon, label, count, pressed, locale, square = false, ...rest }: IconButtonProps) {
   const { lang, direction } = useReader(locale);
   const shows = count !== undefined && count > 0;
   const shown = shows ? compactCount(count, lang) : "";
@@ -39,7 +41,7 @@ export function IconButton({ icon, label, count, pressed, locale, ...rest }: Ico
       {...rest}
       dir={direction}
       kind="icon"
-      size="icon"
+      size={square ? "square" : "icon"}
       pressed={pressed}
       aria-label={shows ? `${label}, ${shown}` : label}
       aria-description={shown === exact ? undefined : exact}

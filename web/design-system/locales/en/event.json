@@ -1,0 +1,10 @@
+{
+  "event.own_time": {
+    "defaultMessage": "{time} ({zone})",
+    "description": "An event's time in the event's own time zone, after the same time in the reader's zone, shown when the two zones differ: time is the time as the reader's locale writes it (Sat 9:00 PM), zone the place name of the event's zone (Tokyo)."
+  },
+  "event.new_tab": {
+    "defaultMessage": "(opens {host} in a new tab)",
+    "description": "Said after a link of an event that leaves the site (a place online, a place's map), for assistive technology: host is the site it leads to (meet.example.com), which also shows beside the link."
+  }
+}
