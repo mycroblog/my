@@ -29,7 +29,8 @@
 // approve replies, boosts and quotes by hand (ADR-0155): what waits shows to its author alone and counts nowhere, the
 // reader's requests list and are answered, and a reply approved joins its thread.
 //
-// How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are access.ts's.
+// How the reader signs in, the browsers and apps of the account, their own OAuth apps and invites are access.ts's; the
+// voice rooms, joining one, and its session's heartbeat and stream, voice.ts's.
 //
 // The stream (GET /streaming) stays open and silent until `send` gives it an event, or `newPosts` and
 // `newNotification` make one. A test scripts an operation with `script` (script.ts). The token revocation the app
@@ -70,6 +71,7 @@ import {
 import { day, idAt, minute, notFound, page, problem, variants, type PageQuery } from "./common";
 import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
+import { voiceHandlers, type FakeVoice } from "./voice";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -522,6 +524,8 @@ export type FakeApi = {
   script: <R extends Route>(route: R, script?: Script<R>) => Scripted<R>;
   /** Sends `event` on every open stream (GET /streaming). */
   send: (event: FakeStreamEvent) => void;
+  /** The reader's call: the rooms' IDs, their session, and what its room stream says (voice.ts). */
+  readonly voice: FakeVoice;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -2149,6 +2153,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       : [],
   );
 
+  const voiceRooms = voiceHandlers({
+    rooms,
+    viewer: () => accountOf(viewer),
+    off: o.voiceOff === true,
+    listed: () => (around === "none" ? [] : rooms),
+    problem,
+    notFound,
+    page,
+  });
+
   // The reader's exports of their data, newest first; a request adds one being built, which stays so.
   const dataExports: Schema<"DataExport">[] = [];
   if (o.dataExport === "building" || o.dataExport === "rebuilding")
@@ -2674,10 +2688,6 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       if (a === undefined) return notFound();
       announcementRead.add(a.key);
       return { status: 200, body: announcementOf(a.key) };
-    },
-    "GET /voice/rooms": ({ query }) => {
-      if (o.voiceOff === true) return notFound();
-      return { status: 200, body: page(around === "none" ? [] : rooms, query).body };
     },
     "GET /events": ({ query }) => ({
       status: 200,
@@ -3519,6 +3529,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       return { status: 201, body: publish(d) };
     },
 
+    // ---- The voice chat rooms -----------------------------------------------------------------------------------------
+
+    ...voiceRooms.handlers,
+
     // ---- How the reader signs in, the browsers and apps of the account, their own apps and invites ----------------------
 
     ...accessHandlers({
@@ -3735,6 +3749,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     serve: scripts.serve,
     script: scripts.script,
     send,
+    voice: voiceRooms.voice,
     unimplemented,
     revocations,
     newPosts,
