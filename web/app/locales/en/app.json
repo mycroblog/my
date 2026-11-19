@@ -243,6 +243,18 @@
     "defaultMessage": "Leave",
     "description": "The button in the bar of the call the reader is in that leaves the call."
   },
+  "app.call_connecting": {
+    "defaultMessage": "Connecting…",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call first connects."
+  },
+  "app.call_reconnecting": {
+    "defaultMessage": "Reconnecting…",
+    "description": "In the bar of the call the reader is in, under the room's name, in place of who hosts it, while the call's connection is lost and comes back by itself."
+  },
+  "app.call_playback_blocked": {
+    "defaultMessage": "Tap anywhere to hear the room",
+    "description": "In the bar of the call the reader is in, under the room's name, while the browser does not let the call's audio play: any tap or key on the page lets it play."
+  },
   "app.maintenance_title": {
     "defaultMessage": "Under maintenance",
     "description": "The title of the page that replaces every screen while the server is under maintenance."

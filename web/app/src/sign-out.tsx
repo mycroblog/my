@@ -8,6 +8,7 @@
 // out: the post still being written and the timelines live in the page alone, and go with it. Every other tab of the
 // browser hears of it, empties its own cache of server data and what it kept of a form, and loads anew at the start
 // too, with what was being written there. What the reader saved on the server (their drafts) stays.
+// A call the reader is in leaves its room first, and ends with the session in every tab.
 //
 // When the app has no token to revoke with (the server had ended the token's family), the same is removed, but the
 // session of the server's own sign-in pages may still live, with which the next Sign in would pass without a
@@ -25,7 +26,7 @@
 // no token and an emptied cache.
 
 import { closeSession, endSession, type AppData, type SessionEnd } from "@my/app-data";
-import { forgetConfirmationKept, SignOutDialog } from "@my/app-features";
+import { forgetConfirmationKept, leaveCallBeforeSignOut, SignOutDialog } from "@my/app-features";
 import { ModalPresence } from "@my/design-system";
 import { clearCaches } from "@my/platform";
 import { useRouter } from "@tanstack/react-router";
@@ -69,6 +70,8 @@ async function removeKept(): Promise<void> {
  * revocation.
  */
 async function signOut({ data, config, leave }: Session): Promise<void> {
+  // The reader's call leaves its room while the session can still say so; its end would end the call anyway.
+  await leaveCallBeforeSignOut();
   let end: SessionEnd = "revoked";
   if (data === null) await removeKept();
   else end = await endSession(data, config.clientId, removeKept);

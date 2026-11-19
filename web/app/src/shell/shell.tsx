@@ -29,7 +29,16 @@ import {
   useUnreadNotifications,
   type Instance,
 } from "@my/app-data";
-import { ComposeLayer, leaveCall, muteCall, PostActions, UnsavedSettings, useCall, type Call } from "@my/app-features";
+import {
+  ComposeLayer,
+  leaveCall,
+  muteCall,
+  PostActions,
+  resumeCallPlayback,
+  UnsavedSettings,
+  useCall,
+  type Call,
+} from "@my/app-features";
 import {
   CallBar,
   Frame,
@@ -190,14 +199,38 @@ function PlaceList({ items, pathname }: { items: readonly Place[]; pathname: str
   );
 }
 
-/** The bar of the call the reader is in: the room and who hosts it, the microphone, and leaving. */
+/**
+ * The bar of the call the reader is in: the room and who hosts it (or that it connects, or that its audio waits for a
+ * gesture), the microphone, and leaving. While the browser blocks the call's audio, the reader's next tap or key
+ * anywhere on the page lets it play.
+ */
 function CallSlot({ call }: { call: Call }) {
   const t = useStrings();
+  const blocked = call.playbackBlocked === true;
+  useEffect(() => {
+    if (!blocked) return undefined;
+    const resume = () => {
+      resumeCallPlayback();
+    };
+    document.addEventListener("pointerdown", resume, true);
+    document.addEventListener("keydown", resume, true);
+    return () => {
+      document.removeEventListener("pointerdown", resume, true);
+      document.removeEventListener("keydown", resume, true);
+    };
+  }, [blocked]);
+  const detail = blocked
+    ? t("app.call_playback_blocked")
+    : call.phase === "connecting"
+      ? t("app.call_connecting")
+      : call.phase === "reconnecting"
+        ? t("app.call_reconnecting")
+        : t("app.room_caption", { host: call.host, count: call.participants });
   return (
     <CallBar
       href={`/voice/${call.roomId}`}
       room={call.room}
-      detail={t("app.room_caption", { host: call.host, count: call.participants })}
+      detail={detail}
       muted={call.muted}
       micLabel={t(call.muted ? "app.call_unmute" : "app.call_mute")}
       onMic={() => {

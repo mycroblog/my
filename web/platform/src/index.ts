@@ -13,6 +13,7 @@ export { watchKeyboardInset } from "./keyboard-inset";
 export { browserLanguages } from "./languages";
 export { mediaDevices } from "./media";
 export { oneTimeCodeField } from "./one-time-code";
+export { holdUnload, watchPageHide } from "./page";
 export {
   createPasskey,
   getPasskey,

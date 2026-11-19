@@ -15,6 +15,7 @@ import "@my/design-system/emoji.css";
 import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import { onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
+import { inCall } from "@my/app-features";
 import { I18nProvider } from "@my/design-system";
 import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
 
@@ -46,8 +47,10 @@ if (data !== null) startStream(data);
 if (import.meta.env.PROD) registerServiceWorker("/sw.js");
 // A chunk of an older build that a newer one replaced (its worker took over and dropped the old precache, and the
 // server serves the new build alone) fails to load: the page loads again on the build the server serves, once a
-// minute at most, so that a chunk that fails for another reason never loops (ADR-0028 §12).
+// minute at most, so that a chunk that fails for another reason never loops (ADR-0028 §12). Never while the reader is
+// in a call, which a load would end: the navigation that needed the chunk fails instead, and the call goes on.
 addEventListener("vite:preloadError", (event) => {
+  if (inCall()) return;
   const last = Number(readDeviceValue(reloadedKey) ?? "0");
   if (Date.now() - last < 60_000) return;
   event.preventDefault();
