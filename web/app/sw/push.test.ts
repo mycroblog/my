@@ -2,7 +2,7 @@
 /// <reference types="bun" />
 
 import { describe, expect, test } from "bun:test";
-import { clickedURL, notificationFor, type Shown } from "./push";
+import { clickedURL, notificationFor, windowToOpen, type Shown } from "./push";
 
 const origin = "https://my.example";
 
@@ -77,5 +77,25 @@ describe("clickedURL", () => {
       const url = clickedURL(data, origin);
       expect([data, new URL(url).origin]).toEqual([data, origin]);
     }
+  });
+});
+
+describe("the window a click opens its address in", () => {
+  const at = (path: string, focused = false) => ({ url: `${origin}${path}`, focused });
+
+  test("is the focused one, else any, else none", () => {
+    const home = at("/home");
+    const focused = at("/notifications", true);
+    expect(windowToOpen([home, focused])).toBe(focused);
+    expect(windowToOpen([home])).toBe(home);
+    expect(windowToOpen([])).toBeUndefined();
+  });
+
+  test("is never one on a payment page, focused or not", () => {
+    const checkout = at("/payments/pages/payjp/checkout?s=x", true);
+    const home = at("/home");
+    expect(windowToOpen([checkout, home])).toBe(home);
+    expect(windowToOpen([checkout, at("/payments")])).toBeUndefined();
+    expect(windowToOpen([at("/paymentsx", true)])?.url).toBe(`${origin}/paymentsx`);
   });
 });

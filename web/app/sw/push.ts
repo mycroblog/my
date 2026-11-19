@@ -57,3 +57,19 @@ export function clickedURL(data: unknown, origin: string): string {
   }
   return new URL("/notifications", origin).href;
 }
+
+/** The part of a window client that decides whether a notification's click may take it over. */
+export type OpenWindow = { url: string; focused: boolean };
+
+/**
+ * The window a click on a notification opens its address in: the focused one, or else any; none, for a new window,
+ * when there is none. A window on a payment page (/payments/..., a checkout or a card change under way) is never
+ * taken: the click would navigate the payer away from a payment in progress.
+ */
+export function windowToOpen<W extends OpenWindow>(windows: readonly W[]): W | undefined {
+  const app = windows.filter((w) => {
+    const path = URL.canParse(w.url) ? new URL(w.url).pathname : "";
+    return path !== "/payments" && !path.startsWith("/payments/");
+  });
+  return app.find((w) => w.focused) ?? app[0];
+}

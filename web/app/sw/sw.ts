@@ -36,7 +36,7 @@ import {
 import { registerRoute } from "workbox-routing";
 import { CacheFirst, NetworkOnly } from "workbox-strategies";
 import { cachePrefix, isMessage, shellPath, skipWaitingMessage } from "@my/platform/sw-protocol";
-import { clickedURL, notificationFor } from "./push";
+import { clickedURL, notificationFor, windowToOpen } from "./push";
 import { classify, signsOut, type Handling } from "./routing";
 
 declare const self: ServiceWorkerGlobalScope & {
@@ -153,12 +153,11 @@ self.addEventListener("push", (event) => {
 });
 
 /**
- * Opens `url` in a window of the app: the focused one, or else any, which goes there; a new window when the app is not
- * open.
+ * Opens `url` in a window of the app: the focused one, or else any, which goes there, never one on a payment page; a
+ * new window when there is no other.
  */
 async function openApp(url: string): Promise<void> {
-  const windows = await self.clients.matchAll({ type: "window" });
-  const target = windows.find((client) => client.focused) ?? windows[0];
+  const target = windowToOpen(await self.clients.matchAll({ type: "window" }));
   if (target === undefined) {
     await self.clients.openWindow(url);
     return;
