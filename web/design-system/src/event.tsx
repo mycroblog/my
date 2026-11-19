@@ -15,8 +15,9 @@
 import { createContext, use, useId, type HTMLAttributes, type ReactElement, type ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
+import { CoverRadio, segmentClassName } from "./choice";
 import { Icon, type IconName } from "./icons";
-import { Box, Layers, Pin, Row, Spoken, Stack } from "./layout";
+import { Box, Layers, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { HeadcountMark, type Headcount } from "./voice";
 
@@ -167,62 +168,11 @@ const answerIcon: Record<Answer, IconName> = { yes: "answerYes", maybe: "answerM
 
 const choice = tv({
   slots: {
-    // As a secondary button, on the raised surface; chosen, knocked out of the text's color, which no hover changes.
-    segment: [
-      "box-border min-h-control-form cursor-pointer rounded-control px-control-timeline-inline py-control-form-line",
-      "bg-surface-raised font-sans text-body font-label text-text outline-hidden",
-      "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
-      "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
-      "has-[input:checked:enabled]:bg-text has-[input:checked]:text-surface",
-      // Closed, the answers dim; the chosen one stays knocked out, of the muted text's color, which keeps the surface's
-      // words on it at a readable contrast where a dimmed knock-out would not.
-      "has-[input:disabled]:cursor-not-allowed has-[input:disabled:not(:checked)]:opacity-disabled",
-      "has-[input:checked:disabled]:bg-muted-text",
-    ],
     note: "text-caption text-muted-text [word-break:auto-phrase]",
     // The note keeps its room while a save state stands in its place.
     hidden: "invisible",
   },
 });
-
-/**
- * The radio of an answer, over the whole of its label and not drawn: a press or a click anywhere on the answer lands on
- * the control itself, and the label under it shows its state (chosen, focused, disabled). Radios of one `name` are one
- * group to the browser, which the arrow keys move along.
- */
-function AnswerInput({
-  name,
-  value,
-  checked,
-  disabled,
-  onChange,
-}: {
-  name: string;
-  value: Answer;
-  checked: boolean;
-  disabled: boolean;
-  onChange: (answer: Answer) => void;
-}) {
-  return (
-    <Pin
-      cover
-      full="both"
-      as={
-        <input
-          type="radio"
-          name={name}
-          value={value}
-          checked={checked}
-          disabled={disabled}
-          className="cursor-pointer opacity-0 disabled:cursor-not-allowed"
-          onChange={() => {
-            onChange(value);
-          }}
-        />
-      }
-    />
-  );
-}
 
 /**
  * The three answers, which know their own width: in columns alike, each a third of the row; from a tablet's column, no
@@ -310,7 +260,6 @@ export function AnswerChoice({
   note,
   save,
 }: AnswerChoiceProps) {
-  const s = choice();
   const id = useId();
   const lined = note !== undefined || save !== undefined;
   return (
@@ -322,8 +271,11 @@ export function AnswerChoice({
     >
       <ChoicePlace>
         {answers.map((a) => (
-          <SegmentPlace key={a} as={<label className={s.segment()} data-selected={value === a || undefined} />}>
-            <AnswerInput
+          <SegmentPlace
+            key={a}
+            as={<label className={segmentClassName({ size: "form" })} data-selected={value === a || undefined} />}
+          >
+            <CoverRadio
               name={id}
               value={a}
               checked={value === a}
@@ -442,18 +394,6 @@ const table = tv({
     confirmed: "text-caption font-label",
     count: "tabular-nums",
     glyph: "text-muted-text",
-    // As the answers to the event, smaller: on the raised surface, the chosen one knocked out.
-    segment: [
-      "box-border cursor-pointer rounded-control bg-surface-raised font-sans text-caption font-label text-text",
-      "outline-hidden",
-      "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
-      "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
-      "has-[input:checked:enabled]:bg-text has-[input:checked]:text-surface",
-      // Closed, the answers dim; the chosen one stays knocked out, of the muted text's color, which keeps the surface's
-      // words on it at a readable contrast where a dimmed knock-out would not.
-      "has-[input:disabled]:cursor-not-allowed has-[input:disabled:not(:checked)]:opacity-disabled",
-      "has-[input:checked:disabled]:bg-muted-text",
-    ],
     save: "text-caption",
   },
 });
@@ -580,8 +520,11 @@ export function CandidateRow({ time, counts, answer, onAnswer, isDisabled, confi
       <CandidatePlace at="answer" role="cell" className="">
         <Row gap="hair" role="radiogroup" aria-labelledby={`${id} ${headId("yours")}`}>
           {answers.map((a) => (
-            <AnswerPlace key={a} as={<label className={s.segment()} data-selected={answer === a || undefined} />}>
-              <AnswerInput
+            <AnswerPlace
+              key={a}
+              as={<label className={segmentClassName({ size: "compact" })} data-selected={answer === a || undefined} />}
+            >
+              <CoverRadio
                 name={id}
                 value={a}
                 checked={answer === a}

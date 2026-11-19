@@ -3,9 +3,10 @@
 // The controls of a choice among options: the options as pressable rows on the page's surface, each headed by the
 // mark it is answered with, a radio's ring or, where several may be chosen, a checkbox's square; the mark alone, for
 // what shows a choice made or to be made without being pressed; an option as it is written, a field headed by that
-// mark; and a share of a whole as a bar. Every word is the caller's.
+// mark; a single choice among a few short options side by side, as segments (a period, an amount); and a share of a
+// whole as a bar. Every word is the caller's.
 
-import { useId, type ReactNode } from "react";
+import { useId, type ReactElement, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
@@ -209,6 +210,175 @@ export function ChoiceField({
       </Row>
       {error && <FieldError id={errorId}>{error}</FieldError>}
     </>
+  );
+}
+
+/**
+ * A segment of a single choice (an answer to an event, a period, an amount), as a secondary button, on the raised
+ * surface, and on the page's where it stands on a raised one; chosen, knocked out of the text's color, which no hover
+ * changes. Its size: `form`, a form control's height; `target`, a finger's target at every pointer; `compact`, a
+ * caption's type, its size its place's.
+ */
+export const segmentClassName = tv({
+  base: [
+    "box-border cursor-pointer rounded-control bg-surface-raised font-sans font-label text-text outline-hidden",
+    "has-[input:enabled:not(:checked)]:hover:bg-surface-raised-hover",
+    "has-[input:enabled:not(:checked)]:active:bg-surface-raised-pressed has-[input:focus-visible]:shadow-focus",
+    "[[data-surface-raised]_&]:bg-surface",
+    "[[data-surface-raised]_&]:has-[input:enabled:not(:checked)]:hover:bg-surface-hover",
+    "[[data-surface-raised]_&]:has-[input:enabled:not(:checked)]:active:bg-surface-pressed",
+    "has-[input:checked:enabled]:bg-text [[data-surface-raised]_&]:has-[input:checked:enabled]:bg-text",
+    "has-[input:checked]:text-surface",
+    // Closed, the segments dim; the chosen one stays knocked out, of the muted text's color, which keeps the surface's
+    // words on it at a readable contrast where a dimmed knock-out would not.
+    "has-[input:disabled]:cursor-not-allowed has-[input:disabled:not(:checked)]:opacity-disabled",
+    "has-[input:checked:disabled]:bg-muted-text [[data-surface-raised]_&]:has-[input:checked:disabled]:bg-muted-text",
+  ],
+  variants: {
+    size: {
+      form: "min-h-control-form px-control-timeline-inline py-control-form-line text-body",
+      target: "min-h-icon-button-touch px-control-timeline-inline py-control-form-line text-body",
+      compact: "text-caption",
+    },
+  },
+});
+
+/**
+ * The radio of a segment, over the whole of its label and not drawn: a press or a click anywhere on the segment lands
+ * on the control itself, and the label under it shows its state (chosen, focused, disabled). Radios of one `name` are
+ * one group to the browser, which the arrow keys move along.
+ */
+export function CoverRadio<T extends string>({
+  name,
+  value,
+  checked,
+  disabled,
+  onChange,
+}: {
+  name: string;
+  value: T;
+  checked: boolean;
+  disabled: boolean;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <Pin
+      cover
+      full="both"
+      as={
+        <input
+          type="radio"
+          name={name}
+          value={value}
+          checked={checked}
+          disabled={disabled}
+          className="cursor-pointer opacity-0 disabled:cursor-not-allowed"
+          onChange={() => {
+            onChange(value);
+          }}
+        />
+      }
+    />
+  );
+}
+
+/** One option of a `SegmentChoice`: its value, its words, and a short line under them ("Save 10%"). */
+export type SegmentOption<T extends string> = { value: T; label: string; note?: string | undefined };
+
+/**
+ * The tracks of the segments, which know their own width: in columns alike, three at most to a row on a phone (four
+ * two by two); from a tablet's column, all in one row, each no wider than a few words.
+ */
+const SEGMENT_TRACKS = {
+  1: "grid-cols-[minmax(0,1fr)] @min-[32rem]:grid-cols-[minmax(0,9rem)]",
+  2: "grid-cols-[repeat(2,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(2,minmax(0,9rem))]",
+  3: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(3,minmax(0,9rem))]",
+  4: "grid-cols-[repeat(2,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(4,minmax(0,9rem))]",
+  5: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(5,minmax(0,9rem))]",
+  6: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[32rem]:grid-cols-[repeat(6,minmax(0,9rem))]",
+} as const;
+
+/** The segments, `count` of them, in the tracks of their count. */
+function SegmentGrid({ count, children }: { count: number; children: ReactNode }) {
+  const tracks = SEGMENT_TRACKS[Math.min(6, Math.max(1, count)) as keyof typeof SEGMENT_TRACKS];
+  return (
+    <div className="@container">
+      <div className={`grid gap-entry-caption ${tracks}`}>{children}</div>
+    </div>
+  );
+}
+
+/** A segment, as `as` (its `<label>`, which its radio covers): its words over its note, in its middle. */
+function SegmentPlace({ as, children }: { as: ReactElement<{ className?: unknown }>; children: ReactNode }) {
+  return (
+    <Stack as={as} anchor pack="center" justify="center" className="text-center">
+      {children}
+    </Stack>
+  );
+}
+
+const segments = tv({
+  slots: {
+    label: "[word-break:auto-phrase]",
+    note: "text-caption font-normal [word-break:auto-phrase]",
+    about: "text-caption text-muted-text [word-break:auto-phrase]",
+  },
+});
+
+/**
+ * A single choice among one to six short options, named `label`, side by side as segments (Monthly | Yearly, the
+ * amounts of a tip): a radio group the arrow keys move along, each radio over the whole of its segment, a finger's
+ * target tall; each its words, and a short note under them; the chosen one knocked out. `about`, under them, says what
+ * the choice means and describes it.
+ */
+export function SegmentChoice<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+  isDisabled = false,
+  about,
+}: {
+  label: string;
+  options: readonly SegmentOption<T>[];
+  /** The chosen value; null before one is chosen. */
+  value: T | null;
+  onChange: (value: T) => void;
+  /** No option may be chosen now. */
+  isDisabled?: boolean | undefined;
+  about?: string | undefined;
+}) {
+  const s = segments();
+  const name = useId();
+  const aboutId = useId();
+  return (
+    <Stack
+      gap="entry-line"
+      role="radiogroup"
+      aria-label={label}
+      {...(about === undefined ? {} : { "aria-describedby": aboutId })}
+    >
+      <SegmentGrid count={options.length}>
+        {options.map((option) => (
+          <SegmentPlace key={option.value} as={<label className={segmentClassName({ size: "target" })} />}>
+            <CoverRadio
+              name={name}
+              value={option.value}
+              checked={value === option.value}
+              disabled={isDisabled}
+              onChange={onChange}
+            />
+            <span className={s.label()}>{option.label}</span>
+            {option.note !== undefined && <span className={s.note()}>{option.note}</span>}
+          </SegmentPlace>
+        ))}
+      </SegmentGrid>
+      {about !== undefined && (
+        <p id={aboutId} className={s.about()}>
+          {about}
+        </p>
+      )}
+    </Stack>
   );
 }
 
