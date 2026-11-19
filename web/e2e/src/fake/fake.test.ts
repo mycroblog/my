@@ -237,6 +237,189 @@ describe("the stream", () => {
   });
 });
 
+describe("the voice rooms", () => {
+  type Room = components["schemas"]["VoiceRoom"];
+  type Join = components["schemas"]["VoiceRoomJoin"];
+
+  /** Joins the fake's room at `index`, and opens the stream of the session. */
+  const inRoom = async (fake: FakeApi, index = 0) => {
+    const room = fake.voice.roomId(index);
+    const join = (await ask(fake, "POST", `/voice/rooms/${room}/participation`)) as Answered<Join>;
+    const response = await fake.serve(request("GET", `/voice/rooms/${room}/stream?session=${join.body.session}`));
+    if (response.body === null) throw new Error("test: the stream has no body");
+    return { room, join, response, reader: response.body.getReader() };
+  };
+  /** The next frame of a stream, as text, or null once it ended. */
+  const frame = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
+    const { value, done } = await reader.read();
+    return done ? null : new TextDecoder().decode(value);
+  };
+  /** The name and the data of an event frame. */
+  const event = (text: string | null) => {
+    const match = /^event: (\w+)\ndata: (.*)\n\n$/s.exec(text ?? "");
+    return match === null ? text : { event: match[1], data: JSON.parse(match[2] ?? "null") as unknown };
+  };
+  const beat = (fake: FakeApi, room: string, session: string) =>
+    ask(fake, "POST", `/voice/rooms/${room}/heartbeat`, { session }).then((answer) => answer.status);
+
+  test("the stories' server lists open rooms, reads one and a history, as a reader who is in none", async () => {
+    const fake = createFakeApi();
+    const list = (await ask(fake, "GET", "/voice/rooms")) as Answered<{ items: Room[] }>;
+    expect(list.status).toBe(200);
+    expect(list.body.items.length).toBeGreaterThan(1);
+    expect(list.body.items.map((r) => r.id).slice(0, 2)).toEqual([fake.voice.roomId(0), fake.voice.roomId(1)]);
+    const one = (await ask(fake, "GET", `/voice/rooms/${fake.voice.roomId(0)}`)) as Answered<Room>;
+    expect([one.status, one.body.id]).toEqual([200, fake.voice.roomId(0)]);
+    // No session of anyone is shown outside the stream.
+    expect(list.body.items.flatMap((r) => r.participants).filter((p) => p.session !== undefined)).toEqual([]);
+    const history = await ask(fake, "GET", "/voice/history");
+    expect([history.status, history.body]).toEqual([200, { items: [] }]);
+    expect(fake.voice.joined()).toBeNull();
+    const nowhere = await ask(fake, "GET", "/voice/rooms/nowhere");
+    expect(nowhere.status).toBe(404);
+  });
+
+  test("a join gives a new session and a grant, whose stream says it connected and the room, with the reader in it", async () => {
+    const fake = createFakeApi();
+    const { room, join, response, reader } = await inRoom(fake);
+    expect(join.status).toBe(200);
+    expect(join.body.grant).toMatchObject({ kind: "p2p", ice_servers: [], relay_only: false });
+    expect(Date.parse(join.body.grant.expires_at)).toBeGreaterThan(Date.now());
+    expect(fake.voice.joined()).toEqual({ room, session: join.body.session });
+    expect(response.headers.get("Content-Type")).toBe("text/event-stream");
+    const [connected, first] = [await frame(reader), await frame(reader)];
+    expect(connected).toBe(": connected\n\n");
+    const state = event(first) as { event: string; data: Room };
+    expect(state.event).toBe("state");
+    expect(state.data.participants.find((p) => p.account.id === fake.accountId("yuki"))).toMatchObject({
+      role: "listener",
+      session: join.body.session,
+    });
+    expect(fake.voice.opened()).toBe(1);
+  });
+
+  test("the session's heartbeat and its new grant are answered, another session's are not", async () => {
+    const fake = createFakeApi();
+    const { room, join } = await inRoom(fake);
+    const beats = [await beat(fake, room, join.body.session), await beat(fake, room, "another")];
+    expect(beats).toEqual([204, 404]);
+    const grant = await ask(fake, "POST", `/voice/rooms/${room}/grant`, { session: join.body.session });
+    expect(grant.status).toBe(200);
+    expect(grant.body).toMatchObject({ kind: "p2p" });
+    const another = await ask(fake, "POST", `/voice/rooms/${room}/grant`, { session: "another" });
+    expect(another.status).toBe(404);
+  });
+
+  test("the microphone, a reaction and speaking are said on the stream; a listener's microphone is refused", async () => {
+    const fake = createFakeApi();
+    const { room, join, reader } = await inRoom(fake);
+    await frame(reader);
+    await frame(reader);
+    const session = join.body.session;
+    const refused = await ask(fake, "POST", `/voice/rooms/${room}/mic`, { session, on: true });
+    expect([refused.status, (refused.body as { type: string }).type]).toEqual([
+      403,
+      "/api/v1/problems/voice-cannot-speak",
+    ]);
+    const speaking = (await ask(fake, "POST", `/voice/rooms/${room}/speaker`)) as Answered<Room>;
+    expect(speaking.status).toBe(200);
+    const spoke = event(await frame(reader)) as { event: string; data: Room };
+    expect(spoke.event).toBe("state");
+    expect(spoke.data.participants.find((p) => p.account.id === fake.accountId("yuki"))?.role).toBe("speaker");
+    const mic = await ask(fake, "POST", `/voice/rooms/${room}/mic`, { session, on: true });
+    const micSaid = event(await frame(reader));
+    const reaction = await ask(fake, "POST", `/voice/rooms/${room}/reactions`, { emoji: "👏" });
+    const reactionSaid = event(await frame(reader));
+    expect([mic.status, micSaid, reaction.status, reactionSaid]).toEqual([
+      204,
+      { event: "mic", data: { participant: fake.accountId("yuki"), on: true } },
+      204,
+      { event: "reaction", data: { participant: fake.accountId("yuki"), emoji: "👏" } },
+    ]);
+  });
+
+  test("a dropped stream ends without a word and opens again on the same session", async () => {
+    const fake = createFakeApi();
+    const { room, join, reader } = await inRoom(fake);
+    await frame(reader);
+    await frame(reader);
+    fake.voice.drop();
+    const [ended, beaten] = [await frame(reader), await beat(fake, room, join.body.session)];
+    expect([ended, beaten]).toEqual([null, 204]);
+    const again = await fake.serve(request("GET", `/voice/rooms/${room}/stream?session=${join.body.session}`));
+    expect(again.status).toBe(200);
+    expect(fake.voice.opened()).toBe(2);
+  });
+
+  test("removed, replaced and ended are said, close the stream, and the session is gone; ended takes the room away", async () => {
+    for (const [name, reason] of [
+      ["removed", "removed"],
+      ["replaced", "replaced"],
+      ["ended", "host"],
+    ] as const) {
+      const fake = createFakeApi();
+      const { room, join, reader } = await inRoom(fake);
+      await frame(reader);
+      await frame(reader);
+      fake.voice.send({ event: name, data: { reason } });
+      const said = [event(await frame(reader)), await frame(reader)];
+      expect(said).toEqual([{ event: name, data: { reason } }, null]);
+      const beaten = await beat(fake, room, join.body.session);
+      expect([beaten, fake.voice.joined()]).toEqual([404, null]);
+      const stream = await fake.serve(request("GET", `/voice/rooms/${room}/stream?session=${join.body.session}`));
+      expect(stream.status).toBe(404);
+      const list = (await ask(fake, "GET", "/voice/rooms")) as Answered<{ items: Room[] }>;
+      expect([name, list.body.items.some((r) => r.id === room)]).toEqual([name, name !== "ended"]);
+    }
+  });
+
+  test("leaving ends the session with its stream, and the reader is no longer counted", async () => {
+    const fake = createFakeApi();
+    const before = ((await ask(fake, "GET", `/voice/rooms/${fake.voice.roomId(0)}`)) as Answered<Room>).body;
+    const { room, join, reader } = await inRoom(fake);
+    await frame(reader);
+    await frame(reader);
+    const left = await ask(fake, "DELETE", `/voice/rooms/${room}/participation`);
+    const said = event(await frame(reader));
+    const beaten = await beat(fake, room, join.body.session);
+    expect([left.status, said, beaten, fake.voice.joined()]).toEqual([
+      204,
+      { event: "removed", data: { reason: "left" } },
+      404,
+      null,
+    ]);
+    const after = ((await ask(fake, "GET", `/voice/rooms/${room}`)) as Answered<Room>).body;
+    expect([after.participants_count, after.participants.length]).toEqual([
+      before.participants_count,
+      before.participants.length,
+    ]);
+    const again = await ask(fake, "DELETE", `/voice/rooms/${room}/participation`);
+    expect(again.status).toBe(404);
+  });
+
+  test("joining another room moves the reader there, and joining the same room again replaces the session", async () => {
+    const fake = createFakeApi();
+    const first = await inRoom(fake);
+    await frame(first.reader);
+    await frame(first.reader);
+    const other = fake.voice.roomId(1);
+    const moved = (await ask(fake, "POST", `/voice/rooms/${other}/participation`)) as Answered<Join>;
+    const movedOut = event(await frame(first.reader));
+    expect(movedOut).toEqual({ event: "removed", data: { reason: "moved" } });
+    expect(fake.voice.joined()).toEqual({ room: other, session: moved.body.session });
+    expect(moved.body.session).not.toBe(first.join.body.session);
+    const stream = await fake.serve(request("GET", `/voice/rooms/${other}/stream?session=${moved.body.session}`));
+    if (stream.body === null) throw new Error("test: the stream has no body");
+    const reader = stream.body.getReader();
+    await frame(reader);
+    await frame(reader);
+    const again = (await ask(fake, "POST", `/voice/rooms/${other}/participation`)) as Answered<Join>;
+    const replaced = event(await frame(reader));
+    expect(replaced).toEqual({ event: "replaced", data: { reason: "replaced" } });
+    expect(fake.voice.joined()).toEqual({ room: other, session: again.body.session });
+  });
+});
+
 describe("the seed", () => {
   test("without one, the fake holds the scenario", async () => {
     const fake = createFakeApi();

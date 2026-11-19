@@ -24,6 +24,34 @@ export function onAPhone(): void {
   });
 }
 
+/**
+ * A viewport whose width the test changes while the app is open, until the test ends: wide at first, and `phone(on)`
+ * makes the media query of a width under a tablet's match or not, and tells each list of it that asked, as a browser
+ * does when the window is resized or the phone turned.
+ */
+export function changingWidth(): { phone: (on: boolean) => void } {
+  const matchMedia = window.matchMedia;
+  const narrowQueries: MediaQueryList[] = [];
+  let narrow = false;
+  window.matchMedia = (query: string) => {
+    const list = matchMedia.call(window, query);
+    const isNarrow = /^\(width < 40rem\)$/.test(query);
+    Object.defineProperty(list, "matches", { get: () => isNarrow && narrow });
+    if (isNarrow) narrowQueries.push(list);
+    return list;
+  };
+  onTestFinished(() => {
+    window.matchMedia = matchMedia;
+  });
+  return {
+    phone: (on) => {
+      narrow = on;
+      for (const list of narrowQueries)
+        list.dispatchEvent(Object.assign(new Event("change"), { matches: on, media: list.media }));
+    },
+  };
+}
+
 /** The rail, the main navigation of a wide viewport: the first of the two navigations named Main that render. */
 export function rail(): HTMLElement {
   const [navigation] = screen.getAllByRole("navigation", { name: "Main" });

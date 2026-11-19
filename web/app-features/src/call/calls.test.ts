@@ -4,13 +4,13 @@
 // screen, its stream opened again on the same session, the heartbeat and the grant, and each way a call ends, once.
 
 import { afterEach, beforeEach, expect, test } from "bun:test";
-import { closeSession, createAppData, type AppData } from "@my/app-data";
+import { closeSession, createAppData, voiceStreamDelays, type AppData, type VoiceGrant } from "@my/app-data";
 import { createFakeApi, fakeOrigin, type FakeApi } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import { fakeCallRuntime, settle, type FakeCallRuntime } from "../test/call";
 import { currentCall, inCall, joinCall, lastCallEnd, runCallsOn } from "./calls";
 import { callShown, leaveCall, muteCall } from "./store";
-import { grantRenewalLead, heartbeatInterval, heartbeatTtl } from "./voice-call";
+import { grantRenewalLead, heartbeatInterval, heartbeatTtl, roomGrant } from "./voice-call";
 
 type Sent = { readonly line: string; readonly keepalive: boolean };
 
@@ -202,6 +202,105 @@ test("a join the server refuses leaves the call of another room as it was", asyn
   expect(await joinCall(data, fake.voice.roomId(1)).catch((error: unknown) => error)).toMatchObject({ status: 409 });
   await settle();
   expect(currentCall()).toBe(call);
+  expect(call.ended).toBe(false);
+});
+
+test("a stream that cannot open again for a while is tried again on the same session, the heartbeat going on meanwhile, and the call goes on from its first state", async () => {
+  const { fake, call, sent, roomId } = await joined();
+  const { audio, stream, heartbeat, session } = call;
+  const reopens = fake.script("GET /voice/rooms/{id}/stream", { times: 2, fail: "network" });
+  const beats = fake.script("POST /voice/rooms/{id}/heartbeat");
+  fake.voice.drop();
+  // While the stream is down the reader's hand goes up elsewhere (another tab of theirs): no stream says so.
+  await fake.serve(new Request(`${fakeOrigin}/api/v1/voice/rooms/${roomId}/hand`, { method: "POST" }));
+  const handUp = () =>
+    call.getState().room.participants.find((p) => p.account.id === fake.accountId("yuki"))?.hand_raised;
+  expect(handUp()).toBe(false);
+  // The first two tries get no answer; the third, after the delays of the first three, opens.
+  const [first = 0, second = 0, third = 0] = voiceStreamDelays;
+  await on.clock.advance(first + second);
+  expect(reopens.seen).toHaveLength(2);
+  expect(call.getState().phase).toBe("reconnecting");
+  await on.clock.advance(Math.max(third, heartbeatInterval));
+  expect(reopens.seen.map((r) => r.url.searchParams.get("session"))).toEqual([session, session, session]);
+  expect(fake.voice.opened()).toBe(2);
+  expect(beats.seen.length).toBeGreaterThan(0);
+  expect({ phase: call.getState().phase, ended: call.ended, current: currentCall() === call }).toEqual({
+    phase: "live",
+    ended: false,
+    current: true,
+  });
+  expect([call.audio, call.stream, call.heartbeat, call.session]).toEqual([audio, stream, heartbeat, session]);
+  expect(sent.filter((r) => r.line.endsWith("/participation"))).toHaveLength(1);
+  // The stream opened again catches up from its first state, and the call hears what it says next.
+  expect(handUp()).toBe(true);
+  fake.voice.send({ event: "removed", data: { reason: "removed" } });
+  await on.clock.advance(0);
+  expect(call.getState().end).toEqual({ kind: "removed", reason: "removed" });
+});
+
+test("a heartbeat that fails for less than 45 seconds leaves the call on", async () => {
+  const { fake, call } = await joined();
+  fake.script("POST /voice/rooms/{id}/heartbeat", { times: 1, fail: "network" });
+  await on.clock.advance(heartbeatTtl * 2);
+  expect(call.ended).toBe(false);
+  expect(call.getState().phase).toBe("live");
+});
+
+test("a heartbeat that gets no answer for 45 seconds ends the call with its reason", async () => {
+  const { fake, call } = await joined();
+  fake.script("POST /voice/rooms/{id}/heartbeat", { fail: "network" });
+  await on.clock.advance(heartbeatTtl - 1);
+  expect(call.ended).toBe(false);
+  await on.clock.advance(heartbeatInterval);
+  expect(call.getState().end).toEqual({ kind: "lost", reason: "heartbeat" });
+  expect(currentCall()).toBeNull();
+});
+
+test("the grant the server gave again is the one handed to the audio, and it is taken again before it expires in turn", async () => {
+  const s = server();
+  const expiresIn = (ms: number) => new Date(on.clock.now() + grantRenewalLead + ms).toISOString();
+  s.fake.script("POST /voice/rooms/{id}/participation", {
+    change: (join) => ({ ...join, grant: { ...join.grant, expires_at: expiresIn(60_000) } }),
+  });
+  const answered: VoiceGrant[] = [];
+  const grants = s.fake.script("POST /voice/rooms/{id}/grant", {
+    change: (grant) => {
+      const given = { ...grant, expires_at: expiresIn(120_000), options: { round: String(answered.length) } };
+      answered.push(given);
+      return given;
+    },
+  });
+  const call = await joinCall(s.data, s.fake.voice.roomId(0));
+  await on.clock.advance(61_000);
+  expect(grants.seen).toHaveLength(1);
+  expect(on.sessions[0]?.renewed).toEqual(answered.map(roomGrant));
+  await on.clock.advance(118_000);
+  expect(grants.seen).toHaveLength(1);
+  await on.clock.advance(4_000);
+  expect(grants.seen).toHaveLength(2);
+  expect(on.sessions[0]?.renewed).toEqual(answered.map(roomGrant));
+  expect(on.sessions[0]?.reconnected).toEqual([]);
+  expect({ ended: call.ended, audio: call.audio === on.sessions[0] }).toEqual({ ended: false, audio: true });
+});
+
+test("a grant the stream sends is handed to the audio, to connect again with when the server says so", async () => {
+  const { fake, call } = await joined();
+  const grant = (round: string): VoiceGrant => ({
+    kind: "p2p",
+    options: { round },
+    ice_servers: [],
+    relay_only: false,
+    expires_at: new Date(on.clock.now() + 6 * 60 * 60_000).toISOString(),
+  });
+  fake.voice.send({ event: "grant", data: { grant: grant("renew"), reconnect: false } });
+  await on.clock.advance(0);
+  fake.voice.send({ event: "grant", data: { grant: grant("reconnect"), reconnect: true } });
+  await on.clock.advance(0);
+  expect({ renewed: on.sessions[0]?.renewed, reconnected: on.sessions[0]?.reconnected }).toEqual({
+    renewed: [roomGrant(grant("renew"))],
+    reconnected: [roomGrant(grant("reconnect"))],
+  });
   expect(call.ended).toBe(false);
 });
 
