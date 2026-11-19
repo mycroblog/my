@@ -88,7 +88,17 @@ export const LAYOUT_PARTS = {
   "web/design-system/src/choice.tsx": ["SegmentGrid", "SegmentPlace"],
   "web/design-system/src/supporter.tsx": ["PlanList", "StateLineFrame"],
   "web/design-system/src/finance.tsx": ["FinanceFrame", "FinanceLine", "FinancePlace"],
-  "web/design-system/src/records.tsx": ["RecordFrame", "RecordLine", "RecordPlace", "NarrowOnly", "OpenPlace"],
+  "web/design-system/src/records.tsx": [
+    "RecordRoom",
+    "RecordFrame",
+    "NarrowStrip",
+    "RecordLine",
+    "RecordPlace",
+    "NarrowOnly",
+    "WideOnly",
+    "NarrowName",
+    "HeadWords",
+  ],
   "web/design-system/src/event.tsx": [
     "ChoicePlace",
     "SegmentPlace",

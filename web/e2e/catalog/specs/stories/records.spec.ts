@@ -110,9 +110,13 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       const pages = page.getByRole("navigation", { name: "Pages", exact: true });
       await expect(pages).toHaveCount(4);
-      // Next on every page but the last, Previous on every page but the first: never a button that does nothing.
+      // Next leads on from every page but the last, Previous from every page but the first, where each stays,
+      // disabled, so that a press that reached the last page leaves the focus on its button.
       await expect(pages.getByRole("link", { name: "Next", exact: true })).toHaveCount(2);
       await expect(pages.getByRole("link", { name: "Previous", exact: true })).toHaveCount(2);
+      await expect(pages.getByRole("button", { name: "Previous", exact: true, disabled: true })).toHaveCount(1);
+      await expect(pages.getByRole("button", { name: "Previous", exact: true, disabled: false })).toHaveCount(1);
+      await expect(pages.getByRole("button", { name: "Next", exact: true })).toHaveCount(2);
     },
   ],
   [
@@ -120,7 +124,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     async (page) => {
       await expect(page.getByRole("table")).toHaveCount(0);
       await expect(
-        page.getByText("No open reports. Reports from people and other servers show up here.", { exact: true }),
+        page.getByText("No open reports.", { exact: true }),
       ).toBeVisible();
       await expect(page.getByRole("button", { name: "Clear filters", exact: true })).toBeVisible();
     },
@@ -185,13 +189,26 @@ test("each story of the lists of records shows its state, and a table of records
       );
     });
 
+  await test.step("a press anywhere on a record opens it, a fact as much as its head", async () => {
+    await open(records("reports-screen"), { width: pc });
+    const reports = table(page, "Reports");
+    const fact = await reports.getByRole("cell", { name: "Harassment", exact: true }).boundingBox();
+    if (fact === null) throw new Error("no cell Harassment");
+    // The record's cover takes the press, as it would a finger's; Playwright's click would refuse the covered cell.
+    await page.mouse.click(fact.x + fact.width / 2, fact.y + fact.height / 2);
+    await expect(reports.getByRole("button", { name: "@kuro@social.example", exact: true })).toHaveAttribute(
+      "aria-current",
+      "true",
+    );
+  });
+
   await test.step("a record open: its list beside it from `wide`, the record marked; under it, the record alone", async () => {
     await open(records("report-open"), { width: from.wide });
     const beside = page.getByRole("complementary", { name: "Reports", exact: true });
     await expect(beside.getByRole("table", { name: "Reports", exact: true })).toBeVisible();
     await expect(beside.getByRole("button", { name: "@deals4u@promo.example", exact: true })).toHaveAttribute(
       "aria-current",
-      "page",
+      "true",
     );
     await open(records("report-open"), { width: from.wide - 1 });
     await expect(page.getByRole("table", { name: "Reports", exact: true })).toBeHidden();

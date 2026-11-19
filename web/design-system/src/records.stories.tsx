@@ -9,7 +9,7 @@
 import { color, rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
-import { TextButton } from "./button";
+import { Button, TextButton } from "./button";
 import { FeedNotice } from "./feed";
 import { Box, Stack } from "./layout";
 import { BackButton, ScreenTitle } from "./list";
@@ -77,7 +77,7 @@ const reports: readonly Report[] = [
   {
     id: "1042",
     account: "@deals4u@promo.example",
-    by: "Reported by @mika and 11 others · Report 1042",
+    by: "Reported by @mika and 11 others · Report 1042",
     category: "Spam",
     categoryId: "spam",
     reports: 12,
@@ -88,7 +88,7 @@ const reports: readonly Report[] = [
   {
     id: "1041",
     account: "@kuro@social.example",
-    by: "Reported by @hana · Report 1041",
+    by: "Reported by @hana · Report 1041",
     category: "Harassment",
     categoryId: "harassment",
     reports: 2,
@@ -100,7 +100,7 @@ const reports: readonly Report[] = [
   {
     id: "1040",
     account: "@newsbot@feeds.example",
-    by: "Forwarded by feeds.example · Report 1040",
+    by: "Forwarded by feeds.example · Report 1040",
     category: "Other",
     categoryId: "other",
     reports: 1,
@@ -111,7 +111,7 @@ const reports: readonly Report[] = [
   {
     id: "1038",
     account: "@ren",
-    by: "Reported by @sora · Report 1038",
+    by: "Reported by @sora · Report 1038",
     category: "Rule 3: Mark sensitive media",
     categoryId: "rules",
     reports: 3,
@@ -122,7 +122,7 @@ const reports: readonly Report[] = [
   {
     id: "1035",
     account: "@aoi@pixel.example",
-    by: "Reported by @yuki · Report 1035",
+    by: "Reported by @yuki · Report 1035",
     category: "Illegal content",
     categoryId: "legal",
     reports: 1,
@@ -246,11 +246,12 @@ function ReportFilters({ filters, set, count }: { filters: Filters; set: (f: Fil
 function Queue({
   start = none,
   picked = [],
-  first = false,
+  pages = "middle",
 }: {
   start?: Filters;
   picked?: readonly string[];
-  first?: boolean;
+  /** Where the page shown stands among the queue's: between others, the first, or the only one. */
+  pages?: "middle" | "first" | "only";
 }) {
   const [filters, setFilters] = useState<Filters>(start);
   const [sort, setSort] = useState<RecordSort<ReportColumn>>({ by: "received", direction: "descending" });
@@ -294,12 +295,35 @@ function Queue({
             </FeedNotice>
           }
         />
-        <RecordPages
-          {...(first ? {} : { previous: { onPress: () => undefined } })}
-          next={{ onPress: () => undefined }}
-        />
+        {pages !== "only" && (
+          <RecordPages
+            {...(pages === "first" ? {} : { previous: { onPress: () => undefined } })}
+            next={{ onPress: () => undefined }}
+          />
+        )}
       </Stack>
     </Column>
+  );
+}
+
+/** The queue's table alone, its rows picked as given, for the actions on all picked. */
+function Picking({ picked }: { picked: readonly string[] }) {
+  const [selected, setSelected] = useState<ReadonlySet<string>>(new Set(picked));
+  return (
+    <RecordTable
+      label="Reports"
+      head={{ label: "Account" }}
+      columns={reportColumns}
+      rows={reports.map(reportRow)}
+      selection={{
+        selected,
+        onChange: setSelected,
+        actions: [
+          { id: "assign", label: "Assign to me", onPress: () => undefined },
+          { id: "resolve", label: "Resolve…", onPress: () => undefined },
+        ],
+      }}
+    />
   );
 }
 
@@ -479,17 +503,29 @@ const places = (
 function ReportDetail() {
   return (
     <Stack gap="entry-room">
-      <ScreenTitle back={<BackButton onPress={() => undefined}>Reports</BackButton>}>
+      <ScreenTitle
+        back={<BackButton onPress={() => undefined}>Reports</BackButton>}
+        actions={
+          <>
+            <Button kind="secondary" size="timeline" onPress={() => undefined}>
+              Assign to me
+            </Button>
+            <Button kind="primary" size="timeline" onPress={() => undefined}>
+              Resolve…
+            </Button>
+          </>
+        }
+      >
         @deals4u@promo.example
       </ScreenTitle>
       <Stack gap="entry-line">
         <StateMark state="open">Open</StateMark>
-        <Box as="p" breaks="phrase">
+        <Box as="p" text="body" breaks="phrase">
           Twelve people reported this account for spam in the last hour: it replies to every post that mentions a sale
           with the same link.
         </Box>
         <Box as="p" text="caption" tone="muted">
-          Reported by @mika and 11 others · Report 1042 · 3m ago
+          Reported by @mika and 11 others · Report 1042 · 3m ago
         </Box>
       </Stack>
     </Stack>
@@ -514,7 +550,7 @@ export const ReportsScreen: Story = {
 
 /** The queue filtered: open reports of spam, the search's words, the toggle on, and Clear filters at the facets' end. */
 export const FiltersApplied: Story = {
-  render: () => <Queue start={{ search: "deals", state: "open", category: "spam", mine: false }} first />,
+  render: () => <Queue start={{ search: "deals", state: "open", category: "spam", mine: false }} pages="only" />,
 };
 
 /** The filters at rest: nothing applied, so no Clear filters; the facets each say what they filter by. */
@@ -538,10 +574,12 @@ export const FiltersAtRest: Story = {
  */
 export const Selecting: Story = {
   render: () => (
-    <Stack gap="entry-room">
-      <Queue picked={["1042", "1041", "1040", "1038"]} first />
-      <Queue first />
-    </Stack>
+    <Column>
+      <Stack gap="entry-room">
+        <Picking picked={["1042", "1041", "1040", "1038"]} />
+        <Picking picked={[]} />
+      </Stack>
+    </Column>
   ),
 };
 
@@ -599,7 +637,10 @@ export const Jobs: Story = {
   },
 };
 
-/** The pages of a list: the first, Next alone at the end; between, both; the last, Previous alone; Next on its way. */
+/**
+ * The pages of a list: the first, Previous disabled; between, both; the last, Next disabled, where a press on Next that
+ * reached it keeps the focus; Next on its way.
+ */
 export const Pages: Story = {
   render: () => (
     <Column>
@@ -629,7 +670,7 @@ export const Empty: Story = {
           head={{ label: "Account" }}
           columns={reportColumns}
           rows={[]}
-          empty={<FeedNotice>No open reports. Reports from people and other servers show up here.</FeedNotice>}
+          empty={<FeedNotice>No open reports.</FeedNotice>}
         />
         <RecordTable
           label="Accounts"
@@ -676,7 +717,7 @@ export const ReportOpen: Story = {
         {places}
       </FrameSide>
       <FrameMain>
-        <FrameHeading>Report 1042</FrameHeading>
+        <FrameHeading>Report 1042</FrameHeading>
         <ReportDetail />
       </FrameMain>
       <FrameAside label="Reports">

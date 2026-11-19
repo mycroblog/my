@@ -34,5 +34,17 @@
   "records.more": {
     "defaultMessage": "さらに表示",
     "description": "Under a list that grows in place (a table of records), adds the next records under those shown."
+  },
+  "records.sort_by": {
+    "defaultMessage": "並べ替え",
+    "description": "The name of the menu that a narrow table of records (the staff's screens on a phone) opens to choose the column it is sorted by and the direction; also shown on its button while the table is sorted by none."
+  },
+  "records.ascending": {
+    "defaultMessage": "昇順",
+    "description": "In the sort menu of a table of records: sorts it from the least to the most (A to Z, oldest first); also read after the sorted column's name on the menu's button."
+  },
+  "records.descending": {
+    "defaultMessage": "降順",
+    "description": "In the sort menu of a table of records: sorts it from the most to the least (Z to A, newest first); also read after the sorted column's name on the menu's button."
   }
 }

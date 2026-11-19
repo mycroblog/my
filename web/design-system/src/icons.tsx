@@ -51,8 +51,8 @@ import {
   IconChevronLeft,
   IconChevronRight,
   IconCircleCheck,
+  IconCircle,
   IconCircleDot,
-  IconCircleFilled,
   IconCircleMinus,
   IconCircleX,
   IconClock,
@@ -383,12 +383,12 @@ export const icons = {
   signOut: { off: IconLogout2, directional: true },
   // The records of the staff's screens (records.tsx): the state of a record, each by a shape of its own, so that a
   // column of states reads by shape as well as by word: open and waiting for a moderator (a ring around a point),
-  // assigned to one, resolved, in force (a solid point), expired (a clock crossed out), lifted (a lock opened),
-  // pending, disabled (a ring barred); failed takes `error`. A column's sort: up, down, and sortable (both).
+  // assigned to one, resolved, in force (a plain ring, quieter than what waits), expired (a clock crossed out), lifted
+  // (a lock opened), pending, disabled (a ring barred); failed takes `error`. A column's sort: up, down, and sortable (both).
   stateOpen: { off: IconCircleDot },
   stateAssigned: { off: IconUserCheck },
   stateResolved: { off: IconCircleCheck },
-  stateActive: { off: IconCircleFilled },
+  stateActive: { off: IconCircle },
   stateExpired: { off: IconClockX },
   stateLifted: { off: IconLockOpen },
   statePending: { off: IconHourglass },

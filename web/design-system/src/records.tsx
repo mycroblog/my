@@ -5,9 +5,9 @@
 // it, the link that opens it) the row's header, a column a kind of fact, and the column it is sorted by says so with
 // its direction (aria-sort), in its header's glyph and to assistive technology. It knows its own width: wide (a
 // tablet's column and wider), the columns side by side under their names; narrow (a phone, the column beside the main
-// one), each record stacked: its head and its state on a line, each other fact on a line under it after its column's
-// name, which the eye needs there and assistive technology hears from the column's header; the names of the columns
-// the table sorts by stay in a row over it, as its sort. Rows stand apart by space alone and mark their extent with a
+// one), each record stacked: its head and its state on a line, its other facts in a line under it, each after its
+// column's name, which the eye needs there and assistive technology hears from the column's header; over it, select
+// all and the sort, one control naming the column and the direction. A head (a handle, a domain) never breaks inside. Rows stand apart by space alone and mark their extent with a
 // surface while hovered or focused, the open record with the raised surface, as the current tab. A row may be picked
 // by its checkbox for one action on all the rows picked, the actions over the table beside how many are picked. A
 // state is a glyph of its own shape beside its word, never a tile, its weight and tone by whether it waits for someone.
@@ -28,7 +28,7 @@ import { tv } from "tailwind-variants/lite";
 import { Button, ButtonBase, LinkButton, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
-import { Box, Row, Stack } from "./layout";
+import { Box, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
 import { SearchField } from "./search-field";
@@ -133,7 +133,10 @@ export type RecordTableProps<K extends string> = {
   current?: string | undefined;
   /** A row opens by a press, where it has no `href` (a detail the screen shows in place of the list). */
   onOpen?: ((id: string) => void) | undefined;
-  /** The rows picked, and the actions on all of them, over the table: its rows each start with a checkbox. */
+  /**
+   * The rows picked, and the actions on all of them, over the table: its rows each start with a checkbox. The selection
+   * is of the rows shown: every change drops the ids of rows not in `rows`.
+   */
   selection?:
     | {
         selected: ReadonlySet<string>;
@@ -147,12 +150,22 @@ export type RecordTableProps<K extends string> = {
   empty?: ReactNode;
 };
 
-const TRACK = { words: "minmax(0,1fr)", figures: "max-content", fit: "max-content" } as const;
+// A column of words keeps its longest word and shares the room left; the heads' column takes what its heads need, up
+// to all the room the others leave, and cuts a head short only past that.
+const TRACK = { words: "minmax(min-content,1fr)", figures: "max-content", fit: "max-content" } as const;
 
 /**
- * The table's frame, which knows its own width: narrow (under 30rem), a record under another; wide, the tracks of its
- * columns, which the table gives (`tracks`), each row on them. It reaches past its container by a row's inset, so
- * that what the rows hold lines up with what stands above and below the table.
+ * The room of a table, which knows its own width: what stands over the table on a narrow one alone (select all and
+ * the sort), then the table.
+ */
+function RecordRoom({ children }: { children: ReactNode }) {
+  return <div className="@container grid grid-cols-[minmax(0,1fr)] gap-y-entry-line">{children}</div>;
+}
+
+/**
+ * The table's frame: narrow (under 30rem), a record under another; wide, the tracks of its columns, which the table
+ * gives (`tracks`), each row on them. It reaches past its container by a row's inset, so that what the rows hold lines
+ * up with what stands above and below the table.
  */
 function RecordFrame({
   tracks,
@@ -160,21 +173,26 @@ function RecordFrame({
   ...rest
 }: HTMLAttributes<HTMLDivElement> & { tracks: string; className: string }) {
   return (
-    <div className="@container">
-      <div
-        {...rest}
-        style={{ "--record-tracks": tracks } as CSSProperties}
-        className={`${className} -mx-screen-row-inline grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-entry-avatar`}
-      />
-    </div>
+    <div
+      {...rest}
+      style={{ "--record-tracks": tracks } as CSSProperties}
+      className={`${className} -mx-screen-row-inline grid grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[var(--record-tracks)] @min-[30rem]:gap-x-entry-avatar`}
+    />
+  );
+}
+
+/** What stands over a narrow table alone: select all at the start, the sort at the end. */
+function NarrowStrip({ children }: { children: ReactNode }) {
+  return (
+    <div className="flex min-h-control-timeline items-center gap-screen-row-gap @min-[30rem]:hidden">{children}</div>
   );
 }
 
 /**
- * A row of the table. `head`, the row of the columns' names: narrow, a row that wraps of those the table sorts by
- * (and select all), the others read alone; wide, on the table's tracks. A record: narrow, its checkbox, its head and
- * what stands beside it on the first line, then its facts in a line that wraps; wide, on the table's tracks, its cells
- * on their first baseline. The record is what its head's link covers.
+ * A row of the table. `head`, the row of the columns' names: narrow, its names read alone (the strip over the table
+ * shows its controls); wide, on the table's tracks. A record: narrow, its checkbox, its head and what stands beside it on the
+ * first line, then its facts in a line that wraps; wide, on the table's tracks, its cells on their first baseline. The
+ * record is what its head's link covers.
  */
 function RecordLine({
   head = false,
@@ -183,8 +201,9 @@ function RecordLine({
 }: HTMLAttributes<HTMLDivElement> & { head?: boolean; className: string }) {
   const shown = head
     ? [
-        "flex flex-wrap items-center gap-screen-tab-gap pb-screen-air",
-        "@min-[30rem]:col-span-full @min-[30rem]:grid @min-[30rem]:grid-cols-subgrid @min-[30rem]:gap-x-entry-avatar",
+        "flex",
+        "@min-[30rem]:col-span-full @min-[30rem]:grid @min-[30rem]:grid-cols-subgrid @min-[30rem]:items-center",
+        "@min-[30rem]:gap-x-entry-avatar @min-[30rem]:pb-screen-air",
       ].join(" ")
     : [
         // Narrow, a break after the first line (its ::after, a line of its own) sends the facts under it.
@@ -213,22 +232,27 @@ const PLACE = {
   ].join(" "),
   // A fact the record has none of: narrow, nothing shown, still read as its column's cell; wide, its column, empty.
   blank: "sr-only @min-[30rem]:not-sr-only",
-  // The name of a column the table does not sort by: narrow, read alone; wide, over its column.
+  // The name of a column: narrow, read alone; wide, over it, at its end for a column of figures.
   name: "sr-only @min-[30rem]:not-sr-only",
-  // The name of a column of figures: wide, at its column's end.
   "figures-name": "sr-only @min-[30rem]:not-sr-only @min-[30rem]:text-end",
-  // The name of a column the table sorts by, a button: narrow in the row over the table; wide, over its column.
-  sorts: "flex-none",
-  "figures-sorts": "flex-none @min-[30rem]:justify-self-end",
+  // The name of a column the table sorts by, a button on a wide table: the same.
+  sorts: "sr-only @min-[30rem]:not-sr-only",
+  "figures-sorts": "sr-only @min-[30rem]:not-sr-only @min-[30rem]:justify-self-end",
+  // Select all, a checkbox on a wide table.
+  "pick-name":
+    "sr-only @min-[30rem]:not-sr-only @min-[30rem]:relative @min-[30rem]:flex @min-[30rem]:h-[1lh] @min-[30rem]:items-center",
 } as const;
 
-/** Where a cell stands in its row; a control in a cell (a link to an account) stands over the link that covers it. */
+/**
+ * Where a cell stands in its row; a control in a cell (a link to an account) stands over the link that covers it, but
+ * the head's own link, whose box past it is the cover, stays unpositioned so that the cover reaches the whole row.
+ */
 function RecordPlace({
   at,
   className,
   ...rest
 }: { at: keyof typeof PLACE; className: string } & HTMLAttributes<HTMLElement>) {
-  return <div {...rest} className={`${className} ${PLACE[at]} [&_:is(a,button)]:relative`} />;
+  return <div {...rest} className={`${className} ${PLACE[at]} [&_:is(a,button):not([data-open])]:relative`} />;
 }
 
 /** What a narrow table shows alone: a fact's column's name before it, select all's words. */
@@ -240,9 +264,27 @@ function NarrowOnly({ children }: { children: ReactNode }) {
   );
 }
 
-/** The words of a record's head, whose box past them covers the whole row, so that a press anywhere opens it. */
-function OpenPlace({ children }: { children: ReactNode }) {
-  return <span className="after:absolute after:inset-0 after:content-['']">{children}</span>;
+/** What a wide table shows alone: a column's controls (its sort, select all), which the narrow one's strip holds. */
+function WideOnly({ children }: { children: ReactNode }) {
+  return <span className="hidden @min-[30rem]:contents">{children}</span>;
+}
+
+/** What a narrow table reads alone: a column's name, which its button says on a wide one. */
+function NarrowName({ children }: { children: ReactNode }) {
+  return <span className="@min-[30rem]:hidden">{children}</span>;
+}
+
+/**
+ * A record's head, isolated in its own direction (a handle reads the same in a right-to-left page), on one line, cut
+ * short with an ellipsis only where its column has no more room: a handle never breaks inside. `cover`, its box past
+ * it covers the whole row, so that a press anywhere opens the record.
+ */
+function HeadWords({ cover = false, children }: { cover?: boolean; children: string }) {
+  return (
+    <span className={`block truncate ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}>
+      <bdi dir="auto">{children}</bdi>
+    </span>
+  );
 }
 
 const table = tv({
@@ -258,11 +300,16 @@ const table = tv({
       "has-[[data-open][aria-current]]:bg-surface-raised",
     ],
     headLine: "px-screen-row-inline",
-    open: "cursor-pointer text-text no-underline outline-hidden font-label [overflow-wrap:anywhere]",
-    plain: "font-label [overflow-wrap:anywhere]",
-    caption: "text-caption text-muted-text [overflow-wrap:anywhere]",
+    // A head, a link or a button, in the page's face and type, whatever element it is.
+    open: [
+      "cursor-pointer border-0 bg-transparent p-0 text-start font-sans text-body font-label text-text no-underline",
+      "outline-hidden",
+    ],
+    plain: "font-label",
+    // Under the head, wrapping as its column allows: it asks the column for no width of its own.
+    caption: "text-caption text-muted-text [contain:inline-size] [overflow-wrap:break-word]",
     factName: "text-caption text-muted-text whitespace-nowrap",
-    fact: "[overflow-wrap:anywhere]",
+    fact: "[overflow-wrap:break-word]",
     figure: "tabular-nums",
     // A column's name that sorts: muted, the text's color while it is the one sorted by, its glyph after it.
     sort: [
@@ -349,6 +396,77 @@ function SortButton({
   );
 }
 
+/**
+ * The sort of a narrow table, one control: the column it is sorted by and its glyph of the direction, read with the
+ * direction's word; it opens a menu of the columns that sort and of the two directions.
+ */
+function SortMenu<K extends string>({
+  options,
+  sort,
+  onSort,
+}: {
+  options: readonly { by: K | "head"; label: string; first: RecordDirection }[];
+  sort: RecordSort<K> | undefined;
+  onSort: (sort: RecordSort<K>) => void;
+}) {
+  const s = table();
+  const { lang } = useReader(undefined);
+  const { t } = stringsIn(lang);
+  const now = options.find((option) => option.by === sort?.by);
+  return (
+    <MenuSurface
+      label={t("records.sort_by")}
+      placement="bottom end"
+      trigger={
+        <Row
+          inline
+          align="center"
+          gap="entry-caption"
+          bleedEnd="control-timeline-inline"
+          as={<AriaButton className={`${s.sort()} ${now === undefined ? "" : s.sorted()}`} />}
+        >
+          <span>{now?.label ?? t("records.sort_by")}</span>
+          {sort !== undefined && now !== undefined && (
+            <>
+              <Icon name={sortGlyph(sort.direction)} place="caption" />
+              <Spoken>{` ${t(sort.direction === "ascending" ? "records.ascending" : "records.descending")}`}</Spoken>
+            </>
+          )}
+        </Row>
+      }
+    >
+      <MenuGroup
+        chosen={now?.by}
+        onChoose={(by) => {
+          const option = options.find((o) => o.by === by);
+          if (option !== undefined) onSort({ by: option.by, direction: option.first });
+        }}
+      >
+        {options.map((option) => (
+          <MenuItem key={option.by} id={option.by} icon="sortable">
+            {option.label}
+          </MenuItem>
+        ))}
+      </MenuGroup>
+      {now !== undefined && sort !== undefined && (
+        <MenuGroup
+          chosen={sort.direction}
+          onChoose={(direction) => {
+            onSort({ by: now.by, direction: direction === "ascending" ? "ascending" : "descending" });
+          }}
+        >
+          <MenuItem id="ascending" icon="sortedUp">
+            {t("records.ascending")}
+          </MenuItem>
+          <MenuItem id="descending" icon="sortedDown">
+            {t("records.descending")}
+          </MenuItem>
+        </MenuGroup>
+      )}
+    </MenuSurface>
+  );
+}
+
 /** What the rows of a table know of it: whether they are picked, and what opens one. */
 const RowsContext = createContext<{
   picked: ReadonlySet<string> | undefined;
@@ -383,7 +501,7 @@ export function RecordTable<K extends string>({
   const picks = selection !== undefined;
   const picked = selection?.selected;
   const count = rows.filter((row) => picked?.has(row.id) === true).length;
-  const tracks = [picks ? "max-content" : "", "minmax(0,2fr)", ...columns.map((c) => TRACK[c.kind ?? "words"])]
+  const tracks = [picks ? "max-content" : "", "minmax(0,max-content)", ...columns.map((c) => TRACK[c.kind ?? "words"])]
     .filter((track) => track !== "")
     .join(" ");
   const sortable = onSort !== undefined;
@@ -396,6 +514,19 @@ export function RecordTable<K extends string>({
     });
   };
   const ariaSort = (by: K | "head") => directionOf(by);
+  // The selection is of the rows shown: an id of a row no longer shown (filtered out, another page) leaves it with
+  // every change, so that the count and the actions always speak of the same rows.
+  const shown = new Set(rows.map((row) => row.id));
+  const selectAll = (checked: boolean) => {
+    selection?.onChange(new Set(checked ? shown : []));
+  };
+  // The columns that sort, the heads' first, for the sort of a narrow table.
+  const options = sortable
+    ? [
+        ...(head.sorts === undefined ? [] : [{ by: "head" as const, label: head.label, first: head.sorts }]),
+        ...columns.flatMap((c) => (c.sorts === undefined ? [] : [{ by: c.key, label: c.label, first: c.sorts }])),
+      ]
+    : [];
   return (
     <Stack gap="entry-line">
       {selection !== undefined && (
@@ -419,95 +550,119 @@ export function RecordTable<K extends string>({
           </Row>
         </Row>
       )}
-      <RecordFrame
-        role="table"
-        aria-label={label}
-        aria-busy={busy || undefined}
-        tracks={tracks}
-        className={`${s.root()} ${busy ? s.busy() : ""}`}
-      >
-        <RecordLine role="row" head className={s.headLine()}>
-          {selection !== undefined && (
-            <RecordPlace at="pick" role="columnheader" className="">
+      <RecordRoom>
+        {(selection !== undefined || options.length > 0) && (
+          <NarrowStrip>
+            {selection !== undefined && (
               <Pick
                 label={t("records.select_all")}
                 words={t("records.select_all")}
                 checked={count > 0 && count === rows.length}
                 mixed={count > 0 && count < rows.length}
-                onChange={(checked) => {
-                  selection.onChange(new Set(checked ? rows.map((row) => row.id) : []));
-                }}
+                onChange={selectAll}
               />
-            </RecordPlace>
-          )}
-          <RecordPlace
-            at={sortable && head.sorts !== undefined ? "sorts" : "name"}
-            role="columnheader"
-            aria-sort={ariaSort("head")}
-            className={s.name()}
-          >
-            {sortable && head.sorts !== undefined ? (
-              <SortButton label={head.label} direction={directionOf("head")} onPress={press("head", head.sorts)} />
-            ) : (
-              head.label
             )}
-          </RecordPlace>
-          {columns.map((column) => {
-            const sorts = sortable && column.sorts !== undefined;
-            const figures = column.kind === "figures";
-            return (
-              <RecordPlace
-                key={column.key}
-                at={sorts ? (figures ? "figures-sorts" : "sorts") : figures ? "figures-name" : "name"}
-                role="columnheader"
-                aria-sort={ariaSort(column.key)}
-                className={s.name()}
-              >
-                {sorts ? (
-                  <SortButton
-                    label={column.label}
-                    direction={directionOf(column.key)}
-                    onPress={press(column.key, column.sorts)}
-                    end={figures}
-                  />
-                ) : (
-                  column.label
-                )}
-              </RecordPlace>
-            );
-          })}
-        </RecordLine>
-        <RowsContext
-          value={{
-            picked,
-            onPick: (id, checked) => {
-              if (selection === undefined) return;
-              const next = new Set(selection.selected);
-              if (checked) next.add(id);
-              else next.delete(id);
-              selection.onChange(next);
-            },
-            onOpen,
-            current,
-          }}
+            {options.length > 0 && onSort !== undefined && (
+              <Box push="end">
+                <SortMenu options={options} sort={sort} onSort={onSort} />
+              </Box>
+            )}
+          </NarrowStrip>
+        )}
+        <RecordFrame
+          role="table"
+          aria-label={label}
+          aria-busy={busy || undefined}
+          tracks={tracks}
+          className={`${s.root()} ${busy ? s.busy() : ""}`}
         >
-          {rows.map((row) => (
-            <Record key={row.id} row={row} columns={columns} picks={picks} />
-          ))}
-        </RowsContext>
-      </RecordFrame>
+          <RecordLine role="row" head className={s.headLine()}>
+            {selection !== undefined && (
+              <RecordPlace at="pick-name" role="columnheader" className="">
+                <WideOnly>
+                  <Pick
+                    label={t("records.select_all")}
+                    checked={count > 0 && count === rows.length}
+                    mixed={count > 0 && count < rows.length}
+                    onChange={selectAll}
+                  />
+                </WideOnly>
+                <NarrowName>{t("records.select_all")}</NarrowName>
+              </RecordPlace>
+            )}
+            <RecordPlace
+              at={sortable && head.sorts !== undefined ? "sorts" : "name"}
+              role="columnheader"
+              aria-sort={ariaSort("head")}
+              className={s.name()}
+            >
+              {sortable && head.sorts !== undefined ? (
+                <>
+                  <WideOnly>
+                    <SortButton
+                      label={head.label}
+                      direction={directionOf("head")}
+                      onPress={press("head", head.sorts)}
+                    />
+                  </WideOnly>
+                  <NarrowName>{head.label}</NarrowName>
+                </>
+              ) : (
+                head.label
+              )}
+            </RecordPlace>
+            {columns.map((column) => {
+              const sorts = sortable && column.sorts !== undefined;
+              const figures = column.kind === "figures";
+              return (
+                <RecordPlace
+                  key={column.key}
+                  at={sorts ? (figures ? "figures-sorts" : "sorts") : figures ? "figures-name" : "name"}
+                  role="columnheader"
+                  aria-sort={ariaSort(column.key)}
+                  className={s.name()}
+                >
+                  {sorts ? (
+                    <>
+                      <WideOnly>
+                        <SortButton
+                          label={column.label}
+                          direction={directionOf(column.key)}
+                          onPress={press(column.key, column.sorts)}
+                          end={figures}
+                        />
+                      </WideOnly>
+                      <NarrowName>{column.label}</NarrowName>
+                    </>
+                  ) : (
+                    column.label
+                  )}
+                </RecordPlace>
+              );
+            })}
+          </RecordLine>
+          <RowsContext
+            value={{
+              picked,
+              onPick: (id, checked) => {
+                if (selection === undefined) return;
+                const next = new Set([...selection.selected].filter((kept) => shown.has(kept)));
+                if (checked) next.add(id);
+                else next.delete(id);
+                selection.onChange(next);
+              },
+              onOpen,
+              current,
+            }}
+          >
+            {rows.map((row) => (
+              <Record key={row.id} row={row} columns={columns} picks={picks} />
+            ))}
+          </RowsContext>
+        </RecordFrame>
+      </RecordRoom>
     </Stack>
   );
-}
-
-/**
- * A head with a chance to break before each @ and . inside it (@deals4u@promo.example, a domain), so that a handle or
- * a domain too long for its column wraps between its parts; its text is unchanged for copying and assistive technology.
- */
-function breakable(head: string): ReactNode {
-  const parts = head.split(/(?<=.)(?=[@.])/u);
-  if (parts.length === 1) return head;
-  return parts.flatMap((part, i) => (i === 0 ? [part] : [<wbr key={i} />, part]));
 }
 
 /** A record: its checkbox, its head (the link that opens it) over its caption, and its cells. */
@@ -524,8 +679,9 @@ function Record<K extends string>({
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   const { picked, onPick, onOpen, current } = use(RowsContext);
-  const marked = row.id === current ? { "aria-current": "page" as const } : {};
-  const words = <OpenPlace>{breakable(row.head)}</OpenPlace>;
+  // The open record: the page it leads to, for a link; the one shown, for a button.
+  const open = row.id === current;
+  const words = <HeadWords cover>{row.head}</HeadWords>;
   return (
     <RecordLine role="row" className={s.line()}>
       {picks && (
@@ -542,29 +698,33 @@ function Record<K extends string>({
       <RecordPlace at="head" role="rowheader" className="">
         <Stack as="span" gap="hair">
           {row.href !== undefined ? (
-            <Link href={row.href} data-open="" {...marked} className={s.open()} dir="auto">
+            <Link
+              href={row.href}
+              data-open=""
+              {...(open ? { "aria-current": "page" as const } : {})}
+              className={s.open()}
+            >
               {words}
             </Link>
           ) : onOpen !== undefined ? (
             <AriaButton
               data-open=""
-              dir="auto"
-              {...marked}
+              {...(open ? { "aria-current": "true" as const } : {})}
               onPress={() => {
                 onOpen(row.id);
               }}
-              className={`${s.open()} border-0 bg-transparent p-0 text-start text-body`}
+              className={s.open()}
             >
               {words}
             </AriaButton>
           ) : (
-            <span className={s.plain()} dir="auto">
-              {breakable(row.head)}
+            <span className={s.plain()}>
+              <HeadWords>{row.head}</HeadWords>
             </span>
           )}
           {row.caption !== undefined && (
-            <span className={s.caption()} dir="auto">
-              {row.caption}
+            <span className={s.caption()}>
+              <bdi dir="auto">{row.caption}</bdi>
             </span>
           )}
         </Stack>
@@ -608,6 +768,7 @@ export type RecordPagesProps = {
   busy?: "previous" | "next" | undefined;
 };
 
+/** A page's button; where there is no such page, disabled, so that the focus it holds stays where it was. */
 function PageButton({
   target,
   busy,
@@ -615,7 +776,7 @@ function PageButton({
   end,
   children,
 }: {
-  target: PageTarget;
+  target: PageTarget | undefined;
   busy: boolean;
   icon: IconName;
   end: boolean;
@@ -628,6 +789,12 @@ function PageButton({
       {end && <Icon name={icon} place="caption" />}
     </Row>
   );
+  if (target === undefined)
+    return (
+      <Button size="target" isDisabled>
+        {label}
+      </Button>
+    );
   if ("href" in target)
     return (
       <LinkButton href={target.href} size="target">
@@ -642,8 +809,9 @@ function PageButton({
 }
 
 /**
- * The pages of a list paged by cursor, under it: Previous at the start, Next at the end, each only where there is such
- * a page, so that the reader never meets a button that does nothing. A navigation named for assistive technology.
+ * The pages of a list paged by cursor, under it: Previous at the start, Next at the end, either disabled where there is
+ * no such page (the first page, the last), so that a press that reaches the last page leaves the focus on its button.
+ * A list of one page has none. A navigation named for assistive technology.
  */
 export function RecordPages({ previous, next, busy }: RecordPagesProps) {
   const { lang } = useReader(undefined);
@@ -651,18 +819,14 @@ export function RecordPages({ previous, next, busy }: RecordPagesProps) {
   if (previous === undefined && next === undefined) return null;
   return (
     <Row as="nav" align="center" gap="screen-tabs-gap" aria-label={t("records.pages")}>
-      {previous !== undefined && (
-        <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
-          {t("records.previous")}
+      <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
+        {t("records.previous")}
+      </PageButton>
+      <Box push="end">
+        <PageButton target={next} busy={busy === "next"} icon="onward" end>
+          {t("records.next")}
         </PageButton>
-      )}
-      {next !== undefined && (
-        <Box push="end">
-          <PageButton target={next} busy={busy === "next"} icon="onward" end>
-            {t("records.next")}
-          </PageButton>
-        </Box>
-      )}
+      </Box>
     </Row>
   );
 }
@@ -685,20 +849,6 @@ export function MoreRecords({ onPress, busy = false }: { onPress: () => void; bu
 
 // The filters over a list.
 
-const facet = tv({
-  base: [
-    "box-border h-chip cursor-pointer rounded-control border-0 px-chip-inline font-sans text-caption whitespace-nowrap",
-    "outline-hidden data-focus-visible:shadow-focus",
-  ],
-  variants: {
-    // Applied, it is knocked out of the text's color, with no hue, as a chip that is on.
-    applied: {
-      false: "bg-surface-raised text-text data-hovered:bg-surface-raised-hover data-pressed:bg-surface-raised-pressed",
-      true: "bg-text text-surface",
-    },
-  },
-});
-
 /** A value of a facet: its id, its words and its glyph, as the menu shows it. */
 export type FilterValue = { id: string; label: string; icon: IconName };
 
@@ -716,8 +866,8 @@ export type FilterFacetProps = {
 const ANY = "\u0000any";
 
 /**
- * A facet of the filters: a button that opens its values in a menu, the one applied checked; while a value is applied,
- * the button is knocked out and says it ("State: Open").
+ * A facet of the filters: a chip that opens its values in a menu, the one applied checked; while a value is applied,
+ * the chip is on, knocked out as a chip that is on, and says it ("State: Open"), as the menu button of boost is on.
  */
 export function FilterFacet({ label, any, values, chosen, onChoose }: FilterFacetProps) {
   const { lang } = useReader(undefined);
@@ -728,15 +878,10 @@ export function FilterFacet({ label, any, values, chosen, onChoose }: FilterFace
       label={label}
       placement="bottom start"
       trigger={
-        <Row
-          inline
-          align="center"
-          gap="chip-gap"
-          as={<AriaButton className={facet({ applied: value !== undefined })} />}
-        >
+        <ButtonBase kind="chip" size="chip" pressed={value !== undefined}>
           <span>{value === undefined ? label : t("records.facet", { facet: label, value: value.label })}</span>
           <Icon name="expand" place="caption" />
-        </Row>
+        </ButtonBase>
       }
     >
       <MenuGroup
@@ -758,7 +903,10 @@ export function FilterFacet({ label, any, values, chosen, onChoose }: FilterFace
   );
 }
 
-/** A facet that is on or off ("Assigned to me"): a toggle, knocked out while on. */
+/**
+ * A facet that is on or off ("Assigned to me"): a toggle on the chip's surface, knocked out while on, its words where
+ * a reaction's chip has a glyph and a count.
+ */
 export function FilterToggle({ label, on, onChange }: { label: string; on: boolean; onChange: (on: boolean) => void }) {
   return (
     <ButtonBase
@@ -797,8 +945,16 @@ export function FilterBar({ label, search, children, applied, onClear, summary }
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   const id = useId();
+  const bar = useId();
+  // Clear filters leaves as it acts: the focus goes to the search, else to the first facet, so that it is not lost.
+  const clear = () => {
+    onClear();
+    const root = document.getElementById(bar);
+    const to = root?.querySelector<HTMLElement>("input[type=search]") ?? root?.querySelector<HTMLElement>("button");
+    to?.focus();
+  };
   return (
-    <Stack role="search" gap="screen-field-gap" aria-label={label}>
+    <Stack id={bar} role="search" gap="screen-field-gap" aria-label={label}>
       {search !== undefined && (
         <SearchField
           id={id}
@@ -812,8 +968,9 @@ export function FilterBar({ label, search, children, applied, onClear, summary }
       <Row wrap align="center" gap="chip-spacing">
         {children}
         {applied && (
-          <Box as="span" push="end" text="caption">
-            <TextButton onPress={onClear}>{t("records.clear_filters")}</TextButton>
+          // In the look of a list's notice's action, so that Clear filters reads alike wherever it stands.
+          <Box as="span" push="end" text="caption" tone="muted" nowrap>
+            <TextButton onPress={clear}>{t("records.clear_filters")}</TextButton>
           </Box>
         )}
       </Row>
