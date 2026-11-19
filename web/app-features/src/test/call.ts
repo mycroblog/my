@@ -27,6 +27,8 @@ type FakeRoomSession = RoomSession & {
   readonly signals: IncomingSignal[];
   readonly microphones: boolean[];
   readonly closed: () => boolean;
+  /** How many listeners of its events are on now. */
+  readonly listening: () => number;
   /** Says what the session's events say. */
   readonly emit: <E extends keyof RoomSessionEvents>(event: E, ...args: Parameters<RoomSessionEvents[E]>) => void;
 };
@@ -60,6 +62,7 @@ function fakeRoomSession(options: RoomSessionOptions, refuseMicrophone?: Error):
     signals,
     microphones,
     closed: () => closed,
+    listening: () => [...listeners.values()].reduce((n, set) => n + set.size, 0),
     update: (roster) => {
       rosters.push(roster);
     },
@@ -157,6 +160,8 @@ export type FakeCallRuntime = {
   readonly environments: () => number;
   /** The page goes away. */
   readonly hidePage: () => void;
+  /** The network comes back. */
+  readonly goOnline: () => void;
   /** How many holds of the unload are on now. */
   readonly holds: () => number;
 };
@@ -166,6 +171,7 @@ export function fakeCallRuntime(refuseMicrophone?: Error): FakeCallRuntime {
   const clock = manualClock();
   const sessions: FakeRoomSession[] = [];
   const hides = new Set<() => void>();
+  const onlines = new Set<() => void>();
   let holds = 0;
   let environments = 0;
   const environment: RoomEnvironment = {
@@ -188,8 +194,17 @@ export function fakeCallRuntime(refuseMicrophone?: Error): FakeCallRuntime {
       for (const hide of [...hides]) hide();
     },
     holds: () => holds,
+    goOnline: () => {
+      for (const online of [...onlines]) online();
+    },
     runtime: {
       clock,
+      watchNetwork: (onOnline) => {
+        onlines.add(onOnline);
+        return () => {
+          onlines.delete(onOnline);
+        };
+      },
       createSession: (options) => {
         const made = fakeRoomSession(options, refuseMicrophone);
         sessions.push(made);

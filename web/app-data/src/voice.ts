@@ -114,20 +114,39 @@ export function isVoiceSessionGone(error: unknown): boolean {
  * Joins the room `id` with a new session, which leaves the room the reader was in (a 409 for the host of an open
  * room elsewhere, and for a room that is full).
  */
-export async function joinVoiceRoom({ api }: AppData, id: string): Promise<VoiceJoin> {
-  return answered(await api.POST("/voice/rooms/{id}/participation", { params: { path: { id } } }), "the join");
+export async function joinVoiceRoom({ api }: AppData, id: string): Promise<VoiceJoin & ServerTime> {
+  const answer = await api.POST("/voice/rooms/{id}/participation", { params: { path: { id } } });
+  return { ...answered(answer, "the join"), serverTime: serverTimeOf(answer.response) };
+}
+
+/**
+ * When the server answered, in milliseconds since the epoch, by the answer's Date header; null without one. A grant's
+ * `expires_at` is the server's time: its lifetime is counted from this, whatever the device's clock says.
+ */
+export type ServerTime = { readonly serverTime: number | null };
+
+function serverTimeOf(response: Response): number | null {
+  const date = response.headers.get("Date");
+  const time = date === null ? Number.NaN : Date.parse(date);
+  return Number.isFinite(time) ? time : null;
 }
 
 /** How the host of a room with others in it leaves: handing it to the next host, or ending it. */
 export type VoiceLeaveChoice = { readonly nextHostId: string } | { readonly end: true };
 
 /**
- * Leaves the room `id`. The host of a room with others in it names a choice: without one the server refuses (a 409
- * `voice-host-must-choose`), and the reader stays in.
+ * Leaves the room `id` with `session`: a session that no longer holds the reader's place (another tab or device joined
+ * since) changes nothing, and the server answers 204. The host of a room with others in it names a choice: without
+ * one the server refuses (a 409 `voice-host-must-choose`), and the reader stays in.
  */
-export async function leaveVoiceRoom({ api }: AppData, id: string, choice?: VoiceLeaveChoice): Promise<void> {
-  const query = choice === undefined ? {} : "end" in choice ? { end: true } : { next_host_id: choice.nextHostId };
-  await api.DELETE("/voice/rooms/{id}/participation", { params: { path: { id }, query } });
+export async function leaveVoiceRoom(
+  { api }: AppData,
+  id: string,
+  session: string,
+  choice?: VoiceLeaveChoice,
+): Promise<void> {
+  const chosen = choice === undefined ? {} : "end" in choice ? { end: true } : { next_host_id: choice.nextHostId };
+  await api.DELETE("/voice/rooms/{id}/participation", { params: { path: { id }, query: { session, ...chosen } } });
 }
 
 /**
@@ -139,12 +158,14 @@ export function isVoiceLeaveRefused(error: unknown): boolean {
 }
 
 /**
- * Leaves the room `id` as the page goes away (pagehide): the request outlives the page (`keepalive`) and carries the
- * access token as every request does. A host of a room with others in it is refused, and stays the host until the
- * server's grace after the heartbeats stop.
+ * Leaves the room `id` with `session` as the page goes away (pagehide): the request outlives the page (`keepalive`)
+ * and carries the access token as every request does; a session another tab replaced since changes nothing. A host
+ * of a room with others in it is refused, and stays the host until the server's grace after the heartbeats stop.
  */
-export function leaveVoiceRoomOnUnload({ api }: AppData, id: string): void {
-  api.DELETE("/voice/rooms/{id}/participation", { params: { path: { id } }, keepalive: true }).catch(() => undefined);
+export function leaveVoiceRoomOnUnload({ api }: AppData, id: string, session: string): void {
+  api
+    .DELETE("/voice/rooms/{id}/participation", { params: { path: { id }, query: { session } }, keepalive: true })
+    .catch(() => undefined);
 }
 
 /** Tells the server that `session` is alive (every 15 seconds; ADR-0100 §6). */
@@ -152,12 +173,14 @@ export async function sendVoiceHeartbeat({ api }: AppData, id: string, session: 
   await api.POST("/voice/rooms/{id}/heartbeat", { params: { path: { id } }, body: { session } });
 }
 
-/** A new grant for `session`, with new TURN credentials (ADR-0101 §5). */
-export async function renewVoiceGrant({ api }: AppData, id: string, session: string): Promise<VoiceGrant> {
-  return answered(
-    await api.POST("/voice/rooms/{id}/grant", { params: { path: { id } }, body: { session } }),
-    "the grant",
-  );
+/** A new grant for `session`, with new TURN credentials (ADR-0101 §5), and when the server gave it. */
+export async function renewVoiceGrant(
+  { api }: AppData,
+  id: string,
+  session: string,
+): Promise<{ readonly grant: VoiceGrant } & ServerTime> {
+  const answer = await api.POST("/voice/rooms/{id}/grant", { params: { path: { id } }, body: { session } });
+  return { grant: answered(answer, "the grant"), serverTime: serverTimeOf(answer.response) };
 }
 
 /** Sends a signal of P2P from `session` to another session of the room. */
@@ -271,8 +294,8 @@ export type VoiceStreamOptions = {
 
 /**
  * Reads the room's stream of `session` as long as the session lasts, opening it again on the same session whenever
- * it drops (a network failure, a 5xx, a silent stream, the server closing it), after a wait that grows with the
- * failures in a row. It resolves once a `removed`, `replaced` or `ended` event was handed on, or `signal` aborted, and
+ * it drops (a network failure, a 5xx, a silent stream, the server closing it), after a wait that grows with the drops
+ * in a row since the stream last sent an event. It resolves once a `removed`, `replaced` or `ended` event was handed on, or `signal` aborted, and
  * rejects with the server's refusal of the stream (a ProblemError of a 4xx: a 404 when the server holds the session no
  * more), which opening it again would not change.
  */
@@ -286,12 +309,20 @@ export async function runVoiceStream(data: AppData, options: VoiceStreamOptions)
   while (!stopped()) {
     let ended = false;
     try {
-      ended = await readVoiceStream(data, options, () => {
-        options.onOpen?.(opened);
-        opened = true;
-        failures = 0;
-      });
+      ended = await readVoiceStream(
+        data,
+        options,
+        () => {
+          options.onOpen?.(opened);
+          opened = true;
+        },
+        () => {
+          // Only a stream that said something counts as working: one that opens and closes at once fails again.
+          failures = 0;
+        },
+      );
       if (ended || stopped()) return;
+      failures++;
       options.onDrop?.(null);
     } catch (error) {
       if (stopped()) return;
@@ -319,6 +350,7 @@ async function readVoiceStream(
   data: AppData,
   { room, session, signal, onEvent, silence = voiceStreamSilence }: VoiceStreamOptions,
   onOpen: () => void,
+  onHeard: () => void,
 ): Promise<boolean> {
   const quiet = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -347,6 +379,7 @@ async function readVoiceStream(
       for (const sent of sents) {
         const event = parseVoiceStreamEvent(sent.event, sent.data);
         if (event === null) continue;
+        onHeard();
         onEvent(event);
         if (event.type === "removed" || event.type === "replaced" || event.type === "ended") return true;
       }

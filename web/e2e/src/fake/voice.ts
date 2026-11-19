@@ -163,8 +163,11 @@ export function voiceHandlers(c: VoiceContext): { handlers: Handlers; voice: Fak
       opened = 0;
       return { status: 200, body: { room: shown(room), session, grant: grant() } };
     },
-    "DELETE /voice/rooms/{id}/participation": ({ params }) => {
+    "DELETE /voice/rooms/{id}/participation": ({ params, query }) => {
       if (c.off || joined?.room !== params.id) return c.notFound();
+      // A session that no longer holds the reader's place leaves nothing.
+      const session = query.get("session");
+      if (session !== null && session !== joined.session) return { status: 204 };
       end("removed", "left");
       return { status: 204 };
     },

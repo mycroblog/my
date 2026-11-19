@@ -42,6 +42,10 @@ const browserRuntime: CallRuntime = {
     if (devices === undefined) throw new CallUnavailableError("app-features: the browser gives no media devices");
     return browserEnvironment({ devices, watchNetwork: (onChange) => watchOnline(onChange) });
   },
+  watchNetwork: (onOnline) =>
+    watchOnline((online) => {
+      if (online) onOnline();
+    }),
   watchPageHide,
   holdUnload,
 };
@@ -133,7 +137,7 @@ export function joinCall(data: AppData, roomId: string): Promise<VoiceCall> {
       // A grant this client cannot connect with: the session the server made goes again, and the room left stays left.
       leaving?.switched();
       environment.close?.();
-      void leaveVoiceRoom(data, roomId).catch(() => undefined);
+      void leaveVoiceRoom(data, roomId, join.session).catch(() => undefined);
       throw error;
     }
     leaving?.switched();
@@ -215,10 +219,12 @@ export function lastCallEnd(): CallEnd | null {
 
 /**
  * Leaves the reader's call, if any, before the session of the app ends (signing out): the leave is sent while it
- * still can be. A host whom the server keeps in (they did not choose who hosts next) stays until the session's end
- * ends the call.
+ * still can be, also for a join on its way, which is awaited first. A host whom the server keeps in (they did not
+ * choose who hosts next) stays until the session's end ends the call.
  */
 export async function leaveCallBeforeSignOut(): Promise<void> {
+  const pending = joining?.call;
+  if (pending !== undefined) await pending.catch(() => undefined);
   await current?.leave().catch(() => undefined);
 }
 

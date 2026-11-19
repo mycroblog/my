@@ -6,13 +6,29 @@
 import { afterEach, beforeEach, expect, test } from "bun:test";
 import { closeSession, createAppData, voiceStreamDelays, type AppData, type VoiceGrant } from "@my/app-data";
 import { createFakeApi, fakeOrigin, type FakeApi } from "@my/e2e/fake";
+import { RoomSessionFailure } from "@my/rtc";
 import { createClient } from "@mycroblog/mykit";
 import { fakeCallRuntime, settle, type FakeCallRuntime } from "../test/call";
-import { currentCall, inCall, joinCall, lastCallEnd, runCallsOn } from "./calls";
+import { currentCall, inCall, joinCall, lastCallEnd, leaveCallBeforeSignOut, runCallsOn } from "./calls";
 import { callShown, leaveCall, muteCall } from "./store";
 import { grantRenewalLead, heartbeatInterval, heartbeatTtl, roomGrant } from "./voice-call";
 
-type Sent = { readonly line: string; readonly keepalive: boolean };
+type Sent = { readonly line: string; readonly keepalive: boolean; readonly session?: string | null };
+
+const minute = 60_000;
+
+/** The fake's joins give a grant that expires `ms` from now, or one whose expiry cannot be read (NaN). */
+function expiringIn(fake: FakeApi, ms: number) {
+  fake.script("POST /voice/rooms/{id}/participation", {
+    change: (join) => ({
+      ...join,
+      grant: {
+        ...join.grant,
+        expires_at: Number.isNaN(ms) ? "not a time" : new Date(on.clock.now() + ms).toISOString(),
+      },
+    }),
+  });
+}
 
 /** The app's data on a fake API, with what it sent. */
 function server(): { fake: FakeApi; data: AppData; sent: Sent[] } {
@@ -23,7 +39,13 @@ function server(): { fake: FakeApi; data: AppData; sent: Sent[] } {
     retry: { disabled: true },
     fetch: (request) => {
       const url = new URL(request.url);
-      sent.push({ line: `${request.method} ${url.pathname.replace("/api/v1", "")}`, keepalive: request.keepalive });
+      const line = `${request.method} ${url.pathname.replace("/api/v1", "")}`;
+      const session = url.searchParams.get("session");
+      sent.push(
+        request.method === "DELETE"
+          ? { line, keepalive: request.keepalive, session }
+          : { line, keepalive: request.keepalive },
+      );
       return fake.serve(request);
     },
   });
@@ -110,16 +132,11 @@ test("a heartbeat the server answers with 404 ends the call at once", async () =
 
 test("the grant is taken again 10 minutes before it expires, and given to the audio", async () => {
   const s = server();
-  // A grant that expires in 11 minutes: it is taken again in one.
-  s.fake.script("POST /voice/rooms/{id}/participation", {
-    change: (join) => ({
-      ...join,
-      grant: { ...join.grant, expires_at: new Date(on.clock.now() + grantRenewalLead + 60_000).toISOString() },
-    }),
-  });
+  // A grant that expires in 30 minutes: it is taken again in 20.
+  expiringIn(s.fake, 30 * minute);
   const grants = s.fake.script("POST /voice/rooms/{id}/grant");
   const call = await joinCall(s.data, s.fake.voice.roomId(0));
-  await on.clock.advance(59_000);
+  await on.clock.advance(30 * minute - grantRenewalLead - 1_000);
   expect(grants.seen).toHaveLength(0);
   await on.clock.advance(2_000);
   expect(grants.seen).toHaveLength(1);
@@ -175,7 +192,11 @@ test("the page going away sends the leave with keepalive and ends the call", asy
   const { sent, call, roomId } = await joined();
   on.hidePage();
   await settle();
-  expect(sent.at(-1)).toEqual({ line: `DELETE /voice/rooms/${roomId}/participation`, keepalive: true });
+  expect(sent.at(-1)).toEqual({
+    line: `DELETE /voice/rooms/${roomId}/participation`,
+    keepalive: true,
+    session: call.session,
+  });
   expect(call.getState().end?.kind).toBe("unloaded");
 });
 
@@ -317,4 +338,183 @@ test("the shell's bar shows the room, and its microphone is the call's", async (
   // A listener does not send: the microphone stays off, and the bar says so.
   expect(call.getState().micFailure).toBe("refused");
   expect(callShown()?.muted).toBe(true);
+});
+
+test("audio that stays lost asks for a grant again after a growing wait, and at once as the network comes back", async () => {
+  const { fake, call } = await joined();
+  const grants = fake.script("POST /voice/rooms/{id}/grant", { fail: "network" });
+  const audio = on.sessions[0];
+  audio?.emit("connection", { state: "lost", participants: [] });
+  await on.clock.advance(0);
+  expect(grants.seen).toHaveLength(1);
+  await on.clock.advance(1_000);
+  expect(grants.seen).toHaveLength(2);
+  await on.clock.advance(1_500);
+  expect(grants.seen).toHaveLength(2);
+  on.goOnline();
+  await settle();
+  expect(grants.seen).toHaveLength(3);
+  grants.end();
+  on.goOnline();
+  await settle();
+  expect(audio?.reconnected).toHaveLength(1);
+  expect(call.ended).toBe(false);
+  // Once the call ends, nothing asks again.
+  await call.leave();
+  const after = grants.seen.length;
+  await on.clock.advance(60_000);
+  expect(grants.seen).toHaveLength(after);
+});
+
+test("a short grant is taken again halfway through its life, and no sooner than 30 seconds after it came", async () => {
+  const s = server();
+  expiringIn(s.fake, 5 * minute);
+  const grants = s.fake.script("POST /voice/rooms/{id}/grant");
+  await joinCall(s.data, s.fake.voice.roomId(0));
+  await on.clock.advance(2.5 * minute - 1_000);
+  expect(grants.seen).toHaveLength(0);
+  await on.clock.advance(2_000);
+  expect(grants.seen).toHaveLength(1);
+});
+
+test("a grant that already expired is taken again after 30 seconds, not at once", async () => {
+  const s = server();
+  expiringIn(s.fake, -minute);
+  const grants = s.fake.script("POST /voice/rooms/{id}/grant");
+  await joinCall(s.data, s.fake.voice.roomId(0));
+  await on.clock.advance(29_000);
+  expect(grants.seen).toHaveLength(0);
+  await on.clock.advance(2_000);
+  expect(grants.seen).toHaveLength(1);
+});
+
+test("a grant whose expiry cannot be read is not taken again on a timer", async () => {
+  const s = server();
+  expiringIn(s.fake, Number.NaN);
+  const grants = s.fake.script("POST /voice/rooms/{id}/grant");
+  await joinCall(s.data, s.fake.voice.roomId(0));
+  await on.clock.advance(5 * minute);
+  expect(grants.seen).toHaveLength(0);
+});
+
+test("the same credentials again are not given to the audio, and are asked for again after a wait", async () => {
+  const s = server();
+  const expires = new Date(on.clock.now() + 30 * minute).toISOString();
+  expiringIn(s.fake, 30 * minute);
+  const grants = s.fake.script("POST /voice/rooms/{id}/grant", {
+    change: (grant) => ({ ...grant, expires_at: expires }),
+  });
+  await joinCall(s.data, s.fake.voice.roomId(0));
+  await on.clock.advance(20 * minute + 1_000);
+  expect(grants.seen).toHaveLength(1);
+  expect(on.sessions[0]?.renewed).toHaveLength(0);
+  await on.clock.advance(30_000);
+  expect(grants.seen).toHaveLength(2);
+});
+
+test("signing out while a join is on its way leaves the room the join entered", async () => {
+  const s = server();
+  const join = s.fake.script("POST /voice/rooms/{id}/participation", { hold: "response" });
+  const call = joinCall(s.data, s.fake.voice.roomId(0));
+  const leaving = leaveCallBeforeSignOut();
+  await join.served();
+  join.release();
+  await leaving;
+  expect((await call).getState().end?.kind).toBe("left");
+  expect(s.sent.at(-1)?.line).toBe(`DELETE /voice/rooms/${s.fake.voice.roomId(0)}/participation`);
+});
+
+test("a call whose session of the app ended before it started hears nothing of its audio", async () => {
+  const s = server();
+  const join = s.fake.script("POST /voice/rooms/{id}/participation", { hold: "response" });
+  const call = joinCall(s.data, s.fake.voice.roomId(0));
+  await join.served();
+  await closeSession(s.data);
+  join.release();
+  expect((await call).getState().end?.kind).toBe("signed_out");
+  expect(on.sessions[0]?.listening()).toBe(0);
+});
+
+/** Makes the reader a speaker in the call's room, as the stream says. */
+async function speaking() {
+  const joinedNow = await joined();
+  await joinedNow.call.act("speak");
+  await on.clock.advance(0);
+  return joinedNow;
+}
+
+test("the server hears of the microphone whenever what applies differs from what it last heard", async () => {
+  const { fake, call } = await speaking();
+  const mics = fake.script("POST /voice/rooms/{id}/mic");
+  await call.setMicrophone(true);
+  // The reader listens again: the microphone goes off, and the server hears so.
+  await call.act("listen");
+  await on.clock.advance(0);
+  expect(mics.seen.map((m) => m.body.on)).toEqual([true, false]);
+  expect(call.getState().microphone).toBe(false);
+});
+
+test("a host's mute turns the microphone off without telling the server, and turning it on again tells it", async () => {
+  const { fake, call } = await speaking();
+  const mics = fake.script("POST /voice/rooms/{id}/mic");
+  await call.setMicrophone(true);
+  fake.voice.send({ event: "muted", data: { by: "host" } });
+  await on.clock.advance(0);
+  expect(call.getState()).toMatchObject({ microphone: false, mutedBy: "host" });
+  await call.setMicrophone(true);
+  expect(mics.seen.map((m) => m.body.on)).toEqual([true, true]);
+});
+
+test("the participants' microphones are those of the speakers in the latest state", async () => {
+  const { fake, call } = await speaking();
+  const self = call.getState().self?.account.id ?? "";
+  fake.voice.send({ event: "mic", data: { participant: "gone", on: true } });
+  fake.voice.send({ event: "mic", data: { participant: self, on: true } });
+  await on.clock.advance(0);
+  expect(call.getState().mics.size).toBe(2);
+  fake.voice.send({ event: "state" });
+  await on.clock.advance(0);
+  expect([...call.getState().mics]).toEqual([[self, true]]);
+  await call.act("listen");
+  await on.clock.advance(0);
+  expect(call.getState().mics.size).toBe(0);
+});
+
+test("a join of another room that the server refuses keeps a leave on its way", async () => {
+  const { data, fake, call } = await joined();
+  const leave = fake.script("DELETE /voice/rooms/{id}/participation", { hold: "request" });
+  const leaving = call.leave();
+  await leave.arrived();
+  fake.script("POST /voice/rooms/{id}/participation", { fail: 409 });
+  expect(await joinCall(data, fake.voice.roomId(1)).catch((error: unknown) => error)).toMatchObject({ status: 409 });
+  leave.release();
+  await leaving;
+  expect(call.getState().end?.kind).toBe("left");
+});
+
+test("once the stream said how the room stands, a write's answer does not change it", async () => {
+  const { fake, call } = await joined();
+  const name = call.getState().room.name;
+  fake.script("POST /voice/rooms/{id}/hand", { change: (room) => ({ ...room, name: "An older name" }) });
+  await call.act("raise-hand");
+  await on.clock.advance(0);
+  expect(call.getState().room.name).toBe(name);
+  expect(call.getState().self?.hand_raised).toBe(true);
+});
+
+test("each leave names the call's session, so that a tab another replaced leaves nothing", async () => {
+  const left = await joined();
+  await left.call.leave();
+  expect(left.sent.at(-1)).toMatchObject({
+    line: `DELETE /voice/rooms/${left.roomId}/participation`,
+    session: left.call.session,
+  });
+  const failed = await joined();
+  on.sessions.at(-1)?.emit("failed", new RoomSessionFailure("unavailable"));
+  await settle();
+  expect(failed.call.getState().end?.kind).toBe("failed");
+  expect(failed.sent.at(-1)).toMatchObject({
+    line: `DELETE /voice/rooms/${failed.roomId}/participation`,
+    session: failed.call.session,
+  });
 });

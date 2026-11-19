@@ -714,6 +714,7 @@ export {
   type VoiceLeaveChoice,
   type VoiceRoomHistoryEntry,
   type VoiceRoomParticipant,
+  type ServerTime,
   type VoiceSelfOperation,
   type VoiceSignalOut,
   type VoiceStreamEvent,

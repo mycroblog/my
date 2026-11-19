@@ -11,10 +11,16 @@
 //   `reaction` to the state, `muted` turns the microphone off, `grant` renews or reconnects the audio, and `removed`,
 //   `replaced` and `ended` end the call. A stream the server refuses (a 404: it holds the session no more) ends it as
 //   `lost`.
-// - 10 minutes before a P2P grant expires the call asks for a new one and gives it to the audio (`renew`: new TURN
-//   credentials and an ICE restart). An SFU's grant only connects and lives a minute; the SFU keeps the connection, and
-//   when the audio says it is `lost` the call asks for a new grant and connects again with it (`reconnect`).
-// - The microphone follows the reader's latest wish, one change after another, and sends only while the reader speaks.
+// - 10 minutes before a P2P grant expires (halfway through a shorter lifetime, counted from the server's time of the
+//   answer, and never within 30 seconds of the last) the call asks for a new one and gives it to the audio (`renew`:
+//   new TURN credentials and an ICE restart); the same credentials again wait and ask later. An SFU's grant only
+//   connects and lives a minute; the SFU keeps the connection, and while the audio says it is `lost` the call asks for
+//   a new grant and connects again with it (`reconnect`), after a wait that grows with the tries, or as the network
+//   comes back.
+// - The microphone follows the reader's latest wish, one change after another, and sends only while the reader speaks;
+//   the server hears of it whenever what applies differs from what it last heard. The microphones of the participants
+//   are those of the speakers in the latest `state`.
+// - Once the stream gave a `state`, only the stream says how the room stands: the answer of a write may be older.
 // - Every end happens once: whatever ends the call first stops the stream, the timers and the audio, and says why.
 import {
   isVoiceLeaveRefused,
@@ -33,6 +39,7 @@ import {
   voiceRoomLeft,
   voiceSelfOperation,
   type AppData,
+  type ServerTime,
   type VoiceGrant,
   type VoiceHostOperation,
   type VoiceJoin,
@@ -58,6 +65,12 @@ export const reactionDuration = 5_000;
 
 /** The wait before asking again for a grant the server could not give. */
 const grantRetry = 30_000;
+
+/** The least wait after a grant before it is taken again, whatever its lifetime says. */
+const renewalFloor = 30_000;
+
+/** The waits before asking again for a grant for audio that is lost, by the tries before (the last for every later one). */
+const regrantDelays: readonly number[] = [1_000, 2_000, 5_000, 10_000, 30_000];
 
 /** The longest wait a timer takes. */
 const longestTimer = 2 ** 31 - 1;
@@ -143,6 +156,8 @@ export type VoiceCallState = {
 export type VoiceCallRuntime = {
   readonly createSession: (options: RoomSessionOptions) => RoomSession;
   readonly clock: Clock;
+  /** Calls `onOnline` when the network comes back, until the function it returns is called; none by default. */
+  readonly watchNetwork?: ((onOnline: () => void) => () => void) | undefined;
 };
 
 /** The grant as @my/rtc takes it. */
@@ -187,7 +202,19 @@ export class VoiceCall {
   #beating = false;
   #alive: number;
   #renewal: unknown;
+  /** When the grant came, by the call's clock, and how long it lives from then (NaN when its expiry is unreadable). */
+  #grantAt = 0;
+  #grantLife = Number.NaN;
   #regranting = false;
+  #regrantTimer: unknown;
+  /** The tries for a new grant since the audio was last connected. */
+  #regrants = 0;
+  /** Whether the server last heard that the microphone is on. */
+  #micHeard = false;
+  /** Whether a `state` of the stream came: from then on only the stream says how the room stands. */
+  #heardState = false;
+  /** What `#leaving` was before a join of another room took its place. */
+  #beforeSwitch: CallEnd | null = null;
   #reactionId = 0;
   #micChanges: Promise<void> = Promise.resolve();
   #started = false;
@@ -201,11 +228,17 @@ export class VoiceCall {
    * Takes the session `join` answered, on `data`'s session of the app, and makes its audio on `environment` (made
    * from the reader's gesture). It throws what making the audio throws (a grant of a kind it cannot connect with).
    */
-  constructor(data: AppData, join: VoiceJoin, environment: RoomEnvironment, runtime: VoiceCallRuntime) {
+  constructor(
+    data: AppData,
+    join: VoiceJoin & Partial<ServerTime>,
+    environment: RoomEnvironment,
+    runtime: VoiceCallRuntime,
+  ) {
     this.#data = data;
     this.#runtime = runtime;
     this.#grant = roomGrant(join.grant);
     this.#alive = runtime.clock.now();
+    this.#grantTimes(join.grant, join.serverTime);
     this.#state = {
       roomId: join.room.id,
       session: join.session,
@@ -307,11 +340,20 @@ export class VoiceCall {
   start(): void {
     if (this.#started || this.#over()) return;
     this.#started = true;
+    // The session of the app ended (signed out here or in another tab): nothing can be asked of the server any more.
+    // Heard first, so that a session that ended already ends the call before anything else is started.
+    this.#unhook.push(
+      onDataClosed(this.#data, () => {
+        this.#finish({ kind: "signed_out", reason: "" }, false);
+      }),
+    );
+    if (this.#over()) return;
     const audio = this.#audio;
     this.#unhook.push(
       audio.on("connection", ({ state }) => {
         this.#set({ connection: state });
-        if (state === "lost") void this.#regrant();
+        if (state === "lost") this.#regrantSoon();
+        else if (state === "connected") this.#regrants = 0;
       }),
       audio.on("talking", (talking) => {
         if (!this.#over()) this.#set({ talking });
@@ -322,10 +364,13 @@ export class VoiceCall {
       audio.on("failed", (failure) => {
         this.#finish({ kind: "failed", reason: failure.reason }, true);
       }),
-      // The session of the app ended (signed out here or in another tab): nothing can be asked of the server any more.
-      onDataClosed(this.#data, () => {
-        this.#finish({ kind: "signed_out", reason: "" }, false);
-      }),
+      this.#runtime.watchNetwork?.(() => {
+        // The network came back: audio that is lost asks for its grant now, not after the wait.
+        if (this.#state.connection !== "lost" || this.#regranting || this.#over()) return;
+        this.#runtime.clock.clearTimeout(this.#regrantTimer);
+        this.#regrantTimer = undefined;
+        void this.#regrant();
+      }) ?? (() => undefined),
     );
     if (this.#over()) return;
     const { clock } = this.#runtime;
@@ -397,8 +442,13 @@ export class VoiceCall {
   #handle(event: VoiceStreamEvent): void {
     if (this.#over()) return;
     switch (event.type) {
-      case "state":
+      case "state": {
+        this.#heardState = true;
         this.#learnSelf(event.room);
+        // A microphone is said only of a speaker who is still in the room.
+        const speakers = new Set(event.room.participants.filter((p) => p.role === "speaker").map((p) => p.account.id));
+        const mics = [...this.#state.mics].filter(([id]) => speakers.has(id));
+        if (mics.length !== this.#state.mics.size) this.#set({ mics: new Map(mics) });
         this.#members = event.room.participants.flatMap((p) =>
           p.session === undefined || p.session === this.session
             ? []
@@ -406,6 +456,7 @@ export class VoiceCall {
         );
         this.#applyRoom(event.room);
         return;
+      }
       case "mic":
         this.#set({ mics: new Map([...this.#state.mics, [event.participant, event.on]]) });
         return;
@@ -419,11 +470,13 @@ export class VoiceCall {
       }
       case "muted":
         // The server turned the microphone off for everyone already: nothing to tell it.
+        this.#micHeard = false;
         this.#set({ mutedBy: event.by });
-        this.#changeMicrophone(false, false).catch(() => undefined);
+        this.#changeMicrophone(false).catch(() => undefined);
         return;
       case "grant":
         this.#grant = roomGrant(event.grant);
+        this.#grantTimes(event.grant, null);
         if (event.reconnect) this.#audio.reconnect(this.#grant);
         else this.#audio.renew(this.#grant);
         this.#scheduleRenewal();
@@ -457,7 +510,7 @@ export class VoiceCall {
     this.#applyRoster();
     // No longer a speaker: the microphone goes off.
     if (spoke && self?.role !== "speaker" && this.#state.micWanted)
-      this.#changeMicrophone(false, false).catch(() => undefined);
+      this.#changeMicrophone(false).catch(() => undefined);
   }
 
   #speaks(): boolean {
@@ -481,24 +534,51 @@ export class VoiceCall {
 
   // ---- The grant -------------------------------------------------------------------------------------------------
 
+  /** Keeps when `grant` came and how long it lives, from the server's time of the answer when it gave one. */
+  #grantTimes(grant: VoiceGrant, serverTime: number | null | undefined): void {
+    const now = this.#runtime.clock.now();
+    this.#grantAt = now;
+    this.#grantLife = Date.parse(grant.expires_at) - (serverTime ?? now);
+  }
+
+  /**
+   * Takes a P2P grant again before it expires: 10 minutes before, or halfway through a lifetime shorter than 20
+   * minutes, and never sooner than 30 seconds after it came. A grant whose expiry cannot be read is not taken again.
+   */
   #scheduleRenewal(): void {
     const { clock } = this.#runtime;
     clock.clearTimeout(this.#renewal);
-    if (this.#over() || this.#grant.kind !== "p2p") return;
-    const delay = Math.min(Math.max(this.#grant.expiresAt - grantRenewalLead - clock.now(), 0), longestTimer);
+    if (this.#over() || this.#grant.kind !== "p2p" || !Number.isFinite(this.#grantLife)) return;
+    const after = Math.max(this.#grantLife - grantRenewalLead, this.#grantLife / 2, renewalFloor);
+    const delay = Math.min(Math.max(this.#grantAt + after - clock.now(), 0), longestTimer);
     this.#renewal = clock.setTimeout(() => {
       if (delay === longestTimer) this.#scheduleRenewal();
       else void this.#renew();
     }, delay);
   }
 
+  #retryRenewal(): void {
+    const { clock } = this.#runtime;
+    clock.clearTimeout(this.#renewal);
+    this.#renewal = clock.setTimeout(() => {
+      void this.#renew();
+    }, grantRetry);
+  }
+
   async #renew(): Promise<void> {
     if (this.#over()) return;
     try {
-      const grant = roomGrant(await renewVoiceGrant(this.#data, this.roomId, this.session));
+      const { grant, serverTime } = await renewVoiceGrant(this.#data, this.roomId, this.session);
       if (this.#over()) return;
-      this.#grant = grant;
-      this.#audio.renew(grant);
+      const renewed = roomGrant(grant);
+      // The same credentials again (a TURN provider gives them until shortly before they expire), or none readable.
+      if (!(renewed.expiresAt > this.#grant.expiresAt)) {
+        this.#retryRenewal();
+        return;
+      }
+      this.#grant = renewed;
+      this.#grantTimes(grant, serverTime);
+      this.#audio.renew(renewed);
       this.#scheduleRenewal();
     } catch (error) {
       if (this.#over()) return;
@@ -506,30 +586,40 @@ export class VoiceCall {
         this.#finish({ kind: "lost", reason: "session" }, false);
         return;
       }
-      const { clock } = this.#runtime;
-      clock.clearTimeout(this.#renewal);
-      this.#renewal = clock.setTimeout(() => {
-        void this.#renew();
-      }, grantRetry);
+      this.#retryRenewal();
     }
   }
 
-  /** The audio went away and needs a new grant: asks for one and connects again with it. */
+  /** The audio is lost: asks for a new grant, at once the first time, then after a wait that grows with the tries. */
+  #regrantSoon(): void {
+    if (this.#over() || this.#regranting || this.#regrantTimer !== undefined) return;
+    const delay =
+      this.#regrants === 0 ? 0 : (regrantDelays[Math.min(this.#regrants - 1, regrantDelays.length - 1)] ?? 30_000);
+    this.#regrants++;
+    this.#regrantTimer = this.#runtime.clock.setTimeout(() => {
+      this.#regrantTimer = undefined;
+      void this.#regrant();
+    }, delay);
+  }
+
+  /** The audio went away and needs a new grant: asks for one and connects again with it, until it is connected. */
   async #regrant(): Promise<void> {
     if (this.#regranting || this.#over()) return;
     this.#regranting = true;
     try {
-      const grant = roomGrant(await renewVoiceGrant(this.#data, this.roomId, this.session));
+      const { grant, serverTime } = await renewVoiceGrant(this.#data, this.roomId, this.session);
       if (this.#over()) return;
-      this.#grant = grant;
-      this.#audio.reconnect(grant);
+      this.#grant = roomGrant(grant);
+      this.#grantTimes(grant, serverTime);
+      this.#audio.reconnect(this.#grant);
       this.#scheduleRenewal();
     } catch (error) {
       if (isVoiceSessionGone(error)) this.#finish({ kind: "lost", reason: "session" }, false);
-      // Otherwise the next `lost` of the audio asks again.
     } finally {
       this.#regranting = false;
     }
+    // Still lost (the request failed, or the new connection went away too): try again after the wait.
+    if (this.#state.connection === "lost") this.#regrantSoon();
   }
 
   // ---- What the reader does --------------------------------------------------------------------------------------
@@ -540,17 +630,18 @@ export class VoiceCall {
    * server did not take it (the microphone is off then, and `micFailure` says why).
    */
   setMicrophone(on: boolean): Promise<void> {
-    return this.#changeMicrophone(on, true);
+    return this.#changeMicrophone(on);
   }
 
-  #changeMicrophone(on: boolean, tell: boolean): Promise<void> {
+  #changeMicrophone(on: boolean): Promise<void> {
     this.#set({ micWanted: on, micPending: true, ...(on ? { mutedBy: null } : {}) });
-    const change = this.#micChanges.then(() => this.#applyMicrophone(tell));
+    const change = this.#micChanges.then(() => this.#applyMicrophone());
     this.#micChanges = change.catch(() => undefined);
     return change;
   }
 
-  async #applyMicrophone(tell: boolean): Promise<void> {
+  /** Applies the latest wish, and tells the server whenever what applies differs from what it last heard. */
+  async #applyMicrophone(): Promise<void> {
     if (this.#over()) return;
     const asked = this.#state.micWanted;
     const want = asked && this.#speaks();
@@ -564,11 +655,11 @@ export class VoiceCall {
       this.#set({ micWanted: false, micPending: false, microphone: false, micFailure: micFailure(error) });
       throw error;
     }
-    const changed = want !== this.#state.microphone;
     this.#set({ micPending: false, microphone: want, ...(want ? { micFailure: null } : {}) });
-    if (!tell || !changed || this.#over()) return;
+    if (want === this.#micHeard || this.#over()) return;
     try {
       await setVoiceMic(this.#data, this.roomId, this.session, want);
+      this.#micHeard = want;
     } catch (error) {
       if (want) {
         // The server did not take it (the reader no longer speaks): the microphone goes off again.
@@ -582,7 +673,8 @@ export class VoiceCall {
   /** Asks to speak, listens again, raises or lowers the hand; the room the server answers comes in. */
   async act(operation: VoiceSelfOperation): Promise<void> {
     const room = await voiceSelfOperation(this.#data, this.roomId, operation);
-    this.#applyRoom(room);
+    // Once the stream says how the room stands, an answer that may be older than its latest `state` changes nothing.
+    if (!this.#heardState) this.#applyRoom(room);
   }
 
   /** Sends a reaction (a Unicode emoji or a custom emoji's `:shortcode:`). */
@@ -593,7 +685,7 @@ export class VoiceCall {
   /** Runs the host's or a co-host's `operation` on the participant `accountId`. */
   async host(accountId: string, operation: VoiceHostOperation): Promise<void> {
     const room = await voiceHostOperation(this.#data, this.roomId, accountId, operation);
-    if (room !== undefined) this.#applyRoom(room);
+    if (room !== undefined && !this.#heardState) this.#applyRoom(room);
   }
 
   /** Plays the audio the browser blocked, from the reader's gesture. */
@@ -611,7 +703,7 @@ export class VoiceCall {
     const left: CallEnd = { kind: "left", reason: "" };
     this.#leaving = left;
     try {
-      await leaveVoiceRoom(this.#data, this.roomId, choice);
+      await leaveVoiceRoom(this.#data, this.roomId, this.session, choice);
     } catch (error) {
       if (isVoiceLeaveRefused(error) && !this.#over()) {
         this.#leaving = null;
@@ -624,7 +716,7 @@ export class VoiceCall {
   /** The page goes away: the leave goes with it, outliving the page, and the call ends. */
   unload(): void {
     if (this.#over()) return;
-    leaveVoiceRoomOnUnload(this.#data, this.roomId);
+    leaveVoiceRoomOnUnload(this.#data, this.roomId, this.session);
     this.#finish({ kind: "unloaded", reason: "" }, false);
   }
 
@@ -633,7 +725,14 @@ export class VoiceCall {
    * the join's doing. `false` once the server refused the join, and the call goes on.
    */
   switching(on: boolean): void {
-    if (!this.#over()) this.#leaving = on ? { kind: "switched", reason: "" } : null;
+    if (this.#over()) return;
+    if (on) {
+      this.#beforeSwitch = this.#leaving;
+      this.#leaving = { kind: "switched", reason: "" };
+    } else {
+      this.#leaving = this.#beforeSwitch;
+      this.#beforeSwitch = null;
+    }
   }
 
   /** Ends the call without asking the server: the reader's join of another room left this one already. */
@@ -651,6 +750,8 @@ export class VoiceCall {
     clock.clearInterval(this.#heartbeat);
     this.#heartbeat = undefined;
     clock.clearTimeout(this.#renewal);
+    clock.clearTimeout(this.#regrantTimer);
+    this.#regrantTimer = undefined;
     for (const timer of this.#reactionTimers) clock.clearTimeout(timer);
     this.#reactionTimers.clear();
     for (const unhook of this.#unhook.splice(0)) unhook();
@@ -666,7 +767,7 @@ export class VoiceCall {
       connection: "closed",
     });
     if (end.kind !== "signed_out") {
-      if (leave) void leaveVoiceRoom(this.#data, this.roomId).catch(() => undefined);
+      if (leave) void leaveVoiceRoom(this.#data, this.roomId, this.session).catch(() => undefined);
       voiceRoomLeft(this.#data, this.roomId);
     }
     for (const listener of [...this.#ends]) listener(end);

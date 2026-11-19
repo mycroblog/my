@@ -1,9 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 import { expect, test } from "bun:test";
+import { createFakeApi, fakeOrigin } from "@my/e2e/fake";
+import { createClient } from "@mycroblog/mykit";
+import { createAppData } from "./app-data";
 import { fakeData } from "./test/data";
 import {
   joinVoiceRoom,
+  leaveVoiceRoom,
   parseVoiceStreamEvent,
   runVoiceStream,
   sendVoiceHeartbeat,
@@ -107,4 +111,53 @@ test("an event of the stream is typed by its name, and one it cannot read is lef
   expect(parseVoiceStreamEvent("mic", '{"participant":"a1"}')).toBeNull();
   expect(parseVoiceStreamEvent("state", "not json")).toBeNull();
   expect(parseVoiceStreamEvent("newer", "{}")).toBeNull();
+});
+
+test("a stream that opens and closes without a word waits longer each time, and one that spoke starts over", async () => {
+  const fake = createFakeApi();
+  let says = "";
+  const api = createClient({
+    server: fakeOrigin,
+    retry: { disabled: true },
+    fetch: (request) =>
+      request.url.includes("/stream")
+        ? Promise.resolve(new Response(says, { headers: { "Content-Type": "text/event-stream" } }))
+        : fake.serve(request),
+  });
+  const data = createAppData(api);
+  const held = heldSleep();
+  const stop = new AbortController();
+  const running = runVoiceStream(data, {
+    room: "r1",
+    session: "s1",
+    signal: stop.signal,
+    onEvent: () => undefined,
+    sleep: held.sleep,
+  });
+  for (let n = 0; n < 3; n++) {
+    for (let i = 0; i < 5; i++) await turn();
+    held.wake();
+  }
+  for (let i = 0; i < 5; i++) await turn();
+  expect(held.waits).toEqual(voiceStreamDelays.slice(0, 4));
+  says = `event: mic\ndata: {"participant":"a1","on":true}\n\n`;
+  held.wake();
+  for (let i = 0; i < 5; i++) await turn();
+  expect(held.waits.at(-1)).toBe(voiceStreamDelays[0]);
+  stop.abort();
+  held.wake();
+  await running;
+});
+
+test("a leave names its session, and one of a session the reader joined past changes nothing", async () => {
+  const { fake, data, requests } = fakeData();
+  const room = fake.voice.roomId(0);
+  const first = await joinVoiceRoom(data, room);
+  const second = await joinVoiceRoom(data, room);
+  await leaveVoiceRoom(data, room, first.session);
+  expect(requests.at(-1)).toBe(`DELETE /voice/rooms/${room}/participation?session=${first.session}`);
+  expect(fake.voice.joined()?.session).toBe(second.session);
+  await leaveVoiceRoom(data, room, second.session, { end: true });
+  expect(requests.at(-1)).toBe(`DELETE /voice/rooms/${room}/participation?session=${second.session}&end=true`);
+  expect(fake.voice.joined()).toBeNull();
 });
