@@ -146,6 +146,8 @@ export function ReportDialog({
   // What the reader does already is not offered again; a block mutes all a mute would.
   const blocking = relationship?.blocking === true && after.block !== "done";
   const muting = relationship?.muting === true && after.mute !== "done";
+  // A block, there already or done here, hides all a mute would: Mute is no longer offered.
+  const blocked = relationship?.blocking === true || after.block === "done";
   return (
     <>
       <ReportPanel
@@ -163,7 +165,9 @@ export function ReportDialog({
         commentRefused={refused?.comment === true}
         onSend={send}
         onClose={onClose}
-        mute={muting || blocking ? undefined : { state: after.mute, onPress: doAfter("mute") }}
+        mute={
+          muting || (blocked && after.mute !== "done") ? undefined : { state: after.mute, onPress: doAfter("mute") }
+        }
         block={
           blocking
             ? undefined

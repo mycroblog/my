@@ -21,14 +21,19 @@ export type InstanceRule = components["schemas"]["InstanceRule"];
 export type CreateReport = components["schemas"]["CreateReportRequest"];
 
 /**
- * Files a report, and marks the list of the reader's reports. It resolves with the report as the server filed it, and
+ * Files a report, and marks the list of the reader's reports, and for a moderator the queue of reports and the count
+ * of what awaits them. It resolves with the report as the server filed it, and
  * rejects with the server's problem: 422 for a target or a post the reader may not report, a rule not in effect or a
  * comment too long, 429 past the hourly limit.
  */
 export async function fileReport(data: AppData, report: CreateReport): Promise<OwnReport> {
   const { data: filed } = await data.api.POST("/reports", { body: report });
   if (filed === undefined) throw new Error("app-data: the report answered without a report");
-  await data.queryClient.invalidateQueries({ predicate: ({ queryKey }) => queryKey[1] === "/reports" });
+  // A reader who moderates sees it join the queue and its count too.
+  await data.queryClient.invalidateQueries({
+    predicate: ({ queryKey }) =>
+      queryKey[1] === "/reports" || queryKey[1] === "/admin/counts" || queryKey[1] === "/admin/reports",
+  });
   return filed;
 }
 
