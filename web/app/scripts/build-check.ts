@@ -30,7 +30,8 @@ type Chunk = { file: string; isEntry?: boolean; imports?: string[] };
 function fontLicenseProblems(dir: string): string[] {
   const problems: string[] = [];
   const needed = new Set<string>();
-  for (const name of readdirSync(join(dir, "assets"))) {
+  // In an order of their own, not the file system's, which differs between machines.
+  for (const name of readdirSync(join(dir, "assets")).sort()) {
     if (!fontFile.test(name)) continue;
     const license = fontLicenses.find(([prefix]) => name.startsWith(prefix))?.[1];
     if (license === undefined) {
@@ -39,7 +40,7 @@ function fontLicenseProblems(dir: string): string[] {
       needed.add(license);
     }
   }
-  for (const license of needed) {
+  for (const license of new Set(fontLicenses.map(([, notice]) => notice).filter((notice) => needed.has(notice)))) {
     const path = join(dir, "licenses", license);
     if (!existsSync(path)) {
       problems.push(`licenses/${license} is missing: the build ships its font, so vite.config.ts must list it`);
