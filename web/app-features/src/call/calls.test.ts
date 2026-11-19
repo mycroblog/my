@@ -521,3 +521,33 @@ test("each leave names the call's session, so that a tab another replaced leaves
     session: failed.call.session,
   });
 });
+
+test("giving the runtime back ends its call and leaves no end behind, and a join on its way is undone when it lands", async () => {
+  const { call, sent } = await joined();
+  restore();
+  expect(call.ended).toBe(true);
+  expect(currentCall()).toBeNull();
+  expect(lastCallEnd()).toBeNull();
+  expect(on.holds()).toBe(0);
+  await settle();
+  expect(sent.filter((r) => r.line.endsWith("/participation") && r.keepalive)).toHaveLength(1);
+
+  restore = runCallsOn(on.runtime);
+  const s = server();
+  const joins = s.fake.script("POST /voice/rooms/{id}/participation", { hold: "response" });
+  const late = joinCall(s.data, s.fake.voice.roomId(0));
+  await joins.served();
+  restore();
+  joins.release();
+  expect(
+    await late.then(
+      () => "joined",
+      () => "undone",
+    ),
+  ).toBe("undone");
+  await settle();
+  expect(currentCall()).toBeNull();
+  expect(lastCallEnd()).toBeNull();
+  expect(s.sent.filter((r) => r.line.startsWith("DELETE"))).toHaveLength(1);
+  restore = runCallsOn(on.runtime);
+});
