@@ -116,7 +116,7 @@
     "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
   },
   "staff_webhooks.events.missing": {
-    "defaultMessage": "{names} が必要な出来事は、あなたのロールでは扱えなくなりました。もとのままにしてください。",
+    "defaultMessage": "{names} が必要な出来事は、あなたのロールでは扱えなくなりました。その変更を元に戻して、もう一度保存してください。",
     "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
   },
   "staff_webhooks.events.fixed": {
@@ -188,7 +188,7 @@
     "description": "The title of a webhook's summary while it is on and its last attempts failed. Read by administrators."
   },
   "staff_webhooks.summary.failing.about": {
-    "defaultMessage": "{count, plural, other {{since} から # 回続けて失敗しています。}}失敗が 72 時間にわたって 20 回を超えると、サーバーが webhook を無効にします。",
+    "defaultMessage": "{count, plural, other {{since} から # 回続けて失敗しています。}}20 回以上続けて失敗し、最初の失敗から 72 時間たつと、サーバーが webhook を無効にします。",
     "description": "Under the title that a webhook's deliveries are failing: how many attempts, since when (a date and time), and when the server turns it off. Read by administrators."
   },
   "staff_webhooks.summary.off": {
@@ -288,7 +288,7 @@
     "description": "A fact of a delivery: how many times it was sent. Read by administrators."
   },
   "staff_webhooks.delivery.attempt": {
-    "defaultMessage": "{outcome, select, succeeded {{at} に応答 {code}} http_error {{at} に応答 {code}} timeout {{at} に 15 秒以内の応答なし} connection_error {{at} に接続できませんでした} forbidden_destination {{at} の時点でサーバーはこのアドレスに接続できません} other {{outcome}}}",
+    "defaultMessage": "{outcome, select, succeeded {{at} に応答 {code}} http_error {{at} に応答 {code}} timeout {{at} に 15 秒以内の応答なし} connection_error {{at} に接続できませんでした} forbidden_destination {{at} に接続しませんでした (このサーバーからは接続が許されないアドレス)} other {{outcome}}}",
     "description": "A fact of a delivery: what its last attempt got (an HTTP status code, or why it got none) and when (a date and time). Read by administrators."
   },
   "staff_webhooks.delivery.status": {

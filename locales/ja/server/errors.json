@@ -684,7 +684,7 @@
     "description": "API error title for HTTP 409 when an administrator approves or rejects, or the requester withdraws, a custom emoji request that cannot be; the detail and the reason property say why."
   },
   "errors.custom_emoji_request_conflict_detail": {
-    "defaultMessage": "{reason, select, not_pending {この申請は、すでに承認・却下・取り下げされています。} requester_cannot_create {申請者は、もうカスタム絵文字を作れません。申請を却下してください。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。申請を却下してください。} other {この申請は、いまの状態では処理できません。}}",
+    "defaultMessage": "{reason, select, not_pending {この申請は、すでに承認されたか、断られたか、取り下げられています。} requester_cannot_create {申請者は、もうカスタム絵文字を作れません。申請を断ってください。} shortcode_taken {このサーバーのカスタム絵文字に、同じショートコードのものがあります。申請を断ってください。} other {この申請は、いまの状態では処理できません。}}",
     "description": "Detail of the API error (HTTP 409) of a custom emoji request that cannot be decided or withdrawn. {reason} is the reason code (not shown); each branch explains one case."
   },
   "errors.domain_mutes.too_many": {

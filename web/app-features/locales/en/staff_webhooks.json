@@ -116,7 +116,7 @@
     "description": "Under the first event of a webhook's form when none is chosen. Read by administrators."
   },
   "staff_webhooks.events.missing": {
-    "defaultMessage": "Your roles no longer allow events that need {names}. Leave them as they were.",
+    "defaultMessage": "Your roles no longer allow the events that need {names}. Undo your change to them and save again.",
     "description": "Under the first event of a webhook's form when the server refused events whose permissions (a list) the reader no longer holds. Read by administrators."
   },
   "staff_webhooks.events.fixed": {
@@ -188,7 +188,7 @@
     "description": "The title of a webhook's summary while it is on and its last attempts failed. Read by administrators."
   },
   "staff_webhooks.summary.failing.about": {
-    "defaultMessage": "{count, plural, one {# attempt has failed} other {# attempts in a row have failed}} since {since}. The server turns the webhook off once failures span 72 hours and number 20.",
+    "defaultMessage": "{count, plural, one {# attempt has failed} other {# attempts in a row have failed}} since {since}. The server turns the webhook off once 20 attempts in a row have failed over 72 hours or more.",
     "description": "Under the title that a webhook's deliveries are failing: how many attempts, since when (a date and time), and when the server turns it off. Read by administrators."
   },
   "staff_webhooks.summary.off": {
@@ -288,7 +288,7 @@
     "description": "A fact of a delivery: how many times it was sent. Read by administrators."
   },
   "staff_webhooks.delivery.attempt": {
-    "defaultMessage": "{outcome, select, succeeded {Answered {code}} http_error {Answered {code}} timeout {No answer within 15 seconds} connection_error {Could not connect} forbidden_destination {The server may not reach this address} other {{outcome}}} at {at}",
+    "defaultMessage": "{outcome, select, succeeded {Answered {code}} http_error {Answered {code}} timeout {No answer within 15 seconds} connection_error {Could not connect} forbidden_destination {This server is not allowed to connect to this address} other {{outcome}}} at {at}",
     "description": "A fact of a delivery: what its last attempt got (an HTTP status code, or why it got none) and when (a date and time). Read by administrators."
   },
   "staff_webhooks.delivery.status": {

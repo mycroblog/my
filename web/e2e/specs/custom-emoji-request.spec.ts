@@ -66,7 +66,7 @@ test("a person asks for a custom emoji, an administrator approves the request, a
     await requests.open();
     await expect(requests.row(shortcode)).toBeVisible();
     await requests.approve(shortcode);
-    await expect(requests.said(`:${shortcode}: is approved and made.`)).toBeVisible();
+    await expect(requests.said(`The request for :${shortcode}: is approved.`)).toBeVisible();
   } finally {
     await theirs.close();
   }

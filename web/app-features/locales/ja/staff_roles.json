@@ -124,7 +124,7 @@
     "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
   },
   "staff_roles.permissions.missing": {
-    "defaultMessage": "{names} はあなたのロールにもう含まれないため、付け外しできません。もとのままにしてください。",
+    "defaultMessage": "{names} はあなたのロールにもう含まれないため、付け外しできません。その変更を元に戻して、もう一度保存してください。",
     "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
   },
   "staff_roles.facts.permissions": {
@@ -272,7 +272,7 @@
     "description": "In the section of an account's roles when revoking a role (its key) failed. Read by administrators."
   },
   "staff_roles.account.plan": {
-    "defaultMessage": "{key} はサポーターのプランが付けるロールのため、サブスクリプションで付け外しされます。",
+    "defaultMessage": "{key} はサポーターのプランが付けるロールのため、プランへの加入で付き、加入の終了で外れます。",
     "description": "In the section of an account's roles when the server refused to grant or revoke a plan's role (its key). Read by administrators."
   },
   "staff_roles.account.last_admin": {

@@ -100,7 +100,7 @@
     "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
   },
   "staff_announcements.text.about": {
-    "defaultMessage": "Written in Markdown. Readers get it formatted, as it shows under What readers see once saved.",
+    "defaultMessage": "Written in Markdown. Once you save, What readers see shows it as readers get it.",
     "description": "Under the heading of an announcement's text. Read by administrators."
   },
   "staff_announcements.text.placeholder": {
@@ -108,7 +108,7 @@
     "description": "In the empty editor of an announcement's text. Read by administrators."
   },
   "staff_announcements.text.rule": {
-    "defaultMessage": "Write a text of up to {max} characters.",
+    "defaultMessage": "Shorten the text to {max} characters or fewer.",
     "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
   },
   "staff_announcements.editor_failed": {

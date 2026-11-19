@@ -72,7 +72,7 @@
     "description": "On the page of a role a supporter plan grants, under what it is. Read by administrators."
   },
   "staff_roles.permission": {
-    "defaultMessage": "{permission, select, manage_reports {Handle reports} manage_accounts {Moderate accounts} manage_domains {Moderate other servers} manage_rules {Edit the rules} manage_settings {Change the server settings} manage_roles {Manage roles} manage_invites {Manage invites} view_audit {Read the audit log} manage_jobs {Manage jobs} manage_login_recovery {Recover sign-ins} manage_custom_emojis {Manage custom emoji} manage_webhooks {Manage webhooks} manage_announcements {Write announcements} manage_finance {Manage the finance} view_finance {Read the finance} manage_supporters {Manage the supporter program} create_custom_emojis {Request custom emoji} manage_oauth_apps {Manage OAuth apps} manage_service_closure {Announce the closure} start_voice_rooms {Open voice chat rooms} manage_errors {Handle errors} manage_login_providers {Manage login providers} create_invites {Create invites} keep_posts_longer {Keep posts longer} create_articles {Write articles} create_events {Create events} other {{permission}}}",
+    "defaultMessage": "{permission, select, manage_reports {Handle reports} manage_accounts {Moderate accounts} manage_domains {Moderate other servers} manage_rules {Edit the rules} manage_settings {Change the server settings} manage_roles {Manage roles} manage_invites {Manage invites} view_audit {Read the audit log} manage_jobs {Manage jobs} manage_login_recovery {Recover sign-ins} manage_custom_emojis {Manage custom emoji} manage_webhooks {Manage webhooks} manage_announcements {Write announcements} manage_finance {Manage the finances} view_finance {Read the finances} manage_supporters {Manage the supporter plans} create_custom_emojis {Request custom emoji} manage_oauth_apps {Manage OAuth apps} manage_service_closure {Announce the closure} start_voice_rooms {Open voice chat rooms} manage_errors {Handle errors} manage_login_providers {Manage login providers} create_invites {Create invites} keep_posts_longer {Keep posts longer} create_articles {Write articles} create_events {Create events} other {{permission}}}",
     "description": "The name of a permission a role grants, as a checkbox of a role's form and in a list of them. Read by administrators."
   },
   "staff_roles.role": {
@@ -124,7 +124,7 @@
     "description": "Under the first permission of a role's form when the server refused the permissions with no list of which. Read by administrators."
   },
   "staff_roles.permissions.missing": {
-    "defaultMessage": "Your roles no longer grant {names}, so you cannot give or take it. Leave it as it was.",
+    "defaultMessage": "Your roles no longer grant {names}, so you cannot give or take them. Undo your change to them and save again.",
     "description": "Under the first permission of a role's form when the server refused a change of permissions the reader no longer holds (a list). Read by administrators."
   },
   "staff_roles.facts.permissions": {
@@ -272,7 +272,7 @@
     "description": "In the section of an account's roles when revoking a role (its key) failed. Read by administrators."
   },
   "staff_roles.account.plan": {
-    "defaultMessage": "A supporter plan grants {key}, so its subscriptions give and take it.",
+    "defaultMessage": "A supporter plan grants {key}: people get it when they subscribe and lose it when their subscription ends.",
     "description": "In the section of an account's roles when the server refused to grant or revoke a plan's role (its key). Read by administrators."
   },
   "staff_roles.account.last_admin": {

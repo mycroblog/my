@@ -12,7 +12,7 @@
     "description": "In the place of a custom emoji's image when it cannot be shown (another server's media the server rejects). Read by administrators."
   },
   "staff_emoji.state.enabled": {
-    "defaultMessage": "Shown",
+    "defaultMessage": "Enabled",
     "description": "The state of a custom emoji that shows where it is used. Read by administrators."
   },
   "staff_emoji.state.disabled": {
@@ -108,7 +108,7 @@
     "description": "At /admin/custom-emojis when the emoji could not be read, before Try again. Read by administrators."
   },
   "staff_emoji.empty": {
-    "defaultMessage": "There is no custom emoji yet. Register one, or they come with the posts of other servers.",
+    "defaultMessage": "There is no custom emoji yet. Register one here; those of other servers arrive with their posts.",
     "description": "At /admin/custom-emojis when the server has no custom emoji at all. Read by administrators."
   },
   "staff_emoji.empty.filtered": {
@@ -140,7 +140,7 @@
     "description": "Under the shortcode of a new custom emoji: the rule its value follows, also when it was refused. Read by administrators."
   },
   "staff_emoji.shortcode.taken": {
-    "defaultMessage": "Another emoji of this server has this shortcode, or a pending request keeps it. Choose another.",
+    "defaultMessage": "Another emoji of this server has this shortcode, or a request waiting for a decision keeps it. Choose another.",
     "description": "Under a shortcode the server refused because a local emoji or a pending request has it. Read by administrators."
   },
   "staff_emoji.image": {
@@ -244,7 +244,7 @@
     "description": "Beside Save or Register of a custom emoji when the save failed with no field named. Read by administrators."
   },
   "staff_emoji.actions": {
-    "defaultMessage": "Use",
+    "defaultMessage": "Image and state",
     "description": "The heading of the first section of a custom emoji's page: its image, Disable or Enable, and a new image. Read by administrators."
   },
   "staff_emoji.enabled.about": {
@@ -268,7 +268,7 @@
     "description": "In the section of a custom emoji's actions once it was disabled. Read by administrators."
   },
   "staff_emoji.enabled": {
-    "defaultMessage": "The emoji is shown again.",
+    "defaultMessage": "The emoji is enabled.",
     "description": "In the section of a custom emoji's actions once it was enabled. Read by administrators."
   },
   "staff_emoji.facts": {
@@ -304,7 +304,7 @@
     "description": "The heading of the section of another server's custom emoji that copies it into a local one. Read by administrators."
   },
   "staff_emoji.copy.about": {
-    "defaultMessage": "Makes a local emoji of the same image, offered in the picker, which this server's texts can use.",
+    "defaultMessage": "Makes an emoji of this server with the same image and offers it in the picker.",
     "description": "Under the heading of the copy of another server's custom emoji. Read by administrators."
   },
   "staff_emoji.copy.shortcode": {
@@ -372,7 +372,7 @@
     "description": "The link to /admin/custom-emojis under the sentence that an address names no emoji. Read by administrators."
   },
   "staff_emoji.request.state": {
-    "defaultMessage": "{state, select, pending {Pending} approved {Approved} rejected {Rejected} withdrawn {Withdrawn} lapsed {Lapsed} other {{state}}}",
+    "defaultMessage": "{state, select, pending {Waiting for a decision} approved {Approved} rejected {Rejected} withdrawn {Withdrawn} lapsed {Lapsed: the emoji was deleted} other {{state}}}",
     "description": "The state of a request for a custom emoji. Lapsed: a request for a new image of an emoji that was deleted. Read by administrators."
   },
   "staff_emoji.request.state.term": {
@@ -468,7 +468,7 @@
     "description": "The field of why a request is rejected, which the requester reads; it may stay empty. Read by administrators."
   },
   "staff_emoji.request.approved": {
-    "defaultMessage": "{shortcode} is approved and made.",
+    "defaultMessage": "The request for {shortcode} is approved.",
     "description": "Over the requests once one was approved (the emoji's shortcode between colons). Read by administrators."
   },
   "staff_emoji.request.rejected": {

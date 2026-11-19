@@ -40,7 +40,7 @@
     "description": "The heading at /admin of the group of screens of the server's own settings, texts and rules. Read by administrators."
   },
   "staff.group.connections": {
-    "defaultMessage": "外とのつながり",
+    "defaultMessage": "外部との連携",
     "description": "The heading at /admin of the group of screens of what the server connects to: relays, login providers, OAuth apps. Read by administrators."
   },
   "staff.entry.reports": {

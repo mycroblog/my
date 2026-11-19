@@ -56,7 +56,7 @@
     "description": "At /admin/announcements when the state filter keeps none. Read by administrators."
   },
   "staff_announcements.standing": {
-    "defaultMessage": "{standing, select, draft {下書き} scheduled {公開待ち} showing {表示中} ended {終了} withdrawn {取り下げ済み} other {{standing}}}",
+    "defaultMessage": "{standing, select, draft {下書き} scheduled {表示待ち} showing {表示中} ended {終了} withdrawn {取り下げ済み} other {{standing}}}",
     "description": "Where an announcement stands: a draft nobody sees, published and waiting for its window to start, showing to every local user now, published and its window over, or withdrawn for good. Read by administrators."
   },
   "staff_announcements.window.both": {
@@ -100,7 +100,7 @@
     "description": "The heading of the section of an announcement's text, and the name of its editor. Read by administrators."
   },
   "staff_announcements.text.about": {
-    "defaultMessage": "Markdown で書きます。読む人には整形されて表示され、保存すると「読む人に見える表示」で確かめられます。",
+    "defaultMessage": "Markdown で書きます。保存すると、読む人に届く形を「読む人に見える表示」で確かめられます。",
     "description": "Under the heading of an announcement's text. Read by administrators."
   },
   "staff_announcements.text.placeholder": {
@@ -108,7 +108,7 @@
     "description": "In the empty editor of an announcement's text. Read by administrators."
   },
   "staff_announcements.text.rule": {
-    "defaultMessage": "本文は {max} 文字までで書いてください。",
+    "defaultMessage": "本文を {max} 文字以内にしてください。",
     "description": "Under the text of an announcement when it is empty or too long. Read by administrators."
   },
   "staff_announcements.editor_failed": {
