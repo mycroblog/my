@@ -220,3 +220,15 @@ test("a tip refused as the reader may not says the server's reason", async () =>
   await app.user.click(await screen.findByRole("button", { name: "Tip ¥500" }));
   await says("Confirm your email address first.");
 });
+
+test("a reader whose address is not confirmed is told so before any press, offered no Tip, and starts nothing", async () => {
+  const app = await at("/settings/supporter/tip", { program: false, tips: {}, ineligible: "email_unverified" });
+  const starts = app.fake.script("POST /supporter/tips");
+  await says("Confirm your email address to tip.");
+  await waitFor(() => {
+    expect(app.data.queryClient.isFetching()).toBe(0);
+  });
+  expect(screen.queryAllByRole("button", { name: /^Tip / })).toHaveLength(0);
+  expect(starts.seen).toHaveLength(0);
+  expect(app.fake.supporters.tipId("last")).toBe("none");
+});

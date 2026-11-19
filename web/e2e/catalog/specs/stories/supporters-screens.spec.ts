@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The stories of the supporter's screens (web/app/src/supporters.stories.tsx) each show the state they are named by,
-// on the fake API: the supporters' page for a reader without a plan, a member, a visitor, a reader whose address is
-// not confirmed, a server of tips alone, the native shell, a server that takes no support, and its loading, failure,
+// on the fake API: the supporters' page for a reader without a plan, a member, a visitor, a reader who may not
+// subscribe nor tip (each reason, with the program and on a server of tips alone), a server of tips alone, the native shell, a server that takes no support, and its loading, failure,
 // empty list and long names; the settings' Supporter in each state of a subscription and back from the checkout; and
 // the tip, its returns, a reader who may not tip and a server that takes none. What the screens do from each state is
 // the app's route tests' (web/app/src/supporters-routes.dom.test.tsx); this is that the catalog shows each state for a
@@ -86,6 +86,36 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     },
   ],
   [
+    "page-not-local",
+    async (page) => {
+      await says(page, "Only people with an account on this server can subscribe.");
+      await says(page, "Only people with an account on this server can tip.");
+    },
+  ],
+  [
+    "page-restricted",
+    async (page) => {
+      await says(page, "Your account cannot subscribe while it is restricted.");
+      await says(page, "Your account cannot tip while it is restricted.");
+    },
+  ],
+  ...(
+    [
+      ["unverified", "Confirm your email address to tip."],
+      ["not-local", "Only people with an account on this server can tip."],
+      ["restricted", "Your account cannot tip while it is restricted."],
+    ] as const
+  ).map(
+    ([reason, why]) =>
+      [
+        `page-tips-only-${reason}`,
+        async (page: Page) => {
+          await says(page, why);
+          await expect(main(page).getByRole("link", { name: "Tip", exact: true })).toHaveCount(0);
+        },
+      ] as const,
+  ),
+  [
     "page-native-shell",
     async (page) => {
       await expect(plans(page)).toHaveCount(0);
@@ -168,6 +198,24 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(page.getByRole("button", { name: "Tip ¥500", exact: true })).toHaveCount(0);
     },
   ],
+  ...(
+    [
+      ["tip-not-local", "Only people with an account on this server can tip."],
+      ["tip-restricted", "Your account cannot tip while it is restricted."],
+      ["tip-only-unverified", "Confirm your email address to tip."],
+      ["tip-only-not-local", "Only people with an account on this server can tip."],
+      ["tip-only-restricted", "Your account cannot tip while it is restricted."],
+    ] as const
+  ).map(
+    ([name, why]) =>
+      [
+        name,
+        async (page: Page) => {
+          await says(page, why);
+          await expect(page.getByRole("button", { name: "Tip ¥500", exact: true })).toHaveCount(0);
+        },
+      ] as const,
+  ),
   ["tip-off", (page) => says(page, "This server takes no tips now.")],
   ["tip-loading", (page) => says(page, "Loading the amounts…")],
   ["tip-error", (page) => says(page, /^The amounts could not be loaded\./)],

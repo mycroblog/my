@@ -2,7 +2,8 @@
 
 // The supporter's side (ADR-0072, ADR-0162, ADR-0070 §13; FR-911, FR-914, FR-918), on the fake server (app.samples.tsx):
 // the supporters' page with the plans, the tip and the list, for a reader without a plan, for a member (Switch), for a
-// visitor, for a reader whose address is not confirmed, on a server of tips alone, in the native shell (the list
+// visitor, for a reader who may not subscribe nor tip (each reason the server says, with the program and on a server
+// of tips alone), on a server of tips alone, in the native shell (the list
 // alone), on a server that takes no support, and loading, failing, with an empty list and long names; the settings'
 // Supporter in every state of a subscription (none, its first payment not made, renewing, yearly, ending after a
 // cancel, a change scheduled, a failed payment in its grace and past it), with the listing, for a reader who may not
@@ -56,8 +57,24 @@ export const PageHiddenPlan: Story = { parameters: at(page, { ...all, subscripti
 export const PageVisitor: Story = { parameters: at(page, { ...all, list: "signed_in" }, { signedOut: true }) };
 /** A reader whose address is not confirmed: why they may not subscribe nor tip, in a sentence each. */
 export const PageUnverified: Story = { parameters: at(page, { ...all, ineligible: "email_unverified" }) };
+/** A reader of another server: only people with an account here may subscribe or tip. */
+export const PageNotLocal: Story = { parameters: at(page, { ...all, ineligible: "not_local" }) };
+/** A reader whose account is restricted: neither while it is. */
+export const PageRestricted: Story = { parameters: at(page, { ...all, ineligible: "restricted" }) };
 /** A server of tips alone: the tip, no plans, no list. */
 export const PageTipsOnly: Story = { parameters: at(page, { program: false, tips: {} }) };
+/** A server of tips alone, for a reader whose address is not confirmed: why they may not tip, no Tip. */
+export const PageTipsOnlyUnverified: Story = {
+  parameters: at(page, { program: false, tips: {}, ineligible: "email_unverified" }),
+};
+/** A server of tips alone, for a reader of another server. */
+export const PageTipsOnlyNotLocal: Story = {
+  parameters: at(page, { program: false, tips: {}, ineligible: "not_local" }),
+};
+/** A server of tips alone, for a reader whose account is restricted. */
+export const PageTipsOnlyRestricted: Story = {
+  parameters: at(page, { program: false, tips: {}, ineligible: "restricted" }),
+};
 /** In the native app's shell: no plan, no tip, no way to either; the list alone. */
 export const PageNativeShell: Story = { parameters: at(page, all), beforeEach: nativeShell };
 /** A server that takes no support. */
@@ -125,6 +142,18 @@ export const TipUnpaid: Story = {
 };
 /** A reader whose address is not confirmed: the amounts closed, why in a sentence, no Tip. */
 export const TipUnverified: Story = { parameters: at(tip, { ...all, ineligible: "email_unverified" }) };
+/** A reader of another server: the amounts closed, why in a sentence, no Tip. */
+export const TipNotLocal: Story = { parameters: at(tip, { ...all, ineligible: "not_local" }) };
+/** A reader whose account is restricted: the amounts closed, why in a sentence, no Tip. */
+export const TipRestricted: Story = { parameters: at(tip, { ...all, ineligible: "restricted" }) };
+/** A server of tips alone, for a reader whose address is not confirmed: said before the press, no Tip. */
+export const TipOnlyUnverified: Story = {
+  parameters: at(tip, { program: false, tips: {}, ineligible: "email_unverified" }),
+};
+/** A server of tips alone, for a reader of another server. */
+export const TipOnlyNotLocal: Story = { parameters: at(tip, { program: false, tips: {}, ineligible: "not_local" }) };
+/** A server of tips alone, for a reader whose account is restricted. */
+export const TipOnlyRestricted: Story = { parameters: at(tip, { program: false, tips: {}, ineligible: "restricted" }) };
 /** A server whose program is on and takes no tips. */
 export const TipOff: Story = { parameters: at(tip, { list: "everyone" }) };
 export const TipLoading: Story = { parameters: at(tip, all, { state: "loading" }) };

@@ -476,9 +476,10 @@ const offer = (bar: SupporterBar | undefined): SupporterOffer => ({ may: bar ===
 const unknown: SupporterOffer = { may: undefined, bar: undefined };
 
 /**
- * Who may subscribe and tip, from the instance and, with a session (`signedIn`) where the program is on, the reader's
- * subscription and why the server says they may not. Where the subscription could not be read, a tip is offered and
- * the server checks it as it starts.
+ * Who may subscribe and tip, from the instance and, with a session (`signedIn`), why the server says they may not: for
+ * subscribing, where the program is on, the reader's subscription; for tipping, where the server takes tips, the tip
+ * amounts, which say it to the reader's token with or without the program. Where the amounts answer 404 (the tips
+ * turned off since the instance was read), a tip is offered and the server checks it as it starts.
  */
 export function useSupporterAccess(signedIn = true): SupporterAccess {
   const data = useAppData();
@@ -486,59 +487,64 @@ export function useSupporterAccess(signedIn = true): SupporterAccess {
   const instance = useQuery(instanceQuery(data));
   const program = instance.data?.supporters_enabled;
   const tips = instance.data?.tips_enabled;
-  const asks = signedIn && !app && (program === true || tips === true);
-  const own = useQuery({ ...ownSubscriptionQuery(data), enabled: asks });
+  const asksOwn = signedIn && !app && program === true;
+  const asksAmounts = signedIn && !app && tips === true;
+  const own = useQuery({ ...ownSubscriptionQuery(data), enabled: asksOwn });
+  const amounts = useQuery({ ...tipAmountsQuery(data), enabled: asksAmounts });
+  const gone = (error: unknown) => error instanceof ProblemError && error.status === 404;
+  const ownUnread = asksOwn && own.data === undefined && !gone(own.error);
+  const amountsUnread = asksAmounts && amounts.data === undefined && !gone(amounts.error);
   const retry = () => {
-    if (instance.data === undefined) void instance.refetch();
-    else if (asks && own.data === undefined) void own.refetch();
+    if (instance.data === undefined) {
+      void instance.refetch();
+      return;
+    }
+    if (ownUnread) void own.refetch();
+    if (amountsUnread) void amounts.refetch();
   };
   if (instance.data === undefined)
-    return {
-      program,
-      tips,
-      app,
-      subscribe: unknown,
-      tip: unknown,
-      failed: instance.isError,
-      retry,
-    };
+    return { program, tips, app, subscribe: unknown, tip: unknown, failed: instance.isError, retry };
   const before = (on: boolean | undefined): SupporterBar | undefined =>
     on !== true ? "off" : app ? "app" : !signedIn ? "signed-out" : undefined;
   const subscribeBar = before(program);
   const tipBar = before(tips);
-  // The program off leaves the reader's subscription unread (a 404): the server checks a tip as it starts.
-  const ownGone = own.error instanceof ProblemError && own.error.status === 404;
-  if (asks && own.data === undefined && !ownGone)
-    return {
-      program,
-      tips,
-      app,
-      subscribe: subscribeBar === undefined ? unknown : offer(subscribeBar),
-      tip: tipBar === undefined ? unknown : offer(tipBar),
-      failed: own.isError,
-      retry,
-    };
-  const reason = own.data?.ineligible_reason;
   const going = own.data?.subscription;
+  const subscribe: SupporterOffer =
+    subscribeBar === undefined && ownUnread
+      ? unknown
+      : offer(
+          subscribeBar ??
+            own.data?.ineligible_reason ??
+            (going !== undefined && going.state !== "pending" ? "subscribed" : undefined),
+        );
+  const tip: SupporterOffer =
+    tipBar === undefined && amountsUnread ? unknown : offer(tipBar ?? amounts.data?.ineligible_reason);
   return {
     program,
     tips,
     app,
-    subscribe: offer(
-      subscribeBar ?? reason ?? (going !== undefined && going.state !== "pending" ? "subscribed" : undefined),
-    ),
-    tip: offer(tipBar ?? reason),
-    failed: false,
+    subscribe,
+    tip,
+    failed: (ownUnread && own.isError) || (amountsUnread && amounts.isError),
     retry,
   };
 }
 
-/** What a screen of the supporters waits for: the instance, and the reader's subscription where it is read. */
+/**
+ * What a screen of the supporters waits for: the instance and, with a session, the reader's subscription where the
+ * program is on and the tip amounts where the server takes tips.
+ */
 export async function loadSupporterAccess(data: AppData, signedIn = true): Promise<void> {
   const instance = await data.queryClient.query({ ...instanceQuery(data), staleTime: Infinity }).catch(() => undefined);
   if (!signedIn || inNativeShell() || instance === undefined) return;
-  if (instance.supporters_enabled || instance.tips_enabled)
-    await data.queryClient.query({ ...ownSubscriptionQuery(data), staleTime: Infinity }).catch(() => undefined);
+  await Promise.all([
+    instance.supporters_enabled
+      ? data.queryClient.query({ ...ownSubscriptionQuery(data), staleTime: Infinity }).catch(() => undefined)
+      : undefined,
+    instance.tips_enabled
+      ? data.queryClient.query({ ...tipAmountsQuery(data), staleTime: Infinity }).catch(() => undefined)
+      : undefined,
+  ]);
 }
 
 // ---- Writes -----------------------------------------------------------------------------------------------------------
