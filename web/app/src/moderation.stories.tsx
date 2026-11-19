@@ -5,9 +5,9 @@
 // scenario's moderator (marco, who reads every story but those of another reader), a report another server sent, a
 // voice chat room and an event, one an automated review filed and resolved, and one forwarded when filed and resolved.
 // The roots: Moderation with the screens a moderator's permissions open, the open reports counted; and either root for
-// a reader whose permissions open none of its screens, or none yet. The queue: the open reports, none, filtered with
-// and without a match, the resolved ones, the longest waiting first, loading, failing, and its address for a reader it
-// is not open to. A report: with its deleted posts; assigned, with a note, and forwardable; another server's; a voice
+// a reader whose permissions open none of its screens (the administrator's root is admin.stories.tsx's). The queue:
+// the open reports, none, filtered with and without a match, the resolved ones, the longest waiting first, loading,
+// failing, and its address for a reader it is not open to. A report: with its deleted posts; assigned, with a note, and forwardable; another server's; a voice
 // chat room's and an event's; resolved by an automated review's report; forwarded and resolved; offered for
 // translation where the server may send a report's text; and loading, failing, and an address that names none. What
 // follows a press (assigning, a note, resolving, forwarding, a translation shown) is the route tests'.
@@ -31,8 +31,6 @@ const at = (path: string, more: Omit<Fake, "at"> = {}) => screen({ at: path, vie
 export const Root: Story = { parameters: at("/moderation") };
 /** Moderation for a reader whose account has no moderation permission: why no screen is open to them. */
 export const RootNone: Story = { parameters: at("/moderation", { viewer: "yuki" }) };
-/** Administration for the administrator, whose permissions open no screen built yet. */
-export const AdminRootNoneYet: Story = { parameters: at("/admin", { viewer: "hana" }) };
 /** Administration for a moderator, who has no permission of the server's administration. */
 export const AdminRootNone: Story = { parameters: at("/admin") };
 
