@@ -8,7 +8,7 @@ version: "3"
 tasks:
   # Its output is not committed (ADR-0081): the tasks that read a package's messages.gen.ts depend on it.
   compile:
-    desc: Compile the catalogs of the web packages (web/<package>/locales/) with Lingui into each package's src/messages.gen.ts
+    desc: Compile the catalogs of the web packages (web/<package>/locales/) with Lingui into each package's src/messages.gen.ts and its messages.<locale>.gen.ts
     deps: [":web:install"]
     run: once
     sources:
@@ -17,7 +17,7 @@ tasks:
       - "tools/i18n/src/**/*.ts"
       - bun.lock
     generates:
-      - "web/*/src/messages.gen.ts"
+      - "web/*/src/messages*.gen.ts"
     cmds:
       - bun web/i18n/src/compile.ts
 

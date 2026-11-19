@@ -111,6 +111,22 @@ export default defineConfig({
         fileURLToPath(new URL("auth.html", import.meta.url)),
         fileURLToPath(new URL("pay.html", import.meta.url)),
       ],
+      output: {
+        // Each locale's strings, of every package (its messages.<locale>.gen.ts, @my/i18n), in a chunk of its own,
+        // locale-<tag>-<hash>.js, still loaded with the page as the catalogs import them: all of them in one chunk
+        // passed the Service Worker's limit of a precached file (2 MiB).
+        codeSplitting: {
+          groups: [
+            {
+              debugName: "locale",
+              name: (id) => {
+                const locale = /[\\/]src[\\/]messages\.([A-Za-z0-9-]+)\.gen\.ts$/.exec(id)?.[1];
+                return locale === undefined ? null : `locale-${locale}`;
+              },
+            },
+          ],
+        },
+      },
     },
   },
   server: {
