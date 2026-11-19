@@ -87,6 +87,18 @@ export const eventsPath = "/events";
 /** The address of an event's page (ADR-0161 §9). */
 export const eventPath = (id: string) => `/events/${encodeURIComponent(id)}`;
 
+/** The address of the form that creates an event (FR-940). */
+export const eventNewPath = "/events/new";
+
+/** The address of the form that changes an event, for its organizers. */
+export const eventEditPath = (id: string) => `${eventPath(id)}/edit`;
+
+/** The address of the invitations of an event, for its organizers. */
+export const eventInvitationsPath = (id: string) => `${eventPath(id)}/invitations`;
+
+/** The address of the co-organizers of an event, which its organizer names. */
+export const eventCoorganizersPath = (id: string) => `${eventPath(id)}/coorganizers`;
+
 /** The address of the settings' screen of the reminders of events (ADR-0161 §12). */
 export const eventRemindersPath = "/settings/events";
 

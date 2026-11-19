@@ -8,6 +8,14 @@
 // page loading, failing, with long names, and for a visitor; and the ways in: the profile of an organizer with their
 // upcoming events, and the reminders in the settings, loading and failing.
 
+//
+// And for the organizer (#3238): the list without Create an event, the form that creates one (and its address for a
+// reader who may not), changing an event as its organizer and as a co-organizer (and the address for another reader
+// and for a cancelled event), the invitations and the co-organizers (and their addresses for a reader who does not
+// choose them), and the voice room that could not open, said to its organizer. The poll's dates' actions and the
+// approvals show in Poll and CoOrganized.
+
+import { scenario, type FakeEventPlan } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
 
@@ -72,3 +80,81 @@ export const ProfileEvents: Story = { parameters: screen({ at: "/@sam" }) };
 export const Reminders: Story = { parameters: screen({ at: "/settings/events" }) };
 export const RemindersLoading: Story = { parameters: screen({ at: "/settings/events", state: "loading" }) };
 export const RemindersError: Story = { parameters: screen({ at: "/settings/events", state: "error" }) };
+
+// ---- The organizer's side (ADR-0161 §3–§8, §10; FR-940–945, FR-948, FR-950, FR-952) --------------------------------
+
+/** An event the reader organizes whose voice room could not open: they may not host rooms on this server. */
+const unopened: FakeEventPlan = {
+  key: "own-voice",
+  organizer: "yuki",
+  title: "Morning stretch",
+  description: "Ten minutes, cameras off.",
+  timeZone: "Asia/Tokyo",
+  inDays: 0,
+  hour: 0,
+  hours: 1,
+  startsInMinutes: -20,
+  places: [{ kind: "voice", speakers: "everyone" }],
+  room: "not_eligible",
+};
+
+/** An event the reader organized and cancelled. */
+const cancelledOwn: FakeEventPlan = {
+  key: "own-cancelled",
+  organizer: "yuki",
+  title: "Kite day",
+  description: "On the dunes.",
+  timeZone: "Asia/Tokyo",
+  inDays: 6,
+  hour: 10,
+  hours: 3,
+  cancelled: { reason: "organizer", note: "Too much wind." },
+};
+
+/** The scenario with the reader's own events of these stories beside the fake's. */
+const ownEvents = { seed: { ...scenario, events: [...scenario.events, unopened, cancelledOwn] } };
+
+/** The events of a server where only some may create events: no Create an event for this reader. */
+export const EventsCannotCreate: Story = {
+  parameters: screen({ at: "/events", server: { eventCreators: "permitted" } }),
+};
+/**
+ * The form that creates an event: its title, description, a fixed date tomorrow in the reader's zone, the time zone,
+ * the places (the voice room offered to a reader who may host rooms), who sees the event, its capacity.
+ */
+export const CreateEvent: Story = { parameters: screen({ at: "/events/new" }) };
+/** The form's address for a reader who may not create events. */
+export const CreateEventNotAllowed: Story = {
+  parameters: screen({ at: "/events/new", server: { eventCreators: "permitted" } }),
+};
+/** Changing an event the reader organizes whose date is polled: its settings, the poll left to its page. */
+export const EditEvent: Story = { parameters: screen({ at: "/events/{event:photo-walk}/edit" }) };
+/** Changing an event the reader co-organizes: its places, and who sees it said, the organizer's to change. */
+export const EditCoOrganized: Story = { parameters: screen({ at: "/events/{event:bread-class}/edit" }) };
+/** The form's address for a reader who does not organize the event. */
+export const EditNotOrganizer: Story = { parameters: screen({ at: "/events/{event:book-swap}/edit" }) };
+/** The form's address of an event the reader cancelled. */
+export const EditCancelled: Story = {
+  parameters: screen({ at: "/events/{event:own-cancelled}/edit", server: ownEvents }),
+};
+/** The invitations of an event the reader co-organizes: one, with Revoke, and the search of who to invite. */
+export const Invitations: Story = { parameters: screen({ at: "/events/{event:bread-class}/invitations" }) };
+/** None yet. */
+export const InvitationsNone: Story = { parameters: screen({ at: "/events/{event:photo-walk}/invitations" }) };
+/** The invitations' address of an event the reader does not organize. */
+export const InvitationsNotOrganizer: Story = {
+  parameters: screen({ at: "/events/{event:book-swap}/invitations" }),
+};
+/** The co-organizers of an event the reader organizes: one, with Remove, and the search of who to name. */
+export const Coorganizers: Story = { parameters: screen({ at: "/events/{event:photo-walk}/coorganizers" }) };
+/** The co-organizers' address for a co-organizer: only the organizer names them. */
+export const CoorganizersNotOrganizer: Story = {
+  parameters: screen({ at: "/events/{event:bread-class}/coorganizers" }),
+};
+/** An event the reader organizes whose voice room could not open, said to them with why. */
+export const VoiceUnavailableOrganizer: Story = {
+  parameters: screen({
+    at: "/events/{event:own-voice}",
+    server: ownEvents,
+  }),
+};

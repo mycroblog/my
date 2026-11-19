@@ -5,7 +5,8 @@
 // where. A place the reader does not see (shown to the attendees the organizers approve) shows its kind alone, and
 // that. The voice room says where it stands: before the start, that it opens then; while it opens, the event is read
 // again until it says what came of it; once opened, that it is open, its way in at the frame's foot (joining from the
-// press, as the room's own Join does), or that it ended; why it could not open.
+// press, as the room's own Join does), or that it ended; why it could not open, to its organizer in their own words,
+// with what they can do about it.
 
 import {
   eventRoom,
@@ -143,7 +144,9 @@ function VoicePlace({ event, now, refetch, t }: { event: ServerEvent; now: numbe
           kind="voice"
           label={label}
           unavailable
-          note={t("events.room_unavailable", { reason: room.reason satisfies EventRoomUnavailableReason })}
+          note={t(event.viewer.organizer ? "events.room_unavailable_organizer" : "events.room_unavailable", {
+            reason: room.reason satisfies EventRoomUnavailableReason,
+          })}
         />
       );
     case "none":

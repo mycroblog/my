@@ -209,6 +209,11 @@ func (s *Server) GetInstance(ctx context.Context, _ GetInstanceRequestObject) (G
 	if out.VoiceEnabled && settings.VoiceRoomStarters() == instance.VoiceRoomStartersEveryone {
 		out.VoiceRoomStarters = InstanceVoiceRoomStartersEveryone
 	}
+	// Who may create events (ADR-0161 §3), so that clients offer creating one only then.
+	out.EventCreators = InstanceEventCreatorsPermitted
+	if settings.EventCreators() == instance.EventCreatorsEveryone {
+		out.EventCreators = InstanceEventCreatorsEveryone
+	}
 	fullTextSearch, err := s.instanceFullTextSearch(ctx)
 	if err != nil {
 		return nil, err

@@ -4,9 +4,12 @@
 // fake API: the list's own states and a visitor's, an event's answer in its states (going, not answered, at capacity,
 // started), one co-organized, its places (hidden, a voice room before the start, open, and one that could not open), a
 // poll, cancelled, ended, not seen, its loading and failure, a visitor's page, the organizer's profile, and the
-// reminders, loading and failing. What the
-// screens do from each state is the app's route tests' (web/app/src/events-routes.dom.test.tsx); this is that the
-// catalog shows each state for a review and a shot.
+// reminders, loading and failing; and the organizer's: the list without Create an event, the form that creates one and
+// its address for a reader who may not, changing an event (an organizer's, a co-organizer's, another reader's, a
+// cancelled one), the invitations and the co-organizers and their addresses for others, and the voice room that could
+// not open said to its organizer. What the screens do from each state is the app's route tests'
+// (web/app/src/events-routes.dom.test.tsx, events-organize.dom.test.tsx); this is that the catalog shows each state for
+// a review and a shot.
 
 import type { Page } from "@playwright/test";
 import { expect, pc, test } from "../test";
@@ -110,6 +113,13 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(main(page).getByRole("list", { name: "Organizers", exact: true }).getByRole("listitem")).toHaveCount(
         2,
       );
+      // The organizers' menu, and each attendee's approval.
+      await expect(main(page).getByRole("button", { name: "Manage the event", exact: true })).toBeVisible();
+      // Two wait for approval, each with Approve in sight; the one approved has its mark and its menu.
+      await expect(main(page).getByText(/^Waiting for approval$/)).toHaveCount(2);
+      await expect(main(page).getByRole("button", { name: /^Approve .+$/ })).toHaveCount(2);
+      await expect(main(page).getByText(/^Approved$/)).toHaveCount(1);
+      await expect(main(page).getByRole("button", { name: /^Actions for .+$/ })).toHaveCount(1);
     },
   ],
   [
@@ -118,6 +128,9 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(main(page).getByRole("table", { name: "Date poll", exact: true })).toBeVisible();
       await expect(answers(page)).toHaveCount(0);
       await expect(main(page).getByRole("button", { name: "Add to calendar", exact: true })).toHaveCount(0);
+      // The reader organizes it: each date's menu, and a date to add.
+      await expect(main(page).getByRole("button", { name: /^Options for .+$/ })).toHaveCount(3);
+      await expect(main(page).getByRole("group", { name: "Add a date", exact: true })).toBeVisible();
     },
   ],
   [
@@ -204,6 +217,114 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     "reminders-error",
     async (page) => {
       await expect(main(page).getByRole("alert")).toHaveText(/^Your reminders could not be loaded\./);
+    },
+  ],
+  // The organizer's (#3238).
+  [
+    "events-cannot-create",
+    async (page) => {
+      await expect(listed(page)).not.toHaveCount(0);
+      await expect(page.getByRole("link", { name: "Create an event", exact: true })).toHaveCount(0);
+    },
+  ],
+  [
+    "create-event",
+    async (page) => {
+      await expect(main(page).getByRole("textbox", { name: "Title", exact: true })).toBeVisible();
+      await expect(main(page).getByRole("radio", { name: "On a fixed date", exact: true })).toBeChecked();
+      await expect(
+        main(page).getByRole("checkbox", {
+          name: "In a voice chat room that opens when the event starts",
+          exact: true,
+        }),
+      ).toBeVisible();
+      await expect(main(page).getByRole("button", { name: "Create the event", exact: true })).toBeVisible();
+    },
+  ],
+  [
+    "create-event-not-allowed",
+    async (page) => {
+      await expect(main(page).getByText(/^You cannot create events on this server\..*$/)).toBeVisible();
+      await expect(main(page).getByRole("textbox")).toHaveCount(0);
+    },
+  ],
+  [
+    "edit-event",
+    async (page) => {
+      await expect(main(page).getByRole("textbox", { name: "Title", exact: true })).toHaveValue(/^Photo walk/);
+      await expect(main(page).getByText(/^The date is being polled\..*$/)).toBeVisible();
+      await expect(main(page).getByRole("radiogroup", { name: "Who can see the event", exact: true })).toBeVisible();
+    },
+  ],
+  [
+    "edit-co-organized",
+    async (page) => {
+      await expect(main(page).getByRole("checkbox", { name: "In person", exact: true })).toBeChecked();
+      await expect(main(page).getByText(/^.+ Only the organizer, .+, changes who can see it\.$/)).toBeVisible();
+      await expect(main(page).getByRole("radiogroup", { name: "Who can see the event", exact: true })).toHaveCount(0);
+    },
+  ],
+  [
+    "edit-not-organizer",
+    async (page) => {
+      await expect(
+        main(page).getByText(/^Only the event's organizer, .+, and its co-organizers can change it\.$/),
+      ).toBeVisible();
+    },
+  ],
+  [
+    "edit-cancelled",
+    async (page) => {
+      await expect(main(page).getByText(/^This event was cancelled, so it can no longer be changed\.$/)).toBeVisible();
+    },
+  ],
+  [
+    "invitations",
+    async (page) => {
+      await expect(main(page).getByRole("list", { name: "Invited", exact: true }).getByRole("listitem")).toHaveCount(1);
+      await expect(main(page).getByRole("button", { name: /^Actions for .+$/ })).toHaveCount(1);
+      await expect(main(page).getByRole("searchbox", { name: "Name or handle", exact: true })).toBeVisible();
+    },
+  ],
+  [
+    "invitations-none",
+    async (page) => {
+      await expect(main(page).getByText(/^No one is invited yet\..*$/)).toBeVisible();
+    },
+  ],
+  [
+    "invitations-not-organizer",
+    async (page) => {
+      await expect(
+        main(page).getByText(/^Only the event's organizer, .+, and its co-organizers can invite people to it\.$/),
+      ).toBeVisible();
+      await expect(main(page).getByRole("searchbox")).toHaveCount(0);
+    },
+  ],
+  [
+    "coorganizers",
+    async (page) => {
+      await expect(main(page).getByRole("button", { name: /^Actions for .+$/ })).toHaveCount(1);
+      await expect(main(page).getByRole("searchbox", { name: "Name or handle", exact: true })).toBeVisible();
+    },
+  ],
+  [
+    "coorganizers-not-organizer",
+    async (page) => {
+      await expect(
+        main(page).getByText(/^Only the event's organizer, .+, can name its co-organizers\.$/),
+      ).toBeVisible();
+    },
+  ],
+  [
+    "voice-unavailable-organizer",
+    async (page) => {
+      await expect(
+        main(page).getByText(
+          /^Could not open: you may not host voice chat rooms on this server\. The event goes on\.$/,
+        ),
+      ).toBeVisible();
+      await expect(main(page).getByRole("button", { name: "Manage the event", exact: true })).toBeVisible();
     },
   ],
 ];

@@ -303,6 +303,16 @@ export class Fresh {
     return { id: body(data, "the event").id, title, candidates: (o.candidates ?? []).map(startOf) };
   }
 
+  /** The evenings (18:00 of the test's zone) `inDays` days from now, each, for a form a spec fills with dates. */
+  evenings(inDays: readonly number[]): Date[] {
+    const now = Date.now();
+    return inDays.map((days) => {
+      const evening = new Date(now + days * 86_400_000);
+      evening.setHours(18, 0, 0, 0);
+      return evening;
+    });
+  }
+
   /** `by` reacts to the post `post` with `emoji`: a Unicode emoji, or a custom one's shortcode without colons. */
   async reaction(by: Person, post: FreshPost, emoji: string): Promise<void> {
     const { error } = await (

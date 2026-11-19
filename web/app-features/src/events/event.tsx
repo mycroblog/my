@@ -14,6 +14,10 @@
 //   and the calendar file of the event to download, a cancelled one's too. While its date is polled, the poll
 //   (poll.tsx) in their place.
 // - Its organizers, and who is going and maybe (people.tsx).
+// - For its organizers (manage.tsx): the menu in its head, which leads to changing it, its invitations and its
+//   co-organizers, and cancels it, asked first; the approval of each attendee going or maybe (people.tsx); the poll's
+//   dates added, withdrawn and confirmed from its table (poll.tsx); and why its voice room could not open, in the
+//   organizer's own words (places.tsx).
 //
 // The page is drawn again as the event starts and as it ends. An event the reader does not see, or that is not there
 // (the server's 404), says so. What came of a press that the page does not show in the control's own line (a
@@ -46,6 +50,7 @@ import {
   GroupHeading,
   HeadcountMark,
   Icon,
+  ModalPresence,
   Row,
   SaveState,
   ScreenStack,
@@ -55,12 +60,13 @@ import {
   useLocale,
   type Answer,
 } from "@my/design-system";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { saveFile } from "../save-file";
 import { descriptionParts } from "./description";
+import { CancelDialog, EventMenu } from "./manage";
 import { Attendees, Organizers } from "./people";
 import { hasPlaces, Places, RoomFoot, type JoinRoom, type Say } from "./places";
-import { Poll } from "./poll";
+import { Poll, PollAskDialog, type PollAsk } from "./poll";
 import { Retry, useEventStrings, type T } from "./parts";
 
 /** What the page's loader waits for: the event, from the cache unless a write marked it stale. */
@@ -280,7 +286,7 @@ function Calendar({ writes, say, t }: { writes: EventWrites; say: Say; t: T }) {
   return (
     <Stack gap="entry-line">
       <Box>
-        <Button size="timeline" touch busy={busy} onPress={download}>
+        <Button size="target" busy={busy} onPress={download}>
           {t("events.calendar")}
         </Button>
       </Box>
@@ -301,7 +307,6 @@ function Shown({
   say,
   refetch,
   onBack,
-  menu,
   t,
 }: {
   event: ServerEvent;
@@ -309,16 +314,36 @@ function Shown({
   say: Say;
   refetch: () => void;
   onBack: () => void;
-  menu: ReactNode;
   t: T;
 }) {
   const writes = useEventWrites(event.id);
   const now = useMoment(event);
   const phase = eventPhase(event, now);
   const room = eventRoom(event, now);
+  const title = useRef<HTMLHeadingElement>(null);
+  const [cancelling, setCancelling] = useState(false);
+  // The cancellation was done: the title takes the focus once the dialog is out of the document.
+  const cancelled = useRef(false);
+  const poll = useRef<HTMLDivElement>(null);
+  const [pollAsk, setPollAsk] = useState<PollAsk | null>(null);
+  // What a done confirmation of the poll leaves the focus to, once its dialog is out of the document: the title over
+  // the date it fixed, or the poll's first date's menu after a date was withdrawn.
+  const pollDone = useRef<PollAsk["op"] | null>(null);
   return (
     <ScreenStack>
-      <ScreenTitle back={<BackButton onPress={onBack}>{t("events.back")}</BackButton>} actions={menu}>
+      <ScreenTitle
+        ref={title}
+        back={<BackButton onPress={onBack}>{t("events.back")}</BackButton>}
+        actions={
+          <EventMenu
+            event={event}
+            onCancel={() => {
+              setCancelling(true);
+            }}
+            t={t}
+          />
+        }
+      >
         {event.title}
       </ScreenTitle>
       <State event={event} phase={phase} t={t} />
@@ -333,7 +358,9 @@ function Shown({
       {phase === "polling" ? (
         <Stack gap="entry-line">
           <GroupHeading>{t("events.poll_heading")}</GroupHeading>
-          <Poll event={event} writes={writes} t={t} />
+          <div ref={poll}>
+            <Poll event={event} writes={writes} say={say} onAsk={setPollAsk} t={t} />
+          </div>
         </Stack>
       ) : (
         <Stack gap="entry-room">
@@ -343,8 +370,60 @@ function Shown({
         </Stack>
       )}
       <Organizers event={event} t={t} />
-      <Attendees event={event} t={t} />
+      <Attendees event={event} phase={phase} say={say} t={t} />
       {room.state === "open" && <RoomFoot roomId={room.roomId} join={join} say={say} t={t} />}
+      <ModalPresence>
+        {cancelling && (
+          <CancelDialog
+            key="cancel"
+            writes={writes}
+            onCancelled={() => {
+              cancelled.current = true;
+              setCancelling(false);
+              say(t("events.cancel.done"));
+            }}
+            onClosed={() => {
+              // Cancelled already, from elsewhere: the page reads the event again, and says so.
+              cancelled.current = true;
+              setCancelling(false);
+              refetch();
+              say(t("events.cancel.closed"));
+            }}
+            onClose={() => {
+              setCancelling(false);
+            }}
+            onGone={() => {
+              if (!cancelled.current) return;
+              cancelled.current = false;
+              title.current?.focus();
+            }}
+            t={t}
+          />
+        )}
+        {pollAsk !== null && (
+          <PollAskDialog
+            key={`poll-${pollAsk.op}`}
+            ask={pollAsk}
+            writes={writes}
+            onDone={(outcome) => {
+              setPollAsk(null);
+              if (outcome === "cancelled") return;
+              if (outcome === "done") {
+                pollDone.current = pollAsk.op;
+                say(t("events.poll.done", { op: pollAsk.op, date: pollAsk.date }));
+              } else say(outcome.failed);
+            }}
+            onGone={() => {
+              const done = pollDone.current;
+              pollDone.current = null;
+              if (done === "confirm") title.current?.focus();
+              else if (done === "withdraw")
+                poll.current?.querySelector<HTMLElement>("[role=table] button:not([disabled])")?.focus();
+            }}
+            t={t}
+          />
+        )}
+      </ModalPresence>
     </ScreenStack>
   );
 }
@@ -356,20 +435,9 @@ function Said({ told }: { told: { words: string; n: number } | null }) {
 
 /**
  * The page of the event of `id` for a reader signed in. `join` joins its open voice room from the reader's press and
- * shows the room; `onBack` goes to the events; `menu`, what its organizers may do with it, stands at the end of its
- * head.
+ * shows the room; `onBack` goes to the events.
  */
-export function EventScreen({
-  id,
-  join,
-  onBack,
-  menu,
-}: {
-  id: string;
-  join: JoinRoom;
-  onBack: () => void;
-  menu?: ReactNode;
-}) {
+export function EventScreen({ id, join, onBack }: { id: string; join: JoinRoom; onBack: () => void }) {
   const t = useEventStrings();
   const { event, error, gone, refetch } = useEvent(id);
   const [told, setTold] = useState<{ words: string; n: number } | null>(null);
@@ -386,7 +454,7 @@ export function EventScreen({
         </ScreenStack>
       );
     if (event !== undefined)
-      return <Shown event={event} join={join} say={say} refetch={refetch} onBack={onBack} menu={menu} t={t} />;
+      return <Shown event={event} join={join} say={say} refetch={refetch} onBack={onBack} t={t} />;
     if (error !== null)
       return (
         <ScreenStack>
