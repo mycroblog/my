@@ -54,20 +54,29 @@ const mark = tv({
 /**
  * The mark an option is answered with: a radio's ring, or a checkbox's square where several may be chosen; on (chosen),
  * knocked out of the text's color, the ring around a dot, the square around a check; `plain` where nothing is pressed
- * any more (results), and an option not chosen keeps its mark's shape, faint.
+ * any more (results), and an option not chosen keeps its mark's shape, faint. `mixed`, a checkbox over others of which
+ * some are checked (select all): the square knocked out around a dash.
  */
 export function ChoiceMark({
   multiple,
   on = false,
   plain = false,
+  mixed = false,
 }: {
   multiple: boolean;
   on?: boolean;
   plain?: boolean;
+  mixed?: boolean;
 }) {
   return (
-    <Layers as="span" center rigid className={mark({ multiple, on, plain })} aria-hidden="true">
+    <Layers as="span" center rigid className={mark({ multiple, on: on || mixed, plain })} aria-hidden="true">
+      {mixed && multiple && (
+        <svg viewBox="0 0 12 12" className="size-poll-mark-check" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 6 L9 6" strokeLinecap="round" />
+        </svg>
+      )}
       {on &&
+        !mixed &&
         (multiple ? (
           <svg viewBox="0 0 12 12" className="size-poll-mark-check" fill="none" stroke="currentColor" strokeWidth="2">
             <path d="M2.5 6.25 L5 8.75 L9.5 3.5" strokeLinecap="round" strokeLinejoin="round" />

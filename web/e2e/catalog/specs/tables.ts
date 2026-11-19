@@ -8,9 +8,10 @@ import type { Page } from "@playwright/test";
 
 /**
  * The table named `name` as Chromium gives it to assistive technology, read cell by cell: for each row after the
- * first, each of its cells as `<the row's header> | <the column's header> | <the cell>`, a column's header counted by
- * the cell's place in its row; the first row is the columns' headers, and a row that does not line up with it, or a
- * table that is not there, is told as such. A name is the one Chromium computes, its spaces folded.
+ * first, each of its cells but its header as `<the row's header> | <the column's header> | <the cell>`, a column's
+ * header counted by the cell's place in its row, the row's header wherever it stands (after a row's checkbox, say);
+ * the first row is the columns' headers, and a row that does not line up with it, or has not one header, or a table
+ * that is not there, is told as such. A name is the one Chromium computes, its spaces folded.
  */
 export async function readCellByCell(page: Page, name: string): Promise<string[]> {
   const cdp = await page.context().newCDPSession(page);
@@ -40,15 +41,18 @@ export async function readCellByCell(page: Page, name: string): Promise<string[]
     if (columns.some((column) => roleOf(column) !== "columnheader"))
       return [`a first row of ${columns.map(roleOf).join(", ")}`];
     return rows.flatMap((row) => {
-      const [date, ...cells] = under(row, ["columnheader", "rowheader", "cell"]);
-      if (date === undefined || roleOf(date) !== "rowheader" || cells.length + 1 !== columns.length)
-        return [`a row of ${[date, ...cells].map((cell) => (cell ? roleOf(cell) : "nothing")).join(", ")}`];
-      return cells.map(
-        (cell, i) =>
-          `${nameOf(date)} | ${columns[i + 1] ? nameOf(columns[i + 1] as Node) : ""} | ${
-            roleOf(cell) === "cell" ? nameOf(cell) : roleOf(cell)
-          }`,
-      );
+      const cells = under(row, ["columnheader", "rowheader", "cell"]);
+      const headers = cells.filter((cell) => roleOf(cell) === "rowheader");
+      const [header] = headers;
+      if (header === undefined || headers.length !== 1 || cells.length !== columns.length)
+        return [`a row of ${cells.length === 0 ? "nothing" : cells.map(roleOf).join(", ")}`];
+      return cells.flatMap((cell, i) => {
+        if (cell === header) return [];
+        const column = columns[i];
+        return [
+          `${nameOf(header)} | ${column ? nameOf(column) : ""} | ${roleOf(cell) === "cell" ? nameOf(cell) : roleOf(cell)}`,
+        ];
+      });
     });
   } finally {
     await cdp.detach();

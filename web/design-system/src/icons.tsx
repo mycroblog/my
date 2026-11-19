@@ -15,8 +15,11 @@ import {
   IconAlertTriangle,
   IconApps,
   IconArchive,
+  IconArrowDown,
   IconArrowLeft,
   IconArrowMoveRight,
+  IconArrowUp,
+  IconArrowsSort,
   IconArticle,
   IconAt,
   IconBallFootball,
@@ -47,9 +50,13 @@ import {
   IconChevronDown,
   IconChevronLeft,
   IconChevronRight,
+  IconCircle,
   IconCircleCheck,
+  IconCircleDot,
+  IconCircleMinus,
   IconCircleX,
   IconClock,
+  IconClockX,
   IconCloudOff,
   IconCoin,
   IconCoinFilled,
@@ -59,6 +66,7 @@ import {
   IconDoorExit,
   IconDots,
   IconExternalLink,
+  IconEye,
   IconEyeOff,
   IconFile,
   IconFilePencil,
@@ -73,6 +81,7 @@ import {
   IconHistory,
   IconHome,
   IconHomeFilled,
+  IconHourglass,
   IconHourglassLow,
   IconInfoCircle,
   IconInfoCircleFilled,
@@ -82,6 +91,7 @@ import {
   IconLinkOff,
   IconListDetails,
   IconLock,
+  IconLockOpen,
   IconLogin2,
   IconLogout2,
   IconMail,
@@ -136,6 +146,7 @@ import {
   IconToolsKitchen2,
   IconTrash,
   IconUser,
+  IconUserCheck,
   IconUserFilled,
   IconUserMinus,
   IconUserPlus,
@@ -247,6 +258,8 @@ export const icons = {
   // What a reader chose not to see yet: a content warning's fold. An eye crossed out, not a flag, which reads as report.
   // On, while the composer holds a content warning.
   hidden: { off: IconEyeOff, on: "tile" },
+  // Private data shown (an email address, an IP address), as a staff member revealed it.
+  revealed: { off: IconEye },
   // The kinds of a notification with no action of their own (the rough of #3047): a follow, an ended poll (poll,
   // above), the moderators' notice; and a post its author pinned to their profile.
   follow: { off: IconUserPlus, directional: true },
@@ -371,6 +384,21 @@ export const icons = {
   invite: { off: IconTicket },
   accountData: { off: IconDatabase },
   signOut: { off: IconLogout2, directional: true },
+  // The records of the staff's screens (records.tsx): the state of a record, each by a shape of its own, so that a
+  // column of states reads by shape as well as by word: open and waiting for a moderator (a ring around a point),
+  // assigned to one, resolved, in force (a plain ring, quieter than what waits), expired (a clock crossed out), lifted
+  // (a lock opened), pending, disabled (a ring barred); failed takes `error`. A column's sort: up, down, and sortable (both).
+  stateOpen: { off: IconCircleDot },
+  stateAssigned: { off: IconUserCheck },
+  stateResolved: { off: IconCircleCheck },
+  stateActive: { off: IconCircle },
+  stateExpired: { off: IconClockX },
+  stateLifted: { off: IconLockOpen },
+  statePending: { off: IconHourglass },
+  stateDisabled: { off: IconCircleMinus },
+  sortedUp: { off: IconArrowUp },
+  sortedDown: { off: IconArrowDown },
+  sortable: { off: IconArrowsSort },
 } as const satisfies Record<string, Entry>;
 
 export type IconName = keyof typeof icons;
