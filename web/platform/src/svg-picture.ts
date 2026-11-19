@@ -3,7 +3,8 @@
 // Drawing an SVG as PNG pictures of given sizes, in the browser (ADR-0059 §10): the server sanitizes a brand image's
 // SVG and draws nothing, and the administrator's browser draws the PNGs of the places that take no SVG (favicons, home
 // screens, emails, link previews) with the same renderer that shows the SVG. The SVG is read as an image from a `blob:`
-// URL, never put into the page, and each picture is drawn on a canvas.
+// URL, as the server's sanitizer wrote it (with its viewBox's size as its own, which a canvas needs), never parsed nor
+// put into the page, and each picture is drawn on a canvas.
 
 /** How one picture is drawn: its size, the color under it (none leaves it transparent), and the share it fills. */
 export type SvgPictureSpec = {
@@ -14,18 +15,6 @@ export type SvgPictureSpec = {
   /** The share of the width and of the height the SVG may fill, centered (1 by default): `[0.8, 0.5]`. */
   readonly fit?: readonly [number, number] | undefined;
 };
-
-/**
- * `svg` with the size of its viewBox as its width and height: a browser may refuse to draw on a canvas an SVG with no
- * size of its own (Firefox), which a sanitized SVG often lacks.
- */
-function sized(svg: string, viewBox: { readonly width: number; readonly height: number }): string {
-  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
-  const root = doc.documentElement;
-  root.setAttribute("width", String(viewBox.width));
-  root.setAttribute("height", String(viewBox.height));
-  return new XMLSerializer().serializeToString(doc);
-}
 
 /** Reads `svg` as an image, through a `blob:` URL that it lets go once read. */
 async function imageOf(svg: string): Promise<HTMLImageElement> {
@@ -60,7 +49,7 @@ export async function drawSvgPictures(
   viewBox: { readonly width: number; readonly height: number },
   specs: readonly SvgPictureSpec[],
 ): Promise<Blob[]> {
-  const image = await imageOf(sized(svg, viewBox));
+  const image = await imageOf(svg);
   const pictures: Blob[] = [];
   for (const spec of specs) {
     const canvas = document.createElement("canvas");

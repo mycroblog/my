@@ -287,7 +287,12 @@ export function adminHandlers(c: AdminContext): { handlers: Handlers; admin: Fak
     const scripts = /<script[\s\S]*?<\/script>/g;
     const dropped: Schema<"BrandDropped">[] = scripts.test(text) ? [{ kind: "element", name: "script" }] : [];
     return {
-      svg: text.replace(scripts, ""),
+      // As the server's sanitizer writes it: the viewBox's size as the root's own width and height.
+      svg: text
+        .replace(scripts, "")
+        .replace(/<svg\b[^>]*>/, (open) =>
+          open.replace(/\s(?:width|height)="[^"]*"/g, "").replace(/>$/, ` width="${String(w)}" height="${String(h)}">`),
+        ),
       view_box_width: w,
       view_box_height: h,
       renditions: sizes[kind],
