@@ -415,6 +415,11 @@ export type TextFieldProps = {
    * list, one under another, each a field), and `end` is not drawn.
    */
   labelHidden?: boolean | undefined;
+  /**
+   * It stands among the rows of settings of a section (a `SettingRow` before or after it): its label looks as their
+   * names do, in the text's own weight, not as the label of a field in a form of fields.
+   */
+  row?: boolean | undefined;
 };
 
 /**
@@ -444,6 +449,7 @@ export function TextField({
   autoFocus,
   onChange,
   labelHidden = false,
+  row = false,
 }: TextFieldProps) {
   const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
   const holder = use(FieldContext);
@@ -480,7 +486,7 @@ export function TextField({
         </label>
       ) : (
         <Row align="baseline" justify="between" gap="form-page-alert-gap">
-          <label className={s.label()} htmlFor={id}>
+          <label className={row ? "[word-break:auto-phrase]" : s.label()} htmlFor={id}>
             {label}
           </label>
           {end}

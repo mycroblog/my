@@ -9,6 +9,7 @@
 // asks the reader to authenticate again, by each proof, with no way to prove it, and in flight; a setting that cannot
 // be changed now, with its reason; a number field given a number outside what it takes; what the reader copies and
 // keeps (recovery codes shown once, before and after copying; a secret of a server's length, which wraps in its box);
+// a text field among the rows of a section, its name in the rows' own look;
 // the key of an authenticator app as a QR code and as text; rows that say what is known of each thing, one fact a
 // line, under what came of a change in their section and over a sentence of the section with the links to where the
 // reader acts on it; and the facts a section states, which are not pressed.
@@ -629,6 +630,21 @@ function Refused() {
  * A number field given a number outside what it takes, over the most and under the least, shows the nearest it
  * takes; and a field with none.
  */
+/** A text field among a section's rows, named as they are, not as a field of a form of fields. */
+function TextAmongRows() {
+  const w = useWords();
+  return (
+    <Column>
+      <SettingsSection heading={w.section}>
+        <SettingRow id="rows-days" label={w.ends} form>
+          <NumberField defaultValue={30} min={1} max={365} unit={w.days} />
+        </SettingRow>
+        <TextField id="rows-text" name="text" label={w.filters} row defaultValue={w.filterRows[0]?.[0]} />
+      </SettingsSection>
+    </Column>
+  );
+}
+
 function NumberRange() {
   const w = useWords();
   return (
@@ -935,3 +951,5 @@ export const WorkingAndNot: Story = { render: () => <Working /> };
 export const RefusedValues: Story = { render: () => <Refused /> };
 /** A number field given a number over its most and under its least, and none. */
 export const NumberOutOfRange: Story = { render: () => <NumberRange /> };
+/** A text field among the rows of a section: its name in the rows' look. */
+export const TextAmongSettingRows: Story = { render: () => <TextAmongRows /> };

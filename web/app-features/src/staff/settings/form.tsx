@@ -51,9 +51,9 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useStaffStrings, type T } from "../parts";
-import { LeaveDialog, type AdminSubProps } from "./parts";
+import { Irreversible, LeaveDialog, OnOffRow, type AdminSubProps } from "./parts";
 import { ProvidersField, type ProvidersValue } from "./providers";
-import { keysOf, textsOf, type SettingField, type SettingTopic, type Unit } from "./topics";
+import { factorOf, keysOf, textsOf, type SettingField, type SettingTopic } from "./topics";
 import {
   choiceAbouts,
   choiceNames,
@@ -65,9 +65,6 @@ import {
   textLabels,
   wordOf,
 } from "./words";
-
-/** What a number's field shows of its setting: the setting's value divided by this. */
-const factors: Readonly<Partial<Record<Unit, number>>> = { hours: 3600, minutes: 60, mebibytes: 1_048_576 };
 
 /** The words of an option of a select, by the family of settings that share them. */
 const families: Readonly<Partial<Record<AdminSettingKey, string>>> = {
@@ -93,6 +90,10 @@ const families: Readonly<Partial<Record<AdminSettingKey, string>>> = {
   hook_media_check_on_failure: "hook_failure",
   hook_inbound_actor_on_failure: "hook_failure",
 };
+
+/** The settings whose change cannot be undone, marked under their row; and the options of a choice that cannot. */
+const irreversibleKeys: ReadonlySet<string> = new Set(["login_providers_only", "auto_delete_max_age_days"]);
+const irreversibleChoices: Readonly<Record<string, string>> = { federation_scope: "allowlist" };
 
 /** The languages the app is written in, which a server's default may be. */
 const appLanguages = ["en", "ja", "de", "es", "fr", "pt-BR", "zh-CN", "zh-TW"];
@@ -123,8 +124,8 @@ type Sent =
 type Ask = "scope" | "providers_only" | "auto_delete_max";
 
 /** The rule a value of `setting` follows, in the form's words: the server says only that it is not valid. */
-function ruleOf(t: T, setting: AdminSetting, unit: Unit | undefined): string {
-  const factor = unit === undefined ? 1 : (factors[unit] ?? 1);
+function ruleOf(t: T, setting: AdminSetting): string {
+  const factor = factorOf(setting.key);
   return t("staff_settings.rule", {
     kind: setting.kind,
     min: Math.ceil((setting.minimum ?? 0) / factor),
@@ -175,6 +176,9 @@ export function TopicForm({
   const [form, setForm] = useState<Form>(base);
   const [sent, setSent] = useState<Sent>({ kind: "idle" });
   const [asking, setAsking] = useState<Ask | undefined>(undefined);
+  // The picture of an image uploaded here, shown under its new value until a read of the settings carries its image
+  // (the server leaves it out while the file is processed).
+  const [shownImages, setShown] = useState<Readonly<Record<string, { readonly id: string; readonly url: string }>>>({});
   const busy = sent.kind === "sending";
   const focusNext = useRef<string | undefined>(undefined);
   useEffect(() => {
@@ -224,7 +228,7 @@ export function TopicForm({
     if (field.kind === "setting") return field.as === "choices" ? controlOf(name) : `${rowOf(name)}-control`;
     if (field.kind === "checks") return controlOf(field.keys[0] ?? name);
     if (field.kind === "image") return name === field.alt ? controlOf(name) : controlOf(field.key);
-    if (field.kind === "providers") return controlOf("providers");
+    if (field.kind === "providers") return `${controlOf("providers")}-control`;
     return controlOf(name);
   };
 
@@ -244,37 +248,45 @@ export function TopicForm({
         .flatMap((f) => (f.kind === "setting" ? [f] : []))
         .flatMap((f) => {
           const setting = settings.get(f.key);
-          return setting?.kind === "int" && form.values[f.key] === "" ? [[f.key, ruleOf(t, setting, f.unit)]] : [];
+          return setting?.kind === "int" && form.values[f.key] === "" ? [[f.key, ruleOf(t, setting)]] : [];
         }),
     );
 
   const send = async () => {
     setAsking(undefined);
     setSent({ kind: "sending" });
+    // Each part that succeeds is kept as done, so that a save tried again sends only what did not go: an image
+    // uploaded becomes its setting's value (its picture shown meanwhile), a text recorded becomes the text saved.
     const uploaded: Record<string, string> = {};
     let failing: string | undefined;
     try {
       for (const [key, image] of Object.entries(form.images)) {
         failing = key;
-        uploaded[key] = await writes.upload(image.file);
+        const id = await writes.upload(image.file);
+        uploaded[key] = id;
+        setShown((now) => ({ ...now, [key]: { id, url: image.url } }));
+        setForm((now) => ({
+          ...now,
+          values: { ...now.values, [key]: id },
+          images: Object.fromEntries(Object.entries(now.images).filter(([k]) => k !== key)),
+        }));
       }
       for (const key of changedTexts) {
         failing = key;
-        await writes.setText(key, form.texts[key] ?? "");
+        const body = form.texts[key] ?? "";
+        await writes.setText(key, body);
+        setBase((now) => ({ ...now, texts: { ...now.texts, [key]: body } }));
       }
       failing = undefined;
       const values = { ...Object.fromEntries(changedKeys.map((k) => [k, form.values[k] ?? ""])), ...uploaded };
       if (Object.keys(values).length > 0) await writes.save(values);
-      setBase({ ...form, values: { ...form.values, ...uploaded }, images: {} });
-      setForm((now) => ({ ...now, values: { ...now.values, ...uploaded }, images: {} }));
+      setBase((now) => ({ ...now, values: { ...now.values, ...values } }));
       setSent({ kind: "saved" });
     } catch (error) {
       const named = refusedField(error);
       const key = named?.member.startsWith("values.") === true ? named.member.slice("values.".length) : undefined;
       const setting = key === undefined ? undefined : settings.get(key as AdminSettingKey);
-      const field = topic.sections.flatMap((s) => s.fields).find((f) => f.kind === "setting" && f.key === key);
-      if (key !== undefined && setting !== undefined)
-        refuse({ [key]: ruleOf(t, setting, field?.kind === "setting" ? field.unit : undefined) });
+      if (key !== undefined && setting !== undefined) refuse({ [key]: ruleOf(t, setting) });
       else if (failing !== undefined && named !== undefined) refuse({ [failing]: named.detail });
       else setSent({ kind: "refused", reason: refusalDetail(error) });
     }
@@ -310,7 +322,7 @@ export function TopicForm({
   const single = base.values["single_user"] === "true";
 
   /** A field of a section, drawn by what it holds. */
-  const field = (f: SettingField): ReactNode => {
+  const field = (f: SettingField, alone?: string): ReactNode => {
     if (f.kind === "text") {
       const key = f.key;
       return (
@@ -319,6 +331,7 @@ export function TopicForm({
           id={controlOf(key)}
           name={key}
           label={t(wordOf(textLabels, key))}
+          row
           hint={key === "name" ? t("staff_settings.text.name.about") : undefined}
           defaultValue={form.texts[key] ?? ""}
           multiline={f.lines > 1}
@@ -333,7 +346,17 @@ export function TopicForm({
     if (f.kind === "image") {
       const setting = settings.get(f.key);
       const picked = form.images[f.key];
-      const shown = picked?.url ?? (form.values[f.key] === "" ? undefined : setting?.image?.url);
+      const value = form.values[f.key] ?? "";
+      const kept = shownImages[f.key];
+      const shown =
+        picked?.url ??
+        (value === ""
+          ? undefined
+          : setting?.value === value && setting.image !== undefined
+            ? setting.image.url
+            : kept?.id === value
+              ? kept.url
+              : setting?.image?.url);
       return (
         <Stack key={f.key} gap="screen-row-gap">
           <PictureField
@@ -364,6 +387,7 @@ export function TopicForm({
             id={controlOf(f.alt)}
             name={f.alt}
             label={t(wordOf(textLabels, f.alt))}
+            row
             defaultValue={form.texts[f.alt] ?? ""}
             multiline
             rows={2}
@@ -418,11 +442,11 @@ export function TopicForm({
           }}
         />
       );
-    return settingField(f);
+    return settingField(f, alone);
   };
 
   /** A setting drawn by its kind: a list of its options, a select, a number, a text. */
-  const settingField = (f: SettingField & { kind: "setting" }): ReactNode => {
+  const settingField = (f: SettingField & { kind: "setting" }, alone: string | undefined): ReactNode => {
     const setting = settings.get(f.key);
     if (setting === undefined) return null;
     const value = form.values[f.key] ?? "";
@@ -448,6 +472,9 @@ export function TopicForm({
                   <Box as="span" text="caption" tone="muted" breaks="phrase">
                     {t(wordOf(choiceAbouts, f.key), { value: optionOf(option) })}
                   </Box>
+                  {irreversibleChoices[f.key] === option && (
+                    <Irreversible>{t("staff_settings.irreversible", { what: f.key })}</Irreversible>
+                  )}
                 </Stack>
               ),
             }))}
@@ -462,23 +489,40 @@ export function TopicForm({
         </Stack>
       );
     }
+    // What cannot be undone is marked under its row, in the text's color, beside the question Save asks.
+    const mark = irreversibleKeys.has(f.key) ? (
+      <Irreversible>{t("staff_settings.irreversible", { what: f.key })}</Irreversible>
+    ) : undefined;
     const row = (control: ReactNode, wide = false) => (
-      <SettingRow key={f.key} id={rowOf(f.key)} label={label} about={about} form error={faults[f.key]} wide={wide}>
+      <SettingRow
+        key={f.key}
+        id={rowOf(f.key)}
+        label={label}
+        about={about}
+        form
+        error={faults[f.key]}
+        wide={wide}
+        values={mark}
+      >
         {control}
       </SettingRow>
     );
     switch (setting.kind) {
       case "bool":
-        return row(
-          <Select
-            name={f.key}
-            options={["true", "false"].map((v) => ({ value: v, label: t("staff_settings.bool", { value: v }) }))}
-            value={value === "true" ? "true" : "false"}
-            onChange={(v) => {
-              setValue(f.key, v);
+        return (
+          <OnOffRow
+            key={f.key}
+            id={rowOf(f.key)}
+            label={label}
+            about={about}
+            on={value === "true"}
+            onChange={(on) => {
+              setValue(f.key, on ? "true" : "false");
             }}
-            isDisabled={busy}
-          />,
+            disabled={busy}
+            error={faults[f.key]}
+            values={mark}
+          />
         );
       case "enum": {
         const family = families[f.key] ?? "audience";
@@ -502,7 +546,7 @@ export function TopicForm({
         );
       }
       case "int": {
-        const factor = f.unit === undefined ? 1 : (factors[f.unit] ?? 1);
+        const factor = factorOf(f.key);
         return row(
           <NumberField
             name={f.key}
@@ -538,6 +582,8 @@ export function TopicForm({
             id={controlOf(f.key)}
             name={f.key}
             label={label}
+            labelHidden={alone === label}
+            row
             hint={about}
             type={setting.kind === "email" ? "email" : "text"}
             defaultValue={value}
@@ -557,7 +603,7 @@ export function TopicForm({
   return (
     <>
       <SettingsScreen
-        sub={back !== undefined}
+        sub
         icon={back === undefined ? topic.icon : undefined}
         title={title}
         back={
@@ -597,13 +643,17 @@ export function TopicForm({
             heading={t(wordOf(sectionHeadings, s.id))}
             about={s.about ? t(wordOf(sectionAbouts, s.id)) : undefined}
           >
-            {single && hiddenOnSingle.has(s.id) ? (
+            {single && hiddenOnSingle.has(s.id) && (
               <Box as="p" breaks="phrase">
                 {t("staff_settings.single_user.hidden")}
               </Box>
-            ) : (
-              s.fields.map(field)
             )}
+            {s.fields
+              // On a one-person server, a section of signing up keeps only what turns that off.
+              .filter(
+                (f) => !(single && hiddenOnSingle.has(s.id) && !(f.kind === "setting" && f.key === "single_user")),
+              )
+              .map((f) => field(f, s.fields.length === 1 ? t(wordOf(sectionHeadings, s.id)) : undefined))}
           </SettingsSection>
         ))}
       </SettingsScreen>

@@ -23,7 +23,7 @@ type About<K extends string> = `staff_settings.setting.${K}.about` extends Messa
 type Choices<K extends string> = `staff_settings.choice.${K}.about` extends MessageId ? K : never;
 
 /** What a number counts, as its field says after it; a field in hours or minutes holds seconds ×3600 or ×60. */
-export type Unit =
+type Unit =
   | "days"
   | "hours"
   | "minutes"
@@ -98,9 +98,9 @@ const settingTopics: readonly SettingTopic[] = [
     path: "general",
     icon: "about",
     sections: [
-      section("about", [text("name"), text("short_description", 3), text("description", 8)], true),
-      section("language", [setting("default_locale", { about: true })]),
-      section("contact", [setting("contact_account", { about: true }), setting("contact_email", { about: true })]),
+      section("about", [text("name"), text("short_description", 3), text("description", 8)]),
+      section("language", [setting("default_locale")]),
+      section("contact", [setting("contact_account"), setting("contact_email", { about: true })]),
       section("images", [
         { kind: "image", key: "thumbnail", alt: "thumbnail_alt" },
         { kind: "image", key: "preview_image", alt: "preview_image_alt" },
@@ -111,20 +111,19 @@ const settingTopics: readonly SettingTopic[] = [
     path: "registration",
     icon: "signUp",
     sections: [
-      section("mode", [choices("registration_mode")]),
-      section("single_user", [setting("single_user", { about: true })]),
+      section("mode", [choices("registration_mode"), setting("single_user", { about: true })]),
       section("invites", [
         setting("invite_creators", { about: true }),
         setting("member_invite_max_active", { about: true, unit: "invites" }),
         setting("member_invite_max_uses", { unit: "people" }),
         setting("member_invite_max_lifetime_seconds", { about: true, unit: "hours" }),
       ]),
-      section("providers_only", [setting("login_providers_only", { about: true })]),
+      section("providers_only", [setting("login_providers_only")]),
       section("apps", [
         setting("user_app_registration", { about: true }),
-        setting("dynamic_client_registration", { about: true }),
-        setting("oauth_metadata_document_clients", { about: true }),
-        setting("oauth_client_rate_limits", { about: true }),
+        setting("dynamic_client_registration"),
+        setting("oauth_metadata_document_clients"),
+        setting("oauth_client_rate_limits"),
       ]),
     ],
   },
@@ -132,10 +131,7 @@ const settingTopics: readonly SettingTopic[] = [
     path: "content",
     icon: "compose",
     sections: [
-      section("posts", [
-        setting("max_status_length", { unit: "characters" }),
-        setting("require_media_description", { about: true }),
-      ]),
+      section("posts", [setting("max_status_length", { unit: "characters" }), setting("require_media_description")]),
       section("timelines", [
         setting("local_timeline_visibility", { about: true }),
         setting("federated_timeline_visibility"),
@@ -156,11 +152,8 @@ const settingTopics: readonly SettingTopic[] = [
         setting("max_article_bytes", { about: true }),
         setting("max_article_images", { unit: "images" }),
       ]),
-      section("events", [
-        setting("event_creators", { about: true }),
-        setting("event_records_retention_days", { about: true, unit: "days" }),
-      ]),
-      section("landing", [setting("public_counts", { about: true }), setting("featured_accounts", { about: true })]),
+      section("events", [setting("event_creators"), setting("event_records_retention_days", { unit: "days" })]),
+      section("landing", [setting("public_counts"), setting("featured_accounts")]),
     ],
   },
   {
@@ -169,7 +162,7 @@ const settingTopics: readonly SettingTopic[] = [
     sections: [
       section("federation_mode", [choices("federation_mode")]),
       section("federation_scope", [choices("federation_scope")]),
-      section("signatures", [setting("authorized_fetch", { about: true })]),
+      section("signatures", [setting("authorized_fetch")]),
       section("remote_media", [
         setting("remote_media_policy", { about: true }),
         setting("remote_media_cache_ttl_seconds", { unit: "minutes" }),
@@ -181,7 +174,7 @@ const settingTopics: readonly SettingTopic[] = [
         setting("relay_status_retention_days", { about: true, unit: "days" }),
       ]),
       section("domain_actions", [
-        setting("domain_actions_visibility", { about: true }),
+        setting("domain_actions_visibility"),
         setting("domain_actions_rationale_visibility", { about: true }),
       ]),
     ],
@@ -193,7 +186,7 @@ const settingTopics: readonly SettingTopic[] = [
       section("hook_inbound_status", [
         setting("hook_inbound_status_mode"),
         setting("hook_inbound_status_on_failure"),
-        setting("hook_inbound_status_unfollowed_direct", { about: true }),
+        setting("hook_inbound_status_unfollowed_direct"),
       ]),
       section("hook_inbound_follow", [setting("hook_inbound_follow_mode"), setting("hook_inbound_follow_on_failure")]),
       section("hook_signup_check", [
@@ -219,7 +212,7 @@ const settingTopics: readonly SettingTopic[] = [
     icon: "search",
     sections: [
       section("search_engines", [choices("search_indexing"), setting("indexable_default", { about: true })]),
-      section("security", [setting("security_contact", { about: true })]),
+      section("security", [setting("security_contact")]),
       section("ai", [choices("ai_usage")]),
       section("full_text_search", [setting("search_visibilities", { about: true })]),
     ],
@@ -241,10 +234,7 @@ const settingTopics: readonly SettingTopic[] = [
     sections: [
       section(
         "auto_delete_default",
-        [
-          setting("auto_delete_default_enabled", { about: true }),
-          setting("auto_delete_default_min_age_days", { unit: "days" }),
-        ],
+        [setting("auto_delete_default_enabled"), setting("auto_delete_default_min_age_days", { unit: "days" })],
         true,
       ),
       section("auto_delete_default_kept", [
@@ -331,11 +321,25 @@ export const translationTopic: SettingTopic = {
     section("translation_limits", [
       setting("translation_user_monthly_characters", { about: true, unit: "characters" }),
       setting("translation_server_monthly_characters", { unit: "characters" }),
-      setting("translation_retention_days", { about: true, unit: "days" }),
+      setting("translation_retention_days", { unit: "days" }),
     ]),
     section("translation_reports", [setting("translation_reports_to_server", { about: true })]),
   ],
 };
+
+/**
+ * What a number's field shows of its setting: the setting's value divided by this. Only a setting the server keeps in
+ * another unit than its field shows has one (seconds shown as hours or minutes, bytes as MiB); a setting kept in
+ * minutes or days is shown as it is.
+ */
+const factors: Readonly<Partial<Record<AdminSettingKey, number>>> = {
+  member_invite_max_lifetime_seconds: 3600,
+  remote_media_cache_ttl_seconds: 60,
+  remote_media_cache_max_bytes: 1_048_576,
+};
+
+/** The factor of `key`'s field: 1 for a setting shown in the unit the server keeps it in. */
+export const factorOf = (key: string): number => factors[key as AdminSettingKey] ?? 1;
 
 /** The topic at `path`; undefined for none. */
 export const topicAt = (path: string): SettingTopic | undefined => settingTopics.find((t) => t.path === path);

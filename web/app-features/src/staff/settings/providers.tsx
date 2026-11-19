@@ -8,7 +8,8 @@
 // local and unlisted posts; `private` and `direct` go only to one named with them).
 
 import { useTranslationProviders, type TranslationProvider } from "@my/app-data";
-import { Box, Button, CheckField, FieldError, Row, Stack } from "@my/design-system";
+import { Box, Button, CheckField, Row, Stack } from "@my/design-system";
+import { OnOffRow } from "./parts";
 import type { ReactNode } from "react";
 import { useStaffStrings } from "../parts";
 
@@ -95,64 +96,58 @@ export function ProvidersField({
         const receives = named.get(p.id) ?? unnamed;
         const place = used.indexOf(p.id);
         return (
-          <Stack key={p.id} gap="hair">
-            <CheckField
-              id={i === 0 ? id : `${id}-${p.id}`}
-              name="translation_providers"
-              value={p.id}
-              label={t("staff_settings.providers.use", { name: p.name })}
-              checked={on}
-              describedBy={i === 0 && error !== undefined ? `${id}-error` : undefined}
-              onChange={(checked) => {
-                set(checked ? [...used, p.id] : used.filter((u) => u !== p.id));
-              }}
-              touch
-              disabled={disabled}
-            />
-            {on && (
-              <Stack gap="hair">
-                <Box as="p" text="caption" tone="muted">
-                  {t("staff_settings.providers.receives", { name: p.name })}
-                </Box>
-                <Row wrap gap="screen-tabs-gap">
-                  {audiences.map((a) => (
-                    <CheckField
-                      key={a}
-                      id={`${id}-${p.id}-${a}`}
-                      name={`translation_provider_visibilities.${p.id}`}
-                      value={a}
-                      label={t("staff_settings.providers.audience", { audience: a })}
-                      checked={receives.includes(a)}
-                      onChange={(checked) => {
-                        const next = new Map(named);
-                        next.set(p.id, checked ? [...receives, a] : receives.filter((r) => r !== a));
-                        set(used, next);
-                      }}
-                      touch
-                      disabled={disabled}
-                    />
-                  ))}
-                </Row>
-                {place > 0 && (
-                  <Row>
-                    <Button
-                      size="timeline"
-                      touch
-                      isDisabled={disabled}
-                      onPress={() => {
-                        set([p.id, ...used.filter((u) => u !== p.id)]);
-                      }}
-                    >
-                      {t("staff_settings.providers.first", { name: p.name })}
-                    </Button>
+          <OnOffRow
+            key={p.id}
+            id={i === 0 ? id : `${id}-${p.id}`}
+            label={t("staff_settings.providers.use", { name: p.name })}
+            on={on}
+            onChange={(checked) => {
+              set(checked ? [...used, p.id] : used.filter((u) => u !== p.id));
+            }}
+            disabled={disabled}
+            error={i === 0 ? error : undefined}
+            values={
+              on ? (
+                <Stack gap="hair">
+                  <Row wrap gap="screen-tabs-gap">
+                    {audiences.map((a) => (
+                      <CheckField
+                        key={a}
+                        id={`${id}-${p.id}-${a}`}
+                        name={`translation_provider_visibilities.${p.id}`}
+                        value={a}
+                        label={t("staff_settings.providers.audience", { audience: a })}
+                        checked={receives.includes(a)}
+                        onChange={(checked) => {
+                          const next = new Map(named);
+                          next.set(p.id, checked ? [...receives, a] : receives.filter((r) => r !== a));
+                          set(used, next);
+                        }}
+                        touch
+                        disabled={disabled}
+                      />
+                    ))}
                   </Row>
-                )}
-              </Stack>
-            )}
-          </Stack>
+                  {place > 0 && (
+                    <Row>
+                      <Button
+                        size="timeline"
+                        touch
+                        isDisabled={disabled}
+                        onPress={() => {
+                          set([p.id, ...used.filter((u) => u !== p.id)]);
+                        }}
+                      >
+                        {t("staff_settings.providers.first", { name: p.name })}
+                      </Button>
+                    </Row>
+                  )}
+                </Stack>
+              ) : undefined
+            }
+          />
         );
       })}
-      {error !== undefined && <FieldError id={`${id}-error`}>{error}</FieldError>}
     </Stack>
   );
 }

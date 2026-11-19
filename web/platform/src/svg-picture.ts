@@ -15,6 +15,18 @@ export type SvgPictureSpec = {
   readonly fit?: readonly [number, number] | undefined;
 };
 
+/**
+ * `svg` with the size of its viewBox as its width and height: a browser may refuse to draw on a canvas an SVG with no
+ * size of its own (Firefox), which a sanitized SVG often lacks.
+ */
+function sized(svg: string, viewBox: { readonly width: number; readonly height: number }): string {
+  const doc = new DOMParser().parseFromString(svg, "image/svg+xml");
+  const root = doc.documentElement;
+  root.setAttribute("width", String(viewBox.width));
+  root.setAttribute("height", String(viewBox.height));
+  return new XMLSerializer().serializeToString(doc);
+}
+
 /** Reads `svg` as an image, through a `blob:` URL that it lets go once read. */
 async function imageOf(svg: string): Promise<HTMLImageElement> {
   const url = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
@@ -48,7 +60,7 @@ export async function drawSvgPictures(
   viewBox: { readonly width: number; readonly height: number },
   specs: readonly SvgPictureSpec[],
 ): Promise<Blob[]> {
-  const image = await imageOf(svg);
+  const image = await imageOf(sized(svg, viewBox));
   const pictures: Blob[] = [];
   for (const spec of specs) {
     const canvas = document.createElement("canvas");

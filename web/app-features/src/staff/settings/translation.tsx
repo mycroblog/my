@@ -18,7 +18,7 @@ import { SettingsFacts, SettingsScreen, SettingsSection, useLocale } from "@my/d
 import type { ReactNode } from "react";
 import { useStaffStrings } from "../parts";
 import { TopicForm } from "./form";
-import { ScreenNotice } from "./parts";
+import { ScreenNotice, type AdminSubProps } from "./parts";
 import { translationTopic } from "./topics";
 
 /** Reads what the screen shows, for the route's loader. */
@@ -31,6 +31,7 @@ function Usage(): ReactNode {
   const { t } = useStaffStrings();
   const { locale } = useLocale();
   const { overview, status, retry } = useTranslationOverview();
+  const limit = useAdminSettings().settings?.get("translation_server_monthly_characters")?.value;
   const heading = t("staff_settings.translation_usage");
   if (overview === undefined)
     return (
@@ -46,13 +47,19 @@ function Usage(): ReactNode {
       </SettingsSection>
     );
   const percent = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
+  const number = new Intl.NumberFormat(locale);
   const requests = overview.cache_hits + overview.cache_misses;
   return (
     <SettingsSection heading={heading} about={t("staff_settings.translation_usage.about", { month: overview.month })}>
       <SettingsFacts
         label={heading}
         items={[
-          { text: t("staff_settings.translation_usage.characters", { count: overview.characters }) },
+          {
+            text: t("staff_settings.translation_usage.of_limit", {
+              used: number.format(overview.characters),
+              limit: number.format(Number(limit ?? 0)),
+            }),
+          },
           {
             text:
               overview.cache_hit_rate === undefined
@@ -68,14 +75,18 @@ function Usage(): ReactNode {
   );
 }
 
-/** Translation's settings, once they are read. */
-export function TranslationSettingsScreen(): ReactNode {
+/**
+ * Translation's settings, once they are read. Its route holds the reader back while the form has changes not saved
+ * (`onUnsaved`, `leaving`).
+ */
+export function TranslationSettingsScreen({ onUnsaved, leaving }: Partial<AdminSubProps> = {}): ReactNode {
   const { t } = useStaffStrings();
   const read = useAdminSettings();
   const title = t("staff.entry.translation");
   if (read.settings === undefined || read.texts === undefined)
     return (
       <SettingsScreen
+        sub
         icon={translationTopic.icon}
         title={title}
         notice={
@@ -88,6 +99,14 @@ export function TranslationSettingsScreen(): ReactNode {
       />
     );
   return (
-    <TopicForm topic={translationTopic} title={title} settings={read.settings} texts={read.texts} before={<Usage />} />
+    <TopicForm
+      topic={translationTopic}
+      title={title}
+      settings={read.settings}
+      texts={read.texts}
+      before={<Usage />}
+      onUnsaved={onUnsaved}
+      leaving={leaving}
+    />
   );
 }

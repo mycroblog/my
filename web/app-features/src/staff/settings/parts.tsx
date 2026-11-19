@@ -5,7 +5,18 @@
 // nothing (with the way to its list); the question before leaving a form with changes not saved; what a screen under
 // an entry is given by its route; and a value to pass on, with the button that copies it.
 
-import { Button, ConfirmDialog, CopyBlock, FeedNotice, TextLink } from "@my/design-system";
+import {
+  Box,
+  Button,
+  ConfirmDialog,
+  CopyBlock,
+  FeedNotice,
+  Icon,
+  Row,
+  Select,
+  SettingRow,
+  TextLink,
+} from "@my/design-system";
 import { copyText } from "@my/platform";
 import { useState, type ReactNode } from "react";
 import { useStaffStrings } from "../parts";
@@ -94,5 +105,62 @@ export function CopyValue({ label, value, copy }: { label: string; value: string
       }
       result={copied === undefined ? undefined : t(copied ? "staff_settings.copied" : "staff_settings.copy_failed")}
     />
+  );
+}
+
+/**
+ * A setting that is on or off, in a form saved as a whole: its row, with the one select of On and Off that every such
+ * setting of the administration takes (a switch saves at once, which no form here does), and what it holds under it.
+ */
+export function OnOffRow({
+  id,
+  label,
+  about,
+  on,
+  onChange,
+  disabled = false,
+  error,
+  values,
+}: {
+  id: string;
+  label: string;
+  about?: string | undefined;
+  on: boolean;
+  onChange: (on: boolean) => void;
+  disabled?: boolean | undefined;
+  error?: string | undefined;
+  /** What stands close under the row as its own (a mark of what cannot be undone, what the setting holds). */
+  values?: ReactNode;
+}): ReactNode {
+  const { t } = useStaffStrings();
+  return (
+    <SettingRow id={id} label={label} about={about} form error={error} values={values}>
+      <Select
+        name={id}
+        options={["true", "false"].map((v) => ({ value: v, label: t("staff_settings.bool", { value: v }) }))}
+        value={on ? "true" : "false"}
+        onChange={(v) => {
+          onChange(v === "true");
+        }}
+        isDisabled={disabled}
+      />
+    </SettingRow>
+  );
+}
+
+/**
+ * The mark of a choice or an action that cannot be undone, in the text's color with the glyph of caution: the one look
+ * every such option and act of the administration has, beside the question that confirms it.
+ */
+export function Irreversible({ children }: { children: string }): ReactNode {
+  return (
+    <Row align="start" gap="entry-caption">
+      <Row as="span" inline line rigid align="center">
+        <Icon name="caution" place="caption" />
+      </Row>
+      <Box as="span" text="caption" weight="strong" breaks="phrase">
+        {children}
+      </Box>
+    </Row>
   );
 }

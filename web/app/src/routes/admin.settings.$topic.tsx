@@ -6,6 +6,9 @@
 
 import { AdminSettingsTopicScreen, loadAdminSettingsTopic, useAdminSettingsTopicTitle } from "@my/app-features";
 import { createFileRoute } from "@tanstack/react-router";
+import icon from "../../../brand/icon.svg";
+import logoDark from "../../../brand/Wordmark-DarkBg.svg";
+import logo from "../../../brand/Wordmark-Primary-Color.svg";
 import { adminSubLoad, AdminSubHeading, AdminSubPage } from "../shell/staff";
 
 export const Route = createFileRoute("/admin/settings/$topic")({
@@ -15,6 +18,9 @@ export const Route = createFileRoute("/admin/settings/$topic")({
   // A screen of its own opens at its top.
   staticData: { scroll: "top" },
 });
+
+/** The built-in images of the brand, which the icon and logo page shows while the server has none of its own. */
+const builtIn = { icon, logo, logo_dark: logoDark };
 
 function AdminSettingsTopicPage() {
   const { data } = Route.useRouteContext();
@@ -27,7 +33,7 @@ function AdminSettingsTopicPage() {
       returnTo={`/admin/settings/${topic}`}
       heading={<Heading />}
     >
-      {(sub) => <AdminSettingsTopicScreen topic={topic} {...sub} />}
+      {(sub) => <AdminSettingsTopicScreen topic={topic} builtIn={builtIn} {...sub} />}
     </AdminSubPage>
   );
 }

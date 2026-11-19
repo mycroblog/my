@@ -237,3 +237,4 @@ export { loadRelays, NewRelayScreen, RelayScreen, useRelayTitle } from "./staff/
 export { loadRules, NewRuleScreen, RuleScreen } from "./staff/rules";
 export type { AdminSubProps } from "./staff/settings/parts";
 export { AdminSettingsTopicScreen, loadAdminSettingsTopic, useAdminSettingsTopicTitle } from "./staff/settings/screen";
+export { loadTranslationSettings, TranslationSettingsScreen } from "./staff/settings/translation";

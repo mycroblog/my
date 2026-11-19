@@ -219,10 +219,6 @@
     "defaultMessage": "Name and descriptions",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.section.about.about": {
-    "defaultMessage": "Written once, in any language, and shown as they are in every language.",
-    "description": "The line under the heading Name and descriptions: what the section's settings do. Read by administrators."
-  },
   "staff_settings.section.language": {
     "defaultMessage": "Language",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
@@ -237,10 +233,6 @@
   },
   "staff_settings.section.mode": {
     "defaultMessage": "Who can sign up",
-    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.section.single_user": {
-    "defaultMessage": "One-person server",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.invites": {
@@ -388,31 +380,31 @@
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_status": {
-    "defaultMessage": "Posts from other servers (inbound.status)",
+    "defaultMessage": "Posts from other servers",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_follow": {
-    "defaultMessage": "Follows from other servers (inbound.follow)",
+    "defaultMessage": "Follows from other servers",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_signup_check": {
-    "defaultMessage": "Sign-ups (signup.check)",
+    "defaultMessage": "Sign-ups",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_media_check": {
-    "defaultMessage": "Media (media.check)",
+    "defaultMessage": "Media",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_local_status": {
-    "defaultMessage": "Posts of this server (local.status)",
+    "defaultMessage": "Posts of this server",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_actor": {
-    "defaultMessage": "Accounts of other servers (inbound.actor)",
+    "defaultMessage": "Accounts of other servers",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_local_profile": {
-    "defaultMessage": "Profiles of this server (local.profile)",
+    "defaultMessage": "Profiles of this server",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.security": {
@@ -447,17 +439,9 @@
     "defaultMessage": "Default language",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.default_locale.about": {
-    "defaultMessage": "The app's language for new accounts, and for anyone whose language the app does not have.",
-    "description": "The line about the setting Default language: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.contact_account": {
     "defaultMessage": "Contact account",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.contact_account.about": {
-    "defaultMessage": "The username of an account of this server that people can contact.",
-    "description": "The line about the setting Contact account: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.contact_email": {
     "defaultMessage": "Contact email",
@@ -531,10 +515,6 @@
     "defaultMessage": "Sign in only with login providers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.login_providers_only.about": {
-    "defaultMessage": "While a provider is enabled, passwords and passkeys no longer sign in, and people without a linked provider cannot sign in again once their sessions end.",
-    "description": "The line about the setting Sign in only with login providers: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.user_app_registration": {
     "defaultMessage": "People can register apps",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
@@ -551,17 +531,9 @@
     "defaultMessage": "Accept apps by their metadata document",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.oauth_metadata_document_clients.about": {
-    "defaultMessage": "Accepts an app whose ID is the https address of its metadata, with no registration.",
-    "description": "The line about the setting Apps by their metadata document: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.oauth_client_rate_limits": {
     "defaultMessage": "Request caps of apps",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.oauth_client_rate_limits.about": {
-    "defaultMessage": "client_id=requests pairs, separated by commas: how many requests all users of an app may make in 5 minutes.",
-    "description": "The line about the setting Request caps of apps: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.max_status_length": {
     "defaultMessage": "Longest post",
@@ -570,10 +542,6 @@
   "staff_settings.setting.require_media_description": {
     "defaultMessage": "Media needs a description",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.require_media_description.about": {
-    "defaultMessage": "A post with an image, video or audio that has no description is refused.",
-    "description": "The line about the setting Media needs a description: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.local_timeline_visibility": {
     "defaultMessage": "Local timeline",
@@ -643,33 +611,17 @@
     "defaultMessage": "Who can create events",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.event_creators.about": {
-    "defaultMessage": "People with the permission to create events can, either way.",
-    "description": "The line about the setting Who can create events: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.event_records_retention_days": {
     "defaultMessage": "Keep answers to events",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.event_records_retention_days.about": {
-    "defaultMessage": "Days after an event ended to keep who answered, was approved, was invited and voted.",
-    "description": "The line about the setting Keep answers to events: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.public_counts": {
     "defaultMessage": "Show the server's numbers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.public_counts.about": {
-    "defaultMessage": "The front page shows how many members there are and how many public posts they made each day.",
-    "description": "The line about the setting Show the server's numbers: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.featured_accounts": {
     "defaultMessage": "Suggested accounts",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.featured_accounts.about": {
-    "defaultMessage": "Usernames of up to 20 accounts of this server, separated by spaces, suggested first in this order.",
-    "description": "The line about the setting Suggested accounts: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.federation_mode": {
     "defaultMessage": "Direction",
@@ -726,10 +678,6 @@
   "staff_settings.setting.domain_actions_visibility": {
     "defaultMessage": "Who sees the moderated servers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.domain_actions_visibility.about": {
-    "defaultMessage": "The list of the servers this server took action on.",
-    "description": "The line about the setting Who sees the moderated servers: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.domain_actions_rationale_visibility": {
     "defaultMessage": "Who sees the reasons",
@@ -790,10 +738,6 @@
   "staff_settings.setting.hook_inbound_status_unfollowed_direct": {
     "defaultMessage": "Also review messages from strangers",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.hook_inbound_status_unfollowed_direct.about": {
-    "defaultMessage": "Direct messages whose author nobody here follows go to the plugin too.",
-    "description": "The line about the setting Also review messages from strangers: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.hook_signup_check_reject": {
     "defaultMessage": "Refuse a sign-up it rejects",
@@ -870,10 +814,6 @@
   "staff_settings.setting.auto_delete_default_enabled": {
     "defaultMessage": "Automatic deletion",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.auto_delete_default_enabled.about": {
-    "defaultMessage": "Whether new accounts start with it on.",
-    "description": "The line about the setting Automatic deletion: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_min_age_days": {
     "defaultMessage": "Delete posts older than",
@@ -1047,10 +987,6 @@
     "defaultMessage": "Keep translations",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.translation_retention_days.about": {
-    "defaultMessage": "Days after a translation was made.",
-    "description": "The line about the setting Keep translations: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.translation_reports_to_server": {
     "defaultMessage": "Moderators can translate reports",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
@@ -1059,21 +995,9 @@
     "defaultMessage": "A report's comment counts as a followers-only post: it goes only to a provider allowed to receive those.",
     "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
   },
-  "staff_settings.setting.security_contact.about": {
-    "defaultMessage": "An https: or mailto: address for reports of security problems of this server. With one, the server answers /.well-known/security.txt.",
-    "description": "The line about the setting Security contact: what it does where that is not plain. Read by administrators."
-  },
-  "staff_settings.setting.dynamic_client_registration.about": {
-    "defaultMessage": "Tools can register as public apps without signing in (RFC 7591). Unused ones are deleted after a while.",
-    "description": "The line about the setting Apps can register themselves: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.max_article_bytes.about": {
     "defaultMessage": "How large the body of an article may be, counted in the HTML it makes (1,000 to 100,000).",
     "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
-  },
-  "staff_settings.setting.authorized_fetch.about": {
-    "defaultMessage": "Other servers must sign their requests to read posts and collections here (secure mode).",
-    "description": "The line about the setting Require signed fetches: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {Anyone} approval {After a moderator approves} invite {Only with an invite} other {Nobody}}",
@@ -1096,7 +1020,7 @@
     "description": "An option of the setting federation_scope, a radio in the list of its options. Read by administrators."
   },
   "staff_settings.choice.federation_scope.about": {
-    "defaultMessage": "{value, select, open {Every server that no domain action suspends.} other {Only the servers on the allowlist. Switching ends the follows with every other server. This cannot be undone.}}",
+    "defaultMessage": "{value, select, open {Every server that no domain action suspends.} other {Only the servers on the allowlist.}}",
     "description": "The line under an option of the setting federation_scope: what choosing it does, read before saving. Read by administrators."
   },
   "staff_settings.choice.search_indexing": {
@@ -1175,10 +1099,6 @@
     "defaultMessage": "Use the built-in image",
     "description": "The button that brings a brand image back to the built-in one when saved. Read by administrators."
   },
-  "staff_settings.brand.builtin": {
-    "defaultMessage": "The built-in image is used.",
-    "description": "Under a brand image while it uses the built-in one. Read by administrators."
-  },
   "staff_settings.brand.checking": {
     "defaultMessage": "Checking the file…",
     "description": "Under a brand image while the server checks the SVG picked. Read by administrators."
@@ -1203,9 +1123,9 @@
     "defaultMessage": "{code, select, malformed {This file is not a valid SVG. Export it again and choose it.} doctype {This SVG declares a DOCTYPE or entities. Export it without them.} not_svg {This file is not an SVG. Choose an SVG file.} no_viewbox {This SVG has no viewBox. Export it with one.} too_large {This file is too large. Export a simpler drawing.} too_many_elements {This SVG has too many elements. Export a simpler drawing.} too_deep {This SVG nests its elements too deep. Export a simpler drawing.} too_many_uses {This SVG repeats its parts too often. Export a simpler drawing.} aspect_ratio {This picture has the wrong shape: an icon must be square, a logo 1 to 8 times as wide as it is high.} text {This SVG has text. Change the text to outlines and export it again.} unsafe_css {This SVG has styles that cannot be used. Remove them and export it again.} not_opaque {The browser drew a picture that is not opaque. Try another browser.} dimensions {The browser drew a picture of the wrong size. Try another browser.} invalid_color {The color behind the icon is not a color. Enter one such as #ffffff.} other {This file cannot be used. Choose another SVG.}}",
     "description": "Under a brand image the server refused: why, by the code of its problem, and what to do. Read by administrators."
   },
-  "staff_settings.brand.file": {
-    "defaultMessage": "{kind, select, icon {Icon} logo {Logo} other {Logo for dark backgrounds}} (SVG)",
-    "description": "The label of the field of a brand image's SVG file. Read by administrators."
+  "staff_settings.brand.section": {
+    "defaultMessage": "Pictures",
+    "description": "The heading of the section of the icon, the logo and the logo for dark backgrounds at /admin/settings/branding. Read by administrators."
   },
   "staff_settings.documents.group": {
     "defaultMessage": "Documents",
@@ -1276,24 +1196,16 @@
     "description": "The title of a rule's page at /admin/rules/{id}. Read by administrators."
   },
   "staff_settings.rules.section": {
-    "defaultMessage": "Rule",
+    "defaultMessage": "Wording",
     "description": "The heading of the section of a rule's text, hint and place. Read by administrators."
   },
   "staff_settings.rules.text": {
     "defaultMessage": "Rule",
     "description": "The label of a rule's text. Read by administrators."
   },
-  "staff_settings.rules.text.about": {
-    "defaultMessage": "One line, written once in any language and shown as it is in every language.",
-    "description": "The hint under a rule's text. Read by administrators."
-  },
   "staff_settings.rules.hint": {
     "defaultMessage": "Explanation",
     "description": "The label of a rule's hint. Read by administrators."
-  },
-  "staff_settings.rules.hint.about": {
-    "defaultMessage": "Optional: what the rule means, shown under it.",
-    "description": "The hint under a rule's explanation. Read by administrators."
   },
   "staff_settings.rules.rule": {
     "defaultMessage": "{field, select, text {Write the rule on one line, in {max} characters at most.} other {Keep the explanation to {max} characters.}}",
@@ -1308,7 +1220,7 @@
     "description": "The heading of the last section of a rule's page. Read by administrators."
   },
   "staff_settings.rules.retire.about": {
-    "defaultMessage": "It leaves the rules at once and for good. Reports that cite it still refer to it.",
+    "defaultMessage": "Reports that cite it still refer to it.",
     "description": "The line under Retire the rule. Read by administrators."
   },
   "staff_settings.rules.retire.press": {
@@ -1376,7 +1288,7 @@
     "description": "Whether the server takes in the public posts a relay relays. Read by administrators."
   },
   "staff_settings.relays.last_day": {
-    "defaultMessage": "Last 24 hours: {taken} taken in, {dropped} dropped over the limit",
+    "defaultMessage": "Last 24 hours: {taken, number} taken in, {dropped, number} dropped",
     "description": "What a relay brought in during the last 24 hours, and what was dropped over the hourly limit. Read by administrators."
   },
   "staff_settings.relays.new": {
@@ -1599,6 +1511,10 @@
     "defaultMessage": "Copy the URL",
     "description": "The button that copies the callback URL. Read by administrators."
   },
+  "staff_settings.providers_admin.callback.next": {
+    "defaultMessage": "Once the provider is added, its page shows the callback URL to register at the provider: {url}",
+    "description": "On the form of a new login provider, under its connection: where the callback URL will be shown, with its form (the server's address, the provider's ID in place of <ID>). Read by administrators."
+  },
   "staff_settings.providers_admin.starts.title": {
     "defaultMessage": "Start limiting sign-in now?",
     "description": "The question before adding or enabling a provider that starts the limit of sign-in to providers at once. Read by administrators."
@@ -1654,10 +1570,6 @@
   "staff_settings.providers.use": {
     "defaultMessage": "Use {name}",
     "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
-  },
-  "staff_settings.providers.receives": {
-    "defaultMessage": "Posts {name} receives",
-    "description": "Over the checkboxes of the visibilities a provider receives. Read by administrators."
   },
   "staff_settings.providers.audience": {
     "defaultMessage": "{audience, select, public {Public} local {Local} unlisted {Quiet public} private {Followers only} other {Direct}}",
@@ -1740,7 +1652,7 @@
     "description": "The heading of the form that denies a host. Read by administrators."
   },
   "staff_settings.hosts.deny.about": {
-    "defaultMessage": "No app whose metadata is on the host can sign in, and the tokens of its apps are revoked at once.",
+    "defaultMessage": "No app whose metadata is on the host can sign in.",
     "description": "The line under Deny a host. Read by administrators."
   },
   "staff_settings.hosts.deny.press": {
@@ -1807,10 +1719,6 @@
     "defaultMessage": "Counted in UTC, for {month}. What the limits count may differ from what a provider bills.",
     "description": "The line under This month on the Translation screen; month is YYYY-MM. Read by administrators."
   },
-  "staff_settings.translation_usage.characters": {
-    "defaultMessage": "{count, plural, one {# character sent to providers} other {# characters sent to providers}}",
-    "description": "How many characters of posts went to translation providers this month. Read by administrators."
-  },
   "staff_settings.translation_usage.kept": {
     "defaultMessage": "{share} of {count, plural, one {# request} other {# requests}} answered from kept translations",
     "description": "The cache hit rate of translation this month; share is a percentage. Read by administrators."
@@ -1826,5 +1734,13 @@
   "staff_settings.translation_usage.failed": {
     "defaultMessage": "This month's use could not be loaded.",
     "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.translation_usage.of_limit": {
+    "defaultMessage": "{used} of {limit} characters for the whole server",
+    "description": "This month's characters sent to translation providers against the server's monthly limit; both are formatted numbers. Read by administrators."
+  },
+  "staff_settings.irreversible": {
+    "defaultMessage": "{what, select, federation_scope {Ends the follows with every other server. This cannot be undone.} login_providers_only {People without a linked provider cannot sign in again once their sessions end.} auto_delete_max_age_days {Deletes the older posts of everyone. This cannot be undone.} retire {The rule leaves the rules for good. This cannot be undone.} delete {The provider is deleted for good. This cannot be undone.} deny {Revokes the tokens of the host's apps at once. This cannot be undone.} other {This cannot be undone.}}",
+    "description": "The mark, beside a caution glyph, of an option or an action of the administration that cannot be undone, by what it marks. Read by administrators."
   }
 }

@@ -69,9 +69,14 @@ export class Administration {
     return this.main.getByRole("link", { name: new RegExp(`^\\d+\\. ${escape(text)}(?: .+)?$`) });
   }
 
-  /** The rule of `text` at the place `n` of the rules in effect. */
-  ruleAt(n: number, text: string): Locator {
-    return this.main.getByRole("link", { name: `${String(n)}. ${text}`, exact: true });
+  /** The list of the rules in effect, in their order. */
+  get inEffect(): Locator {
+    return this.main.getByRole("list", { name: "In effect", exact: true });
+  }
+
+  /** What the list of the rules in effect holds where the rule `first` comes before the rule `then`, any between. */
+  inOrder(first: string, then: string): RegExp {
+    return new RegExp(`^[\\s\\S]*${escape(first)}[\\s\\S]*${escape(then)}[\\s\\S]*$`);
   }
 
   /** A rule in the list of the retired rules, by its text. */

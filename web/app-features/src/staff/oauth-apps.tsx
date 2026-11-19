@@ -42,7 +42,7 @@ import {
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { StaffAddress, StaffSearch } from "./entries";
 import { useMoment, useStaffStrings } from "./parts";
-import { ScreenNotice, type AdminSubProps } from "./settings/parts";
+import { Irreversible, ScreenNotice, type AdminSubProps } from "./settings/parts";
 
 /** The address of the apps. */
 const adminOAuthAppsPath = "/admin/oauth-apps";
@@ -87,10 +87,10 @@ function AppRow({
     <SettingsListRow
       title={app.name}
       inactive={app.state !== "enabled"}
-      standing={t("staff_settings.apps.state", { state: app.state })}
+      state={t("staff_settings.apps.state", { state: app.state })}
       facts={[
         t("staff_settings.apps.registration", { registration: app.registration }),
-        app.client_id,
+        ...(app.registration === "metadata_document" ? [app.client_id] : []),
         ...(owner === undefined ? [] : [owner]),
       ]}
       said={said === undefined ? null : { text: said, n: 1 }}
@@ -178,6 +178,7 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
   if (page.status !== "success")
     return (
       <SettingsScreen
+        sub
         icon="apps"
         title={title}
         notice={
@@ -192,7 +193,7 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
   const previous = trail.at(-1);
   return (
     <>
-      <SettingsScreen icon="apps" title={title}>
+      <SettingsScreen sub icon="apps" title={title}>
         {filter}
         <SettingsSection heading={t("staff_settings.apps.list")}>
           {page.items.length === 0 ? (
@@ -330,27 +331,6 @@ export function OAuthHostsScreen({ go }: AdminSubProps): ReactNode {
   return (
     <>
       <SettingsScreen sub title={t("staff_settings.hosts")} back={back}>
-        <SettingsSection heading={t("staff_settings.hosts.deny")} about={t("staff_settings.hosts.deny.about")}>
-          <TextField
-            key={round}
-            id={`${id}-host`}
-            name="host"
-            label={t("staff_settings.hosts.host")}
-            autoCapitalize="none"
-            maxLength={253}
-            error={state.kind === "refused" ? state.field : undefined}
-            onChange={(value) => {
-              setHost(value);
-              setState((was) => (was.kind === "refused" ? { kind: "idle" } : was));
-            }}
-          />
-          <Box>
-            <Button size="timeline" touch busy={state.kind === "sending"} onPress={press}>
-              {t("staff_settings.hosts.deny.press")}
-            </Button>
-          </Box>
-          <SettingsResult>{state.kind === "refused" ? state.reason : undefined}</SettingsResult>
-        </SettingsSection>
         <SettingsSection heading={t("staff_settings.hosts.list")}>
           {page.status !== "success" ? (
             <ScreenNotice
@@ -409,6 +389,29 @@ export function OAuthHostsScreen({ go }: AdminSubProps): ReactNode {
           {said !== undefined && !page.items.some((d) => d.host === said.host) && (
             <SettingsResult>{said.text}</SettingsResult>
           )}
+        </SettingsSection>
+        <SettingsSection heading={t("staff_settings.hosts.deny")} about={t("staff_settings.hosts.deny.about")}>
+          <TextField
+            key={round}
+            id={`${id}-host`}
+            name="host"
+            label={t("staff_settings.hosts.host")}
+            row
+            autoCapitalize="none"
+            maxLength={253}
+            error={state.kind === "refused" ? state.field : undefined}
+            onChange={(value) => {
+              setHost(value);
+              setState((was) => (was.kind === "refused" ? { kind: "idle" } : was));
+            }}
+          />
+          <Irreversible>{t("staff_settings.irreversible", { what: "deny" })}</Irreversible>
+          <Box>
+            <Button size="timeline" touch busy={state.kind === "sending"} onPress={press}>
+              {t("staff_settings.hosts.deny.press")}
+            </Button>
+          </Box>
+          <SettingsResult>{state.kind === "refused" ? state.reason : undefined}</SettingsResult>
         </SettingsSection>
       </SettingsScreen>
       <ModalPresence>

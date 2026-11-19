@@ -145,7 +145,7 @@ export const staffEntries: readonly StaffEntry[] = [
     icon: "translate",
     name: "staff.entry.translation",
     hint: "staff.entry.translation.hint",
-    Screen: TranslationSettingsScreen,
+    Screen: () => <TranslationSettingsScreen />,
     load: (data) => loadTranslationSettings(data),
   },
   {

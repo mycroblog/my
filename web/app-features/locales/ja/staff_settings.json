@@ -219,10 +219,6 @@
     "defaultMessage": "名前と説明",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.section.about.about": {
-    "defaultMessage": "1 つの言語で書いたものが、どの言語でもそのまま表示されます。",
-    "description": "The line under the heading Name and descriptions: what the section's settings do. Read by administrators."
-  },
   "staff_settings.section.language": {
     "defaultMessage": "言語",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
@@ -237,10 +233,6 @@
   },
   "staff_settings.section.mode": {
     "defaultMessage": "登録できる人",
-    "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.section.single_user": {
-    "defaultMessage": "一人のためのサーバー",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.invites": {
@@ -388,31 +380,31 @@
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_status": {
-    "defaultMessage": "ほかのサーバーからの投稿 (inbound.status)",
+    "defaultMessage": "ほかのサーバーからの投稿",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_follow": {
-    "defaultMessage": "ほかのサーバーからのフォロー (inbound.follow)",
+    "defaultMessage": "ほかのサーバーからのフォロー",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_signup_check": {
-    "defaultMessage": "登録 (signup.check)",
+    "defaultMessage": "登録",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_media_check": {
-    "defaultMessage": "メディア (media.check)",
+    "defaultMessage": "メディア",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_local_status": {
-    "defaultMessage": "このサーバーの投稿 (local.status)",
+    "defaultMessage": "このサーバーの投稿",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_inbound_actor": {
-    "defaultMessage": "ほかのサーバーのアカウント (inbound.actor)",
+    "defaultMessage": "ほかのサーバーのアカウント",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.hook_local_profile": {
-    "defaultMessage": "このサーバーのプロフィール (local.profile)",
+    "defaultMessage": "このサーバーのプロフィール",
     "description": "The heading of a section of a page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.section.security": {
@@ -447,17 +439,9 @@
     "defaultMessage": "既定の言語",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.default_locale.about": {
-    "defaultMessage": "新しいアカウントのアプリの言語です。アプリにない言語を使う人にも使います。",
-    "description": "The line about the setting Default language: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.contact_account": {
     "defaultMessage": "連絡先のアカウント",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.contact_account.about": {
-    "defaultMessage": "連絡を受けるこのサーバーのアカウントのユーザー名です。",
-    "description": "The line about the setting Contact account: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.contact_email": {
     "defaultMessage": "連絡先のメールアドレス",
@@ -531,10 +515,6 @@
     "defaultMessage": "ログインプロバイダーだけでログイン",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.login_providers_only.about": {
-    "defaultMessage": "有効なプロバイダーがある間、パスワードとパスキーではログインできません。プロバイダーと連携していない人は、セッションが切れると再びログインできません。",
-    "description": "The line about the setting Sign in only with login providers: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.user_app_registration": {
     "defaultMessage": "利用者がアプリを登録できる",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
@@ -551,17 +531,9 @@
     "defaultMessage": "メタデータ文書のアプリを受け付ける",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.oauth_metadata_document_clients.about": {
-    "defaultMessage": "ID がメタデータの https のアドレスであるアプリを、登録なしに受け付けます。",
-    "description": "The line about the setting Apps by their metadata document: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.oauth_client_rate_limits": {
     "defaultMessage": "アプリのリクエストの上限",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.oauth_client_rate_limits.about": {
-    "defaultMessage": "client_id=リクエスト数 の組をカンマで区切ります。アプリの全利用者が 5 分間にできるリクエストの数です。",
-    "description": "The line about the setting Request caps of apps: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.max_status_length": {
     "defaultMessage": "投稿の最大の長さ",
@@ -570,10 +542,6 @@
   "staff_settings.setting.require_media_description": {
     "defaultMessage": "メディアに説明を必須にする",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.require_media_description.about": {
-    "defaultMessage": "説明のない画像・動画・音声をつけた投稿は受け付けません。",
-    "description": "The line about the setting Media needs a description: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.local_timeline_visibility": {
     "defaultMessage": "ローカルタイムライン",
@@ -643,33 +611,17 @@
     "defaultMessage": "イベントを作れる人",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.event_creators.about": {
-    "defaultMessage": "イベントを作る権限を持つ人は、どちらでも作れます。",
-    "description": "The line about the setting Who can create events: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.event_records_retention_days": {
     "defaultMessage": "イベントの出欠の保存",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.event_records_retention_days.about": {
-    "defaultMessage": "イベントが終わってから、出欠の回答・承認・招待・投票の記録を残す日数です。",
-    "description": "The line about the setting Keep answers to events: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.public_counts": {
     "defaultMessage": "サーバーの数字を出す",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.public_counts.about": {
-    "defaultMessage": "トップページに、メンバーの数と 1 日ごとの公開の投稿の数を出します。",
-    "description": "The line about the setting Show the server's numbers: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.featured_accounts": {
     "defaultMessage": "おすすめのアカウント",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.featured_accounts.about": {
-    "defaultMessage": "このサーバーのアカウントのユーザー名を 20 個まで、スペースで区切って入れます。この順に先頭でおすすめします。",
-    "description": "The line about the setting Suggested accounts: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.federation_mode": {
     "defaultMessage": "連合の方向",
@@ -726,10 +678,6 @@
   "staff_settings.setting.domain_actions_visibility": {
     "defaultMessage": "処分したサーバーを見られる人",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.domain_actions_visibility.about": {
-    "defaultMessage": "このサーバーが処分したサーバーの一覧です。",
-    "description": "The line about the setting Who sees the moderated servers: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.domain_actions_rationale_visibility": {
     "defaultMessage": "理由を見られる人",
@@ -790,10 +738,6 @@
   "staff_settings.setting.hook_inbound_status_unfollowed_direct": {
     "defaultMessage": "フォローしていない人からのメッセージも審査",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.hook_inbound_status_unfollowed_direct.about": {
-    "defaultMessage": "ここで誰もフォローしていない送り主からのダイレクトメッセージも、プラグインに送ります。",
-    "description": "The line about the setting Also review messages from strangers: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.hook_signup_check_reject": {
     "defaultMessage": "拒否の判定で登録を断る",
@@ -870,10 +814,6 @@
   "staff_settings.setting.auto_delete_default_enabled": {
     "defaultMessage": "自動削除",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
-  },
-  "staff_settings.setting.auto_delete_default_enabled.about": {
-    "defaultMessage": "新しいアカウントで最初からオンにするかどうかです。",
-    "description": "The line about the setting Automatic deletion: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.setting.auto_delete_default_min_age_days": {
     "defaultMessage": "この日数を過ぎた投稿を削除",
@@ -1047,10 +987,6 @@
     "defaultMessage": "翻訳の保存",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
-  "staff_settings.setting.translation_retention_days.about": {
-    "defaultMessage": "翻訳してからの日数です。",
-    "description": "The line about the setting Keep translations: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.translation_reports_to_server": {
     "defaultMessage": "モデレーターが通報を翻訳できる",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
@@ -1059,21 +995,9 @@
     "defaultMessage": "通報のコメントはフォロワー限定の投稿として扱い、それを受け取れるサービスにだけ送ります。",
     "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
   },
-  "staff_settings.setting.security_contact.about": {
-    "defaultMessage": "このサーバーのセキュリティの問題の報告先です (https: か mailto: のアドレス)。設定すると /.well-known/security.txt を返します。",
-    "description": "The line about the setting Security contact: what it does where that is not plain. Read by administrators."
-  },
-  "staff_settings.setting.dynamic_client_registration.about": {
-    "defaultMessage": "ツールがログインせずに公開のアプリとして登録できます (RFC 7591)。使われないものはしばらくして削除されます。",
-    "description": "The line about the setting Apps can register themselves: what it does where that is not plain. Read by administrators."
-  },
   "staff_settings.setting.max_article_bytes.about": {
     "defaultMessage": "記事の本文の大きさの上限です。本文から作る HTML で数えます (1000〜100000)。",
     "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
-  },
-  "staff_settings.setting.authorized_fetch.about": {
-    "defaultMessage": "ほかのサーバーが投稿やコレクションを読むときに、署名を求めます (セキュアモード)。",
-    "description": "The line about the setting Require signed fetches: what it does where that is not plain. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {誰でも} approval {モデレーターの承認のあと} invite {招待がある人だけ} other {誰も登録できない}}",
@@ -1096,7 +1020,7 @@
     "description": "An option of the setting federation_scope, a radio in the list of its options. Read by administrators."
   },
   "staff_settings.choice.federation_scope.about": {
-    "defaultMessage": "{value, select, open {ドメインへの処分で停止していない、すべてのサーバーです。} other {許可リストのサーバーだけです。切り替えると、ほかのサーバーとのフォローは終わります。取り消せません。}}",
+    "defaultMessage": "{value, select, open {ドメインへの処分で停止していない、すべてのサーバーです。} other {許可リストのサーバーだけです。}}",
     "description": "The line under an option of the setting federation_scope: what choosing it does, read before saving. Read by administrators."
   },
   "staff_settings.choice.search_indexing": {
@@ -1175,10 +1099,6 @@
     "defaultMessage": "標準の画像にする",
     "description": "The button that brings a brand image back to the built-in one when saved. Read by administrators."
   },
-  "staff_settings.brand.builtin": {
-    "defaultMessage": "標準の画像を使っています。",
-    "description": "Under a brand image while it uses the built-in one. Read by administrators."
-  },
   "staff_settings.brand.checking": {
     "defaultMessage": "ファイルを確かめています…",
     "description": "Under a brand image while the server checks the SVG picked. Read by administrators."
@@ -1203,9 +1123,9 @@
     "defaultMessage": "{code, select, malformed {正しい SVG ではありません。書き出し直して選んでください。} doctype {DOCTYPE かエンティティの宣言があります。なしで書き出してください。} not_svg {SVG ファイルではありません。SVG ファイルを選んでください。} no_viewbox {viewBox がありません。viewBox つきで書き出してください。} too_large {ファイルが大きすぎます。図を簡単にして書き出し直してください。} too_many_elements {要素が多すぎます。図を簡単にして書き出し直してください。} too_deep {要素の入れ子が深すぎます。図を簡単にして書き出し直してください。} too_many_uses {部品の繰り返しが多すぎます。図を簡単にして書き出し直してください。} aspect_ratio {形が合いません。アイコンは正方形、ロゴは高さの 1〜8 倍の幅にしてください。} text {文字があります。文字をアウトラインにして書き出し直してください。} unsafe_css {使えないスタイルがあります。取り除いて書き出し直してください。} not_opaque {ブラウザーが透明な部分のある画像を描きました。別のブラウザーで試してください。} dimensions {ブラウザーが違う大きさの画像を描きました。別のブラウザーで試してください。} invalid_color {アイコンの背景の色が正しくありません。#ffffff のように入れてください。} other {このファイルは使えません。別の SVG を選んでください。}}",
     "description": "Under a brand image the server refused: why, by the code of its problem, and what to do. Read by administrators."
   },
-  "staff_settings.brand.file": {
-    "defaultMessage": "{kind, select, icon {アイコン} logo {ロゴ} other {暗い背景用のロゴ}} (SVG)",
-    "description": "The label of the field of a brand image's SVG file. Read by administrators."
+  "staff_settings.brand.section": {
+    "defaultMessage": "画像",
+    "description": "The heading of the section of the icon, the logo and the logo for dark backgrounds at /admin/settings/branding. Read by administrators."
   },
   "staff_settings.documents.group": {
     "defaultMessage": "文書",
@@ -1276,24 +1196,16 @@
     "description": "The title of a rule's page at /admin/rules/{id}. Read by administrators."
   },
   "staff_settings.rules.section": {
-    "defaultMessage": "ルール",
+    "defaultMessage": "文面",
     "description": "The heading of the section of a rule's text, hint and place. Read by administrators."
   },
   "staff_settings.rules.text": {
     "defaultMessage": "ルール",
     "description": "The label of a rule's text. Read by administrators."
   },
-  "staff_settings.rules.text.about": {
-    "defaultMessage": "1 行で書きます。1 つの言語で書いたものが、どの言語でもそのまま表示されます。",
-    "description": "The hint under a rule's text. Read by administrators."
-  },
   "staff_settings.rules.hint": {
     "defaultMessage": "説明",
     "description": "The label of a rule's hint. Read by administrators."
-  },
-  "staff_settings.rules.hint.about": {
-    "defaultMessage": "任意。ルールの意味を、ルールの下に表示します。",
-    "description": "The hint under a rule's explanation. Read by administrators."
   },
   "staff_settings.rules.rule": {
     "defaultMessage": "{field, select, text {ルールは 1 行、{max} 文字以内で書いてください。} other {説明は {max} 文字以内にしてください。}}",
@@ -1308,7 +1220,7 @@
     "description": "The heading of the last section of a rule's page. Read by administrators."
   },
   "staff_settings.rules.retire.about": {
-    "defaultMessage": "すぐにルールから外れます。このルールを示した通報からは、引き続き参照できます。",
+    "defaultMessage": "このルールを示した通報からは、引き続き参照できます。",
     "description": "The line under Retire the rule. Read by administrators."
   },
   "staff_settings.rules.retire.press": {
@@ -1376,7 +1288,7 @@
     "description": "Whether the server takes in the public posts a relay relays. Read by administrators."
   },
   "staff_settings.relays.last_day": {
-    "defaultMessage": "直近 24 時間: 受け取り {taken} 件、超過で破棄 {dropped} 件",
+    "defaultMessage": "直近 24 時間: 受け取り {taken, number} 件、超過で破棄 {dropped, number} 件",
     "description": "What a relay brought in during the last 24 hours, and what was dropped over the hourly limit. Read by administrators."
   },
   "staff_settings.relays.new": {
@@ -1552,7 +1464,7 @@
     "description": "The heading of a provider's state on its page. Read by administrators."
   },
   "staff_settings.providers_admin.field": {
-    "defaultMessage": "{field, select, name {名前} issuer {{kind, select, mastodon {サーバー} other {Issuer}}} clientId {クライアント ID} secret {クライアントシークレット} scopes {追加のスコープ} other {{kind, select, oidc {クレームの条件} github {Organization} other {Discord のサーバー}}}}}",
+    "defaultMessage": "{field, select, name {名前} issuer {{kind, select, mastodon {サーバー} other {発行者 (Issuer)}}} clientId {クライアント ID} secret {クライアントシークレット} scopes {追加のスコープ} other {{kind, select, oidc {クレームの条件} github {Organization} other {Discord のサーバー}}}}",
     "description": "The label of a field of a provider's form. Read by administrators."
   },
   "staff_settings.providers_admin.issuer.about": {
@@ -1598,6 +1510,10 @@
   "staff_settings.providers_admin.callback.copy": {
     "defaultMessage": "URL をコピー",
     "description": "The button that copies the callback URL. Read by administrators."
+  },
+  "staff_settings.providers_admin.callback.next": {
+    "defaultMessage": "追加すると、プロバイダーに登録するコールバック URL をそのページに表示します: {url}",
+    "description": "On the form of a new login provider, under its connection: where the callback URL will be shown, with its form (the server's address, the provider's ID in place of <ID>). Read by administrators."
   },
   "staff_settings.providers_admin.starts.title": {
     "defaultMessage": "ログインの制限をいま始めますか？",
@@ -1654,10 +1570,6 @@
   "staff_settings.providers.use": {
     "defaultMessage": "{name} を使う",
     "description": "The checkbox of whether posts are sent to a translation provider. Read by administrators."
-  },
-  "staff_settings.providers.receives": {
-    "defaultMessage": "{name} に送る投稿",
-    "description": "Over the checkboxes of the visibilities a provider receives. Read by administrators."
   },
   "staff_settings.providers.audience": {
     "defaultMessage": "{audience, select, public {公開} local {ローカル限定} unlisted {ひかえめな公開} private {フォロワー限定} other {ダイレクト}}",
@@ -1740,7 +1652,7 @@
     "description": "The heading of the form that denies a host. Read by administrators."
   },
   "staff_settings.hosts.deny.about": {
-    "defaultMessage": "そのホストにメタデータがあるアプリはログインできなくなり、トークンはすぐに失効します。",
+    "defaultMessage": "そのホストにメタデータがあるアプリはログインできなくなります。",
     "description": "The line under Deny a host. Read by administrators."
   },
   "staff_settings.hosts.deny.press": {
@@ -1807,10 +1719,6 @@
     "defaultMessage": "{month} の分を UTC で数えます。上限が数える量は、翻訳サービスの請求と違うことがあります。",
     "description": "The line under This month on the Translation screen; month is YYYY-MM. Read by administrators."
   },
-  "staff_settings.translation_usage.characters": {
-    "defaultMessage": "{count, plural, other {翻訳サービスに送った文字数: #}}",
-    "description": "How many characters of posts went to translation providers this month. Read by administrators."
-  },
   "staff_settings.translation_usage.kept": {
     "defaultMessage": "{count, plural, other {# 件}}のリクエストのうち {share} を保存済みの翻訳で返しました",
     "description": "The cache hit rate of translation this month; share is a percentage. Read by administrators."
@@ -1826,5 +1734,13 @@
   "staff_settings.translation_usage.failed": {
     "defaultMessage": "今月の使用量を読み込めませんでした。",
     "description": "When the month's use of translation could not be read, before Try again. Read by administrators."
+  },
+  "staff_settings.translation_usage.of_limit": {
+    "defaultMessage": "サーバー全体で {limit} 文字のうち {used} 文字",
+    "description": "This month's characters sent to translation providers against the server's monthly limit; both are formatted numbers. Read by administrators."
+  },
+  "staff_settings.irreversible": {
+    "defaultMessage": "{what, select, federation_scope {ほかのサーバーとのフォローが終わります。取り消せません。} login_providers_only {プロバイダーと連携していない人は、セッションが切れると再びログインできません。} auto_delete_max_age_days {全員の古い投稿を削除します。取り消せません。} retire {ルールから外れ、戻りません。取り消せません。} delete {プロバイダーを削除します。取り消せません。} deny {そのホストのアプリのトークンをすぐに失効させます。取り消せません。} other {取り消せません。}}",
+    "description": "The mark, beside a caution glyph, of an option or an action of the administration that cannot be undone, by what it marks. Read by administrators."
   }
 }

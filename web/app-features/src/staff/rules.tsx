@@ -43,7 +43,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings } from "./parts";
-import { LeaveDialog, ScreenNotice, type AdminSubProps } from "./settings/parts";
+import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "./settings/parts";
 
 /** The address of the rules. */
 const adminRulesPath = "/admin/rules";
@@ -63,6 +63,7 @@ export function AdminRulesScreen(): ReactNode {
   if (read.inEffect === undefined || read.retired === undefined)
     return (
       <SettingsScreen
+        sub
         icon="list"
         title={title}
         notice={
@@ -76,7 +77,7 @@ export function AdminRulesScreen(): ReactNode {
     );
   const full = read.inEffect.length >= ruleLimits.inEffect;
   return (
-    <SettingsScreen icon="list" title={title}>
+    <SettingsScreen sub icon="list" title={title}>
       <SettingsSection
         heading={t("staff_settings.rules.in_effect")}
         count={String(read.inEffect.length)}
@@ -155,7 +156,7 @@ function RuleFields({
         id={`${id}-text`}
         name="text"
         label={t("staff_settings.rules.text")}
-        hint={t("staff_settings.rules.text.about")}
+        row
         defaultValue={form.text}
         maxLength={ruleLimits.text}
         error={error("text")}
@@ -167,7 +168,7 @@ function RuleFields({
         id={`${id}-hint`}
         name="hint"
         label={t("staff_settings.rules.hint")}
-        hint={t("staff_settings.rules.hint.about")}
+        row
         defaultValue={form.hint}
         multiline
         rows={3}
@@ -371,33 +372,39 @@ function RuleForm({
         sub
         title={t("staff_settings.rules.one")}
         back={<BackToRules go={go} />}
+        // What ends the rule stands last and apart, after the form and its Save.
         foot={
-          <RuleBar
-            sent={f.sent}
-            busy={f.busy}
-            onSave={() => {
-              void save();
-            }}
-            label={t("staff_settings.save")}
-          />
+          <>
+            <RuleBar
+              sent={f.sent}
+              busy={f.busy}
+              onSave={() => {
+                void save();
+              }}
+              label={t("staff_settings.save")}
+            />
+            <SettingsSection heading={t("staff_settings.rules.retire")} about={t("staff_settings.rules.retire.about")}>
+              <Irreversible>{t("staff_settings.irreversible", { what: "retire" })}</Irreversible>
+              <Box>
+                <Button
+                  size="timeline"
+                  touch
+                  isDisabled={f.busy}
+                  onPress={() => {
+                    setAsking("retire");
+                  }}
+                >
+                  {t("staff_settings.rules.retire.press")}
+                </Button>
+              </Box>
+              <SettingsResult>
+                {retiring === "failed" ? t("staff_settings.rules.retire.failed") : undefined}
+              </SettingsResult>
+            </SettingsSection>
+          </>
         }
       >
         <RuleFields id={f.id} form={f.form} places={places} sent={f.sent} busy={f.busy} onChange={f.change} />
-        <SettingsSection heading={t("staff_settings.rules.retire")} about={t("staff_settings.rules.retire.about")}>
-          <Box>
-            <Button
-              size="timeline"
-              touch
-              isDisabled={f.busy}
-              onPress={() => {
-                setAsking("retire");
-              }}
-            >
-              {t("staff_settings.rules.retire.press")}
-            </Button>
-          </Box>
-          <SettingsResult>{retiring === "failed" ? t("staff_settings.rules.retire.failed") : undefined}</SettingsResult>
-        </SettingsSection>
       </SettingsScreen>
       <ModalPresence>
         {asking === "retire" ? (

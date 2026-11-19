@@ -6,10 +6,18 @@
 // to the list.
 
 import { loadAdminBrands, loadAdminSettings, useAdminSettings, type AppData } from "@my/app-data";
-import { BackButton, SettingsGroup, SettingsItem, SettingsMenu, SettingsScreen } from "@my/design-system";
+import {
+  BackButton,
+  ScreenStack,
+  ScreenTitle,
+  SettingsGroup,
+  SettingsItem,
+  SettingsMenu,
+  SettingsScreen,
+} from "@my/design-system";
 import type { ReactNode } from "react";
 import { useStaffStrings } from "../parts";
-import { BrandingForm } from "./branding";
+import { BrandingForm, type BuiltInBrands } from "./branding";
 import type { MessageId } from "../../messages.gen";
 import { TopicForm } from "./form";
 import { ScreenNotice, type AdminSubProps } from "./parts";
@@ -55,22 +63,25 @@ const iconOf = (path: string) => (path === "branding" ? "picture" : (topicAt(pat
 export function AdminSettingsScreen(): ReactNode {
   const { t } = useStaffStrings();
   return (
-    <SettingsMenu label={t("staff.entry.settings")}>
-      {groups.map((group) => (
-        <SettingsGroup key={group.id} heading={t(groupHeadings[group.id])}>
-          {group.topics.map((path) => (
-            <SettingsItem
-              key={path}
-              icon={iconOf(path)}
-              label={t(topicWords[path].name)}
-              hint={t(topicWords[path].hint)}
-              href={adminSettingsTopicPath(path)}
-              count={undefined}
-            />
-          ))}
-        </SettingsGroup>
-      ))}
-    </SettingsMenu>
+    <ScreenStack>
+      <ScreenTitle glyph="settings">{t("staff.entry.settings")}</ScreenTitle>
+      <SettingsMenu label={t("staff.entry.settings")}>
+        {groups.map((group) => (
+          <SettingsGroup key={group.id} heading={t(groupHeadings[group.id])}>
+            {group.topics.map((path) => (
+              <SettingsItem
+                key={path}
+                icon={iconOf(path)}
+                label={t(topicWords[path].name)}
+                hint={t(topicWords[path].hint)}
+                href={adminSettingsTopicPath(path)}
+                count={undefined}
+              />
+            ))}
+          </SettingsGroup>
+        ))}
+      </SettingsMenu>
+    </ScreenStack>
   );
 }
 
@@ -87,7 +98,11 @@ export function useAdminSettingsTopicTitle(topic: string): string | undefined {
 }
 
 /** A page of Server settings: its form once what it shows is read, until then that it loads or failed. */
-export function AdminSettingsTopicScreen({ topic, ...sub }: AdminSubProps & { topic: string }): ReactNode {
+export function AdminSettingsTopicScreen({
+  topic,
+  builtIn,
+  ...sub
+}: AdminSubProps & { topic: string; builtIn: BuiltInBrands }): ReactNode {
   const { t } = useStaffStrings();
   const found = topicAt(topic);
   const read = useAdminSettings();
@@ -101,7 +116,7 @@ export function AdminSettingsTopicScreen({ topic, ...sub }: AdminSubProps & { to
       {back.label}
     </BackButton>
   );
-  if (topic === "branding") return <BrandingForm back={back} {...sub} />;
+  if (topic === "branding") return <BrandingForm back={back} builtIn={builtIn} {...sub} />;
   if (found === undefined)
     return (
       <SettingsScreen

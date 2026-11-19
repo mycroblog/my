@@ -30,11 +30,14 @@ import {
   SubmitBar,
   TextField,
 } from "@my/design-system";
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { Fragment, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useStaffStrings, type T } from "../parts";
 import { LeaveDialog, ScreenNotice, type AdminSubProps } from "./parts";
 
 const kinds = ["icon", "logo", "logo_dark"] as const satisfies readonly BrandKind[];
+
+/** The addresses of the built-in images, which the app's build holds, by kind. */
+export type BuiltInBrands = Readonly<Record<BrandKind, string>>;
 
 /** An image picked and checked: the server's SVG, shown from a `blob:` address. */
 type Picked = { readonly sanitized: BrandSanitized; readonly url: string };
@@ -62,7 +65,12 @@ export function BrandingForm({
   go,
   onUnsaved,
   leaving,
-}: AdminSubProps & { back: { readonly label: string; readonly href: string } }): ReactNode {
+  builtIn,
+}: AdminSubProps & {
+  back: { readonly label: string; readonly href: string };
+  /** The built-in images, by kind, which stand while the server has none of its own. */
+  builtIn: BuiltInBrands;
+}): ReactNode {
   const { t } = useStaffStrings();
   const id = useId();
   const read = useAdminBrands();
@@ -183,23 +191,17 @@ export function BrandingForm({
   const field = (kind: BrandKind) => {
     const d = drafts[kind] ?? {};
     const current = brands[kind];
-    const src = d.picked?.url ?? (d.removed === true ? undefined : current?.svg_url);
+    // The image of its own, or the built-in one, which the server uses while it has none.
+    const own = d.picked?.url ?? (d.removed === true ? undefined : current?.svg_url);
+    const src = own ?? builtIn[kind];
     const dropped = d.picked?.sanitized.dropped ?? [];
     return (
-      <SettingsSection
-        key={kind}
-        heading={t("staff_settings.brand.kind", { kind })}
-        about={t("staff_settings.brand.kind.about", { kind })}
-      >
+      <Fragment key={kind}>
         <PictureField
           id={controlOf(kind)}
-          label={t("staff_settings.brand.file", { kind })}
+          label={t("staff_settings.brand.kind", { kind })}
           hint={
-            d.checking === true
-              ? t("staff_settings.brand.checking")
-              : src === undefined
-                ? t("staff_settings.brand.builtin")
-                : undefined
+            d.checking === true ? t("staff_settings.brand.checking") : t("staff_settings.brand.kind.about", { kind })
           }
           shape={kind === "icon" ? "square" : "wordmark"}
           dark={kind === "logo_dark"}
@@ -211,7 +213,7 @@ export function BrandingForm({
             pick(kind, file);
           }}
           remove={
-            src === undefined
+            own === undefined
               ? undefined
               : {
                   label: t("staff_settings.brand.remove"),
@@ -232,6 +234,7 @@ export function BrandingForm({
             id={colorId}
             name="background"
             label={t("staff_settings.brand.color")}
+            row
             hint={t("staff_settings.brand.color.about")}
             defaultValue={color}
             autoCapitalize="none"
@@ -241,7 +244,7 @@ export function BrandingForm({
             }}
           />
         )}
-      </SettingsSection>
+      </Fragment>
     );
   };
 
@@ -275,7 +278,7 @@ export function BrandingForm({
           </SubmitBar>
         }
       >
-        {kinds.map(field)}
+        <SettingsSection heading={t("staff_settings.brand.section")}>{kinds.map(field)}</SettingsSection>
       </SettingsScreen>
       <ModalPresence>{leaving !== undefined && <LeaveDialog key="leave" leaving={leaving} />}</ModalPresence>
     </>

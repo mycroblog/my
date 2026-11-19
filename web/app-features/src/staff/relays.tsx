@@ -23,7 +23,6 @@ import {
   BackButton,
   Box,
   Button,
-  CheckField,
   ConfirmDialog,
   focusRefusedField,
   FormAlert,
@@ -43,7 +42,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings } from "./parts";
-import { LeaveDialog, ScreenNotice, type AdminSubProps } from "./settings/parts";
+import { LeaveDialog, OnOffRow, ScreenNotice, type AdminSubProps } from "./settings/parts";
 
 /** The address of the relays. */
 const adminRelaysPath = "/admin/relays";
@@ -75,6 +74,7 @@ export function AdminRelaysScreen(): ReactNode {
   if (read.relays === undefined)
     return (
       <SettingsScreen
+        sub
         icon="federated"
         title={title}
         notice={
@@ -87,7 +87,7 @@ export function AdminRelaysScreen(): ReactNode {
       />
     );
   return (
-    <SettingsScreen icon="federated" title={title}>
+    <SettingsScreen sub icon="federated" title={title}>
       <SettingsSection
         heading={t("staff_settings.relays.list")}
         count={String(read.relays.length)}
@@ -107,7 +107,7 @@ export function AdminRelaysScreen(): ReactNode {
                 key={relay.id}
                 title={hostOf(relay.url)}
                 inactive={!joined(relay) || relay.domain_suspended}
-                standing={t("staff_settings.relays.state", {
+                state={t("staff_settings.relays.state", {
                   state: relay.domain_suspended ? "suspended" : relay.state,
                 })}
                 facts={[
@@ -222,6 +222,7 @@ export function NewRelayScreen({ go, onUnsaved, leaving }: AdminSubProps): React
             id={`${id}-url`}
             name="url"
             label={t("staff_settings.relays.url")}
+            row
             hint={t("staff_settings.relays.url.about")}
             autoCapitalize="none"
             inputMode="text"
@@ -251,14 +252,11 @@ export function NewRelayScreen({ go, onUnsaved, leaving }: AdminSubProps): React
               isDisabled={busy}
             />
           </SettingRow>
-          <CheckField
+          <OnOffRow
             id={`${id}-receive`}
-            name="receive"
-            value="true"
             label={t("staff_settings.relays.receive.check")}
-            checked={receive}
+            on={receive}
             onChange={setReceive}
-            touch
             disabled={busy}
           />
         </SettingsSection>

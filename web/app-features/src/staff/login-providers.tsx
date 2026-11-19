@@ -23,6 +23,7 @@ import {
   useAdminLoginProvider,
   useAdminLoginProviders,
   useAdminLoginProviderWrites,
+  useInstance,
   useLoginProvidersOnlyImpact,
   type AdminLoginProvider,
   type AppData,
@@ -35,7 +36,6 @@ import {
   BackButton,
   Box,
   Button,
-  CheckField,
   ChoiceList,
   ConfirmDialog,
   focusRefusedField,
@@ -43,8 +43,6 @@ import {
   LinkButton,
   ModalPresence,
   SaveState,
-  Select,
-  SettingRow,
   SettingsEmpty,
   SettingsList,
   SettingsListRow,
@@ -58,7 +56,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useStaffStrings, type T } from "./parts";
-import { CopyValue, LeaveDialog, ScreenNotice, type AdminSubProps } from "./settings/parts";
+import { CopyValue, Irreversible, LeaveDialog, OnOffRow, ScreenNotice, type AdminSubProps } from "./settings/parts";
 
 /** The address of the login providers. */
 const adminLoginProvidersPath = "/admin/login-providers";
@@ -195,6 +193,7 @@ export function AdminLoginProvidersScreen(): ReactNode {
   if (read.providers === undefined)
     return (
       <SettingsScreen
+        sub
         icon="signIn"
         title={title}
         notice={
@@ -210,7 +209,7 @@ export function AdminLoginProvidersScreen(): ReactNode {
       />
     );
   return (
-    <SettingsScreen icon="signIn" title={title}>
+    <SettingsScreen sub icon="signIn" title={title}>
       {impact?.setting_on === true && (
         <StatusSummary
           icon="caution"
@@ -242,7 +241,7 @@ export function AdminLoginProvidersScreen(): ReactNode {
                 key={p.id}
                 title={p.display_name}
                 inactive={p.state !== "enabled"}
-                standing={t("staff_settings.providers_admin.state", { state: p.state })}
+                state={t("staff_settings.providers_admin.state", { state: p.state })}
                 facts={[
                   kindWords(t, p.kind),
                   t("staff_settings.providers_admin.linked", { count: p.linked_users }),
@@ -294,6 +293,7 @@ function ProviderFields({
       id={`${id}-${field}`}
       name={field}
       label={t("staff_settings.providers_admin.field", { field, kind: form.kind })}
+      row
       hint={more.hint}
       type={more.secret === true ? "password" : "text"}
       autoComplete={more.secret === true ? "new-password" : "off"}
@@ -357,28 +357,22 @@ function ProviderFields({
           text("scopes", { hint: t("staff_settings.providers_admin.scopes.about", { kind: form.kind }) })}
       </SettingsSection>
       <SettingsSection heading={t("staff_settings.providers_admin.section.who")}>
-        <CheckField
+        <OnOffRow
           id={`${id}-signup`}
-          name="allow_signup"
-          value="true"
           label={t("staff_settings.providers_admin.allow_signup")}
-          checked={form.signup}
+          on={form.signup}
           onChange={(signup) => {
             onChange({ signup });
           }}
-          touch
           disabled={busy}
         />
-        <CheckField
+        <OnOffRow
           id={`${id}-link`}
-          name="allow_link"
-          value="true"
           label={t("staff_settings.providers_admin.allow_link")}
-          checked={form.link}
+          on={form.link}
           onChange={(link) => {
             onChange({ link });
           }}
-          touch
           disabled={busy}
         />
         {form.kind !== "mastodon" &&
@@ -522,6 +516,7 @@ export function NewLoginProviderScreen({ go, onUnsaved, leaving }: AdminSubProps
   const writes = useAdminLoginProviderWrites();
   const f = useProviderForm(blank, onUnsaved);
   const { impact } = useLoginProvidersOnlyImpact(true);
+  const instance = useInstance();
   const [asking, setAsking] = useState(false);
   const send = () => {
     f.setSent({ kind: "sending" });
@@ -551,6 +546,13 @@ export function NewLoginProviderScreen({ go, onUnsaved, leaving }: AdminSubProps
         foot={<ProviderBar sent={f.sent} busy={f.busy} label={t("staff_settings.providers_admin.add")} onSave={save} />}
       >
         <ProviderFields id={f.id} form={f.form} fresh sent={f.sent} busy={f.busy} onChange={f.change} />
+        <SettingsSection heading={t("staff_settings.providers_admin.callback")}>
+          <Box as="p" breaks="phrase">
+            {t("staff_settings.providers_admin.callback.next", {
+              url: `https://${instance?.domain ?? ""}/auth/external/<ID>/callback`,
+            })}
+          </Box>
+        </SettingsSection>
       </SettingsScreen>
       <ModalPresence>
         {asking ? (
@@ -637,15 +639,39 @@ function ProviderPage({ provider, go, onUnsaved, leaving }: AdminSubProps & { pr
         sub
         title={provider.display_name}
         back={<BackToProviders go={go} />}
+        // What deletes the provider stands last and apart, after the form and its Save.
         foot={
-          <ProviderBar
-            sent={f.sent}
-            busy={f.busy}
-            label={t("staff_settings.save")}
-            onSave={() => {
-              save();
-            }}
-          />
+          <>
+            <ProviderBar
+              sent={f.sent}
+              busy={f.busy}
+              label={t("staff_settings.save")}
+              onSave={() => {
+                save();
+              }}
+            />
+            <SettingsSection
+              heading={t("staff_settings.providers_admin.delete")}
+              about={t("staff_settings.providers_admin.delete.about", { count: provider.linked_users })}
+            >
+              <Irreversible>{t("staff_settings.irreversible", { what: "delete" })}</Irreversible>
+              <Box>
+                <Button
+                  size="timeline"
+                  touch
+                  isDisabled={f.busy}
+                  onPress={() => {
+                    setAsking("delete");
+                  }}
+                >
+                  {t("staff_settings.providers_admin.delete.press")}
+                </Button>
+              </Box>
+              <SettingsResult>
+                {deleting === "failed" ? t("staff_settings.providers_admin.delete.failed") : undefined}
+              </SettingsResult>
+            </SettingsSection>
+          </>
         }
       >
         <SettingsSection
@@ -659,25 +685,16 @@ function ProviderPage({ provider, go, onUnsaved, leaving }: AdminSubProps & { pr
           />
         </SettingsSection>
         <SettingsSection heading={t("staff_settings.providers_admin.section.state")}>
-          <SettingRow
+          <OnOffRow
             id={`${f.id}-state`}
             label={t("staff_settings.providers_admin.state.label")}
             about={t("staff_settings.providers_admin.linked", { count: provider.linked_users })}
-            form
-          >
-            <Select
-              name="state"
-              options={(["enabled", "disabled"] as const).map((state) => ({
-                value: state,
-                label: t("staff_settings.providers_admin.state", { state }),
-              }))}
-              value={f.form.enabled ? "enabled" : "disabled"}
-              onChange={(value) => {
-                f.change({ enabled: value === "enabled" });
-              }}
-              isDisabled={f.busy}
-            />
-          </SettingRow>
+            on={f.form.enabled}
+            onChange={(enabled) => {
+              f.change({ enabled });
+            }}
+            disabled={f.busy}
+          />
         </SettingsSection>
         <ProviderFields
           key={round}
@@ -688,26 +705,6 @@ function ProviderPage({ provider, go, onUnsaved, leaving }: AdminSubProps & { pr
           busy={f.busy}
           onChange={f.change}
         />
-        <SettingsSection
-          heading={t("staff_settings.providers_admin.delete")}
-          about={t("staff_settings.providers_admin.delete.about", { count: provider.linked_users })}
-        >
-          <Box>
-            <Button
-              size="timeline"
-              touch
-              isDisabled={f.busy}
-              onPress={() => {
-                setAsking("delete");
-              }}
-            >
-              {t("staff_settings.providers_admin.delete.press")}
-            </Button>
-          </Box>
-          <SettingsResult>
-            {deleting === "failed" ? t("staff_settings.providers_admin.delete.failed") : undefined}
-          </SettingsResult>
-        </SettingsSection>
       </SettingsScreen>
       <ModalPresence>
         {asking === "limit" ? (

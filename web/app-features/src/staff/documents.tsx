@@ -22,6 +22,8 @@ import {
   FormAlert,
   ModalPresence,
   SaveState,
+  ScreenStack,
+  ScreenTitle,
   SettingsGroup,
   SettingsItem,
   SettingsMenu,
@@ -52,20 +54,23 @@ const documentPath = (path: string) => `${adminDocumentsPath}/${path}`;
 export function AdminDocumentsScreen(): ReactNode {
   const { t } = useStaffStrings();
   return (
-    <SettingsMenu label={t("staff.entry.documents")}>
-      <SettingsGroup heading={t("staff_settings.documents.group")}>
-        {documents.map((d) => (
-          <SettingsItem
-            key={d.path}
-            icon="file"
-            label={t("staff_settings.document", { document: d.key })}
-            hint={t("staff_settings.document.hint", { document: d.key })}
-            href={documentPath(d.path)}
-            count={undefined}
-          />
-        ))}
-      </SettingsGroup>
-    </SettingsMenu>
+    <ScreenStack>
+      <ScreenTitle glyph="file">{t("staff.entry.documents")}</ScreenTitle>
+      <SettingsMenu label={t("staff.entry.documents")}>
+        <SettingsGroup heading={t("staff_settings.documents.group")}>
+          {documents.map((d) => (
+            <SettingsItem
+              key={d.path}
+              icon="file"
+              label={t("staff_settings.document", { document: d.key })}
+              hint={t("staff_settings.document.hint", { document: d.key })}
+              href={documentPath(d.path)}
+              count={undefined}
+            />
+          ))}
+        </SettingsGroup>
+      </SettingsMenu>
+    </ScreenStack>
   );
 }
 
