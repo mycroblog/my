@@ -110,6 +110,8 @@ test("a person whose registration waits for a moderator is let in once a moderat
     await new Moderation(theirs.page).place.click();
     await staff.entry("Registrations").click();
     const handle = `@${who.username}`;
+    await expect(staff.registration(handle)).not.toContainText(who.email);
+    await staff.showEmail(handle);
     await expect(staff.registration(handle)).toContainText(who.email);
     await staff.approve(handle);
     await expect(staff.said("1 registration approved.")).toBeVisible();

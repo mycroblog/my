@@ -61,6 +61,7 @@ import {
   ScreenStack,
   ScreenTitle,
   Stack,
+  StateMark,
   TextButton,
   TextField,
   TextLink,
@@ -310,7 +311,12 @@ function useRoomFacts(room: ReportedVoiceRoom | undefined): Fact[] {
     { term: t("staff.report.room.opened"), value: moment(room.opened_at) },
     {
       term: t("staff.report.room.ended"),
-      value: room.ended_at === undefined ? t("staff.report.room.open_now") : moment(room.ended_at),
+      value:
+        room.ended_at === undefined ? (
+          <StateMark state="open">{t("staff.report.room.open_now")}</StateMark>
+        ) : (
+          moment(room.ended_at)
+        ),
     },
     ...(room.ended_at === undefined
       ? []
@@ -679,14 +685,17 @@ function VoiceRoom({ room }: { room: ReportedVoiceRoom }) {
     })),
   ].toSorted((a, b) => b.at.localeCompare(a.at));
   return (
-    <Titled title={t("staff.report.room.log")}>
+    <>
+      <Titled title={t("staff.report.room.log")}>
+        <LogList label={t("staff.report.room.log")}>
+          {entries.map((e) => (
+            <Fragment key={e.key}>{e.node}</Fragment>
+          ))}
+        </LogList>
+      </Titled>
+      {/* Ending the room for everyone stands last and apart, after what it is decided on. */}
       {room.ended_at === undefined && <EndRoom id={room.id} />}
-      <LogList label={t("staff.report.room.log")}>
-        {entries.map((e) => (
-          <Fragment key={e.key}>{e.node}</Fragment>
-        ))}
-      </LogList>
-    </Titled>
+    </>
   );
 }
 

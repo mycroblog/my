@@ -22,6 +22,7 @@ import {
   RelativeTime,
   ScreenStack,
   ScreenTitle,
+  Stack,
   StateMark,
   TabRow,
   TextLink,
@@ -31,12 +32,12 @@ import {
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import { staffEntryPath } from "../entries";
-import { ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
+import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 import { categoryWords } from "../reports/queue";
 import { ActionForm } from "./action-form";
 import { AccountActionsPage } from "./actions";
 import { ManagePage } from "./manage";
-import { AccountStateMark, ActionStateMark, kindWords, useEnd } from "./parts";
+import { AccountStateMark, actionCategoryWords, ActionStateMark, bannedBy, kindWords, useEnd, Section } from "./parts";
 
 /** The pages of an account's moderation. */
 export type AccountPage = "review" | "actions" | "manage";
@@ -59,7 +60,7 @@ export type AccountScreenProps = {
   onSearch: (search: Readonly<Record<string, string | undefined>>) => void;
   /** Shows another page of the account. */
   onPage: (page: AccountPage) => void;
-  /** Goes back to the search of accounts. */
+  /** Goes back to the report the reader came from, else to the search of accounts. */
   onBack: () => void;
 };
 
@@ -107,7 +108,13 @@ export function AccountScreen(props: AccountScreenProps): ReactNode {
   const page = pages.some((p) => p.id === props.page) ? props.page : "review";
   return (
     <ScreenStack>
-      <ScreenTitle back={<BackButton onPress={props.onBack}>{t("staff_accounts.account.back")}</BackButton>}>
+      <ScreenTitle
+        back={
+          <BackButton onPress={props.onBack}>
+            {t(props.report === undefined ? "staff_accounts.account.back" : "staff_accounts.account.back_report")}
+          </BackButton>
+        }
+      >
         {sentenceHandleOf(account.account)}
       </ScreenTitle>
       <TabRow label={t("staff_accounts.page.tabs")} tabs={pages} current={page} onChange={props.onPage}>
@@ -132,19 +139,27 @@ function invitedBy(t: T, invite: NonNullable<NonNullable<ModeratedAccountDetail[
 
 /** What is known of the account: its state, what is taken away, where it is from, its registration and its sign-in. */
 function useAccountFacts(account: ModeratedAccountDetail): Fact[] {
-  const { t, locale } = useStaffStrings();
+  const { t } = useStaffStrings();
   const moment = useMoment();
   const r = account.registration;
   return [
-    { term: t("staff_accounts.fact.state"), value: <AccountStateMark state={account.state} /> },
+    {
+      term: t("staff_accounts.fact.state"),
+      value: <AccountStateMark state={account.state} banned={bannedBy(account.actions)} />,
+    },
     {
       term: t("staff_accounts.fact.restrictions"),
       value:
-        account.restrictions.length === 0
-          ? t("staff_accounts.restrictions.none")
-          : new Intl.ListFormat(locale, { type: "unit" }).format(
-              account.restrictions.map((x) => t("staff_accounts.restriction", { restriction: x })),
-            ),
+        account.restrictions.length === 0 ? (
+          t("staff_accounts.restrictions.none")
+        ) : (
+          // One a line, each whole: a list joined in a sentence broke inside its items on a phone.
+          <Stack as="ul" gap="entry-line">
+            {account.restrictions.map((x) => (
+              <li key={x}>{t("staff_accounts.restriction", { restriction: x })}</li>
+            ))}
+          </Stack>
+        ),
     },
     {
       term: t("staff_accounts.fact.origin"),
@@ -192,16 +207,16 @@ function Review({ account, report }: { account: ModeratedAccountDetail; report: 
   return (
     <ScreenStack>
       <FactList label={t("staff_accounts.account.facts")} items={facts} />
-      <Titled title={t("staff_accounts.act.title")}>
+      <Section title={t("staff_accounts.act.title")}>
         <ActionForm account={account} report={report} />
-      </Titled>
-      <Titled title={t("staff_accounts.account.actions")}>
+      </Section>
+      <Section title={t("staff_accounts.account.actions")}>
         <ActionTable account={account.id} actions={account.actions} />
-      </Titled>
+      </Section>
       {account.reports !== undefined && (
-        <Titled title={t("staff_accounts.account.reports")}>
+        <Section title={t("staff_accounts.account.reports")}>
           <ReportTable reports={account.reports} />
-        </Titled>
+        </Section>
       )}
     </ScreenStack>
   );
@@ -235,7 +250,7 @@ export function ActionTable({
     caption: a.public_reason,
     href: accountActionPath(account, a.id),
     cells: {
-      category: categoryWords(t, a.reason_category),
+      category: actionCategoryWords(t, a.reason_category),
       issued: <RelativeTime date={a.issued_at} />,
       ends: a.kind === "ban" ? t("staff_accounts.ends.never") : end(a.expires_at),
       state: <ActionStateMark action={a} />,

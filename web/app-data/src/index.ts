@@ -802,6 +802,7 @@ export {
   useModeratedAppeals,
   useDecideAppeal,
   useModeratedAccount,
+  useModeratedAccounts,
   useActionReport,
   usePlaceWrites,
   useStaffAccounts,

@@ -114,7 +114,8 @@ export function InvitesScreen(address: StaffAddress): ReactNode {
   const columns: RecordColumn<Column>[] = [
     { key: "uses", label: t("staff_accounts.invites.column.uses"), kind: "figures" },
     { key: "ends", label: t("staff_accounts.invites.column.ends"), kind: "fit" },
-    { key: "state", label: t("staff_accounts.invites.column.state"), kind: "fit", beside: true },
+    // A state wraps before a code is cut short: a code is what is copied.
+    { key: "state", label: t("staff_accounts.invites.column.state"), beside: true },
   ];
   const rows = page.items.map((i): RecordRow<Column> => ({
     id: i.id,

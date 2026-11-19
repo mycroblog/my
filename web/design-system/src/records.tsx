@@ -46,13 +46,27 @@ import { SearchField } from "./search-field";
 
 /** The states a record of the staff's screens is in. */
 export type RecordState =
-  "open" | "assigned" | "resolved" | "active" | "expired" | "lifted" | "pending" | "failed" | "disabled";
+  | "open"
+  | "assigned"
+  | "resolved"
+  | "active"
+  | "limited"
+  | "suspended"
+  | "permanent"
+  | "expired"
+  | "lifted"
+  | "pending"
+  | "failed"
+  | "disabled";
 
 const stateGlyph: Record<RecordState, IconName> = {
   open: "stateOpen",
   assigned: "stateAssigned",
   resolved: "stateResolved",
   active: "stateActive",
+  limited: "hidden",
+  suspended: "block",
+  permanent: "block",
   expired: "stateExpired",
   lifted: "stateLifted",
   pending: "statePending",
@@ -61,8 +75,9 @@ const stateGlyph: Record<RecordState, IconName> = {
 };
 
 /**
- * How a state weighs: what waits for someone (open, pending, failed) in the text's color and a label's weight; what is
- * in force (assigned, active) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
+ * How a state weighs: what waits for someone (open, pending, failed) and what shuts something out (suspended, and
+ * permanent, which nothing lifts) in the text's color and a label's weight; what is in force (assigned, active,
+ * limited) in the text's color; what is over (resolved, expired, lifted, disabled) muted.
  */
 const stateTone = {
   open: "waits",
@@ -70,6 +85,9 @@ const stateTone = {
   failed: "waits",
   assigned: "holds",
   active: "holds",
+  limited: "holds",
+  suspended: "waits",
+  permanent: "waits",
   resolved: "over",
   expired: "over",
   lifted: "over",
@@ -128,6 +146,11 @@ export type RecordRow<K extends string = string> = {
   caption?: string | undefined;
   href?: string | undefined;
   cells: Partial<Record<K, ReactNode>>;
+  /**
+   * What the record holds past its cells, across the whole of the row under them (a person's reason, their private
+   * facts, the actions on that one record): at any width a line of its own, the row's last.
+   */
+  detail?: ReactNode;
 };
 
 /** An action on every row picked: its words, what it does, and whether it is under way. */
@@ -243,6 +266,8 @@ function RecordLine({
 }
 
 const PLACE = {
+  // What a record holds across the row, under its cells: narrow, after its facts; wide, every column.
+  detail: "order-3 basis-full pt-entry-line @min-[30rem]:col-span-full",
   // A row's checkbox, or select all: on the first line's height, over the link that covers the row.
   pick: "relative z-1 flex h-[1lh] flex-none items-center self-start",
   // The head of a record: narrow, the first line's room; wide, its column.
@@ -311,9 +336,14 @@ function NarrowName({ children }: { children: ReactNode }) {
  * it covers the whole row, so that a press anywhere opens the record.
  */
 function HeadWords({ cover = false, children }: { cover?: boolean; children: string }) {
+  // Its own direction cuts it at its end in its reading order (a handle keeps its "@" and its start in a right-to-left
+  // page), standing at the start of its column all the same.
   return (
-    <span className={`block truncate ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}>
-      <bdi dir="auto">{children}</bdi>
+    <span
+      dir="auto"
+      className={`block truncate [text-align:match-parent] ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
+    >
+      {children}
     </span>
   );
 }
@@ -801,6 +831,11 @@ function Record<K extends string>({
           </RecordPlace>
         );
       })}
+      {row.detail !== undefined && (
+        <RecordPlace at="detail" role="cell" aria-colspan={columns.length + (picks ? 2 : 1)} className="">
+          {row.detail}
+        </RecordPlace>
+      )}
     </RecordLine>
   );
 }

@@ -141,12 +141,14 @@ export class StaffAccounts {
     return rowOf(this.page, this.registrations, handle);
   }
 
-  /** Approves the registration of `handle`, asked first; returns once the server answered. */
+  /** Shows the email address of the registration of `handle`, which the list keeps until asked. */
+  async showEmail(handle: string): Promise<void> {
+    await this.registration(handle).getByRole("button", { name: "Show", exact: true }).click();
+  }
+
+  /** Approves the registration of `handle` by its row's own Approve, asked first; returns once the server answered. */
   async approve(handle: string): Promise<void> {
-    const pick = this.registration(handle).getByRole("checkbox", { name: `Select ${handle}`, exact: true });
-    await pick.click();
-    await expect(pick).toBeChecked();
-    await this.button("Approve").click();
+    await this.registration(handle).getByRole("button", { name: "Approve", exact: true }).click();
     const dialog = this.page.getByRole("alertdialog");
     await answered(this.page, { methods: ["POST"], path: /\/admin\/registrations\/[^/]+\/approve$/ }, async () => {
       await dialog.getByRole("button", { name: "Approve", exact: true }).click();

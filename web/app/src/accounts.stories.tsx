@@ -84,7 +84,7 @@ export const Action: Story = {
 export const ActionLifted: Story = {
   parameters: at("/moderation/accounts/{account:mio}/actions/{moderated:action:mio}"),
 };
-/** A ban: never lifted, only overturning its appeal undoes it. */
+/** A ban: permanent, never lifted; only an appeal can overturn it, whose way its page offers. */
 export const ActionBan: Story = {
   parameters: at("/moderation/accounts/{moderated:account:cheapfollowers}/actions/{moderated:action:ban}"),
 };

@@ -14,7 +14,10 @@ import {
   type ModeratedRegistration,
 } from "@my/app-data";
 import {
-  Box,
+  Button,
+  FactList,
+  Row,
+  Stack,
   ConfirmDialog,
   FeedNotice,
   ModalPresence,
@@ -54,7 +57,12 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
   const noteId = useId();
   const { say, status } = useSaid();
   const [selected, setSelected] = useState<ReadonlySet<string>>(new Set());
-  const [asking, setAsking] = useState<"approve" | "reject" | undefined>(undefined);
+  // The decision asked, of the registrations of `ids`: the picked rows, or one row's own.
+  const [asking, setAsking] = useState<{ decision: "approve" | "reject"; ids: readonly string[] } | undefined>(
+    undefined,
+  );
+  // The registrations whose email address the reader asked to see (ADR-0058 §9: shown on demand alone).
+  const [revealed, setRevealed] = useState<ReadonlySet<string>>(new Set());
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const head = <ScreenTitle>{t("staff_accounts.entry.registrations")}</ScreenTitle>;
@@ -75,13 +83,9 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
   const picked = pending.filter((r) => selected.has(r.id));
   const send = () => {
     if (asking === undefined) return;
-    const decision = asking;
+    const { decision, ids } = asking;
     setBusy(true);
-    void decide(
-      picked.map((r) => r.id),
-      decision,
-      note.trim(),
-    ).then((results) => {
+    void decide(ids, decision, note.trim()).then((results) => {
       setBusy(false);
       setAsking(undefined);
       setNote("");
@@ -99,8 +103,6 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
     });
   };
   const columns: RecordColumn<Column>[] = [
-    { key: "email", label: t("staff_accounts.registrations.column.email") },
-    { key: "reason", label: t("staff_accounts.registrations.column.reason") },
     { key: "submitted", label: t("staff_accounts.registrations.column.submitted"), kind: "fit", bare: true },
     { key: "state", label: t("staff_accounts.registrations.column.state"), kind: "fit", beside: true },
   ];
@@ -111,19 +113,65 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
     caption: r.email_verified === false ? t("staff_accounts.registrations.unconfirmed") : undefined,
     ...(r.account_id === undefined ? {} : { href: moderatedAccountPath(r.account_id) }),
     cells: {
-      email:
-        r.email === undefined ? (
-          t("staff_accounts.registrations.no_email")
-        ) : (
-          <Box as="span" dir="ltr">
-            {r.email}
-          </Box>
-        ),
-      reason: r.reason === undefined ? t("staff_accounts.registrations.no_reason") : <bdi>{r.reason}</bdi>,
       submitted: <RelativeTime date={r.submitted_at} />,
       state: <RegistrationStateMark registration={r} />,
     },
+    // Across the row: the email address, kept until shown, why they want to join, and the row's own decision.
+    detail: (
+      <Stack gap="entry-room">
+        <FactList
+          label={t("staff_accounts.registrations.facts")}
+          items={[
+            {
+              term: t("staff_accounts.registrations.column.email"),
+              code: true,
+              ...(r.email === undefined
+                ? { value: t("staff_accounts.registrations.no_email") }
+                : revealed.has(r.id)
+                  ? { value: r.email }
+                  : {
+                      reveal: {
+                        onReveal: () => {
+                          setRevealed((now) => new Set([...now, r.id]));
+                        },
+                      },
+                    }),
+            },
+            {
+              term: t("staff_accounts.registrations.column.reason"),
+              value: r.reason === undefined ? t("staff_accounts.registrations.no_reason") : <bdi>{r.reason}</bdi>,
+            },
+          ]}
+        />
+        {r.state === "pending" && (
+          <Row wrap gap="screen-tab-gap">
+            <Button
+              kind="primary"
+              size="timeline"
+              touch
+              busy={busy && asking?.decision === "approve" && asking.ids.length === 1 && asking.ids[0] === r.id}
+              onPress={() => {
+                setAsking({ decision: "approve", ids: [r.id] });
+              }}
+            >
+              {t("staff_accounts.registrations.approve")}
+            </Button>
+            <Button
+              size="timeline"
+              touch
+              busy={busy && asking?.decision === "reject" && asking.ids.length === 1 && asking.ids[0] === r.id}
+              onPress={() => {
+                setAsking({ decision: "reject", ids: [r.id] });
+              }}
+            >
+              {t("staff_accounts.registrations.reject")}
+            </Button>
+          </Row>
+        )}
+      </Stack>
+    ),
   }));
+  const decision = asking?.decision;
   return (
     <ScreenStack busy={page.stale}>
       {head}
@@ -148,17 +196,17 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
                     id: "approve",
                     label: t("staff_accounts.registrations.approve"),
                     onPress: () => {
-                      setAsking("approve");
+                      if (picked.length > 0) setAsking({ decision: "approve", ids: picked.map((r) => r.id) });
                     },
-                    busy: busy && asking === "approve",
+                    busy: busy && decision === "approve" && (asking?.ids.length ?? 0) > 1,
                   },
                   {
                     id: "reject",
                     label: t("staff_accounts.registrations.reject"),
                     onPress: () => {
-                      setAsking("reject");
+                      if (picked.length > 0) setAsking({ decision: "reject", ids: picked.map((r) => r.id) });
                     },
-                    busy: busy && asking === "reject",
+                    busy: busy && decision === "reject" && (asking?.ids.length ?? 0) > 1,
                   },
                 ],
               }
@@ -167,17 +215,19 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
       />
       <Pages address={address} next={page.next} />
       <ModalPresence>
-        {asking !== undefined && picked.length > 0 && (
+        {asking !== undefined && (
           <ConfirmDialog
             title={t(
-              asking === "approve"
+              asking.decision === "approve"
                 ? "staff_accounts.registrations.approve.confirm"
                 : "staff_accounts.registrations.reject.confirm",
-              { count: picked.length },
+              { count: asking.ids.length },
             )}
             cancel={t("staff_accounts.cancel")}
             confirm={t(
-              asking === "approve" ? "staff_accounts.registrations.approve" : "staff_accounts.registrations.reject",
+              asking.decision === "approve"
+                ? "staff_accounts.registrations.approve"
+                : "staff_accounts.registrations.reject",
             )}
             busy={busy}
             onCancel={() => {
@@ -190,7 +240,7 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
               name="note"
               label={t("staff_accounts.registrations.note")}
               hint={t(
-                asking === "approve"
+                asking.decision === "approve"
                   ? "staff_accounts.registrations.approve.about"
                   : "staff_accounts.registrations.reject.about",
               )}

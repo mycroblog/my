@@ -406,3 +406,15 @@ export function useActionReport(id: string | undefined): ReportDetail | undefine
   const may = useQuery(viewerQuery(data)).data?.permissions.includes("manage_reports") === true;
   return useQuery({ ...reportQuery(data, id ?? ""), enabled: id !== undefined && id !== "" && may }).data;
 }
+
+/**
+ * The accounts of `ids` as the moderators see them (`manage_accounts`), which a list of appeals names by ID alone: an
+ * account suspended or banned is among them, where the public read of it answers that it is gone. An account not read
+ * yet, or gone, is not in the map.
+ */
+export function useModeratedAccounts(ids: readonly (string | undefined)[]): ReadonlyMap<string, ModeratedAccount> {
+  const data = useAppData();
+  const unique = [...new Set(ids.filter((id): id is string => id !== undefined))];
+  const results = useQueries({ queries: unique.map((id) => moderatedAccountQuery(data, id)) });
+  return new Map(unique.flatMap((id, i) => (results[i]?.data === undefined ? [] : [[id, results[i].data] as const])));
+}

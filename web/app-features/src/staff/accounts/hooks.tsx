@@ -190,7 +190,7 @@ export function HookDecisionsScreen(address: StaffAddress): ReactNode {
     );
   const columns: RecordColumn<Column>[] = [
     { key: "outcome", label: t("staff_accounts.decisions.column.outcome") },
-    { key: "mode", label: t("staff_accounts.decisions.column.mode"), bare: true },
+    { key: "mode", label: t("staff_accounts.decisions.column.mode"), kind: "fit", bare: true },
     { key: "decided", label: t("staff_accounts.decisions.column.decided"), kind: "fit", bare: true },
     { key: "state", label: t("staff_accounts.decisions.column.state"), kind: "fit", beside: true },
   ];
@@ -224,7 +224,6 @@ export function HookDecisionsScreen(address: StaffAddress): ReactNode {
             )}
           </FeedNotice>
         }
-        even
       />
       <Pages address={address} next={page.next} />
     </ScreenStack>

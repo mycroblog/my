@@ -160,7 +160,8 @@ export function SignupBlocksScreen(address: StaffAddress): ReactNode {
     { key: "kind", label: t("staff_accounts.blocks.column.kind"), bare: true },
     { key: "severity", label: t("staff_accounts.blocks.column.severity") },
     { key: "ends", label: t("staff_accounts.blocks.column.ends"), kind: "fit" },
-    { key: "state", label: t("staff_accounts.blocks.column.state"), kind: "fit", beside: true },
+    // A state wraps before the value is cut short: a value is what the reader compares.
+    { key: "state", label: t("staff_accounts.blocks.column.state"), beside: true },
   ];
   const rows = page.items.map((b): RecordRow<Column> => ({
     id: b.id,
@@ -192,7 +193,6 @@ export function SignupBlocksScreen(address: StaffAddress): ReactNode {
             )}
           </FeedNotice>
         }
-        even
       />
       <Pages address={address} next={page.next} />
     </ScreenStack>
@@ -531,7 +531,10 @@ function BlockFacts({ block }: { block: SignupBlock }) {
   // The ban's account, which its page is under.
   const ban = useAccountAction(block.moderation_action_id).value;
   const items: Fact[] = [
-    { term: t("staff_accounts.block.fact.state"), value: t("staff_accounts.action_state", { state: block.state }) },
+    {
+      term: t("staff_accounts.block.fact.state"),
+      value: <StateMark state={block.state}>{t("staff_accounts.action_state", { state: block.state })}</StateMark>,
+    },
     { term: t("staff_accounts.block.fact.kind"), value: kindWordsOf(t, block.kind) },
     { term: t("staff_accounts.block.fact.value"), value: block.value, code: true },
     { term: t("staff_accounts.block.fact.severity"), value: severityWordsOf(t, block.severity) },

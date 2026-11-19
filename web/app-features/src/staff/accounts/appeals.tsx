@@ -14,7 +14,7 @@ import {
   useDecideAppeal,
   useModeratedAppeal,
   useModeratedAppeals,
-  useStaffAccounts,
+  useModeratedAccounts,
   type ModeratedAppeal,
   type ModeratedAppealState,
 } from "@my/app-data";
@@ -47,9 +47,8 @@ import {
 import { useId, useState, type ReactNode } from "react";
 import { staffEntryPath, staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { handleIn, ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
-import { categoryWords } from "../reports/queue";
 import { accountActionPath } from "./account";
-import { cursorOf, filtered, kindWords, Pages, refusalWords, useSaid } from "./parts";
+import { actionCategoryWords, cursorOf, filtered, kindWords, Pages, refusalWords, useSaid, Section } from "./parts";
 
 /** The state of the appeals the queue shows at an address's query: pending unless it says otherwise. */
 export function appealStateOf(search: StaffSearch): ModeratedAppealState | undefined {
@@ -78,7 +77,7 @@ export function AppealQueueScreen(address: StaffAddress): ReactNode {
   const { t } = useStaffStrings();
   const state = appealStateOf(search);
   const page = useModeratedAppeals(state, cursorOf(search));
-  const accounts = useStaffAccounts(page.items.map((a) => a.account_id));
+  const accounts = useModeratedAccounts(page.items.map((a) => a.account_id));
   const states: FilterValue[] = appealStates.map((s) => ({
     id: s,
     label: t("staff_accounts.appeal_state", { state: s }),
@@ -126,7 +125,7 @@ export function AppealQueueScreen(address: StaffAddress): ReactNode {
   ];
   const rows = page.items.map((a): RecordRow<Column> => ({
     id: a.id,
-    head: handleIn(t, accounts.get(a.account_id)),
+    head: handleIn(t, accounts.get(a.account_id)?.account),
     href: appealHref(a.id, search),
     cells: {
       action: kindWords(t, a.action.kind),
@@ -165,7 +164,7 @@ export type AppealScreenProps = {
 export function useAppealTitle(id: string): string | undefined {
   const { t } = useStaffStrings();
   const appeal = useModeratedAppeal(id).value;
-  const account = useStaffAccounts([appeal?.account_id]).get(appeal?.account_id ?? "");
+  const account = useModeratedAccounts([appeal?.account_id]).get(appeal?.account_id ?? "")?.account;
   return appeal === undefined ? undefined : t("staff_accounts.appeal.title", { handle: handleIn(t, account) });
 }
 
@@ -217,9 +216,9 @@ export function AppealScreen({ id, onBack }: AppealScreenProps): ReactNode {
 function AppealFacts({ appeal }: { appeal: ModeratedAppeal }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
-  const people = useStaffAccounts([appeal.account_id, appeal.decided_by_account_id]);
-  const account = people.get(appeal.account_id);
-  const decider = people.get(appeal.decided_by_account_id ?? "");
+  const people = useModeratedAccounts([appeal.account_id, appeal.decided_by_account_id]);
+  const account = people.get(appeal.account_id)?.account;
+  const decider = people.get(appeal.decided_by_account_id ?? "")?.account;
   const items: Fact[] = [
     { term: t("staff_accounts.appeal.fact.state"), value: <AppealStateMark state={appeal.state} /> },
     { term: t("staff_accounts.appeal.fact.submitted"), value: moment(appeal.submitted_at) },
@@ -234,7 +233,7 @@ function AppealFacts({ appeal }: { appeal: ModeratedAppeal }) {
         </TextLink>
       ),
     },
-    { term: t("staff_accounts.appeal.fact.category"), value: categoryWords(t, appeal.action.reason_category) },
+    { term: t("staff_accounts.appeal.fact.category"), value: actionCategoryWords(t, appeal.action.reason_category) },
     {
       term: t("staff_accounts.appeal.fact.public_reason"),
       value:
@@ -272,7 +271,11 @@ function Decide({ appeal, say }: { appeal: ModeratedAppeal; say: (words: string,
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | undefined>(undefined);
   const [alert, setAlert] = useState<string | undefined>(undefined);
+  const moment = useMoment();
   const ban = appeal.action.kind === "ban";
+  // A ban deletes its account 30 days after it was taken, which upholding the original decision makes final.
+  const deleted = moment(new Date(Date.parse(appeal.action.issued_at) + 30 * 86_400_000).toISOString());
+  const handle = handleIn(t, useModeratedAccounts([appeal.account_id]).get(appeal.account_id)?.account);
   const send = () => {
     if (asking === undefined) return;
     const decision = asking;
@@ -295,13 +298,17 @@ function Decide({ appeal, say }: { appeal: ModeratedAppeal; say: (words: string,
     );
   };
   return (
-    <Titled title={t("staff_accounts.appeal.decide")}>
+    <Section title={t("staff_accounts.appeal.decide")}>
       <Stack gap="screen-field-gap">
+        {ban && (
+          <Box as="p" text="body" weight="label">
+            {t("staff_accounts.appeal.ban_final", { date: deleted })}
+          </Box>
+        )}
         <TextField
           id={id}
           name="public_reason"
           label={t("staff_accounts.appeal.reason")}
-          hint={t("staff_accounts.appeal.reason.hint")}
           multiline
           rows={3}
           maxLength={appealReasonLimit}
@@ -340,21 +347,24 @@ function Decide({ appeal, say }: { appeal: ModeratedAppeal; say: (words: string,
             cancel={t("staff_accounts.cancel")}
             confirm={t(asking === "uphold" ? "staff_accounts.appeal.uphold" : "staff_accounts.appeal.overturn")}
             busy={busy}
+            phrase={asking === "uphold" && ban ? handle : undefined}
             onCancel={() => {
               setAsking(undefined);
             }}
             onConfirm={send}
           >
-            {t(
-              asking === "uphold"
-                ? "staff_accounts.appeal.uphold.about"
-                : ban
-                  ? "staff_accounts.appeal.overturn.ban_about"
-                  : "staff_accounts.appeal.overturn.about",
-            )}
+            {asking === "uphold" && ban
+              ? t("staff_accounts.appeal.uphold.ban_about", { date: deleted })
+              : t(
+                  asking === "uphold"
+                    ? "staff_accounts.appeal.uphold.about"
+                    : ban
+                      ? "staff_accounts.appeal.overturn.ban_about"
+                      : "staff_accounts.appeal.overturn.about",
+                )}
           </ConfirmDialog>
         )}
       </ModalPresence>
-    </Titled>
+    </Section>
   );
 }

@@ -100,12 +100,12 @@
     "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
   },
   "staff_accounts.account_state": {
-    "defaultMessage": "{state, select, active {Active} pending {Waits for approval} rejected {Registration rejected} limited {Limited} disabled {Cannot sign in} deactivated {Deactivated} suspended {Suspended} deleted {Deleted} other {Active}}",
-    "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts. Read by moderators."
+    "defaultMessage": "{state, select, active {Active} pending {Waits for approval} rejected {Registration rejected} limited {Limited} disabled {Cannot sign in} deactivated {Deactivated} suspended {Suspended} banned {Banned} deleted {Deleted} other {Active}}",
+    "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts; banned for a suspension by a ban, which nothing lifts. Read by moderators."
   },
   "staff_accounts.action_state": {
-    "defaultMessage": "{state, select, active {In effect} expired {Ended} lifted {Lifted} other {In effect}}",
-    "description": "The state of a moderation action or a sign-up block: in effect, ended by itself, or lifted. Read by moderators."
+    "defaultMessage": "{state, select, active {In effect} permanent {Permanent} expired {Ended} lifted {Lifted} other {In effect}}",
+    "description": "The state of a moderation action or a sign-up block: in effect, permanent (a ban in effect, which is never lifted), ended by itself, or lifted. Read by moderators."
   },
   "staff_accounts.restriction": {
     "defaultMessage": "{restriction, select, login {signing in} post {posting} interact {following and favouriting} visibility_ceiling_private {public posts} public_discovery {public timelines and search} unsolicited_reach {notifications to non-followers} media_sensitive {media shown as is} profile_view {the profile and posts} federation {delivery to and from other servers} other {something}}",
@@ -259,6 +259,10 @@
     "defaultMessage": "Newest reports",
     "description": "The heading of an account's newest reports on its Review page. Read by moderators."
   },
+  "staff_accounts.account.back_report": {
+    "defaultMessage": "Report",
+    "description": "The way back from an account's moderation screen opened from a report, to that report. Read by moderators."
+  },
   "staff_accounts.page.tabs": {
     "defaultMessage": "Pages of the account",
     "description": "For assistive technology, the name of the tabs of an account's moderation screens. Read by moderators."
@@ -350,10 +354,6 @@
   "staff_accounts.act.public_reason": {
     "defaultMessage": "Reason the account is told",
     "description": "The label of the field of the reason a new action tells its account. Read by moderators."
-  },
-  "staff_accounts.act.public_reason.hint": {
-    "defaultMessage": "The account is told of the action, its reason and when it ends, and can appeal it.",
-    "description": "Under the field of the reason of a new action on a local account. Read by moderators."
   },
   "staff_accounts.act.private_note": {
     "defaultMessage": "Note for the moderators",
@@ -570,6 +570,10 @@
   "staff_accounts.action.lifted": {
     "defaultMessage": "{kind} is lifted.",
     "description": "Said after an action was lifted, naming its kind. Read by moderators."
+  },
+  "staff_accounts.action.appeal_open": {
+    "defaultMessage": "Open its appeal",
+    "description": "On a ban's page, after the sentence that only an appeal can overturn it: the link to the appeal of this ban. Read by moderators."
   },
   "staff_accounts.reports.table": {
     "defaultMessage": "Reports",
@@ -871,10 +875,6 @@
     "defaultMessage": "Reason you tell them",
     "description": "The label of the field of the explanation a decision tells the user who appealed. Read by moderators."
   },
-  "staff_accounts.appeal.reason.hint": {
-    "defaultMessage": "They are told the decision and this reason. An appeal is decided once.",
-    "description": "Under the field of the reason of an appeal's decision. Read by moderators."
-  },
   "staff_accounts.appeal.uphold": {
     "defaultMessage": "Uphold",
     "description": "The button that upholds an appeal, keeping its action, and its confirmation's button. Read by moderators."
@@ -890,6 +890,10 @@
   "staff_accounts.appeal.uphold.about": {
     "defaultMessage": "The action stays as it is, and they are told. This cannot be undone.",
     "description": "Under the question before an appeal is upheld. Read by moderators."
+  },
+  "staff_accounts.appeal.uphold.ban_about": {
+    "defaultMessage": "The ban becomes final and the account is deleted on {date}; they are told. This cannot be undone. Type the account's handle to confirm.",
+    "description": "Under the question before an appeal of a ban is upheld, over the field of the handle typed to confirm. Read by moderators."
   },
   "staff_accounts.appeal.overturn.confirm": {
     "defaultMessage": "Overturn the original decision?",
@@ -910,6 +914,10 @@
   "staff_accounts.appeal.overturned": {
     "defaultMessage": "The action is overturned and lifted.",
     "description": "Said after an appeal was overturned. Read by moderators."
+  },
+  "staff_accounts.appeal.ban_final": {
+    "defaultMessage": "Upholding the original decision makes the ban final: the account is deleted on {date}.",
+    "description": "Over Uphold and Overturn of an appeal of a ban: what upholding does. Read by moderators."
   },
   "staff_accounts.registrations.table": {
     "defaultMessage": "Registrations",
@@ -972,7 +980,7 @@
     "description": "The question before the registrations picked are approved. Read by moderators."
   },
   "staff_accounts.registrations.approve.about": {
-    "defaultMessage": "They can use the app at once. A registration is decided once.",
+    "defaultMessage": "They can use the app at once.",
     "description": "The line under the note's field before registrations are approved. Read by moderators."
   },
   "staff_accounts.registrations.reject.confirm": {
@@ -980,7 +988,7 @@
     "description": "The question before the registrations picked are rejected. Read by moderators."
   },
   "staff_accounts.registrations.reject.about": {
-    "defaultMessage": "They cannot use the account. A registration is decided once.",
+    "defaultMessage": "They cannot use the account.",
     "description": "The line under the note's field before registrations are rejected. Read by moderators."
   },
   "staff_accounts.registrations.note": {
@@ -995,12 +1003,16 @@
     "defaultMessage": "{count, plural, one {# registration rejected.} other {# registrations rejected.}}",
     "description": "Said after registrations were rejected. Read by moderators."
   },
+  "staff_accounts.registrations.facts": {
+    "defaultMessage": "The registration",
+    "description": "For assistive technology, the name of the facts of one registration in the list of registrations: its email address, kept until shown, and why the person wants to join. Read by moderators."
+  },
   "staff_accounts.block_kind": {
     "defaultMessage": "{kind, select, email_domain {Email domain} email_hash {Email address} ip_range {IP range} other {Email domain}}",
     "description": "What a sign-up block matches, in its list, its filter, its page and the form of a new one. Read by moderators."
   },
   "staff_accounts.block_severity": {
-    "defaultMessage": "{severity, select, reject {Refuse the sign-up} require_approval {Hold it for approval} other {Refuse the sign-up}}",
+    "defaultMessage": "{severity, select, reject {Refuse the sign‑up} require_approval {Hold it for approval} other {Refuse the sign‑up}}",
     "description": "What a sign-up block does to a sign-up it matches. Read by moderators."
   },
   "staff_accounts.blocks.add": {
@@ -1060,7 +1072,7 @@
     "description": "The column of why a line was skipped. Read by moderators."
   },
   "staff_accounts.blocks.hash": {
-    "defaultMessage": "Address hashed {hash}…",
+    "defaultMessage": "Hash {hash}…",
     "description": "The value of a block of one email address, of which only a hash is kept: its start. Read by moderators."
   },
   "staff_accounts.blocks.empty": {
@@ -1634,5 +1646,9 @@
   "staff_accounts.place.reason": {
     "defaultMessage": "Reason (optional)",
     "description": "The label of the field of why a moderator ends a room or cancels an event. Read by moderators."
+  },
+  "staff_accounts.action_category": {
+    "defaultMessage": "{category, select, spam {Spam} legal {Legal reasons} violation {Violation of the server's rules} other {Other}}",
+    "description": "The kind of reason of a moderation action, in the words the account it is on reads: in the form of a new action, the lists of actions and their facts. Read by moderators."
   }
 }

@@ -5,6 +5,7 @@
 // the appeals of refused posts, a sign-up block and its two forms, and the form of a new invite. Each is titled by
 // what it shows once read, by its entry's name meanwhile, and goes back the way its address says.
 
+import { reportPath } from "@my/app-components";
 import {
   AccountActionScreen,
   accountPagePath,
@@ -57,7 +58,8 @@ export function AccountRoute({ id, page }: { id: string; page: AccountPage }) {
           address.go(staffHref(accountPagePath(id, next), report === undefined ? {} : { report }));
         }}
         onBack={() => {
-          address.go(staffEntryPath("moderation", "accounts"));
+          const report = address.search["report"];
+          address.go(report === undefined ? staffEntryPath("moderation", "accounts") : reportPath(report));
         }}
       />
     </StaffOpened>

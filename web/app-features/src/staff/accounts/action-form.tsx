@@ -4,7 +4,8 @@
 // suspend or force sensitive alone; on posts only from a report, whose posts it names), the kind of reason, how long it
 // lasts (up to ten years; a ban and an action on posts do not end), the reason the account is told and the moderators'
 // note, whether a local account is told, and for a ban of a local account whether its email address is blocked from
-// signing up again. A ban asks first, with the handle typed, and says that only overturning its appeal undoes it; the
+// signing up again. A ban asks first, with the handle typed, and says that it cannot be lifted, only an appeal can
+// overturn it; the
 // deletion of posts asks first too, since it is final. What the server refuses stands under its field, or beside the
 // button for what names none; what the press did is said in the form's status.
 
@@ -37,8 +38,15 @@ import {
 } from "@my/design-system";
 import { useId, useState } from "react";
 import { useStaffStrings } from "../parts";
-import { categoryWords } from "../reports/queue";
-import { kindWords, LabelledSelect, lengthOptions, refusalWords, secondsOf, useSaid } from "./parts";
+import {
+  actionCategoryWords,
+  kindWords,
+  LabelledSelect,
+  lengthOptions,
+  refusalWords,
+  secondsOf,
+  useSaid,
+} from "./parts";
 
 /** The members of the request a refusal may name, each with the field that says it. */
 type Faults = Partial<Record<"kind" | "status_ids" | "expires_in" | "public_reason" | "private_note", string>>;
@@ -159,7 +167,7 @@ export function ActionForm({ account, report }: { account: ModeratedAccountDetai
       />
       <LabelledSelect
         label={t("staff_accounts.act.category")}
-        options={actionCategories.map((c) => ({ value: c, label: categoryWords(t, c) }))}
+        options={actionCategories.map((c) => ({ value: c, label: actionCategoryWords(t, c) }))}
         value={category}
         onChange={(v) => {
           setCategory(v as AccountActionCategory);
@@ -213,7 +221,6 @@ export function ActionForm({ account, report }: { account: ModeratedAccountDetai
         id={`${id}-public_reason`}
         name="public_reason"
         label={t("staff_accounts.act.public_reason")}
-        hint={account.local ? t("staff_accounts.act.public_reason.hint") : undefined}
         multiline
         rows={3}
         maxLength={actionTextLimit}

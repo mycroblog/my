@@ -3,8 +3,8 @@
 // The actions on an account (FR-703, FR-713): every one, a page at a time, or those in effect alone, each opening its
 // page at /moderation/accounts/{id}/actions/{actionId}; and that page, with all an action holds (its reason, the
 // moderators' note, who took it, when it ends or was lifted and why, the report it follows from) and, while it is in
-// effect, Lift, with the reason for lifting. A ban is never lifted: its page says that only overturning its appeal
-// undoes it.
+// effect, Lift, with the reason for lifting. A ban cannot be lifted: its page says that only an appeal can overturn
+// it, with the way to its appeal where there is one.
 
 import { reportPath, sentenceHandleOf } from "@my/app-components";
 import {
@@ -14,6 +14,7 @@ import {
   useAccountActions,
   useAccountWrites,
   useModeratedAccount,
+  useModeratedAppeals,
   useStaffAccounts,
   type AccountAction,
   type ModeratedAccountDetail,
@@ -36,10 +37,21 @@ import {
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import type { StaffSearch } from "../entries";
-import { ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
-import { categoryWords } from "../reports/queue";
+import { ReadNotice, useMoment, useStaffStrings } from "../parts";
+import { appealHref } from "./appeals";
 import { accountPagePath, ActionTable } from "./account";
-import { ActionStateMark, cursorOf, filtered, kindWords, Pages, refusalWords, useEnd, useSaid } from "./parts";
+import {
+  actionCategoryWords,
+  ActionStateMark,
+  cursorOf,
+  filtered,
+  kindWords,
+  Pages,
+  refusalWords,
+  useEnd,
+  useSaid,
+  Section,
+} from "./parts";
 
 /** The actions page of an account: every action, or those in effect, a page at a time. */
 export function AccountActionsPage({
@@ -153,11 +165,32 @@ export function AccountActionScreen({ account, id, onBack }: AccountActionScreen
       <ActionFacts action={action} />
       {status}
       {action.kind === "ban" ? (
-        <FeedNotice start>{t("staff_accounts.action.ban_lifted_by_appeal")}</FeedNotice>
+        <BanNotice action={action} />
       ) : (
         action.state === "active" && <Lift action={action} say={say} />
       )}
     </ScreenStack>
+  );
+}
+
+/**
+ * In a ban's place of Lift: that it cannot be lifted, in the screen's own text, and the way to its appeal where one
+ * was made (among the newest appeals).
+ */
+function BanNotice({ action }: { action: AccountAction }) {
+  const { t } = useStaffStrings();
+  const appeal = useModeratedAppeals(undefined, undefined).items.find((a) => a.action.id === action.id);
+  return (
+    <FeedNotice
+      lead
+      action={
+        appeal === undefined ? undefined : (
+          <TextLink href={appealHref(appeal.id, {})}>{t("staff_accounts.action.appeal_open")}</TextLink>
+        )
+      }
+    >
+      {t("staff_accounts.action.ban_lifted_by_appeal")}
+    </FeedNotice>
   );
 }
 
@@ -169,7 +202,7 @@ function ActionFacts({ action }: { action: AccountAction }) {
   const by = useStaffAccounts([action.issued_by_account_id]).get(action.issued_by_account_id ?? "");
   const items: Fact[] = [
     { term: t("staff_accounts.action.fact.state"), value: <ActionStateMark action={action} /> },
-    { term: t("staff_accounts.action.fact.category"), value: categoryWords(t, action.reason_category) },
+    { term: t("staff_accounts.action.fact.category"), value: actionCategoryWords(t, action.reason_category) },
     {
       term: t("staff_accounts.action.fact.public_reason"),
       value: action.public_reason === undefined ? t("staff_accounts.none") : <bdi>{action.public_reason}</bdi>,
@@ -251,7 +284,7 @@ function Lift({ action, say }: { action: AccountAction; say: (words: string) => 
     );
   };
   return (
-    <Titled title={t("staff_accounts.action.lift")}>
+    <Section title={t("staff_accounts.action.lift")}>
       <Stack
         gap="screen-field-gap"
         as={
@@ -280,6 +313,6 @@ function Lift({ action, say }: { action: AccountAction; say: (words: string) => 
           </Button>
         </Row>
       </Stack>
-    </Titled>
+    </Section>
   );
 }

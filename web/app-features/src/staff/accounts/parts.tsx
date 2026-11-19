@@ -9,6 +9,7 @@ import { copyText } from "@my/platform";
 import {
   Box,
   Button,
+  ListTitle,
   CaptionLine,
   CopyBlock,
   FieldError,
@@ -153,20 +154,43 @@ export function LabelledSelect({
 /** The kind of an action, in words ("Limit"). */
 export const kindWords = (t: T, kind: AccountActionKind): string => t("staff_accounts.kind", { kind });
 
-/** The state of an account, in words, marked as a record's state is. */
-export function AccountStateMark({ state }: { state: ModeratedAccountState }) {
+/** How each state of an account is marked: the graver what it shuts out, the stronger. */
+const accountMarks: Readonly<Record<ModeratedAccountState, RecordState>> = {
+  active: "active",
+  limited: "limited",
+  pending: "pending",
+  disabled: "suspended",
+  suspended: "suspended",
+  rejected: "disabled",
+  deactivated: "disabled",
+  deleted: "disabled",
+};
+
+/**
+ * The state of an account, in words, marked as a record's state is; `banned`, a suspension that a ban in effect made,
+ * named and marked as the ban, which nothing lifts.
+ */
+export function AccountStateMark({ state, banned = false }: { state: ModeratedAccountState; banned?: boolean }) {
   const { t } = useStaffStrings();
-  // In force while it may use the server (limited too), waiting while its registration waits, else shut.
-  const mark: RecordState =
-    state === "active" || state === "limited" ? "active" : state === "pending" ? "pending" : "disabled";
-  return <StateMark state={mark}>{t("staff_accounts.account_state", { state })}</StateMark>;
+  if (banned && state === "suspended")
+    return <StateMark state="permanent">{t("staff_accounts.account_state", { state: "banned" })}</StateMark>;
+  return <StateMark state={accountMarks[state]}>{t("staff_accounts.account_state", { state })}</StateMark>;
 }
 
-/** The state of an action, marked: in effect, ended by itself, or lifted. */
+/** Whether a ban is in effect among `actions`. */
+export const bannedBy = (actions: readonly AccountAction[]): boolean =>
+  actions.some((a) => a.kind === "ban" && a.state === "active");
+
+/** The state of an action, marked: in effect (a ban in effect, permanent), ended by itself, or lifted. */
 export function ActionStateMark({ action }: { action: AccountAction }) {
   const { t } = useStaffStrings();
-  return <StateMark state={action.state}>{t("staff_accounts.action_state", { state: action.state })}</StateMark>;
+  const state = action.kind === "ban" && action.state === "active" ? "permanent" : action.state;
+  return <StateMark state={state}>{t("staff_accounts.action_state", { state })}</StateMark>;
 }
+
+/** The kind of reason of an action, in the words the account it is on reads. */
+export const actionCategoryWords = (t: T, category: AccountAction["reason_category"]): string =>
+  t("staff_accounts.action_category", { category });
 
 /** When an action or a block ends: the moment, or that it lasts until it is lifted. */
 export function useEnd(): (expires: string | undefined) => string {
@@ -213,5 +237,18 @@ export function CopyValue({ label, value, copy }: { label: string; value: string
       }
       result={copied === undefined ? undefined : t(copied ? "staff_accounts.copied" : "staff_accounts.copy_failed")}
     />
+  );
+}
+
+/**
+ * A section of a screen that holds fields or what is decided on (the form of a new action, the decision of an appeal),
+ * under a title of the list's size: never smaller than the labels of the fields under it.
+ */
+export function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack gap="entry-room">
+      <ListTitle>{title}</ListTitle>
+      {children}
+    </Stack>
   );
 }
