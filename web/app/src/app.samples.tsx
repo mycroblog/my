@@ -45,7 +45,10 @@ export type Fake = {
    * `{invite:0}` the ID of the reader's invite at that index of their list, `{room:1}` the ID of the fake's open room at
    * that index, `{room:opened}` of the room the story's reader opens, `{event:book-swap}` of the fake's event of that
    * key), `{tip:open}` and `{tip:paid}` of the reader's tip of the fake's supporters left open or paid, `{report:deals}`
-   * of the fake's report of that key in the moderators' queue, `{server:webhook:alerts}` of the fake's thing of that
+   * of the fake's report of that key in the moderators' queue, `{account:kai}` of the account of the scenario's person
+   * of that username, `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
+   * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
+   * `{server:webhook:alerts}` of the fake's thing of that
    * area and key in the administration (`emoji`, `request`, `announcement`, `webhook`),
    * `announcement:<key>` of an announcement, `list:<index>` of the reader's list at that index and
    * `members:<index>` of its members, `filter:<index>` of the editor of the reader's keyword filter at that index,
@@ -200,7 +203,9 @@ function pathOf(fake: FakeApi, at: string): string {
       .replace(/\{event:([\w-]+)\}/g, (_, key: string) => fake.events.id(key))
       .replace(/\{tip:(open|paid)\}/g, (_, key: "open" | "paid") => fake.supporters.tipId(key))
       .replace(/\{report:([\w-]+)\}/g, (_, key: string) => fake.reports.id(key))
-      .replace(/\{server:(\w+):([\w-]+)\}/g, (_, area: string, key: string) => fake.staffServer.id(area, key));
+      .replace(/\{server:(\w+):([\w-]+)\}/g, (_, area: string, key: string) => fake.staffServer.id(area, key))
+      .replace(/\{account:([\w@.-]+)\}/g, (_, username: string) => fake.accountId(username))
+      .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key));
   if (at.startsWith("article-draft:")) return `/articles/new?draft=${fake.idOf(at.slice("article-draft:".length))}`;
   if (at.startsWith("article-edit:")) return `/articles/${fake.idOf(at.slice("article-edit:".length))}/edit`;
   if (at.startsWith("announcement:")) return fake.announcementPath(at.slice("announcement:".length));
