@@ -30,5 +30,6 @@ test("a person reports an account from its post, with another of its posts, and 
   await expect(report.sent).toBeVisible();
   await report.after("Mute");
   await report.done();
-  await expect(page.getByText(new RegExp(`^You muted @${author.username}(?:@\\S+)?\\.$`))).toBeVisible();
+  // The line in the post's place ends with Undo, in the same paragraph.
+  await expect(page.getByText(new RegExp(`^You muted @${author.username}(?:@\\S+)?\\.\\s*Undo$`))).toBeVisible();
 });
