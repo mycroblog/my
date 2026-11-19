@@ -389,7 +389,7 @@ func TestSupporterSubscriptionPlanRank(t *testing.T) {
 	// The client's comparison with a listed plan is the server's.
 	bronze := ranks[plans["bronze"].Id]
 	want, err := domain.ChangeTiming(domain.Choice{Rank: v.Plan.Revision.Rank, Interval: domain.IntervalMonth}, domain.Choice{Rank: bronze, Interval: domain.IntervalMonth})
-	if err != nil || want != domain.TimingPeriodEnd || !(bronze < sub.PlanRank) {
+	if err != nil || want != domain.TimingPeriodEnd || bronze >= sub.PlanRank {
 		t.Errorf("ChangeTiming to bronze = %s, %v; the client compares %d < %d", want, err, bronze, sub.PlanRank)
 	}
 }
