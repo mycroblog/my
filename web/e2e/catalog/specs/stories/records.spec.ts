@@ -43,14 +43,17 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
     records("filters-applied"),
     async (page) => {
       const filters = page.getByRole("search", { name: "Filter reports", exact: true });
-      await expect(filters.getByRole("searchbox", { name: "Search reports", exact: true })).toHaveValue("deals");
-      await expect(filters.getByRole("button", { name: "State: Open", exact: true })).toBeVisible();
-      await expect(filters.getByRole("button", { name: "Category: Spam", exact: true })).toBeVisible();
+      await expect(filters.getByRole("searchbox", { name: "Search reports", exact: true })).toHaveValue("kuro");
+      await expect(filters.getByRole("button", { name: "State: Assigned", exact: true })).toBeVisible();
+      await expect(filters.getByRole("button", { name: "Category: Harassment", exact: true })).toBeVisible();
+      const mine = filters.getByRole("button", { name: "Assigned to me", exact: true });
+      await expect(mine).toHaveAttribute("aria-pressed", "true");
       await expect(filters.getByRole("status")).toHaveText("1 report");
       // Clear filters empties the search and every facet: the whole queue again.
       await filters.getByRole("button", { name: "Clear filters", exact: true }).click();
       await expect(filters.getByRole("searchbox")).toHaveValue("");
       await expect(filters.getByRole("button", { name: "State", exact: true })).toBeVisible();
+      await expect(mine).toHaveAttribute("aria-pressed", "false");
       await expect(table(page, "Reports").getByRole("row")).toHaveCount(6);
     },
   ],

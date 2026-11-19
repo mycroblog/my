@@ -548,9 +548,14 @@ export const ReportsScreen: Story = {
   render: () => <Queue picked={["1040"]} />,
 };
 
-/** The queue filtered: open reports of spam, the search's words, the toggle on, and Clear filters at the facets' end. */
+/**
+ * The queue filtered: reports of harassment assigned to the reader, the search's words, every facet applied and the
+ * toggle on, and Clear filters at the facets' end.
+ */
 export const FiltersApplied: Story = {
-  render: () => <Queue start={{ search: "deals", state: "open", category: "spam", mine: false }} pages="only" />,
+  render: () => (
+    <Queue start={{ search: "kuro", state: "assigned", category: "harassment", mine: true }} pages="only" />
+  ),
 };
 
 /** The filters at rest: nothing applied, so no Clear filters; the facets each say what they filter by. */
