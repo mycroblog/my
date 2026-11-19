@@ -4,7 +4,7 @@
 // @mycroblog/mykit, and TanStack Query as the one cache of what it answers. Features read and write the server only
 // through the hooks and queries here, and never copy what they return into state or context.
 
-export { createAppData, createQueryClient, type AppData } from "./app-data";
+export { createAppData, createQueryClient, onDataClosed, type AppData } from "./app-data";
 export {
   articleFieldLimits,
   articleSourceQuery,
@@ -681,3 +681,41 @@ export {
   type ModerationAction,
   type ModerationAppeal,
 } from "./own-moderation";
+export {
+  isVoiceLeaveRefused,
+  isVoiceSessionGone,
+  joinVoiceRoom,
+  leaveVoiceRoom,
+  leaveVoiceRoomOnUnload,
+  parseVoiceStreamEvent,
+  reactInVoiceRoom,
+  receiveVoiceRoom,
+  renewVoiceGrant,
+  runVoiceStream,
+  sendVoiceHeartbeat,
+  sendVoiceSignal,
+  setVoiceMic,
+  useVoiceHistory,
+  useVoiceRoom,
+  useVoiceRooms,
+  voiceHistoryQuery,
+  voiceHostOperation,
+  voiceRoomLeft,
+  voiceRoomQuery,
+  voiceRoomsQuery,
+  voiceSelfOperation,
+  voiceStreamDelays,
+  voiceStreamSilence,
+  VoiceStreamSilentError,
+  type VoiceEndReason,
+  type VoiceGrant,
+  type VoiceHostOperation,
+  type VoiceJoin,
+  type VoiceLeaveChoice,
+  type VoiceRoomHistoryEntry,
+  type VoiceRoomParticipant,
+  type VoiceSelfOperation,
+  type VoiceSignalOut,
+  type VoiceStreamEvent,
+  type VoiceStreamOptions,
+} from "./voice";

@@ -80,6 +80,7 @@ class SessionCache extends QueryCache {
  */
 class SessionQueryClient extends QueryClient {
   readonly #cache: SessionCache;
+  readonly #onClose = new Set<() => void>();
 
   constructor(config: QueryClientConfig) {
     const queryCache = new SessionCache();
@@ -92,9 +93,25 @@ class SessionQueryClient extends QueryClient {
   }
 
   close(): void {
+    if (this.#cache.closed) return;
     this.#cache.closed = true;
     void this.cancelQueries();
     this.clear();
+    const listeners = [...this.#onClose];
+    this.#onClose.clear();
+    for (const listener of listeners) listener();
+  }
+
+  /** Calls `listener` once, as the cache closes, until the function it returns is called. */
+  onClose(listener: () => void): () => void {
+    if (this.closed) {
+      listener();
+      return () => undefined;
+    }
+    this.#onClose.add(listener);
+    return () => {
+      this.#onClose.delete(listener);
+    };
   }
 
   override defaultQueryOptions<
@@ -152,6 +169,15 @@ export function whileOpen<T>(data: AppData, asked: () => Promise<T>): Promise<T>
       throw error;
     },
   );
+}
+
+/**
+ * Calls `listener` once when the session of `data` ends (`closeData`: signed out here or in another tab, or ended by
+ * the server), at once when it has ended, until the function it returns is called: what outlives a screen and speaks
+ * for the session (a call) ends with it. Nothing for data on a cache that is not this module's.
+ */
+export function onDataClosed({ queryClient }: AppData, listener: () => void): () => void {
+  return queryClient instanceof SessionQueryClient ? queryClient.onClose(listener) : () => undefined;
 }
 
 /**
