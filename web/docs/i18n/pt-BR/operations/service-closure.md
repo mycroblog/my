@@ -108,7 +108,7 @@ my admin closure export-html -out ./closure -lang ja,en # set the locales and th
 
 - O que ele grava:
   - `<dir>/<locale>.html`, e `<dir>/index.html`, que lista todos os locales na ordem. Eles usam o mesmo template e o mesmo CSS da página de manutenção (`my maintenance export`) e mostram o nome do servidor (`maintenance_server_name`, senão o nome da instância, senão o nome do host), a data de encerramento, a mensagem do operador do anúncio e um link para a página de status (`status_page_url`).
-    O CSS é apenas inline; não há scripts nem recursos externos, e a CSP fica em uma tag `<meta>`. Os ajustes de cor do tema são incorporados; o CSS personalizado não é incluído.
+    O CSS é apenas inline; não há scripts nem recursos externos, e a CSP fica em uma tag `<meta>`. Os ajustes de cor do tema são incorporados.
   - Exemplos de configuração do front end `nginx.conf`, `Caddyfile` e `cloudfront-function.js`. Cada um retorna `410` sem corpo para os caminhos de federação e descoberta (`/ap/*`, `/inbox`, `/.well-known/webfinger`, `/.well-known/host-meta`, `/.well-known/host-meta.json`, `/.well-known/nodeinfo`, `/nodeinfo/*`) e para perfis (`/@*`), e, para qualquer outro caminho, retorna a página do primeiro idioma em `Accept-Language` (ou `index.html`, se não houver nenhum).
     Um idioma recebe a página do locale em que o app o mostraria: `zh`, `zh-SG` e `zh-Hans` recebem `zh-CN.html`, e `zh-Hant`, `zh-HK` e `zh-MO` recebem `zh-TW.html`.
 - O comando se recusa se o servidor não tiver sido encerrado (código de saída 1). Antes de `delivery_completed`, ele avisa que as entregas continuam (e mesmo assim grava os arquivos).

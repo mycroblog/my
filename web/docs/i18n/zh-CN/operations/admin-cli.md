@@ -150,5 +150,5 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 
 - 输出：`-lang` 中每个语言区域一个 `<dir>/<locale>.html`，供按 `Accept-Language` 选择页面的前端使用；以及依次包含所有语言区域的 `<dir>/index.html`，供无法这样选择的前端使用。这些页面使用内联 CSS，不含脚本和外部资源；其 Content-Security-Policy 写在 `<meta>` 元素中。
 - 文字：来自设置 `maintenance_server_name`、`maintenance_message`、`maintenance_until` 和 `status_page_url`（[配置参考](../reference/configuration.md)）。
-- 不加 `-offline` 时，它还会读取实例的名称（当 `maintenance_server_name` 未设置时）、默认语言区域（当未指定 `-lang` 时）以及主题的令牌覆盖值。主题的自定义 CSS 永远不会包含在内。当无法读取数据库时，它会打印警告，根据配置和默认主题生成页面，并以退出码 0 退出。
+- 不加 `-offline` 时，它还会读取实例的名称（当 `maintenance_server_name` 未设置时）、默认语言区域（当未指定 `-lang` 时）以及主题的令牌覆盖值。当无法读取数据库时，它会打印警告，根据配置和默认主题生成页面，并以退出码 0 退出。
 - 每当这些设置或主题发生变化时，以及每次维护之前，都请重新运行它，使前端中的页面保持最新。

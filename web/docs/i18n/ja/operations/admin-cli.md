@@ -175,6 +175,6 @@ my maintenance export -out ./maintenance -lang en,ja -offline   # the configurat
 - 文言: 設定 `maintenance_server_name`、`maintenance_message`、`maintenance_until`、`status_page_url`
   （[設定リファレンス](../reference/configuration.md)）。
 - `-offline` を付けないと、インスタンスの名前（`maintenance_server_name` が未設定のとき）、既定のロケール（`-lang` を指定しないとき）、
-  テーマのトークンの上書きも読みます。テーマのカスタム CSS は決して含まれません。データベースを読めないときは、
+  テーマのトークンの上書きも読みます。データベースを読めないときは、
   警告を出し、設定と既定のテーマからページを書き出して、0 で終了します。
 - フロントエンドのページを最新に保つため、これらの設定やテーマを変えたときと、メンテナンスの前には毎回もう一度実行してください。
