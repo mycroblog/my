@@ -25,3 +25,4 @@ export { memberNotificationRows, moderatorNotificationRows, type FakeNotificatio
 export type { Failure, Script, Scripted, Seen } from "./script";
 export { UnimplementedError, type Route } from "./spec";
 export type { FakeVoice, FakeVoiceEvent } from "./voice";
+export type { FakeEventPlan, FakeEvents } from "./events";

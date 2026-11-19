@@ -54,6 +54,7 @@ const marksSecurity = (path: string) => [
   ["Display and posting", "/settings/display", null],
   ["Notifications", "/settings/notifications", null],
   ["Voice chat", "/settings/voice", null],
+  ["Events", "/settings/events", null],
   ["Relationships", "/settings/relationships", null],
   ["Keyword filters", "/settings/filters", null],
   ["Security", security, "page"],

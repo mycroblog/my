@@ -286,6 +286,7 @@ export {
   type PlaceKind,
   type PlaceLineProps,
 } from "./event";
+export { EventDescription, type DescriptionPart } from "./event-description";
 export { SearchField, type SearchFieldProps } from "./search-field";
 export { SaveState, type SaveStateProps } from "./save-state";
 export {

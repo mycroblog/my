@@ -107,6 +107,14 @@
     "defaultMessage": "The rooms you hosted",
     "description": "The line under Voice chat in the settings menu."
   },
+  "settings.entry.events": {
+    "defaultMessage": "Events",
+    "description": "The entry of the settings of events (the reminders before them), in the settings' menu and as its screen's title."
+  },
+  "settings.entry.events.hint": {
+    "defaultMessage": "Reminders before events",
+    "description": "The line under the entry of the settings of events in the settings' menu."
+  },
   "settings.sign_out": {
     "defaultMessage": "Sign out…",
     "description": "The last row of the settings menu, apart from its groups: it signs this browser out, after a confirmation (settings.sign_out.title)."
@@ -3410,5 +3418,41 @@
   "settings.voice.failed_more": {
     "defaultMessage": "More rooms could not be loaded.",
     "description": "Under the rooms the reader hosted, in the settings, when more could not be loaded, beside a button to try again."
+  },
+  "settings.events.loading": {
+    "defaultMessage": "Loading your reminders…",
+    "description": "In place of the settings of events while the reminders load."
+  },
+  "settings.events.failed": {
+    "defaultMessage": "Your reminders could not be loaded.",
+    "description": "In place of the settings of events when the reminders could not be loaded, beside a button to try again."
+  },
+  "settings.events.reminders": {
+    "defaultMessage": "Reminders",
+    "description": "The heading of the reminders before events in the settings."
+  },
+  "settings.events.reminders.about": {
+    "defaultMessage": "A notification before each event you answered going or maybe.",
+    "description": "The line under the heading of the reminders before events in the settings."
+  },
+  "settings.events.reminder": {
+    "defaultMessage": "Reminder {number}",
+    "description": "The name of one of the three choices of a reminder before events in the settings."
+  },
+  "settings.events.before": {
+    "defaultMessage": "{unit, select, day {{count, plural, one {# day before} other {# days before}}} hour {{count, plural, one {# hour before} other {# hours before}}} other {{count, plural, one {# minute before} other {# minutes before}}}}",
+    "description": "How long before an event's start a reminder is, a choice of a reminder in the settings."
+  },
+  "settings.events.none": {
+    "defaultMessage": "None",
+    "description": "The choice of no reminder in one of the three choices of a reminder before events."
+  },
+  "settings.events.defaults": {
+    "defaultMessage": "Restore the defaults",
+    "description": "The button under the reminders before events that brings back the defaults (1 day and 1 hour before, which the line about the section does not spell out)."
+  },
+  "settings.events.defaults_done": {
+    "defaultMessage": "Restored the defaults",
+    "description": "Beside the button that brings back the default reminders once it did."
   }
 }

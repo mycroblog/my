@@ -12,6 +12,10 @@ export {
   useAnnouncementTitle,
 } from "./announcements/announcements";
 export { AuthScreen } from "./auth/screen";
+export { descriptionParts } from "./events/description";
+export { EventScreen, EventVisitor, loadEvent, useEventTitle } from "./events/event";
+export { EventsScreen, loadEvents } from "./events/list";
+export type { JoinRoom } from "./events/places";
 export {
   CallUnavailableError,
   currentCall,

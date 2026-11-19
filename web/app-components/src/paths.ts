@@ -81,6 +81,15 @@ export const voiceInvitationsPath = (id: string) => `${voiceRoomPath(id)}/invita
 /** The address of the settings' screen of the voice chat: the rooms the reader hosted (ADR-0100 §13). */
 export const voiceHistoryPath = "/settings/voice";
 
+/** The address of the upcoming events the reader sees (ADR-0161 §9). */
+export const eventsPath = "/events";
+
+/** The address of an event's page (ADR-0161 §9). */
+export const eventPath = (id: string) => `/events/${encodeURIComponent(id)}`;
+
+/** The address of the settings' screen of the reminders of events (ADR-0161 §12). */
+export const eventRemindersPath = "/settings/events";
+
 /** The address of the held-back notifications of the account of `id`. */
 export const heldOfPath = (id: string) => `${heldPath}/${id}`;
 
@@ -92,6 +101,7 @@ export type NotificationTarget = {
   readonly account_move?: { readonly target?: Handle | undefined } | undefined;
   readonly announcement?: { readonly id: string } | undefined;
   readonly voice_room_id?: string | undefined;
+  readonly event_id?: string | undefined;
 };
 
 const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request", "quote_request"]);
@@ -100,17 +110,15 @@ const requests: ReadonlySet<string> = new Set(["reply_request", "boost_request",
  * Where a notification leads, the one place that decides it for every list of them: what waits for the reader's
  * approval for a request to reply, boost or quote; the follow requests for one; the post it is about; the account an
  * account moved to; the announcement; the automatic deletion's settings for the server's maximum that will apply to
- * the reader's posts; the voice chat room a room's start or invitation is about; the account that acted; else the
- * notifications. An event's lead to the notifications until the client has its screen.
+ * the reader's posts; the voice chat room a room's start or invitation is about; the event an event's notification is
+ * about; the account that acted; else the notifications.
  */
 export function notificationPath(n: NotificationTarget): string {
   if (requests.has(n.type)) return waitingPath;
   if (n.type === "auto_delete_limit") return autoDeletePath;
   if (n.type.startsWith("voice_room_"))
     return n.voice_room_id === undefined ? "/notifications" : voiceRoomPath(n.voice_room_id);
-  // The events domain adds /events/{id} of the redesign; until then the notifications of an event lead nowhere else,
-  // rather than to a screen the client lacks.
-  if (n.type.startsWith("event_")) return "/notifications";
+  if (n.type.startsWith("event_")) return n.event_id === undefined ? "/notifications" : eventPath(n.event_id);
   if (n.type === "follow_request") return followRequestsPath;
   if (n.status !== undefined) return statusPath(n.status);
   if (n.type === "account_moved" && n.account_move?.target !== undefined) return accountPath(n.account_move.target);

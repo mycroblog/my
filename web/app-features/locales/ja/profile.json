@@ -282,5 +282,9 @@
   "profile.add_to_list_followed_only": {
     "defaultMessage": "フォロー中のアカウントだけ追加できます",
     "description": "Under Add to list, muted, on a profile of an account the reader does not follow."
+  },
+  "profile.events": {
+    "defaultMessage": "これからのイベント",
+    "description": "The name of the list of the upcoming events an account organizes, on its profile, for assistive technology."
   }
 }
