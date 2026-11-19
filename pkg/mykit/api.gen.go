@@ -7967,13 +7967,13 @@ type AdminReport struct {
 	// took an action on the target. `dismissed`: there was nothing to act on.
 	Outcome *AdminReportOutcome `json:"outcome,omitempty"`
 
-	// ReporterAccount The reporter, often the instance actor of a remote server; omitted when the account is gone.
+	// ReporterAccount The reporter, often the instance actor of a remote server; omitted when the account is
+	// gone, and when the reader is the account reported.
 	ReporterAccount *Account `json:"reporter_account,omitempty"`
 
-	// ReporterAccountId The ID of a resource, a UUIDv7 in its canonical string form.
-	//
-	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-	ReporterAccountId Id `json:"reporter_account_id"`
+	// ReporterAccountId The account that filed the report; omitted when the reader is the account reported,
+	// who never learns who reported them.
+	ReporterAccountId *Id `json:"reporter_account_id,omitempty"`
 
 	// RuleIds The IDs of the instance rules that the report cites, retired ones included; only a
 	// report of the `violation` category cites rules.
@@ -8056,13 +8056,13 @@ type AdminReportDetail struct {
 	// took an action on the target. `dismissed`: there was nothing to act on.
 	Outcome *AdminReportOutcome `json:"outcome,omitempty"`
 
-	// ReporterAccount The reporter, often the instance actor of a remote server; omitted when the account is gone.
+	// ReporterAccount The reporter, often the instance actor of a remote server; omitted when the account is
+	// gone, and when the reader is the account reported.
 	ReporterAccount *Account `json:"reporter_account,omitempty"`
 
-	// ReporterAccountId The ID of a resource, a UUIDv7 in its canonical string form.
-	//
-	// Examples: 01890a5d-ac96-774b-bcce-b302099a8057
-	ReporterAccountId Id `json:"reporter_account_id"`
+	// ReporterAccountId The account that filed the report; omitted when the reader is the account reported,
+	// who never learns who reported them.
+	ReporterAccountId *Id `json:"reporter_account_id,omitempty"`
 
 	// RuleIds The IDs of the instance rules that the report cites, retired ones included; only a
 	// report of the `violation` category cites rules.

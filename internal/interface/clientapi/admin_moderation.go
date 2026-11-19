@@ -231,16 +231,26 @@ func (s *Server) LiftDomainAction(ctx context.Context, req LiftDomainActionReque
 }
 
 // newAdminReports presents reports with their reporters, targets, and assignees, reading each
-// account once. An account that is gone is left out of the report.
+// account once. An account that is gone is left out of the report, and so is the reporter of a
+// report whose target is the viewer: the reported never learns who reported them (FR-701). Every
+// admin answer that carries a report presents it here.
 func (s *Server) newAdminReports(ctx context.Context, recs []moderation.ReportRecord) ([]AdminReport, error) {
 	return s.newAdminReportsWith(ctx, s.reads(), recs)
 }
 
 // newAdminReportsWith is newAdminReports through reads.
 func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, recs []moderation.ReportRecord) ([]AdminReport, error) {
+	viewer, _ := ViewerFrom(ctx)
+	hidesReporter := func(r moderation.Report) bool {
+		return viewer.AccountID != "" && r.TargetAccountID == viewer.AccountID
+	}
 	var ids, users []string
 	for _, rec := range recs {
-		for _, id := range []string{rec.Report.ReporterAccountID, rec.Report.TargetAccountID} {
+		shown := []string{rec.Report.ReporterAccountID, rec.Report.TargetAccountID}
+		if hidesReporter(rec.Report) {
+			shown = shown[1:]
+		}
+		for _, id := range shown {
 			if !slices.Contains(ids, id) {
 				ids = append(ids, id)
 			}
@@ -281,9 +291,12 @@ func (s *Server) newAdminReportsWith(ctx context.Context, reads presentReads, re
 		item := AdminReport{
 			Id: r.ID, Category: ReportCategory(r.Category), Comment: r.Comment, Forwarded: r.SentToTarget(),
 			FiledAt: r.FiledAt.UTC(), State: AdminReportState(st.State), StateChangedAt: st.Since.UTC(),
-			ReporterAccountId: r.ReporterAccountID, ReporterAccount: accounts[r.ReporterAccountID],
 			TargetAccountId: r.TargetAccountID, TargetAccount: accounts[r.TargetAccountID],
 			StatusIds: append([]string{}, r.StatusIDs...), RuleIds: append([]string{}, r.RuleIDs...),
+		}
+		if !hidesReporter(r) {
+			id := r.ReporterAccountID
+			item.ReporterAccountId, item.ReporterAccount = &id, accounts[id]
 		}
 		if r.URI != "" {
 			item.Uri = &r.URI
