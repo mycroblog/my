@@ -17,6 +17,7 @@
     "@my/app-data": "workspace:*",
     "@my/design-system": "workspace:*",
     "@my/platform": "workspace:*",
+    "@my/rtc": "workspace:*",
     "lexical": "0.53.0"
   },
   "peerDependencies": {

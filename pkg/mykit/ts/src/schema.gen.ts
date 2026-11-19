@@ -4759,7 +4759,9 @@ export interface paths {
          *     next host (`next_host_id`, a participant who may host rooms) or ends the room (`end`): a
          *     409 `/api/v1/problems/voice-host-must-choose` without either, and a 422
          *     `/api/v1/problems/voice-invalid-next-host` for a next host who may not take over. The room
-         *     ends when nobody is left in it.
+         *     ends when nobody is left in it. With `session`, only that session leaves: a session that no
+         *     longer holds the user's place in the room (another device joined since) changes nothing,
+         *     and the answer is a 204.
          */
         delete: operations["leaveVoiceRoom"];
         options?: never;
@@ -25648,6 +25650,8 @@ export interface operations {
     leaveVoiceRoom: {
         parameters: {
             query?: {
+                /** @description The `session` of the join that leaves. */
+                session?: string;
                 /** @description The participant who becomes the host when the host leaves. */
                 next_host_id?: components["schemas"]["Id"];
                 /** @description Whether the host ends the room on leaving. */

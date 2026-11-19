@@ -467,7 +467,8 @@ func (s *Server) LeaveVoiceRoom(ctx context.Context, req LeaveVoiceRoomRequestOb
 	if p != nil || err != nil {
 		return respond[LeaveVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)
 	}
-	in := appvoice.LeaveInput{NextHostID: deref(knownIDPtr(req.Params.NextHostId)), End: req.Params.End != nil && *req.Params.End}
+	in := appvoice.LeaveInput{NextHostID: deref(knownIDPtr(req.Params.NextHostId)), End: req.Params.End != nil && *req.Params.End,
+		Session: deref(req.Params.Session)}
 	if err := rooms.Leave(ctx, v.AccountID, req.Id, in); err != nil {
 		p, err := s.voiceFail(ctx, err)
 		return respond[LeaveVoiceRoomdefaultApplicationProblemPlusJSONResponse](p, err)

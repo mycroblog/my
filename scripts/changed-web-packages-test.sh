@@ -29,7 +29,7 @@ expect() {
   fi
 }
 
-all="app app-components app-data app-features design-system design-tokens devtools e2e platform"
+all="app app-components app-data app-features design-system design-tokens devtools e2e platform rtc"
 # The packages that test on the fake API, and the fake API's own, @my/e2e, which depends on the client library and the
 # tokens alone: a change to it, or to what it depends on, reaches them all; a change to a layer reaches that layer and
 # the layers above it.
@@ -49,6 +49,7 @@ expect "the tokens" "$fake design-system design-tokens" web/design-tokens/src/to
 expect "the design system" "$parts" web/design-system/src/button.tsx
 expect "the shared components" "app app-components app-features" web/app-components/src/index.ts
 expect "the platform" "app app-data app-features platform" web/platform/src/index.ts
+expect "the audio of calls" "app app-features rtc" web/rtc/src/index.ts
 expect "the server data" "app app-data app-features" web/app-data/src/index.ts
 expect "the features" "app app-features" web/app-features/src/index.ts
 expect "two packages add up" "app app-components app-data app-features design-system platform" web/design-system/src/button.tsx web/platform/src/index.ts

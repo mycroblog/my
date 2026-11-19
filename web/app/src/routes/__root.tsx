@@ -8,6 +8,7 @@
 // shows its own heading inside the shell.
 
 import { useInstance, useServerState, useWritesInFlight } from "@my/app-data";
+import { useVoiceCall } from "@my/app-features";
 import { FeedNotice, MenuSheet, NavigationProvider } from "@my/design-system";
 import { watchKeyboardInset } from "@my/platform";
 import { createRootRouteWithContext, Outlet, useRouter, useRouterState } from "@tanstack/react-router";
@@ -50,12 +51,14 @@ const typing = () => {
 
 /**
  * Loads the app again once the maintenance it showed has ended (ADR-0088 §10), so that the session and every screen
- * start anew from the server; not while a write is on its way or the reader is typing (ADR-0028 §13), but once they
- * stop. The maintenance page has taken the place of the shell and its composer meanwhile, so no screen's text is open
+ * start anew from the server; not while a write is on its way, the reader is typing (ADR-0028 §13) or is in a call,
+ * but once they stop. The maintenance page has taken the place of the shell and its composer meanwhile, so no screen's text is open
  * then; the page itself holds no field.
  */
 function useReloadAfterMaintenance(underMaintenance: boolean) {
   const writing = useWritesInFlight();
+  // A load would end the reader's call: it waits until the call ends.
+  const calling = useVoiceCall() !== null;
   const was = useRef(underMaintenance);
   const [owed, setOwed] = useState(false);
   useEffect(() => {
@@ -63,7 +66,7 @@ function useReloadAfterMaintenance(underMaintenance: boolean) {
     was.current = underMaintenance;
   }, [underMaintenance]);
   useEffect(() => {
-    if (!owed || writing) return;
+    if (!owed || writing || calling) return;
     const reloadWhenIdle = () => {
       if (!typing()) location.reload();
     };
@@ -72,7 +75,7 @@ function useReloadAfterMaintenance(underMaintenance: boolean) {
     return () => {
       document.removeEventListener("focusout", reloadWhenIdle);
     };
-  }, [owed, writing]);
+  }, [owed, writing, calling]);
 }
 
 /**

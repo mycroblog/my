@@ -8,8 +8,8 @@
 # development packages web/devtools (ADR-0168) and web/storybook, the one Storybook host of the stories (ADR-0165 §1),
 # the scenarios, demo and E2E tests of web/e2e (ADR-0015), the tokens of web/design-tokens (ADR-0059), the
 # components of web/design-system, the shared components of web/app-components (ADR-0025 §4), the platform of
-# web/platform (ADR-0028 §17), the server data of web/app-data (ADR-0028 §6), the features of web/app-features and
-# the app of web/app (ADR-0025 §2) here.
+# web/platform (ADR-0028 §17), the audio of calls of web/rtc (ADR-0101 §7), the server data of web/app-data
+# (ADR-0028 §6), the features of web/app-features and the app of web/app (ADR-0025 §2) here.
 version: "3"
 
 vars:
@@ -29,7 +29,7 @@ vars:
 
 tasks:
   check:
-    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
+    desc: Run the workspace-wide checks (bun fmt, the npm licenses) and those of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools and web/storybook in parallel, with the app's build
     deps:
       - fmt-check
       - licenses
@@ -168,13 +168,14 @@ tasks:
       - bun --bun playwright test {{.CLI_ARGS}}
 
   typecheck:
-    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e with tsc
+    desc: Type-check web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e with tsc
     deps: [install, ":i18n:compile", routes]
     cmds:
       - cd web/design-tokens && bun --bun tsc -p .
       - cd web/design-system && bun --bun tsc -p .
       - cd web/app-components && bun --bun tsc -p .
       - cd web/platform && bun --bun tsc -p .
+      - cd web/rtc && bun --bun tsc -p .
       - cd web/app-data && bun --bun tsc -p .
       - cd web/app-features && bun --bun tsc -p .
       - cd web/app && bun --bun tsc -p .
@@ -188,24 +189,24 @@ tasks:
   # does not read), layout outside the layout parts and a viewport breakpoint outside the frames of a page
   # (restrict/layout-parts, restrict/viewport-breakpoints).
   lint:
-    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
+    desc: Run Oxlint on web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n with the workspace's configuration (.oxlintrc.json), prove the rules of web/devtools/src/restrictions.js and styles.js on their fixtures, and fail on a colour outside the tokens in their CSS
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+      - bun --bun oxlint web/design-tokens web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
       - bun test ./web/devtools/src/restrictions.test.js
-      - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/app-data web/app-features web/app web/storybook web/i18n
+      - bun web/devtools/src/colors.js web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/storybook web/i18n
 
   # A part lays out right-to-left under an RTL locale only when its styles name no physical side (ADR-0009 §1).
   direction:
-    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
+    desc: Fail on a Tailwind utility (ml-, left-, text-left, rounded-l…, and bg-left, origin-left or translate-x- outside the ltr and rtl variants), a CSS declaration (margin-left, left, text-align left…), a translateX() that does not turn with the page, or a React style key (marginLeft, left in a style object) that sets a physical side in the TypeScript and CSS of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/i18n, naming the logical one
     cmds:
-      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
+      - bun web/devtools/src/direction.ts web/design-tokens web/design-system web/app-components web/platform web/rtc web/app-data web/app-features web/app web/devtools web/storybook web/e2e web/i18n
 
   knip:
-    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
+    desc: Fail on unused files, exports, and dependencies of web/design-tokens, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app, web/devtools, web/storybook and web/e2e (knip.json)
     deps: [install, ":i18n:compile", routes]
     cmds:
-      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
+      - bun --bun knip --workspace web/design-tokens --workspace web/design-system --workspace web/app-components --workspace web/platform --workspace web/rtc --workspace web/app-data --workspace web/app-features --workspace web/app --workspace web/devtools --workspace web/storybook --workspace web/e2e
 
   # A package's manifest says how its tests run (its `test` script) and what they depend on: scripts/changed-web-packages.sh
   # reads there which packages there are and which a change reaches (ADR-0079 §18).

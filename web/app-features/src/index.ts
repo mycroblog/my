@@ -12,7 +12,46 @@ export {
   useAnnouncementTitle,
 } from "./announcements/announcements";
 export { AuthScreen } from "./auth/screen";
-export { enterCall, leaveCall, muteCall, updateCall, useCall, type Call, type CallControls } from "./call/store";
+export {
+  CallUnavailableError,
+  currentCall,
+  inCall,
+  joinCall,
+  lastCallEnd,
+  leaveCallBeforeSignOut,
+  runCallsOn,
+  useLastCallEnd,
+  useVoiceCall,
+  useVoiceCallState,
+  type CallRuntime,
+} from "./call/calls";
+export {
+  endCall,
+  enterCall,
+  leaveCall,
+  muteCall,
+  resumeCallPlayback,
+  updateCall,
+  useCall,
+  type Call,
+  type CallControls,
+} from "./call/store";
+export {
+  grantRenewalLead,
+  heartbeatInterval,
+  heartbeatTtl,
+  reactionDuration,
+  roomGrant,
+  systemClock,
+  VoiceCall,
+  type CallEnd,
+  type CallPhase,
+  type Clock,
+  type MicFailure,
+  type ShownReaction,
+  type VoiceCallRuntime,
+  type VoiceCallState,
+} from "./call/voice-call";
 export { ClosedScreen, type ClosedScreenProps } from "./closure/closed";
 export {
   ArticleEditor,

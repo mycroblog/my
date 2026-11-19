@@ -1,0 +1,20 @@
+{
+  "name": "@my/rtc",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "bun --bun tsc -p .",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4"
+  },
+  "dependencies": {
+    "livekit-client": "2.24.1",
+    "sora-js-sdk": "2026.1.1"
+  }
+}

@@ -19340,6 +19340,9 @@ type ListVoiceInvitationsParams struct {
 
 // LeaveVoiceRoomParams defines parameters for LeaveVoiceRoom.
 type LeaveVoiceRoomParams struct {
+	// Session The `session` of the join that leaves.
+	Session *string `form:"session,omitempty" json:"session,omitempty"`
+
 	// NextHostId The participant who becomes the host when the host leaves.
 	NextHostId *Id `form:"next_host_id,omitempty" json:"next_host_id,omitempty"`
 
@@ -34469,6 +34472,19 @@ func (siw *ServerInterfaceWrapper) LeaveVoiceRoom(w http.ResponseWriter, r *http
 
 	// Parameter object where we will unmarshal all parameters from the context
 	var params LeaveVoiceRoomParams
+
+	// ------------- Optional query parameter "session" -------------
+
+	err = runtime.BindQueryParameterWithOptions("form", true, false, "session", r.URL.Query(), &params.Session, runtime.BindQueryParameterOptions{Type: "string", Format: ""})
+	if err != nil {
+		var requiredError *runtime.RequiredParameterError
+		if errors.As(err, &requiredError) {
+			siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "session"})
+		} else {
+			siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "session", Err: err})
+		}
+		return
+	}
 
 	// ------------- Optional query parameter "next_host_id" -------------
 

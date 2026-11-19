@@ -24,3 +24,4 @@ export { serverHtml } from "./html";
 export { memberNotificationRows, moderatorNotificationRows, type FakeNotificationRow } from "./settings";
 export type { Failure, Script, Scripted, Seen } from "./script";
 export { UnimplementedError, type Route } from "./spec";
+export type { FakeVoice, FakeVoiceEvent } from "./voice";
