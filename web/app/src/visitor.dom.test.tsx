@@ -6,9 +6,10 @@
 // were (ADR-0090 §16). What the server keeps from a visitor reads as the server answers it, never as "sign in".
 
 import { expect, test } from "bun:test";
+import { scenario } from "@my/e2e/fake";
 import { screen, within } from "@testing-library/react";
 import { main, renderApp, type TestApp } from "./test/app";
-import { feedOf, postOf } from "./test/posts";
+import { feedOf, findPost, postOf } from "./test/posts";
 
 /** Where the sign-in the app went to comes back to. */
 const returnTo = (app: TestApp) => new URLSearchParams(app.path().split("?")[1]).get("return_to");
@@ -101,6 +102,37 @@ test("a followers-only post opened by a visitor is not found, with nothing to tr
   expect(await main().findByText(/^This post was not found\./)).toBeDefined();
   expect(main().queryByRole("button", { name: "Try again" })).toBeNull();
   expect(main().queryByText("Sign in to see this screen.")).toBeNull();
+});
+
+test("a visitor opens who reacted to a post from its thread, and reads the list", async () => {
+  const text = "Our choir sings at the market on Saturday.";
+  const app = await renderApp("/", {
+    visitor: true,
+    seed: {
+      people: scenario.people,
+      emojis: scenario.emojis,
+      posts: [{ key: "post", author: "yuki", text, language: "en", visibility: "public" }],
+      interactions: [
+        { kind: "reaction", by: "hana", post: "post", emoji: ":teacup:" },
+        { kind: "reaction", by: "sam", post: "post", emoji: ":teacup:" },
+      ],
+    },
+  });
+  await app.navigate(app.fake.postPath("post"));
+  const focused = await findPost("Yuki 雪", text);
+  await app.user.click(within(focused).getByRole("link", { name: ":teacup: 2 people reacted" }));
+  expect(await main().findByRole("heading", { level: 2, name: "Reacted with :teacup: 2" })).toBeDefined();
+  expect(app.path()).toBe(`${app.fake.postPath("post")}/reactions/teacup`);
+  expect(main().getByRole("link", { name: "Sam Rivera" })).toBeDefined();
+  expect(main().getByRole("link", { name: "Hana 花" })).toBeDefined();
+  expect(main().queryByText("Sign in to see this screen.")).toBeNull();
+});
+
+test("who reacted to a post a visitor may not see is not found, with nothing to try again", async () => {
+  const app = await renderApp("/", { visitor: true });
+  await app.navigate(`${app.fake.postPath("ren-followers")}/reactions/${encodeURIComponent("🎉")}`);
+  expect(await main().findByText(/^This post was not found\./)).toBeDefined();
+  expect(main().queryByRole("button", { name: "Try again" })).toBeNull();
 });
 
 test("the first page of a one-person server shows a visitor its operator's profile, whose Follow leads to the sign-in", async () => {

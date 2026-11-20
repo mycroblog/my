@@ -117,7 +117,7 @@
   },
   "app.signed_out_screen": {
     "defaultMessage": "Sign in to see this screen.",
-    "description": "What a screen that needs a session (the notifications, the settings) says to a reader who is not signed in, beside the sign-in link."
+    "description": "What a screen that needs a session (the notifications, the bookmarks, the settings) says to a reader who is not signed in, beside the sign-in link; a profile, its follow lists, a post and who reacted to it show to a visitor instead."
   },
   "app.moderation": {
     "defaultMessage": "Moderation",
