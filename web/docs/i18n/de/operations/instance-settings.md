@@ -370,7 +370,7 @@ und der Text `thumbnail_alt`), erscheinen an den folgenden Stellen. Was nicht ge
 Ist das Kontaktkonto gesperrt oder gelöscht, wird das Konto nicht angezeigt, sondern nur die E-Mail-Adresse.
 Ändere sie auf der Seite „Allgemein“ des Admin-Bildschirms des Webclients („Servereinstellungen“, `/admin/settings/general`) oder mit der CLI oder der Client-API.
 
-<!-- source: one-person-server 39888347b833 -->
+<!-- source: one-person-server 275b5c1d39fa -->
 ### Ein-Personen-Server
 
 Ein Server, der nur seinem Betreiber gehört, das eigene Zuhause des Betreibers im Fediverse, ist ein Ein-Personen-Server: Schalte `single_user` ein. Im Webclient
