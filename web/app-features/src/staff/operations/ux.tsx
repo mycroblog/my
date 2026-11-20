@@ -13,6 +13,7 @@ import {
   loadUXMeasurements,
   useAdminSettings,
   useAdminSettingsWrites,
+  useForgetUXMeasurements,
   usePermissions,
   useInstance,
   useUXMeasurements,
@@ -196,8 +197,9 @@ function Measurements({ hours, onHours, on }: { hours: Window; onHours: (hours: 
     );
   const list = read.value;
   const metrics = uxMetrics.filter((m) => list.items.some((i) => i.metric === m));
-  // Off with nothing kept from before: there is no period to choose among.
-  if (!on && metrics.length === 0) return <FeedNotice start>{t("staff_operations.ux.off")}</FeedNotice>;
+  // Off with nothing kept from before, or off while what shows was read before it was turned off: there is no period to
+  // choose among.
+  if (!on && (metrics.length === 0 || read.stale)) return <FeedNotice start>{t("staff_operations.ux.off")}</FeedNotice>;
   return (
     <>
       {choice(t("staff_operations.ux.since", { date: moment(list.since) }))}
@@ -229,6 +231,7 @@ function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): React
   const id = useId();
   const read = useAdminSettings();
   const writes = useAdminSettingsWrites();
+  const forget = useForgetUXMeasurements();
   const saved = read.settings?.get("ux_measurement")?.value === "true";
   const [on, setOn] = useState<boolean | undefined>(undefined);
   const [sent, setSent] = useState<Sent>("idle");
@@ -261,6 +264,8 @@ function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): React
       () => {
         setOn(undefined);
         setSent("saved");
+        // What was measured before is read again as the server holds it now, the period with it.
+        void forget();
       },
       () => {
         setSent("failed");

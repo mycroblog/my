@@ -49,3 +49,12 @@ export function useUXMeasurements(hours: number): StaffOne<UXMeasurementList> & 
   const query = useQuery({ ...measurementsQuery(useAppData(), hours), placeholderData: keepPreviousData });
   return { ...oneOf(query), stale: query.isPlaceholderData };
 }
+
+/**
+ * Forgets the measurements read, of every period, and reads again those a screen shows: once whether the web client is
+ * measured changed, what was read before says nothing of what the server holds now.
+ */
+export function useForgetUXMeasurements(): () => Promise<void> {
+  const data = useAppData();
+  return () => data.queryClient.resetQueries({ predicate: ({ queryKey }) => queryKey[1] === "/admin/ux_measurements" });
+}

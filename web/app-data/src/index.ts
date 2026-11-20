@@ -908,6 +908,7 @@ export {
 } from "./error-groups";
 export {
   loadUXMeasurements,
+  useForgetUXMeasurements,
   useUXMeasurements,
   uxMetrics,
   uxWindows,
