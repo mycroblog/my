@@ -21,7 +21,7 @@ import {
   type Visibility,
 } from "./scenario";
 import { enrollTOTP, uploadDrawing, uploadFile } from "./seed/seed";
-import { signIn } from "./seed/sign-in";
+import { signIn, webSession } from "./seed/sign-in";
 
 type Status = components["schemas"]["Status"];
 type Account = components["schemas"]["Account"];
@@ -175,6 +175,16 @@ export class Fresh {
     ).POST("/follow_requests/{id}/accept", { params: { path: { id: source.id } } });
     if (accepted.error !== undefined)
       throw new Error(`fresh: ${followee.username} could not accept the follow of ${follower.username}`);
+  }
+
+  /**
+   * A new session of the web client as `p`, signed in through the server's sign-in and token endpoints without a
+   * browser: the value of its cookie, which a browser given it opens the app with, signed in.
+   */
+  session(p: Person | FreshPerson): Promise<string> {
+    const own = "totp" in p ? p.totp : undefined;
+    const secret = own?.secret ?? this.#o.totp?.secrets[p.username];
+    return webSession(this.#o.server, p, secret, own?.step ?? this.#o.totp?.steps[p.username], clientIP());
   }
 
   /** A new person with a password, a display name unique to them, and what `o` asks for. */
