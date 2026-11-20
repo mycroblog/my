@@ -35,7 +35,7 @@ function AboutPage() {
   return (
     <>
       <ScreenHeading>{t("app.about", { name: instance?.name ?? config.instanceName })}</ScreenHeading>
-      <AboutView instance={instance} retry={retry} domains={domains} builtInIcon={icon} />
+      <AboutView instance={instance} retry={retry} domains={domains} builtInIcon={icon} signedIn={data !== null} />
     </>
   );
 }

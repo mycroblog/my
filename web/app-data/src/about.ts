@@ -27,8 +27,15 @@ export function domainActionsShown(
   instance: Pick<Instance, "domain_actions_visibility"> | undefined,
   signedIn: boolean,
 ): boolean {
-  const visibility = instance?.domain_actions_visibility;
-  return visibility === "everyone" || (visibility === "signed_in" && signedIn);
+  return audienceLets(instance?.domain_actions_visibility, signedIn);
+}
+
+/**
+ * Whether an audience of the instance's settings (who may read its moderated domains, its supporters list) lets the
+ * reader read: everyone, or, with `signed_in`, a reader with a session (`signedIn`); nobody with `off`.
+ */
+export function audienceLets(audience: Instance["domain_actions_visibility"] | undefined, signedIn: boolean): boolean {
+  return audience === "everyone" || (audience === "signed_in" && signedIn);
 }
 
 /** The document of `kind` that the instance published (a 404 where it has none). */

@@ -22,7 +22,7 @@ import {
   supportersPagePath,
   termsPagePath,
 } from "@my/app-components";
-import { financePublished, type Instance, type InstanceDomainAction, type PagedList } from "@my/app-data";
+import { audienceLets, financePublished, type Instance, type InstanceDomainAction, type PagedList } from "@my/app-data";
 import {
   Avatar,
   Box,
@@ -95,6 +95,8 @@ export type AboutViewProps = {
   domains: AboutDomains;
   /** The built-in icon, which a server without its own shows. */
   builtInIcon: string;
+  /** Whether the reader has a session: what the server shows to signed-in people alone is said to them alone. */
+  signedIn: boolean;
 };
 
 /**
@@ -113,7 +115,7 @@ export function AboutWaiting({ retry }: { retry?: (() => void) | undefined }): R
 }
 
 /** The about page of the server. */
-export function AboutView({ instance, retry, domains, builtInIcon }: AboutViewProps): ReactNode {
+export function AboutView({ instance, retry, domains, builtInIcon, signedIn }: AboutViewProps): ReactNode {
   const t = useAboutStrings();
   if (instance === undefined) return <AboutWaiting retry={retry} />;
   return (
@@ -129,7 +131,7 @@ export function AboutView({ instance, retry, domains, builtInIcon }: AboutViewPr
       {instance.auto_delete_limit !== undefined && <AutoDelete limit={instance.auto_delete_limit} t={t} />}
       <Crawlers instance={instance} t={t} />
       <Funding instance={instance} t={t} />
-      <Support instance={instance} t={t} />
+      <Support instance={instance} signedIn={signedIn} t={t} />
       <Server instance={instance} t={t} />
     </ScreenStack>
   );
@@ -433,10 +435,11 @@ function Funding({ instance, t }: { instance: Instance; t: T }) {
 }
 
 /** The way to the plans, the tips and the supporters, and to the commerce disclosure, where the server has them. */
-function Support({ instance, t }: { instance: Instance; t: T }) {
+function Support({ instance, signedIn, t }: { instance: Instance; signedIn: boolean; t: T }) {
   const plans = instance.supporters_enabled;
   const tips = instance.tips_enabled;
-  const list = plans && instance.supporter_list_visibility !== "off";
+  // The list is named only to a reader it is shown to.
+  const list = plans && audienceLets(instance.supporter_list_visibility, signedIn);
   const commerce = instance.commerce_disclosure_url !== undefined;
   if (!plans && !tips && !commerce) return null;
   const offer = plans && tips ? "both" : plans ? "plans" : tips ? "tips" : "none";

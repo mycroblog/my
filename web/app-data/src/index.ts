@@ -6,6 +6,7 @@
 
 export { createAppData, createQueryClient, onDataClosed, type AppData } from "./app-data";
 export {
+  audienceLets,
   domainActionsShown,
   instanceDocumentQuery,
   instanceDomainActionsQuery,

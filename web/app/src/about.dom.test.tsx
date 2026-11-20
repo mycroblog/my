@@ -63,6 +63,20 @@ test("the about page reads the same for a visitor", async () => {
 });
 
 for (const visitor of [false, true]) {
+  test(`a supporters list for signed-in people is named ${visitor ? "to no visitor" : "to a signed-in reader"}`, async () => {
+    await renderApp("/about", { supporters: { tips: {}, list: "signed_in" }, visitor });
+    const support = await main().findByRole("region", { name: "Support" });
+    expect(support.textContent.includes("With the supporters list")).toBe(!visitor);
+  });
+}
+
+test("a supporters list for everyone is named to a visitor", async () => {
+  await renderApp("/about", { supporters: { tips: {}, list: "everyone" }, visitor: true });
+  const support = await main().findByRole("region", { name: "Support" });
+  expect(support.textContent).toContain("With the supporters list");
+});
+
+for (const visitor of [false, true]) {
   const reader = visitor ? "a visitor" : "a signed-in reader";
 
   test(`a server that lists its moderated servers to nobody shows ${reader} no section of them`, async () => {
@@ -83,8 +97,8 @@ for (const visitor of [false, true]) {
     if (visitor) expect(items[0]?.textContent).not.toContain("Spam from new accounts every day.");
     else expect(items[0]?.textContent).toContain("Spam from new accounts every day.");
     // A domain moderated without a public comment shows what was done alone.
-    const bots = items.find((item) => item.textContent?.includes("bots.example"));
-    expect(bots?.textContent?.endsWith("Limited")).toBe(true);
+    const bots = items.find((item) => item.textContent.includes("bots.example"));
+    expect(bots?.textContent.endsWith("Limited")).toBe(true);
   });
 }
 
