@@ -62,6 +62,7 @@ import {
   ListMore,
   useAddressPages,
   ReadNotice,
+  shownPayload,
   Titled,
   useMoment,
   useSaid,
@@ -399,15 +400,6 @@ export function useJobTitle(id: string): string | undefined {
 
 /** The first line of `text`. */
 const firstLine = (text: string): string => text.split("\n", 1)[0] ?? text;
-
-/** The payload as its lines are best read: a JSON document laid out, anything else as it is. */
-function shownPayload(payload: string): string {
-  try {
-    return JSON.stringify(JSON.parse(payload), null, 2);
-  } catch {
-    return payload;
-  }
-}
 
 /** The facts of a job, its moments in the reader's zone, its ID and keys each with the button that copies it. */
 function jobFacts(t: T, moment: (iso: string) => string, count: (n: number) => string, job: AdminJob): Fact[] {

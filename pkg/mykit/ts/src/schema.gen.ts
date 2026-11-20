@@ -13417,6 +13417,13 @@ export interface components {
             last_attempt?: components["schemas"]["AdminWebhookAttempt"];
             /** Format: date-time */
             created_at: string;
+            /**
+             * @description The body of the request that every attempt sent, byte for byte as the receiver got it: a
+             *     JSON document, which can carry personal data (an applicant's email address, a report's
+             *     comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+             *     permission that subscribing to its event needs besides `manage_webhooks`.
+             */
+            request_body?: string;
         };
         /** @description A page of the deliveries of a webhook, newest first. */
         AdminWebhookDeliveryPage: components["schemas"]["PageInfo"] & {

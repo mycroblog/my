@@ -20838,6 +20838,13 @@ components:
         created_at:
           type: string
           format: date-time
+        request_body:
+          description: |
+            The body of the request that every attempt sent, byte for byte as the receiver got it: a
+            JSON document, which can carry personal data (an applicant's email address, a report's
+            comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+            permission that subscribing to its event needs besides `manage_webhooks`.
+          type: string
     AdminWebhookDeliveryPage:
       description: A page of the deliveries of a webhook, newest first.
       allOf:

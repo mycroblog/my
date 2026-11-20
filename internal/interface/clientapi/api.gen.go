@@ -9018,6 +9018,12 @@ type AdminWebhookDelivery struct {
 	// MessageId The `webhook-id` of the message, the same on every attempt.
 	MessageId Id `json:"message_id"`
 
+	// RequestBody The body of the request that every attempt sent, byte for byte as the receiver got it: a
+	// JSON document, which can carry personal data (an applicant's email address, a report's
+	// comment). It is kept as long as the delivery, 14 days. Omitted where the reader lacks the
+	// permission that subscribing to its event needs besides `manage_webhooks`.
+	RequestBody *string `json:"request_body,omitempty"`
+
 	// Status `pending`: not sent yet. `succeeded`: an attempt got a 2xx answer. `failing`: every
 	// attempt so far failed; it is retried over about 27 hours, 8 attempts in all, and can be
 	// sent again by hand after that.

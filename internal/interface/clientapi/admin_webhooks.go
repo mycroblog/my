@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"slices"
 
 	appwebhook "github.com/mycroblog/my/internal/app/webhook"
 	"github.com/mycroblog/my/internal/domain/identity"
@@ -68,11 +69,16 @@ func newAdminWebhook(e webhook.Endpoint) AdminWebhook {
 	return out
 }
 
-// newAdminWebhookDelivery presents a delivery to the administrators.
-func newAdminWebhookDelivery(d webhook.DeliveryRecord) AdminWebhookDelivery {
+// newAdminWebhookDelivery presents a delivery to an administrator, with its request body where
+// read reports that they may read the body of its event (bodyReader).
+func newAdminWebhookDelivery(d webhook.DeliveryRecord, read func(webhook.EventType) bool) AdminWebhookDelivery {
 	out := AdminWebhookDelivery{
 		Id: d.Delivery.ID, MessageId: d.Delivery.MessageID, EventType: WebhookMessageType(d.EventType),
 		Status: AdminWebhookDeliveryStatus(d.Status()), Attempts: d.Attempts, CreatedAt: d.Delivery.CreatedAt.UTC(),
+	}
+	if read(d.EventType) {
+		body := string(d.Body)
+		out.RequestBody = &body
 	}
 	if a := d.Last; a != nil {
 		out.LastAttempt = &AdminWebhookAttempt{
@@ -91,9 +97,35 @@ func adminWebhookResponse(e webhook.Endpoint) AdminWebhookJSONResponse {
 	return AdminWebhookJSONResponse{Body: newAdminWebhook(e), Headers: AdminWebhookResponseHeaders{CacheControl: &cache}}
 }
 
-func adminWebhookDeliveryResponse(d webhook.DeliveryRecord) AdminWebhookDeliveryJSONResponse {
+// bodyReader reports, for the event of a delivery, whether the viewer may read the body of its
+// messages: they hold the permission that subscribing to the event needs besides manage_webhooks,
+// which keeps what an event carries (an applicant's email address, a report's comment) from a
+// holder of manage_webhooks alone. A token of permission scopes reads only what its scopes grant
+// (ADR-0090 §17). webhook.test needs none.
+func (s *Server) bodyReader(ctx context.Context, v Viewer) (func(webhook.EventType) bool, error) {
+	perms, err := s.o.Permissions.Permissions(ctx, v.UserID)
+	if err != nil {
+		return nil, fmt.Errorf("clientapi: permissions of %s: %w", v.UserID, err)
+	}
+	scoped, byScope := permissionScopeGrants(ctx, v)
+	granted := make([]webhook.Permission, 0, len(perms))
+	for _, p := range perms {
+		if !byScope || slices.Contains(scoped, p) {
+			granted = append(granted, webhook.Permission(p))
+		}
+	}
+	return func(e webhook.EventType) bool {
+		return e == webhook.EventTest || (e.Subscribable() && len(webhook.MissingPermissions([]webhook.EventType{e}, granted)) == 0)
+	}, nil
+}
+
+func (s *Server) adminWebhookDeliveryResponse(ctx context.Context, v Viewer, d webhook.DeliveryRecord) (AdminWebhookDeliveryJSONResponse, error) {
+	read, err := s.bodyReader(ctx, v)
+	if err != nil {
+		return AdminWebhookDeliveryJSONResponse{}, err
+	}
 	cache := cacheNoStore
-	return AdminWebhookDeliveryJSONResponse{Body: newAdminWebhookDelivery(d), Headers: AdminWebhookDeliveryResponseHeaders{CacheControl: &cache}}
+	return AdminWebhookDeliveryJSONResponse{Body: newAdminWebhookDelivery(d, read), Headers: AdminWebhookDeliveryResponseHeaders{CacheControl: &cache}}, nil
 }
 
 // webhookProblem returns the 422 of a webhook that breaks a rule, and false for another error.
@@ -366,7 +398,7 @@ func (s *Server) RotateWebhookSecret(ctx context.Context, req RotateWebhookSecre
 
 // TestWebhook serves POST /api/v1/admin/webhooks/{id}/test.
 func (s *Server) TestWebhook(ctx context.Context, req TestWebhookRequestObject) (TestWebhookResponseObject, error) {
-	_, p, err := s.requireWebhooks(ctx)
+	v, p, err := s.requireWebhooks(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -380,12 +412,16 @@ func (s *Server) TestWebhook(ctx context.Context, req TestWebhookRequestObject) 
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: test webhook %s: %w", req.Id, err)
 	}
-	return TestWebhook202JSONResponse{adminWebhookDeliveryResponse(d)}, nil
+	res, err := s.adminWebhookDeliveryResponse(ctx, v, d)
+	if err != nil {
+		return nil, err
+	}
+	return TestWebhook202JSONResponse{res}, nil
 }
 
 // ListWebhookDeliveries serves GET /api/v1/admin/webhooks/{id}/deliveries.
 func (s *Server) ListWebhookDeliveries(ctx context.Context, req ListWebhookDeliveriesRequestObject) (ListWebhookDeliveriesResponseObject, error) {
-	_, p, err := s.requireWebhooks(ctx)
+	v, p, err := s.requireWebhooks(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -403,10 +439,14 @@ func (s *Server) ListWebhookDeliveries(ctx context.Context, req ListWebhookDeliv
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: the deliveries of webhook %s: %w", req.Id, err)
 	}
+	read, err := s.bodyReader(ctx, v)
+	if err != nil {
+		return nil, err
+	}
 	ds, last := trim(ds, pq.limit)
 	page := AdminWebhookDeliveryPage{Items: make([]AdminWebhookDelivery, 0, len(ds))}
 	for _, d := range ds {
-		page.Items = append(page.Items, newAdminWebhookDelivery(d))
+		page.Items = append(page.Items, newAdminWebhookDelivery(d, read))
 	}
 	if last >= 0 {
 		page.NextCursor = encodeCursor(ds[last].Delivery.ID)
@@ -417,7 +457,7 @@ func (s *Server) ListWebhookDeliveries(ctx context.Context, req ListWebhookDeliv
 
 // RedeliverWebhookDelivery serves POST /api/v1/admin/webhooks/{id}/deliveries/{delivery_id}/redeliver.
 func (s *Server) RedeliverWebhookDelivery(ctx context.Context, req RedeliverWebhookDeliveryRequestObject) (RedeliverWebhookDeliveryResponseObject, error) {
-	_, p, err := s.requireWebhooks(ctx)
+	v, p, err := s.requireWebhooks(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -431,5 +471,9 @@ func (s *Server) RedeliverWebhookDelivery(ctx context.Context, req RedeliverWebh
 	case err != nil:
 		return nil, fmt.Errorf("clientapi: redeliver %s of webhook %s: %w", req.DeliveryId, req.Id, err)
 	}
-	return RedeliverWebhookDelivery202JSONResponse{adminWebhookDeliveryResponse(d)}, nil
+	res, err := s.adminWebhookDeliveryResponse(ctx, v, d)
+	if err != nil {
+		return nil, err
+	}
+	return RedeliverWebhookDelivery202JSONResponse{res}, nil
 }
