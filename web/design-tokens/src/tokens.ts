@@ -107,6 +107,34 @@ export const color = {
 
 export type ColorName = keyof typeof color;
 
+/**
+ * The colors of the badges a staff gives a role, each a tint and the text on it, in a hue of their own, the same on
+ * every server (a theme does not change them): the label carries what a badge means, the hue only tells one from
+ * another.
+ */
+export const badgeColor = {
+  "badge-neutral": { light: "#ece7e5", dark: "#3a302e" },
+  "on-badge-neutral": { light: "#3f3532", dark: "#e6dcd9" },
+  "badge-red": { light: "#fde2e1", dark: "#4a1f1f" },
+  "on-badge-red": { light: "#9b1c1c", dark: "#ffb4b0" },
+  "badge-orange": { light: "#feead8", dark: "#4a2c14" },
+  "on-badge-orange": { light: "#8a4210", dark: "#ffc89a" },
+  "badge-yellow": { light: "#fbf1c7", dark: "#3f3510" },
+  "on-badge-yellow": { light: "#6b5300", dark: "#f2d97a" },
+  "badge-green": { light: "#dff3e4", dark: "#1d3b25" },
+  "on-badge-green": { light: "#1f6b34", dark: "#a6e3b5" },
+  "badge-teal": { light: "#d9f2f0", dark: "#163a37" },
+  "on-badge-teal": { light: "#13605a", dark: "#9fe0d9" },
+  "badge-blue": { light: "#dfeafc", dark: "#1c2c4a" },
+  "on-badge-blue": { light: "#1d4f9e", dark: "#a9c7ff" },
+  "badge-purple": { light: "#ece3fb", dark: "#2f2348" },
+  "on-badge-purple": { light: "#5b2fa0", dark: "#d2bdff" },
+  "badge-pink": { light: "#fbe1ee", dark: "#46203a" },
+  "on-badge-pink": { light: "#96215c", dark: "#ffb3d6" },
+} as const satisfies Record<string, SchemeColor>;
+
+export type BadgeColorName = keyof typeof badgeColor;
+
 /** A foreground color drawn on a background color, and the contrast ratio it needs in both schemes. */
 export type ContrastPair = { fg: ColorName; bg: ColorName; minimum: number };
 
@@ -135,6 +163,22 @@ export const contrastPairs: readonly ContrastPair[] = [
 ];
 
 /** The weight of a control's label, and of a name that heads what follows it (a post's author). */
+/**
+ * The pairs of the badges' colors, a label on its tint, which a server theme does not change (the badges are fixed,
+ * BadgeColor of the client API): held to 4.5:1 like the theme's.
+ */
+export const badgeContrastPairs: readonly { fg: BadgeColorName; bg: BadgeColorName; minimum: number }[] = [
+  { fg: "on-badge-neutral", bg: "badge-neutral", minimum: 4.5 },
+  { fg: "on-badge-red", bg: "badge-red", minimum: 4.5 },
+  { fg: "on-badge-orange", bg: "badge-orange", minimum: 4.5 },
+  { fg: "on-badge-yellow", bg: "badge-yellow", minimum: 4.5 },
+  { fg: "on-badge-green", bg: "badge-green", minimum: 4.5 },
+  { fg: "on-badge-teal", bg: "badge-teal", minimum: 4.5 },
+  { fg: "on-badge-blue", bg: "badge-blue", minimum: 4.5 },
+  { fg: "on-badge-purple", bg: "badge-purple", minimum: 4.5 },
+  { fg: "on-badge-pink", bg: "badge-pink", minimum: 4.5 },
+];
+
 export const fontWeight = { label: 600, strong: 700 } as const;
 
 /** The corner radius, in rem: of a control, and of a surface over the page (a menu). */
@@ -649,7 +693,7 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ["--font-latin", `"${latinFamily.family}"`],
   ["--font-cjk", `"${cjkRegions[0].family}"`],
   ...Object.entries(text).flatMap(([name, step]) => textProperties(name, step)),
-  ...Object.entries(color).map(([name, c]): [string, string] => [
+  ...Object.entries({ ...color, ...badgeColor }).map(([name, c]): [string, string] => [
     `--color-${name}`,
     `light-dark(${c.light}, ${c.dark})`,
   ]),

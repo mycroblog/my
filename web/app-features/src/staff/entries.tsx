@@ -27,6 +27,7 @@ import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
+import { serverEntries } from "./server/entries";
 import { AdminDocumentsScreen } from "./documents";
 import { AdminLoginProvidersScreen, loadLoginProviders } from "./login-providers";
 import { AdminOAuthAppsScreen, loadOAuthApps } from "./oauth-apps";
@@ -60,6 +61,8 @@ export type StaffAddress = {
   readonly search: StaffSearch;
   /** Shows the screen with `search` in place of the query, as a new entry of the history. */
   readonly onSearch: (search: StaffSearch) => void;
+  /** Shows another address of the app, as a new entry of the history (a server the reader names, a thing made). */
+  readonly go: (href: string) => void;
 };
 
 /** What an entry's screen is given by the route that places it. */
@@ -196,6 +199,8 @@ export const staffEntries: readonly StaffEntry[] = [
     Screen: AdminOAuthAppsScreen,
     load: (data, search) => loadOAuthApps(data, search),
   },
+  // Roles, custom emoji, announcements and webhooks (#3263).
+  ...serverEntries,
   ...accountEntries,
 ];
 

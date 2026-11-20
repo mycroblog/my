@@ -7,6 +7,7 @@
 import {
   breakpoint,
   cjkRegions,
+  badgeColor,
   color,
   latinFamily,
   control,
@@ -48,6 +49,7 @@ const theme = {
   screens: Object.fromEntries(names(breakpoint).map((name) => [name, `${breakpoint[name]}rem`])),
   colors: {
     ...Object.fromEntries(names(color).map((name) => [name, ref(`--color-${name}`)])),
+    ...Object.fromEntries(names(badgeColor).map((name) => [name, ref(`--color-${name}`)])),
     "accent-hover": "color-mix(in srgb, var(--press-shade) var(--press-hover), var(--color-accent))",
     "accent-pressed": "color-mix(in srgb, var(--press-shade) var(--press-pressed), var(--color-accent))",
     "spinner-track": "color-mix(in srgb, currentColor var(--spinner-track-share), transparent)",

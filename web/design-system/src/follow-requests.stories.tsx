@@ -112,7 +112,8 @@ function InNotifications() {
           label={w.filters}
           tabs={[
             { id: "all", name: w.all },
-            { id: "mentions", name: w.mentions },
+            // A tab with things waiting under it shows their count, as the navigation's badge.
+            { id: "mentions", name: w.mentions, count: 3 },
           ]}
           current={tab}
           onChange={setTab}

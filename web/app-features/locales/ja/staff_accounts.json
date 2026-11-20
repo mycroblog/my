@@ -83,14 +83,6 @@
     "defaultMessage": "終わりません",
     "description": "When a ban ends, in a list of actions and its facts: it never does. Read by moderators."
   },
-  "staff_accounts.copied": {
-    "defaultMessage": "コピーしました",
-    "description": "Said after a moderator copied a link to pass on (a password reset link, an invite's link). Read by moderators."
-  },
-  "staff_accounts.copy_failed": {
-    "defaultMessage": "コピーできませんでした。リンクを選んでコピーしてください。",
-    "description": "Said when the browser refused to copy a link to pass on. Read by moderators."
-  },
   "staff_accounts.refused": {
     "defaultMessage": "{why, select, outranks {あなたのロールと同等以上のアカウントには、この操作はできません。} last_admin {ただ一人の管理者がログインできなくなります。先に別のアカウントに管理者のロールを付けてください。} decided {その間に別の人が決めました。再読み込みして結果を確かめてください。} not_appealable {アカウントが削除されたため、BAN を撤回できません。BAN を維持することはできます。} not_overridable {この判定はここでは取り消せません。} not_suppressed {このアカウントへのメールは、もう止まっていません。} no_two_factor {このアカウントは、もう二要素認証を使っていません。} registration_closed {登録が閉じているため、招待を作れません。先にサーバーの設定で登録を開いてください。} closing {サービスの閉鎖を予告したため、もう登録を承認できません。} event_closed {このイベントはすでに中止されています。} forbidden {あなたのアカウントの権限では、もうこの操作はできません。} missing {その間に削除されました。再読み込みして、今の状態を確かめてください。} other {実行できませんでした。アプリを再読み込みして、もう一度試してください。}}",
     "description": "What a moderator is told of a write the server refused, by why it refused. Read by moderators."
@@ -100,7 +92,7 @@
     "description": "The kind of a moderation action on an account: in its list, its page, an appeal, and the form of a new one. Read by moderators."
   },
   "staff_accounts.account_state": {
-    "defaultMessage": "{state, select, active {有効} pending {承認待ち} rejected {登録を却下} limited {公開範囲の制限中} disabled {ログイン停止中} deactivated {無効化} suspended {凍結中} banned {BAN} deleted {削除済み} other {有効}}",
+    "defaultMessage": "{state, select, active {有効} pending {承認待ち} rejected {登録を断った} limited {公開範囲の制限中} disabled {ログイン停止中} deactivated {無効化} suspended {凍結中} banned {BAN} deleted {削除済み} other {有効}}",
     "description": "The state of an account as the moderators see it: in the search, its filter, and the account's facts; banned for a suspension by a ban, which nothing lifts. Read by moderators."
   },
   "staff_accounts.action_state": {
@@ -116,7 +108,7 @@
     "description": "The value of What is taken away in an account's facts, when its actions take away nothing. Read by moderators."
   },
   "staff_accounts.registration_state": {
-    "defaultMessage": "{state, select, pending {承認待ち} approved {承認済み} rejected {却下} other {承認待ち}}",
+    "defaultMessage": "{state, select, pending {承認待ち} approved {承認済み} rejected {断った} other {承認待ち}}",
     "description": "Where a registration stands, in the registrations' list and an account's facts. Read by moderators."
   },
   "staff_accounts.appeal_state": {
@@ -976,7 +968,7 @@
     "description": "The action on the registrations picked that approves them, and its confirmation's button. Read by moderators."
   },
   "staff_accounts.registrations.reject": {
-    "defaultMessage": "却下する",
+    "defaultMessage": "断る",
     "description": "The action on the registrations picked that rejects them, and its confirmation's button. Read by moderators."
   },
   "staff_accounts.registrations.approve.confirm": {
@@ -988,7 +980,7 @@
     "description": "The line under the note's field before registrations are approved. Read by moderators."
   },
   "staff_accounts.registrations.reject.confirm": {
-    "defaultMessage": "{count, plural, other {登録 # 件を却下しますか？}}",
+    "defaultMessage": "{count, plural, other {登録 # 件を断りますか？}}",
     "description": "The question before the registrations picked are rejected. Read by moderators."
   },
   "staff_accounts.registrations.reject.about": {
@@ -1004,7 +996,7 @@
     "description": "Said after registrations were approved. Read by moderators."
   },
   "staff_accounts.registrations.rejected": {
-    "defaultMessage": "{count, plural, other {登録 # 件を却下しました。}}",
+    "defaultMessage": "{count, plural, other {登録 # 件を断りました。}}",
     "description": "Said after registrations were rejected. Read by moderators."
   },
   "staff_accounts.registrations.facts": {
