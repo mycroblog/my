@@ -34,13 +34,13 @@ my admin relay delete <relay id>                                  # delete a rel
 Você não pode registrar o relay de um servidor sob uma ação de domínio (`suspend`). Se o servidor de um relay em que você participa for suspenso depois, o estado não muda,
 mas nada é enviado a esse relay nem recebido dele, e a área de administração informa isso no estado do relay.
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## O que o servidor envia
 
-- Somente a criação, a edição e a exclusão de publicações locais **públicas** (`public`) são enviadas. Publicações `unlisted`, somente para seguidores, direct ou somente locais (`local`), e os impulsionamentos, nunca são enviados.
-  Para manter uma publicação fora dos relays, publique-a como `unlisted` ou `local`. Não há opção de desativação por usuário.
-- Os documentos das publicações públicas trazem uma Linked Data Signature (`RsaSignature2017`), para que Mastodon e Misskey aceitem publicações que um relay repassa sem alterações.
-- O número de entregas cresce pelo número de relays dos quais você participa vezes o número de publicações públicas (as entregas a um relay são unidas em uma só).
+- Apenas a criação, a edição e a exclusão de publicações locais **públicas** (`public`) são enviadas. Publicações `unlisted`, somente para seguidores, diretas ou para vizinhos (`local`), e impulsos, nunca são enviadas.
+  Para manter uma publicação fora dos relays, publique-a como `unlisted` ou `local`. Não há desativação por usuário.
+- Os documentos das publicações públicas trazem uma Linked Data Signature (`RsaSignature2017`), para que o Mastodon e o Misskey possam aceitar publicações que um relay repassa sem alterações.
+- O número de entregas cresce com o número de relays em que você participa vezes o número de publicações públicas (as entregas a um relay são combinadas em uma).
 
 <!-- source: what-the-server-receives fa99c4ec4217 -->
 ## O que o servidor recebe
