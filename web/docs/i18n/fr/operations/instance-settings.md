@@ -315,7 +315,7 @@ et le texte `thumbnail_alt`) apparaissent aux endroits ci-dessous. Ce qui n’es
 Lorsque le compte de contact est suspendu ou supprimé, le compte n’est pas affiché et seule l’adresse e-mail l’est.
 Modifiez-les sur la page Général de l’écran d’administration du client web (« Paramètres du serveur », `/admin/settings/general`), ou avec la CLI ou l’API cliente.
 
-<!-- source: one-person-server 39888347b833 -->
+<!-- source: one-person-server 275b5c1d39fa -->
 ### Serveur d’une seule personne
 
 Un serveur de son seul opérateur, le chez-soi de l’opérateur dans le fédivers, est un serveur d’une seule personne : activez `single_user`. Dans le client web,
