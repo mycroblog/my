@@ -61,6 +61,8 @@ export function startMeasuring({
   const route = () => router.state.matches.at(-1)?.routeId ?? rootRoute;
   // The worst interaction of the visit of a route on screen, which goes as the visit ends or the page is hidden.
   let visit = route();
+  // The route the page loaded on, which its largest paint belongs to even when the screen changed before it settled.
+  const loaded = visit;
   let worst = 0;
   let reports: MeasurementReports | undefined;
   const add = (sample: Measurement) => reports?.add(sample);
@@ -72,7 +74,7 @@ export function startMeasuring({
   const watched = watchVitals(
     {
       largestPaint: (ms) => {
-        add({ metric: "lcp", name: route(), value: ms });
+        add({ metric: "lcp", name: loaded, value: ms });
       },
       interaction: (ms) => {
         worst = Math.max(worst, ms);
