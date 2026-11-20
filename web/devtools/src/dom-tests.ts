@@ -60,9 +60,11 @@ if (import.meta.main) {
       new Response(run.stderr).text(),
       run.exited,
     ]);
-    process.stdout.write(out);
-    process.stderr.write(err);
+    // Written to its end before the next: bun test reports on stderr, and a write to a pipe that process.exit cuts
+    // short loses the failures of the run.
+    await Bun.write(Bun.stdout, out);
+    await Bun.write(Bun.stderr, err);
     if (code !== 0) failed = true;
   }
-  process.exit(failed ? 1 : 0);
+  process.exitCode = failed ? 1 : 0;
 }

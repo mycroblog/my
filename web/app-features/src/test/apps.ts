@@ -104,15 +104,18 @@ export function clipboard(): Clipboard {
   return Reflect.get(browser, "clipboard") as Clipboard;
 }
 
-/** Makes the clipboard refuse what is written to it, until the test ends. */
+/**
+ * Makes the clipboard refuse what is written to it, until the test ends. The refusal is the clipboard's own property,
+ * over its prototype's method: deleting it gives the clipboard back as it was, so that a later test of the process
+ * finds the method as the DOM defines it.
+ */
 export function refusingClipboard(): void {
   const held = clipboard();
-  const writeText = held.writeText.bind(held);
   Object.defineProperty(held, "writeText", {
     configurable: true,
     value: () => Promise.reject(new DOMException("test: the clipboard refused", "NotAllowedError")),
   });
   onTestFinished(() => {
-    Object.defineProperty(held, "writeText", { configurable: true, value: writeText });
+    Reflect.deleteProperty(held, "writeText");
   });
 }
