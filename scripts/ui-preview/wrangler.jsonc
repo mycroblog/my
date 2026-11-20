@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+//
+// The Cloudflare Worker that serves the UI preview (ADR-0165 §2): the static build of the Storybook host web/storybook,
+// main's on the Worker itself (scripts/ui-preview.sh deploy) and a pull request's on its Preview pr-<number>
+// (scripts/ui-preview.sh deploy-pr). It has static assets and no code, so nothing of it runs on the server.
+// scripts/ui-preview.sh copies this file next to the build (./site), with a _headers file that keeps every page out of
+// search engines, and runs wrangler on the copy, always from main's checkout (ui-preview-deploy.yml): a pull request's
+// build never brings a config of its own.
+//
+// It declares no routes, no custom domain and no secret, like the Worker of the documentation site
+// (scripts/docs-site/wrangler.jsonc), with whose token it deploys.
+//
+//   main:          https://my-ui.<subdomain>.workers.dev               (wrangler deploy)
+//   pull request:  https://pr-<number>-my-ui.<subdomain>.workers.dev   (wrangler preview --name pr-<number>)
+{
+  "name": "my-ui",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  // The Previews of pull requests are served on workers.dev.
+  "preview_urls": true,
+  "assets": {
+    "directory": "./site"
+  },
+  // `wrangler preview` refuses a config without this block; the Preview takes everything else from the top level.
+  "previews": {}
+}
