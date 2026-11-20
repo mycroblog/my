@@ -463,6 +463,32 @@ export class Fresh {
     return body(data, `the account ${username}`);
   }
 
+  /**
+   * The closure of the service withdrawn, by `staff` (a fresh person made with `admin: true`), when one is announced:
+   * what a spec that announces one does last, whatever came of it.
+   */
+  async closureWithdrawn(staff: Person): Promise<void> {
+    const api = await this.#api(staff);
+    const { data } = await api.GET("/admin/closure");
+    if (body(data, "the closure").state !== "announced") return;
+    const { error } = await api.DELETE("/admin/closure/announcement");
+    if (error !== undefined) throw new Error(`fresh: the closure could not be withdrawn: ${JSON.stringify(error)}`);
+  }
+
+  /**
+   * The default theme in effect, published by `staff` (a fresh person made with `admin: true`) from an empty draft
+   * unless it is already: what a spec that publishes a theme does last, whatever came of it.
+   */
+  async defaultTheme(staff: Person): Promise<void> {
+    const api = await this.#api(staff);
+    const { data } = await api.GET("/admin/theme");
+    if ((body(data, "the theme").published?.set.tokens.length ?? 0) === 0) return;
+    const saved = await api.PUT("/admin/theme/draft", { body: { tokens: [] } });
+    const published = saved.error === undefined ? await api.POST("/admin/theme/publish") : saved;
+    if (published.error !== undefined)
+      throw new Error(`fresh: the default theme could not be published: ${JSON.stringify(published.error)}`);
+  }
+
   /** A new invite of the administrator, which one person signs up with. */
   async invite(): Promise<FreshInvite> {
     const { data } = await (await this.#staff("admin")).POST("/admin/invites", { body: { max_uses: 1 } });

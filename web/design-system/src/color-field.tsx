@@ -17,7 +17,15 @@
 // alone: its ratio and verdict say it.
 
 import { contrast } from "@my/design-tokens";
-import { useId, useState, type HTMLAttributes, type InputHTMLAttributes, type ReactNode } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useState,
+  type HTMLAttributes,
+  type InputHTMLAttributes,
+  type ReactNode,
+} from "react";
 import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { Icon } from "./icons";
@@ -53,6 +61,11 @@ export type ColorFieldProps = {
   /** The token's new value, once a scheme's color is a whole #rrggbb. */
   onChange: (value: SchemeColors) => void;
   pairs: readonly ColorPair[];
+  /**
+   * Hears whether what a scheme's field holds is a whole #rrggbb, as that comes and goes: while it is not, the token's
+   * value is the last whole color, which the field no longer shows, and what holds it saves nothing.
+   */
+  onValidity?: ((scheme: "light" | "dark", whole: boolean) => void) | undefined;
 };
 
 /** The schemes, in their order. */
@@ -144,6 +157,7 @@ function SchemeColor({
   value,
   pairs,
   onChange,
+  onValidity,
 }: {
   /** The id of its color's field; one of its own without it. */
   id: string | undefined;
@@ -153,6 +167,7 @@ function SchemeColor({
   value: SchemeColors;
   pairs: readonly ColorPair[];
   onChange: (color: string) => void;
+  onValidity: ((whole: boolean) => void) | undefined;
 }) {
   const s = field();
   const { lang } = useReader(undefined);
@@ -174,6 +189,13 @@ function SchemeColor({
   }
   const [left, setLeft] = useState(false);
   const whole = hexOf(typed) !== undefined;
+  // Said as it changes, not at every render of what holds the field.
+  const tell = useEffectEvent((now: boolean) => {
+    onValidity?.(now);
+  });
+  useEffect(() => {
+    tell(whole);
+  }, [whole]);
   // A color that is not whole is said once the reader leaves the field, not at each key.
   const misformed = !whole && left;
   const verdicts = pairs.map((pair) => {
@@ -265,7 +287,7 @@ function SchemeColor({
  * A color token of the server's theme: its name and what it colors, then its color in light and in dark, each with
  * the contrast of its pairs against WCAG AA; a pair under its minimum makes that scheme's field invalid.
  */
-export function ColorField({ id, label, about, value, onChange, pairs }: ColorFieldProps): ReactNode {
+export function ColorField({ id, label, about, value, onChange, pairs, onValidity }: ColorFieldProps): ReactNode {
   const s = field();
   const nameId = useId();
   const aboutId = useId();
@@ -299,6 +321,13 @@ export function ColorField({ id, label, about, value, onChange, pairs }: ColorFi
             onChange={(color) => {
               onChange({ ...value, [scheme]: color });
             }}
+            onValidity={
+              onValidity === undefined
+                ? undefined
+                : (whole) => {
+                    onValidity(scheme, whole);
+                  }
+            }
           />
         ))}
       </SchemeGrid>

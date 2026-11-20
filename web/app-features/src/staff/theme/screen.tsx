@@ -9,6 +9,7 @@
 
 import {
   loadAdminTheme,
+  themeErrorsOf,
   themeNothingThere,
   useAdminTheme,
   useAdminThemeWrites,
@@ -27,6 +28,7 @@ import {
   SettingsResult,
   SettingsScreen,
   SettingsSection,
+  TextLink,
   type Fact,
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
@@ -72,7 +74,14 @@ function setFacts(t: T, list: (items: string[]) => string, set: ThemeSet, when: 
 }
 
 /** What came of the last press of an action of the screen. */
-type Said = { readonly section: "draft" | "published"; readonly words: string } | undefined;
+type Said =
+  | {
+      readonly section: "draft" | "published";
+      readonly words: string;
+      /** The draft's form, where what the server refused of a set is put right. */
+      readonly fix?: boolean | undefined;
+    }
+  | undefined;
 
 /** The theme: the draft and its actions, the theme in effect and its restore, and the way to the brand images. */
 export function AdminThemeScreen(): ReactNode {
@@ -116,13 +125,19 @@ export function AdminThemeScreen(): ReactNode {
         setBusy(undefined);
         setSaid({
           section: what === "publish" ? "draft" : "published",
-          words: t(
-            what === "restore" && themeNothingThere(error)
-              ? "staff_theme.restore.none"
-              : what === "publish" && themeNothingThere(error)
-                ? "staff_theme.publish.none"
-                : "staff_settings.act_failed",
-          ),
+          // A set that no longer meets a rule (the defaults its pairs are checked with changed in an upgrade) is put
+          // right in the draft; trying again would be refused again.
+          ...(themeErrorsOf(error) !== undefined
+            ? { words: t("staff_theme.invalid", { what }), fix: what === "publish" }
+            : {
+                words: t(
+                  what === "restore" && themeNothingThere(error)
+                    ? "staff_theme.restore.none"
+                    : what === "publish" && themeNothingThere(error)
+                      ? "staff_theme.publish.none"
+                      : "staff_settings.act_failed",
+                ),
+              }),
         });
       },
     );
@@ -171,7 +186,17 @@ export function AdminThemeScreen(): ReactNode {
           </LinkButton>
         </Row>
         <SettingsResult>
-          {said?.section === "draft" ? said.words : preview.on ? t("staff_theme.preview.on") : undefined}
+          {said?.section === "draft" ? (
+            said.fix === true ? (
+              <>
+                {said.words} <TextLink href={themeDraftPath}>{t("staff_theme.edit")}</TextLink>
+              </>
+            ) : (
+              said.words
+            )
+          ) : preview.on ? (
+            t("staff_theme.preview.on")
+          ) : undefined}
         </SettingsResult>
       </SettingsSection>
       <SettingsSection heading={t("staff_theme.published")}>

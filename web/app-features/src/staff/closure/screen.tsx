@@ -33,6 +33,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { ScreenNotice } from "../settings/parts";
+import { usePassed } from "./passed";
 
 /** The address of the announcement's form. */
 const announcementPath = "/admin/closure/announcement";
@@ -101,8 +102,7 @@ function Announced({ closure }: { closure: AdminClosure }) {
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | undefined>(undefined);
-  const [now] = useState(() => Date.now());
-  const due = closure.closes_at !== undefined && Date.parse(closure.closes_at) <= now;
+  const due = usePassed(closure.closes_at);
   const withdraw = () => {
     setBusy(true);
     setSaid(undefined);

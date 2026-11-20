@@ -116,7 +116,8 @@ function AnnounceForm({ closure, go, onUnsaved, leaving }: AdminSubProps & { clo
 
   const refuse = (field: Field, words: string) => {
     setSent({ kind: "refused", field, words });
-    focusNext.current = control(field);
+    // A date's row holds its field at `<row>-control`; the message is its own field.
+    focusNext.current = field === "message" ? control(field) : `${control(field)}-control`;
   };
 
   /** Checks the form before it is asked: the closing date given and whole, the deadline whole and not before it. */
@@ -192,6 +193,7 @@ function AnnounceForm({ closure, go, onUnsaved, leaving }: AdminSubProps & { clo
                 change({ closes: value });
               }}
               invalid={fault("closes_at") !== undefined}
+              describedBy={fault("closes_at") === undefined ? undefined : `${control("closes_at")}-error`}
               disabled={busy}
             />
           </SettingRow>
@@ -211,6 +213,7 @@ function AnnounceForm({ closure, go, onUnsaved, leaving }: AdminSubProps & { clo
                 change({ until: value });
               }}
               invalid={fault("export_until") !== undefined}
+              describedBy={fault("export_until") === undefined ? undefined : `${control("export_until")}-error`}
               disabled={busy}
             />
           </SettingRow>

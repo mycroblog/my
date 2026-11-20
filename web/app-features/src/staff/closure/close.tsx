@@ -32,6 +32,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings } from "../parts";
 import { Irreversible, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { usePassed } from "./passed";
 
 /** The address of the closure. */
 const adminClosurePath = "/admin/closure";
@@ -53,11 +54,11 @@ function BackToClosure({ go }: { go: (href: string) => void }) {
   );
 }
 
-/** Why the server cannot be closed now, in a sentence; none once it can. */
-function notYet(closure: AdminClosure, now: number): "none" | "early" | "closed" | undefined {
+/** Why the server cannot be closed now, in a sentence; none once it can (`due`: its closing date has passed). */
+function notYet(closure: AdminClosure, due: boolean): "none" | "early" | "closed" | undefined {
   if (closure.state === "none") return "none";
   if (closure.state !== "announced") return "closed";
-  return closure.closes_at !== undefined && Date.parse(closure.closes_at) <= now ? undefined : "early";
+  return due ? undefined : "early";
 }
 
 /** The check and the closure, once both are read. */
@@ -74,16 +75,16 @@ function Close({
   const moment = useMoment();
   const writes = useAdminClosureWrites();
   const domain = useInstance()?.domain;
-  const [now] = useState(() => Date.now());
+  const due = usePassed(closure.closes_at);
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
   const [said, setSaid] = useState<string | undefined>(undefined);
-  const why = notYet(closure, now);
-  const close = () => {
-    if (domain === undefined) return;
+  const why = notYet(closure, due);
+  /** Closes the server with the domain the reader typed, which the server compares with its own. */
+  const close = (typed: string) => {
     setBusy(true);
     setSaid(undefined);
-    writes.close(domain).then(
+    writes.close(typed).then(
       () => {
         setBusy(false);
         setAsking(false);

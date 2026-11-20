@@ -124,6 +124,8 @@ function DraftForm({ theme, go, onUnsaved, leaving }: AdminSubProps & { theme: A
   const [start, setStart] = useState(() => valuesOf(theme.draft?.tokens ?? theme.published?.set.tokens ?? []));
   const [values, setValues] = useState(start);
   const [sent, setSent] = useState<Sent>({ kind: "idle" });
+  // The schemes' fields that hold no whole color now (`<token>-<scheme>`): the form holds the last whole one there.
+  const [unwhole, setUnwhole] = useState<ReadonlySet<string>>(() => new Set());
   const focusNext = useRef<string | undefined>(undefined);
   const busy = sent.kind === "sending";
   const overrides = overridesOf(values);
@@ -154,6 +156,16 @@ function DraftForm({ theme, go, onUnsaved, leaving }: AdminSubProps & { theme: A
 
   const save = () => {
     if (busy) return;
+    // A field that holds no whole color would save the one it held before, which it no longer shows.
+    const partial = themeSections
+      .flatMap((section) => section.tokens)
+      .flatMap((token) => (["light", "dark"] as const).map((scheme) => `${token}-${scheme}`))
+      .find((key) => unwhole.has(key));
+    if (partial !== undefined) {
+      setSent({ kind: "refused", faults: {}, reason: t("staff_settings.save.refused") });
+      focusNext.current = `${id}-${partial}`;
+      return;
+    }
     const low = firstLowContrast(values);
     if (low !== undefined) {
       setSent({ kind: "refused", faults: {}, reason: t("staff_settings.save.refused") });
@@ -216,6 +228,16 @@ function DraftForm({ theme, go, onUnsaved, leaving }: AdminSubProps & { theme: A
           value={value}
           onChange={(next) => {
             change({ ...values, colors: { ...values.colors, [token]: next } });
+          }}
+          onValidity={(scheme, whole) => {
+            const key = `${token}-${scheme}`;
+            setUnwhole((was) => {
+              if (was.has(key) !== whole) return was;
+              const now = new Set(was);
+              if (whole) now.delete(key);
+              else now.add(key);
+              return now;
+            });
           }}
           pairs={pairsOf(token).map((pair) => ({
             label: t("staff_theme.pair", {

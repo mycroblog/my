@@ -143,11 +143,15 @@ export class ClosureAdmin {
     return this.main.getByRole("textbox", { name: "Message to the users", exact: true });
   }
 
-  /** Sends the announcement and confirms it, and returns once the server answered. */
+  /**
+   * Sends the announcement and confirms it, and returns once the server answered: Announce for a new one, Save where
+   * one is in effect already (a run before this one that did not withdraw it).
+   */
   async announce(): Promise<void> {
-    await this.button("Announce").click();
+    const send = /^(Announce|Save)$/;
+    await this.main.getByRole("button", { name: send }).click();
     await answered(this.page, { methods: ["PUT"], path: /\/admin\/closure\/announcement$/ }, async () => {
-      await this.page.getByRole("alertdialog").getByRole("button", { name: "Announce", exact: true }).click();
+      await this.page.getByRole("alertdialog").getByRole("button", { name: send }).click();
     });
   }
 

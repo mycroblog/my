@@ -19,19 +19,24 @@ test("an administrator announces the closure of the service, sees its notice, an
   signIn,
   fresh,
 }) => {
-  await signIn(await fresh.person({ admin: true }));
+  const admin = await fresh.person({ admin: true });
+  await signIn(admin);
   const closure = new ClosureAdmin(page);
   const message = `Thank you for the years together ${randomUUID().slice(0, 8)}.`;
-  await closure.open();
+  try {
+    await closure.open();
 
-  await closure.openAnnouncement();
-  await closure.closes.fill(closesAt);
-  await closure.message.fill(message);
-  await closure.announce();
-  await expect(closure.announcement.getByText(message, { exact: true })).toBeVisible();
-  await expect(closure.banner).toBeVisible();
+    await closure.openAnnouncement();
+    await closure.closes.fill(closesAt);
+    await closure.message.fill(message);
+    await closure.announce();
+    await expect(closure.announcement.getByText(message, { exact: true })).toBeVisible();
+    await expect(closure.banner).toBeVisible();
 
-  await closure.withdraw();
-  await expect(page.getByRole("main").getByText("No closure is announced.", { exact: true })).toBeVisible();
-  await expect(closure.banner).toBeHidden();
+    await closure.withdraw();
+    await expect(page.getByRole("main").getByText("No closure is announced.", { exact: true })).toBeVisible();
+    await expect(closure.banner).toBeHidden();
+  } finally {
+    await fresh.closureWithdrawn(admin);
+  }
 });

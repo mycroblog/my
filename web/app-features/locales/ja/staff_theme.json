@@ -298,5 +298,9 @@
   "staff_theme.elsewhere": {
     "defaultMessage": "ほかの場所",
     "description": "On the theme's screen of the administration (/admin/theme), the heading of the last section, which leads to the icon and logo page of Server settings. Read by administrators."
+  },
+  "staff_theme.invalid": {
+    "defaultMessage": "{what, select, publish {下書きがテーマの決まりを満たさなくなったため、公開しませんでした。下書きで示された箇所を直して保存してから公開してください。} other {ひとつ前のテーマがテーマの決まりを満たさなくなったため、戻しませんでした。}}",
+    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); after the publish case, a link to the draft's form. Read by administrators."
   }
 }

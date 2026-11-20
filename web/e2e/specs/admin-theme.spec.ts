@@ -18,36 +18,41 @@ test("an administrator previews a draft of the theme on the app's screens, publi
   signIn,
   fresh,
 }) => {
-  await signIn(await fresh.person({ admin: true }));
+  const admin = await fresh.person({ admin: true });
+  await signIn(admin);
   const theme = new ThemeAdmin(page);
 
-  // The default theme first, published, which the restore at the end comes back to.
-  await theme.open();
-  await theme.editDraft();
-  await theme.color("Accent text", "Light").fill(accentText.default);
-  await theme.saveDraft();
-  await expect(theme.saved).toBeVisible();
-  await theme.open();
-  await theme.publish();
-  await expect(theme.said("Published.")).toBeVisible();
+  try {
+    // The default theme first, published, which the restore at the end comes back to.
+    await theme.open();
+    await theme.editDraft();
+    await theme.color("Accent text", "Light").fill(accentText.default);
+    await theme.saveDraft();
+    await expect(theme.saved).toBeVisible();
+    await theme.open();
+    await theme.publish();
+    await expect(theme.said("Published.")).toBeVisible();
 
-  // A darker accent text, saved as the draft and previewed on the home timeline.
-  await theme.editDraft();
-  await theme.color("Accent text", "Light").fill(accentText.draft);
-  await theme.saveDraft();
-  await expect(theme.saved).toBeVisible();
-  await theme.open();
-  await theme.button("Preview").click();
-  await theme.goHome();
-  await expect(theme.previewNotice).toBeVisible();
-  await expect.poll(() => theme.property("--color-accent-text")).toContain(accentText.draft);
+    // A darker accent text, saved as the draft and previewed on the home timeline.
+    await theme.editDraft();
+    await theme.color("Accent text", "Light").fill(accentText.draft);
+    await theme.saveDraft();
+    await expect(theme.saved).toBeVisible();
+    await theme.open();
+    await theme.button("Preview").click();
+    await theme.goHome();
+    await expect(theme.previewNotice).toBeVisible();
+    await expect.poll(() => theme.property("--color-accent-text")).toContain(accentText.draft);
 
-  // Published, then the default theme restored.
-  await theme.backToTheme();
-  await theme.publish();
-  await expect(theme.said("Published.")).toBeVisible();
-  await expect(theme.previewNotice).toBeHidden();
-  await theme.restore();
-  await expect(theme.said("Restored.")).toBeVisible();
-  await expect(page.getByRole("main").getByText("None: the default theme", { exact: true })).toBeVisible();
+    // Published, then the default theme restored.
+    await theme.backToTheme();
+    await theme.publish();
+    await expect(theme.said("Published.")).toBeVisible();
+    await expect(theme.previewNotice).toBeHidden();
+    await theme.restore();
+    await expect(theme.said("Restored.")).toBeVisible();
+    await expect(page.getByRole("main").getByText("None: the default theme", { exact: true })).toBeVisible();
+  } finally {
+    await fresh.defaultTheme(admin);
+  }
 });
