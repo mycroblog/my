@@ -367,7 +367,7 @@ y el texto `thumbnail_alt`) aparecen en los lugares siguientes. Lo que no está 
 Cuando la cuenta de contacto está suspendida o eliminada, la cuenta no se muestra y solo se muestra la dirección de correo.
 Cámbialos en la página General de la pantalla de administración del cliente web («Ajustes del servidor», `/admin/settings/general`), o con la CLI o la API de cliente.
 
-<!-- source: one-person-server 275b5c1d39fa -->
+<!-- source: one-person-server 1bd8fd4f6da5 -->
 ### Servidor de una sola persona
 
 Un servidor solo de su operador, el propio hogar del operador en el fediverso, es un servidor de una sola persona: activa `single_user`. En el cliente web,
