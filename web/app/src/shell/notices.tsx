@@ -39,7 +39,10 @@ export function ServerBanners({ instance }: { instance: Instance | undefined }) 
             { href: accountMovePath, label: t("app.closure_move") },
           ]}
         >
-          {t("app.closure_notice", { closes: date(closure.closes_at), until: date(closure.export_until) })}
+          {t(Date.parse(closure.closes_at) <= Date.now() ? "app.closure_notice_due" : "app.closure_notice", {
+            closes: date(closure.closes_at),
+            until: date(closure.export_until),
+          })}
         </FrameBanner>
       )}
       {preview && (

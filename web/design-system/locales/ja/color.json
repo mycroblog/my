@@ -12,15 +12,27 @@
     "description": "The name of a color swatch in the theme editor that opens the system's color picker, for the light or the dark value of a token (read with Light or Dark)."
   },
   "color.meets": {
-    "defaultMessage": "{ratio}:1、AA ({minimum}:1) を満たす",
-    "description": "A contrast pair's verdict in the theme editor: ratio is the contrast ratio of the token's color with the other token of the pair (4.62), minimum the ratio WCAG 2 level AA asks of the pair (4.5 for text, 3 for a mark), which it meets. Shown after the pair's name (On surface); parallel to color.below."
+    "defaultMessage": "AA を満たす",
+    "description": "Read by a screen reader alone before a contrast pair's ratio in the theme editor, when the pair meets the minimum of WCAG 2 level AA; parallel to color.below."
   },
   "color.below": {
-    "defaultMessage": "{ratio}:1、AA ({minimum}:1) に届かない",
-    "description": "A contrast pair's verdict in the theme editor when its contrast is under the minimum of WCAG 2 level AA, an error that keeps the theme from being saved: ratio is the pair's contrast ratio (2.77), minimum the ratio it needs (4.5 for text, 3 for a mark). Shown after the pair's name (On surface); parallel to color.meets."
+    "defaultMessage": "AA に足りない",
+    "description": "Read by a screen reader alone before a contrast pair's ratio in the theme editor, when the pair is under the minimum of WCAG 2 level AA (an error that keeps the theme from being saved); parallel to color.meets."
   },
   "color.format": {
     "defaultMessage": "色は #ff6b6b のように、# と 0〜9・a〜f の 6 文字で入力してください。",
     "description": "The error under a color's field in the theme editor when what was typed is no color: the field takes # and six hexadecimal digits (0 to 9, a to f)."
+  },
+  "color.ratio": {
+    "defaultMessage": "{ratio}:1",
+    "description": "A contrast pair's ratio in the theme editor when it meets its minimum, after a check mark (4.62:1); the minimum is said once for the field (color.needs)."
+  },
+  "color.short": {
+    "defaultMessage": "{ratio}:1、{minimum}:1 必要",
+    "description": "A contrast pair's ratio in the theme editor when it is under its minimum, after an error mark: ratio is the pair's contrast (2.77), minimum what it needs (4.5 for text, 3 for a mark)."
+  },
+  "color.needs": {
+    "defaultMessage": "{kinds, select, one {どの組も {high}:1 以上が必要です (WCAG AA)。} other {文字は {high}:1 以上、線などの印は {low}:1 以上が必要です (WCAG AA)。}}",
+    "description": "Under a color token's name in the theme editor: the contrast its pairs need, once for the field (one minimum for all, or text's and a mark's)."
   }
 }

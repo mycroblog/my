@@ -164,7 +164,8 @@ export function AdminThemeScreen(): ReactNode {
         <Row wrap gap="entry-caption">
           {drafted && (
             <Button
-              kind="primary"
+              // The screen's next step while the draft differs from the theme in effect; else only a publication again.
+              kind={publishedSame ? "secondary" : "primary"}
               size="timeline"
               touch
               busy={busy === "publish"}
@@ -181,7 +182,8 @@ export function AdminThemeScreen(): ReactNode {
               {t("staff_theme.preview")}
             </Button>
           )}
-          <LinkButton size="timeline" href={themeDraftPath}>
+          {/* Without a draft, starting one is the screen's only action, the primary as on every staff screen. */}
+          <LinkButton kind={drafted ? "secondary" : "primary"} size="timeline" href={themeDraftPath}>
             {t(drafted ? "staff_theme.edit" : "staff_theme.start")}
           </LinkButton>
         </Row>

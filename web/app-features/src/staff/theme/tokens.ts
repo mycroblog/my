@@ -97,17 +97,8 @@ export const tokenNames: Readonly<Record<string, MessageId>> = {
   "duration-spin": "staff_theme.token.duration_spin",
 };
 
-/** What the colors of the first of their kind color, the line under the field's name; the steps of a state have none. */
+/** How a font family is written, the line under its field's name; a token named by what it colors has none. */
 export const tokenAbouts: Readonly<Record<string, MessageId>> = {
-  "color-text": "staff_theme.token.color_text.about",
-  "color-muted-text": "staff_theme.token.color_muted_text.about",
-  "color-accent-text": "staff_theme.token.color_accent_text.about",
-  "color-quote-bar": "staff_theme.token.color_quote_bar.about",
-  "color-accent": "staff_theme.token.color_accent.about",
-  "color-on-accent": "staff_theme.token.color_on_accent.about",
-  "color-surface": "staff_theme.token.color_surface.about",
-  "color-surface-hover": "staff_theme.token.color_surface_hover.about",
-  "color-surface-raised": "staff_theme.token.color_surface_raised.about",
   "font-sans-override": "staff_theme.token.font_sans_override.about",
   "font-mono-override": "staff_theme.token.font_mono_override.about",
 };

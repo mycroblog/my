@@ -28,11 +28,13 @@ import {
   SettingsResult,
   SettingsScreen,
   SettingsSection,
+  Stack,
+  StateMark,
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
-import { useMoment, useStaffStrings } from "../parts";
-import { Irreversible, ScreenNotice, type AdminSubProps } from "../settings/parts";
-import { usePassed } from "./passed";
+import { useStaffStrings } from "../parts";
+import { Caution, Irreversible, ScreenNotice, type AdminSubProps } from "../settings/parts";
+import { useClosureMoment, usePassed } from "./passed";
 
 /** The address of the closure. */
 const adminClosurePath = "/admin/closure";
@@ -61,6 +63,22 @@ function notYet(closure: AdminClosure, due: boolean): "none" | "early" | "closed
   return due ? undefined : "early";
 }
 
+/**
+ * What should be dealt with before closing (account moves not ended, accounts under a hold): its count, and while it is
+ * not none, marked as what waits, with what to do about it under it.
+ */
+function Blocker({ count, warning }: { count: number; warning: string }): ReactNode {
+  const { t } = useStaffStrings();
+  const counted = t("staff_closure.check.count", { count });
+  if (count === 0) return counted;
+  return (
+    <Stack gap="hair">
+      <StateMark state="pending">{counted}</StateMark>
+      <Caution>{warning}</Caution>
+    </Stack>
+  );
+}
+
 /** The check and the closure, once both are read. */
 function Close({
   closure,
@@ -72,7 +90,7 @@ function Close({
   go: (href: string) => void;
 }): ReactNode {
   const { t } = useStaffStrings();
-  const moment = useMoment();
+  const moment = useClosureMoment();
   const writes = useAdminClosureWrites();
   const domain = useInstance()?.domain;
   const due = usePassed(closure.closes_at);
@@ -99,7 +117,7 @@ function Close({
   };
   return (
     <>
-      <SettingsScreen sub title={t("staff_closure.close")} back={<BackToClosure go={go} />}>
+      <SettingsScreen sub title={t("staff_closure.check")} back={<BackToClosure go={go} />}>
         <SettingsSection heading={t("staff_closure.check.heading")}>
           <FactList
             label={t("staff_closure.check.heading")}
@@ -118,20 +136,18 @@ function Close({
               },
               {
                 term: t("staff_closure.check.migrations"),
-                value: t("staff_closure.check.count", { count: check.pending_migrations }),
+                value: (
+                  <Blocker count={check.pending_migrations} warning={t("staff_closure.check.migrations.warning")} />
+                ),
               },
               {
                 term: t("staff_closure.check.holds"),
-                value: t("staff_closure.check.count", { count: check.retention_holds }),
+                value: <Blocker count={check.retention_holds} warning={t("staff_closure.check.holds.warning")} />,
               },
             ]}
           />
-          {check.pending_migrations > 0 && (
-            <SettingsNote instead>{t("staff_closure.check.migrations.warning")}</SettingsNote>
-          )}
-          {check.retention_holds > 0 && <SettingsNote instead>{t("staff_closure.check.holds.warning")}</SettingsNote>}
         </SettingsSection>
-        <SettingsSection heading={t("staff_closure.close")}>
+        <SettingsSection heading={t("staff_closure.close.heading")}>
           {why === undefined ? (
             <>
               <Irreversible>{t("staff_closure.irreversible")}</Irreversible>
@@ -192,7 +208,7 @@ export function ClosureCloseScreen({ go }: AdminSubProps): ReactNode {
     return (
       <SettingsScreen
         sub
-        title={t("staff_closure.close")}
+        title={t("staff_closure.check")}
         back={<BackToClosure go={go} />}
         notice={
           <ScreenNotice
@@ -208,5 +224,5 @@ export function ClosureCloseScreen({ go }: AdminSubProps): ReactNode {
 
 /** The title of the check before closing. */
 export function useClosureCloseTitle(): string {
-  return useStaffStrings().t("staff_closure.close");
+  return useStaffStrings().t("staff_closure.check");
 }

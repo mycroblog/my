@@ -75,13 +75,13 @@
     "defaultMessage": "Users can only sign in and export their data until {date}. About {deletes, number} deliveries ask the other servers to delete this server's accounts. This cannot be undone.",
     "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
   },
+  "staff_closure.close.heading": {
+    "defaultMessage": "Closing",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of the last section, which holds the mark of what cannot be undone and the button that closes the server. Read by administrators."
+  },
   "staff_closure.closed": {
     "defaultMessage": "Closed",
     "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of a closed server. Read by administrators."
-  },
-  "staff_closure.closed.remains": {
-    "defaultMessage": "Users can only sign in and export their data, until the export deadline.",
-    "description": "On the closure's screen of the administration (/admin/closure), what remains of the service once the server is closed. Read by administrators."
   },
   "staff_closure.progress": {
     "defaultMessage": "Deleting the accounts, here and on other servers",
@@ -94,10 +94,6 @@
   "staff_closure.progress.fanouts": {
     "defaultMessage": "Finding their servers",
     "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deletions whose receiving servers are still being found. Read by administrators."
-  },
-  "staff_closure.progress.succeeded": {
-    "defaultMessage": "Delivered",
-    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries the other servers accepted. Read by administrators."
   },
   "staff_closure.progress.pending": {
     "defaultMessage": "Waiting",
@@ -123,9 +119,21 @@
     "defaultMessage": "Every delivery has ended.",
     "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
   },
+  "staff_closure.progress.meter": {
+    "defaultMessage": "Deliveries done",
+    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that were accepted, of all of them. Read by administrators."
+  },
+  "staff_closure.progress.delivered": {
+    "defaultMessage": "{succeeded, number} of {all, number} delivered",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter: the deliveries accepted of all the deliveries of the deletion of the accounts (numbers). Read by administrators."
+  },
+  "staff_closure.progress.undelivered": {
+    "defaultMessage": "Not delivered",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
   "staff_closure.state": {
-    "defaultMessage": "{state, select, none {Not announced} announced {Announced} closed {Closed, deliveries going on} other {Closed, deliveries ended}}",
-    "description": "On the closure's screen of the administration (/admin/closure), where the closure stands. Read by administrators."
+    "defaultMessage": "{state, select, due {Closing date passed} other {Announced}}",
+    "description": "On the closure's screen of the administration (/admin/closure), the state of an announced closure beside its mark: announced, or its closing date passed and the server not closed yet. Read by administrators."
   },
   "staff_closure.fact.state": {
     "defaultMessage": "State",
@@ -172,8 +180,8 @@
     "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the field of the last moment the users can export their data. Read by administrators."
   },
   "staff_closure.form.until.about": {
-    "defaultMessage": "Empty for 30 days after the closing date.",
-    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline: its default. Read by administrators."
+    "defaultMessage": "Left empty, the export deadline is 30 days after the closing date.",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the line under the heading of the dates: the export deadline's default. Read by administrators."
   },
   "staff_closure.form.until.before": {
     "defaultMessage": "Choose a moment on or after the closing date.",

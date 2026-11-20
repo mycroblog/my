@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // Whether a moment of the closure (its closing date) has passed, as it passes: the screen that offers to close the
-// server once it has draws again then, not only at its next visit.
+// server once it has draws again then, not only at its next visit; and how the closure's screens write a moment.
 
+import { dateFormat, useLocale, useTimeZone } from "@my/design-system";
 import { useEffect, useState } from "react";
 
 /** The longest a timer waits (about 24.8 days); a later moment is checked again after it. */
@@ -26,4 +27,15 @@ export function usePassed(iso: string | undefined): boolean {
     };
   }, [at, passed, now]);
   return passed;
+}
+
+/**
+ * Writes a moment of the closure as its banner writes the date, long, with its time, in the reader's zone, never
+ * broken inside (no-break spaces).
+ */
+export function useClosureMoment(): (iso: string) => string {
+  const { locale } = useLocale();
+  const zone = useTimeZone();
+  const format = dateFormat(locale, zone, { dateStyle: "long", timeStyle: "short" });
+  return (iso) => format.format(new Date(iso)).replace(/ /g, "\u00a0");
 }

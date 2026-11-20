@@ -60,8 +60,8 @@ test("each scheme's color is a field described by its pair's ratio, and a pair u
       })
       .join(" ");
   // Cut, never rounded up: 2.77 stays under 2.78.
-  expect(said(light)).toBe("On surface2.77:1, below AA (4.5:1)");
-  expect(said(dark)).toBe("On surface6.05:1, meets AA (4.5:1)");
+  expect(said(light)).toBe("On surfaceBelow AA 2.77:1, needs 4.5:1");
+  expect(said(dark)).toBe("On surfaceMeets AA 6.05:1");
 });
 
 test("a whole color typed tells the owner; what is no color is said once the reader leaves the field", async () => {

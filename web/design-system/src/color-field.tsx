@@ -259,15 +259,23 @@ function SchemeColor({
               <Row as="span" inline rigid>
                 <PairSample fg={fg} bg={bg} className={whole ? s.sample() : `${s.sample()} ${s.stale()}`} />
               </Row>
-              <Row as="span" grow wrap align="center" gapX="entry-caption" gapY="0">
+              <Row as="span" grow align="center" justify="between" gap="entry-caption">
                 <span>{pair.label}</span>
                 {whole && (
-                  <Row as="span" inline align="center" gap="entry-caption" className={meets ? s.pass() : s.fail()}>
+                  <Row
+                    as="span"
+                    inline
+                    rigid
+                    align="center"
+                    gap="entry-caption"
+                    className={meets ? s.pass() : s.fail()}
+                  >
                     <Row as="span" inline rigid>
                       <Icon name={meets ? "chosen" : "error"} place="caption" />
                     </Row>
                     <span className={s.ratio()}>
-                      {t(meets ? "color.meets" : "color.below", {
+                      <span className="sr-only">{t(meets ? "color.meets" : "color.below")} </span>
+                      {t(meets ? "color.ratio" : "color.short", {
                         ratio: format(ratio),
                         minimum: format(pair.minimum),
                       })}
@@ -291,11 +299,21 @@ export function ColorField({ id, label, about, value, onChange, pairs, onValidit
   const s = field();
   const nameId = useId();
   const aboutId = useId();
+  const needsId = useId();
+  const { lang } = useReader(undefined);
+  const { t } = stringsIn(lang);
+  const format = (n: number) => new Intl.NumberFormat(lang, { maximumFractionDigits: 2 }).format(n);
+  // The minimum each pair needs, said once for the field: one for them all, or text's and a mark's.
+  const minima = pairs.map((pair) => pair.minimum);
+  const high = minima.length === 0 ? undefined : Math.max(...minima);
+  const low = minima.length === 0 ? undefined : Math.min(...minima);
   return (
     <Stack
       role="group"
       aria-labelledby={nameId}
-      {...(about === undefined ? {} : { "aria-describedby": aboutId })}
+      aria-describedby={[about === undefined ? undefined : aboutId, high === undefined ? undefined : needsId]
+        .filter((by) => by !== undefined)
+        .join(" ")}
       gap="screen-row-gap"
       className={s.root()}
     >
@@ -306,6 +324,11 @@ export function ColorField({ id, label, about, value, onChange, pairs, onValidit
         {about !== undefined && (
           <p id={aboutId} className={s.about()}>
             {about}
+          </p>
+        )}
+        {high !== undefined && low !== undefined && (
+          <p id={needsId} className={s.about()}>
+            {t("color.needs", { kinds: high === low ? "one" : "two", high: format(high), low: format(low) })}
           </p>
         )}
       </Stack>

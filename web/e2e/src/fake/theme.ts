@@ -23,6 +23,8 @@ export type FakeThemeOptions = {
   published?: boolean;
   /** The draft holds overrides an upgrade left without effect. */
   stale?: boolean;
+  /** The draft's Accent text in light is the brand's coral, under its minimum on the page (as an upgrade may leave it). */
+  low?: boolean;
 };
 
 /** What the theme's handlers take from the fake. */
@@ -138,9 +140,12 @@ export function themeHandlers(c: ThemeContext): { handlers: Handlers } {
     saved_at: new Date(at).toISOString(),
   });
   let draft: ThemeSet | undefined =
-    o.draft === true || o.published === true || o.stale === true
+    o.draft === true || o.published === true || o.stale === true || o.low === true
       ? {
-          ...setOf(startTokens, c.started - 30 * minute),
+          ...setOf(
+            o.low === true ? [{ token: "color-accent-text", light: "#ff6b6b", dark: "#ff8a80" }] : startTokens,
+            c.started - 30 * minute,
+          ),
           ...(o.stale === true
             ? { stale_tokens: [{ token: "color-link", light: "#2255aa", dark: "#88aaff", reason: "unknown_token" }] }
             : {}),

@@ -4,7 +4,8 @@
 // the theme's screen with no draft and nothing published, with a draft not published yet, with it published after an
 // earlier one (so that it can be restored), and with overrides an upgrade left without effect; the draft's form, from
 // the defaults and from the draft; loading and failing. What follows a press (a pair under its minimum refused before
-// sending, a value the server refused, published, the preview over the screens) is the route tests'.
+// sending, a value the server refused, published, the preview over the screens) is the route tests'; the draft's
+// form with a pair under its minimum is a story, and Save's refusal of it a script's shot.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
@@ -36,4 +37,9 @@ export const Failed: Story = { parameters: at("/admin/theme", { state: "error" }
 export const DraftDefault: Story = { parameters: at("/admin/theme/draft") };
 /** The draft's form from the draft: a darker accent text in light, and rounder controls. */
 export const Draft: Story = { parameters: at("/admin/theme/draft", { server: { theme: { draft: true } } }) };
+/**
+ * The draft's form with Accent text in light under its minimum on the page: its pair is marked, which Save refuses
+ * before sending (shot by a script that presses Save).
+ */
+export const DraftBelow: Story = { parameters: at("/admin/theme/draft", { server: { theme: { low: true } } }) };
 export const DraftLoading: Story = { parameters: at("/admin/theme/draft", { state: "loading" }) };

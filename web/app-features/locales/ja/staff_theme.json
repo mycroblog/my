@@ -31,69 +31,33 @@
     "defaultMessage": "文字",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of most text. Read by administrators."
   },
-  "staff_theme.token.color_text.about": {
-    "defaultMessage": "ほとんどの文字。投稿・名前・ラベル。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the text color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_muted_text": {
     "defaultMessage": "控えめな文字",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of secondary text. Read by administrators."
-  },
-  "staff_theme.token.color_muted_text.about": {
-    "defaultMessage": "時刻・数・名前の下の行。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the muted text color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_accent_text": {
     "defaultMessage": "アクセントの文字",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of links and the focus ring. Read by administrators."
   },
-  "staff_theme.token.color_accent_text.about": {
-    "defaultMessage": "リンクとフォーカスの枠。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the accent text color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_quote_bar": {
     "defaultMessage": "引用の線",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the bar at the start of a quote. Read by administrators."
-  },
-  "staff_theme.token.color_quote_bar.about": {
-    "defaultMessage": "引用の始まりの線。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the quote bar color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_accent": {
     "defaultMessage": "アクセント",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the accent fill color. Read by administrators."
   },
-  "staff_theme.token.color_accent.about": {
-    "defaultMessage": "主なボタンの塗り。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the accent color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_on_accent": {
     "defaultMessage": "アクセントの上の文字",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the text on the accent fill. Read by administrators."
-  },
-  "staff_theme.token.color_on_accent.about": {
-    "defaultMessage": "主なボタンの文字。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the text on accent color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_surface": {
     "defaultMessage": "ページの背景",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
   },
-  "staff_theme.token.color_surface.about": {
-    "defaultMessage": "ほかのすべての後ろ。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the surface color colors, under its name. Read by administrators."
-  },
-  "staff_theme.token.color_surface_hover.about": {
-    "defaultMessage": "ページにある行・タブ・枠のないボタン。ポインターを重ねたときと押したとき。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the hovered and pressed surface colors color, under the hovered one's name. Read by administrators."
-  },
   "staff_theme.token.color_surface_raised": {
     "defaultMessage": "入力欄とボタン",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
-  },
-  "staff_theme.token.color_surface_raised.about": {
-    "defaultMessage": "囲まれた区画にも使います。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the raised surface color colors, under its name. Read by administrators."
   },
   "staff_theme.token.font_sans_override": {
     "defaultMessage": "文字のフォント",
@@ -174,10 +138,6 @@
   "staff_theme.pair": {
     "defaultMessage": "{role, select, text {{name}の上} other {{name}の下}}",
     "description": "On the theme editor of the administration (/admin/theme/draft), a pair the color makes with another one, beside its contrast ratio: the color as text on {name}, or as the background under {name} ({name}, the other color's name). Read by administrators."
-  },
-  "staff_theme.default": {
-    "defaultMessage": "空欄で既定の {value} になります。",
-    "description": "On the theme editor of the administration (/admin/theme/draft), under a field of a size, a line height, a radius or a duration: its default ({value}, as the stylesheet writes it: 0.875rem, 1.5, 800ms). Read by administrators."
   },
   "staff_theme.error.range": {
     "defaultMessage": "{kind, select, length {{min}rem から {max}rem までの値にしてください。} duration {{min}ms から {max}ms までの値にしてください。} other {{min} から {max} までの値にしてください。}}",
@@ -268,7 +228,7 @@
     "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the published theme. Read by administrators."
   },
   "staff_theme.published.none": {
-    "defaultMessage": "既定のテーマです。まだ何も公開していません。",
+    "defaultMessage": "既定のテーマです。",
     "description": "On the theme's screen of the administration (/admin/theme), in the section of the published theme while none was published. Read by administrators."
   },
   "staff_theme.restore": {

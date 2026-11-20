@@ -75,13 +75,13 @@
     "defaultMessage": "利用者は {date} までログインしてデータをエクスポートすることだけができます。約 {deletes, number} 件の配送で、このサーバーのアカウントの削除をほかのサーバーに依頼します。取り消せません。",
     "description": "On the check before closing the server (/admin/closure/close), what follows closing the server ({date}, the export deadline; {deletes}, a number). Read by administrators."
   },
+  "staff_closure.close.heading": {
+    "defaultMessage": "閉鎖",
+    "description": "On the check before closing the server (/admin/closure/close), the heading of the last section, which holds the mark of what cannot be undone and the button that closes the server. Read by administrators."
+  },
   "staff_closure.closed": {
     "defaultMessage": "閉鎖",
     "description": "On the closure's screen of the administration (/admin/closure), the heading of the section of a closed server. Read by administrators."
-  },
-  "staff_closure.closed.remains": {
-    "defaultMessage": "利用者ができるのは、エクスポートの期限までログインしてデータをエクスポートすることだけです。",
-    "description": "On the closure's screen of the administration (/admin/closure), what remains of the service once the server is closed. Read by administrators."
   },
   "staff_closure.progress": {
     "defaultMessage": "アカウントの削除 (このサーバーとほかのサーバー)",
@@ -94,10 +94,6 @@
   "staff_closure.progress.fanouts": {
     "defaultMessage": "宛先を調べている削除",
     "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deletions whose receiving servers are still being found. Read by administrators."
-  },
-  "staff_closure.progress.succeeded": {
-    "defaultMessage": "配送済み",
-    "description": "On the closure's screen of the administration (/admin/closure), the label of the number of deliveries the other servers accepted. Read by administrators."
   },
   "staff_closure.progress.pending": {
     "defaultMessage": "待機中",
@@ -123,9 +119,21 @@
     "defaultMessage": "すべての配送が終わりました。",
     "description": "On the closure's screen of the administration (/admin/closure), under the progress once every delivery has ended. Read by administrators."
   },
+  "staff_closure.progress.meter": {
+    "defaultMessage": "済んだ配送",
+    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that were accepted, of all of them. Read by administrators."
+  },
+  "staff_closure.progress.delivered": {
+    "defaultMessage": "{all, number} 件中 {succeeded, number} 件を配送",
+    "description": "On the closure's screen of the administration (/admin/closure), under the meter: the deliveries accepted of all the deliveries of the deletion of the accounts (numbers). Read by administrators."
+  },
+  "staff_closure.progress.undelivered": {
+    "defaultMessage": "配送できなかったもの",
+    "description": "On the closure's screen of the administration (/admin/closure), the heading over the deliveries that failed: refused, skipped, out of attempts. Read by administrators."
+  },
   "staff_closure.state": {
-    "defaultMessage": "{state, select, none {予告なし} announced {予告中} closed {閉鎖、配送中} other {閉鎖、配送は終了}}",
-    "description": "On the closure's screen of the administration (/admin/closure), where the closure stands. Read by administrators."
+    "defaultMessage": "{state, select, due {閉鎖日を過ぎました} other {予告中}}",
+    "description": "On the closure's screen of the administration (/admin/closure), the state of an announced closure beside its mark: announced, or its closing date passed and the server not closed yet. Read by administrators."
   },
   "staff_closure.fact.state": {
     "defaultMessage": "状態",
@@ -172,8 +180,8 @@
     "description": "On the form of the closure's announcement (/admin/closure/announcement), the name of the field of the last moment the users can export their data. Read by administrators."
   },
   "staff_closure.form.until.about": {
-    "defaultMessage": "空欄で閉鎖日の 30 日後になります。",
-    "description": "On the form of the closure's announcement (/admin/closure/announcement), under the export deadline: its default. Read by administrators."
+    "defaultMessage": "エクスポートの期限を空欄にすると、閉鎖日の 30 日後になります。",
+    "description": "On the form of the closure's announcement (/admin/closure/announcement), the line under the heading of the dates: the export deadline's default. Read by administrators."
   },
   "staff_closure.form.until.before": {
     "defaultMessage": "閉鎖日以降の日時を選んでください。",

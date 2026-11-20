@@ -183,7 +183,7 @@ function AnnounceForm({ closure, go, onUnsaved, leaving }: AdminSubProps & { clo
           </SubmitBar>
         }
       >
-        <SettingsSection heading={t("staff_closure.form.dates")}>
+        <SettingsSection heading={t("staff_closure.form.dates")} about={t("staff_closure.form.until.about")}>
           <SettingRow id={control("closes_at")} label={t("staff_closure.form.closes")} form error={fault("closes_at")}>
             <DateTimeField
               id={`${control("closes_at")}-control`}
@@ -200,7 +200,6 @@ function AnnounceForm({ closure, go, onUnsaved, leaving }: AdminSubProps & { clo
           <SettingRow
             id={control("export_until")}
             label={t("staff_closure.form.until")}
-            about={t("staff_closure.form.until.about")}
             form
             error={fault("export_until")}
           >

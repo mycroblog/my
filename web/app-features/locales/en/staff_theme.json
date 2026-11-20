@@ -31,69 +31,33 @@
     "defaultMessage": "Text",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of most text. Read by administrators."
   },
-  "staff_theme.token.color_text.about": {
-    "defaultMessage": "Most words: posts, names, labels.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the text color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_muted_text": {
     "defaultMessage": "Muted text",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of secondary text. Read by administrators."
-  },
-  "staff_theme.token.color_muted_text.about": {
-    "defaultMessage": "Times, counts and the lines under a name.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the muted text color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_accent_text": {
     "defaultMessage": "Accent text",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of links and the focus ring. Read by administrators."
   },
-  "staff_theme.token.color_accent_text.about": {
-    "defaultMessage": "Links and the focus ring.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the accent text color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_quote_bar": {
     "defaultMessage": "Quote bar",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the bar at the start of a quote. Read by administrators."
-  },
-  "staff_theme.token.color_quote_bar.about": {
-    "defaultMessage": "The bar at the start of a quote.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the quote bar color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_accent": {
     "defaultMessage": "Accent",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the accent fill color. Read by administrators."
   },
-  "staff_theme.token.color_accent.about": {
-    "defaultMessage": "The fill of the primary button.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the accent color colors, under its name. Read by administrators."
-  },
   "staff_theme.token.color_on_accent": {
     "defaultMessage": "Text on accent",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of the text on the accent fill. Read by administrators."
-  },
-  "staff_theme.token.color_on_accent.about": {
-    "defaultMessage": "The words on the primary button.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the text on accent color colors, under its name. Read by administrators."
   },
   "staff_theme.token.color_surface": {
     "defaultMessage": "Page background",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the page's background color. Read by administrators."
   },
-  "staff_theme.token.color_surface.about": {
-    "defaultMessage": "Behind everything else.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the surface color colors, under its name. Read by administrators."
-  },
-  "staff_theme.token.color_surface_hover.about": {
-    "defaultMessage": "Rows, tabs and plain buttons on the page, hovered and pressed.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the hovered and pressed surface colors color, under the hovered one's name. Read by administrators."
-  },
   "staff_theme.token.color_surface_raised": {
     "defaultMessage": "Fields and buttons",
     "description": "On the theme editor of the administration (/admin/theme/draft), the name of the color of sections, buttons and fields. Read by administrators."
-  },
-  "staff_theme.token.color_surface_raised.about": {
-    "defaultMessage": "Also boxed sections.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), what the raised surface color colors, under its name. Read by administrators."
   },
   "staff_theme.token.font_sans_override": {
     "defaultMessage": "Text font",
@@ -174,10 +138,6 @@
   "staff_theme.pair": {
     "defaultMessage": "{role, select, text {On {name}} other {Under {name}}}",
     "description": "On the theme editor of the administration (/admin/theme/draft), a pair the color makes with another one, beside its contrast ratio: the color as text on {name}, or as the background under {name} ({name}, the other color's name). Read by administrators."
-  },
-  "staff_theme.default": {
-    "defaultMessage": "Empty for the default, {value}.",
-    "description": "On the theme editor of the administration (/admin/theme/draft), under a field of a size, a line height, a radius or a duration: its default ({value}, as the stylesheet writes it: 0.875rem, 1.5, 800ms). Read by administrators."
   },
   "staff_theme.error.range": {
     "defaultMessage": "{kind, select, length {Write a value from {min}rem to {max}rem.} duration {Write a value from {min}ms to {max}ms.} other {Write a value from {min} to {max}.}}",
@@ -268,7 +228,7 @@
     "description": "On the theme's screen of the administration (/admin/theme), the heading of the section of the published theme. Read by administrators."
   },
   "staff_theme.published.none": {
-    "defaultMessage": "The default theme. Nothing was published yet.",
+    "defaultMessage": "The default theme.",
     "description": "On the theme's screen of the administration (/admin/theme), in the section of the published theme while none was published. Read by administrators."
   },
   "staff_theme.restore": {

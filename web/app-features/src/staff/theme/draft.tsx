@@ -258,7 +258,8 @@ function DraftForm({ theme, go, onUnsaved, leaving }: AdminSubProps & { theme: A
         name={token}
         label={t(name)}
         row
-        hint={about === undefined ? t("staff_theme.default", { value: definition.value ?? "" }) : t(about)}
+        hint={about === undefined ? undefined : t(about)}
+        placeholder={about === undefined ? definition.value : undefined}
         defaultValue={values.texts[token] ?? ""}
         autoCapitalize="none"
         error={faults[token]}
