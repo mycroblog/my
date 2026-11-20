@@ -25,8 +25,10 @@ Each notification links to what it is about, for example "Open post" or "Open th
 
 ## Reading and filtering
 
-"All" lists everything, newest first; "Mentions" lists mentions, quotes, and new posts you asked for. Opening "All"
-marks the notifications on screen as read; "Mentions" does not. New notifications join the list while the page is open.
+"All" lists everything, newest first; "Mentions" lists mentions, quotes, and new posts you asked for. A notification
+becomes read when you click it or act on it, or when it scrolls out above the view; "Mark all as read" reads them all.
+What you read stays read in every tab, on every device, and after you reload, even when older notifications are still
+unread. New notifications join the list while the page is open.
 "Dismiss notification" in a notification's menu removes it. "Mute thread" in a post's menu stops the notifications of
 its thread.
 
