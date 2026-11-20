@@ -121,7 +121,7 @@
   },
   "staff_closure.progress.meter": {
     "defaultMessage": "済んだ配送",
-    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that were accepted, of all of them. Read by administrators."
+    "description": "On the closure's screen of the administration (/admin/closure), the name of the meter of the deliveries of the deletion of the accounts that have ended, delivered or not, of all of them (staff_closure.progress.ended under it says the numbers). Read by administrators."
   },
   "staff_closure.progress.undelivered": {
     "defaultMessage": "配送できなかったもの",
@@ -132,7 +132,7 @@
     "description": "On the closure's screen of the administration (/admin/closure), under the meter of the deliveries of the deletion of the accounts: those ended of all, and of them those delivered and those not delivered (numbers). Read by administrators."
   },
   "staff_closure.state": {
-    "defaultMessage": "{state, select, due {閉鎖日を過ぎました} other {予告中}}",
+    "defaultMessage": "{state, select, due {閉鎖日を過ぎています} other {予告中}}",
     "description": "On the closure's screen of the administration (/admin/closure), the state of an announced closure beside its mark: announced, or its closing date passed and the server not closed yet. Read by administrators."
   },
   "staff_closure.fact.state": {

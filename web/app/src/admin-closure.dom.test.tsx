@@ -210,7 +210,7 @@ test("once the closing date passed, the screen says so, offers Check and close f
     "/admin/closure/close",
   );
   expect(words(section("Announcement"))).toContain("StateClosing date passed");
-  expect(banner()).toMatch(/^This server's closing date, .+, has passed, and it closes soon\./);
+  expect(banner()).toMatch(/^This server's closing date, .+, has passed, and it may close at any time\./);
 });
 
 test("the closing date passing while the screen is open turns it to Check and close without a reload", async () => {

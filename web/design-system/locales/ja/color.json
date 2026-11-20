@@ -28,7 +28,7 @@
     "description": "A contrast pair's ratio in the theme editor when it meets its minimum, after a check mark (4.62:1); the minimum is said once for the field (color.needs)."
   },
   "color.short": {
-    "defaultMessage": "{ratio}:1、{minimum}:1 必要",
+    "defaultMessage": "{ratio}:1 ({minimum}:1 以上が必要)",
     "description": "A contrast pair's ratio in the theme editor when it is under its minimum, after an error mark: ratio is the pair's contrast (2.77), minimum what it needs (4.5 for text, 3 for a mark)."
   },
   "color.needs": {

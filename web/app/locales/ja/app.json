@@ -424,7 +424,7 @@
     "description": "The link of the notice of the draft theme's preview, to the theme's screen of the administration. Read by administrators."
   },
   "app.closure_notice_due": {
-    "defaultMessage": "このサーバーは閉鎖日の {closes} を過ぎ、まもなく閉鎖します。{until} までにデータをエクスポートしてください。",
-    "description": "The notice on every screen once the closing date of the announced closure has passed and the server is not closed yet ({closes}, the closing date; {until}, the last day to take the data away; both dates written out in the reader's language). It cannot be dismissed; parallel to app.closure_notice."
+    "defaultMessage": "このサーバーは閉鎖日の {closes} を過ぎ、いつ閉鎖してもおかしくありません。{until} までにデータをエクスポートしてください。",
+    "description": "The notice on every screen once the closing date of the announced closure has passed and the administrators have not closed the server yet, which they do by hand ({closes}, the closing date; {until}, the last day to take the data away, which holds after the closure too; both dates written out in the reader's language). It cannot be dismissed; parallel to app.closure_notice."
   }
 }

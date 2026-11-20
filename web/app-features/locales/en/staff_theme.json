@@ -260,7 +260,7 @@
     "description": "On the theme's screen of the administration (/admin/theme), the heading of the last section, which leads to the icon and logo page of Server settings. Read by administrators."
   },
   "staff_theme.invalid": {
-    "defaultMessage": "{what, select, publish {The draft no longer meets a rule of the theme, so it was not published. Fix what the draft marks, save it, then publish.} other {The previous theme no longer meets a rule of the theme, so it was not restored. Make the theme you want in the draft, then publish it.}}",
-    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); after the publish case, a link to the draft's form. Read by administrators."
+    "defaultMessage": "{what, select, publish {The draft was not published: a server update changed the theme's rules, and the draft no longer meets them. Fix what the draft marks, save it, then publish it.} other {The previous theme was not restored: a server update changed the theme's rules, and that theme no longer meets them. Make the theme you want in the draft, then publish it.}}",
+    "description": "On the theme's screen of the administration (/admin/theme), when the server refused to publish the draft or restore the previous theme because the set no longer meets a rule (an upgrade changed the defaults its pairs are checked with); in both cases a link to the draft's form follows (staff_theme.edit). Read by administrators."
   }
 }
