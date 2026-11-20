@@ -35,9 +35,17 @@
     "defaultMessage": "次へ",
     "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
   },
+  "records.later": {
+    "defaultMessage": "{granularity, select, week {次の週} month {次の月} other {次の年}}",
+    "description": "In place of Previous under a window of periods (the finance totals): shows the periods after those shown, up to today's (granularity: week, month or year)."
+  },
+  "records.earlier": {
+    "defaultMessage": "{granularity, select, week {前の週} month {前の月} other {前の年}}",
+    "description": "In place of Next under a window of periods (the finance totals): shows the periods before those shown (granularity: week, month or year)."
+  },
   "records.page_failed": {
-    "defaultMessage": "このページを読み込めませんでした。",
-    "description": "Over Previous and Next under a long list, when the page asked for could not be read; the button that asked for it reads Try again (records.retry) meanwhile."
+    "defaultMessage": "{direction, select, previous {前のページを読み込めませんでした。} other {次のページを読み込めませんでした。}}",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
   },
   "records.more": {
     "defaultMessage": "さらに表示",

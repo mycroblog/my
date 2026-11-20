@@ -38,7 +38,8 @@ test("a page that failed says so, and its own button, named Try again, asks for 
   const user = userEvent.setup();
   const next = mock(() => undefined);
   render(<Pager previous={{ onPress: () => undefined }} next={{ onPress: next }} failed="next" position={3} />);
-  expect(screen.getByRole("alert").textContent).toBe("This page could not be loaded.");
+  // It names the page that failed, not the one shown.
+  expect(screen.getByRole("alert").textContent).toBe("The next page could not be loaded.");
   const pages = screen.getByRole("navigation", { name: "Pages" });
   expect(
     within(pages)
@@ -49,14 +50,8 @@ test("a page that failed says so, and its own button, named Try again, asks for 
   expect(next).toHaveBeenCalledTimes(1);
 });
 
-test("a window of something else than pages names its two ways and says what it shows", () => {
-  render(
-    <Pager
-      labels={{ previous: "Later months", next: "Earlier months" }}
-      next={{ onPress: () => undefined }}
-      position="Jun – Nov 2026"
-    />,
-  );
+test("a window of periods names its two ways Later and Earlier and says what it shows", () => {
+  render(<Pager periods="month" next={{ onPress: () => undefined }} position="Jun – Nov 2026" />);
   const pages = screen.getByRole("navigation", { name: "Pages" });
   expect(within(pages).getByRole<HTMLButtonElement>("button", { name: "Later months" }).disabled).toBe(true);
   expect(within(pages).getByRole("button", { name: "Earlier months" })).toBeTruthy();

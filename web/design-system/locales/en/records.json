@@ -35,9 +35,17 @@
     "defaultMessage": "Next",
     "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
   },
+  "records.later": {
+    "defaultMessage": "{granularity, select, week {Later weeks} month {Later months} other {Later years}}",
+    "description": "In place of Previous under a window of periods (the finance totals): shows the periods after those shown, up to today's (granularity: week, month or year)."
+  },
+  "records.earlier": {
+    "defaultMessage": "{granularity, select, week {Earlier weeks} month {Earlier months} other {Earlier years}}",
+    "description": "In place of Next under a window of periods (the finance totals): shows the periods before those shown (granularity: week, month or year)."
+  },
   "records.page_failed": {
-    "defaultMessage": "This page could not be loaded.",
-    "description": "Over Previous and Next under a long list, when the page asked for could not be read; the button that asked for it reads Try again (records.retry) meanwhile."
+    "defaultMessage": "{direction, select, previous {The previous page could not be loaded.} other {The next page could not be loaded.}}",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
   },
   "records.more": {
     "defaultMessage": "Show more",

@@ -2,15 +2,17 @@
 
 // The pager (pager.tsx) in each of its states: Previous and Next under a list that is a screen's subject, on its first
 // page, a middle one and its last, the next page on its way and failed, with and without the page's position; the
-// same part under a window of months, as the finance screens page; and Show more under a list inside a detail, at
-// rest, busy, failed, and gone once the list is read to its end, then a list that grows under it, the focus going to
-// the first item each press added. The items, the addresses and the months are samples.
+// same part under a window of months, as the finance screens page, in the reader's locale; and Show more under a
+// list inside a detail, at rest, busy, failed, and gone once the list is read to its end, then a list that grows under
+// it, the focus going to the first item each press added. The items, the addresses and the months are samples.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
+import { useLocale } from "react-aria-components";
 import { Box, Stack } from "./layout";
 import { Pager, ShowMore, useAddedFocus } from "./pager";
+import { dateFormat } from "./zone";
 
 const rem = (px: number) => `${px / rootPx}rem`;
 const none = () => undefined;
@@ -101,27 +103,32 @@ export const Pages: Story = {
   ),
 };
 
+/** A window of months as the finance screens say it: the first month to the last, in the reader's locale. */
+function Months({ from, to }: { from: string; to: string }) {
+  const { locale } = useLocale();
+  // Months of the calendar, kept in UTC, as the finance screens count them.
+  const format = dateFormat(locale, undefined, { year: "numeric", month: "short", timeZone: "UTC" });
+  return <>{format.formatRange(new Date(`${from}-01T00:00:00Z`), new Date(`${to}-01T00:00:00Z`))}</>;
+}
+
 /**
  * The same part under a window of months (the finance screens): Later toward today, Earlier back, the window's months
- * after them, on a line of their own on a phone; the window that ends with this month, Later disabled where it stands; one further back.
+ * after them, on a line of their own where the line has no room; the window that ends with this month, Later disabled
+ * where it stands; one further back.
  */
 export const Periods: Story = {
   render: () => (
     <Column>
       <Cases>
         <Case name="Ending this month">
-          <Pager
-            labels={{ previous: "Later months", next: "Earlier months" }}
-            next={{ onPress: none }}
-            position="Jun – Nov 2026"
-          />
+          <Pager periods="month" next={{ onPress: none }} position={<Months from="2026-06" to="2026-11" />} />
         </Case>
         <Case name="Further back">
           <Pager
-            labels={{ previous: "Later months", next: "Earlier months" }}
+            periods="month"
             previous={{ onPress: none }}
             next={{ onPress: none }}
-            position="Dec 2025 – May 2026"
+            position={<Months from="2025-12" to="2026-05" />}
           />
         </Case>
       </Cases>
@@ -131,7 +138,7 @@ export const Periods: Story = {
 
 /**
  * Show more under a list inside a detail: at rest; the next items on their way; failed, the same button named Try
- * again under the sentence that says so; and the list read to its end, with none.
+ * again under the sentence that says so.
  */
 export const More: Story = {
   render: () => (
@@ -139,28 +146,50 @@ export const More: Story = {
       <Cases>
         <Case name="More to show">
           <Stack gap="entry-room">
-            <Deliveries count={3} />
+            <Deliveries count={2} />
             <ShowMore more onPress={none} />
           </Stack>
         </Case>
         <Case name="Loading more">
           <Stack gap="entry-room">
-            <Deliveries count={3} />
+            <Deliveries count={2} />
             <ShowMore more busy onPress={none} />
           </Stack>
         </Case>
         <Case name="Loading more failed">
           <Stack gap="entry-room">
-            <Deliveries count={3} />
+            <Deliveries count={2} />
             <ShowMore more failed onPress={none} />
           </Stack>
         </Case>
-        <Case name="Nothing more">
-          <Stack gap="entry-room">
-            <Deliveries count={2} />
-            <ShowMore more={false} onPress={none} />
-          </Stack>
-        </Case>
+      </Cases>
+    </Column>
+  ),
+};
+
+/**
+ * A list inside a detail read to its end: no Show more and no line that says so; its last item is the end, and the
+ * detail's next section follows at the space between sections.
+ */
+export const NothingMore: Story = {
+  render: () => (
+    <Column>
+      <Cases>
+        <Stack gap="entry-room">
+          <Box text="body" weight="strong">
+            Deliveries
+          </Box>
+          <Deliveries count={2} />
+          <ShowMore more={false} onPress={none} />
+        </Stack>
+        <Stack gap="entry-room">
+          <Box text="body" weight="strong">
+            Signing secret
+          </Box>
+          <Box text="caption" tone="muted">
+            Rotated 3 days ago
+          </Box>
+        </Stack>
       </Cases>
     </Column>
   ),

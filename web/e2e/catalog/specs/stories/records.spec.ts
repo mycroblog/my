@@ -129,7 +129,7 @@ const states: readonly (readonly [string, (page: Page) => Promise<void>])[] = [
       await expect(pages.getByRole("button", { name: "Next", exact: true, disabled: true })).toHaveCount(2);
       // The page that failed is asked for again by its own button, under the sentence that says so.
       await expect(pages.getByRole("button", { name: "Try again", exact: true })).toHaveCount(1);
-      await expect(page.getByRole("alert")).toHaveText("This page could not be loaded.");
+      await expect(page.getByRole("alert")).toHaveText("The next page could not be loaded.");
       await expect(pages.getByRole("status")).toHaveText(["Page 1", "Page 3", "Page 7", "Page 3", "Page 3", ""]);
     },
   ],

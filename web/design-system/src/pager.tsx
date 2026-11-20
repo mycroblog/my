@@ -16,12 +16,11 @@
 // named Try again, under the sentence that says what failed. Show more is gone once the list is read to its end, the
 // focus having moved by then to the first item it added (`useAddedFocus`), where the reader goes on.
 //
-// Its few words (the pages, Previous, Next, Show more, Try again and what failed) are the design system's catalog's;
-// a pager of another window than pages (the periods of the finance screens) names its two ways itself.
+// Its few words (the pages, Previous, Next, Later and Earlier for a window of periods, Show more, Try again and what
+// failed) are the design system's catalog's; the position of a window of periods is the app's, which formats it.
 
 import { useRef, type ReactNode, type RefCallback } from "react";
 import { Button, LinkButton } from "./button";
-import { FeedNotice } from "./feed";
 import { Icon, type IconName } from "./icons";
 import { Box, Row, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
@@ -43,12 +42,28 @@ export type PagerProps = {
   failed?: "previous" | "next" | undefined;
   /**
    * Which page is shown, after the two buttons and said as it changes: a number, counted from 1 by the app's trail
-   * ("Page 3"); words, for a window of something else than pages (the months shown). None, the place stays empty.
+   * ("Page 3"); else what the app shows, for a window of periods (the months shown, which it formats in the reader's
+   * locale). None, the place stays empty.
    */
-  position?: number | string | undefined;
-  /** The words of the two ways where they are not Previous and Next (Later months, Earlier months). */
-  labels?: { previous: string; next: string } | undefined;
+  position?: number | ReactNode;
+  /**
+   * A window of periods (the finance totals) in place of pages, by its periods' length: its two ways are Later (as
+   * Previous, toward today) and Earlier (as Next), "Later months", "Earlier months".
+   */
+  periods?: "week" | "month" | "year" | undefined;
 };
+
+/**
+ * What failed, over the buttons: one sentence in the text's color, a caption's size, said as it comes; it goes once the
+ * reader asks again and the answer comes.
+ */
+function Failed({ children }: { children: string }) {
+  return (
+    <Box as="p" role="alert" text="caption" tone="text" breaks="phrase">
+      {children}
+    </Box>
+  );
+}
 
 /** A page's button; where there is no such page, disabled, so that the focus it holds stays where it was. */
 function PageButton({
@@ -96,25 +111,29 @@ function PageButton({
  * the focus on its button; after them, which page is shown, a polite live region. A list of one page has none. A
  * navigation named for assistive technology.
  */
-export function Pager({ previous, next, busy, failed, position, labels }: PagerProps) {
+export function Pager({ previous, next, busy, failed, position, periods }: PagerProps) {
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
   if (previous === undefined && next === undefined) return null;
   const retry = t("records.retry");
   return (
     <Stack gap="screen-row-gap">
-      {failed !== undefined && (
-        <FeedNotice alert start>
-          {t("records.page_failed")}
-        </FeedNotice>
-      )}
+      {failed !== undefined && <Failed>{t("records.page_failed", { direction: failed })}</Failed>}
       <Row as="nav" wrap align="center" gap="screen-tabs-gap" aria-label={t("records.pages")}>
         <Row wrap gap="entry-caption">
           <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
-            {failed === "previous" ? retry : (labels?.previous ?? t("records.previous"))}
+            {failed === "previous"
+              ? retry
+              : periods === undefined
+                ? t("records.previous")
+                : t("records.later", { granularity: periods })}
           </PageButton>
           <PageButton target={next} busy={busy === "next"} icon="onward" end>
-            {failed === "next" ? retry : (labels?.next ?? t("records.next"))}
+            {failed === "next"
+              ? retry
+              : periods === undefined
+                ? t("records.next")
+                : t("records.earlier", { granularity: periods })}
           </PageButton>
         </Row>
         <Box text="caption" tone="muted" numeric>
@@ -149,11 +168,7 @@ export function ShowMore({ more, onPress, busy = false, failed = false }: ShowMo
   if (!more) return null;
   return (
     <Stack gap="screen-row-gap">
-      {failed && (
-        <FeedNotice alert start>
-          {t("records.more_failed")}
-        </FeedNotice>
-      )}
+      {failed && <Failed>{t("records.more_failed")}</Failed>}
       <Row justify="start">
         <Button size="target" busy={busy} onPress={onPress}>
           {t(failed ? "records.retry" : "records.more")}
