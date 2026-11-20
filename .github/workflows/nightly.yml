@@ -7,9 +7,10 @@ run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inp
 
 # Every night on the head of main: the slow suite (slow-suite.yml, ADR-0079), so that a regression in the checks too
 # slow for the merge queue is found within a day. A scheduled run is skipped when main has not moved since the last
-# successful full run; a run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=slow-suite` or
-# `-f jobs=image-scan` for one of them). The scan of the published images runs every night, whether or not main moved.
-# The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh).
+# successful full run; a run by hand always runs (`gh workflow run nightly.yml`, with `-f jobs=slow-suite`,
+# `-f jobs=image-scan` or `-f jobs=web-ux` for one of them). The scan of the published images runs every night, whether or not main moved.
+# The report job files the failures of a full run on main as an issue (scripts/nightly-report.sh). The UX in the lab
+# (web-ux) only informs, so it never makes the run red: its findings have an issue of their own.
 # When the slow suite passes on main, the image jobs publish the image of that commit as
 # ghcr.io/mycroblog/my:nightly (ADR-0010 §5), with no git tag and no GitHub Release.
 #
@@ -18,6 +19,7 @@ run-name: ${{ inputs.jobs && inputs.jobs != 'all' && format('Nightly ({0})', inp
 #   select        whether tonight's run has anything to check
 #   slow-suite    slow-suite.yml, whose jobs show as `slow-suite / <job>`
 #   image-scan    the published images, for a fixable vulnerability
+#   web-ux        the UX of the web client in the lab, judged against the last Nightly's
 #   image-build, image-check, image-attest, image-tag
 #                 the nightly image, as release.yml's jobs of the same names build, check, and attest a release's
 #   report        the issue of a failing Nightly
@@ -31,9 +33,9 @@ on:
   workflow_dispatch:
     inputs:
       jobs:
-        description: "The jobs to run: `all`, `slow-suite`, or `image-scan` (the published images)."
+        description: "The jobs to run: `all`, `slow-suite`, `image-scan` (the published images), or `web-ux` (the UX in the lab)."
         type: choice
-        options: [all, slow-suite, image-scan]
+        options: [all, slow-suite, image-scan, web-ux]
         default: all
 
 permissions:
@@ -86,7 +88,7 @@ jobs:
 
   slow-suite:
     needs: select
-    if: needs.select.outputs.run == 'true' && inputs.jobs != 'image-scan'
+    if: needs.select.outputs.run == 'true' && inputs.jobs != 'image-scan' && inputs.jobs != 'web-ux'
     uses: ./.github/workflows/slow-suite.yml
     # The permissions of slow-suite.yml's CodeQL job, and of its browser jobs, which pull their image.
     permissions:
@@ -123,6 +125,80 @@ jobs:
         run: |
           # The select job itself is not a check of main.
           RESULTS="$(jq 'del(.select)' <<< "$RESULTS")" scripts/nightly-report.sh
+
+  # The UX of the web client in the lab (ADR-0167 §4, `scripts/task.sh web:e2e-ux`): the scenarios of web/e2e/ux with
+  # the CPU throttled, judged against the report of the last Nightly on main (the artifact ux-report of its run; with
+  # none, by the thresholds alone). Here and not in the merge queue or the slow suite, whose failures stop a merge or
+  # the line: a finding, or a scenario that failed, opens the issue labelled ux:lab-regression or comments on the open
+  # one (scripts/nightly-ux-report.sh), and the job passes. The report job does not need it.
+  web-ux:
+    needs: select
+    if: needs.select.outputs.run == 'true' && (inputs.jobs == '' || inputs.jobs == 'all' || inputs.jobs == 'web-ux')
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      actions: read
+      contents: read
+      issues: write
+    steps:
+      - name: Check out
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up go-task
+        uses: ./.github/actions/setup-task
+      - name: Set up Go
+        uses: ./.github/actions/setup-go
+      - name: Set up Bun
+        uses: ./.github/actions/setup-bun
+      - name: Install the Bun packages
+        run: scripts/task.sh web:install
+      - name: Install Chromium
+        working-directory: web/e2e
+        run: bun --bun playwright install --with-deps chromium
+      # The newest ux-report of a run on main that has not expired; the run before tonight's, as tonight's is not
+      # uploaded yet.
+      - name: Fetch the last Nightly's report
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          mkdir -p .tmp/ux-last
+          id="$(gh api "repos/$GH_REPO/actions/artifacts?name=ux-report&per_page=100" \
+            --jq '[.artifacts[] | select(.expired | not) | select(.workflow_run.head_branch == "main")][0].id // ""')"
+          if [ -z "$id" ]; then
+            echo "No report of a last Nightly: only the thresholds are judged."
+            exit 0
+          fi
+          gh api "repos/$GH_REPO/actions/artifacts/$id/zip" > .tmp/ux-last.zip
+          unzip -o -q .tmp/ux-last.zip -d .tmp/ux-last
+      - name: web:e2e-ux
+        id: measure
+        continue-on-error: true
+        env:
+          UX_LAST: ${{ github.workspace }}/.tmp/ux-last/report.json
+        run: scripts/task.sh web:e2e-ux
+      - name: Keep the report
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: ux-report
+          path: |
+            .tmp/ux/report.json
+            .tmp/ux/report.md
+          if-no-files-found: warn
+          retention-days: 90
+      - name: Report the UX
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OUTCOME: ${{ steps.measure.outcome }}
+          REF: ${{ github.ref }}
+          REPORT: .tmp/ux
+          RUN_ID: ${{ github.run_id }}
+          SHA: ${{ github.sha }}
+        run: scripts/nightly-ux-report.sh
 
   # The published images of the two latest minor versions, which operators upgrade through: a failure means a fixable
   # HIGH or above in a published version, not a fault of main, and the answer is a patch release (ADR-0010 §8). It runs
