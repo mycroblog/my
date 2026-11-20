@@ -93,12 +93,26 @@ export function LandingHead({ mark, end }: { mark: ReactNode; end?: ReactNode })
 const parts = tv({
   slots: {
     heading: "text-title",
+    // In a right-to-left page it keeps to the right, whatever its own direction.
+    summary: "rtl:text-right",
     places: "text-caption text-muted-text",
     // A place reads as the words around it; its target reaches the minimum around its text without moving the line
     // (WCAG 2.5.8).
     place: "rounded-control py-target-em text-muted-text no-underline outline-hidden data-focus-visible:shadow-focus",
   },
 });
+
+/**
+ * The server's summary, the operator's words in their own direction; in a right-to-left page from its right side,
+ * where the column starts, whatever their direction.
+ */
+export function LandingSummary({ children }: { children: string }) {
+  return (
+    <p className={parts().summary()} dir="auto">
+      {children}
+    </p>
+  );
+}
 
 /** A part of what the page tells, under its heading. */
 export function LandingSection({ id, heading, children }: { id: string; heading: string; children: ReactNode }) {
@@ -118,109 +132,152 @@ const figure = tv({
     root: "rtl:-scale-x-100",
     follow: "fill-none stroke-muted-text",
     here: "fill-text",
-    hereFace: "fill-surface",
+    hereMark: "fill-surface",
     other: "fill-surface-raised-pressed",
-    otherFace: "fill-muted-text",
-    post: "fill-text stroke-surface",
+    otherMark: "fill-muted-text",
+    post: "fill-surface stroke-text",
+    postMark: "fill-text",
   },
 });
 
 type Point = { readonly x: number; readonly y: number };
 
-/** The servers of the figure, in its own units: this one, larger, at the start, and three others. */
-const here = { x: 60, y: 72, size: 48 };
-const others = [
-  { x: 200, y: 30, size: 36 },
-  { x: 270, y: 104, size: 36 },
-  { x: 156, y: 122, size: 30 },
-] as const;
-const [north, east, south] = others;
+/** A server of the figure, a box in its own units, with the people on it. */
+type Place = { readonly x: number; readonly y: number; readonly width: number; readonly height: number };
 
-/** The follows between people of the servers, the lines a post travels along. */
+/** The servers, each a place of its own size: this one, the largest, at the start, and three others. */
+const servers = {
+  here: { x: 16, y: 60, width: 136, height: 88 },
+  north: { x: 196, y: 14, width: 116, height: 72 },
+  east: { x: 350, y: 92, width: 114, height: 74 },
+  south: { x: 196, y: 138, width: 100, height: 62 },
+} as const satisfies Record<string, Place>;
+
+/** The people of the servers, one or two on each. */
+const people = {
+  hereA: { x: 58, y: 116 },
+  hereB: { x: 110, y: 116 },
+  northA: { x: 234, y: 58 },
+  northB: { x: 276, y: 58 },
+  east: { x: 407, y: 137 },
+  south: { x: 246, y: 177 },
+} as const satisfies Record<string, Point>;
+
+/** Who follows whom, across servers: the lines a post travels along. */
 const follows: readonly (readonly [Point, Point])[] = [
-  [here, north],
-  [here, east],
-  [north, east],
-  [here, south],
+  [people.hereB, people.northA],
+  [people.hereB, people.south],
+  [people.northB, people.east],
+  [people.hereA, people.east],
 ];
 
-/** The posts of a cycle: one of this server's to a follower on another, and one of another's back here. */
+/** The posts of a cycle: one of someone here to a follower on another server, and one from another server back. */
 const journeys: readonly { readonly from: Point; readonly to: Point; readonly start: number }[] = [
-  { from: here, to: north, start: 0 },
-  { from: east, to: here, start: 0.5 },
+  { from: people.hereB, to: people.northA, start: 0 },
+  { from: people.east, to: people.hereA, start: 0.5 },
 ];
 
-const post = { width: 14, height: 10 };
+/** The size of a person, and of a post, in the figure's units. */
+const person = 26;
+const post = { width: 30, height: 22 };
 
-/** A server, a rounded square with the face of a person on it. */
-function Server({
-  x,
-  y,
-  size,
-  faceClassName,
-  tileClassName,
-}: {
-  x: number;
-  y: number;
-  size: number;
-  faceClassName: string;
-  tileClassName: string;
-}) {
-  const r = size * 0.16;
-  const shoulders = size * 0.26;
+/** A server: a box with the bar of a window, a place of its own. */
+function Server({ place, className, markClassName }: { place: Place; className: string; markClassName: string }) {
   return (
     <g>
-      <rect className={tileClassName} x={x - size / 2} y={y - size / 2} width={size} height={size} rx={size * 0.24} />
-      <circle className={faceClassName} cx={x} cy={y - size * 0.1} r={r} />
+      <rect className={className} x={place.x} y={place.y} width={place.width} height={place.height} rx={14} />
+      {[0, 1, 2].map((i) => (
+        <circle key={i} className={markClassName} cx={place.x + 14 + i * 9} cy={place.y + 13} r={2.5} />
+      ))}
+    </g>
+  );
+}
+
+/** A person: a head over shoulders. */
+function Person({ at, className }: { at: Point; className: string }) {
+  const shoulders = person * 0.38;
+  return (
+    <g className={className}>
+      <circle cx={at.x} cy={at.y - person * 0.18} r={person * 0.2} />
       <path
-        className={faceClassName}
-        d={`M ${x - shoulders} ${y + size * 0.3} a ${shoulders} ${shoulders * 0.85} 0 0 1 ${shoulders * 2} 0 Z`}
+        d={`M ${at.x - shoulders} ${at.y + person * 0.4} a ${shoulders} ${shoulders * 0.9} 0 0 1 ${shoulders * 2} 0 Z`}
       />
     </g>
+  );
+}
+
+/** A post: a card with its author's face and two lines of text. */
+function Post({ className, markClassName }: { className: string; markClassName: string }) {
+  return (
+    <>
+      <rect
+        className={className}
+        x={-post.width / 2}
+        y={-post.height / 2}
+        width={post.width}
+        height={post.height}
+        rx={4}
+        strokeWidth={1.5}
+      />
+      <circle className={markClassName} cx={-8} cy={-4} r={3} />
+      <rect className={markClassName} x={-3} y={-5.5} width={13} height={2.5} rx={1.25} />
+      <rect className={markClassName} x={-10} y={2.5} width={20} height={2.5} rx={1.25} />
+    </>
   );
 }
 
 const seconds = (ms: number) => ms / 1000;
 
 /**
- * One post's cycle, without end: it sets out from under the server it leaves once `start` of the cycle is past,
- * travels the line, and waits under the one it reaches for the next cycle, which takes it back under the first at
- * once, unseen.
+ * One post's cycle, without end: once `start` of the cycle is past it comes out at its author, travels the follow,
+ * and goes into the follower it reaches, then waits, unseen, for the next cycle.
  */
 function journey(from: Point, to: Point, start: number): { animate: TargetAndTransition; transition: Transition } {
-  const { cycle, travel, ease } = figureMotion;
-  const reach = start + travel / cycle;
+  const { cycle, fade, travel, ease } = figureMotion;
+  const out = start + fade / cycle;
+  const reach = out + travel / cycle;
+  const gone = reach + fade / cycle;
   return {
-    animate: { x: [from.x, from.x, to.x, to.x], y: [from.y, from.y, to.y, to.y] },
+    animate: {
+      x: [from.x, from.x, from.x, to.x, to.x, to.x],
+      y: [from.y, from.y, from.y, to.y, to.y, to.y],
+      opacity: [0, 0, 1, 1, 0, 0],
+    },
     transition: {
       duration: seconds(cycle),
-      times: [0, start, reach, 1],
-      ease: ["linear", curve(ease), "linear"],
+      times: [0, start, out, reach, gone, 1],
+      ease: ["linear", "linear", curve(ease), "linear", "linear"],
       repeat: Infinity,
     },
   };
 }
 
 /** Where a post stands on the still figure: half way along its line. */
-const halfWay = (from: Point, to: Point) => ({ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 });
+const halfWay = (from: Point, to: Point) => ({ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2, opacity: 1 });
 
 /**
- * The fediverse in a figure, which says nothing its sentence beside it does not: this server among others, joined by
- * the follows of their people, and a post travelling along a follow to another server while another comes back, cycle
- * after cycle at a calm pace (figureMotion); with reduced motion it stands still, each post half way along its line.
- * Only the posts move, by their position alone.
+ * The fediverse in a figure, which says nothing its sentence beside it does not: servers, each a place of its own with
+ * its people, this one at the start and marked; follows from people here to people on the others; and a post
+ * travelling along a follow to another server while another comes back, cycle after cycle at a calm pace
+ * (figureMotion). With reduced motion it stands still, each post half way along its line. As wide as its column.
  */
 export function FediverseFigure() {
   const s = figure();
   const reduced = useReducedMotionConfig() ?? false;
+  const others = [servers.north, servers.east, servers.south];
   return (
-    <Box
-      full
-      max="landing-figure"
-      as={<svg className={s.root()} viewBox="0 0 320 148" aria-hidden="true" focusable="false" />}
-    >
+    <Box full as={<svg className={s.root()} viewBox="0 0 480 210" aria-hidden="true" focusable="false" />}>
+      <Server place={servers.here} className={s.here()} markClassName={s.hereMark()} />
+      {others.map((place, i) => (
+        <Server key={i} place={place} className={s.other()} markClassName={s.otherMark()} />
+      ))}
       {follows.map(([a, b], i) => (
         <line key={i} className={s.follow()} x1={a.x} y1={a.y} x2={b.x} y2={b.y} strokeWidth={1.5} />
+      ))}
+      <Person at={people.hereA} className={s.hereMark()} />
+      <Person at={people.hereB} className={s.hereMark()} />
+      {[people.northA, people.northB, people.east, people.south].map((at, i) => (
+        <Person key={i} at={at} className={s.otherMark()} />
       ))}
       <LazyMotion features={domAnimation} strict>
         {journeys.map(({ from, to, start }, i) => {
@@ -228,27 +285,15 @@ export function FediverseFigure() {
           return (
             <m.g
               key={i}
-              initial={reduced ? halfWay(from, to) : { x: from.x, y: from.y }}
+              initial={reduced ? halfWay(from, to) : { x: from.x, y: from.y, opacity: 0 }}
               animate={reduced ? halfWay(from, to) : run.animate}
               transition={run.transition}
             >
-              <rect
-                className={s.post()}
-                x={-post.width / 2}
-                y={-post.height / 2}
-                width={post.width}
-                height={post.height}
-                rx={2}
-                strokeWidth={1.5}
-              />
+              <Post className={s.post()} markClassName={s.postMark()} />
             </m.g>
           );
         })}
       </LazyMotion>
-      {others.map((o, i) => (
-        <Server key={i} {...o} tileClassName={s.other()} faceClassName={s.otherFace()} />
-      ))}
-      <Server {...here} tileClassName={s.here()} faceClassName={s.hereFace()} />
     </Box>
   );
 }
@@ -256,8 +301,8 @@ export function FediverseFigure() {
 const samples = tv({
   slots: {
     grid: "m-0 grid list-none grid-cols-[repeat(auto-fill,minmax(min(100%,var(--landing-sample)),1fr))] gap-form-page-gap p-0",
-    // A sample and its words share the rows of the samples beside it: the frames of a row as tall as its tallest, and
-    // their names on one line; the words keep to the top of their row.
+    // A sample and its words share the rows of the samples beside it: the frames of a row as tall as its tallest, each
+    // sample in the middle of its frame, and their names on one line; the words keep to the top of their row.
     cell: "row-span-2 grid grid-rows-subgrid gap-y-form-page-head-gap [&>:last-child]:self-start",
     frame: "rounded-overlay bg-surface-raised p-landing-sample-padding",
     // The screen in miniature, drawn at its scale; its layout takes the room it is drawn in.
@@ -297,9 +342,9 @@ export function LandingSamples({
         <SampleCell
           key={item.key}
           sample={
-            <Box clip as={<div className={s.frame()} aria-hidden="true" inert />}>
+            <Stack pack="center" clip as={<div className={s.frame()} aria-hidden="true" inert />}>
               <div className={s.screen()}>{item.sample}</div>
-            </Box>
+            </Stack>
           }
           words={
             <Stack gap="hair">

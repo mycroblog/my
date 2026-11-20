@@ -7,7 +7,10 @@
 
 import {
   EventListLine,
+  handleOf,
+  nameOf,
   Post,
+  PostContent,
   VoiceRoomLine,
   type EventShown,
   type PostAccount,
@@ -15,11 +18,15 @@ import {
   type RoomShown,
 } from "@my/app-components";
 import {
+  Avatar,
+  Byline,
+  CaptionLine,
   instantAt,
   Money,
   PlanCard,
   SearchField,
   Stack,
+  Stamp,
   timeZoneName,
   useLocale,
   useTimeZone,
@@ -114,7 +121,8 @@ export function useLandingSamples(domain: string): Readonly<Record<string, React
     articles: <Post status={article} review />,
     search: (
       <Stack gap="entry-room">
-        {/* Hidden from assistive technology, its field's names are never heard: search's own word stands in. */}
+        {/* Hidden from assistive technology, its field's names are never heard: search's own word stands in. Its words
+            are shown alone, with no clear. */}
         <SearchField
           id="landing-sample-search"
           label={t("app.search")}
@@ -122,22 +130,28 @@ export function useLandingSamples(domain: string): Readonly<Record<string, React
           value={t("app.landing_sample_search")}
           onChange={() => undefined}
           clearLabel={t("app.search")}
+          readOnly
         />
         <Post status={status("found", ren, post, locale, 2 * hour, now)} review />
       </Stack>
     ),
+    // A post of someone on another server in their language, as the reader reads it translated: its byline, the
+    // translation, and the line that says it was translated, without Show original, which a sample cannot do.
     translation: (
-      <Post
-        status={status("translated", sam, post, theirs, 40 * 60_000, now)}
-        translation={{
-          language: locale,
-          source_language: theirs,
-          content: paragraph(post),
-          spoiler_text: "",
-          media_attachments: [],
-        }}
-        review
-      />
+      <Stack gap="entry-line">
+        <Byline
+          avatar={<Avatar name={nameOf(sam)} size="post" decorative />}
+          name={nameOf(sam)}
+          handle={handleOf(sam)}
+          end={<Stamp date={new Date(now - 40 * 60_000)} />}
+        />
+        <PostContent html={paragraph(post)} lang={locale} />
+        <CaptionLine icon="translate">
+          {t("app.landing_sample_translated", {
+            language: new Intl.DisplayNames([locale], { type: "language" }).of(theirs) ?? theirs,
+          })}
+        </CaptionLine>
+      </Stack>
     ),
     supporters: (
       <PlanCard

@@ -399,6 +399,10 @@
     "defaultMessage": "/ month",
     "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
   },
+  "app.landing_sample_translated": {
+    "defaultMessage": "Translated from {language}",
+    "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
+  },
   "app.landing_without_account": {
     "defaultMessage": "Without an account",
     "description": "On the landing page, the small heading over the buttons to what a visitor can read without an account (the public timelines, search)."

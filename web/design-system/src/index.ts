@@ -135,7 +135,15 @@ export {
   type FormPageServer,
   type TextFieldProps,
 } from "./form-page";
-export { FediverseFigure, LandingFrame, LandingHead, LandingPlaces, LandingSamples, LandingSection } from "./landing";
+export {
+  FediverseFigure,
+  LandingFrame,
+  LandingHead,
+  LandingPlaces,
+  LandingSamples,
+  LandingSection,
+  LandingSummary,
+} from "./landing";
 export { IconButton, type IconButtonProps } from "./icon-button";
 export { PairField, PairList, type PairFieldProps } from "./pair-field";
 export { lightSurfaceColor, PictureField, type PictureFieldProps } from "./picture-field";

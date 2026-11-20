@@ -63,6 +63,8 @@ export type SearchFieldProps = {
   clearLabel: string;
   /** It takes the focus as it mounts (a screen opened to search). */
   autoFocus?: boolean | undefined;
+  /** Its words are shown and not changed (a sample of a screen): no clear. */
+  readOnly?: boolean | undefined;
 };
 
 export function SearchField({
@@ -77,6 +79,7 @@ export function SearchField({
   busy = false,
   clearLabel,
   autoFocus,
+  readOnly = false,
 }: SearchFieldProps) {
   const s = field();
   const input = useRef<HTMLInputElement>(null);
@@ -115,6 +118,7 @@ export function SearchField({
               placeholder={labelHidden ? label : undefined}
               spellCheck={false}
               autoFocus={autoFocus}
+              readOnly={readOnly}
               aria-invalid={error ? true : undefined}
               aria-describedby={described}
               aria-busy={busy || undefined}
@@ -135,7 +139,8 @@ export function SearchField({
             <span className={s.spinner()} />
           </Pin>
         ) : (
-          value !== "" && (
+          value !== "" &&
+          !readOnly && (
             <Pin end="0" as={<Row as="span" align="center" justify="center" />} className={s.end()}>
               <IconButton
                 icon="close"

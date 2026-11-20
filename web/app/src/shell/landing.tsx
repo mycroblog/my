@@ -28,6 +28,7 @@ import {
   LandingPlaces,
   LandingSamples,
   LandingSection,
+  LandingSummary,
   LinkButton,
   ServerMark,
   Stack,
@@ -265,7 +266,7 @@ export function Landing({
           />
           {/* What leads on from the summary stays with it. */}
           <Stack gap="form-page-head-gap">
-            {server.description !== undefined && <FormText>{server.description}</FormText>}
+            {server.description !== undefined && <LandingSummary>{server.description}</LandingSummary>}
             <FormLinks>
               <FormLink href={aboutPagePath}>{t("app.landing_about")}</FormLink>
             </FormLinks>

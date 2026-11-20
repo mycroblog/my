@@ -524,20 +524,21 @@ export const formPage = {
 } as const;
 
 /**
- * A server's landing page, in rem: the most width of the figure of the fediverse; the least width of a sample of a
- * screen in the grid of what a member can do, and the padding around the screen and inside it; and the share of its
- * size a sample is drawn at, a screen in miniature.
+ * A server's landing page, in rem: the least width of a sample of a screen in the grid of what a member can do, and
+ * the padding around the screen and inside it; and the share of its size a sample is drawn at, a screen a step
+ * smaller than the app's, its smallest text still read.
  */
-export const landing = { figure: 24, sample: 15, samplePadding: 0.75, sampleScale: 0.75 } as const;
+export const landing = { sample: 15, samplePadding: 0.75, sampleScale: 0.875 } as const;
 
 /**
- * The motion of the landing page's figure of the fediverse, without end: a post travels along a follow from this
- * server to another, and half a `cycle` (ms) later another comes back. Each sets out from under its server, travels
- * for `travel` ms with `ease`, starting and stopping gently as a thing sent from one place to another, and goes under
- * the server it reaches; the rest of the cycle nothing moves, so that the figure is still most of the time and the
- * way to an account keeps the eye. With reduced motion the posts stand half way.
+ * The motion of the landing page's figure of the fediverse, without end: a post travels along a follow from someone
+ * on this server to someone on another, and half a `cycle` (ms) later another comes back. Each comes out at its
+ * author in `fade` ms, travels for `travel` ms with `ease`, starting and stopping gently as a thing sent from one place
+ * to another, and goes into the follower it reaches in `fade` ms; the rest of the cycle nothing moves, so that the
+ * figure is still most of the time and the way to an account keeps the eye. With reduced motion the posts stand half
+ * way.
  */
-export const figureMotion = { cycle: 9000, travel: 1800, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
+export const figureMotion = { cycle: 9000, fade: 300, travel: 1800, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
 
 /**
  * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row

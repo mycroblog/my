@@ -204,8 +204,6 @@ const MAX = {
   "article-cover": "max-h-article-cover-max",
   // A link card's image is never taller than this, whatever its width.
   "media-card": "max-h-media-card-max",
-  // The figure of the fediverse on a landing page.
-  "landing-figure": "max-w-landing-figure",
 } as const;
 
 const CLIP = { both: "overflow-hidden", x: "overflow-x-hidden", y: "overflow-y-hidden" } as const;
