@@ -391,7 +391,8 @@ func (s *Service) handleSeverAllowlist(ctx context.Context, j queue.Job) queue.R
 	return queue.Done()
 }
 
-// ActiveFollows reads the accepted follows of accounts, for the impact of the allowlist.
+// ActiveFollows reads the accepted follows of accounts, for the impact of the allowlist and of a
+// domain suspension.
 // *appgraph.Service implements it; a Deps.Follows that does not counts nothing.
 type ActiveFollows interface {
 	ActiveFollowsOf(ctx context.Context, tx uow.Tx, ids []string) ([]appgraph.ActiveFollow, error)

@@ -77,6 +77,7 @@ import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-se
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
+import { domainHandlers, type FakeDomainOptions, type FakeDomains } from "./domains";
 import { permissionsOfRoles } from "./staff-roles";
 import { refusalOf, staffServerHandlers, type FakeStaffServer, type FakeStaffServerOptions } from "./staff-server";
 import { moderationHandlers, type FakeModeration, type FakeModerationOptions } from "./accounts";
@@ -332,6 +333,8 @@ export type FakeOptions = {
   };
   /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
   reports?: FakeReportOptions;
+  /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
+  domains?: FakeDomainOptions;
   /** The administration's relays, login providers and OAuth apps (admin-settings.ts): the fake's, or none. */
   admin?: FakeAdminOptions;
   /**
@@ -591,6 +594,8 @@ export type FakeApi = {
   readonly supporters: FakeSupporters;
   /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
   readonly reports: FakeReports;
+  /** The domain actions' and the subscriptions' IDs by the fake's keys, and the audit log (domains.ts). */
+  readonly domains: FakeDomains;
   /** The IDs of the custom emoji, announcements and webhooks of the administration by their keys (staff-server.ts). */
   readonly staffServer: FakeStaffServer;
   /** The IDs of the rules, relays and login providers of the administration's fake (admin-settings.ts). */
@@ -2465,6 +2470,23 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     host: fakeHost,
   });
 
+  // The domains, the remote servers and the audit log (domains.ts), the fake's own.
+  const federated = domainHandlers({
+    started,
+    options: o.domains,
+    viewer,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    known: (username) => people.some((p) => p.username === username),
+    accountId: idOf,
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    follows: () => following,
+    host: fakeHost,
+  });
+
   // The instance theme (theme.ts) and the closure of the service as its administrators run it (closure.ts), whose state
   // the instance says.
   const theming = themeHandlers({
@@ -3903,6 +3925,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...moderated.handlers,
     ...accounts.handlers,
 
+    // ---- The domains, the remote servers and the audit log ------------------------------------------------------------
+
+    ...federated.handlers,
+
     // ---- The administration of roles, custom emoji, announcements and webhooks ----------------------------------------
 
     ...staffServer.handlers,
@@ -4135,6 +4161,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     events: events.events,
     supporters: supporting.supporters,
     reports: moderated.reports,
+    domains: federated.domains,
     staffServer: staffServer.server,
     admin: administered.admin,
     moderation: accounts.moderation,

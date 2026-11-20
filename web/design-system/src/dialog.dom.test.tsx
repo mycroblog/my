@@ -424,6 +424,26 @@ test("a confirmation with a text to type keeps its confirmation disabled until t
   expect(answers).toEqual(["confirm"]);
 });
 
+test("while what the reader reads first is pending, the confirmation stays disabled, the text typed or not", async () => {
+  const user = userEvent.setup();
+  const typed = confirmation({ phrase: "spam.example", confirm: "Suspend", pending: true });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const field = within(dialog).getByRole("textbox", { name: "To confirm, enter spam.example" });
+  await user.type(field, "spam.example{Enter}");
+  expect(within(dialog).getByRole("button", { name: "Suspend" }).hasAttribute("disabled")).toBe(true);
+  expect(typed).toEqual([]);
+});
+
+test("while what the reader reads first is pending, a confirmation with no text to type answers no press", async () => {
+  const user = userEvent.setup();
+  const answers = confirmation({ pending: true });
+  const dialog = await screen.findByRole("alertdialog", { name: "Delete this post?" });
+  const confirm = within(dialog).getByRole("button", { name: "Delete" });
+  await user.click(confirm);
+  expect(confirm.hasAttribute("disabled")).toBe(true);
+  expect(answers).toEqual([]);
+});
+
 test("a confirmation with a text to type answers a press only once the text is there, and locks again once it is not", async () => {
   const user = userEvent.setup();
   const answers = confirmation({ phrase: "Moderator", confirm: "Delete role" });

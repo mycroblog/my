@@ -72,6 +72,7 @@ import { Fragment, useId, useState, type ReactNode } from "react";
 import { charsOf } from "../../chars";
 import { readerLanguage, usePostTranslation } from "../../post-translation";
 import { handleIn, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
+import { AccountServerButton } from "../domains/servers";
 import { categoryWords, queueHref } from "./queue";
 import type { StaffSearch } from "../entries";
 import { ActOnAccount, CancelEvent, EndRoom } from "../accounts/places";
@@ -259,16 +260,20 @@ function GoButton({ href, icon, children }: { href: string; icon: IconName; chil
 
 /**
  * The reported account, with the way to act on it at its line's end, its moderation screen
- * (/moderation/accounts/{id}), for a reader with `manage_accounts` alone.
+ * (/moderation/accounts/{id}), for a reader with `manage_accounts` alone; and for a remote one Open the account's
+ * server, for a reader with `manage_domains` alone.
  */
 function ReportedAccount({ report }: { report: ReportDetail }) {
   const { t } = useStaffStrings();
   if (report.target_account === undefined) return <FeedNotice start>{t("staff.account_gone")}</FeedNotice>;
   return (
-    <AccountLine
-      account={report.target_account}
-      end={<ActOnAccount account={report.target_account_id} report={report.id} />}
-    />
+    <Stack gap="entry-line">
+      <AccountLine
+        account={report.target_account}
+        end={<ActOnAccount account={report.target_account_id} report={report.id} />}
+      />
+      <AccountServerButton acct={report.target_account.acct} />
+    </Stack>
   );
 }
 

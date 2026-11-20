@@ -36,6 +36,7 @@ import { AdminRulesScreen, loadRules } from "./rules";
 import { AdminSettingsScreen } from "./settings/screen";
 import { loadTranslationSettings, TranslationSettingsScreen } from "./settings/translation";
 import { accountEntries, accountGroups } from "./accounts/entries";
+import { domainEntries, domainGroups } from "./domains/entries";
 import { AdminClosureScreen, loadClosure } from "./closure/screen";
 import { AdminThemeScreen, loadTheme } from "./theme/screen";
 
@@ -51,6 +52,7 @@ export const staffGroups = [
   // What the server connects to and lets connect to it (#3262).
   { id: "connections", area: "admin", heading: "staff.group.connections" },
   ...accountGroups,
+  ...domainGroups,
 ] as const satisfies readonly { id: string; area: StaffArea; heading: MessageId }[];
 type StaffGroupId = (typeof staffGroups)[number]["id"];
 
@@ -229,6 +231,7 @@ export const staffEntries: readonly StaffEntry[] = [
   // Roles, custom emoji, announcements and webhooks (#3263).
   ...serverEntries,
   ...accountEntries,
+  ...domainEntries,
 ];
 
 /**

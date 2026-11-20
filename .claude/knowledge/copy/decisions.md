@@ -9,7 +9,7 @@ rule of the copy lint; `to users` spares admin strings.
 - en: write "tip", avoid `\b[Dd]onat(?:e|es|ed|ing|ions?)\b`, `\b[Tt]ax[ -]deductible\b` — a one-off payment for nothing back, no donation or deduction; "support" is the plans' — glossary (a22e2f0ee) — 2026-11-11 — held 0 / missed 0
 - ja: write "ログイン" / "ログアウト", avoid `サインイン`, `サインアウト`; write "アカウントを作成", avoid `アカウントを作[らりるれろっ]`; write "試してください", avoid `お試し`; write "モバイル", avoid `電話`; write "チップ", avoid `寄付`, `カンパ`, `投げ銭`, `控除`; write "イベント", avoid `催し`, `集い` — one name each, as en — glossary (c24c48015, ed7cb4c4f, a22e2f0ee), ADR-0161 §2 — 2026-11-11 — held 0 / missed 0
 - Short, flat, to the user: no jokes, no blame (not 無効な入力です) — bad states too — web-client G19 (a73e41238) — 2026-10-17 — held 0 / missed 0
-- An error: what happened, why, what to do next (もう一度試す); a field error, how to fix the value; a 404 too — else it blames — web-client G16, G19 (a73e41238) — 2026-10-17 — held 0 / missed 0
+- An error: what happened, why, what to do next (もう一度試す); a field error, how to fix the value; a 404 too — else it blames — web-client G16, G19 (a73e41238) — 2026-10-17 — held 0 / missed 1
 - Unknown cause: reload or update the app, then try again — a step — the decider (#3108) — 2026-11-16 — held 0 / missed 0
 - An empty area: the fact (まだ投稿はありません), what appears there, the next action — a first view — web-client G14 (a73e41238) — 2026-10-17 — held 0 / missed 0
 - One state, one pattern: <対象>を読み込めませんでした: {reason}, then もう一度試す — learned once — web-client G18 (a73e41238) — 2026-10-17 — held 0 / missed 0

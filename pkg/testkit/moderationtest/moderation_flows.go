@@ -507,6 +507,9 @@ func moderationRejectsInvalid(t *testing.T, e *moderationEnv) {
 	if _, err := e.svc.IssueDomainAction(ctx, appmoderation.DomainActionInput{Domain: "SELF.example", Kind: moderation.DomainSuspend}); !errors.Is(err, moderation.ErrOwnDomain) {
 		t.Errorf("IssueDomainAction(this server) = %v, want ErrOwnDomain", err)
 	}
+	if _, err := e.svc.DomainSuspendImpact(ctx, "self.example"); !errors.Is(err, moderation.ErrOwnDomain) {
+		t.Errorf("DomainSuspendImpact(this server) = %v, want ErrOwnDomain", err)
+	}
 	imported, err := e.svc.ImportDomainBlocks(ctx, appmoderation.DomainBlockImportInput{Blocks: []moderation.DomainBlock{{Domain: "self.example", Severity: moderation.DomainBlockSuspend}}})
 	if err != nil || len(imported.Issued) != 0 || len(imported.Skipped) != 1 || imported.Skipped[0].Reason != appmoderation.DomainBlockOwnDomain {
 		t.Errorf("ImportDomainBlocks(this server) = %+v, %v; want it skipped as own_domain", imported, err)

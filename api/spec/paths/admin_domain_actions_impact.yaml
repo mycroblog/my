@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: MIT
+get:
+  operationId: getDomainSuspendImpact
+  x-permission: manage_domains
+  summary: Count what suspending a domain would end
+  description: |
+    How many follows a `suspend` of `domain` would end now, and how many local accounts would
+    lose one. Moderators read it before they confirm a suspension, which ends those follows for
+    good. The domain is normalized like the domain of a new action; one that is not a valid
+    domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+    zeros. Needs the `manage_domains` permission.
+  tags: [admin-moderation]
+  security:
+    - oauth2: ["admin:read"]
+  parameters:
+    - name: domain
+      in: query
+      required: true
+      description: The domain to count for; its subdomains are counted with it.
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 253
+  responses:
+    "200":
+      description: The count.
+      headers:
+        Cache-Control:
+          $ref: ../components/headers/CacheControl.yaml
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas/DomainSuspendImpact.yaml
+    default:
+      $ref: ../components/responses/Problem.yaml

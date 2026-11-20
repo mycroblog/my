@@ -54,6 +54,9 @@ const underWay = (page: Page): Promise<string[]> =>
     ];
   });
 
+/** How long before the moment the page's clock is installed, so that pausing at the moment moves it forward. */
+const minuteEarly = 60_000;
+
 /**
  * Takes the page's time before it loads anything: call it before the story is opened. The clock stands at one
  * moment until `rest` or `during` moves it.
@@ -63,7 +66,9 @@ export async function hold(page: Page): Promise<Held> {
   page.on("request", (request) => inFlight.add(request));
   page.on("requestfinished", (request) => inFlight.delete(request));
   page.on("requestfailed", (request) => inFlight.delete(request));
-  await page.clock.install({ time: moment });
+  // The installed clock runs until it is paused, so it is installed a minute early: pausing at the moment then always
+  // moves it forward (installed at the moment itself, a pause after a millisecond of a slow start is in its past).
+  await page.clock.install({ time: moment.getTime() - minuteEarly });
   await page.clock.pauseAt(moment);
 
   const still = async () => {

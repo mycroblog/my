@@ -8495,6 +8495,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/domain_actions/impact": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Count what suspending a domain would end
+         * @description How many follows a `suspend` of `domain` would end now, and how many local accounts would
+         *     lose one. Moderators read it before they confirm a suspension, which ends those follows for
+         *     good. The domain is normalized like the domain of a new action; one that is not a valid
+         *     domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+         *     zeros. Needs the `manage_domains` permission.
+         */
+        get: operations["getDomainSuspendImpact"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/domain_actions/export": {
         parameters: {
             query?: never;
@@ -14562,6 +14586,19 @@ export interface components {
         /** @description A page of domain mutes. */
         DomainMutePage: components["schemas"]["PageInfo"] & {
             items: components["schemas"]["DomainMute"][];
+        };
+        /**
+         * @description What a `suspend` of a domain would end now: the accepted follows, in both
+         *     directions, between the local accounts and the accounts of the domain and its subdomains.
+         *     The suspension ends them for good, and each local user who loses one is notified.
+         */
+        DomainSuspendImpact: {
+            /** @description The domain counted for, normalized. */
+            domain: string;
+            /** @description How many follows would end. */
+            follows: number;
+            /** @description How many local accounts would lose a follow. */
+            local_accounts: number;
         };
         /** @description The new content of a status. */
         EditStatusRequest: {
@@ -29610,6 +29647,31 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SignupBlockImportResult"];
+                };
+            };
+            default: components["responses"]["Problem"];
+        };
+    };
+    getDomainSuspendImpact: {
+        parameters: {
+            query: {
+                /** @description The domain to count for; its subdomains are counted with it. */
+                domain: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The count. */
+            200: {
+                headers: {
+                    "Cache-Control": components["headers"]["CacheControl"];
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DomainSuspendImpact"];
                 };
             };
             default: components["responses"]["Problem"];
