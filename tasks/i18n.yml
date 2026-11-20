@@ -40,9 +40,9 @@ tasks:
       - cd tools/i18n && bun src/gen.ts
 
   check:
-    desc: Lint the catalogs, fail on stale generated i18n files, compile the web packages' catalogs, test and type-check tools/i18n and web/i18n, check the TS formatting (web:fmt-check)
+    desc: Lint the catalogs, fail on stale generated i18n files, compile the web packages' catalogs, test, type-check and lint tools/i18n and web/i18n, check the TS formatting (web:fmt-check)
     # The licenses of what tools/i18n and web/i18n depend on are those of the workspace, which web:licenses checks.
-    deps: [lint, compile, test, typecheck, knip, ":web:fmt-check"]
+    deps: [lint, compile, test, typecheck, ts-lint, knip, ":web:fmt-check"]
 
   lint:
     desc: Lint the catalogs, the copy of en and ja and its waivers among them, and fail on stale generated i18n files (pseudo-locales, Go accessors, golden)
@@ -67,6 +67,13 @@ tasks:
     cmds:
       - cd tools/i18n && bun test
       - cd web/i18n && bun test
+
+  # web:lint lints web/i18n, with the web packages.
+  ts-lint:
+    desc: Run Oxlint on tools/i18n with the workspace's configuration (.oxlintrc.json)
+    deps: [":web:install"]
+    cmds:
+      - bun --bun oxlint tools/i18n
 
   knip:
     desc: Fail on unused files, exports, and dependencies of tools/i18n and web/i18n (knip.json)

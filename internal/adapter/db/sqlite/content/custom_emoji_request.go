@@ -141,6 +141,12 @@ func (r *CustomEmojiRepository) ListCustomEmojiRequests(ctx context.Context, q a
 	return out, nil
 }
 
+// CountPendingCustomEmojiRequests implements content.CustomEmojiRequestRepository.
+func (r *CustomEmojiRepository) CountPendingCustomEmojiRequests(ctx context.Context) (int64, error) {
+	n, err := r.db.reader().CountCustomEmojiPendingRequests(ctx)
+	return n, sqlite.Wrap(err, "count pending custom emoji requests")
+}
+
 // ListCustomEmojiRequestsByID implements content.CustomEmojiRequestRepository.
 func (r *CustomEmojiRepository) ListCustomEmojiRequestsByID(ctx context.Context, ids []string) ([]content.CustomEmojiRequestRecord, error) {
 	if len(ids) == 0 {

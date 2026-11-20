@@ -52,6 +52,7 @@ export const operationEntries: readonly StaffEntry[] = [
     icon: "errors",
     name: "staff_operations.entry.error_groups",
     hint: "staff_operations.entry.error_groups.hint",
+    count: { of: (facts) => facts.openErrorGroups, words: "staff_operations.entry.error_groups.count" },
     Screen: ErrorGroupsScreen,
     load: (data, search) => loadErrorList(data, search),
   },

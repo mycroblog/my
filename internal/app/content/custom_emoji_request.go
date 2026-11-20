@@ -92,6 +92,8 @@ type CustomEmojiRequestRepository interface {
 	CountCustomEmojiUsage(ctx context.Context, userID string, since, until time.Time) (approved, pending int, err error)
 	// IsMediaOfPendingCustomEmojiRequest reports whether a pending request uses a media file.
 	IsMediaOfPendingCustomEmojiRequest(ctx context.Context, mediaID string) (bool, error)
+	// CountPendingCustomEmojiRequests counts the requests that await a decision.
+	CountPendingCustomEmojiRequests(ctx context.Context) (int64, error)
 }
 
 // CustomEmojiRequestQuery selects requests. Zero fields select every request.
@@ -554,6 +556,11 @@ func (s *CustomEmojiService) ListRequests(ctx context.Context, q CustomEmojiRequ
 		return nil, err
 	}
 	return s.presentRequests(ctx, recs)
+}
+
+// CountPendingRequests counts the requests that await a decision (GET /api/v1/admin/counts).
+func (s *CustomEmojiService) CountPendingRequests(ctx context.Context) (int64, error) {
+	return s.d.Repository.CountPendingCustomEmojiRequests(ctx)
 }
 
 // RequestsByID returns, in ID order, the requests among ids that exist, with their images, in

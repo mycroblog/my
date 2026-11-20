@@ -18,7 +18,7 @@ import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
 import "./preview.css";
 import { keymap } from "@my/app";
-import { I18nProvider, MenuSheet, ShortcutProvider, useLocale } from "@my/design-system";
+import { claimPressableStyle, I18nProvider, MenuSheet, ShortcutProvider, useLocale } from "@my/design-system";
 import { breakpoint, fontFamily } from "@my/design-tokens";
 import { sizes } from "@my/devtools/sizes";
 import { namesCommandKey, supportsViewTransitions } from "@my/platform";
@@ -101,6 +101,9 @@ const page: Decorator = (Story, { globals, parameters }) => {
     </Theme>
   );
 };
+
+// As the app does: the pressables take their rule from styles.css, not from a style React Aria puts in the head.
+claimPressableStyle();
 
 /** The tags of the axe rules a story must pass (ADR-0110 §9). */
 const axeTags = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];

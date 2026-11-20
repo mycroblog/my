@@ -1,13 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Proves the rules of restrictions.js and styles.js as the workspace runs them: `bun --bun oxlint` with .oxlintrc.json
 // lints the fixtures (web/devtools/fixtures/restrictions/ and the fixtures/ of the layers), and each finding must be
-// one that a fixture line expects with an `error: <Component> prop` comment (design-system-props), an `error: layers
+// one that a fixture line expects with an `error: <Component> prop` or `error: classes <what>` comment
+// (design-system-props), an `error: layers
 // @my/<x>` comment (layer-imports), an `error: platform <what>` comment (platform-globals), an `error: e2e <what>`
 // comment (e2e-queries), an `error: e2e-flaky <what>` comment (e2e-flaky), an `error: color <colour>` comment
 // (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), an `error:
 // viewport <what>` comment (viewport-breakpoints), an `error: switch <what>` comment (switch-in-form), an `error:
 // section <element>` comment (settings-sections), an `error: heading <element>` comment (heading-size), an `error:
-// count <element>` comment (settings-count), or an `error: date <what>` comment (zone-dates), and each expected one
+// count <element>` comment (settings-count), an `error: date <what>` comment (zone-dates), or an `error: html <what>`
+// comment (html-sinks), and each expected one
 // must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
 // other lint run fails on them; this lints copies of them beside them, under the same overrides, and removes the
 // copies. It also holds the lists of the rules to the code: the files layout-parts.js names exist, and the
@@ -41,7 +43,7 @@ const fixtures = dirs.flatMap((dir) =>
 const findings = {
   "restrict(design-system-props)": (/** @type {string} */ message) => {
     const [, component, prop] = /^(<\S+>) (?:of|above) @my\/design-system gets `(\w+)`/.exec(message) ?? [];
-    return `${component} ${prop}`;
+    return component === undefined ? `classes ${/^`([^`]+)`/.exec(message)?.[1]}` : `${component} ${prop}`;
   },
   "restrict(layer-imports)": (/** @type {string} */ message) =>
     `layers ${/^@my\/\S+ imports (@my\/[\w-]+)/.exec(message)?.[1]}`,
@@ -58,6 +60,7 @@ const findings = {
   "restrict(zone-dates)": (/** @type {string} */ message) => `date ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(pager-parts)": (/** @type {string} */ message) => `pager ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(page-trail)": () => "trail",
+  "restrict(html-sinks)": (/** @type {string} */ message) => `html ${/^`([^`]+)`/.exec(message)?.[1]}`,
 };
 
 /** A finding of a rule of the styles: what a declaration wrote, or a name of layout-parts.js. */
@@ -103,7 +106,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|trail(?= |$))/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|(?:html|classes) \S+(?: =)?|trail(?= |$))/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -128,6 +131,7 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/devtools/fixtures/restrictions/settings.tsx");
   expect(fixtures).toContain("web/app-features/fixtures/pagers.tsx");
   expect(fixtures).toContain("web/app-features/fixtures/staff/trail.tsx");
+  expect(fixtures).toContain("web/devtools/fixtures/restrictions/html-sinks.tsx");
   const want = await expected();
   expect(want.some((line) => line.includes(" e2e-flaky "))).toBe(true);
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
@@ -146,6 +150,8 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
     "count",
     "date",
     "pager",
+    "html",
+    "classes",
   ])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);

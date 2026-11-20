@@ -25,9 +25,11 @@ const choice = tv({
     // Over the whole of its row and not drawn: a press or a click anywhere on the option lands on the control itself.
     input: "cursor-pointer opacity-0 disabled:cursor-default",
     label: "[overflow-wrap:anywhere]",
-    // An option as it is written: its text on the surface it stands on, the ring around it on focus.
+    // An option as it is written: its text on the surface it stands on, the ring around it on focus; its line is as
+    // tall as the field, which cuts what reaches under a shorter line (the tail of a g).
     field: [
-      "h-control-form rounded-control border-0 bg-transparent p-0 font-sans text-body text-text",
+      "h-control-form rounded-control border-0 bg-transparent p-0 font-sans text-body leading-(--control-form-height)",
+      "text-text",
       "outline-hidden placeholder:text-muted-text focus-visible:shadow-focus",
     ],
     // The meter's bar (shell.tsx), quieter in a timeline: muted on a track lighter than it.

@@ -33,6 +33,9 @@ var tsExts = map[string]bool{".ts": true, ".tsx": true, ".js": true, ".mjs": tru
 // tsRoots are the TypeScript packages `bun fmt` formats.
 var tsRoots = []string{"web/", "pkg/mykit/ts/", "pkg/mybot/ts/", "tools/i18n/"}
 
+// lintRoots are those of them that web:lint and i18n:ts-lint run Oxlint on.
+var lintRoots = map[string]bool{"web/": true, "tools/i18n/": true}
+
 // tofuRoot is the directory tofu:fmt-check formats (tasks/tofu.yml), and tofuSuffixes are the files `tofu fmt`
 // reads there.
 const tofuRoot = "deploy/opentofu/"
@@ -134,9 +137,9 @@ func fastPlan(root string, changed []string) [][]fastStep {
 		st, err := os.Stat(filepath.Join(root, p))
 		return err == nil && !st.IsDir()
 	}
-	var goFiles, tsFiles, webTS, shFiles, tofuFiles []string
+	var goFiles, tsFiles, lintTS, shFiles, tofuFiles []string
 	pkgs := map[string]map[string]bool{} // module -> package directories
-	md, maps, goTests := false, false, false
+	md, maps, goTests, webTS := false, false, false, false
 	for _, f := range changed {
 		ext := filepath.Ext(f)
 		if strings.HasSuffix(f, "_test.go") || f == sleepBaseline {
@@ -170,9 +173,10 @@ func fastPlan(root string, changed []string) [][]fastStep {
 				if strings.HasPrefix(f, r) {
 					if exists(f) {
 						tsFiles = append(tsFiles, f)
-						if r == "web/" {
-							webTS = append(webTS, f)
+						if lintRoots[r] {
+							lintTS = append(lintTS, f)
 						}
+						webTS = webTS || r == "web/"
 					}
 				}
 			}
@@ -211,9 +215,14 @@ func fastPlan(root string, changed []string) [][]fastStep {
 	}
 	if len(tsFiles) > 0 {
 		ts := []fastStep{{name: "bun fmt", argv: append([]string{"bun", "fmt", "--check"}, tsFiles...)}}
-		if len(webTS) > 0 {
+		if webTS {
+			// The type-aware rules read the generated files that no commit holds (the compiled catalogs, the route
+			// tree): without them each value they type is an error type, which the rules refuse.
+			ts = append(ts, fastStep{name: "web:generated", argv: []string{"scripts/task.sh", "web:generated"}})
+		}
+		if len(lintTS) > 0 {
 			// Oxlint runs from the repository root with its .oxlintrc.json, on Bun alone (ADR-0025 §10).
-			ts = append(ts, fastStep{name: fmt.Sprintf("oxlint (%d files)", len(webTS)), argv: append([]string{"bun", "--bun", "oxlint"}, webTS...)})
+			ts = append(ts, fastStep{name: fmt.Sprintf("oxlint (%d files)", len(lintTS)), argv: append([]string{"bun", "--bun", "oxlint"}, lintTS...)})
 		}
 		plan = append(plan, ts)
 	}

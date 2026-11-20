@@ -13,7 +13,7 @@ export type Glossary = Record<string, Term[]>;
 
 const glossaryPath = join(toolDir, "glossary.json");
 
-export const loadGlossary = (path: string = glossaryPath): Glossary => JSON.parse(readFileSync(path, "utf8"));
+export const loadGlossary = (path: string = glossaryPath) => JSON.parse(readFileSync(path, "utf8")) as Glossary;
 
 /** The findings for the text of one message of `locale`: one per banned variant it contains. */
 export function glossaryFindings(glossary: Glossary, locale: string, text: string): string[] {

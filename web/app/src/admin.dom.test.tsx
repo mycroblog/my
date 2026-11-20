@@ -7,7 +7,7 @@
 // switching federation to the allowlist, limiting sign-in to the login providers and a maximum age of posts say what
 // they end, and ask, before they are saved; a one-person server has no sign-up to set; the icon and logo show the
 // built-in pictures, a chosen one before it is saved, and a retry that sends only what failed; translation shows this
-// month's use against its limit; and each administration entry opens only to its permission. What each screen shows at
+// month's use against its limit; Custom emoji and Errors count what waits there; and each administration entry opens only to its permission. What each screen shows at
 // rest is the stories' (admin.stories.tsx); the rules, relays, login providers and OAuth apps are
 // admin-connections.dom.test.tsx's. A new picture saved is the E2E spec's (admin-settings.spec.ts): its save sends the
 // PNG renditions the browser draws (SetBrandRequest), and the DOM simulation has no canvas to draw them on.
@@ -657,4 +657,40 @@ test("an administrator with every permission is listed every screen", async () =
   await main().findByRole("navigation", { name: "Administration screens" });
   await settled(app);
   expect(listed()).toEqual(everyEntry);
+});
+
+/** The addresses of the entries of the root's list of administration screens whose names, as a reader hears them, match. */
+const namedEntries = (name: RegExp) =>
+  main()
+    .getAllByRole("navigation", { name: "Administration screens" })
+    .flatMap((nav) =>
+      within(nav)
+        .queryAllByRole("link", { name })
+        .map((link) => link.getAttribute("href")),
+    );
+
+test("Custom emoji counts the requests waiting for review, and Errors the open errors, as the server counts them", async () => {
+  const on = fakeApp({ viewer: "hana" });
+  const requests = on.fake.staffServer.pendingEmojiRequests();
+  const errors = on.fake.operations.openErrorGroups();
+  expect([requests > 0, errors > 0]).toEqual([true, true]);
+  const app = await renderApp("/admin", { on });
+  await main().findByRole("navigation", { name: "Administration screens" });
+  await settled(app);
+
+  expect(namedEntries(new RegExp(`^Custom emoji .*\\b${String(requests)} requests? waiting for review$`))).toEqual([
+    "/admin/custom-emojis",
+  ]);
+  expect(namedEntries(new RegExp(`^Errors .*\\b${String(errors)} open errors?$`))).toEqual(["/admin/errors"]);
+});
+
+test("with no request waiting and no open error, neither Custom emoji nor Errors counts anything", async () => {
+  const on = fakeApp({ viewer: "hana", staffServer: { emoji: { none: true } }, operations: "none" });
+  const app = await renderApp("/admin", { on });
+  await main().findByRole("navigation", { name: "Administration screens" });
+  await settled(app);
+
+  expect(listed()).toContain("/admin/custom-emojis");
+  expect(listed()).toContain("/admin/errors");
+  expect(namedEntries(/waiting for review$|open errors?$/)).toEqual([]);
 });

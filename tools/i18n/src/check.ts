@@ -120,7 +120,9 @@ export function messageFindings(
       let want: Args | undefined;
       try {
         want = extractArgs(parseMessage(source));
-      } catch {}
+      } catch {
+        // The source's own error is reported where the source is checked.
+      }
       if (want) dropped.push(...compareArgs("", want, got));
     }
     const waived = new Set(waivers.map(waiverKey));
@@ -227,7 +229,10 @@ function analyze(
   message: unknown,
   where = `${at(locale, ns, key)}: `,
 ): Args | undefined {
-  if (typeof message !== "string") return void error(`${where}defaultMessage must be a string`);
+  if (typeof message !== "string") {
+    error(`${where}defaultMessage must be a string`);
+    return undefined;
+  }
   try {
     const ast = parseMessage(message);
     for (const f of outsideSharedSubset(ast)) error(`${where}${f} is outside the Go/TS shared subset`);
@@ -363,7 +368,9 @@ function checkCatalog(catalog: Catalog, only?: Set<string>, locales?: string[]):
     let canonical: string | undefined;
     try {
       canonical = Intl.getCanonicalLocales(locale)[0];
-    } catch {}
+    } catch {
+      // Not a tag at all: reported below, with no canonical form to suggest.
+    }
     if (canonical !== locale)
       error(`locales/${locale}: not a canonical BCP 47 tag${canonical ? ` (use ${canonical})` : ""}`);
   }

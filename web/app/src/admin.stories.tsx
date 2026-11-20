@@ -2,7 +2,7 @@
 
 // The server's administration of its settings, texts, rules, relays, login providers and OAuth apps (FR-001, FR-010,
 // FR-705, FR-724, FR-725, FR-922, ADR-0058 §1), on the fake server (app.samples.tsx) as its administrator (hana) reads
-// it. The root: the screens of This server and Connections. Server settings: its pages in groups, and each page as a
+// it. The root: the screens of This server and Connections, with what waits counted and with nothing waiting. Server settings: its pages in groups, and each page as a
 // form: General with the thumbnail, the icon and logo set and built in, Sign-up and the same on a one-person server,
 // Posts and features, Federation, Automated review, Search engines and AI, Voice chat, Deleting old posts, Appeals and
 // records; loading, failing, and an address that names no page. Terms and policies, and a document. Translation with a
@@ -27,8 +27,15 @@ type Story = StoryObj<typeof meta>;
 /** The screen at `at` as the scenario's administrator reads it. */
 const at = (path: string, more: Omit<Fake, "at"> = {}) => screen({ at: path, viewer: "hana", ...more });
 
-/** Administration: This server (settings, terms and policies, rules, translation) and Connections. */
+/**
+ * Administration: This server (settings, terms and policies, rules, translation) and Connections, with the requests of
+ * custom emoji waiting for review counted on Custom emoji and the open errors on Errors.
+ */
 export const Root: Story = { parameters: at("/admin") };
+/** Administration with no request of custom emoji waiting and no open error: neither entry counts anything. */
+export const RootNothingWaiting: Story = {
+  parameters: at("/admin", { server: { staffServer: { emoji: { none: true } }, operations: "none" } }),
+};
 
 /** Server settings: its pages in groups, each with a line of what it holds. */
 export const Settings: Story = { parameters: at("/admin/settings") };
