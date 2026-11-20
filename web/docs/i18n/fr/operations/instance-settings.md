@@ -519,7 +519,7 @@ modes. Une règle est le choix de l’opérateur, et elle s’applique en plus d
 - L’API d’administration est `/api/v1/admin/link_card_domains` (lister, définir ; un `DELETE` avec le domaine le retire) et exige la permission de rôle `manage_settings`. Un serveur conserve au plus 1 000 règles, chacune avec une note de 5 000 caractères au plus.
 - Chaque changement est enregistré dans le journal d’audit (`link_card_domain_fetch_stopped`, `link_card_domain_images_stopped`, `link_card_domain_rule_removed`).
 
-<!-- source: theme 98c2eee35f30 -->
+<!-- source: theme 1ada01b2db2e -->
 ## Thème
 
 Le thème de tout le serveur est un ensemble de surcharges des jetons de conception du client web, avec une valeur claire et une valeur sombre pour chaque couleur.
@@ -534,7 +534,7 @@ Il n’y a pas de CSS personnalisé.
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | couleur | `#rrggbb` pour le clair et pour le sombre |
   | `font-sans-override`, `font-mono-override` | famille de polices | Noms de familles, séparés par des virgules (30 au plus), sans famille générique comme `sans-serif` ; mettez entre guillemets un nom contenant un mot qui commence par un chiffre, comme `"M PLUS 1p"` |
   | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | longueur | `0` ou rem / px, de 0,625rem à 3rem |
-  | `text-*--line-height` des mêmes quatre | nombre | 1 à 2,5 |
+  | `text-*--line-height` des mêmes sept | nombre | 1 à 2,5 |
   | `radius-control`, `radius-overlay` | longueur | 0 à 2rem |
   | `duration-spin` | durée | ms / s, 0 à 1000ms |
 

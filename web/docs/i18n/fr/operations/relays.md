@@ -3,12 +3,12 @@
 
 Un relais est un serveur qui transmet les publications publiques des serveurs qui l’ont rejoint aux autres serveurs inscrits. Même une petite instance qui a peu d’abonnements obtient un fil fédéré et des fils de hashtags bien remplies, et ses propres publications publiques portent plus loin. Une instance qui ne rejoint aucun relais ne gagne ni lignes ni tâches.
 
-<!-- source: join-a-relay 5c97a6145f1b -->
+<!-- source: join-a-relay 551373ffaed6 -->
 ## Rejoindre un relais
 
 Utilisez « Relais » dans la zone d’administration (`/admin/relays`). Il exige la permission `manage_settings`, que le rôle intégré `admin` possède.
 « Rejoindre un relais » ouvre le formulaire qui en enregistre un. La liste affiche l’état de chaque relais et ce qu’il a apporté au cours des dernières 24
-heures ; choisir un relais ouvre sa page, avec ses adresses et le bouton qui le quitte, ou, une fois qu’il a été quitté ou qu’il a rejeté
+heures ; choisir un relais ouvre sa page, avec ses adresses et le bouton qui le quitte, ou, une fois que le serveur l’a quitté ou qu’il a rejeté
 le serveur, les boutons qui le rejoignent de nouveau et le suppriment. Quitter et supprimer demandent d’abord confirmation.
 La CLI est `my admin relay` (`my admin relay -help`) :
 
