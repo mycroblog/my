@@ -107,6 +107,31 @@ if GITHUB_REPOSITORY=mycroblog/my DRY_RUN=1 "$script" comment 12x "$tmp/body.md"
   fail "comment: took a pull request number that is not one"
 fi
 
+# cleanup: the Cloudflare API is a stand-in curl on PATH that answers with the status in $tmp/status, and gh a
+# stand-in that says every pull request is closed. A Worker that does not exist yet (404) has nothing to delete; another
+# status fails; a page of Previews lists pr-7 for deletion, which the dry run prints instead of running.
+mkdir -p "$tmp/bin"
+cat >"$tmp/bin/curl" <<'EOF'
+#!/usr/bin/env bash
+status="$(cat "$UI_PREVIEW_TEST_STATUS")"
+if [[ "$status" == 200 ]]; then printf '{"result": [{"name": "pr-7"}, {"name": "main"}]}'; else printf '{}'; fi
+printf '\n%s' "$status"
+EOF
+printf '#!/usr/bin/env bash\necho closed\n' >"$tmp/bin/gh"
+chmod +x "$tmp/bin/curl" "$tmp/bin/gh"
+cleanup() {
+  echo "$1" >"$tmp/status"
+  PATH="$tmp/bin:$PATH" UI_PREVIEW_TEST_STATUS="$tmp/status" CLOUDFLARE_API_TOKEN=t CLOUDFLARE_ACCOUNT_ID=a \
+    GITHUB_REPOSITORY=mycroblog/my DRY_RUN=1 UI_PREVIEW_WORK="$tmp/work" "$script" cleanup 2>&1
+}
+cleanup 404 >"$tmp/out" || fail "cleanup: a Worker not created yet failed the cleanup: $(cat "$tmp/out")"
+grep -q 'no such Worker yet' "$tmp/out" || fail "cleanup: a 404 did not say the Worker does not exist yet"
+if cleanup 500 >"$tmp/out"; then
+  fail "cleanup: took an error of the Cloudflare API as no Preview"
+fi
+cleanup 200 >"$tmp/out" || fail "cleanup: a page of Previews failed: $(cat "$tmp/out")"
+grep -q 'deleting pr-7' "$tmp/out" || fail "cleanup: did not delete the Preview of a closed pull request: $(cat "$tmp/out")"
+
 if [[ "$failed" -ne 0 ]]; then
   exit 1
 fi
