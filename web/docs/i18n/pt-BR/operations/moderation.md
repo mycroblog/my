@@ -609,7 +609,7 @@ Novas denúncias, cadastros aguardando aprovação e recursos chegam às pessoas
 `GET /api/v1/admin/counts` retorna o número de denúncias abertas (`open_reports`, exige `manage_reports`), o número de cadastros aguardando aprovação (`pending_registrations`) e o número de recursos aguardando análise (`pending_appeals`) (ambos exigem `manage_accounts`), o número de solicitações de emojis personalizados aguardando decisão (`pending_custom_emoji_requests`, exige `manage_custom_emojis`) e o número de grupos de erros abertos, novos, regredidos ou reativados (`open_error_groups`, exige `manage_errors`).
 Os itens para os quais você não tem permissão não são retornados.
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## Registro de auditoria
 
 As operações de moderadores e administradores são registradas, uma linha cada, no registro de auditoria (`audit_log_entries`) na mesma transação da operação.
@@ -639,7 +639,7 @@ Operações que falharam e operações que não alteraram nada não são registr
 | `supporter_subscription` | `supporter_subscription_ended` (um administrador encerrou uma assinatura de imediato; o nome do alvo é o nome do plano e o handle do usuário) |
 | `custom_emoji_request` | `custom_emoji_request_submitted`, `custom_emoji_request_withdrawn`, `custom_emoji_request_approved`, `custom_emoji_request_rejected` (enviar, retirar, aprovar e rejeitar uma solicitação de emoji personalizado; o nome do alvo é o `:shortcode:`) |
 | `payment_provider` | `payment_reconcile_queued` (uma reconciliação com o provedor de pagamento foi iniciada manualmente; o nome do alvo é o nome do provedor) |
-| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (desativar e reativar um cliente OAuth; desativar revoga todos os seus tokens; o nome do alvo é o nome do cliente e o `client_id`) |
+| `oauth_client` | `oauth_client_disabled`, `oauth_client_enabled` (desativar e ativar um cliente OAuth; desativar revoga todos os seus tokens; o nome do alvo é o nome do cliente e o `client_id`) |
 | `oauth_client_host` | `oauth_client_host_denied`, `oauth_client_host_allowed` (negar e revogar a negação de um host de Client ID Metadata Document; negar revoga os tokens dos clientes desse host; o nome do alvo é o host) |
 | `instance` | `service_closure_announced`, `service_closure_withdrawn`, `service_closure_closed`, `service_closure_delivery_completed` (anunciar o encerramento do serviço ou alterar a data, retirar o anúncio, encerrar e concluir a entrega do encerramento; o nome do alvo é `service_closure`) |
 | `voice_room` | `voice_room_ended` (um moderador encerrou uma sala de chat de voz aberta; o nome do alvo é o ID da sala, pois o nome some quando a conta que o escreveu é apagada; os detalhes da denúncia mostram o nome) |

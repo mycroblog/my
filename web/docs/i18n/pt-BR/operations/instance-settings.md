@@ -322,7 +322,7 @@ e o texto `thumbnail_alt`) aparecem nos lugares abaixo. O que não estiver defin
 Quando a conta de contato está suspensa ou excluída, a conta não é exibida e apenas o endereço de e-mail é.
 Altere-os na página Geral da tela de administração do cliente web (“Configurações do servidor”, `/admin/settings/general`), ou com a CLI ou a API de cliente.
 
-<!-- source: one-person-server 275b5c1d39fa -->
+<!-- source: one-person-server 1bd8fd4f6da5 -->
 ### Servidor de uma só pessoa
 
 Um servidor só do seu operador, o lar do próprio operador no fediverso, é um servidor de uma só pessoa: ative `single_user`. No cliente web,
@@ -353,7 +353,7 @@ Enquanto ele está ativado:
   `/api/v1/problems/single-user-mode`.
 - **Sem novas publicações locais.** Em um servidor de uma só pessoa, uma publicação para “Vizinhos” não alcança ninguém além dos seguidores, então uma nova
   publicação não pode ser local: a API do cliente responde `422` e a deixa de fora do que uma conta pode publicar. Uma visibilidade padrão
-  “Vizinhos” é lida como “Seguidores” e não pode ser salva, e uma sala de chat de voz para as pessoas deste servidor se anuncia
+  “Vizinhos” é lida como “Somente seguidores” e não pode ser salva, e uma sala de chat de voz para as pessoas deste servidor se anuncia
   em uma publicação para os seguidores. As publicações que já são locais continuam locais.
 - **O servidor diz o que é.** `single_user` em `GET /api/v1/instance` é `true`, com o modo de cadastro e as linhas do tempo efetivos
   e a conta do operador como `single_user_account`, e o NodeInfo responde `openRegistrations: false` com
