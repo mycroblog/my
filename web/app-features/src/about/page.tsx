@@ -279,7 +279,8 @@ function DomainList({ list, t }: { list: PagedList<InstanceDomainAction>; t: T }
     <Stack gap="screen-row-gap">
       <Stack as="ul" plain gap="screen-row-gap" aria-label={t("about.domains")}>
         {list.items.map((item, i) => (
-          <li key={item.digest} ref={added.item(i)}>
+          // A domain both limited and suspended is two items of one digest.
+          <li key={`${item.digest}:${item.kind}`} ref={added.item(i)}>
             <Domain item={item} t={t} />
           </li>
         ))}
