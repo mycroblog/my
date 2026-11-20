@@ -24587,6 +24587,13 @@ components:
             (`POST /client_measurements`). While it is false, the server takes none and the client sends
             none.
           type: boolean
+        ux_measurement_share:
+          description: |
+            The percent of browser sessions whose web client sends its samples while `ux_measurement`
+            is true: each session is drawn once, at this share.
+          type: integer
+          minimum: 1
+          maximum: 100
         translation:
           $ref: '#/components/schemas/InstanceTranslation'
         auto_delete_limit:
@@ -25093,6 +25100,7 @@ components:
         - funding_meter_target_currency
         - funding_meter_rail
         - ux_measurement
+        - ux_measurement_share
     InstanceSettingKind:
       description: |
         The type of a setting's value. `bool`: `true` or `false`. `int`: a decimal integer from

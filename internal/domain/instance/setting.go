@@ -80,6 +80,9 @@ const (
 	// SettingUXMeasurement is whether the web client sends samples of how fast it responds and
 	// the server keeps them (ADR-0167 §3); off, the server takes none.
 	SettingUXMeasurement SettingKey = "ux_measurement"
+	// SettingUXMeasurementShare is the percent of the browser sessions of the web client that send
+	// their samples while SettingUXMeasurement is on (ADR-0167 §3).
+	SettingUXMeasurementShare SettingKey = "ux_measurement_share"
 	// SettingDynamicClientRegistration is whether OAuth clients may register themselves
 	// without authentication at POST /oauth/register (RFC 7591, ADR-0090 §1).
 	SettingDynamicClientRegistration SettingKey = "dynamic_client_registration"
@@ -696,6 +699,10 @@ var definitions = []Definition{
 	{
 		Key: SettingUXMeasurement, Kind: KindBool, Default: "false",
 		Doc: "Whether the web client sends samples of how fast it responds, with nothing that identifies a person, and the server keeps them for the operators (ADR-0167 §3); off, the server takes none.",
+	},
+	{
+		Key: SettingUXMeasurementShare, Kind: KindInt, Default: strconv.Itoa(DefaultUXMeasurementShare), Min: 1, Max: 100,
+		Doc: "The percent of the web client's browser sessions that send their samples while ux_measurement is on, each session drawn once (ADR-0167 §3).",
 	},
 	{
 		Key: SettingFinanceVisibility, Kind: KindEnum, Default: string(FinancePrivate),
@@ -1834,6 +1841,12 @@ func (s Settings) LinkCardsIgnoreRobotsTxt() bool {
 
 // UXMeasurement returns the value of SettingUXMeasurement.
 func (s Settings) UXMeasurement() bool { return s.boolValue(SettingUXMeasurement) }
+
+// DefaultUXMeasurementShare is the default of SettingUXMeasurementShare, in percent.
+const DefaultUXMeasurementShare = 10
+
+// UXMeasurementShare returns the value of SettingUXMeasurementShare, in percent.
+func (s Settings) UXMeasurementShare() int { return s.intValue(SettingUXMeasurementShare) }
 
 // UserAppRegistration returns the value of SettingUserAppRegistration.
 func (s Settings) UserAppRegistration() bool { return s.boolValue(SettingUserAppRegistration) }

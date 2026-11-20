@@ -3259,6 +3259,7 @@ const (
 	InstanceSettingKeyTranslationUserMonthlyCharacters   InstanceSettingKey = "translation_user_monthly_characters"
 	InstanceSettingKeyUserAppRegistration                InstanceSettingKey = "user_app_registration"
 	InstanceSettingKeyUxMeasurement                      InstanceSettingKey = "ux_measurement"
+	InstanceSettingKeyUxMeasurementShare                 InstanceSettingKey = "ux_measurement_share"
 	InstanceSettingKeyVoiceParticipantsRetentionDays     InstanceSettingKey = "voice_participants_retention_days"
 	InstanceSettingKeyVoicePublicSummary                 InstanceSettingKey = "voice_public_summary"
 	InstanceSettingKeyVoiceRoomStarters                  InstanceSettingKey = "voice_room_starters"
@@ -3500,6 +3501,8 @@ func (e InstanceSettingKey) Valid() bool {
 	case InstanceSettingKeyUserAppRegistration:
 		return true
 	case InstanceSettingKeyUxMeasurement:
+		return true
+	case InstanceSettingKeyUxMeasurementShare:
 		return true
 	case InstanceSettingKeyVoiceParticipantsRetentionDays:
 		return true
@@ -12835,6 +12838,10 @@ type Instance struct {
 	// (`POST /client_measurements`). While it is false, the server takes none and the client sends
 	// none.
 	UxMeasurement *bool `json:"ux_measurement,omitempty"`
+
+	// UxMeasurementShare The percent of browser sessions whose web client sends its samples while `ux_measurement`
+	// is true: each session is drawn once, at this share.
+	UxMeasurementShare *int `json:"ux_measurement_share,omitempty"`
 
 	// Version The server version.
 	Version string `json:"version"`
