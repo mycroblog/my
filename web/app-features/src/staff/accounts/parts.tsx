@@ -24,7 +24,7 @@ import {
 import { useId } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
-export { cursorOf, filtered, Pages, Section, useSaid } from "../parts";
+export { cursorOf, filtered, Pages, useSaid } from "../parts";
 
 /** What the reader is told of a refused write of theirs, by what the server's problem means. */
 export function refusalWords(t: T, error: unknown): string {
