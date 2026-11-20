@@ -30,8 +30,9 @@ Given an epic or a milestone, you are the orchestrator. Before building:
 4. Build: yourself for one small issue; otherwise up to four subagents at once. Across Go and TS, the OpenAPI
    contract first (ADR-0170 §4); per language, `go-developer` or `ts-developer`, then `go-test-developer` or
    `ts-test-developer`, given the issue and the developer's report. `routine` for mechanical work; for a
-   UI change, `visual` first in a story (ADR-0169 §9), `copy` for its strings, and a fresh `visual-evaluator`
-   given only `web:shot`'s shots, the task and the constraints, before the decider picks. Hand the others their
+   UI change, `visual` first in a story (ADR-0169 §9), `copy` for its strings, `motion` for its states and changes of
+   screen, and a fresh `visual-evaluator` given only `web:shot`'s shots, the task and the constraints, before the
+   decider picks. Hand the others their
    `ctx <n> --quiet` file.
 5. Bring the branch up to date with `git merge origin/main` (`agentkit regen` on a conflict in generated
    files). `scripts/agentkit.sh check` is the local check; run
