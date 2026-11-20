@@ -100,7 +100,7 @@
     "description": "An option of a setting that is on or off, in the select of its row. Read by administrators."
   },
   "staff_settings.unit": {
-    "defaultMessage": "{unit, select, days {days} hours {hours} minutes {minutes} characters {characters} posts {posts} mebibytes {MiB} invites {invites} people {people} images {images} times {times} pins {pins} other {}}",
+    "defaultMessage": "{unit, select, days {days} hours {hours} minutes {minutes} characters {characters} posts {posts} mebibytes {MiB} invites {invites} people {people} images {images} times {times} pins {pins} percent {%} other {}}",
     "description": "What a number of a setting counts, after its field. Read by administrators."
   },
   "staff_settings.rule": {
@@ -1006,6 +1006,10 @@
   "staff_settings.setting.ux_measurement": {
     "defaultMessage": "Measure the web client",
     "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement_share": {
+    "defaultMessage": "Sessions measured",
+    "description": "The setting ux_measurement_share: the share of browser sessions whose web client sends samples while measuring is on, a number of percent after it. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {Anyone} approval {After a moderator approves} invite {Only with an invite} other {Nobody}}",

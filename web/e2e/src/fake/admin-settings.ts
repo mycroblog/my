@@ -83,6 +83,7 @@ const definitions: readonly Definition[] = [
   ["link_cards", "bool", "true"],
   ["link_cards_ignore_robots_txt", "bool", "false"],
   ["ux_measurement", "bool", "false"],
+  ["ux_measurement_share", "int", "10", [1, 100]],
   ["finance_visibility", "enum", "private", ["private", "totals", "breakdown"]],
   ["finance_viewer_item_names", "bool", "false"],
   ["finance_viewer_item_memos", "bool", "false"],

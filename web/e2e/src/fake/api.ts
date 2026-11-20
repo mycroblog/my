@@ -359,10 +359,12 @@ export type FakeOptions = {
   /**
    * The operations (operations.ts): the fake's jobs, error groups and rules of the link card crawler by default, or
    * none, or `crowded` (more rules and an error group's hours than a screen shows at once); `uxMeasurement`, the
-   * instance measures the web client (`ux_measurement`), whose samples the fake then holds.
+   * instance measures the web client (`ux_measurement`), whose samples the fake then holds; `uxMeasurementShare`, the
+   * share of its sessions it measures (`ux_measurement_share`, 10 % by default).
    */
   operations?: FakeOperationsOptions;
   uxMeasurement?: boolean;
+  uxMeasurementShare?: number;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
@@ -2207,6 +2209,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     link_cards: false,
     link_cards_ignore_robots_txt: false,
     ux_measurement: o.uxMeasurement === true,
+    ux_measurement_share: o.uxMeasurementShare ?? 10,
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
@@ -2613,6 +2616,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
       ...(o.translation?.reports === true ? { translation_reports_to_server: "true" } : {}),
       ...(o.uxMeasurement === true ? { ux_measurement: "true" } : {}),
+      ...(o.uxMeasurementShare === undefined ? {} : { ux_measurement_share: String(o.uxMeasurementShare) }),
     },
     texts: {
       name: instanceBody.name,

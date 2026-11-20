@@ -6,7 +6,7 @@
 // attempts, one waiting to retry, one running, and an address that names none. Errors: the open groups, every group,
 // none, loading and failing; a panic of the server with its latest occurrence, an error of the web client, a group
 // resolved after it happened again, a muted one, and an address that names none. UX measurements: the last 24 hours and
-// the last 7 days, measuring off, loading. Link card domains: the rules, none, a new rule, a rule, and an address that
+// the last 7 days, every session measured, measuring off, loading. Link card domains: the rules, none, a new rule, a rule, and an address that
 // names none. What follows a press (the question before Run again, resolved, a refused domain) is the route tests' and
 // the E2E's.
 
@@ -96,6 +96,10 @@ export const UXMeasurements: Story = { parameters: at("/admin/ux-measurements", 
 /** The last 7 days. */
 export const UXMeasurementsWeek: Story = {
   parameters: at("/admin/ux-measurements?hours=168", { server: { uxMeasurement: true } }),
+};
+/** Every browser session measured (`ux_measurement_share` 100): the share's field under the switch says 100 %. */
+export const UXMeasurementsEverySession: Story = {
+  parameters: at("/admin/ux-measurements", { server: { uxMeasurement: true, uxMeasurementShare: 100 } }),
 };
 /** Measuring off, the server's default: no samples, and the setting under them. */
 export const UXMeasurementsOff: Story = { parameters: at("/admin/ux-measurements") };
