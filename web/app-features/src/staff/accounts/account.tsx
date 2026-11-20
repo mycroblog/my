@@ -8,6 +8,7 @@
 
 import { moderatedAccountPath, reportPath, sentenceHandleOf } from "@my/app-components";
 import {
+  useAccountReports,
   usePermissions,
   useModeratedAccount,
   type AccountAction,
@@ -20,19 +21,21 @@ import {
   FeedNotice,
   RecordTable,
   RelativeTime,
+  Row,
   ScreenStack,
   ScreenTitle,
   Stack,
   StateMark,
   TabRow,
   TextLink,
+  useAddedFocus,
   type Fact,
   type RecordColumn,
   type RecordRow,
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import { staffEntryPath } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T, Section } from "../parts";
+import { ListMore, ReadNotice, useMoment, useStaffStrings, type T, Section } from "../parts";
 import { categoryWords } from "../reports/queue";
 import { ActionForm } from "./action-form";
 import { AccountActionsPage } from "./actions";
@@ -200,7 +203,13 @@ function useAccountFacts(account: ModeratedAccountDetail): Fact[] {
   ];
 }
 
-/** Review: the account's facts, the form of a new action, its newest actions and its newest reports. */
+/** How many of an account's actions its details hold, the newest: Review leads to the rest, on the Actions page. */
+const newestActions = 20;
+
+/**
+ * Review: the account's facts, the form of a new action, its newest actions with the way to the rest, and its reports,
+ * the newest first, the rest under Show more.
+ */
 function Review({ account, report }: { account: ModeratedAccountDetail; report: string | undefined }) {
   const { t } = useStaffStrings();
   const facts = useAccountFacts(account);
@@ -212,10 +221,15 @@ function Review({ account, report }: { account: ModeratedAccountDetail; report: 
       </Section>
       <Section title={t("staff_accounts.account.actions")}>
         <ActionTable account={account.id} actions={account.actions} />
+        {account.actions.length >= newestActions && (
+          <Row>
+            <TextLink href={accountPagePath(account.id, "actions")}>{t("staff_accounts.account.actions.all")}</TextLink>
+          </Row>
+        )}
       </Section>
       {account.reports !== undefined && (
         <Section title={t("staff_accounts.account.reports")}>
-          <ReportTable reports={account.reports} />
+          <ReportTable account={account.id} newest={account.reports} />
         </Section>
       )}
     </ScreenStack>
@@ -271,14 +285,19 @@ export function ActionTable({
 
 type ReportColumn = "filed" | "state";
 
-/** The account's newest reports, each its category, opening its screen; who filed it is the report's to say (§9). */
-function ReportTable({ reports }: { reports: readonly QueuedReport[] }) {
+/**
+ * The account's reports, the newest first (`newest`, those its details hold), the rest under Show more, each its
+ * category, opening its screen; who filed it is the report's to say (§9).
+ */
+function ReportTable({ account, newest }: { account: string; newest: readonly QueuedReport[] }) {
   const { t } = useStaffStrings();
+  const list = useAccountReports(account, newest);
+  const added = useAddedFocus(list.items.length);
   const columns: RecordColumn<ReportColumn>[] = [
     { key: "filed", label: t("staff_accounts.reports.column.filed"), kind: "fit", bare: true },
     { key: "state", label: t("staff_accounts.reports.column.state"), kind: "fit", beside: true },
   ];
-  const rows = reports.map((r): RecordRow<ReportColumn> => ({
+  const rows = list.items.map((r): RecordRow<ReportColumn> => ({
     id: r.id,
     head: categoryWords(t, r.category),
     href: reportPath(r.id),
@@ -292,12 +311,16 @@ function ReportTable({ reports }: { reports: readonly QueuedReport[] }) {
     },
   }));
   return (
-    <RecordTable
-      label={t("staff_accounts.reports.table")}
-      head={{ label: t("staff_accounts.reports.column.category") }}
-      columns={columns}
-      rows={rows}
-      empty={<FeedNotice start>{t("staff_accounts.reports.none")}</FeedNotice>}
-    />
+    <Stack gap="entry-room">
+      <RecordTable
+        label={t("staff_accounts.reports.table")}
+        head={{ label: t("staff_accounts.reports.column.category") }}
+        columns={columns}
+        rows={rows}
+        itemRef={added.item}
+        empty={<FeedNotice start>{t("staff_accounts.reports.none")}</FeedNotice>}
+      />
+      <ListMore list={list} added={added} />
+    </Stack>
   );
 }

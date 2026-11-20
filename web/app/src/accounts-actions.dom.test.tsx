@@ -286,7 +286,7 @@ test("an account's email and IP addresses are asked for only once shown, and are
     if (!shown.includes("kai@demo.test") || !shown.includes("203.0.113.52"))
       throw new Error("test: the email and the IP address are not shown");
   });
-  const signIns = within(main().getByRole("table", { name: "Newest sign-ins" }));
+  const signIns = within(main().getByRole("table", { name: "Sign-ins" }));
   expect(signIns.getAllByRole("rowheader").map((cell) => words(cell))).toEqual([
     "2001:db8:85a3::8a2e:370:7334",
     "203.0.113.52",

@@ -42,16 +42,17 @@ import {
   SettingsFacts,
   SettingsList,
   SettingsListRow,
-  MoreRecords,
   SettingsNote,
-  StateMark,
-  type RecordState,
   SettingsResult,
   SettingsScreen,
   SettingsSection,
+  ShowMore,
+  StateMark,
   SubmitBar,
   TextField,
+  useAddedFocus,
   useLocale,
+  type RecordState,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { stringsIn } from "../locale";
@@ -112,6 +113,7 @@ function Requests({ requests, more }: { requests: readonly OwnCustomEmojiRequest
   const t = useT();
   const moment = useMoment(false);
   const writes = useOwnEmojiWrites();
+  const added = useAddedFocus(requests.length);
   const [busy, setBusy] = useState<string | undefined>(undefined);
   const [said, setSaid] = useState<Said | undefined>(undefined);
   const saidRef = useRef<HTMLParagraphElement>(null);
@@ -147,9 +149,10 @@ function Requests({ requests, more }: { requests: readonly OwnCustomEmojiRequest
         <SettingsEmpty>{t("emoji_own.requests.empty")}</SettingsEmpty>
       ) : (
         <SettingsList label={heading}>
-          {requests.map((r) => (
+          {requests.map((r, i) => (
             <SettingsListRow
               key={r.id}
+              itemRef={added.item(i)}
               title={coded(r.shortcode)}
               inactive={r.state !== "pending" && r.state !== "approved"}
               mark={<StateMark state={requestLook[r.state]}>{stateOf(t, r)}</StateMark>}
@@ -179,7 +182,7 @@ function Requests({ requests, more }: { requests: readonly OwnCustomEmojiRequest
       <SettingsResult ref={saidRef}>
         {said === undefined ? undefined : <span key={said.n}>{said.text}</span>}
       </SettingsResult>
-      <More more={more} />
+      <ShowMore more={more.hasNext} busy={more.fetching} failed={more.failed} onPress={added.press(more.next)} />
     </SettingsSection>
   );
 }
@@ -230,38 +233,36 @@ export function CustomEmojiSettings({ back }: SettingsEntryProps): ReactNode {
         )}
       </SettingsSection>
       <Requests requests={requests} more={read.moreRequests} />
-      <SettingsSection heading={t("emoji_own.emojis")}>
-        {emojis.length === 0 ? (
-          <SettingsEmpty>{t("emoji_own.emojis.empty")}</SettingsEmpty>
-        ) : (
-          <SettingsList label={t("emoji_own.emojis")}>
-            {emojis.map((e) => (
-              <SettingsListRow
-                key={e.id}
-                title={coded(e.shortcode)}
-                inactive={e.state === "disabled"}
-                facts={emojiFacts(t, e)}
-                state={e.state === "disabled" ? t("emoji_own.emoji.disabled") : undefined}
-                href={ownEmojiPath(e.id)}
-              />
-            ))}
-          </SettingsList>
-        )}
-        <More more={read.moreEmojis} />
-      </SettingsSection>
+      <Emojis emojis={emojis} more={read.moreEmojis} />
     </SettingsScreen>
   );
 }
 
-/** Show more under a list of the reader's that has a next page; the words that it failed, with the same button. */
-function More({ more }: { more: OwnMore }) {
+/** The reader's emoji, each the door to its screen, Show more under them while there are more. */
+function Emojis({ emojis, more }: { emojis: readonly OwnCustomEmoji[]; more: OwnMore }) {
   const t = useT();
-  if (!more.hasNext) return null;
+  const added = useAddedFocus(emojis.length);
   return (
-    <>
-      {more.failed && <SettingsNote>{t("emoji_own.more.failed")}</SettingsNote>}
-      <MoreRecords busy={more.fetching} onPress={more.next} />
-    </>
+    <SettingsSection heading={t("emoji_own.emojis")}>
+      {emojis.length === 0 ? (
+        <SettingsEmpty>{t("emoji_own.emojis.empty")}</SettingsEmpty>
+      ) : (
+        <SettingsList label={t("emoji_own.emojis")}>
+          {emojis.map((e, i) => (
+            <SettingsListRow
+              key={e.id}
+              title={coded(e.shortcode)}
+              inactive={e.state === "disabled"}
+              facts={emojiFacts(t, e)}
+              state={e.state === "disabled" ? t("emoji_own.emoji.disabled") : undefined}
+              href={ownEmojiPath(e.id)}
+              itemRef={added.item(i)}
+            />
+          ))}
+        </SettingsList>
+      )}
+      <ShowMore more={more.hasNext} busy={more.fetching} failed={more.failed} onPress={added.press(more.next)} />
+    </SettingsSection>
   );
 }
 

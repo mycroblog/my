@@ -4,11 +4,13 @@
 // accounts they block (the scenario's quickdeals, and the account sora left behind), the account they mute (kai, its
 // notifications too), two servers they mute and two hashtags they follow; with every list empty, each saying what it
 // would hold and how something gets there; with nine muted servers, of which the entry shows five and the door to the
-// whole list, and seven hashtags, shown whole; the whole list of the muted servers, the screen under the entry; and
-// while it loads, and when it could not be read.
+// whole list, and seven hashtags, shown whole; the whole list of the muted servers, the screen under the entry; the
+// whole list of more blocked accounts than a page holds, before and after Show more; and while it loads, and when it
+// could not be read.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { manyBlocked } from "./pages.samples";
 
 const at = "/settings/relationships";
 
@@ -53,6 +55,12 @@ export const Empty: Story = { parameters: screen({ at, state: "empty" }) };
 export const Many: Story = { parameters: screen({ at, server: many }) };
 /** /settings/relationships/servers: the whole list of the muted servers, the screen under the entry. */
 export const AllServers: Story = { parameters: screen({ at: `${at}/servers`, server: many }) };
+/** The whole list of more blocked accounts than a page holds: Show more under the first twenty. */
+export const AllBlockedMany: Story = { parameters: screen({ at: `${at}/blocked`, server: manyBlocked }) };
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const AllBlockedManyMore: Story = {
+  parameters: screen({ at: `${at}/blocked`, server: manyBlocked, more: true }),
+};
 /** While the lists are on their way: the entry's head, and that it loads. */
 export const Loading: Story = { parameters: screen({ at, state: "loading" }) };
 /** When none of the lists could be read: it says so, with the way to try again. */

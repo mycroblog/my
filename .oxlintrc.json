@@ -506,6 +506,32 @@
       "rules": {
         "restrict/zone-dates": "off"
       }
+    },
+    // One pager for every paged list (#3279): outside @my/design-system no button pages or grows a list, and in the
+    // staff's screens no list keeps its pages in the address outside useAddressPages (the rule reads the path).
+    {
+      "files": [
+        "web/**"
+      ],
+      "rules": {
+        "restrict/pager-parts": "error"
+      }
+    },
+    {
+      "files": [
+        "web/design-system/**"
+      ],
+      "rules": {
+        "restrict/pager-parts": "off"
+      }
+    },
+    {
+      "files": [
+        "web/app-features/**"
+      ],
+      "rules": {
+        "restrict/page-trail": "error"
+      }
     }
   ]
 }

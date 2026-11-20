@@ -8,15 +8,15 @@
 import { VoiceRoomLine, voiceOpenPath } from "@my/app-components";
 import { useMayOpenVoiceRooms, voiceRoomsQuery, useVoiceRooms, type AppData } from "@my/app-data";
 import {
-  Box,
-  Button,
   FeedNotice,
   FrameFoot,
   LinkButton,
   RowItem,
   RowList,
+  ShowMore,
   Stack,
   TextButton,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import type { ReactNode } from "react";
@@ -56,6 +56,7 @@ export function VoiceRooms() {
 function Rooms(): ReactNode {
   const { t } = stringsIn(useLocale().locale);
   const list = useVoiceRooms();
+  const added = useAddedFocus(list.items.length);
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("voice.retry")}</TextButton>;
   if (list.status === "pending") return <FeedNotice>{t("voice.rooms_loading")}</FeedNotice>;
   if (list.items.length === 0)
@@ -69,27 +70,18 @@ function Rooms(): ReactNode {
   return (
     <Stack gap="entry-room">
       <RowList label={t("voice.rooms")}>
-        {list.items.map((room) => (
-          <RowItem key={room.id}>
+        {list.items.map((room, i) => (
+          <RowItem key={room.id} itemRef={added.item(i)}>
             <VoiceRoomLine room={room} />
           </RowItem>
         ))}
       </RowList>
-      {list.failedNextPage ? (
-        <FeedNotice alert action={retry(list.fetchNextPage)}>
-          {t("voice.rooms_failed_more")}
-        </FeedNotice>
-      ) : list.isFetchingNextPage ? (
-        <FeedNotice>{t("voice.rooms_loading_more")}</FeedNotice>
-      ) : (
-        list.hasNextPage && (
-          <Box>
-            <Button size="timeline" touch onPress={list.fetchNextPage}>
-              {t("voice.rooms_more")}
-            </Button>
-          </Box>
-        )
-      )}
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
     </Stack>
   );
 }

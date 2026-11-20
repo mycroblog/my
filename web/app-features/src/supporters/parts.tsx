@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the supporters' page shares among its parts: its strings, a day as the reader writes it, and the line under a
-// list that pages.
+// What the supporters' page shares among its parts: its strings, a day as the reader writes it, and the button that
+// tries again what failed.
 
-import type { PagedList } from "@my/app-data";
-import { Box, Button, dateFormat, FeedNotice, TextButton, useLocale, useTimeZone } from "@my/design-system";
-import type { ReactNode } from "react";
+import { dateFormat, TextButton, useLocale, useTimeZone } from "@my/design-system";
 import { stringsIn } from "../locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
@@ -31,25 +29,4 @@ export function useDay(): (iso: string) => string {
 /** The button that tries again what failed. */
 export function Retry({ onPress, t }: { onPress: () => void; t: T }) {
   return <TextButton onPress={onPress}>{t("supporters.retry")}</TextButton>;
-}
-
-/**
- * Under a list that pages: Show more while there is a next page, that it loads, or that it could not, with Try again
- * in the button's place, so that the focus stays on it.
- */
-export function MoreOf({ list, t }: { list: PagedList<unknown>; t: T }): ReactNode {
-  if (list.failedNextPage)
-    return (
-      <FeedNotice alert start action={<Retry onPress={list.fetchNextPage} t={t} />}>
-        {t("supporters.list.failed_more")}
-      </FeedNotice>
-    );
-  if (!list.hasNextPage) return null;
-  return (
-    <Box>
-      <Button size="target" busy={list.isFetchingNextPage} onPress={list.fetchNextPage}>
-        {t("supporters.list.more")}
-      </Button>
-    </Box>
-  );
 }

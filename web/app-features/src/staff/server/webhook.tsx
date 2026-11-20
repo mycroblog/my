@@ -25,7 +25,6 @@ import {
   Button,
   ConfirmDialog,
   ModalPresence,
-  MoreRecords,
   Row,
   FeedNotice,
   RecordTable,
@@ -36,12 +35,13 @@ import {
   SettingsSection,
   StateMark,
   StatusSummary,
+  useAddedFocus,
   type IconName,
   type RecordRow,
   type RecordState,
 } from "@my/design-system";
 import { use, useState, type ReactNode } from "react";
-import { useMoment, useStaffStrings, type T } from "../parts";
+import { ListMore, useMoment, useStaffStrings, type T } from "../parts";
 import { Irreversible, LeaveDialog, ScreenNotice, type AdminSubProps } from "../settings/parts";
 import { useStillThere } from "./parts";
 import {
@@ -226,6 +226,7 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
   const list = useWebhookDeliveries(webhook.id);
+  const added = useAddedFocus(list.items.length);
   const writes = useAdminWebhookWrites();
   const there = useStillThere();
   const [busy, setBusy] = useState<string | undefined>(undefined);
@@ -299,11 +300,11 @@ function Deliveries({ webhook }: { webhook: AdminWebhook }) {
         ]}
         rows={rows}
         contained
+        itemRef={added.item}
         empty={<FeedNotice>{t("staff_webhooks.deliveries.empty")}</FeedNotice>}
       />
       <SettingsResult>{said === undefined ? undefined : <span key={said.n}>{said.text}</span>}</SettingsResult>
-      {list.failedNextPage && <SettingsResult>{t("staff_webhooks.deliveries.more_failed")}</SettingsResult>}
-      {list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />}
+      <ListMore list={list} added={added} />
     </SettingsSection>
   );
 }

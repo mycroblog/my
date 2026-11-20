@@ -27,6 +27,7 @@ import {
   type ErrorGroupState,
 } from "@my/app-data";
 import {
+  Pager,
   Box,
   Button,
   CodeText,
@@ -38,7 +39,8 @@ import {
   FinanceTable,
   LogEntry,
   LogList,
-  MoreRecords,
+  ShowMore,
+  useAddedFocus,
   RecordTable,
   RelativeTime,
   Row,
@@ -55,7 +57,17 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { cursorOf, filtered, Pages, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
+import {
+  cursorOf,
+  filtered,
+  useAddressPages,
+  ReadNotice,
+  Titled,
+  useMoment,
+  useSaid,
+  useStaffStrings,
+  type T,
+} from "../parts";
 import { CopyValue } from "../settings/parts";
 import { CopyAction, SubTitle, useCount } from "./parts";
 
@@ -143,6 +155,7 @@ type GroupColumn = "state" | "day" | "week" | "seen";
 
 /** The groups of a state and a source, a page at a time, each leading to its screen. */
 export function ErrorGroupsScreen({ search, onSearch }: StaffAddress): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const count = useCount();
   const q = errorQueryOf(search);
@@ -215,7 +228,7 @@ export function ErrorGroupsScreen({ search, onSearch }: StaffAddress): ReactNode
           </FeedNotice>
         }
       />
-      <Pages address={{ search, onSearch }} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }
@@ -327,6 +340,7 @@ function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
   const count = useCount();
   const moment = useMoment();
   const [shown, setShown] = useState(hoursShown);
+  const added = useAddedFocus(shown);
   const hours = group.hourly_counts.toReversed();
   const title = t("staff_operations.error_groups.hours");
   return (
@@ -343,17 +357,21 @@ function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
               { label: t("staff_operations.error_groups.sample.version") },
             ]}
           >
-            {hours.slice(0, shown).map((h) => (
-              <FinanceRow key={h.hour} head={moment(h.hour)} cells={[{ figures: [count(h.count)] }, h.last_version]} />
+            {hours.slice(0, shown).map((h, i) => (
+              <FinanceRow
+                key={h.hour}
+                itemRef={added.item(i)}
+                head={moment(h.hour)}
+                cells={[{ figures: [count(h.count)] }, h.last_version]}
+              />
             ))}
           </FinanceTable>
-          {hours.length > shown && (
-            <MoreRecords
-              onPress={() => {
-                setShown((n) => n + hoursShown);
-              }}
-            />
-          )}
+          <ShowMore
+            more={hours.length > shown}
+            onPress={added.press(() => {
+              setShown((n) => n + hoursShown);
+            })}
+          />
         </Stack>
       )}
     </Titled>

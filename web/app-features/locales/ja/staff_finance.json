@@ -59,10 +59,6 @@
     "defaultMessage": "費用を読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "On the list of cost items when it could not be loaded, before Try again."
   },
-  "staff_finance.costs.failed_more": {
-    "defaultMessage": "続きの費用を読み込めませんでした。接続を確認してから、もう一度試してください。",
-    "description": "Under the list of cost items when its next page could not be loaded, before Try again."
-  },
   "staff_finance.costs.empty": {
     "defaultMessage": "記録された費用はまだありません。",
     "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
@@ -186,10 +182,6 @@
   "staff_finance.income.movements.failed": {
     "defaultMessage": "お金の動きを読み込めませんでした。接続を確認してから、もう一度試してください。",
     "description": "In the place of the money movements when they could not be loaded, before Try again."
-  },
-  "staff_finance.income.movements.failed_more": {
-    "defaultMessage": "続きのお金の動きを読み込めませんでした。接続を確認してから、もう一度試してください。",
-    "description": "Under the money movements when their next page could not be loaded, before Try again."
   },
   "staff_finance.income.movements.empty": {
     "defaultMessage": "お金の動きはまだありません。決済の事業者が知らせた支払いと返金がここに出ます。",

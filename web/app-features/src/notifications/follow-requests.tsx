@@ -22,12 +22,13 @@ import {
   BackButton,
   Button,
   FeedNotice,
-  Fold,
   OpenRow,
   ScreenStack,
   ScreenTitle,
+  ShowMore,
   StateText,
   TextButton,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import { useEffect, useRef } from "react";
@@ -108,34 +109,33 @@ function Answers({ account, t }: { account: Account; t: T }) {
 
 /**
  * The screen of the follow requests, newest first, back to the notifications at its top: a row per account that asks,
- * then a line that they load, that they failed (with Try again), that there are none, or a fold that shows more.
+ * then a line that they load, that they failed (with Try again), that there are none, or Show more.
  */
 export function FollowRequests({ onBack }: { onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
   const requests = useFollowRequests();
   const { items, status } = requests;
+  const added = useAddedFocus(items.length);
   // The title counts those that still wait: one answered here leaves the count, though its row stays.
   const asking = useStillAsking(items);
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("notifications.retry")}</TextButton>;
-  const failedMore = status === "success" && requests.error !== null && !requests.isFetchingNextPage;
   const end =
-    status === "pending" || requests.isFetchingNextPage ? (
+    status === "pending" ? (
       <FeedNotice start>{t("notifications.follow_requests_loading")}</FeedNotice>
-    ) : status === "error" ? (
+    ) : status === "error" && !requests.failedNextPage ? (
       <FeedNotice start alert action={retry(requests.refetch)}>
-        {t("notifications.follow_requests_failed")}
-      </FeedNotice>
-    ) : failedMore && requests.hasNextPage ? (
-      <FeedNotice start alert action={retry(requests.fetchNextPage)}>
         {t("notifications.follow_requests_failed")}
       </FeedNotice>
     ) : items.length === 0 ? (
       <FeedNotice start>{t("notifications.follow_requests_empty")}</FeedNotice>
-    ) : requests.hasNextPage ? (
-      <Fold>
-        <TextButton onPress={requests.fetchNextPage}>{t("profile.follows_more")}</TextButton>
-      </Fold>
-    ) : undefined;
+    ) : (
+      <ShowMore
+        more={requests.hasNextPage}
+        busy={requests.isFetchingNextPage}
+        failed={requests.failedNextPage}
+        onPress={added.press(requests.fetchNextPage)}
+      />
+    );
   return (
     <ScreenStack busy={status === "pending"}>
       <ScreenTitle
@@ -145,8 +145,8 @@ export function FollowRequests({ onBack }: { onBack: () => void }) {
       >
         {t("notifications.follow_requests")}
       </ScreenTitle>
-      {items.map((a) => (
-        <AccountLine key={a.id} account={a} end={<Answers account={a} t={t} />} />
+      {items.map((a, i) => (
+        <AccountLine key={a.id} account={a} end={<Answers account={a} t={t} />} itemRef={added.item(i)} />
       ))}
       {end}
     </ScreenStack>

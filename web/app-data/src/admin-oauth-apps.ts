@@ -92,9 +92,9 @@ export async function loadAdminOAuthClients(data: AppData, q: AdminOAuthClientQu
   await data.queryClient.query(adminOAuthClientsQuery(data, q)).catch(() => undefined);
 }
 
-/** Reads the first page of the denied hosts, for a route's loader. */
-export async function loadOAuthHostDenials(data: AppData): Promise<void> {
-  await data.queryClient.query(oAuthHostDenialsQuery(data, undefined)).catch(() => undefined);
+/** Reads the page of the denied hosts after `cursor` (the first without one), for a route's loader. */
+export async function loadOAuthHostDenials(data: AppData, cursor?: string): Promise<void> {
+  await data.queryClient.query(oAuthHostDenialsQuery(data, cursor)).catch(() => undefined);
 }
 
 /** The writes of the apps and the denied hosts; each rejects with the server's problem. */

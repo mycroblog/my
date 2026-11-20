@@ -55,10 +55,6 @@
     "defaultMessage": "{count, plural, =0 {{max} 件まで選べます。まだ選んでいません。} other {{max} 件まで選べます。# 件を選んでいます。}}",
     "description": "Under the heading of the posts to include in a report: how many may be chosen ({max}, 20) and how many are ({count})."
   },
-  "report.posts_more": {
-    "defaultMessage": "前の投稿を表示",
-    "description": "The button under the account's posts in the report panel that shows older posts to choose from."
-  },
   "report.posts_loading": {
     "defaultMessage": "投稿を読み込んでいます…",
     "description": "Said in the place of the account's posts in the report panel while they load."

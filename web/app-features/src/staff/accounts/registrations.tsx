@@ -14,6 +14,7 @@ import {
   type ModeratedRegistration,
 } from "@my/app-data";
 import {
+  Pager,
   Button,
   FactList,
   Row,
@@ -33,7 +34,7 @@ import {
 import { useId, useState, type ReactNode } from "react";
 import type { StaffAddress } from "../entries";
 import { ReadNotice, useStaffStrings } from "../parts";
-import { cursorOf, Pages, refusalWords, useSaid } from "./parts";
+import { useAddressPages, refusalWords, useSaid } from "./parts";
 
 type Column = "email" | "reason" | "submitted" | "state";
 
@@ -50,8 +51,9 @@ function RegistrationStateMark({ registration }: { registration: ModeratedRegist
 
 /** The registrations that wait: the table with its picked rows' actions, and the pages. */
 export function RegistrationsScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { t } = useStaffStrings();
-  const cursor = cursorOf(address.search);
+  const cursor = pages.cursor;
   const page = useRegistrations(cursor);
   const decide = useDecideRegistrations(cursor);
   const noteId = useId();
@@ -212,7 +214,7 @@ export function RegistrationsScreen(address: StaffAddress): ReactNode {
         }
         empty={<FeedNotice>{t("staff_accounts.registrations.empty")}</FeedNotice>}
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
       <ModalPresence>
         {asking !== undefined && (
           <ConfirmDialog

@@ -66,6 +66,10 @@ export const NewWebhookForALead: Story = {
 export const Webhook: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}"),
 };
+/** The same webhook with Show more pressed once under its deliveries, two a page: all four, and Show more gone. */
+export const WebhookMore: Story = {
+  parameters: asAdmin("/admin/webhooks/{server:webhook:alerts}", { server: { staffPage: 2 }, more: true }),
+};
 /** A webhook whose deliveries are failing now, with how many and since when, and an address too long for a phone. */
 export const WebhookFailing: Story = {
   parameters: asAdmin("/admin/webhooks/{server:webhook:chat}"),

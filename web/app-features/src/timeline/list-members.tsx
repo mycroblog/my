@@ -23,15 +23,16 @@ import {
   BackButton,
   Button,
   FeedNotice,
-  Fold,
   FoundRows,
   RowItem,
   RowList,
   ScreenStack,
   ScreenTitle,
   SearchField,
+  ShowMore,
   StateText,
   TextButton,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import { useId, useRef, useState } from "react";
@@ -54,6 +55,7 @@ export function ListMembers({ id, onBack }: { id: string; onBack: () => void }) 
   const { t } = stringsIn(useLocale().locale);
   const { list, status, refetch } = useList(id);
   const members = useListMembers(id);
+  const added = useAddedFocus(members.items.length);
   const writes = useListWrites();
   const fieldId = useId();
   const [q, setQ] = useState("");
@@ -96,25 +98,23 @@ export function ListMembers({ id, onBack }: { id: string; onBack: () => void }) 
       </ScreenStack>
     );
   const inList = new Set(members.items.map((a) => a.id));
-  const failedMore = members.status === "success" && members.error !== null && !members.isFetchingNextPage;
   const end =
-    members.status === "pending" || members.isFetchingNextPage ? (
+    members.status === "pending" ? (
       <FeedNotice start>{t("timeline.list_loading")}</FeedNotice>
-    ) : members.status === "error" ? (
+    ) : members.status === "error" && !members.failedNextPage ? (
       <FeedNotice start alert action={retry(members.refetch)}>
-        {t("timeline.list_failed")}
-      </FeedNotice>
-    ) : failedMore && members.hasNextPage ? (
-      <FeedNotice start alert action={retry(members.fetchNextPage)}>
         {t("timeline.list_failed")}
       </FeedNotice>
     ) : members.items.length === 0 ? (
       <FeedNotice start>{t("timeline.list_members_empty")}</FeedNotice>
-    ) : members.hasNextPage ? (
-      <Fold>
-        <TextButton onPress={members.fetchNextPage}>{t("profile.follows_more")}</TextButton>
-      </Fold>
-    ) : undefined;
+    ) : (
+      <ShowMore
+        more={members.hasNextPage}
+        busy={members.isFetchingNextPage}
+        failed={members.failedNextPage}
+        onPress={added.press(members.fetchNextPage)}
+      />
+    );
   return (
     <ScreenStack busy={members.status === "pending"}>
       <ScreenTitle
@@ -160,8 +160,8 @@ export function ListMembers({ id, onBack }: { id: string; onBack: () => void }) 
       )}
       {members.items.length > 0 && (
         <RowList label={t("timeline.list_members_open")}>
-          {members.items.map((a) => (
-            <RowItem key={a.id}>
+          {members.items.map((a, i) => (
+            <RowItem key={a.id} itemRef={added.item(i)}>
               <AccountLine
                 account={a}
                 end={

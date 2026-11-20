@@ -13,5 +13,10 @@ import { MotionGlobalConfig } from "motion/react";
 // Neither simulation has an animation engine: Motion finishes every animation at once, so what leaves is gone.
 MotionGlobalConfig.skipAnimations = true;
 
-// Each test starts from an empty document.
-afterEach(cleanup);
+// Each test starts from an empty document. React Aria's announcer lives on the body, outside what Testing Library
+// renders, and keeps what a test announced; its logs are emptied as its own clearAnnouncer does, the node left in place
+// for the next test's announcements.
+afterEach(() => {
+  cleanup();
+  for (const log of document.querySelectorAll("[data-live-announcer] [role='log']")) log.replaceChildren();
+});

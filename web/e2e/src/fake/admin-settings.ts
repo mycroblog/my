@@ -7,7 +7,7 @@
 // an SVG checked as the server checks it (refused with text in it, its scripts removed); the translation providers the
 // server has; the rules, two of them retired; the relays, one joined, one waiting, one that rejected the server; the
 // login providers, one of each kind but Discord; the OAuth apps of every way of registration, one disabled; and the
-// hosts denied.
+// hosts denied, two of them.
 
 import { idAt, minute, page, problem, type PageQuery } from "./common";
 import { fakeRules } from "./reports";
@@ -473,6 +473,13 @@ export function adminHandlers(c: AdminContext): { handlers: Handlers; admin: Fak
           denied_by: c.accountOf(c.viewer),
           denied_by_deleted: false,
           denied_at: iso(ago(5 * 24 * 60)),
+        },
+        {
+          id: idAt(ago(12 * 24 * 60), 49_501),
+          host: "apps.junk.example",
+          denied_by: c.accountOf(c.viewer),
+          denied_by_deleted: false,
+          denied_at: iso(ago(12 * 24 * 60)),
         },
       ];
 

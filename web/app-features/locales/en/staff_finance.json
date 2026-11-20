@@ -59,10 +59,6 @@
     "defaultMessage": "The costs could not be loaded. Check your connection, then try again.",
     "description": "On the list of cost items when it could not be loaded, before Try again."
   },
-  "staff_finance.costs.failed_more": {
-    "defaultMessage": "More costs could not be loaded. Check your connection, then try again.",
-    "description": "Under the list of cost items when its next page could not be loaded, before Try again."
-  },
   "staff_finance.costs.empty": {
     "defaultMessage": "No cost is recorded yet.",
     "description": "In the place of the list of cost items while there is none; Record a cost stands over it."
@@ -186,10 +182,6 @@
   "staff_finance.income.movements.failed": {
     "defaultMessage": "The money movements could not be loaded. Check your connection, then try again.",
     "description": "In the place of the money movements when they could not be loaded, before Try again."
-  },
-  "staff_finance.income.movements.failed_more": {
-    "defaultMessage": "More money movements could not be loaded. Check your connection, then try again.",
-    "description": "Under the money movements when their next page could not be loaded, before Try again."
   },
   "staff_finance.income.movements.empty": {
     "defaultMessage": "No money has moved yet. Payments and refunds show here once the payment provider reports them.",

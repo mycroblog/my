@@ -11,10 +11,12 @@
 // its amounts, back from its checkout (paid, not settled yet, left unpaid), for a reader who may not tip, on a server
 // that takes none, loading and failing. What follows a press (a question, a refusal, the rate limit) is the route
 // tests' (supporters-routes.dom.test.tsx).
+// More of the supporters listed than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { FakeSupporterOptions } from "@my/e2e/fake";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
+import { manySupporters } from "./pages.samples";
 
 /** The program with its two plans, the tips, and the list shown to everyone, unless a story says otherwise. */
 const all: FakeSupporterOptions = { tips: {}, list: "everyone" };
@@ -84,6 +86,10 @@ export const PageError: Story = { parameters: at(page, all, { state: "error" }) 
 /** Nobody chose to be listed. */
 export const PageEmpty: Story = { parameters: at(page, all, { state: "empty" }) };
 export const PageLong: Story = { parameters: at(page, all, { state: "long" }) };
+/** More listed supporters than a page holds: Show more under the first twenty. */
+export const PageMany: Story = { parameters: screen({ at: page, server: manySupporters }) };
+/** The same after Show more: the rest under the first twenty, and no Show more. */
+export const PageManyMore: Story = { parameters: screen({ at: page, server: manySupporters, more: true }) };
 
 // ---- The settings' Supporter -------------------------------------------------------------------------------------------
 

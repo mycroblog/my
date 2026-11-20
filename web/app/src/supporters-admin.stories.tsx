@@ -77,9 +77,9 @@ export const PlanMissing: Story = { parameters: at("/admin/supporters/plans/none
 export const Subscriptions: Story = { parameters: at("/admin/supporters/subscriptions") };
 /** The subscriptions whose payment failed. */
 export const SubscriptionsFiltered: Story = { parameters: at("/admin/supporters/subscriptions?state=past_due") };
-/** More subscriptions than a page holds: Show more. */
+/** More subscriptions than a page holds, on the second page: Previous and Next, and which page it is. */
 export const SubscriptionsMany: Story = {
-  parameters: at("/admin/supporters/subscriptions", { subscriptions: "many" }),
+  parameters: at("/admin/supporters/subscriptions", { subscriptions: "many" }, { next: true }),
 };
 export const SubscriptionsNone: Story = {
   parameters: at("/admin/supporters/subscriptions", { subscriptions: "none" }),

@@ -204,11 +204,13 @@ function respond(answer: AnyAnswer, request: Request): Response {
 
 /**
  * What answers a request with the handler of its operation among `handlers`; a request of none throws an
- * UnimplementedError that names it, after `refused` was told.
+ * UnimplementedError that names it, after `refused` was told. A list of the staff's (under /admin) that names no
+ * `limit` is paged by `staffPage` items where given, in place of the server's 20.
  */
 export function createRouter(
   handlers: Handlers,
   refused: (error: UnimplementedError) => void,
+  staffPage?: number,
 ): (request: Request) => Promise<Response> {
   const find = createMatcher(Object.keys(handlers) as Route[]);
   return async (request) => {
@@ -229,7 +231,13 @@ export function createRouter(
     }) => AnyAnswer | Promise<AnyAnswer>;
     const answer = await handler({
       params: found.params,
-      query: { get: (name) => url.searchParams.get(name), all: (name) => url.searchParams.getAll(name) },
+      query: {
+        get: (name) =>
+          name === "limit" && staffPage !== undefined && request.method === "GET" && path.startsWith("/admin/")
+            ? (url.searchParams.get(name) ?? String(staffPage))
+            : url.searchParams.get(name),
+        all: (name) => url.searchParams.getAll(name),
+      },
       body: await jsonOf(request),
       request,
     });

@@ -859,14 +859,6 @@
     "defaultMessage": "This list could not be loaded.",
     "description": "In place of a list of the settings' page Relationships when it could not be read (the network, the server); Try again follows it (settings.retry)."
   },
-  "settings.relationships.failed_more": {
-    "defaultMessage": "The rest of this list could not be loaded.",
-    "description": "Under a list of the settings' page Relationships, on the page that holds the whole list, when its next accounts could not be read; Try again follows it (settings.retry)."
-  },
-  "settings.relationships.more": {
-    "defaultMessage": "Show more",
-    "description": "The button under a list on the page that holds the whole of one list of Relationships (blocked accounts, muted accounts…), which loads the next ones."
-  },
   "settings.relationships.all": {
     "defaultMessage": "{list, select, blocked {See all blocked accounts} muted {See all muted accounts} servers {See all muted servers} other {See all followed hashtags}}",
     "description": "The button under the first few rows of a list on the settings' page Relationships, where the list has more, which opens the page that holds the whole list. list is as in settings.relationships.list."
@@ -1202,14 +1194,6 @@
   "settings.account.actions.past.empty": {
     "defaultMessage": "No past actions. An action that ended or was lifted stays listed here, with your appeal and its result.",
     "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
-  },
-  "settings.account.actions.more": {
-    "defaultMessage": "Show more",
-    "description": "The button under the list Past actions on the settings page Account status, which loads the next, older actions."
-  },
-  "settings.account.actions.failed_more": {
-    "defaultMessage": "More past actions could not be loaded.",
-    "description": "Under the list Past actions on the settings page Account status when its next, older actions could not be read; Try again follows it (settings.retry)."
   },
   "settings.account.action.title": {
     "defaultMessage": "Moderation action",
@@ -3311,14 +3295,6 @@
     "defaultMessage": "{max, plural, =0 {This server does not let users create invites now.} other {You have as many usable invites as allowed (#). Revoke one, or wait until one expires or is used up.}}",
     "description": "A sentence in the section Your invites, in place of the button Create invite, and on the page Create invite in the form's place, when the reader has as many usable invites as the server allows. max is that number; 0 means the server's administrators let no user create invites for now. The same words as the server's refusal (errors.invites.too_many), with the number."
   },
-  "settings.invites.more": {
-    "defaultMessage": "Show more",
-    "description": "The button under the list Your invites that shows the next, older invites."
-  },
-  "settings.invites.failed_more": {
-    "defaultMessage": "The rest of this list could not be loaded.",
-    "description": "Under the list Your invites on the settings' page Invites, when its next, older invites could not be read after Show more (the network, the server); the button under it then reads Try again (settings.retry) and asks for them again."
-  },
   "settings.invites.cannot": {
     "defaultMessage": "You cannot create invites",
     "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
@@ -3422,10 +3398,6 @@
   "settings.voice.ended_at": {
     "defaultMessage": "Ended {date}",
     "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it ended, its day and hour."
-  },
-  "settings.voice.failed_more": {
-    "defaultMessage": "More rooms could not be loaded.",
-    "description": "Under the rooms the reader hosted, in the settings, when more could not be loaded, beside a button to try again."
   },
   "settings.events.loading": {
     "defaultMessage": "Loading your reminders…",

@@ -7,9 +7,9 @@
 
 import { EventListLine, eventNewPath } from "@my/app-components";
 import { eventsQuery, useEvents, useMayCreateEvents, type AppData } from "@my/app-data";
-import { FeedNotice, FrameFoot, LinkButton, RowItem, RowList, Stack } from "@my/design-system";
+import { FeedNotice, FrameFoot, LinkButton, RowItem, RowList, ShowMore, Stack, useAddedFocus } from "@my/design-system";
 import type { ReactNode } from "react";
-import { MoreOf, Retry, useEventStrings, type T } from "./parts";
+import { Retry, useEventStrings, type T } from "./parts";
 
 /** What the list's loader waits for: its first page, from the cache unless a write marked it stale. */
 export async function loadEvents(data: AppData): Promise<void> {
@@ -40,6 +40,7 @@ export function EventsScreen(): ReactNode {
 /** The events, or what stands in their place: that they load, failed, or are none. */
 function Events({ t }: { t: T }): ReactNode {
   const list = useEvents();
+  const added = useAddedFocus(list.items.length);
   if (list.status === "pending") return <FeedNotice>{t("events.loading")}</FeedNotice>;
   if (list.items.length === 0)
     return list.status === "error" ? (
@@ -53,13 +54,18 @@ function Events({ t }: { t: T }): ReactNode {
   return (
     <Stack gap="entry-room">
       <RowList label={t("events.list")}>
-        {list.items.map((event) => (
-          <RowItem key={event.id}>
+        {list.items.map((event, i) => (
+          <RowItem key={event.id} itemRef={added.item(i)}>
             <EventListLine event={event} now={now} />
           </RowItem>
         ))}
       </RowList>
-      <MoreOf list={list} t={t} />
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
     </Stack>
   );
 }

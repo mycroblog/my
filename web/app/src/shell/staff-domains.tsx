@@ -137,7 +137,6 @@ export function DomainListRoute({ id }: { id: string }) {
       <DomainListScreen
         key={id}
         id={id}
-        {...address}
         onBack={() => {
           address.go(domainListsPath);
         }}

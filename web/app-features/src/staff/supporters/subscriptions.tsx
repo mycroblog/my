@@ -22,6 +22,7 @@ import {
   type SubscriptionState,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   ConfirmDialog,
@@ -30,7 +31,6 @@ import {
   FilterBar,
   FilterFacet,
   ModalPresence,
-  MoreRecords,
   RecordTable,
   Row,
   ScreenStack,
@@ -46,7 +46,18 @@ import {
 import { useState, type ReactNode } from "react";
 import { staffHref, type StaffSearch, type StaffUnderProps } from "../entries";
 import { moneyText } from "../../finance-totals";
-import { ReadNotice, Section, useMoment, useMomentDay, useStaffStrings, useSaid, type T } from "../parts";
+import {
+  cursorOf,
+  filtered,
+  useAddressPages,
+  ReadNotice,
+  Section,
+  useMoment,
+  useMomentDay,
+  useStaffStrings,
+  useSaid,
+  type T,
+} from "../parts";
 import { Irreversible } from "../settings/parts";
 import { stateWords, subscriberOf, subscriptionMark, supportersPaths } from "./parts";
 
@@ -59,11 +70,6 @@ export function subscriptionsOf(search: StaffSearch): SubscriptionQuery {
   };
 }
 
-const searchOf = (q: SubscriptionQuery): StaffSearch => ({
-  ...(q.plan === undefined ? {} : { plan: q.plan }),
-  ...(q.state === undefined ? {} : { state: q.state }),
-});
-
 /** A subscription's plan and period in words. */
 const termsOf = (t: T, s: AdminSubscription) =>
   t("staff_supporters.subscription.terms", { plan: s.plan_name, interval: s.interval });
@@ -72,10 +78,11 @@ type Column = "plan" | "ends" | "state";
 
 /** The subscriptions, filtered by plan and state, a page at a time. */
 export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const moment = useMomentDay();
   const q = subscriptionsOf(search);
-  const list = useAdminSubscriptions(q);
+  const list = useAdminSubscriptions(q, pages.cursor);
   const plans = useAdminPlans().value ?? [];
   const planValues: FilterValue[] = plans.map((p) => ({ id: p.id, label: p.name, icon: "funding" }));
   const stateValues: FilterValue[] = subscriptionStates.map((s) => ({
@@ -88,7 +95,7 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
           ? "stateExpired"
           : "statePending",
   }));
-  const filtered = q.plan !== undefined || q.state !== undefined;
+  const narrowed = q.plan !== undefined || q.state !== undefined;
   const head = (
     <>
       <ScreenTitle
@@ -106,7 +113,7 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
       </ScreenTitle>
       <FilterBar
         label={t("staff_supporters.subscriptions.filters")}
-        applied={filtered}
+        applied={narrowed}
         onClear={() => {
           onSearch({});
         }}
@@ -117,7 +124,7 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
           values={planValues}
           chosen={q.plan}
           onChoose={(plan) => {
-            onSearch(searchOf({ ...q, plan }));
+            onSearch(filtered(search, { plan }));
           }}
         />
         <FilterFacet
@@ -126,13 +133,13 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
           values={stateValues}
           chosen={q.state}
           onChoose={(state) => {
-            onSearch(searchOf({ ...q, state: subscriptionStates.find((s) => s === state) }));
+            onSearch(filtered(search, { state: subscriptionStates.find((s) => s === state) }));
           }}
         />
       </FilterBar>
     </>
   );
-  if (list.status !== "success" && list.items.length === 0)
+  if (list.status !== "success" && !list.stale)
     return (
       <ScreenStack>
         {head}
@@ -171,22 +178,22 @@ export function SubscriptionListScreen({ search, onSearch, go }: StaffUnderProps
         head={{ label: t("staff_supporters.subscriptions.column.subscriber") }}
         columns={columns}
         rows={rows}
+        busy={list.stale}
         even
         empty={
           <FeedNotice>
-            {t(filtered ? "staff_supporters.subscriptions.empty.filtered" : "staff_supporters.subscriptions.empty")}
+            {t(narrowed ? "staff_supporters.subscriptions.empty.filtered" : "staff_supporters.subscriptions.empty")}
           </FeedNotice>
         }
       />
-      {list.failedNextPage ? <FeedNotice alert>{t("staff_supporters.subscriptions.more_failed")}</FeedNotice> : null}
-      {list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />}
+      <Pager {...pages.pager(list.next)} />
     </ScreenStack>
   );
 }
 
 /** Reads the subscriptions of an address's query and the plans its filter names, for the route's loader. */
 export async function loadSubscriptionList(data: AppData, search: StaffSearch): Promise<void> {
-  await Promise.all([loadAdminSubscriptions(data, subscriptionsOf(search)), loadAdminPlans(data)]);
+  await Promise.all([loadAdminSubscriptions(data, subscriptionsOf(search), cursorOf(search)), loadAdminPlans(data)]);
 }
 
 /** Reads the subscription of `id`, for the route's loader. */

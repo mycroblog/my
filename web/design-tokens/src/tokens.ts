@@ -240,8 +240,11 @@ export const transition = {
   rise: 3,
 } as const;
 
-/** The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. */
-export const spinner = { size: 1.125, stroke: 0.125, trackShare: 0.25 } as const;
+/**
+ * The spinner, relative to the label's size, in em: its diameter and stroke, and the share its track shows. A browser
+ * draws a border a whole pixel wide, down from what it is given: the stroke is 2 px at a label's size, never 1.
+ */
+export const spinner = { size: 1.125, stroke: 0.16, trackShare: 0.25 } as const;
 
 /**
  * The words a version of a post added in its edit history: the share of the text's color in the tint behind them, a

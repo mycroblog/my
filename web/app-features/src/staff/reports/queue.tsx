@@ -17,6 +17,7 @@ import {
   type ReportQueueQuery,
 } from "@my/app-data";
 import {
+  Pager,
   FeedNotice,
   FilterBar,
   FilterFacet,
@@ -33,19 +34,19 @@ import {
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
-import { Pages, ReadNotice, useStaffStrings, type T } from "../parts";
+import { cursorOf, useAddressPages, ReadNotice, useStaffStrings, type T } from "../parts";
 
 type Category = (typeof reportCategories)[number];
 
 /** What the queue shows at an address's query: the open reports, the newest first, unless it says otherwise. */
 export function queueOf(search: StaffSearch): ReportQueueQuery {
-  const { state, category, assignee, order, cursor } = search;
+  const { state, category, assignee, order } = search;
   return {
     state: state === "any" ? undefined : state === "resolved" ? "resolved" : "open",
     category: reportCategories.find((c) => c === category),
     assignee: assignee === "me" || assignee === "none" ? assignee : undefined,
     order: order === "oldest" ? "oldest" : "newest",
-    cursor: cursor === undefined || cursor === "" ? undefined : cursor,
+    cursor: cursorOf(search),
   };
 }
 
@@ -232,6 +233,7 @@ function QueueFilters({ q, onChange }: { q: ReportQueueQuery; onChange: (q: Repo
 
 /** The queue of reports: its filters, the page of reports, and the pages. */
 export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const q = queueOf(search);
   const page = useReportQueue(q);
@@ -277,7 +279,7 @@ export function ReportQueueScreen({ search, onSearch }: StaffAddress): ReactNode
           )
         }
       />
-      <Pages address={{ search, onSearch }} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

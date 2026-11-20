@@ -46,13 +46,16 @@ import {
   RowItem,
   RowList,
   SettingsResult,
+  ShowMore,
   Stack,
   TextLink,
+  useAddedFocus,
   useLocale,
+  type AddedFocus,
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { barSaid, barSentence, sentences, useMoney } from "../supporter-words";
-import { MoreOf, Retry, useDay, useSupporterStrings, type T } from "./parts";
+import { Retry, useDay, useSupporterStrings, type T } from "./parts";
 import { ChargeConfirm, PlanChoice } from "./plans";
 
 /** What the page's loader waits for: who may subscribe and tip, the plans, and the list's first page. */
@@ -399,6 +402,7 @@ function Tip({ signedIn, signInHref, t }: { signedIn: boolean; signInHref: strin
 /** The supporters who chose to be listed, under the plans they are members of, or that a visitor must sign in. */
 function Supporters({ visible, signInHref, t }: { visible: boolean; signInHref: string | undefined; t: T }) {
   const list = useSupporters(undefined, visible);
+  const added = useAddedFocus(list.items.length);
   let body: ReactNode;
   if (!visible)
     body = (
@@ -423,9 +427,19 @@ function Supporters({ visible, signInHref, t }: { visible: boolean; signInHref: 
     body = (
       <Stack gap="entry-room">
         {(list.plans ?? []).map((plan) => (
-          <PlanGroup key={plan.id} plan={plan} accounts={list.items.filter((e) => e.plan_id === plan.id)} />
+          <PlanGroup
+            key={plan.id}
+            plan={plan}
+            accounts={list.items.filter((e) => e.plan_id === plan.id)}
+            item={(entry) => added.item(list.items.indexOf(entry))}
+          />
         ))}
-        <MoreOf list={list} t={t} />
+        <ShowMore
+          more={list.hasNextPage}
+          busy={list.isFetchingNextPage}
+          failed={list.failedNextPage}
+          onPress={added.press(list.fetchNextPage)}
+        />
       </Stack>
     );
   return (
@@ -440,12 +454,15 @@ function Supporters({ visible, signInHref, t }: { visible: boolean; signInHref: 
 }
 
 /** The listed supporters of one plan, under its name; nothing for none. */
-function PlanGroup({
+function PlanGroup<A extends { readonly account: Parameters<typeof AccountLine>[0]["account"] }>({
   plan,
   accounts,
+  item,
 }: {
   plan: SupporterListPlan;
-  accounts: readonly { readonly account: Parameters<typeof AccountLine>[0]["account"] }[];
+  accounts: readonly A[];
+  /** The ref of a supporter's row, for the list that grows under Show more. */
+  item: (entry: A) => ReturnType<AddedFocus["item"]>;
 }) {
   if (accounts.length === 0) return null;
   return (
@@ -453,7 +470,7 @@ function PlanGroup({
       <GroupHeading>{plan.name}</GroupHeading>
       <RowList label={plan.name}>
         {accounts.map((a) => (
-          <RowItem key={a.account.id}>
+          <RowItem key={a.account.id} itemRef={item(a)}>
             <AccountLine account={a.account} />
           </RowItem>
         ))}

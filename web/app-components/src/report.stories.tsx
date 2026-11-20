@@ -4,7 +4,7 @@
 // app opens it: from a post's menu (that post chosen, the account's other posts to add), from a profile's menu (none
 // chosen), from a notification's (a local account, so nothing to forward), from a voice chat room's and an event's
 // menu (no posts, never forwarded); a violation with the rules it breaks, a remote account's report sent to its server
-// too, the account's posts loading, failing and none, more posts on their way; sending, refused by the server, and a
+// too, the account's posts loading, failing and none, more posts on their way, failing, and read; sending, refused by the server, and a
 // comment it refused; and once sent, with mute and block, one muted and one that failed, and for an account the reader
 // mutes already. Each answers the reader's choices as the feature does, and sends nothing.
 
@@ -31,6 +31,12 @@ const byId = (id: string) => {
 
 /** The reported account's posts, newest first: one behind a content warning among them. */
 const accountPosts: ReportPost[] = ["lena-quiet", "takuya-cw", "ravi-two", "mika-long", "hana-four"].map(byId);
+/** Older posts of the account, as Show more adds them. */
+const olderPosts: ReportPost[] = ["ravi-two", "mika-long", "hana-four"].map((id) => {
+  const post = posts.find((p) => p.id === id);
+  if (post === undefined) throw new Error(`no sample post ${id}`);
+  return statusOf(post, `${id}-older`);
+});
 const [first] = accountPosts;
 if (first === undefined) throw new Error("no sample posts");
 
@@ -49,6 +55,7 @@ const read = (over: Partial<ReportPosts> = {}): ReportPosts => ({
   status: "success",
   more: true,
   loadingMore: false,
+  failedMore: false,
   onMore: () => undefined,
   onRetry: () => undefined,
   ...over,
@@ -152,6 +159,24 @@ export const PostsNone: Story = {
 /** Older posts on their way. */
 export const PostsMore: Story = {
   args: { target: fromPost, posts: read({ loadingMore: true }), draft: reportDraft(first.id), phase: "writing" },
+};
+/** After Show more: the older posts under those read first, and no Show more once the account has no more. */
+export const PostsOlder: Story = {
+  args: {
+    target: fromPost,
+    posts: read({ items: [...accountPosts, ...olderPosts], more: false }),
+    draft: reportDraft(first.id),
+    phase: "writing",
+  },
+};
+/** Older posts could not be read: those read stay, Show more named Try again under the sentence that says so. */
+export const PostsMoreFailed: Story = {
+  args: {
+    target: fromPost,
+    posts: read({ status: "error", failedMore: true }),
+    draft: reportDraft(first.id),
+    phase: "writing",
+  },
 };
 /** The report on its way: Send spins and the choices hold. */
 export const Sending: Story = {

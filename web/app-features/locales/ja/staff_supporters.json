@@ -127,10 +127,6 @@
     "defaultMessage": "この条件に合う加入はありません。",
     "description": "In the place of the subscriptions when the filters match none; Clear filters is above."
   },
-  "staff_supporters.subscriptions.more_failed": {
-    "defaultMessage": "続きの加入を読み込めませんでした。もう一度試してください。",
-    "description": "When the next page of subscriptions failed; Show more follows."
-  },
   "staff_supporters.subscriptions.column.subscriber": {
     "defaultMessage": "加入者",
     "description": "Header of the column of the subscribers' handles."

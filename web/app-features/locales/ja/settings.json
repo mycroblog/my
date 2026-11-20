@@ -859,14 +859,6 @@
     "defaultMessage": "この一覧を読み込めませんでした。",
     "description": "In place of a list of the settings' page Relationships when it could not be read (the network, the server); Try again follows it (settings.retry)."
   },
-  "settings.relationships.failed_more": {
-    "defaultMessage": "この一覧の続きを読み込めませんでした。",
-    "description": "Under a list of the settings' page Relationships, on the page that holds the whole list, when its next accounts could not be read; Try again follows it (settings.retry)."
-  },
-  "settings.relationships.more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under a list on the page that holds the whole of one list of Relationships (blocked accounts, muted accounts…), which loads the next ones."
-  },
   "settings.relationships.all": {
     "defaultMessage": "{list, select, blocked {ブロックしたアカウントをすべて表示} muted {ミュートしたアカウントをすべて表示} servers {ミュートしたサーバーをすべて表示} other {フォロー中のハッシュタグをすべて表示}}",
     "description": "The button under the first few rows of a list on the settings' page Relationships, where the list has more, which opens the page that holds the whole list. list is as in settings.relationships.list."
@@ -1202,14 +1194,6 @@
   "settings.account.actions.past.empty": {
     "defaultMessage": "過去の処分はありません。終了した処分や解除された処分は、異議申し立てとその結果とともにここに残ります。",
     "description": "In place of the list Past actions on the settings page Account status while no moderators' action on the reader's account has ended or been lifted."
-  },
-  "settings.account.actions.more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under the list Past actions on the settings page Account status, which loads the next, older actions."
-  },
-  "settings.account.actions.failed_more": {
-    "defaultMessage": "過去の処分の続きを読み込めませんでした。",
-    "description": "Under the list Past actions on the settings page Account status when its next, older actions could not be read; Try again follows it (settings.retry)."
   },
   "settings.account.action.title": {
     "defaultMessage": "モデレーションの処分",
@@ -3311,14 +3295,6 @@
     "defaultMessage": "{max, plural, =0 {このサーバーでは、いま利用者が招待を作れません。} other {使える招待の数の上限 (# 件) に達しています。どれかを取り消すか、期限切れか使い切りになるまで待ってください。}}",
     "description": "A sentence in the section Your invites, in place of the button Create invite, and on the page Create invite in the form's place, when the reader has as many usable invites as the server allows. max is that number; 0 means the server's administrators let no user create invites for now. The same words as the server's refusal (errors.invites.too_many), with the number."
   },
-  "settings.invites.more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under the list Your invites that shows the next, older invites."
-  },
-  "settings.invites.failed_more": {
-    "defaultMessage": "この一覧の続きを読み込めませんでした。",
-    "description": "Under the list Your invites on the settings' page Invites, when its next, older invites could not be read after Show more (the network, the server); the button under it then reads Try again (settings.retry) and asks for them again."
-  },
   "settings.invites.cannot": {
     "defaultMessage": "招待を作れません",
     "description": "The title of the summary at the top of the Invites page, and of the page Create invite, for a reader who may not create invites now; settings.invites.cannot.reason under it says why. The words of the server's refusal (errors.invites.not_allowed), without its full stop: it is a heading."
@@ -3422,10 +3398,6 @@
   "settings.voice.ended_at": {
     "defaultMessage": "{date} に終了",
     "description": "A fact of a voice chat room the reader hosted, in the settings: date is when it ended, its day and hour."
-  },
-  "settings.voice.failed_more": {
-    "defaultMessage": "続きのルームを読み込めませんでした。",
-    "description": "Under the rooms the reader hosted, in the settings, when more could not be loaded, beside a button to try again."
   },
   "settings.events.loading": {
     "defaultMessage": "リマインダーを読み込んでいます…",

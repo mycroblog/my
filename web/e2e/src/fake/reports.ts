@@ -18,8 +18,21 @@ type Report = Schema<"AdminReportDetail">;
 type Account = Schema<"Account">;
 type Status = Schema<"Status">;
 
-/** What the queue holds when the fake starts: the fake's reports (`queue`, by default), or none. */
-export type FakeReportOptions = "queue" | "none";
+/**
+ * What the queue holds when the fake starts: the fake's reports (`queue`, by default), or none; `crowded`, kai reported
+ * 24 times more as well, a day apart before them, so that the queue and kai's reports run past a page.
+ */
+export type FakeReportOptions = "queue" | "none" | "crowded";
+
+/** The reports of `crowded`: kai's replies reported as spam by sam and layla in turn, a day apart. */
+const crowd: readonly Plan[] = Array.from({ length: 24 }, (_, i) => ({
+  key: `crowd-${String(i + 1)}`,
+  reporter: i % 2 === 0 ? "sam" : "layla",
+  target: "kai",
+  category: "spam" as const,
+  comment: `Another reply with the same link, number ${String(i + 1)}.`,
+  minutesAgo: (i + 2) * 24 * 60,
+}));
 
 /** What the reports' handlers take from the fake. */
 export type ReportContext = {
@@ -420,9 +433,11 @@ export function reportHandlers(c: ReportContext): { handlers: Handlers; reports:
     peopleOf(plan).every(c.known) &&
     (plan.posts ?? []).every(c.knownPost) &&
     (plan.event === undefined || c.eventId(plan.event) !== "none");
-  const reports: Report[] = (c.options === "none" ? [] : plans.filter(whole).map(reportOf)).toSorted((a, b) =>
-    b.filed_at.localeCompare(a.filed_at),
-  );
+  const planned = c.options === "none" ? [] : c.options === "crowded" ? [...plans, ...crowd] : plans;
+  const reports: Report[] = planned
+    .filter(whole)
+    .map(reportOf)
+    .toSorted((a, b) => b.filed_at.localeCompare(a.filed_at));
   for (const r of reports)
     r.target_history.reports_count = reports.filter(
       (o) => o.target_account_id === r.target_account_id && o.id !== r.id,

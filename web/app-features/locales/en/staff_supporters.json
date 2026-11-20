@@ -127,10 +127,6 @@
     "defaultMessage": "No subscription matches these filters.",
     "description": "In the place of the subscriptions when the filters match none; Clear filters is above."
   },
-  "staff_supporters.subscriptions.more_failed": {
-    "defaultMessage": "More subscriptions could not be loaded. Try again.",
-    "description": "When the next page of subscriptions failed; Show more follows."
-  },
   "staff_supporters.subscriptions.column.subscriber": {
     "defaultMessage": "Subscriber",
     "description": "Header of the column of the subscribers' handles."

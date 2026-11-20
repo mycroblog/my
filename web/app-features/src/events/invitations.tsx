@@ -47,12 +47,14 @@ import {
   ScreenStack,
   ScreenTitle,
   SearchField,
+  ShowMore,
   Stack,
   StateText,
+  useAddedFocus,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
 import { useGone } from "./manage";
-import { MoreOf, Retry, useEventStrings, type T } from "./parts";
+import { Retry, useEventStrings, type T } from "./parts";
 
 /** Whether `account` is of this server: only its people are invited and named. */
 const isLocal = (account: Account) => !account.acct.includes("@");
@@ -292,6 +294,7 @@ function Invited({
   t: T;
 }) {
   const list = useEventInvitations(event.id);
+  const added = useAddedFocus(list.items.length);
   const heading = t("events.invitations.list");
   return (
     <Stack gap="entry-line" id={listId} tabIndex={-1} role="group" aria-label={heading}>
@@ -309,8 +312,8 @@ function Invited({
       ) : (
         <Stack gap="entry-room">
           <RowList label={heading}>
-            {list.items.map((invitation) => (
-              <RowItem key={invitation.id}>
+            {list.items.map((invitation, i) => (
+              <RowItem key={invitation.id} itemRef={added.item(i)}>
                 <AccountLine
                   account={invitation.account}
                   end={
@@ -327,7 +330,12 @@ function Invited({
               </RowItem>
             ))}
           </RowList>
-          <MoreOf list={list} t={t} />
+          <ShowMore
+            more={list.hasNextPage}
+            busy={list.isFetchingNextPage}
+            failed={list.failedNextPage}
+            onPress={added.press(list.fetchNextPage)}
+          />
         </Stack>
       )}
     </Stack>

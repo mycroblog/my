@@ -18,11 +18,11 @@ import {
   type AppData,
 } from "@my/app-data";
 import {
+  Pager,
   FeedNotice,
   FilterBar,
   FilterFacet,
   LinkButton,
-  RecordPages,
   RecordTable,
   ScreenStack,
   ScreenTitle,
@@ -35,7 +35,7 @@ import {
 } from "@my/design-system";
 import { useState, type ReactNode } from "react";
 import type { StaffEntryProps, StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
+import { cursorOf, filtered, useAddressPages, ReadNotice, useMoment, useStaffStrings, type T } from "../parts";
 
 /** The address of the announcements. */
 export const adminAnnouncementsPath = "/admin/announcements";
@@ -46,29 +46,12 @@ export const adminAnnouncementPath = (id: string): string => `${adminAnnouncemen
 
 /** What the list shows at an address's query: every announcement unless it names a state. */
 function announcementQueryOf(search: StaffSearch): AdminAnnouncementQuery {
-  const { state, cursor } = search;
-  return {
-    state: announcementFilters.find((f) => f === state),
-    cursor: cursor === undefined || cursor === "" ? undefined : cursor,
-  };
+  return { state: announcementFilters.find((f) => f === search["state"]), cursor: cursorOf(search) };
 }
 
 /** Reads what the list shows at `search`, for the route's loader. */
 export const loadAnnouncementsScreen = (data: AppData, search: StaffSearch): Promise<void> =>
   loadAdminAnnouncements(data, announcementQueryOf(search));
-
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
-
-/** The query of the list's address for `q`, at the page after the `trail` of pages before it. */
-function searchOf(q: AdminAnnouncementQuery, trail: readonly string[] = []): StaffSearch {
-  return {
-    ...(q.state === undefined ? {} : { state: q.state }),
-    ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
-    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
-  };
-}
 
 /** The mark of each standing of an announcement, and its glyph in the filter. */
 const standingLook: Record<AdminAnnouncementFilter, { readonly state: RecordState; readonly icon: IconName }> = {
@@ -106,16 +89,13 @@ type Column = "window" | "state";
 
 /** The announcements: the filter, a page of them, and the pages. */
 export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const windowWords = useWindowWords();
   // Where each stands is told at the moment the screen opened.
   const [now] = useState(() => Date.now());
   const q = announcementQueryOf(search);
-  const trail = trailOf(search);
   const page = useAdminAnnouncements(q);
-  const go = (next: AdminAnnouncementQuery, nextTrail: readonly string[] = []) => {
-    onSearch(searchOf(next, nextTrail));
-  };
   const values: FilterValue[] = announcementFilters.map((f) => ({
     id: f,
     label: standingWords(t, f),
@@ -128,7 +108,7 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
         label={t("staff_announcements.filters")}
         applied={q.state !== undefined}
         onClear={() => {
-          go({});
+          onSearch(filtered(search, { state: undefined }));
         }}
       >
         <FilterFacet
@@ -137,7 +117,7 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
           values={values}
           chosen={q.state}
           onChoose={(state) => {
-            go({ state: announcementFilters.find((f) => f === state) });
+            onSearch(filtered(search, { state: announcementFilters.find((f) => f === state) }));
           }}
         />
       </FilterBar>
@@ -164,7 +144,6 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
       state: <StandingMark standing={announcementStanding(a, now)} />,
     },
   }));
-  const previous = trail.at(-1);
   return (
     <ScreenStack busy={page.stale}>
       {head}
@@ -195,26 +174,7 @@ export function AdminAnnouncementsScreen({ search, onSearch }: StaffEntryProps):
           }
         />
       </SettingsSection>
-      <RecordPages
-        previous={
-          previous === undefined
-            ? undefined
-            : {
-                onPress: () => {
-                  go({ ...q, cursor: previous === "" ? undefined : previous }, trail.slice(0, -1));
-                },
-              }
-        }
-        next={
-          page.next === undefined
-            ? undefined
-            : {
-                onPress: () => {
-                  go({ ...q, cursor: page.next }, [...trail, q.cursor ?? ""]);
-                },
-              }
-        }
-      />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

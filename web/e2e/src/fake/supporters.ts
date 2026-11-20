@@ -52,6 +52,8 @@ export type FakeSupporterOptions = {
   list?: Audience;
   /** The reader chose to be on the list (as a member of a plan). */
   listed?: boolean;
+  /** More people of the seed on the Supporter plan, listed, after the others: more than a page of the list. */
+  more?: readonly string[];
 };
 
 /** What a test does with the fake's supporters. */
@@ -89,7 +91,7 @@ export type SupporterContext = {
 const yen = (amount: number): Money => ({ amount: String(amount), currency: "JPY" });
 
 /** The people of the seed on the plans, besides the reader: their plan, whether they listed, and how long ago. */
-const members: readonly { by: string; plan: "supporter" | "patron"; listedDaysAgo?: number }[] = [
+const seededMembers: readonly { by: string; plan: "supporter" | "patron"; listedDaysAgo?: number }[] = [
   { by: "hana", plan: "supporter", listedDaysAgo: 10 },
   { by: "sam", plan: "supporter", listedDaysAgo: 3 },
   { by: "mio", plan: "patron", listedDaysAgo: 5 },
@@ -103,6 +105,10 @@ export function supporterHandlers(c: SupporterContext): {
   instance: Pick<Schema<"Instance">, "supporters_enabled" | "tips_enabled" | "supporter_list_visibility">;
 } {
   const o: FakeSupporterOptions = c.options ?? {};
+  const members = [
+    ...seededMembers,
+    ...(o.more ?? []).map((by, i) => ({ by, plan: "supporter" as const, listedDaysAgo: 20 + i })),
+  ];
   const program = c.options !== undefined && o.program !== false;
   const tipsOn = o.tips !== undefined;
   const list: Audience = o.list ?? "off";

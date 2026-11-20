@@ -56,6 +56,8 @@ const findings = {
   "restrict(heading-size)": (/** @type {string} */ message) => `heading ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(settings-count)": (/** @type {string} */ message) => `count ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(zone-dates)": (/** @type {string} */ message) => `date ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(pager-parts)": (/** @type {string} */ message) => `pager ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "restrict(page-trail)": () => "trail",
 };
 
 /** A finding of a rule of the styles: what a declaration wrote, or a name of layout-parts.js. */
@@ -101,7 +103,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date) \S+)/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|trail(?= |$))/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -124,13 +126,27 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/design-system/fixtures/viewport.tsx");
   expect(fixtures).toContain("web/design-system/fixtures/dates.tsx");
   expect(fixtures).toContain("web/devtools/fixtures/restrictions/settings.tsx");
+  expect(fixtures).toContain("web/app-features/fixtures/pagers.tsx");
+  expect(fixtures).toContain("web/app-features/fixtures/staff/trail.tsx");
   const want = await expected();
   expect(want.some((line) => line.includes(" e2e-flaky "))).toBe(true);
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
   expect(want.some((line) => line.includes(" layers @my/"))).toBe(true);
   expect(want.some((line) => line.includes(" platform "))).toBe(true);
   expect(want.some((line) => line.includes(" e2e "))).toBe(true);
-  for (const kind of ["color", "layout", "layout-part", "viewport", "switch", "section", "heading", "count", "date"])
+  expect(want.some((line) => line.endsWith(" trail"))).toBe(true);
+  for (const kind of [
+    "color",
+    "layout",
+    "layout-part",
+    "viewport",
+    "switch",
+    "section",
+    "heading",
+    "count",
+    "date",
+    "pager",
+  ])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);
 }, 60_000);

@@ -36,6 +36,10 @@ export const AdminRootNone: Story = { parameters: at("/admin") };
 
 /** The open reports, the newest first: each its account, who filed it, its category, when, and who handles it. */
 export const Queue: Story = { parameters: at("/moderation/reports") };
+/** The queue's second page, two reports a page: Previous and Next, and which page it is; the address keeps it. */
+export const QueueSecondPage: Story = {
+  parameters: at("/moderation/reports", { server: { staffPage: 2 }, next: true }),
+};
 /** No report is open: the queue says so, and what comes there. */
 export const QueueEmpty: Story = { parameters: at("/moderation/reports", { server: { reports: "none" } }) };
 /** Every report the reader handles, open or resolved: the filters applied, and Clear filters. */

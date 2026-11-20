@@ -28,6 +28,7 @@ import {
   type ModeratedHookAppeal,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Box,
   Button,
@@ -55,7 +56,7 @@ import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { ReadNotice, Titled, useMoment, useStaffStrings, type T } from "../parts";
 import { AppealStateMark } from "./appeals";
-import { cursorOf, filtered, whoIn, Pages, refusalWords, useSaid } from "./parts";
+import { cursorOf, filtered, whoIn, useAddressPages, refusalWords, useSaid } from "./parts";
 
 /** The address of the decisions, and of their appeals. */
 const decisionsPath = "/moderation/hook-decisions";
@@ -120,6 +121,7 @@ type Column = "outcome" | "mode" | "decided" | "state";
 
 /** The decisions: the summary, the filters, the way to the appeals, the page, and the pages. */
 export function HookDecisionsScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const q = decisionQueryOf(search);
@@ -226,7 +228,7 @@ export function HookDecisionsScreen(address: StaffAddress): ReactNode {
           </FeedNotice>
         }
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }
@@ -388,10 +390,11 @@ type AppealColumn = "submitted" | "state";
 
 /** The appeals of refused posts: the filter of their state, the page, and the pages. */
 export function HookAppealsScreen({ onBack, ...address }: StaffAddress & { onBack: () => void }): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const state = hookAppealStateOf(search);
-  const page = useModeratedHookAppeals(state, cursorOf(search));
+  const page = useModeratedHookAppeals(state, pages.cursor);
   const accounts = useStaffAccounts(page.items.map((a) => a.account_id));
   const head = (
     <>
@@ -464,7 +467,7 @@ export function HookAppealsScreen({ onBack, ...address }: StaffAddress & { onBac
           </FeedNotice>
         }
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

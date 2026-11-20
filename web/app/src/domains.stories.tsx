@@ -29,6 +29,10 @@ const none = { server: { domains: "none" as const } };
 export const DomainActions: Story = { parameters: at("/moderation/domain-actions") };
 /** Every action, lifted and expired ones too. */
 export const DomainActionsAll: Story = { parameters: at("/moderation/domain-actions?active=all") };
+/** Every domain action, on its second page, two a page. */
+export const DomainActionsSecondPage: Story = {
+  parameters: at("/moderation/domain-actions?active=all", { server: { staffPage: 2 }, next: true }),
+};
 /** The actions on one domain, as a remote server's screen leads to them. */
 export const DomainActionsOfDomain: Story = {
   parameters: at("/moderation/domain-actions?domain=old.example&active=all"),
@@ -64,12 +68,23 @@ export const DomainAllowsEmpty: Story = { parameters: at("/moderation/domain-act
 
 /** The subscriptions: one automatic that failed three times in a row, one in the draft mode. */
 export const DomainLists: Story = { parameters: at("/moderation/domain-actions/subscriptions") };
+/** The subscriptions' second page, one a page. */
+export const DomainListsSecondPage: Story = {
+  parameters: at("/moderation/domain-actions/subscriptions", { server: { staffPage: 1 }, next: true }),
+};
 /** No subscription yet. */
 export const DomainListsEmpty: Story = { parameters: at("/moderation/domain-actions/subscriptions", none) };
 /** The form of a new subscription. */
 export const NewDomainList: Story = { parameters: at("/moderation/domain-actions/subscriptions/new") };
 /** A subscription in the draft mode: its three drafts (a lift first), its fetches, its settings, Stop subscribing. */
 export const DomainList: Story = { parameters: at("/moderation/domain-actions/subscriptions/{domain:list:shared}") };
+/** A subscription with Show more pressed once under its fetches, two a page. */
+export const DomainListMore: Story = {
+  parameters: at("/moderation/domain-actions/subscriptions/{domain:list:shared}", {
+    server: { staffPage: 2 },
+    more: true,
+  }),
+};
 /** An automatic subscription whose last three fetches failed, and no draft waits. */
 export const DomainListFailing: Story = {
   parameters: at("/moderation/domain-actions/subscriptions/{domain:list:failing}"),
@@ -79,6 +94,10 @@ export const DomainListMissing: Story = { parameters: at("/moderation/domain-act
 
 /** The servers deliveries failed to reach, with Open a server. */
 export const RemoteServers: Story = { parameters: at("/moderation/instances") };
+/** The remote servers' second page, one a page. */
+export const RemoteServersSecondPage: Story = {
+  parameters: at("/moderation/instances", { server: { staffPage: 1 }, next: true }),
+};
 /** The servers marked unavailable. */
 export const RemoteServersUnavailable: Story = { parameters: at("/moderation/instances?state=unavailable") };
 /** Deliveries reach every server. */
@@ -89,11 +108,22 @@ export const RemoteServersLoading: Story = { parameters: at("/moderation/instanc
  * its deliveries, one that keeps failing and one masked.
  */
 export const RemoteServer: Story = { parameters: at("/moderation/instances/dead.example") };
+/**
+ * A remote server with Show more pressed once under its availability and its deliveries, one a page: two of each, and
+ * Show more gone where the list is read to its end.
+ */
+export const RemoteServerMore: Story = {
+  parameters: at("/moderation/instances/dead.example", { server: { staffPage: 1 }, more: true }),
+};
 /** A server deliveries reach, which has never stopped. */
 export const RemoteServerAvailable: Story = { parameters: at("/moderation/instances/photos.example") };
 
 /** The audit log, newest first: one entry of every kind of operation, by the reader, another moderator, the command line, the server and another server. */
 export const AuditLog: Story = { parameters: at("/moderation/audit-log") };
+/** The audit log's second page, two entries a page: Previous and Next, and which page it is. */
+export const AuditLogSecondPage: Story = {
+  parameters: at("/moderation/audit-log", { server: { staffPage: 2 }, next: true }),
+};
 /** The operations on one domain, as an action's page and a server's screen lead to them. */
 export const AuditLogOfTarget: Story = {
   parameters: at("/moderation/audit-log?target_kind=domain&target=spam.example"),

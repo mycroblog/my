@@ -8,6 +8,7 @@
 // mio without the role has no entry, and the administrator, who registers emoji from the administration, has none
 // either. Under it: the form of a request, and the form at the limit; one of their emoji, and an address that names
 // none of theirs.
+// More requests and emoji of their own than a page holds, before and after Show more (`more`).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta, type Fake } from "./app.samples";
@@ -38,6 +39,12 @@ export const Entry: Story = {};
 export const AtTheLimit: Story = { parameters: asMio(entry, { server: { staffServer: { emoji: { limit: 2 } } } }) };
 /** No monthly limit for the reader. */
 export const NoLimit: Story = { parameters: asMio(entry, { server: { staffServer: { emoji: { limit: "none" } } } }) };
+/** More requests and emoji of their own than a page holds: Show more under the first twenty of each. */
+export const Many: Story = { parameters: asMio(entry, { server: { staffServer: { emoji: { many: 24 } } } }) };
+/** The same after Show more under each: the rest of both, and no Show more. */
+export const ManyMore: Story = {
+  parameters: asMio(entry, { server: { staffServer: { emoji: { many: 24 } } }, more: true }),
+};
 /** A reader with the role and nothing yet: sentences in the lists' place. */
 export const NothingYet: Story = {
   parameters: screen({ at: entry, viewer: "yuki", server: { staffServer: { roles: { viewer: ["artist"] } } } }),

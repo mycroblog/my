@@ -5,9 +5,8 @@
 // columns' order, a fact's name shown on a phone hidden from what is read; the column it is sorted by and its
 // direction (aria-sort), and a press on a column's name that sorts by it or turns it; select all over the rows'
 // checkboxes, how many are picked, said, and the actions waiting while none is; the open record marked; the filters
-// as a search landmark, a facet saying its value, Clear filters only while one is applied; the pages as a navigation
-// of the pages there are. How each stands at a width is its stories' (Records), and how Chromium reads the table cell
-// by cell is the catalog's (web/e2e/catalog).
+// as a search landmark, a facet saying its value, Clear filters only while one is applied. How each stands at a width
+// is its stories' (Records), and how Chromium reads the table cell by cell is the catalog's (web/e2e/catalog).
 
 import { expect, mock, test } from "bun:test";
 import { render, screen, within } from "@testing-library/react";
@@ -17,7 +16,6 @@ import {
   FilterBar,
   FilterFacet,
   FilterToggle,
-  RecordPages,
   RecordTable,
   StateMark,
   type RecordColumn,
@@ -323,28 +321,6 @@ test("the filters are a search landmark: a facet says the value applied, and Cle
   expect(onClear).toHaveBeenCalledTimes(1);
   // Clear filters goes away with what it cleared: the focus moves to the search, never to the page's start.
   expect(document.activeElement === within(search).getByRole("searchbox", { name: "Search reports" })).toBe(true);
-});
-
-test("the pages are a navigation that keeps Previous and Next in place, disabled where there is no page", () => {
-  const { rerender } = render(<RecordPages next={{ href: "/moderation/reports?after=1035" }} />);
-  const pages = screen.getByRole("navigation", { name: "Pages" });
-  expect(
-    within(pages)
-      .getAllByRole("link")
-      .map((l) => l.textContent),
-  ).toEqual(["Next"]);
-  // The first page keeps its Previous where it stands, disabled, so that the focus never falls out of the pages.
-  expect(within(pages).getByRole<HTMLButtonElement>("button", { name: "Previous" }).disabled).toBe(true);
-
-  rerender(<RecordPages previous={{ onPress: () => undefined }} next={{ onPress: () => undefined }} />);
-  expect(
-    within(screen.getByRole("navigation", { name: "Pages" }))
-      .getAllByRole("button")
-      .map((b) => b.textContent),
-  ).toEqual(["Previous", "Next"]);
-
-  rerender(<RecordPages />);
-  expect(screen.queryByRole("navigation")).toBeNull();
 });
 
 /** The checkbox of select all, the head's on a wide table. */

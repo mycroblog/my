@@ -28,6 +28,10 @@ const emoji = (key: string, more: Omit<Fake, "at"> = {}) => at(`/admin/custom-em
 
 /** Every emoji, newest first: its image, :shortcode:, category and aliases or server, and whether it is shown. */
 export const Emoji: Story = { parameters: at("/admin/custom-emojis") };
+/** The emoji's second page, two a page. */
+export const EmojiSecondPage: Story = {
+  parameters: at("/admin/custom-emojis", { server: { staffPage: 2 }, next: true }),
+};
 /** This server's emoji alone. */
 export const EmojiOfThisServer: Story = { parameters: at("/admin/custom-emojis?origin=local") };
 /** Other servers' emoji alone: each its domain. */
@@ -65,6 +69,10 @@ export const NewEmoji: Story = { parameters: at("/admin/custom-emojis/new") };
 
 /** The requests that wait: mio's two, and one of kai's, who may no longer create emoji. */
 export const Requests: Story = { parameters: at("/admin/custom-emojis/requests") };
+/** The requests' second page, two a page. */
+export const RequestsSecondPage: Story = {
+  parameters: at("/admin/custom-emojis/requests", { server: { staffPage: 2 }, next: true }),
+};
 /** No request waits: the list says so, and the tab counts none. */
 export const RequestsNone: Story = {
   parameters: at("/admin/custom-emojis/requests", { server: { staffServer: { emoji: { none: true } } } }),

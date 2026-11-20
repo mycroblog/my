@@ -255,10 +255,6 @@
     "defaultMessage": "The deliveries could not be loaded.",
     "description": "In the section of a webhook's deliveries when they could not be read, before Try again. Read by administrators."
   },
-  "staff_webhooks.deliveries.more_failed": {
-    "defaultMessage": "The older deliveries could not be loaded. Try again.",
-    "description": "Under a webhook's deliveries when the next page failed, over Show more. Read by administrators."
-  },
   "staff_webhooks.deliveries.empty": {
     "defaultMessage": "Nothing was sent in the last 14 days.",
     "description": "In the section of a webhook's deliveries while there is none. Read by administrators."

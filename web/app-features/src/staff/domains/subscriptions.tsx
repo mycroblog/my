@@ -15,6 +15,7 @@ import {
   domainListSuspendAs,
   domainListTitleLimit,
   domainListUrlLimit,
+  loadDomainListSubscriptions,
   refusedMember,
   useDomainListDrafts,
   useDomainListFetches,
@@ -24,8 +25,10 @@ import {
   type DomainListFetch,
   type DomainListSubscription,
   type DomainListSubscriptionChange,
+  type AppData,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   CheckField,
@@ -49,10 +52,11 @@ import {
   type IconName,
   type RecordColumn,
   type RecordRow,
+  useAddedFocus,
 } from "@my/design-system";
 import { useId, useState, type ReactNode } from "react";
-import type { StaffAddress } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
+import type { StaffAddress, StaffSearch } from "../entries";
+import { ListMore, ReadNotice, useMoment, useStaffStrings, type T, useSaid } from "../parts";
 import {
   cursorOf,
   domainKindWords,
@@ -60,14 +64,11 @@ import {
   domainListsPath,
   LabelledSelect,
   newDomainListPath,
-  Pages,
+  useAddressPages,
   refusalWords,
   Section,
   tied,
 } from "./parts";
-
-/** The names under which a subscription's page keeps the pages of its fetches in its address. */
-const fetchPages = { cursor: "fetches", trail: "fetches_trail" };
 
 /** The last fetch of a subscription, in words: what came of it. */
 function fetchWords(t: T, fetch: DomainListFetch): string {
@@ -85,11 +86,16 @@ const fetchGlyph = (fetch: DomainListFetch): IconName =>
 
 type Column = "mode" | "fetched";
 
+/** Reads the page of subscriptions an address's query asks for, for the route's loader. */
+export const loadDomainListsScreen = (data: AppData, search: StaffSearch): Promise<void> =>
+  loadDomainListSubscriptions(data, cursorOf(search));
+
 /** The list of subscriptions: Add subscription, the page, and the pages. */
 export function DomainListsScreen({ address, onBack }: { address: StaffAddress; onBack: () => void }): ReactNode {
+  const pages = useAddressPages(address);
   const { t } = useStaffStrings();
   const moment = useMoment();
-  const page = useDomainListSubscriptions(cursorOf(address.search));
+  const page = useDomainListSubscriptions(pages.cursor);
   const head = (
     <ScreenTitle
       back={<BackButton onPress={onBack}>{t("staff_domains.actions.back")}</BackButton>}
@@ -150,7 +156,7 @@ export function DomainListsScreen({ address, onBack }: { address: StaffAddress; 
         empty={<FeedNotice>{t("staff_domains.lists.empty")}</FeedNotice>}
         even
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }
@@ -376,7 +382,7 @@ export function useDomainListTitle(id: string): string | undefined {
   return useDomainListSubscription(id).value?.title;
 }
 
-export type DomainListScreenProps = StaffAddress & {
+export type DomainListScreenProps = {
   id: string;
   onBack: () => void;
   /** Goes back to the list once the subscription is stopped. */
@@ -384,7 +390,7 @@ export type DomainListScreenProps = StaffAddress & {
 };
 
 /** The subscription of `id` on its page; or why it shows none. */
-export function DomainListScreen({ id, onBack, onRemoved, ...address }: DomainListScreenProps): ReactNode {
+export function DomainListScreen({ id, onBack, onRemoved }: DomainListScreenProps): ReactNode {
   const { t } = useStaffStrings();
   const read = useDomainListSubscription(id);
   if (read.missing)
@@ -411,7 +417,7 @@ export function DomainListScreen({ id, onBack, onRemoved, ...address }: DomainLi
       </ScreenTitle>
       <ListHead subscription={subscription} />
       <Drafts id={id} />
-      <Fetches id={id} address={address} />
+      <Fetches id={id} />
       <ListSettings key={subscription.updated_at} subscription={subscription} />
       <StopSubscribing subscription={subscription} onRemoved={onRemoved} />
     </ScreenStack>
@@ -586,31 +592,32 @@ function Drafts({ id }: { id: string }) {
   );
 }
 
-/** The fetches of the list, newest first, a page at a time. */
-function Fetches({ id, address }: { id: string; address: StaffAddress }) {
+/** The fetches of the list, newest first, grown under Show more. */
+function Fetches({ id }: { id: string }) {
   const { t } = useStaffStrings();
-  const page = useDomainListFetches(id, cursorOf(address.search, fetchPages.cursor));
+  const list = useDomainListFetches(id);
+  const added = useAddedFocus(list.items.length);
   return (
     <Section title={t("staff_domains.fetches")}>
-      {page.status !== "success" ? (
+      {list.items.length === 0 && list.status !== "success" ? (
         <ReadNotice
-          status={page.status}
+          status={list.status}
           loading={t("staff_domains.fetches.loading")}
           failed={t("staff_domains.fetches.failed")}
-          retry={page.refetch}
+          retry={list.refetch}
         />
-      ) : page.items.length === 0 ? (
+      ) : list.items.length === 0 ? (
         <FeedNotice start>{t("staff_domains.fetches.empty")}</FeedNotice>
       ) : (
         <Stack gap="entry-room">
           <LogList label={t("staff_domains.fetches")}>
-            {page.items.map((f) => (
-              <LogEntry key={f.id} icon={fetchGlyph(f)} date={f.fetched_at}>
+            {list.items.map((f, i) => (
+              <LogEntry key={f.id} itemRef={added.item(i)} icon={fetchGlyph(f)} date={f.fetched_at}>
                 {fetchWords(t, f)}
               </LogEntry>
             ))}
           </LogList>
-          <Pages address={address} next={page.next} of={fetchPages} />
+          <ListMore list={list} added={added} />
         </Stack>
       )}
     </Section>

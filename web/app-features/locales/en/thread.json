@@ -39,25 +39,13 @@
     "defaultMessage": "Loading reactions…",
     "description": "What the list of who reacted to a post with one emoji says while the first of them load."
   },
-  "thread.reactors_loading_more": {
-    "defaultMessage": "Loading more reactions…",
-    "description": "What the list of who reacted to a post with one emoji says under them while more load."
-  },
   "thread.reactors_failed": {
     "defaultMessage": "The reactions could not be loaded.",
     "description": "What the list of who reacted to a post with one emoji says when the first of them could not be loaded, beside a button to try again."
   },
-  "thread.reactors_failed_more": {
-    "defaultMessage": "More reactions could not be loaded.",
-    "description": "What the list of who reacted to a post with one emoji says under them when more could not be loaded, beside a button to try again."
-  },
   "thread.reactors_empty": {
     "defaultMessage": "No one has reacted with this emoji yet.",
     "description": "What the list of who reacted to a post with one emoji says when it is empty (the reactions were taken back)."
-  },
-  "thread.reactors_more": {
-    "defaultMessage": "Show more",
-    "description": "The button under the list of who reacted to a post with one emoji while more of them follow; pressing it loads them."
   },
   "thread.reactors_back": {
     "defaultMessage": "Back to the post",

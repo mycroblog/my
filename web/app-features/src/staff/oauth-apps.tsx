@@ -22,13 +22,13 @@ import {
   type OAuthClientRegistration,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Box,
   Button,
   ConfirmDialog,
   focusRefusedField,
   ModalPresence,
-  RecordPages,
   Select,
   SettingRow,
   SettingsEmpty,
@@ -41,7 +41,7 @@ import {
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { StaffAddress, StaffSearch } from "./entries";
-import { useMoment, useStaffStrings } from "./parts";
+import { cursorOf, filtered, useAddressPages, useMoment, useStaffStrings } from "./parts";
 import { Irreversible, ScreenNotice, type AdminSubProps } from "./settings/parts";
 
 /** The address of the apps. */
@@ -53,16 +53,13 @@ const oAuthHostsPath = `${adminOAuthAppsPath}/hosts`;
 const registrationOf = (search: StaffSearch): OAuthClientRegistration | undefined =>
   oAuthClientRegistrations.find((r) => r === search["registration"]);
 
-/** The cursors of the pages before the one shown, the first page's as empty: the way back by Previous. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
-
 /** Reads the page of the apps the address asks for, for the loader. */
 export const loadOAuthApps = (data: AppData, search: StaffSearch): Promise<void> =>
-  loadAdminOAuthClients(data, { registration: registrationOf(search), cursor: search["cursor"] });
+  loadAdminOAuthClients(data, { registration: registrationOf(search), cursor: cursorOf(search) });
 
-/** Reads the first page of the denied hosts, for the route's loader. */
-export const loadOAuthHosts = (data: AppData): Promise<void> => loadOAuthHostDenials(data);
+/** Reads the page of the denied hosts the address asks for, for the route's loader. */
+export const loadOAuthHosts = (data: AppData, search: StaffSearch): Promise<void> =>
+  loadOAuthHostDenials(data, cursorOf(search));
 
 /** An app's row: what it is, where it stands, and Disable or Enable. */
 function AppRow({
@@ -114,26 +111,16 @@ function AppRow({
 
 /** The apps, a page at a time, kept to one way of registration; and the door to the denied hosts. */
 export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const id = useId();
   const registration = registrationOf(search);
-  const cursor = search["cursor"];
-  const trail = trailOf(search);
-  const page = useAdminOAuthClients({ registration, cursor });
+  const page = useAdminOAuthClients({ registration, cursor: pages.cursor });
   const writes = useAdminOAuthWrites();
   const [asking, setAsking] = useState<AdminOAuthClient | undefined>(undefined);
   const [busy, setBusy] = useState<string | undefined>(undefined);
   const [said, setSaid] = useState<{ id: string; text: string } | undefined>(undefined);
   const title = t("staff.entry.oauth_apps");
-  const go = (next: { registration?: string | undefined; cursor?: string | undefined; trail?: string[] }) => {
-    onSearch({
-      ...(next.registration === undefined ? {} : { registration: next.registration }),
-      ...(next.cursor === undefined ? {} : { cursor: next.cursor }),
-      ...(next.trail === undefined || next.trail.length === 0
-        ? {}
-        : { trail: next.trail.map((c) => encodeURIComponent(c)).join(",") }),
-    });
-  };
   const act = (app: AdminOAuthClient) => {
     setBusy(app.id);
     setSaid(undefined);
@@ -162,7 +149,7 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
           }))}
           value={registration ?? "any"}
           onChange={(value) => {
-            go({ registration: value === "any" ? undefined : value });
+            onSearch(filtered(search, { registration: value === "any" ? undefined : value }));
           }}
         />
       </SettingRow>
@@ -190,7 +177,6 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
         }
       />
     );
-  const previous = trail.at(-1);
   return (
     <>
       <SettingsScreen sub icon="apps" title={title}>
@@ -214,26 +200,7 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
               ))}
             </SettingsList>
           )}
-          <RecordPages
-            previous={
-              previous === undefined
-                ? undefined
-                : {
-                    onPress: () => {
-                      go({ registration, cursor: previous === "" ? undefined : previous, trail: trail.slice(0, -1) });
-                    },
-                  }
-            }
-            next={
-              page.next === undefined
-                ? undefined
-                : {
-                    onPress: () => {
-                      go({ registration, cursor: page.next, trail: [...trail, cursor ?? ""] });
-                    },
-                  }
-            }
-          />
+          <Pager {...pages.pager(page.next)} />
         </SettingsSection>
         {hosts}
       </SettingsScreen>
@@ -260,14 +227,17 @@ export function AdminOAuthAppsScreen({ search, onSearch }: StaffAddress): ReactN
   );
 }
 
-/** The denied hosts: a host to deny, and each denial with Lift. */
-export function OAuthHostsScreen({ go }: AdminSubProps): ReactNode {
+/** The denied hosts, a page at a time, the page kept in the address: a host to deny, and each denial with Lift. */
+export function OAuthHostsScreen({
+  go,
+  search,
+  onSearch,
+}: AdminSubProps & Pick<StaffAddress, "search" | "onSearch">): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const id = useId();
   const moment = useMoment();
-  const [trail, setTrail] = useState<string[]>([]);
-  const cursor = trail.at(-1);
-  const page = useOAuthHostDenials(cursor === "" ? undefined : cursor);
+  const page = useOAuthHostDenials(pages.cursor);
   const writes = useAdminOAuthWrites();
   const [host, setHost] = useState("");
   const [round, setRound] = useState(0);
@@ -363,29 +333,7 @@ export function OAuthHostsScreen({ go }: AdminSubProps): ReactNode {
               ))}
             </SettingsList>
           )}
-          {page.status === "success" && (
-            <RecordPages
-              previous={
-                trail.length === 0
-                  ? undefined
-                  : {
-                      onPress: () => {
-                        setTrail((now) => now.slice(0, -1));
-                      },
-                    }
-              }
-              next={
-                page.next === undefined
-                  ? undefined
-                  : {
-                      onPress: () => {
-                        const next = page.next;
-                        if (next !== undefined) setTrail((now) => [...now, next]);
-                      },
-                    }
-              }
-            />
-          )}
+          {page.status === "success" && <Pager {...pages.pager(page.next)} />}
           {said !== undefined && !page.items.some((d) => d.host === said.host) && (
             <SettingsResult>{said.text}</SettingsResult>
           )}

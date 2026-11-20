@@ -17,8 +17,6 @@ import {
   FilterBar,
   FilterFacet,
   FilterToggle,
-  MoreRecords,
-  RecordPages,
   RecordTable,
   StateMark,
   type FilterValue,
@@ -27,6 +25,7 @@ import {
   type RecordSort,
   type RecordState,
 } from "./records";
+import { Pager, ShowMore, useAddedFocus } from "./pager";
 import { Frame, FrameAside, FrameDock, FrameHeading, FrameMain, FrameMark, FrameSide, NavItem, NavList } from "./shell";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -304,9 +303,10 @@ function Queue({
           }
         />
         {pages !== "only" && (
-          <RecordPages
+          <Pager
             {...(pages === "first" ? {} : { previous: { onPress: () => undefined } })}
             next={{ onPress: () => undefined }}
+            position={pages === "first" ? 1 : 2}
           />
         )}
       </Stack>
@@ -685,7 +685,8 @@ export const Jobs: Story = {
         <Column>
           <Stack gap="entry-room">
             <RecordTable label="Jobs" head={{ label: "Job" }} columns={jobColumns} rows={jobs} busy={busy} />
-            <MoreRecords
+            <ShowMore
+              more
               busy={busy}
               onPress={() => {
                 setBusy(true);
@@ -700,23 +701,34 @@ export const Jobs: Story = {
 };
 
 /**
- * The pages of a list: the first, Previous disabled; between, both; the last, Next disabled, where a press on Next that
- * reached it keeps the focus; Next on its way.
+ * The jobs' table growing under Show more, four rows a press: the head of the first row each press added takes the
+ * focus (`itemRef` with `useAddedFocus`), and Show more goes once the list is read to its end.
  */
-export const Pages: Story = {
-  render: () => (
-    <Column>
-      <Stack gap="entry-room">
-        <RecordPages next={{ href: "#/moderation/reports?after=1035" }} />
-        <RecordPages
-          previous={{ href: "#/moderation/reports?before=1034" }}
-          next={{ href: "#/moderation/reports?after=990" }}
-        />
-        <RecordPages previous={{ href: "#/moderation/reports?before=989" }} />
-        <RecordPages previous={{ onPress: () => undefined }} next={{ onPress: () => undefined }} busy="next" />
-      </Stack>
-    </Column>
-  ),
+export const GrowingRows: Story = {
+  render: () => {
+    function Screen() {
+      const [shown, setShown] = useState(4);
+      const added = useAddedFocus(shown);
+      const rows = Array.from({ length: shown }, (_, i) => {
+        const sample = jobs[i % jobs.length];
+        return sample === undefined ? undefined : { ...sample, id: `${sample.id}-${String(i)}` };
+      }).filter((row) => row !== undefined);
+      return (
+        <Column>
+          <Stack gap="entry-room">
+            <RecordTable label="Jobs" head={{ label: "Job" }} columns={jobColumns} rows={rows} itemRef={added.item} />
+            <ShowMore
+              more={shown < 12}
+              onPress={added.press(() => {
+                setShown((n) => n + 4);
+              })}
+            />
+          </Stack>
+        </Column>
+      );
+    }
+    return <Screen />;
+  },
 };
 
 /**

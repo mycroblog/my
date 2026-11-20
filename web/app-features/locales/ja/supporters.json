@@ -3,14 +3,6 @@
     "defaultMessage": "もう一度試す",
     "description": "The button that reads again what the supporters' page could not read."
   },
-  "supporters.list.failed_more": {
-    "defaultMessage": "続きのサポーターを読み込めませんでした。",
-    "description": "Under the supporters list of the supporters' page, when its next page could not be read; Try again follows."
-  },
-  "supporters.list.more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under the supporters list that reads its next page."
-  },
   "supporters.list.about": {
     "defaultMessage": "このサーバーを支援し、一覧に載ることを選んだ人を、プランごとに示します。",
     "description": "Under the heading of the supporters list."

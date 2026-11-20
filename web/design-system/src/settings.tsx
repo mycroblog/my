@@ -32,7 +32,16 @@
 // cannot count in the source, `settingsFindings` (test/settings.ts) reads from the marks the parts leave
 // (`data-settings-…`).
 
-import { createContext, Fragment, use, useId, type ReactElement, type ReactNode, type Ref } from "react";
+import {
+  createContext,
+  Fragment,
+  use,
+  useId,
+  type ReactElement,
+  type ReactNode,
+  type Ref,
+  type RefCallback,
+} from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { raisedSurface, TextLink } from "./button";
@@ -792,6 +801,7 @@ export function SettingsListRow({
   end,
   result,
   said,
+  itemRef,
 }: {
   icon?: IconName | undefined;
   title: string;
@@ -819,6 +829,11 @@ export function SettingsListRow({
   result?: SettingsRowResult | undefined;
   /** What came of an action that leaves the row as it was; `null` while it has nothing to say. */
   said?: SettingsRowSaid | null | undefined;
+  /**
+   * The ref of its focusable element, the link of a row with `href`, else the row itself: a list that grows under
+   * Show more gives the first row a press added the focus (`useAddedFocus`).
+   */
+  itemRef?: RefCallback<HTMLElement> | undefined;
 }) {
   const s = list({ inactive });
   const titleId = useId();
@@ -897,7 +912,11 @@ export function SettingsListRow({
   if (href !== undefined)
     return (
       <Stack as="li">
-        <LinkRow as={<Link href={href} className={facts === undefined ? s.link() : `${s.link()} ${s.spaced()}`} />}>
+        <LinkRow
+          as={
+            <Link ref={itemRef} href={href} className={facts === undefined ? s.link() : `${s.link()} ${s.spaced()}`} />
+          }
+        >
           {parts}
           <Row as="span" inline rigid className={s.chevron()}>
             <Icon name="onward" place="action" />
@@ -907,7 +926,7 @@ export function SettingsListRow({
     );
   return (
     <Row
-      as="li"
+      as={<li ref={itemRef} />}
       align="center"
       gap="screen-row-gap"
       className={value ? s.value() : facts === undefined ? s.row() : `${s.row()} ${s.spaced()}`}
@@ -935,6 +954,7 @@ export function SettingsAccountItem({
   note,
   end,
   result,
+  itemRef,
 }: {
   account: ReactNode;
   /** The account's name for assistive technology, which names the group of `end`. */
@@ -942,12 +962,21 @@ export function SettingsAccountItem({
   note?: ReactNode;
   end?: ReactNode;
   result?: SettingsRowResult | undefined;
+  /** The ref of the row, for a list that grows under Show more (`useAddedFocus`). */
+  itemRef?: RefCallback<HTMLElement> | undefined;
 }) {
   const s = list();
   return (
     // Wrapped, the end stands right under the account (its own box a little taller than the button), the next account
     // a row's air and more away.
-    <Row as="li" wrap align="start" gapX="form-page-gap" gapY="0" className={`${s.row()} ${s.spaced()}`}>
+    <Row
+      as={<li ref={itemRef} />}
+      wrap
+      align="start"
+      gapX="form-page-gap"
+      gapY="0"
+      className={`${s.row()} ${s.spaced()}`}
+    >
       <Stack grow="names" gap="hair">
         {account}
         {result !== undefined ? (

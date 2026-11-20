@@ -35,6 +35,10 @@ export const RootSingleUser: Story = {
 
 /** The accounts, newest first: each its handle, its server, when it was created and its state. */
 export const Accounts: Story = { parameters: at("/moderation/accounts") };
+/** The accounts' second page, two a page. */
+export const AccountsSecondPage: Story = {
+  parameters: at("/moderation/accounts", { server: { staffPage: 2 }, next: true }),
+};
 /** The accounts of other servers. */
 export const AccountsRemote: Story = { parameters: at("/moderation/accounts?origin=remote") };
 /** The accounts that signed up or signed in from one IP address. */
@@ -48,6 +52,12 @@ export const AccountsNotOpen: Story = { parameters: at("/moderation/accounts", {
 
 /** A limited spam account's Review: its facts, the form of a new action, its actions and its reports. */
 export const Account: Story = { parameters: at("/moderation/accounts/{account:quickdeals}") };
+/**
+ * kai, reported more often than the account's details hold: the newest 20 reports and Show more, which reads the rest.
+ */
+export const AccountManyReports: Story = {
+  parameters: at("/moderation/accounts/{account:kai}", { server: { reports: "crowded", moderation: "crowded" } }),
+};
 /** The same, opened from a report of its posts: the actions on posts offered, naming the report's posts. */
 export const AccountFromReport: Story = {
   parameters: at("/moderation/accounts/{account:quickdeals}?report={report:deals}"),
@@ -106,6 +116,10 @@ export const ManageRemote: Story = {
 
 /** The appeals that wait: kai's of no posting, and the ban's. */
 export const Appeals: Story = { parameters: at("/moderation/appeals") };
+/** Every appeal, on its second page, two a page. */
+export const AppealsSecondPage: Story = {
+  parameters: at("/moderation/appeals?state=any", { server: { staffPage: 2 }, next: true }),
+};
 /** Every appeal, decided ones among them. */
 export const AppealsAll: Story = { parameters: at("/moderation/appeals?state=any") };
 /** No appeal waits. */
@@ -123,6 +137,10 @@ export const AppealMissing: Story = { parameters: at("/moderation/appeals/none")
 
 /** The registrations that wait: their emails, an unconfirmed one, why they want to join, and a long handle. */
 export const Registrations: Story = { parameters: at("/moderation/registrations") };
+/** The registrations' second page, two a page. */
+export const RegistrationsSecondPage: Story = {
+  parameters: at("/moderation/registrations", { server: { staffPage: 2 }, next: true }),
+};
 /** No registration waits. */
 export const RegistrationsEmpty: Story = {
   parameters: at("/moderation/registrations", { server: { moderation: "none" } }),
@@ -136,6 +154,10 @@ export const RegistrationsSingleUser: Story = {
 
 /** The automated reviews: each hook's decisions of the week, then what they stopped, flagged or could not check. */
 export const HookDecisions: Story = { parameters: at("/moderation/hook-decisions") };
+/** The hooks' decisions on their second page, two a page. */
+export const HookDecisionsSecondPage: Story = {
+  parameters: at("/moderation/hook-decisions", { server: { staffPage: 2 }, next: true }),
+};
 /** The decisions of one hook. */
 export const HookDecisionsOfHook: Story = { parameters: at("/moderation/hook-decisions?hook=inbound.status") };
 /** No decision. */
@@ -153,6 +175,10 @@ export const HookDecisionCancelled: Story = {
 };
 /** The appeals of refused posts that wait. */
 export const HookAppeals: Story = { parameters: at("/moderation/hook-decisions/appeals") };
+/** Every appeal of the hooks' decisions, on their second page, one a page. */
+export const HookAppealsSecondPage: Story = {
+  parameters: at("/moderation/hook-decisions/appeals?state=any", { server: { staffPage: 1 }, next: true }),
+};
 /** An appeal of a refused post: the post, the author's comment, and the decision. */
 export const HookAppeal: Story = { parameters: at("/moderation/hook-decisions/appeals/{moderated:hook-appeal:kai}") };
 /** An upheld appeal of a refused post. */
@@ -164,6 +190,10 @@ export const HookAppealUpheld: Story = {
 export const SignupBlocks: Story = { parameters: at("/moderation/signup-blocks") };
 /** Every sign-up block, the lifted and the expired among them. */
 export const SignupBlocksAll: Story = { parameters: at("/moderation/signup-blocks?active=all") };
+/** Every sign-up block, on its second page, two a page. */
+export const SignupBlocksSecondPage: Story = {
+  parameters: at("/moderation/signup-blocks?active=all", { server: { staffPage: 2 }, next: true }),
+};
 /** No sign-up block. */
 export const SignupBlocksEmpty: Story = {
   parameters: at("/moderation/signup-blocks", { server: { moderation: "none" } }),
@@ -182,6 +212,10 @@ export const SignupBlockMissing: Story = { parameters: at("/moderation/signup-bl
 
 /** Every invite for the administrator: who created each, how many signed up, when it ends, and its state. */
 export const Invites: Story = { parameters: at("/moderation/invites", { viewer: "hana" }) };
+/** The invites' second page, two a page. */
+export const InvitesSecondPage: Story = {
+  parameters: at("/moderation/invites", { viewer: "hana", server: { staffPage: 2 }, next: true }),
+};
 /** No invite. */
 export const InvitesEmpty: Story = {
   parameters: at("/moderation/invites", { viewer: "hana", server: { moderation: "none" } }),

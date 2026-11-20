@@ -74,7 +74,7 @@ import { financeHandlers, type FakeFinanceOptions } from "./finance";
 import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptions } from "./finance-admin";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
 import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
-import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
+import { voiceHandlers, type FakeVoice, type FakeVoiceMany, type FakeVoiceOpenRefusal } from "./voice";
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
@@ -307,6 +307,8 @@ export type FakeOptions = {
   voiceStarters?: "everyone" | "permitted";
   /** Why the server refuses every opening of a room: the reader may not, too many are open, or they host another. */
   voiceOpen?: FakeVoiceOpenRefusal;
+  /** More open rooms, rooms the reader hosted, and invitations to the reader's room than a page holds. */
+  voiceMany?: FakeVoiceMany;
   /**
    * Who may create events (the instance setting `event_creators`): every local account by default, or only those
    * whose roles have `create_events` (`permitted`), as the admin's do.
@@ -334,7 +336,15 @@ export type FakeOptions = {
      */
     reports?: boolean;
   };
-  /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
+  /**
+   * How many items a page of the staff's lists (under /admin) holds when the request names no `limit`: the server's 20
+   * by default; fewer, so that a story or a test reaches the second page of a list the fake holds a few of.
+   */
+  staffPage?: number;
+  /**
+   * The moderators' queue of reports (reports.ts): the fake's own reports by default, or none; `crowded`, kai reported
+   * 24 times more as well, so that the queue and kai's reports run past a page.
+   */
   reports?: FakeReportOptions;
   /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
   domains?: FakeDomainOptions;
@@ -342,12 +352,14 @@ export type FakeOptions = {
   admin?: FakeAdminOptions;
   /**
    * The moderation of accounts (accounts.ts): the fake's own actions, appeals, registrations, decisions of the hooks,
-   * sign-up blocks and invites by default, or none of them.
+   * sign-up blocks and invites by default, or none of them; `crowded`, kai with 30 sign-ins and 24 accounts of the
+   * fake's own that signed up from kai's address as well, so that the account search and kai's lists run past a page.
    */
   moderation?: FakeModerationOptions;
   /**
    * The operations (operations.ts): the fake's jobs, error groups and rules of the link card crawler by default, or
-   * none; `uxMeasurement`, the instance measures the web client (`ux_measurement`), whose samples the fake then holds.
+   * none, or `crowded` (more rules and an error group's hours than a screen shows at once); `uxMeasurement`, the
+   * instance measures the web client (`ux_measurement`), whose samples the fake then holds.
    */
   operations?: FakeOperationsOptions;
   uxMeasurement?: boolean;
@@ -432,6 +444,8 @@ export type FakeOptions = {
    * of kiri@far.example, and a follow of kobo@bread.example, the newest first; accepting or dismissing them is kept.
    */
   held?: boolean;
+  /** With `held`, a follow of each of these people held back too, older than the others: more than a page of accounts. */
+  heldFrom?: readonly string[];
   /**
    * Web Push (FR-206): the server sends it (its application key), and the reader has no subscription until they
    * register one; none by default, as a server without a VAPID key.
@@ -2410,6 +2424,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       },
     ],
     openRefusal: o.voiceOpen,
+    many: o.voiceMany,
+    accountByName: (username) => (local(username) ? accountOf(username) : undefined),
     newId: () => idAt(Date.now(), 31_000 + (voiceIds += 1)),
     accountById: (id) => {
       const username = usernameOf.get(id);
@@ -2770,6 +2786,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     hold("kiri@far.example", "favourite", 20, 0, about);
     hold("kiri@far.example", "boost", 45, 1, about);
     hold("kobo@bread.example", "follow", 90, 2);
+    (o.heldFrom ?? []).forEach((from, i) => {
+      hold(from, "follow", 120 + i * 10, 3 + i);
+    });
   }
   const heldRequestOf = (username: string): Schema<"NotificationRequest"> => {
     const list = held.get(username) ?? [];
@@ -4092,9 +4111,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     json(body, 503, { "Content-Type": "application/json", ...headers });
 
   const unimplemented: string[] = [];
-  const route = createRouter(handlers, (error) => {
-    unimplemented.push(error.operation);
-  });
+  const route = createRouter(
+    handlers,
+    (error) => {
+      unimplemented.push(error.operation);
+    },
+    o.staffPage,
+  );
 
   const revocations: { clientId: string; token: string }[] = [];
 

@@ -21,7 +21,11 @@
   },
   "records.pages": {
     "defaultMessage": "Pages",
-    "description": "The name, for assistive technology, of the navigation under a long list (reports, accounts, jobs) that moves to the page before or after."
+    "description": "The name, for assistive technology, of the navigation under a long list paged by cursor (reports, accounts, a staff queue) that moves to the page before or after."
+  },
+  "records.page": {
+    "defaultMessage": "Page {page, number}",
+    "description": "Between Previous and Next under a long list paged by cursor: which page of it is shown, counted from the first (the server gives no total, so no 'of N'); also read to assistive technology as it changes."
   },
   "records.previous": {
     "defaultMessage": "Previous",
@@ -31,9 +35,33 @@
     "defaultMessage": "Next",
     "description": "Under a long list, moves to the page after the one shown (older records, in a list of the latest first)."
   },
+  "records.later": {
+    "defaultMessage": "{granularity, select, week {Later weeks} month {Later months} other {Later years}}",
+    "description": "In place of Previous under a window of periods (the finance totals): shows the periods after those shown, up to today's (granularity: week, month or year)."
+  },
+  "records.earlier": {
+    "defaultMessage": "{granularity, select, week {Earlier weeks} month {Earlier months} other {Earlier years}}",
+    "description": "In place of Next under a window of periods (the finance totals): shows the periods before those shown (granularity: week, month or year)."
+  },
+  "records.page_failed": {
+    "defaultMessage": "{direction, select, previous {The previous page could not be loaded.} other {The next page could not be loaded.}}",
+    "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
+  },
+  "records.periods_failed": {
+    "defaultMessage": "{direction, select, previous {{granularity, select, week {The later weeks could not be loaded.} month {The later months could not be loaded.} other {The later years could not be loaded.}}} other {{granularity, select, week {The earlier weeks could not be loaded.} month {The earlier months could not be loaded.} other {The earlier years could not be loaded.}}}}",
+    "description": "Over Later and Earlier under a window of periods (the finance totals), when the periods asked for could not be read: direction is previous (Later, toward today) or next (Earlier), granularity week, month or year; the button that asked for them reads Try again (records.retry) meanwhile."
+  },
   "records.more": {
     "defaultMessage": "Show more",
-    "description": "Under a list that grows in place (a table of records), adds the next records under those shown."
+    "description": "Under a list that grows in place (a table of records, a list inside a detail or the settings), adds the next items under those shown."
+  },
+  "records.more_failed": {
+    "defaultMessage": "The rest of the list could not be loaded.",
+    "description": "Over Show more under a list that grows in place, when its next items could not be read; the button reads Try again (records.retry) meanwhile."
+  },
+  "records.retry": {
+    "defaultMessage": "Try again",
+    "description": "The button under a list in place of Previous, Next or Show more after it failed (records.page_failed, records.more_failed): asks for the same items again."
   },
   "records.sort_by": {
     "defaultMessage": "Sort by",

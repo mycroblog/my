@@ -9,6 +9,7 @@ import { type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { accountByIdQuery, accountQuery, type Account } from "./accounts";
 import type { AppData } from "./app-data";
+import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { oneOf, pageOf, staffChanged, type StaffOne, type StaffPage } from "./staff-reads";
 
@@ -67,60 +68,71 @@ export function useRemoteServer(domain: string): StaffOne<RemoteServer> {
   return oneOf(useQuery(remoteServerQuery(useAppData(), domain)));
 }
 
-/** The times the server of `domain` was marked unavailable or available, newest first, after `cursor`. */
-export function availabilityEventsQuery({ queries }: AppData, domain: string, cursor: string | undefined) {
-  return queries.queryOptions("get", "/admin/instances/{domain}/availability_events", {
-    params: { path: { domain }, query: cursor === undefined ? {} : { cursor } },
-  });
-}
-
-/** The page of availability events of the server of `domain` after `cursor`, as a screen shows it. */
-export function useAvailabilityEvents(domain: string, cursor: string | undefined): StaffPage<AvailabilityEvent> {
-  return pageOf(
-    useQuery({ ...availabilityEventsQuery(useAppData(), domain, cursor), placeholderData: keepPreviousData }),
+/** The times the server of `domain` was marked unavailable or available, newest first, a page at a time. */
+export function availabilityEventsQuery({ api, queries }: AppData, domain: string) {
+  return pagedQuery<AvailabilityEvent>(
+    queries.queryOptions("get", "/admin/instances/{domain}/availability_events", {
+      params: { path: { domain }, query: {} },
+    }).queryKey,
+    async (cursor, signal) =>
+      (
+        await api.GET("/admin/instances/{domain}/availability_events", {
+          params: { path: { domain }, query: cursor === undefined ? {} : { cursor } },
+          signal,
+        })
+      ).data,
   );
 }
 
+/** The availability events of the server of `domain`, newest first, grown under Show more. */
+export function useAvailabilityEvents(domain: string): PagedList<AvailabilityEvent> {
+  return usePagedList(availabilityEventsQuery(useAppData(), domain));
+}
+
 /**
- * What the deliveries show: those of one activity, those of one local account (which the server records in the audit
- * log before it answers), and the page after `cursor`.
+ * What the deliveries show: those of one activity, and those of one local account (which the server records in the
+ * audit log before it answers each page).
  */
 export type DeliveryQuery = {
   readonly activity?: string | undefined;
   readonly account?: string | undefined;
-  readonly cursor?: string | undefined;
 };
 
-/** A page of the deliveries to the server of `domain` that `q` asks for. */
-export function deliveriesQuery({ queries }: AppData, domain: string, q: DeliveryQuery) {
-  return queries.queryOptions("get", "/admin/instances/{domain}/deliveries", {
-    params: {
-      path: { domain },
-      query: {
-        ...(q.activity === undefined ? {} : { activity_uri: q.activity }),
-        ...(q.account === undefined ? {} : { account_id: q.account }),
-        ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
-      },
-    },
-  });
+/** The deliveries to the server of `domain` that `q` asks for, newest first, a page at a time. */
+export function deliveriesQuery({ api, queries }: AppData, domain: string, q: DeliveryQuery) {
+  const query = {
+    ...(q.activity === undefined ? {} : { activity_uri: q.activity }),
+    ...(q.account === undefined ? {} : { account_id: q.account }),
+  };
+  return pagedQuery<Delivery>(
+    queries.queryOptions("get", "/admin/instances/{domain}/deliveries", { params: { path: { domain }, query } })
+      .queryKey,
+    async (cursor, signal) =>
+      (
+        await api.GET("/admin/instances/{domain}/deliveries", {
+          params: { path: { domain }, query: cursor === undefined ? query : { ...query, cursor } },
+          signal,
+        })
+      ).data,
+  );
 }
 
 /**
- * The page of deliveries to the server of `domain` that `q` asks for, as a screen shows it; a 400 (an account that is
- * not local) and a 404 (one not known) are `refused`.
+ * The deliveries to the server of `domain` that `q` asks for, grown under Show more; a 400 (an account that is not
+ * local) and a 404 (one not known) are `refused`.
  */
-export function useDeliveries(domain: string, q: DeliveryQuery): StaffPage<Delivery> & { readonly refused: boolean } {
-  const query = useQuery({ ...deliveriesQuery(useAppData(), domain, q), placeholderData: keepPreviousData });
-  const error = query.error as { status?: unknown } | null;
-  return { ...pageOf(query), refused: error?.status === 400 || error?.status === 404 };
+export function useDeliveries(domain: string, q: DeliveryQuery): PagedList<Delivery> & { readonly refused: boolean } {
+  const list = usePagedList(deliveriesQuery(useAppData(), domain, q));
+  const error = list.error as { status?: unknown } | null;
+  return { ...list, refused: list.items.length === 0 && (error?.status === 400 || error?.status === 404) };
 }
 
 /** Reads the server of `domain`, its latest availability events and deliveries, for a route's loader. */
 export async function loadRemoteServer(data: AppData, domain: string): Promise<void> {
   await Promise.all([
     data.queryClient.query(remoteServerQuery(data, domain)).catch(() => undefined),
-    data.queryClient.query(availabilityEventsQuery(data, domain, undefined)).catch(() => undefined),
-    data.queryClient.query(deliveriesQuery(data, domain, {})).catch(() => undefined),
+    data.queryClient.infiniteQuery(availabilityEventsQuery(data, domain)).catch(() => undefined),
+    data.queryClient.infiniteQuery(deliveriesQuery(data, domain, {})).catch(() => undefined),
   ]);
 }
 

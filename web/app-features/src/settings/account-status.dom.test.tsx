@@ -357,7 +357,7 @@ describe("Account status", () => {
     await answered(on, before);
     expect(failing.seen.length).toBeGreaterThan(0);
     expect(rows(past)).toHaveLength(20);
-    expect(linesOf(section(past))).toContain("More past actions could not be loaded.");
+    expect(within(section(past)).getByRole("alert").textContent).toBe("The rest of the list could not be loaded.");
     const again = within(section(past)).getByRole("button", { name: "Try again" });
     expect(within(section(past)).queryAllByRole("button", { name: "Show more" })).toHaveLength(0);
     // The whole screen did not give way to the failure.
@@ -370,7 +370,7 @@ describe("Account status", () => {
     await answered(on, retried);
     expect(rows(past)).toHaveLength(24);
     expect(within(section(past)).queryAllByRole("button", { name: /^(Show more|Try again)$/ })).toHaveLength(0);
-    expect(linesOf(section(past))).not.toContain("More past actions could not be loaded.");
+    expect(within(section(past)).queryAllByText("The rest of the list could not be loaded.")).toHaveLength(0);
   });
 
   test("while the actions are on their way the screen says so in a status, and then lists what came", async () => {

@@ -7,13 +7,13 @@
 // into the cache and reads again what it changes: the lists, the instance (what it says of the program and the tips)
 // and the public plans.
 import { ProblemError, type components } from "@mycroblog/mykit";
-import { useQuery } from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
 import { answered, oneRead, type OneRead } from "./finance-admin";
 import { adminRolesQuery, type AdminRole } from "./admin-roles";
 import { instanceQuery } from "./instance";
-import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
+import { pageOf, type StaffPage } from "./staff-reads";
 
 type Schemas = components["schemas"];
 
@@ -319,31 +319,23 @@ export type SubscriptionQuery = {
   readonly state?: SubscriptionState | undefined;
 };
 
-/** The subscriptions of `q`, newest first. */
-export function adminSubscriptionsQuery({ api, queries }: AppData, q: SubscriptionQuery) {
+/** The page of the subscriptions of `q` after `cursor`, newest first. */
+export function adminSubscriptionsQuery({ queries }: AppData, q: SubscriptionQuery, cursor?: string) {
   const query = {
     ...(q.plan === undefined ? {} : { plan_id: q.plan }),
     ...(q.state === undefined ? {} : { state: q.state }),
+    ...(cursor === undefined ? {} : { cursor }),
   };
-  return pagedQuery<AdminSubscription>(
-    queries.queryOptions("get", "/admin/supporter_subscriptions", { params: { query } }).queryKey,
-    async (cursor, signal) =>
-      (
-        await api.GET("/admin/supporter_subscriptions", {
-          params: { query: cursor === undefined ? query : { ...query, cursor } },
-          signal,
-        })
-      ).data,
-  );
+  return queries.queryOptions("get", "/admin/supporter_subscriptions", { params: { query } });
 }
 
 export function adminSubscriptionQuery({ queries }: AppData, id: string) {
   return queries.queryOptions("get", "/admin/supporter_subscriptions/{id}", { params: { path: { id } } });
 }
 
-/** The subscriptions of `q`, newest first, a page at a time. */
-export function useAdminSubscriptions(q: SubscriptionQuery): PagedList<AdminSubscription> {
-  return usePagedList(adminSubscriptionsQuery(useAppData(), q));
+/** The page of the subscriptions of `q` after `cursor`, newest first; the page shown before stays. */
+export function useAdminSubscriptions(q: SubscriptionQuery, cursor?: string): StaffPage<AdminSubscription> {
+  return pageOf(useQuery({ ...adminSubscriptionsQuery(useAppData(), q, cursor), placeholderData: keepPreviousData }));
 }
 
 /** The subscription of `id`. */
@@ -351,9 +343,9 @@ export function useAdminSubscription(id: string): SupporterRead<AdminSubscriptio
   return oneRead(useQuery(adminSubscriptionQuery(useAppData(), id)));
 }
 
-/** Reads the subscriptions of `q`, for a route's loader. */
-export async function loadAdminSubscriptions(data: AppData, q: SubscriptionQuery): Promise<void> {
-  await data.queryClient.infiniteQuery(adminSubscriptionsQuery(data, q)).catch(() => undefined);
+/** Reads the page of the subscriptions of `q` after `cursor`, for a route's loader. */
+export async function loadAdminSubscriptions(data: AppData, q: SubscriptionQuery, cursor?: string): Promise<void> {
+  await data.queryClient.query(adminSubscriptionsQuery(data, q, cursor)).catch(() => undefined);
 }
 
 /** Reads the subscription of `id`, for a route's loader. */

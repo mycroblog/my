@@ -9,6 +9,7 @@
 // base64 of 32 bytes, as the server makes it; a test adds a delivery that waits, and a redelivery puts one back to
 // waiting.
 
+import { page } from "./common";
 import type { StaffServerContext } from "./staff-server";
 import type { Handlers, Schema } from "./spec";
 
@@ -365,19 +366,7 @@ export function webhookHandlers(c: StaffServerContext): {
     "GET /admin/webhooks/{id}/deliveries": ({ params, query }) => {
       if (!allowed()) return forbidden();
       if (found(params.id) === undefined) return c.notFound();
-      const list = deliveries.get(params.id) ?? [];
-      const cursor = query.get("cursor");
-      const from = cursor === null ? 0 : list.findIndex((d) => d.id === cursor) + 1;
-      const size = Number(query.get("limit") ?? 20);
-      const items = list.slice(from, from + size);
-      const last = items.at(-1);
-      return {
-        status: 200,
-        body: {
-          items: structuredClone(items),
-          ...(last !== undefined && from + size < list.length ? { next_cursor: last.id } : {}),
-        },
-      };
+      return { status: 200, body: structuredClone(page(deliveries.get(params.id) ?? [], query).body) };
     },
     "POST /admin/webhooks/{id}/deliveries/{delivery_id}/redeliver": ({ params }) => {
       if (!allowed()) return forbidden();

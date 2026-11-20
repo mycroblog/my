@@ -9,11 +9,12 @@
 import { ProblemError, type components } from "@mycroblog/mykit";
 import { keepPreviousData, useQueries, useQuery } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
+import { afterNewestLimit, pagedQuery, useListAfter, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 import { moderationCountsQuery } from "./rights";
 import { oneOf, pageOf, staffChanged, type StaffOne, type StaffPage } from "./staff-reads";
 import { accountByIdQuery, viewerQuery, type Account } from "./accounts";
-import { reportQuery, type ReportDetail } from "./moderation-reports";
+import { reportQuery, type QueuedReport, type ReportDetail } from "./moderation-reports";
 
 /** An account as the moderators find it. */
 export type ModeratedAccount = components["schemas"]["AdminAccount"];
@@ -423,4 +424,75 @@ export function useActionReport(id: string | undefined): ReportDetail | undefine
   const data = useAppData();
   const may = useQuery(viewerQuery(data)).data?.permissions.includes("manage_reports") === true;
   return useQuery({ ...reportQuery(data, id ?? ""), enabled: id !== undefined && id !== "" && may }).data;
+}
+
+/** A sign-in of a local account: where it came from, with what, and when. */
+export type AccountSignIn = components["schemas"]["AdminAccountSignIn"];
+
+/** The query of a list after a detail's newest: its first page asks for those and the ones after. */
+const afterNewest = (cursor: string | undefined) => (cursor === undefined ? { limit: afterNewestLimit } : { cursor });
+
+/**
+ * The reports of the account of `id`, newest first, from the `newest` its details hold, the rest read on Show more
+ * (`GET /admin/reports?target_account_id=`, of either state).
+ */
+export function useAccountReports(id: string, newest: readonly QueuedReport[]): PagedList<QueuedReport> {
+  const { api, queries } = useAppData();
+  const query = { target_account_id: id };
+  return useListAfter(
+    newest,
+    pagedQuery<QueuedReport>(
+      [...queries.queryOptions("get", "/admin/reports", { params: { query } }).queryKey, "after"],
+      async (cursor, signal) =>
+        (await api.GET("/admin/reports", { params: { query: { ...query, ...afterNewest(cursor) } }, signal })).data,
+    ),
+  );
+}
+
+/**
+ * The sign-ins of the local account of `id`, newest first, from the `newest` its shown private data hold, the rest
+ * read on Show more: each page the server records in the audit log, as it does the showing.
+ */
+export function useAccountSignIns(id: string, newest: readonly AccountSignIn[]): PagedList<AccountSignIn> {
+  const { api, queries } = useAppData();
+  return useListAfter(
+    newest,
+    pagedQuery<AccountSignIn>(
+      queries.queryOptions("get", "/admin/accounts/{id}/sign_ins", { params: { path: { id }, query: {} } }).queryKey,
+      async (cursor, signal) =>
+        (
+          await api.GET("/admin/accounts/{id}/sign_ins", {
+            params: { path: { id }, query: afterNewest(cursor) },
+            signal,
+          })
+        ).data,
+    ),
+  );
+}
+
+/**
+ * The other local accounts that used the address `ip` of the account of `id`, newest first, from the `newest` its
+ * shown private data hold, the rest read on Show more: each page the server records in the audit log.
+ */
+export function useSameIpAccounts(
+  id: string,
+  ip: string,
+  newest: readonly ModeratedAccount[],
+): PagedList<ModeratedAccount> {
+  const { api, queries } = useAppData();
+  return useListAfter(
+    newest,
+    pagedQuery<ModeratedAccount>(
+      queries.queryOptions("get", "/admin/accounts/{id}/same_ip_accounts", {
+        params: { path: { id }, query: { ip } },
+      }).queryKey,
+      async (cursor, signal) =>
+        (
+          await api.GET("/admin/accounts/{id}/same_ip_accounts", {
+            params: { path: { id }, query: { ip, ...afterNewest(cursor) } },
+            signal,
+          })
+        ).data,
+    ),
+  );
 }

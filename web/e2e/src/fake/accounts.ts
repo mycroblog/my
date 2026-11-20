@@ -47,8 +47,12 @@ type Block = Schema<"AdminSignupBlock">;
 type Invite = Schema<"AdminInvite">;
 type Permission = Schema<"Permission">;
 
-/** What the moderation holds when the fake starts: the fake's own (`seeded`, by default), or nothing at all. */
-export type FakeModerationOptions = "seeded" | "none";
+/**
+ * What the moderation holds when the fake starts: the fake's own (`seeded`, by default), or nothing at all; `crowded`,
+ * the fake's own and kai's 28 more sign-ins, a day apart, and 24 accounts of the fake's own (`ring01` to `ring24`)
+ * that signed up and signed in from kai's address, so that the account search and kai's lists run past a page.
+ */
+export type FakeModerationOptions = "seeded" | "none" | "crowded";
 
 /** A person of the fake, as the moderation reads them. */
 type ModeratedPerson = {
@@ -425,6 +429,29 @@ export function moderationHandlers(c: ModerationContext): { handlers: Handlers; 
       state: "approved",
       changed: ago(5 * 24 * 60),
     };
+  const kai = heldOf("kai");
+  const kaiIp = kai?.signIns[0]?.ip;
+  if (c.options === "crowded" && kai !== undefined && kaiIp !== undefined) {
+    const otherIp = kai.signIns[1]?.ip ?? kaiIp;
+    for (let i = 0; i < 28; i += 1)
+      kai.signIns.push({ ip: i % 2 === 0 ? kaiIp : otherIp, ua: browsers[i % 3] ?? "", at: ago((3 + i) * 24 * 60) });
+    for (let i = 0; i < 24; i += 1) {
+      const n = String(i + 1).padStart(2, "0");
+      const created = (4 + i) * 24 * 60;
+      const ring = addOwn(`ring${n}`, `Ring ${n}`, "", created, {
+        email: `ring${n}@throwaway.example`,
+        registrationIp: kaiIp,
+        signIns: [{ ip: kaiIp, ua: browsers[(i + 2) % 3] ?? "", at: ago(created - 60) }],
+      });
+      if (ring !== undefined)
+        ring.registration = {
+          id: idAt(ago(created), 46_600 + i),
+          submitted: ago(created),
+          state: "approved",
+          changed: ago(created),
+        };
+    }
+  }
   /** An applicant whose registration waits. */
   const applicant = (
     index: number,
@@ -1140,6 +1167,7 @@ export function moderationHandlers(c: ModerationContext): { handlers: Handlers; 
             : { registration_ip: h.registrationIp, registered_at: iso(h.registration.submitted) }),
           sign_ins: h.signIns
             .toSorted((a, b) => b.at - a.at)
+            .slice(0, 20)
             .map((s) => ({ ip: s.ip, user_agent: s.ua, signed_in_at: iso(s.at) })),
           same_ip_accounts: ips.flatMap((ip) => {
             const others = newestAccounts().filter((o) => o !== h && o.local && ipsOf(o).includes(ip));

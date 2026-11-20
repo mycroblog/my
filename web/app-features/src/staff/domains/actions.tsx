@@ -14,6 +14,7 @@ import {
   type DomainAction,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   FactList,
@@ -47,7 +48,7 @@ import {
   domainListsPath,
   filtered,
   newDomainActionPath,
-  Pages,
+  useAddressPages,
   refusalWords,
   remoteServerPath,
   useEnd,
@@ -72,6 +73,7 @@ const searchPause = 400;
 
 /** The list of domain actions: the ways on, its filters, the page, and the pages. */
 export function DomainActionsScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const end = useEnd();
@@ -190,7 +192,7 @@ export function DomainActionsScreen(address: StaffAddress): ReactNode {
         }
         even
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

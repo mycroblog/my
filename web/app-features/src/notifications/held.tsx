@@ -36,15 +36,17 @@ import {
   BackButton,
   Button,
   FeedNotice,
-  Fold,
   FormText,
   ScreenHead,
   ScreenStack,
   ScreenTitle,
+  ShowMore,
   StateText,
   TextButton,
   TextLink,
+  useAddedFocus,
   useLocale,
+  type AddedFocus,
 } from "@my/design-system";
 import { useEffect, useRef } from "react";
 import { stringsIn } from "../locale";
@@ -114,10 +116,19 @@ function Answers({ id, t }: { id: string; t: T }) {
 }
 
 /** An account's request: its name leading to its held-back notifications, how many, and the answer at the end. */
-function Request({ request, t }: { request: NotificationRequest; t: T }) {
+function Request({
+  request,
+  itemRef,
+  t,
+}: {
+  request: NotificationRequest;
+  itemRef: ReturnType<AddedFocus["item"]>;
+  t: T;
+}) {
   const { account } = request;
   return (
     <AccountRow
+      itemRef={itemRef}
       avatar={<Avatar name={nameOf(account)} src={account.avatar?.small.url} size="post" decorative />}
       name={<AccountName account={account} />}
       handle={handleOf(account)}
@@ -130,36 +141,35 @@ function Request({ request, t }: { request: NotificationRequest; t: T }) {
 
 /**
  * The screen of the requests, back to the notifications at its top: a row per account, then a line that they load,
- * that they failed (with Try again), that there are none, or a fold that shows more.
+ * that they failed (with Try again), that there are none, or Show more.
  */
 export function Held({ onBack }: { onBack: () => void }) {
   const { t } = stringsIn(useLocale().locale);
   const requests = useNotificationRequests();
   const { items, status } = requests;
+  const added = useAddedFocus(items.length);
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("notifications.retry")}</TextButton>;
   // The way to where the reader chooses what is held back: the policy, in the notification settings.
   const settings = <TextLink href={notificationSettingsPath}>{t("notifications.held_settings")}</TextLink>;
-  const failedMore = status === "success" && requests.error !== null && !requests.isFetchingNextPage;
   const end =
-    status === "pending" || requests.isFetchingNextPage ? (
+    status === "pending" ? (
       <FeedNotice start>{t("notifications.held_loading")}</FeedNotice>
-    ) : status === "error" ? (
+    ) : status === "error" && !requests.failedNextPage ? (
       <FeedNotice start alert action={retry(requests.refetch)}>
-        {t("notifications.held_failed")}
-      </FeedNotice>
-    ) : failedMore && requests.hasNextPage ? (
-      <FeedNotice start alert action={retry(requests.fetchNextPage)}>
         {t("notifications.held_failed")}
       </FeedNotice>
     ) : items.length === 0 ? (
       <FeedNotice start action={settings}>
         {t("notifications.held_empty")}
       </FeedNotice>
-    ) : requests.hasNextPage ? (
-      <Fold>
-        <TextButton onPress={requests.fetchNextPage}>{t("profile.follows_more")}</TextButton>
-      </Fold>
-    ) : undefined;
+    ) : (
+      <ShowMore
+        more={requests.hasNextPage}
+        busy={requests.isFetchingNextPage}
+        failed={requests.failedNextPage}
+        onPress={added.press(requests.fetchNextPage)}
+      />
+    );
   return (
     <ScreenStack busy={status === "pending"}>
       <ScreenTitle glyph="followers" back={<BackButton onPress={onBack}>{t("notifications.label")}</BackButton>}>
@@ -170,8 +180,8 @@ export function Held({ onBack }: { onBack: () => void }) {
           {t("notifications.held_about")} {settings}
         </FormText>
       )}
-      {items.map((r) => (
-        <Request key={r.id} request={r} t={t} />
+      {items.map((r, i) => (
+        <Request key={r.id} request={r} itemRef={added.item(i)} t={t} />
       ))}
       {end}
     </ScreenStack>

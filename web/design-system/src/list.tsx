@@ -470,9 +470,12 @@ export function ResultGroup({ title, children }: { title: string; children: Reac
   );
 }
 
-/** A row of a `RowList` (an `AccountRow`, an `OpenRow`). */
-export function RowItem({ children }: { children: ReactNode }) {
-  return <li>{children}</li>;
+/**
+ * A row of a `RowList` (an `AccountRow`, an `OpenRow`); `itemRef` the ref of the row, for a list that grows under Show
+ * more (`useAddedFocus`).
+ */
+export function RowItem({ itemRef, children }: { itemRef?: Ref<HTMLLIElement> | undefined; children: ReactNode }) {
+  return <li ref={itemRef}>{children}</li>;
 }
 
 // A line under the byline at the name's start (how many notifications an account's request holds).
@@ -490,6 +493,7 @@ export function AccountRow({
   note,
   heading = false,
   end,
+  itemRef,
 }: {
   avatar: ReactNode;
   name: ReactNode;
@@ -501,12 +505,14 @@ export function AccountRow({
   /** The name is the heading of the screen the row heads (`ScreenHead`). */
   heading?: boolean | undefined;
   end?: ReactNode;
+  /** The ref of the row, for a list that grows under Show more (`useAddedFocus`). */
+  itemRef?: Ref<HTMLDivElement> | undefined;
 }) {
   const s = account();
   return (
     // What the reader may do goes under the name, at the end, where beside it the name and the handle would keep less
     // than their least width (a 320 px row with two buttons), so that the handle stays readable.
-    <Row wrap align="center" gap="screen-row-gap">
+    <Row as={<div ref={itemRef} />} wrap align="center" gap="screen-row-gap">
       <Stack grow="names" gap="entry-line">
         <Byline avatar={avatar} name={accountName} handle={handle} href={href} heading={heading} />
         {note !== undefined && <p className={s.note()}>{note}</p>}

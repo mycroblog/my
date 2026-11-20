@@ -12,8 +12,8 @@ import type { AppData } from "./app-data";
 import type { FinanceQuery } from "./finance";
 import { adminSettingsQuery, type AdminSetting } from "./admin-settings";
 import { instanceQuery } from "./instance";
-import { pagedQuery, usePagedList, type PagedList } from "./paged";
 import { useAppData } from "./provider";
+import { pageOf, type StaffPage } from "./staff-reads";
 
 type Schemas = components["schemas"];
 
@@ -90,13 +90,11 @@ export function oneRead<T>(query: {
 
 // ---- The cost items ---------------------------------------------------------------------------------------------------
 
-/** The cost items that are not deleted, newest first. */
-export function costItemsQuery({ api, queries }: AppData) {
-  return pagedQuery<CostItem>(
-    queries.queryOptions("get", "/admin/cost_items").queryKey,
-    async (cursor, signal) =>
-      (await api.GET("/admin/cost_items", { params: { query: cursor === undefined ? {} : { cursor } }, signal })).data,
-  );
+/** The page of the cost items that are not deleted, newest first, after `cursor`; every page's key under the list's. */
+export function costItemsQuery({ queries }: AppData, cursor?: string) {
+  return cursor === undefined
+    ? queries.queryOptions("get", "/admin/cost_items")
+    : queries.queryOptions("get", "/admin/cost_items", { params: { query: { cursor } } });
 }
 
 /** One cost item. */
@@ -104,9 +102,9 @@ export function costItemQuery({ queries }: AppData, id: string) {
   return queries.queryOptions("get", "/admin/cost_items/{id}", { params: { path: { id } } });
 }
 
-/** The cost items, newest first, a page at a time. */
-export function useCostItems(): PagedList<CostItem> {
-  return usePagedList(costItemsQuery(useAppData()));
+/** The page of the cost items after `cursor` (the first without one), newest first; the page shown before stays. */
+export function useCostItems(cursor?: string): StaffPage<CostItem> {
+  return pageOf(useQuery({ ...costItemsQuery(useAppData(), cursor), placeholderData: keepPreviousData }));
 }
 
 /** The cost item of `id`. */
@@ -114,9 +112,9 @@ export function useCostItem(id: string): OneRead<CostItem> {
   return oneRead(useQuery(costItemQuery(useAppData(), id)));
 }
 
-/** Reads the first page of the cost items, for a route's loader. */
-export async function loadCostItems(data: AppData): Promise<void> {
-  await data.queryClient.infiniteQuery(costItemsQuery(data)).catch(() => undefined);
+/** Reads the page of the cost items after `cursor`, for a route's loader. */
+export async function loadCostItems(data: AppData, cursor?: string): Promise<void> {
+  await data.queryClient.query(costItemsQuery(data, cursor)).catch(() => undefined);
 }
 
 /** Reads the cost item of `id`, for a route's loader. */
@@ -251,24 +249,18 @@ export function useAdminIncomeTotals(q: FinanceQuery): OneRead<AdminIncomeTotals
 /** Which money movements a list shows: of one kind, or of every kind. */
 export type IncomeMovementQuery = { readonly kind?: IncomeKind | undefined };
 
-/** The money movements of `q`, newest first. */
-export function incomeMovementsQuery({ api, queries }: AppData, q: IncomeMovementQuery) {
-  const query = q.kind === undefined ? {} : { kind: q.kind };
-  return pagedQuery<IncomeMovement>(
-    queries.queryOptions("get", "/admin/income_movements", { params: { query } }).queryKey,
-    async (cursor, signal) =>
-      (
-        await api.GET("/admin/income_movements", {
-          params: { query: cursor === undefined ? query : { ...query, cursor } },
-          signal,
-        })
-      ).data,
-  );
+/** The page of the money movements of `q` after `cursor`, newest first. */
+export function incomeMovementsQuery({ queries }: AppData, q: IncomeMovementQuery, cursor?: string) {
+  return queries.queryOptions("get", "/admin/income_movements", {
+    params: {
+      query: { ...(q.kind === undefined ? {} : { kind: q.kind }), ...(cursor === undefined ? {} : { cursor }) },
+    },
+  });
 }
 
-/** The money movements of `q`, newest first, a page at a time. */
-export function useIncomeMovements(q: IncomeMovementQuery): PagedList<IncomeMovement> {
-  return usePagedList(incomeMovementsQuery(useAppData(), q));
+/** The page of the money movements of `q` after `cursor`, newest first; the page shown before stays. */
+export function useIncomeMovements(q: IncomeMovementQuery, cursor?: string): StaffPage<IncomeMovement> {
+  return pageOf(useQuery({ ...incomeMovementsQuery(useAppData(), q, cursor), placeholderData: keepPreviousData }));
 }
 
 // ---- The billing imports ----------------------------------------------------------------------------------------------

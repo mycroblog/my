@@ -32,9 +32,11 @@ import {
   ScreenStack,
   ScreenTitle,
   SearchField,
+  ShowMore,
   Stack,
   StateText,
   TextButton,
+  useAddedFocus,
   useLocale,
 } from "@my/design-system";
 import { ProblemError } from "@mycroblog/mykit";
@@ -125,6 +127,7 @@ function Found({
 /** The invitations not revoked, oldest first, each with as what and Revoke; Show more for the next page. */
 function Invited({ data, roomId, onSaid, t }: { data: AppData; roomId: string; onSaid: (text: string) => void; t: T }) {
   const list = useVoiceInvitations(roomId);
+  const added = useAddedFocus(list.items.length);
   const [revoking, setRevoking] = useState<string | null>(null);
   const retry = (onPress: () => void) => <TextButton onPress={onPress}>{t("voice.retry")}</TextButton>;
   if (list.status === "pending") return <FeedNotice>{t("voice.invitations.loading")}</FeedNotice>;
@@ -153,10 +156,10 @@ function Invited({ data, roomId, onSaid, t }: { data: AppData; roomId: string; o
   return (
     <Stack gap="entry-room">
       <RowList label={t("voice.invitations.title")}>
-        {list.items.map((invitation) => {
+        {list.items.map((invitation, i) => {
           const name = nameOf(invitation.account);
           return (
-            <RowItem key={invitation.id}>
+            <RowItem key={invitation.id} itemRef={added.item(i)}>
               <AccountLine
                 account={invitation.account}
                 end={
@@ -179,19 +182,12 @@ function Invited({ data, roomId, onSaid, t }: { data: AppData; roomId: string; o
           );
         })}
       </RowList>
-      {list.failedNextPage ? (
-        <FeedNotice alert action={retry(list.fetchNextPage)}>
-          {t("voice.invitations.failed_more")}
-        </FeedNotice>
-      ) : (
-        list.hasNextPage && (
-          <Box>
-            <Button size="timeline" touch busy={list.isFetchingNextPage} onPress={list.fetchNextPage}>
-              {t("voice.rooms_more")}
-            </Button>
-          </Box>
-        )
-      )}
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
     </Stack>
   );
 }

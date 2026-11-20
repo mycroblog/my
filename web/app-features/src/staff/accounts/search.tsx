@@ -16,6 +16,7 @@ import {
   type ModeratedAccountState,
 } from "@my/app-data";
 import {
+  Pager,
   FeedNotice,
   FilterBar,
   FilterFacet,
@@ -30,7 +31,7 @@ import {
 import { useEffect, useState, type ReactNode } from "react";
 import type { StaffAddress, StaffSearch } from "../entries";
 import { ReadNotice, useStaffStrings } from "../parts";
-import { AccountStateMark, cursorOf, filtered, Pages } from "./parts";
+import { AccountStateMark, cursorOf, filtered, useAddressPages } from "./parts";
 
 /** What the search's words are matched against. */
 const searchKeys = ["username", "domain", "email", "email_domain", "ip"] as const;
@@ -104,6 +105,7 @@ function AccountTable({
 
 /** The search of accounts: its field and filters, the page of accounts found, and the pages. */
 export function AccountSearchScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const q = searchQueryOf(search);
@@ -218,7 +220,7 @@ export function AccountSearchScreen(address: StaffAddress): ReactNode {
           </FeedNotice>
         }
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

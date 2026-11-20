@@ -5,9 +5,11 @@
 // Accept (`held`); each state every screen is shown in (app.samples.tsx); kiri's held-back notifications on their own
 // screen, its failure and its request gone; and the notifications with the row over them. The answer in place of a
 // row's buttons, right after Accept or Dismiss, is the row's own state (the design system's Follow requests).
+// More of the accounts held back than a page holds, before and after Show more (pages.samples.ts, `more`).
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
+import { manyHeld } from "./pages.samples";
 
 const at = "/notifications/requests";
 const server = { held: true };
@@ -26,6 +28,10 @@ export const Empty: Story = { parameters: screen({ at, server, state: "empty" })
 export const Loading: Story = { parameters: screen({ at, server, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at, server, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at, server, state: "long" }) };
+/** More accounts held back than a page holds: Show more under the newest twenty. */
+export const Many: Story = { parameters: screen({ at, server: manyHeld }) };
+/** The same after Show more: the older accounts under the newest twenty, and no Show more. */
+export const ManyMore: Story = { parameters: screen({ at, server: manyHeld, more: true }) };
 /** One account's held-back notifications, as the list draws them, under the account and its answer. */
 export const OneAccount: Story = { parameters: screen({ at: "held:kiri@far.example", server }) };
 /** One account's screen when its request could not be read: the failure, with Try again. */

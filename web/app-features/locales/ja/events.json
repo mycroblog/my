@@ -11,14 +11,6 @@
     "defaultMessage": "イベントを読み込めませんでした。",
     "description": "In place of the list of events when they could not be loaded, beside a button to try again."
   },
-  "events.failed_more": {
-    "defaultMessage": "続きを読み込めませんでした。",
-    "description": "Under a list of an event's screens (the events, who is going, who answered a date) when its next page could not be loaded, beside a button to try again."
-  },
-  "events.more": {
-    "defaultMessage": "さらに表示",
-    "description": "The button under a list of an event's screens that loads the next of it."
-  },
   "events.retry": {
     "defaultMessage": "もう一度試す",
     "description": "The button after a sentence that says something of an event's screens could not be loaded."

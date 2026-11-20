@@ -25,6 +25,7 @@ import {
   type CostSchedule,
 } from "@my/app-data";
 import {
+  Pager,
   Button,
   DateTimeField,
   FeedNotice,
@@ -32,7 +33,6 @@ import {
   focusRefusedField,
   FormAlert,
   LinkButton,
-  MoreRecords,
   NumberField,
   RecordTable,
   Row,
@@ -41,7 +41,6 @@ import {
   Select,
   Stack,
   StateMark,
-  TextButton,
   TextField,
   type RecordColumn,
   type RecordRow,
@@ -49,8 +48,8 @@ import {
 import { useId, useState, type ReactNode } from "react";
 import { fieldError, placeRefusal, type Refused } from "../../field-errors";
 import { moneyText } from "../../finance-totals";
-import type { StaffUnderProps } from "../entries";
-import { errorOf, Field, ReadNotice, useStaffStrings, type T } from "../parts";
+import type { StaffSearch, StaffUnderProps } from "../entries";
+import { cursorOf, errorOf, Field, useAddressPages, ReadNotice, useStaffStrings, type T } from "../parts";
 import { FinanceBack, financePaths, scheduleWords, currencyOptions, useDay, useTodayDate } from "./parts";
 
 // ---- The list ---------------------------------------------------------------------------------------------------------
@@ -75,10 +74,11 @@ function EndMark({ item, today }: { item: CostItem; today: string }) {
   );
 }
 
-/** The cost items, newest first, and Record a cost. */
-export function CostItemsScreen({ go }: StaffUnderProps): ReactNode {
+/** The cost items, newest first, a page at a time, the page kept in the address; and Record a cost. */
+export function CostItemsScreen({ go, search, onSearch }: StaffUnderProps): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t, locale } = useStaffStrings();
-  const list = useCostItems();
+  const list = useCostItems(pages.cursor);
   const today = useTodayDate();
   const head = (
     <ScreenTitle
@@ -92,7 +92,7 @@ export function CostItemsScreen({ go }: StaffUnderProps): ReactNode {
       {t("staff_finance.costs")}
     </ScreenTitle>
   );
-  if (list.status !== "success" && list.items.length === 0)
+  if (list.status !== "success" && !list.stale)
     return (
       <ScreenStack>
         {head}
@@ -132,22 +132,18 @@ export function CostItemsScreen({ go }: StaffUnderProps): ReactNode {
         head={{ label: t("staff_finance.costs.column.item") }}
         columns={columns}
         rows={rows}
+        busy={list.stale}
         even
         empty={<FeedNotice start>{t("staff_finance.costs.empty")}</FeedNotice>}
       />
-      {list.failedNextPage ? (
-        <FeedNotice alert start action={<TextButton onPress={list.fetchNextPage}>{t("staff.retry")}</TextButton>}>
-          {t("staff_finance.costs.failed_more")}
-        </FeedNotice>
-      ) : (
-        list.hasNextPage && <MoreRecords onPress={list.fetchNextPage} busy={list.isFetchingNextPage} />
-      )}
+      <Pager {...pages.pager(list.next)} />
     </ScreenStack>
   );
 }
 
-/** Reads the first page of the cost items, for the route's loader. */
-export const loadCostItemsScreen = (data: AppData): Promise<void> => loadCostItems(data);
+/** Reads the page of the cost items the address asks for, for the route's loader. */
+export const loadCostItemsScreen = (data: AppData, search: StaffSearch): Promise<void> =>
+  loadCostItems(data, cursorOf(search));
 
 // ---- A new item -------------------------------------------------------------------------------------------------------
 

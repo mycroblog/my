@@ -24,6 +24,7 @@ import {
   type SignupBlockSeverity,
 } from "@my/app-data";
 import {
+  Pager,
   BackButton,
   Button,
   FactList,
@@ -55,7 +56,7 @@ import {
   filtered,
   LabelledSelect,
   lengthOptions,
-  Pages,
+  useAddressPages,
   refusalWords,
   secondsOf,
   useEnd,
@@ -91,6 +92,7 @@ type Column = "kind" | "severity" | "ends" | "state";
 
 /** The list of blocks: its filters, the way to add some, the page, and the pages. */
 export function SignupBlocksScreen(address: StaffAddress): ReactNode {
+  const pages = useAddressPages(address);
   const { search, onSearch } = address;
   const { t } = useStaffStrings();
   const end = useEnd();
@@ -194,7 +196,7 @@ export function SignupBlocksScreen(address: StaffAddress): ReactNode {
           </FeedNotice>
         }
       />
-      <Pages address={address} next={page.next} />
+      <Pager {...pages.pager(page.next)} />
     </ScreenStack>
   );
 }

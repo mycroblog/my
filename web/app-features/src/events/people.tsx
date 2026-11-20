@@ -27,11 +27,14 @@ import {
   Row,
   RowItem,
   RowList,
+  ShowMore,
   Stack,
   StateText,
+  useAddedFocus,
+  type AddedFocus,
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { MoreOf, Retry, type T } from "./parts";
+import { Retry, type T } from "./parts";
 import type { Say } from "./places";
 
 /** The organizer, then the co-organizers. */
@@ -144,9 +147,12 @@ function Group({
   attendees,
   heading,
   end,
+  item,
 }: {
   attendees: readonly EventAttendee[];
   heading: string;
+  /** The ref of an attendee's row, for the list that grows under Show more. */
+  item: (attendee: EventAttendee) => ReturnType<AddedFocus["item"]>;
   /** What stands at the end of each attendee's line (the organizers' approval). */
   end?: ((attendee: EventAttendee) => ReactNode) | undefined;
 }) {
@@ -156,7 +162,7 @@ function Group({
       <GroupHeading>{heading}</GroupHeading>
       <RowList label={heading}>
         {attendees.map((a) => (
-          <RowItem key={a.account.id}>
+          <RowItem key={a.account.id} itemRef={item(a)}>
             <AccountLine account={a.account} end={end?.(a)} />
           </RowItem>
         ))}
@@ -182,6 +188,9 @@ export function Attendees({
 }): ReactNode {
   const list = useEventAttendees(event.id);
   const writes = useEventWrites(event.id);
+  const added = useAddedFocus(list.items.length);
+  // The first attendee a press added takes the focus, in whichever group it stands.
+  const item = (attendee: EventAttendee) => added.item(list.items.indexOf(attendee));
   if (list.status === "pending") return <FeedNotice start>{t("events.attendees_loading")}</FeedNotice>;
   if (list.items.length === 0)
     return list.status === "error" ? (
@@ -204,9 +213,14 @@ export function Attendees({
   return (
     <Stack gap="entry-room">
       {/* The server counts who is going; who may go is counted by the pages read. */}
-      <Group attendees={going} heading={t("events.going_group", { count: event.going_count })} end={end} />
-      <Group attendees={maybe} heading={t("events.maybe_group")} end={end} />
-      <MoreOf list={list} t={t} />
+      <Group attendees={going} heading={t("events.going_group", { count: event.going_count })} end={end} item={item} />
+      <Group attendees={maybe} heading={t("events.maybe_group")} end={end} item={item} />
+      <ShowMore
+        more={list.hasNextPage}
+        busy={list.isFetchingNextPage}
+        failed={list.failedNextPage}
+        onPress={added.press(list.fetchNextPage)}
+      />
     </Stack>
   );
 }

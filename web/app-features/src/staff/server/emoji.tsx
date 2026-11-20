@@ -16,11 +16,11 @@ import {
   type AppData,
 } from "@my/app-data";
 import {
+  Pager,
   Box,
   FeedNotice,
   FilterBar,
   FilterFacet,
-  RecordPages,
   RecordTable,
   ScreenStack,
   type FilterValue,
@@ -29,32 +29,18 @@ import {
 } from "@my/design-system";
 import type { ReactNode } from "react";
 import type { StaffEntryProps, StaffSearch } from "../entries";
-import { ReadNotice, useStaffStrings, type T } from "../parts";
+import { cursorOf, filtered, useAddressPages, ReadNotice, useStaffStrings, type T } from "../parts";
 import { adminEmojiPath, coded, EmojiImage, EmojiState, EmojiTabs, EmojiTitle, originOf } from "./emoji-parts";
 
 /** What the list shows at an address's query: every emoji unless it names an origin or a shortcode, and a page. */
 function emojiQueryOf(search: StaffSearch): AdminEmojiQuery {
-  const { origin, shortcode, cursor } = search;
+  const { origin, shortcode } = search;
   return {
     origin: origin === "local" || origin === "remote" ? origin : undefined,
     shortcode: shortcode === undefined || shortcode === "" ? undefined : shortcode,
-    cursor: cursor === undefined || cursor === "" ? undefined : cursor,
+    cursor: cursorOf(search),
   };
 }
-
-/** The query of the list's address for `q`, after the `trail` of pages before it. */
-function searchOf(q: AdminEmojiQuery, trail: readonly string[] = []): StaffSearch {
-  return {
-    ...(q.origin === undefined ? {} : { origin: q.origin }),
-    ...(q.shortcode === undefined ? {} : { shortcode: q.shortcode }),
-    ...(q.cursor === undefined ? {} : { cursor: q.cursor }),
-    ...(trail.length === 0 ? {} : { trail: trail.map((c) => encodeURIComponent(c)).join(",") }),
-  };
-}
-
-/** The cursors of the pages before the one shown, the first page's as empty. */
-const trailOf = (search: StaffSearch): string[] =>
-  search["trail"] === undefined ? [] : search["trail"].split(",").map((c) => decodeURIComponent(c));
 
 /** Reads what the list shows at `search`, and the pending requests its tab counts, for the route's loader. */
 export async function loadEmojiScreen(data: AppData, search: StaffSearch): Promise<void> {
@@ -77,13 +63,13 @@ type Column = "image" | "origin" | "state";
 
 /** The custom emoji: their tabs, their filters, a page of them, and the pages. */
 export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): ReactNode {
+  const pages = useAddressPages({ search, onSearch });
   const { t } = useStaffStrings();
   const q = emojiQueryOf(search);
-  const trail = trailOf(search);
   const page = useAdminEmojis(q);
-  const filtered = q.origin !== undefined || q.shortcode !== undefined;
-  const change = (next: Partial<AdminEmojiQuery>) => {
-    onSearch(searchOf({ ...q, ...next, cursor: undefined }));
+  const narrowed = q.origin !== undefined || q.shortcode !== undefined;
+  const change = (next: Partial<Pick<AdminEmojiQuery, "origin" | "shortcode">>) => {
+    onSearch(filtered(search, next));
   };
   const origins: FilterValue[] = [
     { id: "local", label: t("staff_emoji.origin.local"), icon: "home" },
@@ -110,7 +96,6 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
       state: <EmojiState emoji={e} />,
     },
   }));
-  const previous = trail.at(-1);
   return (
     <ScreenStack busy={page.stale}>
       <EmojiTitle />
@@ -126,7 +111,7 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
               },
               clearLabel: t("staff_emoji.search.clear"),
             }}
-            applied={filtered}
+            applied={narrowed}
             onClear={() => {
               onSearch({});
             }}
@@ -157,30 +142,9 @@ export function AdminEmojiScreen({ search, onSearch, go }: StaffEntryProps): Rea
                 rows={rows}
                 busy={page.stale}
                 even
-                empty={<FeedNotice>{t(filtered ? "staff_emoji.empty.filtered" : "staff_emoji.empty")}</FeedNotice>}
+                empty={<FeedNotice>{t(narrowed ? "staff_emoji.empty.filtered" : "staff_emoji.empty")}</FeedNotice>}
               />
-              <RecordPages
-                previous={
-                  previous === undefined
-                    ? undefined
-                    : {
-                        onPress: () => {
-                          onSearch(
-                            searchOf({ ...q, cursor: previous === "" ? undefined : previous }, trail.slice(0, -1)),
-                          );
-                        },
-                      }
-                }
-                next={
-                  page.next === undefined
-                    ? undefined
-                    : {
-                        onPress: () => {
-                          onSearch(searchOf({ ...q, cursor: page.next }, [...trail, q.cursor ?? ""]));
-                        },
-                      }
-                }
-              />
+              <Pager {...pages.pager(page.next)} />
             </>
           )}
         </ScreenStack>
