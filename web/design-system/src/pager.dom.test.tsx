@@ -66,6 +66,41 @@ test("a window of periods that failed names the periods, not a page", () => {
   expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
 });
 
+test("Later that reaches the window ending today leaves the focus on Earlier, not the page's body", async () => {
+  const user = userEvent.setup();
+  const press = () => undefined;
+  const { rerender } = render(<Pager periods="month" previous={{ onPress: press }} next={{ onPress: press }} />);
+  await user.click(screen.getByRole("button", { name: "Later months" }));
+  // A browser drops the focus of a button that is disabled to the page's body, before the effects of the render.
+  act(() => {
+    (document.activeElement as HTMLElement | null)?.blur();
+  });
+  rerender(<Pager periods="month" next={{ onPress: press }} />);
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Earlier months" }));
+});
+
+test("Next that reaches the last page leaves the focus on Previous, and on the position where both go", async () => {
+  const user = userEvent.setup();
+  const press = () => undefined;
+  const { rerender } = render(<Pager previous={{ onPress: press }} next={{ onPress: press }} position={2} />);
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  // Where the browser keeps the focus on the disabled button, it moves all the same.
+  rerender(<Pager previous={{ onPress: press }} position={3} />);
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "Previous" }));
+
+  // A focus that left the pager for another element stays there.
+  const outside = document.createElement("button");
+  document.body.append(outside);
+  rerender(<Pager previous={{ onPress: press }} next={{ onPress: press }} position={2} />);
+  await user.click(screen.getByRole("button", { name: "Next" }));
+  act(() => {
+    outside.focus();
+  });
+  rerender(<Pager previous={{ onPress: press }} position={3} />);
+  expect(document.activeElement).toBe(outside);
+  outside.remove();
+});
+
 test("Show more stays the one button, named Try again after it failed, and goes with the list's end", () => {
   const { rerender } = render(<ShowMore more onPress={() => undefined} />);
   const button = screen.getByRole("button", { name: "Show more" });

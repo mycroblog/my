@@ -19,7 +19,7 @@
 // Its few words (the pages, Previous, Next, Later and Earlier for a window of periods, Show more, Try again and what
 // failed) are the design system's catalog's; the position of a window of periods is the app's, which formats it.
 
-import { useRef, type ReactNode, type RefCallback } from "react";
+import { useLayoutEffect, useRef, type FocusEvent, type ReactNode, type RefCallback } from "react";
 import { Button, LinkButton } from "./button";
 import { Icon, type IconName } from "./icons";
 import { Box, Row, Stack } from "./layout";
@@ -106,14 +106,51 @@ function PageButton({
 }
 
 /**
+ * The focus of the pager's two buttons: a press that leaves its own direction with no page (Next reaching the last
+ * page, Later the window that ends today) disables the button that holds the focus, which a browser then drops to the
+ * page's body; it goes to the other direction's button instead, or to the position where that one is disabled too.
+ * Returns the ref of the row of the two buttons with its focus handlers, and the position's ref.
+ */
+function useKeptFocus(previousGone: boolean, nextGone: boolean) {
+  const buttons = useRef<HTMLDivElement>(null);
+  const place = useRef<HTMLSpanElement>(null);
+  // The direction whose button holds the focus, kept while the focus leaves it for nothing (the body, as it is
+  // disabled) and forgotten once it goes elsewhere.
+  const held = useRef<0 | 1 | undefined>(undefined);
+  useLayoutEffect(() => {
+    const row = buttons.current;
+    const at = held.current;
+    if (row === null || at === undefined || !(at === 0 ? previousGone : nextGone)) return;
+    const lost = row.children[at];
+    const active = document.activeElement;
+    if (active !== null && active !== document.body && !(lost?.contains(active) ?? false)) return;
+    const other = row.children[at === 0 ? 1 : 0];
+    if (other instanceof HTMLElement && !(at === 0 ? nextGone : previousGone)) other.focus();
+    else place.current?.focus();
+  }, [previousGone, nextGone]);
+  return {
+    buttons,
+    place,
+    onFocus: (event: FocusEvent<HTMLDivElement>) => {
+      const at = [...event.currentTarget.children].findIndex((b) => b.contains(event.target));
+      held.current = at === 0 || at === 1 ? at : undefined;
+    },
+    onBlur: (event: FocusEvent<HTMLDivElement>) => {
+      if (event.relatedTarget !== null) held.current = undefined;
+    },
+  };
+}
+
+/**
  * Previous and Next under a list that is a screen's subject, paged by cursor, side by side at the list's start, either
- * disabled where there is no such page (the first page, the last), so that a press that reaches the last page leaves
- * the focus on its button; after them, which page is shown, a polite live region. A list of one page has none. A
- * navigation named for assistive technology.
+ * disabled where there is no such page (the first page, the last); a press that reaches it leaves the focus on the
+ * other direction (`useKeptFocus`). After them, which page is shown, a polite live region. A list of one page has none.
+ * A navigation named for assistive technology.
  */
 export function Pager({ previous, next, busy, failed, position, periods }: PagerProps) {
   const { lang } = useReader(undefined);
   const { t } = stringsIn(lang);
+  const kept = useKeptFocus(previous === undefined, next === undefined);
   if (previous === undefined && next === undefined) return null;
   const retry = t("records.retry");
   return (
@@ -126,7 +163,7 @@ export function Pager({ previous, next, busy, failed, position, periods }: Pager
         </Failed>
       )}
       <Row as="nav" wrap align="center" gap="screen-tabs-gap" aria-label={t("records.pages")} data-pager="">
-        <Row wrap gap="entry-caption">
+        <Row as={<div ref={kept.buttons} onFocus={kept.onFocus} onBlur={kept.onBlur} />} wrap gap="entry-caption">
           <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
             {failed === "previous"
               ? retry
@@ -143,7 +180,7 @@ export function Pager({ previous, next, busy, failed, position, periods }: Pager
           </PageButton>
         </Row>
         <Box text="caption" tone="muted" numeric>
-          <span role="status">
+          <span ref={kept.place} role="status" tabIndex={-1}>
             {typeof position === "number" ? t("records.page", { page: position }) : (position ?? "")}
           </span>
         </Box>
