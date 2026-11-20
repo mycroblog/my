@@ -34,8 +34,9 @@ test("a visitor reads a profile and a thread signed out, and Follow sends them t
   await signIn.withPassword(reader.email, reader.password);
   await expect(profile.heading).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`/@${writer.username}$`));
-  // Signed in now, the profile offers the reader's own follow.
-  await expect(profile.followButton).toBeVisible();
+  // Signed in now, Follow is the reader's own: the server takes it, and the profile shows they follow the writer.
+  await profile.follow();
+  await expect(profile.followingButton).toBeVisible();
 });
 
 test("a post's Favourite sends a visitor through the sign-in back to the post", async ({ page, fresh }) => {
@@ -55,5 +56,8 @@ test("a post's Favourite sends a visitor through the sign-in back to the post", 
   await signIn.withPassword(reader.email, reader.password);
   await expect(thread.heading).toBeVisible();
   await expect(page).toHaveURL(new RegExp(`${opened}$`));
-  await expect(thread.post(writer.displayName, post.text).favouriteButton).toBeVisible();
+  // Signed in now, Favourite is the reader's own: the server takes it, and the post shows it favourited.
+  const favourited = thread.post(writer.displayName, post.text);
+  await favourited.favourite();
+  await expect(favourited.favourited).toBeVisible();
 });
