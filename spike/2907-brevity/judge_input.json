@@ -1,0 +1,770 @@
+[
+ {
+  "id": 0,
+  "where": "The line about the setting Keep who took part: what it does where that is not plain.",
+  "control": {
+   "en": "Keep who took part",
+   "ja": "参加の記録の保存"
+  },
+  "helper": {
+   "en": "Days after a room ended.",
+   "ja": "ルームが終わってからの日数です。"
+  }
+ },
+ {
+  "id": 1,
+  "where": "The line about the setting Keep translations: what it does where that is not plain.",
+  "control": {
+   "en": "Keep translations",
+   "ja": "翻訳の保存"
+  },
+  "helper": {
+   "en": "Days after a translation was made.",
+   "ja": "翻訳してからの日数です。"
+  }
+ },
+ {
+  "id": 2,
+  "where": "The line about the setting Suggested accounts: what it does where that is not plain.",
+  "control": {
+   "en": "Suggested accounts",
+   "ja": "おすすめのアカウント"
+  },
+  "helper": {
+   "en": "Usernames of up to 20 accounts of this server, separated by spaces, suggested first in this order.",
+   "ja": "このサーバーのアカウントのユーザー名を 20 個まで、スペースで区切って入れます。この順に先頭でおすすめします。"
+  }
+ },
+ {
+  "id": 3,
+  "where": "The line about the setting Readers can use their browser's translation: what it does where that is not plain.",
+  "control": {
+   "en": "Readers can use their browser's translation",
+   "ja": "ブラウザーの翻訳を使えるようにする"
+  },
+  "helper": {
+   "en": "It sends nothing to this server or to a provider. With a provider too, the browser translates what the provider does not.",
+   "ja": "このサーバーにも翻訳サービスにも何も送りません。翻訳サービスもあるときは、サービスが訳さないものをブラウザーが訳します。"
+  }
+ },
+ {
+  "id": 4,
+  "where": "The line about the setting Largest article: what it does where that is not plain.",
+  "control": {
+   "en": "Largest article",
+   "ja": "記事の最大の大きさ"
+  },
+  "helper": {
+   "en": "How large the body of an article may be, counted in the HTML it makes (1,000 to 100,000).",
+   "ja": "記事の本文の大きさの上限です。本文から作る HTML で数えます (1000〜100000)。"
+  }
+ },
+ {
+  "id": 5,
+  "where": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the text font's name.",
+  "control": {
+   "en": "Text font",
+   "ja": "文字のフォント"
+  },
+  "helper": {
+   "en": "Family names, separated by commas. The app's own fonts draw what yours lack.",
+   "ja": "ファミリー名をカンマで区切って書きます。足りない文字はアプリのフォントで表示します。"
+  }
+ },
+ {
+  "id": 6,
+  "where": "The line about the setting Keep answers to events: what it does where that is not plain.",
+  "control": {
+   "en": "Keep answers to events",
+   "ja": "イベントの出欠の保存"
+  },
+  "helper": {
+   "en": "Days after an event ended to keep who answered, was approved, was invited and voted.",
+   "ja": "イベントが終わってから、出欠の回答・承認・招待・投票の記録を残す日数です。"
+  }
+ },
+ {
+  "id": 7,
+  "where": "The line about the setting Moderators can translate reports: what it does where that is not plain.",
+  "control": {
+   "en": "Moderators can translate reports",
+   "ja": "モデレーターが通報を翻訳できる"
+  },
+  "helper": {
+   "en": "A report's comment counts as a followers-only post: it goes only to a provider allowed to receive those.",
+   "ja": "通報のコメントはフォロワー限定の投稿として扱い、それを受け取れるサービスにだけ送ります。"
+  }
+ },
+ {
+  "id": 8,
+  "where": "The line about the setting Media needs a description: what it does where that is not plain.",
+  "control": {
+   "en": "Media needs a description",
+   "ja": "メディアに説明を必須にする"
+  },
+  "helper": {
+   "en": "A post with an image, video or audio that has no description is refused.",
+   "ja": "説明のない画像・動画・音声をつけた投稿は受け付けません。"
+  }
+ },
+ {
+  "id": 9,
+  "where": "The line about the setting Local timeline: what it does where that is not plain.",
+  "control": {
+   "en": "Local timeline",
+   "ja": "ローカルタイムライン"
+  },
+  "helper": {
+   "en": "Unless everyone can see it, the front page shows no sample posts.",
+   "ja": "全員に見せない場合、トップページに投稿の例を出しません。"
+  }
+ },
+ {
+  "id": 10,
+  "where": "The line about the setting Apps can register themselves: what it does where that is not plain.",
+  "control": {
+   "en": "Apps can register themselves",
+   "ja": "アプリが自分で登録できる"
+  },
+  "helper": {
+   "en": "Tools can register as public apps without signing in (RFC 7591). Unused ones are deleted after a while.",
+   "ja": "ツールがログインせずに公開のアプリとして登録できます (RFC 7591)。使われないものはしばらくして削除されます。"
+  }
+ },
+ {
+  "id": 11,
+  "where": "The line about the setting Keep posts only a relay brought: what it does where that is not plain.",
+  "control": {
+   "en": "Keep posts only a relay brought",
+   "ja": "リレーだけが運んだ投稿の保存"
+  },
+  "helper": {
+   "en": "Days such a post is kept when nobody here follows its author or refers to it.",
+   "ja": "ここで誰も投稿者をフォローせず、参照もしていない投稿を残す日数です。"
+  }
+ },
+ {
+  "id": 12,
+  "where": "The line about the setting Require signed fetches: what it does where that is not plain.",
+  "control": {
+   "en": "Require signed fetches",
+   "ja": "取得に署名を求める"
+  },
+  "helper": {
+   "en": "Other servers must sign their requests to read posts and collections here (secure mode).",
+   "ja": "ほかのサーバーが投稿やコレクションを読むときに、署名を求めます (セキュアモード)。"
+  }
+ },
+ {
+  "id": 13,
+  "where": "The line about the setting New accounts can be indexed: what it does where that is not plain.",
+  "control": {
+   "en": "Include new accounts in search",
+   "ja": "新しいアカウントを検索に載せる"
+  },
+  "helper": {
+   "en": "What new accounts start with; each person can change it. Accounts that exist keep theirs.",
+   "ja": "新しいアカウントの最初の設定です。各自で変えられます。いまあるアカウントは変わりません。"
+  }
+ },
+ {
+  "id": 14,
+  "where": "The line about the setting Who can write articles: what it does where that is not plain.",
+  "control": {
+   "en": "Who can write articles",
+   "ja": "記事を書ける人"
+  },
+  "helper": {
+   "en": "Limiting it keeps the articles already written.",
+   "ja": "制限しても、書かれた記事は残ります。"
+  }
+ },
+ {
+  "id": 15,
+  "where": "The line about the setting Who can create events: what it does where that is not plain.",
+  "control": {
+   "en": "Who can create events",
+   "ja": "イベントを作れる人"
+  },
+  "helper": {
+   "en": "People with the permission to create events can, either way.",
+   "ja": "イベントを作る権限を持つ人は、どちらでも作れます。"
+  }
+ },
+ {
+  "id": 16,
+  "where": "The line about the setting Also review messages from strangers: what it does where that is not plain.",
+  "control": {
+   "en": "Also review messages from strangers",
+   "ja": "フォローしていない人からのメッセージも審査"
+  },
+  "helper": {
+   "en": "Direct messages whose author nobody here follows go to the plugin too.",
+   "ja": "ここで誰もフォローしていない送り主からのダイレクトメッセージも、プラグインに送ります。"
+  }
+ },
+ {
+  "id": 17,
+  "where": "The line about the setting Review accounts younger than: what it does where that is not plain.",
+  "control": {
+   "en": "Review accounts younger than",
+   "ja": "この日数より新しいアカウントを審査"
+  },
+  "helper": {
+   "en": "At 0, every account is reviewed.",
+   "ja": "0 ですべてのアカウントを審査します。"
+  }
+ },
+ {
+  "id": 18,
+  "where": "The line about the setting Actions and appeals: what it does where that is not plain.",
+  "control": {
+   "en": "Actions and appeals",
+   "ja": "処分と異議申し立て"
+  },
+  "helper": {
+   "en": "Days after the action ended.",
+   "ja": "処分が終わってからの日数です。"
+  }
+ },
+ {
+  "id": 19,
+  "where": "The line about the setting Who sees the reasons: what it does where that is not plain.",
+  "control": {
+   "en": "Who sees the reasons",
+   "ja": "理由を見られる人"
+  },
+  "helper": {
+   "en": "Someone who cannot see the list never sees the reasons.",
+   "ja": "一覧を見られない人は理由も見られません。"
+  }
+ },
+ {
+  "id": 20,
+  "where": "The line about the setting Security contact: what it does where that is not plain.",
+  "control": {
+   "en": "Security contact",
+   "ja": "セキュリティの連絡先"
+  },
+  "helper": {
+   "en": "An https: or mailto: address for reports of security problems of this server. With one, the server answers /.well-known/security.txt.",
+   "ja": "このサーバーのセキュリティの問題の報告先です (https: か mailto: のアドレス)。設定すると /.well-known/security.txt を返します。"
+  }
+ },
+ {
+  "id": 21,
+  "where": "The line about the setting Keep posts at most: what it does where that is not plain.",
+  "control": {
+   "en": "Keep posts at most",
+   "ja": "投稿を残す最長の日数"
+  },
+  "helper": {
+   "en": "At 0, no maximum.",
+   "ja": "0 で上限なし。"
+  }
+ },
+ {
+  "id": 22,
+  "where": "The line about the setting Characters per person a month: what it does where that is not plain.",
+  "control": {
+   "en": "Characters per person a month",
+   "ja": "1 人の 1 か月の文字数"
+  },
+  "helper": {
+   "en": "At 0, nothing is sent. Months are in UTC.",
+   "ja": "0 で何も送りません。月は UTC で数えます。"
+  }
+ },
+ {
+  "id": 23,
+  "where": "The line about the setting Keep any post at most: what it does where that is not plain.",
+  "control": {
+   "en": "Keep any post at most",
+   "ja": "どの投稿も残す最長の日数"
+  },
+  "helper": {
+   "en": "At 0, no limit. Past it, replies, boosts and bookmarks here show the post as deleted.",
+   "ja": "0 で上限なし。過ぎると、ここでの返信・ブースト・ブックマークでは削除済みと表示されます。"
+  }
+ },
+ {
+  "id": 24,
+  "where": "The line about the setting Who sees the moderated servers: what it does where that is not plain.",
+  "control": {
+   "en": "Who sees the moderated servers",
+   "ja": "処分したサーバーを見られる人"
+  },
+  "helper": {
+   "en": "The list of the servers this server took action on.",
+   "ja": "このサーバーが処分したサーバーの一覧です。"
+  }
+ },
+ {
+  "id": 25,
+  "where": "The line about the setting Fetch cards despite robots.txt: what it does where that is not plain.",
+  "control": {
+   "en": "Fetch cards despite robots.txt",
+   "ja": "robots.txt に従わずにカードを取得"
+  },
+  "helper": {
+   "en": "Turn it on only when too many cards are missing: linked sites can no longer refuse these fetches.",
+   "ja": "カードが出ないことが多すぎるときだけオンにしてください。リンク先のサイトは取得を断れなくなります。"
+  }
+ },
+ {
+  "id": 26,
+  "where": "The line about the setting Keep posts nothing here refers to: what it does where that is not plain.",
+  "control": {
+   "en": "Keep posts nothing here refers to",
+   "ja": "ここで参照されない投稿の保存"
+  },
+  "helper": {
+   "en": "Days a post from another server is kept when nothing of this server refers to it.",
+   "ja": "このサーバーのどこからも参照されない、ほかのサーバーの投稿を残す日数です。"
+  }
+ },
+ {
+  "id": 27,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the quote bar color colors, under its name.",
+  "control": {
+   "en": "Quote bar",
+   "ja": "引用の線"
+  },
+  "helper": {
+   "en": "The bar at the start of a quote.",
+   "ja": "引用の始まりの線。"
+  }
+ },
+ {
+  "id": 28,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the muted text color colors, under its name.",
+  "control": {
+   "en": "Muted text",
+   "ja": "控えめな文字"
+  },
+  "helper": {
+   "en": "Times, counts and the lines under a name.",
+   "ja": "時刻・数・名前の下の行。"
+  }
+ },
+ {
+  "id": 29,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the text color colors, under its name.",
+  "control": {
+   "en": "Text",
+   "ja": "文字"
+  },
+  "helper": {
+   "en": "Most words: posts, names, labels.",
+   "ja": "ほとんどの文字。投稿・名前・ラベル。"
+  }
+ },
+ {
+  "id": 30,
+  "where": "The line about the setting Contact account: what it does where that is not plain.",
+  "control": {
+   "en": "Contact account",
+   "ja": "連絡先のアカウント"
+  },
+  "helper": {
+   "en": "The username of an account of this server that people can contact.",
+   "ja": "連絡を受けるこのサーバーのアカウントのユーザー名です。"
+  }
+ },
+ {
+  "id": 31,
+  "where": "The line about the setting Pins that keep posts: what it does where that is not plain.",
+  "control": {
+   "en": "Pins that keep posts",
+   "ja": "投稿を残すピン留めの数"
+  },
+  "helper": {
+   "en": "The most recent pins first. 5 keeps every pinned post.",
+   "ja": "最近ピン留めしたものから数えます。5 でピン留めしたすべての投稿を残します。"
+  }
+ },
+ {
+  "id": 32,
+  "where": "The line about the setting Contact email: what it does where that is not plain.",
+  "control": {
+   "en": "Contact email",
+   "ja": "連絡先のメールアドレス"
+  },
+  "helper": {
+   "en": "Also where replies to the emails this server sends go.",
+   "ja": "このサーバーが送るメールの返信先にもなります。"
+  }
+ },
+ {
+  "id": 33,
+  "where": "The line about the setting Apps by their metadata document: what it does where that is not plain.",
+  "control": {
+   "en": "Accept apps by their metadata document",
+   "ja": "メタデータ文書のアプリを受け付ける"
+  },
+  "helper": {
+   "en": "Accepts an app whose ID is the https address of its metadata, with no registration.",
+   "ja": "ID がメタデータの https のアドレスであるアプリを、登録なしに受け付けます。"
+  }
+ },
+ {
+  "id": 34,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the raised surface color colors, under its name.",
+  "control": {
+   "en": "Fields and buttons",
+   "ja": "入力欄とボタン"
+  },
+  "helper": {
+   "en": "Also boxed sections.",
+   "ja": "囲まれた区画にも使います。"
+  }
+ },
+ {
+  "id": 35,
+  "where": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the code font's name.",
+  "control": {
+   "en": "Code font",
+   "ja": "コードのフォント"
+  },
+  "helper": {
+   "en": "Family names, separated by commas.",
+   "ja": "ファミリー名をカンマで区切って書きます。"
+  }
+ },
+ {
+  "id": 36,
+  "where": "The line about the setting Grace period: what it does where that is not plain.",
+  "control": {
+   "en": "Grace period",
+   "ja": "猶予"
+  },
+  "helper": {
+   "en": "Days an account keeps its own settings after it is told.",
+   "ja": "お知らせしてから、各自の設定のままでいる日数です。"
+  }
+ },
+ {
+  "id": 37,
+  "where": "The line about the setting Default language: what it does where that is not plain.",
+  "control": {
+   "en": "Default language",
+   "ja": "既定の言語"
+  },
+  "helper": {
+   "en": "The app's language for new accounts, and for anyone whose language the app does not have.",
+   "ja": "新しいアカウントのアプリの言語です。アプリにない言語を使う人にも使います。"
+  }
+ },
+ {
+  "id": 38,
+  "where": "The line about the setting Posts search covers: what it does where that is not plain.",
+  "control": {
+   "en": "Posts search covers",
+   "ja": "検索の対象"
+  },
+  "helper": {
+   "en": "A visibility added finds only its new posts until the index is rebuilt.",
+   "ja": "追加した公開範囲は、索引を作り直すまで新しい投稿だけが見つかります。"
+  }
+ },
+ {
+  "id": 39,
+  "where": "The line about the setting One-person server: what it does where that is not plain.",
+  "control": {
+   "en": "One-person server",
+   "ja": "一人のためのサーバー"
+  },
+  "helper": {
+   "en": "Only for a server with exactly one account. Nobody else can sign up, and the local timelines are off.",
+   "ja": "アカウントがちょうど 1 つのサーバーでだけ使えます。ほかの人は登録できず、ローカルのタイムラインはオフになります。"
+  }
+ },
+ {
+  "id": 40,
+  "where": "The line about the setting Show local rooms outside: what it does where that is not plain.",
+  "control": {
+   "en": "Show local rooms outside",
+   "ja": "ローカルのルームを外に見せる"
+  },
+  "helper": {
+   "en": "People not signed in here see a local room's name, description, host and whether it is open. Never who takes part.",
+   "ja": "ここにログインしていない人に、ローカルのルームの名前・説明・ホスト・開催中かを見せます。参加者は見せません。"
+  }
+ },
+ {
+  "id": 41,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the surface color colors, under its name.",
+  "control": {
+   "en": "Page background",
+   "ja": "ページの背景"
+  },
+  "helper": {
+   "en": "Behind everything else.",
+   "ja": "ほかのすべての後ろ。"
+  }
+ },
+ {
+  "id": 42,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the accent text color colors, under its name.",
+  "control": {
+   "en": "Accent text",
+   "ja": "アクセントの文字"
+  },
+  "helper": {
+   "en": "Links and the focus ring.",
+   "ja": "リンクとフォーカスの枠。"
+  }
+ },
+ {
+  "id": 43,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the accent color colors, under its name.",
+  "control": {
+   "en": "Accent",
+   "ja": "アクセント"
+  },
+  "helper": {
+   "en": "The fill of the primary button.",
+   "ja": "主なボタンの塗り。"
+  }
+ },
+ {
+  "id": 44,
+  "where": "The line about the setting People can register apps: what it does where that is not plain.",
+  "control": {
+   "en": "People can register apps",
+   "ja": "利用者がアプリを登録できる"
+  },
+  "helper": {
+   "en": "Apps already registered keep working when it is off.",
+   "ja": "オフにしても、登録済みのアプリは使えます。"
+  }
+ },
+ {
+  "id": 45,
+  "where": "The line about the setting Automatic deletion: what it does where that is not plain.",
+  "control": {
+   "en": "Automatic deletion",
+   "ja": "自動削除"
+  },
+  "helper": {
+   "en": "Whether new accounts start with it on.",
+   "ja": "新しいアカウントで最初からオンにするかどうかです。"
+  }
+ },
+ {
+  "id": 46,
+  "where": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under a field that only the moderators read.",
+  "control": {
+   "en": "Moderators' note",
+   "ja": "モデレーターのメモ"
+  },
+  "helper": {
+   "en": "Only the moderators read it.",
+   "ja": "モデレーターだけが読めます。"
+  }
+ },
+ {
+  "id": 47,
+  "where": "The line about the setting Link preview image: what it does where that is not plain.",
+  "control": {
+   "en": "Link preview image",
+   "ja": "リンクプレビューの画像"
+  },
+  "helper": {
+   "en": "Shown when a page of this server that has no image of its own is shared.",
+   "ja": "画像のないこのサーバーのページが共有されたときに表示されます。"
+  }
+ },
+ {
+  "id": 48,
+  "where": "The line about the setting Usable invites per person: what it does where that is not plain.",
+  "control": {
+   "en": "Usable invites per person",
+   "ja": "1 人が持てる招待"
+  },
+  "helper": {
+   "en": "At 0, members can create none.",
+   "ja": "0 にするとメンバーは作れません。"
+  }
+ },
+ {
+  "id": 49,
+  "where": "The line about the setting Cards for links: what it does where that is not plain.",
+  "control": {
+   "en": "Cards for links",
+   "ja": "リンクのカード"
+  },
+  "helper": {
+   "en": "The server fetches a linked page to make its card. Off also hides the cards already made.",
+   "ja": "サーバーがリンク先のページを取得してカードを作ります。オフにすると作ったカードも出しません。"
+  }
+ },
+ {
+  "id": 50,
+  "where": "The line about the setting Appeals can be made for: what it does where that is not plain.",
+  "control": {
+   "en": "Appeals can be made for",
+   "ja": "異議申し立てができる日数"
+  },
+  "helper": {
+   "en": "Days after an action. Changing it moves the deadline of actions already taken too.",
+   "ja": "処分からの日数です。変えると、すでにある処分の期限も変わります。"
+  }
+ },
+ {
+  "id": 51,
+  "where": "The line about the setting Longest an invite works: what it does where that is not plain.",
+  "control": {
+   "en": "Longest an invite works",
+   "ja": "招待が使える最長の時間"
+  },
+  "helper": {
+   "en": "Lowering it does not shorten invites already made.",
+   "ja": "短くしても、作った招待の期限は変わりません。"
+  }
+ },
+ {
+  "id": 52,
+  "where": "The line about the setting Who can create invites: what it does where that is not plain.",
+  "control": {
+   "en": "Who can create invites",
+   "ja": "招待を作れる人"
+  },
+  "helper": {
+   "en": "Moderators who manage invites can always create them. In approval mode, a sign-up with an invite does not wait for a review.",
+   "ja": "招待を管理するモデレーターはいつでも作れます。承認制では、招待での登録は審査を待ちません。"
+  }
+ },
+ {
+  "id": 53,
+  "where": "The line about the setting Show the server's numbers: what it does where that is not plain.",
+  "control": {
+   "en": "Show the server's numbers",
+   "ja": "サーバーの数字を出す"
+  },
+  "helper": {
+   "en": "The front page shows how many members there are and how many public posts they made each day.",
+   "ja": "トップページに、メンバーの数と 1 日ごとの公開の投稿の数を出します。"
+  }
+ },
+ {
+  "id": 54,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the hovered and pressed surface colors color, under the hovered one's name.",
+  "control": {
+   "en": "Page background, hovered",
+   "ja": "ページの背景 (ポインターを重ねたとき)"
+  },
+  "helper": {
+   "en": "Rows, tabs and plain buttons on the page, hovered and pressed.",
+   "ja": "ページにある行・タブ・枠のないボタン。ポインターを重ねたときと押したとき。"
+  }
+ },
+ {
+  "id": 55,
+  "where": "The line about the setting Refuse a sign-up it rejects: what it does where that is not plain.",
+  "control": {
+   "en": "Refuse a sign-up it rejects",
+   "ja": "拒否の判定で登録を断る"
+  },
+  "helper": {
+   "en": "When off, a reject is only recorded.",
+   "ja": "オフのときは記録だけします。"
+  }
+ },
+ {
+  "id": 56,
+  "where": "The line about the setting Keep copies of: what it does where that is not plain.",
+  "control": {
+   "en": "Keep copies of",
+   "ja": "コピーを残すもの"
+  },
+  "helper": {
+   "en": "A file with no copy is relayed from its server.",
+   "ja": "コピーのないファイルは、元のサーバーから中継します。"
+  }
+ },
+ {
+  "id": 57,
+  "where": "The line about the setting Reports: what it does where that is not plain.",
+  "control": {
+   "en": "Reports",
+   "ja": "通報"
+  },
+  "helper": {
+   "en": "Days after their last resolution. A report an action refers to is kept as long as the action.",
+   "ja": "最後に解決してからの日数です。処分が参照する通報は、処分と同じだけ残ります。"
+  }
+ },
+ {
+  "id": 58,
+  "where": "The line about the setting Sign in only with login providers: what it does where that is not plain.",
+  "control": {
+   "en": "Sign in only with login providers",
+   "ja": "ログインプロバイダーだけでログイン"
+  },
+  "helper": {
+   "en": "While a provider is enabled, passwords and passkeys no longer sign in, and people without a linked provider cannot sign in again once their sessions end.",
+   "ja": "有効なプロバイダーがある間、パスワードとパスキーではログインできません。プロバイダーと連携していない人は、セッションが切れると再びログインできません。"
+  }
+ },
+ {
+  "id": 59,
+  "where": "The line about the setting Request caps of apps: what it does where that is not plain.",
+  "control": {
+   "en": "Request caps of apps",
+   "ja": "アプリのリクエストの上限"
+  },
+  "helper": {
+   "en": "client_id=requests pairs, separated by commas: how many requests all users of an app may make in 5 minutes.",
+   "ja": "client_id=リクエスト数 の組をカンマで区切ります。アプリの全利用者が 5 分間にできるリクエストの数です。"
+  }
+ },
+ {
+  "id": 60,
+  "where": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of the public reason.",
+  "control": {
+   "en": "Public reason",
+   "ja": "公開する理由"
+  },
+  "helper": {
+   "en": "Shown where this server publishes the domains it acts on.",
+   "ja": "処分したドメインを公開しているとき、そこに表示されます。"
+  }
+ },
+ {
+  "id": 61,
+  "where": "The line about the setting Thumbnail: what it does where that is not plain.",
+  "control": {
+   "en": "Thumbnail",
+   "ja": "サムネイル"
+  },
+  "helper": {
+   "en": "Shown on this server's About page and the front page, and in link previews when there is no link preview image.",
+   "ja": "「このサーバーについて」のページとトップページに表示されます。リンクプレビューの画像がないときはプレビューにも使います。"
+  }
+ },
+ {
+  "id": 62,
+  "where": "On the theme editor of the administration (/admin/theme/draft), what the text on accent color colors, under its name.",
+  "control": {
+   "en": "Text on accent",
+   "ja": "アクセントの上の文字"
+  },
+  "helper": {
+   "en": "The words on the primary button.",
+   "ja": "主なボタンの文字。"
+  }
+ },
+ {
+  "id": 63,
+  "where": "The line about the setting Review accounts younger than: what it does where that is not plain.",
+  "control": {
+   "en": "Review accounts younger than",
+   "ja": "この日数より新しいアカウントを審査"
+  },
+  "helper": {
+   "en": "At 0, every account is reviewed.",
+   "ja": "0 ですべてのアカウントを審査します。"
+  }
+ }
+]

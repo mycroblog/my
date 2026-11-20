@@ -1,0 +1,1026 @@
+[
+ {
+  "key": "staff_settings.setting.default_locale.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "The app's language for new accounts, and for anyone whose language the app does not have.",
+   "control": "Default language",
+   "heading": null
+  },
+  "ja": {
+   "text": "新しいアカウントのアプリの言語です。アプリにない言語を使う人にも使います。",
+   "control": "既定の言語",
+   "heading": null
+  },
+  "description": "The line about the setting Default language: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.contact_account.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "The username of an account of this server that people can contact.",
+   "control": "Contact account",
+   "heading": null
+  },
+  "ja": {
+   "text": "連絡を受けるこのサーバーのアカウントのユーザー名です。",
+   "control": "連絡先のアカウント",
+   "heading": null
+  },
+  "description": "The line about the setting Contact account: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.contact_email.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Also where replies to the emails this server sends go.",
+   "control": "Contact email",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーが送るメールの返信先にもなります。",
+   "control": "連絡先のメールアドレス",
+   "heading": null
+  },
+  "description": "The line about the setting Contact email: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.thumbnail.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Shown on this server's About page and the front page, and in link previews when there is no link preview image.",
+   "control": "Thumbnail",
+   "heading": null
+  },
+  "ja": {
+   "text": "「このサーバーについて」のページとトップページに表示されます。リンクプレビューの画像がないときはプレビューにも使います。",
+   "control": "サムネイル",
+   "heading": null
+  },
+  "description": "The line about the setting Thumbnail: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.preview_image.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Shown when a page of this server that has no image of its own is shared.",
+   "control": "Link preview image",
+   "heading": null
+  },
+  "ja": {
+   "text": "画像のないこのサーバーのページが共有されたときに表示されます。",
+   "control": "リンクプレビューの画像",
+   "heading": null
+  },
+  "description": "The line about the setting Link preview image: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.single_user.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Only for a server with exactly one account. Nobody else can sign up, and the local timelines are off.",
+   "control": "One-person server",
+   "heading": null
+  },
+  "ja": {
+   "text": "アカウントがちょうど 1 つのサーバーでだけ使えます。ほかの人は登録できず、ローカルのタイムラインはオフになります。",
+   "control": "一人のためのサーバー",
+   "heading": null
+  },
+  "description": "The line about the setting One-person server: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.invite_creators.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Moderators who manage invites can always create them. In approval mode, a sign-up with an invite does not wait for a review.",
+   "control": "Who can create invites",
+   "heading": null
+  },
+  "ja": {
+   "text": "招待を管理するモデレーターはいつでも作れます。承認制では、招待での登録は審査を待ちません。",
+   "control": "招待を作れる人",
+   "heading": null
+  },
+  "description": "The line about the setting Who can create invites: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.member_invite_max_active.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, members can create none.",
+   "control": "Usable invites per person",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 にするとメンバーは作れません。",
+   "control": "1 人が持てる招待",
+   "heading": null
+  },
+  "description": "The line about the setting Usable invites per person: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.member_invite_max_lifetime_seconds.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Lowering it does not shorten invites already made.",
+   "control": "Longest an invite works",
+   "heading": null
+  },
+  "ja": {
+   "text": "短くしても、作った招待の期限は変わりません。",
+   "control": "招待が使える最長の時間",
+   "heading": null
+  },
+  "description": "The line about the setting Longest an invite works: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.login_providers_only.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "While a provider is enabled, passwords and passkeys no longer sign in, and people without a linked provider cannot sign in again once their sessions end.",
+   "control": "Sign in only with login providers",
+   "heading": null
+  },
+  "ja": {
+   "text": "有効なプロバイダーがある間、パスワードとパスキーではログインできません。プロバイダーと連携していない人は、セッションが切れると再びログインできません。",
+   "control": "ログインプロバイダーだけでログイン",
+   "heading": null
+  },
+  "description": "The line about the setting Sign in only with login providers: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.user_app_registration.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Apps already registered keep working when it is off.",
+   "control": "People can register apps",
+   "heading": null
+  },
+  "ja": {
+   "text": "オフにしても、登録済みのアプリは使えます。",
+   "control": "利用者がアプリを登録できる",
+   "heading": null
+  },
+  "description": "The line about the setting People can register apps: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.oauth_metadata_document_clients.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Accepts an app whose ID is the https address of its metadata, with no registration.",
+   "control": "Accept apps by their metadata document",
+   "heading": null
+  },
+  "ja": {
+   "text": "ID がメタデータの https のアドレスであるアプリを、登録なしに受け付けます。",
+   "control": "メタデータ文書のアプリを受け付ける",
+   "heading": null
+  },
+  "description": "The line about the setting Apps by their metadata document: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.oauth_client_rate_limits.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "client_id=requests pairs, separated by commas: how many requests all users of an app may make in 5 minutes.",
+   "control": "Request caps of apps",
+   "heading": null
+  },
+  "ja": {
+   "text": "client_id=リクエスト数 の組をカンマで区切ります。アプリの全利用者が 5 分間にできるリクエストの数です。",
+   "control": "アプリのリクエストの上限",
+   "heading": null
+  },
+  "description": "The line about the setting Request caps of apps: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.require_media_description.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "A post with an image, video or audio that has no description is refused.",
+   "control": "Media needs a description",
+   "heading": null
+  },
+  "ja": {
+   "text": "説明のない画像・動画・音声をつけた投稿は受け付けません。",
+   "control": "メディアに説明を必須にする",
+   "heading": null
+  },
+  "description": "The line about the setting Media needs a description: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.local_timeline_visibility.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Unless everyone can see it, the front page shows no sample posts.",
+   "control": "Local timeline",
+   "heading": null
+  },
+  "ja": {
+   "text": "全員に見せない場合、トップページに投稿の例を出しません。",
+   "control": "ローカルタイムライン",
+   "heading": null
+  },
+  "description": "The line about the setting Local timeline: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.link_cards.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "The server fetches a linked page to make its card. Off also hides the cards already made.",
+   "control": "Cards for links",
+   "heading": null
+  },
+  "ja": {
+   "text": "サーバーがリンク先のページを取得してカードを作ります。オフにすると作ったカードも出しません。",
+   "control": "リンクのカード",
+   "heading": null
+  },
+  "description": "The line about the setting Cards for links: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.link_cards_ignore_robots_txt.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Turn it on only when too many cards are missing: linked sites can no longer refuse these fetches.",
+   "control": "Fetch cards despite robots.txt",
+   "heading": null
+  },
+  "ja": {
+   "text": "カードが出ないことが多すぎるときだけオンにしてください。リンク先のサイトは取得を断れなくなります。",
+   "control": "robots.txt に従わずにカードを取得",
+   "heading": null
+  },
+  "description": "The line about the setting Fetch cards despite robots.txt: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.article_authoring.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Limiting it keeps the articles already written.",
+   "control": "Who can write articles",
+   "heading": null
+  },
+  "ja": {
+   "text": "制限しても、書かれた記事は残ります。",
+   "control": "記事を書ける人",
+   "heading": null
+  },
+  "description": "The line about the setting Who can write articles: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.event_creators.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "People with the permission to create events can, either way.",
+   "control": "Who can create events",
+   "heading": null
+  },
+  "ja": {
+   "text": "イベントを作る権限を持つ人は、どちらでも作れます。",
+   "control": "イベントを作れる人",
+   "heading": null
+  },
+  "description": "The line about the setting Who can create events: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.event_records_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Days after an event ended to keep who answered, was approved, was invited and voted.",
+   "control": "Keep answers to events",
+   "heading": null
+  },
+  "ja": {
+   "text": "イベントが終わってから、出欠の回答・承認・招待・投票の記録を残す日数です。",
+   "control": "イベントの出欠の保存",
+   "heading": null
+  },
+  "description": "The line about the setting Keep answers to events: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.public_counts.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "The front page shows how many members there are and how many public posts they made each day.",
+   "control": "Show the server's numbers",
+   "heading": null
+  },
+  "ja": {
+   "text": "トップページに、メンバーの数と 1 日ごとの公開の投稿の数を出します。",
+   "control": "サーバーの数字を出す",
+   "heading": null
+  },
+  "description": "The line about the setting Show the server's numbers: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.featured_accounts.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Usernames of up to 20 accounts of this server, separated by spaces, suggested first in this order.",
+   "control": "Suggested accounts",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーのアカウントのユーザー名を 20 個まで、スペースで区切って入れます。この順に先頭でおすすめします。",
+   "control": "おすすめのアカウント",
+   "heading": null
+  },
+  "description": "The line about the setting Suggested accounts: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.remote_media_policy.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "A file with no copy is relayed from its server.",
+   "control": "Keep copies of",
+   "heading": null
+  },
+  "ja": {
+   "text": "コピーのないファイルは、元のサーバーから中継します。",
+   "control": "コピーを残すもの",
+   "heading": null
+  },
+  "description": "The line about the setting Keep copies of: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.remote_status_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days a post from another server is kept when nothing of this server refers to it.",
+   "control": "Keep posts nothing here refers to",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーのどこからも参照されない、ほかのサーバーの投稿を残す日数です。",
+   "control": "ここで参照されない投稿の保存",
+   "heading": null
+  },
+  "description": "The line about the setting Keep posts nothing here refers to: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.remote_status_max_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, no limit. Past it, replies, boosts and bookmarks here show the post as deleted.",
+   "control": "Keep any post at most",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 で上限なし。過ぎると、ここでの返信・ブースト・ブックマークでは削除済みと表示されます。",
+   "control": "どの投稿も残す最長の日数",
+   "heading": null
+  },
+  "description": "The line about the setting Keep any post at most: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.relay_status_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days such a post is kept when nobody here follows its author or refers to it.",
+   "control": "Keep posts only a relay brought",
+   "heading": null
+  },
+  "ja": {
+   "text": "ここで誰も投稿者をフォローせず、参照もしていない投稿を残す日数です。",
+   "control": "リレーだけが運んだ投稿の保存",
+   "heading": null
+  },
+  "description": "The line about the setting Keep posts only a relay brought: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.domain_actions_visibility.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "The list of the servers this server took action on.",
+   "control": "Who sees the moderated servers",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーが処分したサーバーの一覧です。",
+   "control": "処分したサーバーを見られる人",
+   "heading": null
+  },
+  "description": "The line about the setting Who sees the moderated servers: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.domain_actions_rationale_visibility.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Someone who cannot see the list never sees the reasons.",
+   "control": "Who sees the reasons",
+   "heading": null
+  },
+  "ja": {
+   "text": "一覧を見られない人は理由も見られません。",
+   "control": "理由を見られる人",
+   "heading": null
+  },
+  "description": "The line about the setting Who sees the reasons: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.hook_inbound_status_unfollowed_direct.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Direct messages whose author nobody here follows go to the plugin too.",
+   "control": "Also review messages from strangers",
+   "heading": null
+  },
+  "ja": {
+   "text": "ここで誰もフォローしていない送り主からのダイレクトメッセージも、プラグインに送ります。",
+   "control": "フォローしていない人からのメッセージも審査",
+   "heading": null
+  },
+  "description": "The line about the setting Also review messages from strangers: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.hook_signup_check_reject.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "When off, a reject is only recorded.",
+   "control": "Refuse a sign-up it rejects",
+   "heading": null
+  },
+  "ja": {
+   "text": "オフのときは記録だけします。",
+   "control": "拒否の判定で登録を断る",
+   "heading": null
+  },
+  "description": "The line about the setting Refuse a sign-up it rejects: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.hook_local_status_account_age_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, every account is reviewed.",
+   "control": "Review accounts younger than",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 ですべてのアカウントを審査します。",
+   "control": "この日数より新しいアカウントを審査",
+   "heading": null
+  },
+  "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.hook_local_profile_account_age_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, every account is reviewed.",
+   "control": "Review accounts younger than",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 ですべてのアカウントを審査します。",
+   "control": "この日数より新しいアカウントを審査",
+   "heading": null
+  },
+  "description": "The line about the setting Review accounts younger than: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.indexable_default.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "What new accounts start with; each person can change it. Accounts that exist keep theirs.",
+   "control": "Include new accounts in search",
+   "heading": null
+  },
+  "ja": {
+   "text": "新しいアカウントの最初の設定です。各自で変えられます。いまあるアカウントは変わりません。",
+   "control": "新しいアカウントを検索に載せる",
+   "heading": null
+  },
+  "description": "The line about the setting New accounts can be indexed: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.search_visibilities.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "A visibility added finds only its new posts until the index is rebuilt.",
+   "control": "Posts search covers",
+   "heading": null
+  },
+  "ja": {
+   "text": "追加した公開範囲は、索引を作り直すまで新しい投稿だけが見つかります。",
+   "control": "検索の対象",
+   "heading": null
+  },
+  "description": "The line about the setting Posts search covers: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.voice_public_summary.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "People not signed in here see a local room's name, description, host and whether it is open. Never who takes part.",
+   "control": "Show local rooms outside",
+   "heading": null
+  },
+  "ja": {
+   "text": "ここにログインしていない人に、ローカルのルームの名前・説明・ホスト・開催中かを見せます。参加者は見せません。",
+   "control": "ローカルのルームを外に見せる",
+   "heading": null
+  },
+  "description": "The line about the setting Show local rooms outside: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.voice_participants_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days after a room ended.",
+   "control": "Keep who took part",
+   "heading": null
+  },
+  "ja": {
+   "text": "ルームが終わってからの日数です。",
+   "control": "参加の記録の保存",
+   "heading": null
+  },
+  "description": "The line about the setting Keep who took part: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.auto_delete_default_enabled.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Whether new accounts start with it on.",
+   "control": "Automatic deletion",
+   "heading": null
+  },
+  "ja": {
+   "text": "新しいアカウントで最初からオンにするかどうかです。",
+   "control": "自動削除",
+   "heading": null
+  },
+  "description": "The line about the setting Automatic deletion: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.auto_delete_max_age_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, no maximum.",
+   "control": "Keep posts at most",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 で上限なし。",
+   "control": "投稿を残す最長の日数",
+   "heading": null
+  },
+  "description": "The line about the setting Keep posts at most: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.auto_delete_grace_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days an account keeps its own settings after it is told.",
+   "control": "Grace period",
+   "heading": null
+  },
+  "ja": {
+   "text": "お知らせしてから、各自の設定のままでいる日数です。",
+   "control": "猶予",
+   "heading": null
+  },
+  "description": "The line about the setting Grace period: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.auto_delete_max_kept_pins.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "The most recent pins first. 5 keeps every pinned post.",
+   "control": "Pins that keep posts",
+   "heading": null
+  },
+  "ja": {
+   "text": "最近ピン留めしたものから数えます。5 でピン留めしたすべての投稿を残します。",
+   "control": "投稿を残すピン留めの数",
+   "heading": null
+  },
+  "description": "The line about the setting Pins that keep posts: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.appeal_window_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days after an action. Changing it moves the deadline of actions already taken too.",
+   "control": "Appeals can be made for",
+   "heading": null
+  },
+  "ja": {
+   "text": "処分からの日数です。変えると、すでにある処分の期限も変わります。",
+   "control": "異議申し立てができる日数",
+   "heading": null
+  },
+  "description": "The line about the setting Appeals can be made for: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.reports_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days after their last resolution. A report an action refers to is kept as long as the action.",
+   "control": "Reports",
+   "heading": null
+  },
+  "ja": {
+   "text": "最後に解決してからの日数です。処分が参照する通報は、処分と同じだけ残ります。",
+   "control": "通報",
+   "heading": null
+  },
+  "description": "The line about the setting Reports: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.moderation_actions_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "Days after the action ended.",
+   "control": "Actions and appeals",
+   "heading": null
+  },
+  "ja": {
+   "text": "処分が終わってからの日数です。",
+   "control": "処分と異議申し立て",
+   "heading": null
+  },
+  "description": "The line about the setting Actions and appeals: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.translation_browser.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "It sends nothing to this server or to a provider. With a provider too, the browser translates what the provider does not.",
+   "control": "Readers can use their browser's translation",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーにも翻訳サービスにも何も送りません。翻訳サービスもあるときは、サービスが訳さないものをブラウザーが訳します。",
+   "control": "ブラウザーの翻訳を使えるようにする",
+   "heading": null
+  },
+  "description": "The line about the setting Readers can use their browser's translation: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.translation_user_monthly_characters.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "At 0, nothing is sent. Months are in UTC.",
+   "control": "Characters per person a month",
+   "heading": null
+  },
+  "ja": {
+   "text": "0 で何も送りません。月は UTC で数えます。",
+   "control": "1 人の 1 か月の文字数",
+   "heading": null
+  },
+  "description": "The line about the setting Characters per person a month: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.translation_retention_days.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Days after a translation was made.",
+   "control": "Keep translations",
+   "heading": null
+  },
+  "ja": {
+   "text": "翻訳してからの日数です。",
+   "control": "翻訳の保存",
+   "heading": null
+  },
+  "description": "The line about the setting Keep translations: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.translation_reports_to_server.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "A report's comment counts as a followers-only post: it goes only to a provider allowed to receive those.",
+   "control": "Moderators can translate reports",
+   "heading": null
+  },
+  "ja": {
+   "text": "通報のコメントはフォロワー限定の投稿として扱い、それを受け取れるサービスにだけ送ります。",
+   "control": "モデレーターが通報を翻訳できる",
+   "heading": null
+  },
+  "description": "The line about the setting Moderators can translate reports: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.security_contact.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "An https: or mailto: address for reports of security problems of this server. With one, the server answers /.well-known/security.txt.",
+   "control": "Security contact",
+   "heading": null
+  },
+  "ja": {
+   "text": "このサーバーのセキュリティの問題の報告先です (https: か mailto: のアドレス)。設定すると /.well-known/security.txt を返します。",
+   "control": "セキュリティの連絡先",
+   "heading": null
+  },
+  "description": "The line about the setting Security contact: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.dynamic_client_registration.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Tools can register as public apps without signing in (RFC 7591). Unused ones are deleted after a while.",
+   "control": "Apps can register themselves",
+   "heading": null
+  },
+  "ja": {
+   "text": "ツールがログインせずに公開のアプリとして登録できます (RFC 7591)。使われないものはしばらくして削除されます。",
+   "control": "アプリが自分で登録できる",
+   "heading": null
+  },
+  "description": "The line about the setting Apps can register themselves: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.max_article_bytes.about",
+  "commit": "0712ccfa5",
+  "label": "F",
+  "en": {
+   "text": "How large the body of an article may be, counted in the HTML it makes (1,000 to 100,000).",
+   "control": "Largest article",
+   "heading": null
+  },
+  "ja": {
+   "text": "記事の本文の大きさの上限です。本文から作る HTML で数えます (1000〜100000)。",
+   "control": "記事の最大の大きさ",
+   "heading": null
+  },
+  "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_settings.setting.authorized_fetch.about",
+  "commit": "0712ccfa5",
+  "label": "R",
+  "en": {
+   "text": "Other servers must sign their requests to read posts and collections here (secure mode).",
+   "control": "Require signed fetches",
+   "heading": null
+  },
+  "ja": {
+   "text": "ほかのサーバーが投稿やコレクションを読むときに、署名を求めます (セキュアモード)。",
+   "control": "取得に署名を求める",
+   "heading": null
+  },
+  "description": "The line about the setting Require signed fetches: what it does where that is not plain. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_text.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Most words: posts, names, labels.",
+   "control": "Text",
+   "heading": null
+  },
+  "ja": {
+   "text": "ほとんどの文字。投稿・名前・ラベル。",
+   "control": "文字",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the text color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_muted_text.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Times, counts and the lines under a name.",
+   "control": "Muted text",
+   "heading": null
+  },
+  "ja": {
+   "text": "時刻・数・名前の下の行。",
+   "control": "控えめな文字",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the muted text color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_accent_text.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Links and the focus ring.",
+   "control": "Accent text",
+   "heading": null
+  },
+  "ja": {
+   "text": "リンクとフォーカスの枠。",
+   "control": "アクセントの文字",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the accent text color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_quote_bar.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "The bar at the start of a quote.",
+   "control": "Quote bar",
+   "heading": null
+  },
+  "ja": {
+   "text": "引用の始まりの線。",
+   "control": "引用の線",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the quote bar color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_accent.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "The fill of the primary button.",
+   "control": "Accent",
+   "heading": null
+  },
+  "ja": {
+   "text": "主なボタンの塗り。",
+   "control": "アクセント",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the accent color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_on_accent.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "The words on the primary button.",
+   "control": "Text on accent",
+   "heading": null
+  },
+  "ja": {
+   "text": "主なボタンの文字。",
+   "control": "アクセントの上の文字",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the text on accent color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_surface.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Behind everything else.",
+   "control": "Page background",
+   "heading": null
+  },
+  "ja": {
+   "text": "ほかのすべての後ろ。",
+   "control": "ページの背景",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the surface color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_surface_hover.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Rows, tabs and plain buttons on the page, hovered and pressed.",
+   "control": "Page background, hovered",
+   "heading": null
+  },
+  "ja": {
+   "text": "ページにある行・タブ・枠のないボタン。ポインターを重ねたときと押したとき。",
+   "control": "ページの背景 (ポインターを重ねたとき)",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the hovered and pressed surface colors color, under the hovered one's name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.color_surface_raised.about",
+  "commit": "c4a7a717c",
+  "label": "R",
+  "en": {
+   "text": "Also boxed sections.",
+   "control": "Fields and buttons",
+   "heading": null
+  },
+  "ja": {
+   "text": "囲まれた区画にも使います。",
+   "control": "入力欄とボタン",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), what the raised surface color colors, under its name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.font_sans_override.about",
+  "commit": "c4a7a717c",
+  "label": "F",
+  "en": {
+   "text": "Family names, separated by commas. The app's own fonts draw what yours lack.",
+   "control": "Text font",
+   "heading": null
+  },
+  "ja": {
+   "text": "ファミリー名をカンマで区切って書きます。足りない文字はアプリのフォントで表示します。",
+   "control": "文字のフォント",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the text font's name. Read by administrators."
+ },
+ {
+  "key": "staff_theme.token.font_mono_override.about",
+  "commit": "c4a7a717c",
+  "label": "F",
+  "en": {
+   "text": "Family names, separated by commas.",
+   "control": "Code font",
+   "heading": null
+  },
+  "ja": {
+   "text": "ファミリー名をカンマで区切って書きます。",
+   "control": "コードのフォント",
+   "heading": null
+  },
+  "description": "On the theme editor of the administration (/admin/theme/draft), how the font families are written, under the code font's name. Read by administrators."
+ },
+ {
+  "key": "staff_domains.form.public_comment.hint",
+  "commit": "897150d69",
+  "label": "R",
+  "en": {
+   "text": "Shown where this server publishes the domains it acts on.",
+   "control": "Public reason",
+   "heading": null
+  },
+  "ja": {
+   "text": "処分したドメインを公開しているとき、そこに表示されます。",
+   "control": "公開する理由",
+   "heading": null
+  },
+  "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of the public reason. Read by moderators."
+ },
+ {
+  "key": "staff_domains.form.private_note.hint",
+  "commit": "897150d69",
+  "label": "R",
+  "en": {
+   "text": "Only the moderators read it.",
+   "control": "Moderators' note",
+   "heading": null
+  },
+  "ja": {
+   "text": "モデレーターだけが読めます。",
+   "control": "モデレーターのメモ",
+   "heading": null
+  },
+  "description": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under a field that only the moderators read. Read by moderators."
+ }
+]

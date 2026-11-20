@@ -1,0 +1,495 @@
+[
+ {
+  "key": "staff_domains.actions.empty#0",
+  "label": "F",
+  "where": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when no action is in effect.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No action is in effect on any domain. Actions you take on remote domains appear here.",
+   "ja": "有効な処分はありません。リモートのドメインへの処分はここに表示されます。"
+  },
+  "sentence": {
+   "en": "No action is in effect on any domain.",
+   "ja": "有効な処分はありません。"
+  }
+ },
+ {
+  "key": "staff_domains.actions.empty#1",
+  "label": "R",
+  "where": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), when no action is in effect.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No action is in effect on any domain. Actions you take on remote domains appear here.",
+   "ja": "有効な処分はありません。リモートのドメインへの処分はここに表示されます。"
+  },
+  "sentence": {
+   "en": "Actions you take on remote domains appear here.",
+   "ja": "リモートのドメインへの処分はここに表示されます。"
+  }
+ },
+ {
+  "key": "staff_domains.allows.empty#0",
+  "label": "F",
+  "where": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when no domain is allowed.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No domain is allowed. While this server federates only with allowed domains, it federates with none.",
+   "ja": "許可したドメインはありません。許可したドメインとだけ連合する設定のあいだは、どこのサーバーとも連合しません。"
+  },
+  "sentence": {
+   "en": "No domain is allowed.",
+   "ja": "許可したドメインはありません。"
+  }
+ },
+ {
+  "key": "staff_domains.allows.empty#1",
+  "label": "R",
+  "where": "On the moderators' screen of the allowlist of federation (/moderation/domain-actions/allowed), when no domain is allowed.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No domain is allowed. While this server federates only with allowed domains, it federates with none.",
+   "ja": "許可したドメインはありません。許可したドメインとだけ連合する設定のあいだは、どこのサーバーとも連合しません。"
+  },
+  "sentence": {
+   "en": "While this server federates only with allowed domains, it federates with none.",
+   "ja": "許可したドメインとだけ連合する設定のあいだは、どこのサーバーとも連合しません。"
+  }
+ },
+ {
+  "key": "staff_domains.lists.empty#0",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "You subscribe to no blocklist. The lists you subscribe to are fetched every day, and their differences wait here for you.",
+   "ja": "購読しているブロックリストはありません。購読したリストは毎日取得し、その差分はここで確認できます。"
+  },
+  "sentence": {
+   "en": "You subscribe to no blocklist.",
+   "ja": "購読しているブロックリストはありません。"
+  }
+ },
+ {
+  "key": "staff_domains.lists.empty#1",
+  "label": "R",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no subscription.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "You subscribe to no blocklist. The lists you subscribe to are fetched every day, and their differences wait here for you.",
+   "ja": "購読しているブロックリストはありません。購読したリストは毎日取得し、その差分はここで確認できます。"
+  },
+  "sentence": {
+   "en": "The lists you subscribe to are fetched every day, and their differences wait here for you.",
+   "ja": "購読したリストは毎日取得し、その差分はここで確認できます。"
+  }
+ },
+ {
+  "key": "staff_domains.drafts.empty#0",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when no draft waits.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No difference waits for you. What the list adds or removes waits here.",
+   "ja": "確認を待つ差分はありません。リストが足したり外したりしたものはここに並びます。"
+  },
+  "sentence": {
+   "en": "No difference waits for you.",
+   "ja": "確認を待つ差分はありません。"
+  }
+ },
+ {
+  "key": "staff_domains.drafts.empty#1",
+  "label": "R",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when no draft waits.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "No difference waits for you. What the list adds or removes waits here.",
+   "ja": "確認を待つ差分はありません。リストが足したり外したりしたものはここに並びます。"
+  },
+  "sentence": {
+   "en": "What the list adds or removes waits here.",
+   "ja": "リストが足したり外したりしたものはここに並びます。"
+  }
+ },
+ {
+  "key": "staff_domains.servers.empty#0",
+  "label": "F",
+  "where": "On the moderators' list of remote servers (/moderation/instances), when no server has failures.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Deliveries reach every server. A server that deliveries fail to reach appears here.",
+   "ja": "どのサーバーにも配送が届いています。配送が失敗したサーバーがここに表示されます。"
+  },
+  "sentence": {
+   "en": "Deliveries reach every server.",
+   "ja": "どのサーバーにも配送が届いています。"
+  }
+ },
+ {
+  "key": "staff_domains.servers.empty#1",
+  "label": "R",
+  "where": "On the moderators' list of remote servers (/moderation/instances), when no server has failures.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Deliveries reach every server. A server that deliveries fail to reach appears here.",
+   "ja": "どのサーバーにも配送が届いています。配送が失敗したサーバーがここに表示されます。"
+  },
+  "sentence": {
+   "en": "A server that deliveries fail to reach appears here.",
+   "ja": "配送が失敗したサーバーがここに表示されます。"
+  }
+ },
+ {
+  "key": "staff_audit.empty#0",
+  "label": "F",
+  "where": "On the audit log of the moderators (/moderation/audit-log), when the log holds nothing.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Nothing is recorded yet. What moderators and administrators do appears here.",
+   "ja": "まだ記録はありません。モデレーターと管理者の操作がここに記録されます。"
+  },
+  "sentence": {
+   "en": "Nothing is recorded yet.",
+   "ja": "まだ記録はありません。"
+  }
+ },
+ {
+  "key": "staff_audit.empty#1",
+  "label": "R",
+  "where": "On the audit log of the moderators (/moderation/audit-log), when the log holds nothing.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Nothing is recorded yet. What moderators and administrators do appears here.",
+   "ja": "まだ記録はありません。モデレーターと管理者の操作がここに記録されます。"
+  },
+  "sentence": {
+   "en": "What moderators and administrators do appears here.",
+   "ja": "モデレーターと管理者の操作がここに記録されます。"
+  }
+ },
+ {
+  "key": "staff_domains.list.form.url.hint#0",
+  "label": "R",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL's field.",
+  "control": {
+   "en": "Address of the list",
+   "ja": "リストのアドレス"
+  },
+  "whole": {
+   "en": "An https address. It cannot be changed later.",
+   "ja": "https のアドレス。あとから変えられません。"
+  },
+  "sentence": {
+   "en": "An https address.",
+   "ja": "https のアドレス。"
+  }
+ },
+ {
+  "key": "staff_domains.list.form.url.hint#1",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), under the URL's field.",
+  "control": {
+   "en": "Address of the list",
+   "ja": "リストのアドレス"
+  },
+  "whole": {
+   "en": "An https address. It cannot be changed later.",
+   "ja": "https のアドレス。あとから変えられません。"
+  },
+  "sentence": {
+   "en": "It cannot be changed later.",
+   "ja": "あとから変えられません。"
+  }
+ },
+ {
+  "key": "staff_domains.deliveries.account.hint#0",
+  "label": "R",
+  "where": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account, before it is sent.",
+  "control": {
+   "en": "Local account",
+   "ja": "ローカルのアカウント"
+  },
+  "whole": {
+   "en": "A username here. Listing an account's deliveries is recorded in the audit log.",
+   "ja": "このサーバーのユーザー名。アカウントの配送の一覧は監査ログに記録されます。"
+  },
+  "sentence": {
+   "en": "A username here.",
+   "ja": "このサーバーのユーザー名。"
+  }
+ },
+ {
+  "key": "staff_domains.deliveries.account.hint#1",
+  "label": "F",
+  "where": "On the moderators' screen of a remote server (/moderation/instances/{domain}), under the field of a local account, before it is sent.",
+  "control": {
+   "en": "Local account",
+   "ja": "ローカルのアカウント"
+  },
+  "whole": {
+   "en": "A username here. Listing an account's deliveries is recorded in the audit log.",
+   "ja": "このサーバーのユーザー名。アカウントの配送の一覧は監査ログに記録されます。"
+  },
+  "sentence": {
+   "en": "Listing an account's deliveries is recorded in the audit log.",
+   "ja": "アカウントの配送の一覧は監査ログに記録されます。"
+  }
+ },
+ {
+  "key": "staff_domains.form.domain.hint#0",
+  "label": "F",
+  "where": "On the moderators' screens of remote domains (/moderation/domain-actions and under it), under the field of a domain.",
+  "control": {
+   "en": "Domain",
+   "ja": "ドメイン"
+  },
+  "whole": {
+   "en": "Its subdomains are covered too.",
+   "ja": "サブドメインにも効きます。"
+  },
+  "sentence": {
+   "en": "Its subdomains are covered too.",
+   "ja": "サブドメインにも効きます。"
+  }
+ },
+ {
+  "key": "staff_domains.servers.open.hint#0",
+  "label": "F",
+  "where": "On the moderators' list of remote servers (/moderation/instances), under Open a server.",
+  "control": {
+   "en": "Open a server",
+   "ja": "サーバーを開く"
+  },
+  "whole": {
+   "en": "Its domain, a handle on it, or an address on it.",
+   "ja": "ドメイン、そのサーバーのハンドル、またはそのサーバーのアドレス。"
+  },
+  "sentence": {
+   "en": "Its domain, a handle on it, or an address on it.",
+   "ja": "ドメイン、そのサーバーのハンドル、またはそのサーバーのアドレス。"
+  }
+ },
+ {
+  "key": "staff_domains.list.stop.about#0",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of stopping a subscription.",
+  "control": {
+   "en": "Stop subscribing",
+   "ja": "購読をやめる"
+  },
+  "whole": {
+   "en": "The list is no longer fetched. The actions it took stay, as if a moderator had taken them, unless you lift them.",
+   "ja": "リストを取得しなくなります。この購読がした処分は、解除しない限りモデレーターの処分として残ります。"
+  },
+  "sentence": {
+   "en": "The list is no longer fetched.",
+   "ja": "リストを取得しなくなります。"
+  }
+ },
+ {
+  "key": "staff_domains.list.stop.about#1",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), in the confirmation of stopping a subscription.",
+  "control": {
+   "en": "Stop subscribing",
+   "ja": "購読をやめる"
+  },
+  "whole": {
+   "en": "The list is no longer fetched. The actions it took stay, as if a moderator had taken them, unless you lift them.",
+   "ja": "リストを取得しなくなります。この購読がした処分は、解除しない限りモデレーターの処分として残ります。"
+  },
+  "sentence": {
+   "en": "The actions it took stay, as if a moderator had taken them, unless you lift them.",
+   "ja": "この購読がした処分は、解除しない限りモデレーターの処分として残ります。"
+  }
+ },
+ {
+  "key": "staff_domains.fetches.empty#0",
+  "label": "F",
+  "where": "On the moderators' screens of the subscriptions to domain block lists (/moderation/domain-actions/subscriptions), when there is no fetch yet.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "The list has not been fetched yet.",
+   "ja": "リストはまだ取得していません。"
+  },
+  "sentence": {
+   "en": "The list has not been fetched yet.",
+   "ja": "リストはまだ取得していません。"
+  }
+ },
+ {
+  "key": "staff_domains.availability.empty#0",
+  "label": "F",
+  "where": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no availability event.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Deliveries to this server have never stopped.",
+   "ja": "このサーバーへの配送は止まったことがありません。"
+  },
+  "sentence": {
+   "en": "Deliveries to this server have never stopped.",
+   "ja": "このサーバーへの配送は止まったことがありません。"
+  }
+ },
+ {
+  "key": "staff_domains.deliveries.empty#0",
+  "label": "F",
+  "where": "On the moderators' screen of a remote server (/moderation/instances/{domain}), when there is no delivery.",
+  "control": {
+   "en": null,
+   "ja": null
+  },
+  "whole": {
+   "en": "Nothing was delivered to this server in the last 30 days.",
+   "ja": "この 30 日間、このサーバーへの配送はありません。"
+  },
+  "sentence": {
+   "en": "Nothing was delivered to this server in the last 30 days.",
+   "ja": "この 30 日間、このサーバーへの配送はありません。"
+  }
+ },
+ {
+  "key": "report.mute_hint#0",
+  "label": "R",
+  "where": "What muting the reported account does, over its button.",
+  "control": {
+   "en": "Mute {handle}",
+   "ja": "{handle} をミュート"
+  },
+  "whole": {
+   "en": "Their posts stay out of your timelines. They are not told.",
+   "ja": "タイムラインにその人の投稿が表示されなくなります。相手には伝わりません。"
+  },
+  "sentence": {
+   "en": "Their posts stay out of your timelines.",
+   "ja": "タイムラインにその人の投稿が表示されなくなります。"
+  }
+ },
+ {
+  "key": "report.mute_hint#1",
+  "label": "R",
+  "where": "What muting the reported account does, over its button.",
+  "control": {
+   "en": "Mute {handle}",
+   "ja": "{handle} をミュート"
+  },
+  "whole": {
+   "en": "Their posts stay out of your timelines. They are not told.",
+   "ja": "タイムラインにその人の投稿が表示されなくなります。相手には伝わりません。"
+  },
+  "sentence": {
+   "en": "They are not told.",
+   "ja": "相手には伝わりません。"
+  }
+ },
+ {
+  "key": "report.block_hint#0",
+  "label": "R",
+  "where": "What blocking the reported account does, over its button.",
+  "control": {
+   "en": "Block {handle}",
+   "ja": "{handle} をブロック"
+  },
+  "whole": {
+   "en": "Follows between you end, and neither of you can follow the other or see their posts.",
+   "ja": "お互いのフォローは解除され、どちらも相手をフォローできず、相手の投稿も見られなくなります。"
+  },
+  "sentence": {
+   "en": "Follows between you end, and neither of you can follow the other or see their posts.",
+   "ja": "お互いのフォローは解除され、どちらも相手をフォローできず、相手の投稿も見られなくなります。"
+  }
+ },
+ {
+  "key": "report.forward_hint#0",
+  "label": "F",
+  "where": "Under the checkbox that sends a report to another server's moderators: the report goes without naming the reader.",
+  "control": {
+   "en": "Also send the report to the moderators of {domain}",
+   "ja": "{domain} のモデレーターにも通報を送る"
+  },
+  "whole": {
+   "en": "Your name is not sent with it.",
+   "ja": "あなたの名前は含めずに送ります。"
+  },
+  "sentence": {
+   "en": "Your name is not sent with it.",
+   "ja": "あなたの名前は含めずに送ります。"
+  }
+ },
+ {
+  "key": "report.comment_hint#0",
+  "label": "F",
+  "where": "The hint under the comment of a report. {max} is 1000.",
+  "control": {
+   "en": "Comment for the moderators",
+   "ja": "モデレーターへのコメント"
+  },
+  "whole": {
+   "en": "Optional. Up to {max, number} characters.",
+   "ja": "任意です。{max, number} 文字まで書けます。"
+  },
+  "sentence": {
+   "en": "Optional.",
+   "ja": "任意です。"
+  }
+ },
+ {
+  "key": "report.comment_hint#1",
+  "label": "F",
+  "where": "The hint under the comment of a report. {max} is 1000.",
+  "control": {
+   "en": "Comment for the moderators",
+   "ja": "モデレーターへのコメント"
+  },
+  "whole": {
+   "en": "Optional. Up to {max, number} characters.",
+   "ja": "任意です。{max, number} 文字まで書けます。"
+  },
+  "sentence": {
+   "en": "Up to {max, number} characters.",
+   "ja": "{max, number} 文字まで書けます。"
+  }
+ }
+]
