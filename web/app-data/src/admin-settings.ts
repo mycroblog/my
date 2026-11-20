@@ -117,10 +117,18 @@ export type AdminSettingsRead = ScreenRead & {
   readonly texts: Readonly<Partial<Record<InstanceTextKey, string>>> | undefined;
 };
 
-/** The settings and the texts, with where their reads are. */
-export function useAdminSettings(): AdminSettingsRead {
+/**
+ * The settings and the texts, with where their reads are; nothing asked while `enabled` is false (a reader whose
+ * permissions do not keep the settings).
+ */
+export function useAdminSettings(enabled = true): AdminSettingsRead {
   const data = useAppData();
-  const reads = useQueries({ queries: [adminSettingsQuery(data), instanceTextsQuery(data)] });
+  const reads = useQueries({
+    queries: [
+      { ...adminSettingsQuery(data), enabled },
+      { ...instanceTextsQuery(data), enabled },
+    ],
+  });
   const [settings, texts] = reads;
   return {
     ...readOf(reads),

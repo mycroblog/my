@@ -87,17 +87,20 @@ export function LeaveDialog({ leaving }: { leaving: { readonly onStay: () => voi
 
 /**
  * A value to pass on (a callback URL, a link, a secret shown once), named `label`, with the button that copies it and
- * what came of copying; `primary` where copying it is what the screen is for (a link to hand over, a secret).
+ * what came of copying; `primary` where copying it is what the screen is for (a link to hand over, a secret); `code`,
+ * a block of lines kept as they are (a stack, a payload).
  */
 export function CopyValue({
   label,
   value,
   copy,
+  code = false,
   primary = false,
 }: {
   label: string;
   value: string;
   copy: string;
+  code?: boolean | undefined;
   primary?: boolean | undefined;
 }): ReactNode {
   const { t } = useStaffStrings();
@@ -105,7 +108,7 @@ export function CopyValue({
   return (
     <CopyBlock
       label={label}
-      values={[value]}
+      {...(code ? { code: value } : { values: [value] })}
       action={
         <Button
           {...(primary ? { kind: "primary" as const } : {})}

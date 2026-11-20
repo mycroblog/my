@@ -49,6 +49,7 @@ export type Fake = {
    * `{admin:provider:0}` of the administration's rule, relay and login provider at that index of the fake's,
    * `{account:kai}` of the account of the scenario's person of that username, `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
    * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
+   * `{ops:job:dead-email}` and `{ops:error:panic}` of the operations' job and error group of that key (operations.ts),
    * `{server:webhook:alerts}` of the fake's thing of that
    * area and key in the administration (`emoji`, `request`, `announcement`, `webhook`), `{domain:action:spam}` and `{domain:list:shared}` of the fake's
    * domain action and block-list subscription of that key,
@@ -215,6 +216,7 @@ function pathOf(fake: FakeApi, at: string): string {
       )
       .replace(/\{account:([\w@.-]+)\}/g, (_, username: string) => fake.accountId(username))
       .replace(/\{moderated:([\w:-]+)\}/g, (_, key: string) => fake.moderation.id(key))
+      .replace(/\{ops:((?:job|error):[\w-]+)\}/g, (_, key: string) => fake.operations.id(key))
       .replace(/\{domain:(action|list):([\w-]+)\}/g, (_, kind: "action" | "list", key: string) =>
         fake.domains.id(kind, key),
       );

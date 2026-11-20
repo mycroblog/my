@@ -9,6 +9,8 @@
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
+import { TextButton } from "./button";
+import { CodeText } from "./code-text";
 import { FactList, FigureTiles, type Fact, type Figure } from "./facts";
 import { Stack } from "./layout";
 import { GroupHeading } from "./list";
@@ -125,7 +127,34 @@ export const Endpoint: Story = {
   ),
 };
 
-/** The registration in a column narrower than a phone's (a detail inside a log's entry): each term over its value. */
+/** A job's keys: each in the code's face, left to right in any page, with the button that copies it after it. */
+export const WithActions: Story = {
+  render: () => (
+    <Column>
+      <FactList
+        label="The job"
+        items={[
+          {
+            term: "ID",
+            code: true,
+            value: "019a6d2e-4b1c-7f3a-8c2e-41d8b6f07a3c",
+            action: <TextButton onPress={none}>Copy the ID</TextButton>,
+          },
+          {
+            term: "Idempotency key",
+            code: true,
+            value: "notification.email:01J9YZ8Q1A2B3C4D5E6F7G8H9J",
+            action: <TextButton onPress={none}>Copy the key</TextButton>,
+          },
+          { term: "Worker", code: true, value: "worker-7f3a" },
+          { term: "Type", value: <CodeText>notification.email</CodeText> },
+        ]}
+      />
+    </Column>
+  ),
+};
+
+/** The registration in a column of a phone's width or narrower (a detail inside a log's entry): each term over its value. */
 export const NarrowColumn: Story = {
   render: () => (
     <div style={{ maxWidth: rem(208), padding: rem(16) }}>
