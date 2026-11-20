@@ -11,6 +11,7 @@ import {
   barOf,
   importedProvider,
   incomeBeside,
+  moneyCoded,
   moneyText,
   todayIn,
   type FinanceView,
@@ -72,4 +73,10 @@ test("an amount is written with its currency's digits as the server keeps them, 
   expect(moneyText("en", { amount: "12.345", currency: "IQD" })).toContain("12.345");
   expect(moneyText("en", { amount: "1000.50", currency: "HUF" })).toContain("1,000.50");
   expect(moneyText("en", { amount: "1650", currency: "JPY" })).toBe("¥1,650");
+});
+
+test("a negative amount is written with the minus sign, not the hyphen-minus", () => {
+  expect(moneyText("en", { amount: "-1650", currency: "JPY" })).toBe("\u2212¥1,650");
+  expect(moneyText("ja", { amount: "-1650", currency: "JPY" })).toBe("\u2212￥1,650");
+  expect(moneyCoded("en", { amount: "-12.50", currency: "USD" })).toBe("\u2212USD\u00a012.50");
 });

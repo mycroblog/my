@@ -180,9 +180,11 @@ const cells = (row: HTMLElement) =>
     .getAllByRole("cell")
     .map((c) => words(c));
 
-/** An amount as the screen writes it in en. */
+/** An amount as the screen writes it in en: a negative one with the minus sign (U+2212), not Intl's hyphen-minus. */
 const written = (m: { amount: string; currency: string }) =>
-  new Intl.NumberFormat("en", { style: "currency", currency: m.currency }).format(m.amount as `${number}`);
+  new Intl.NumberFormat("en", { style: "currency", currency: m.currency })
+    .format(m.amount as `${number}`)
+    .replace("-", "−");
 
 /** The lengths of the bars drawn in `cell`: what is hidden from assistive technology and holds a fill of a length. */
 const barsIn = (cell: HTMLElement) =>
@@ -258,7 +260,7 @@ test("an estimate is marked on the figures in its imported provider's currency, 
   const table = await totals("month");
   const [costs, , balance] = cells(rowOf(table, monthBack(0)));
   expect(costs).toMatch(/^¥[\d,]+\$[\d,.]+ Estimate$/);
-  expect(balance).toMatch(/^-?¥[\d,]+-?\$[\d,.]+ Estimate$/);
+  expect(balance).toMatch(/^−?¥[\d,]+−?\$[\d,.]+ Estimate$/);
   // The month before is closed.
   expect(cells(rowOf(table, monthBack(1))).join(" ")).not.toContain("Estimate");
   const breakdown = await main().findByRole("table", { name: `${monthBack(0)} by provider` });

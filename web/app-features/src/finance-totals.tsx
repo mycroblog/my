@@ -162,16 +162,25 @@ export function useFinanceView(): FinanceView {
 /** A date of the calendar as an instant at its UTC midnight, to format in UTC. */
 const instantOf = (date: string) => new Date(`${date}T00:00:00Z`);
 
+/** `money` as `format` writes it, with the typeset minus sign (U+2212) where Intl writes a hyphen-minus (en, ja). */
+function typeset(format: Intl.NumberFormat, money: Money): string {
+  return format
+    .formatToParts(money.amount as `${number}`)
+    .map((part) => (part.type === "minusSign" ? "\u2212" : part.value))
+    .join("");
+}
+
 /** An amount in its currency, as the reader's language writes it. */
 export function moneyText(locale: string, money: Money): string {
   // The digits the server keeps for the currency (ISO 4217), which Intl's own (CLDR) do not always match.
   const digits = digitsOf(money.currency);
-  return new Intl.NumberFormat(locale, {
+  const format = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: money.currency,
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(money.amount as `${number}`);
+  });
+  return typeset(format, money);
 }
 
 /** The period of a period of the totals as the API gives it. */
@@ -238,13 +247,14 @@ function estimatedIn(period: CostPeriodTotal | undefined, sources: CostTotalsRul
 /** An amount with its currency's code (JPY 1,970), where amounts of several currencies stand one under another. */
 export function moneyCoded(locale: string, money: Money): string {
   const digits = digitsOf(money.currency);
-  return new Intl.NumberFormat(locale, {
+  const format = new Intl.NumberFormat(locale, {
     style: "currency",
     currency: money.currency,
     currencyDisplay: "code",
     minimumFractionDigits: digits,
     maximumFractionDigits: digits,
-  }).format(money.amount as `${number}`);
+  });
+  return typeset(format, money);
 }
 
 /**
