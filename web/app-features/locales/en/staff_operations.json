@@ -284,7 +284,7 @@
     "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
   },
   "staff_operations.attempts.column.finished": {
-    "defaultMessage": "Finished",
+    "defaultMessage": "Finished at",
     "description": "The column of when a failed attempt finished. Read by administrators."
   },
   "staff_operations.attempt.head": {
@@ -292,8 +292,8 @@
     "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
   },
   "staff_operations.attempt.outcome": {
-    "defaultMessage": "{outcome, select, dead {Failed} other {Runs again}}",
-    "description": "What came of a failed attempt: the job failed for good, or runs again. Read by administrators."
+    "defaultMessage": "{outcome, select, dead {Not retried} other {Retried}}",
+    "description": "What came of a failed attempt: the job failed for good and was not retried, or was retried. Read by administrators."
   },
   "staff_operations.error_groups.state": {
     "defaultMessage": "{state, select, open {Open} resolved {Resolved} muted {Muted} other {{state}}}",
@@ -401,7 +401,7 @@
   },
   "staff_operations.error_groups.first": {
     "defaultMessage": "First seen",
-    "description": "The term of when and on which version an error group first happened. Read by administrators."
+    "description": "The term of when an error group first happened. Read by administrators."
   },
   "staff_operations.error_groups.fingerprint": {
     "defaultMessage": "Fingerprint",
@@ -492,11 +492,11 @@
     "description": "What a button of an error group that failed says, in its screen. Read by administrators."
   },
   "staff_operations.error_groups.first_version": {
-    "defaultMessage": "First version",
+    "defaultMessage": "First seen on version",
     "description": "The term of the server's version an error group first happened on. Read by administrators."
   },
   "staff_operations.error_groups.last_version": {
-    "defaultMessage": "Last version",
+    "defaultMessage": "Last seen on version",
     "description": "The term of the server's version an error group last happened on. Read by administrators."
   },
   "staff_operations.ux.window": {
@@ -509,7 +509,7 @@
   },
   "staff_operations.ux.since": {
     "defaultMessage": "Since {date}",
-    "description": "The line under Window: the start of the window's first hour. Read by administrators."
+    "description": "The line under Period: the start of the period's first hour. Read by administrators."
   },
   "staff_operations.ux.loading": {
     "defaultMessage": "Loading the measurements…",

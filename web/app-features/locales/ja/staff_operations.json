@@ -124,7 +124,7 @@
     "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
   },
   "staff_operations.queue.failed_count": {
-    "defaultMessage": "{count, plural, other {# 件のジョブが失敗しました。}}",
+    "defaultMessage": "{count, plural, other {# 件のジョブが最終的に失敗しました。}}",
     "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
   },
   "staff_operations.jobs.title": {
@@ -284,7 +284,7 @@
     "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
   },
   "staff_operations.attempts.column.finished": {
-    "defaultMessage": "終了",
+    "defaultMessage": "終了した日時",
     "description": "The column of when a failed attempt finished. Read by administrators."
   },
   "staff_operations.attempt.head": {
@@ -292,8 +292,8 @@
     "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
   },
   "staff_operations.attempt.outcome": {
-    "defaultMessage": "{outcome, select, dead {失敗} other {再試行}}",
-    "description": "What came of a failed attempt: the job failed for good, or runs again. Read by administrators."
+    "defaultMessage": "{outcome, select, dead {再試行なし} other {再試行}}",
+    "description": "What came of a failed attempt: the job failed for good and was not retried, or was retried. Read by administrators."
   },
   "staff_operations.error_groups.state": {
     "defaultMessage": "{state, select, open {未解決} resolved {解決済み} muted {ミュート中} other {{state}}}",
@@ -401,7 +401,7 @@
   },
   "staff_operations.error_groups.first": {
     "defaultMessage": "最初の発生",
-    "description": "The term of when and on which version an error group first happened. Read by administrators."
+    "description": "The term of when an error group first happened. Read by administrators."
   },
   "staff_operations.error_groups.fingerprint": {
     "defaultMessage": "フィンガープリント",
@@ -492,11 +492,11 @@
     "description": "What a button of an error group that failed says, in its screen. Read by administrators."
   },
   "staff_operations.error_groups.first_version": {
-    "defaultMessage": "最初のバージョン",
+    "defaultMessage": "最初に発生したバージョン",
     "description": "The term of the server's version an error group first happened on. Read by administrators."
   },
   "staff_operations.error_groups.last_version": {
-    "defaultMessage": "最後のバージョン",
+    "defaultMessage": "最後に発生したバージョン",
     "description": "The term of the server's version an error group last happened on. Read by administrators."
   },
   "staff_operations.ux.window": {
@@ -509,7 +509,7 @@
   },
   "staff_operations.ux.since": {
     "defaultMessage": "{date} から",
-    "description": "The line under Window: the start of the window's first hour. Read by administrators."
+    "description": "The line under Period: the start of the period's first hour. Read by administrators."
   },
   "staff_operations.ux.loading": {
     "defaultMessage": "計測を読み込んでいます…",
