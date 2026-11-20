@@ -292,7 +292,7 @@
     "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
   },
   "app.landing_sign_up_invite": {
-    "defaultMessage": "招待で登録する",
+    "defaultMessage": "招待でアカウントを作成",
     "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
   },
   "app.landing_account": {
@@ -320,15 +320,15 @@
     "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
   },
   "app.landing_week_posts": {
-    "defaultMessage": "{count, plural, other {今週の公開投稿}}",
+    "defaultMessage": "{count, plural, other {直近 7 日間の公開投稿}}",
     "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
   },
   "app.landing_fediverse_heading": {
-    "defaultMessage": "fediverse の一員",
+    "defaultMessage": "フェディバースの一員",
     "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
   },
   "app.landing_fediverse": {
-    "defaultMessage": "ここのアカウントには @you@{domain} のようなアドレスがつきます。このアドレスで、Mastodon をはじめ fediverse のほかのサーバーの人をフォローでき、フォローし返してもらえます。",
+    "defaultMessage": "ここのアカウントには @you@{domain} のようなアドレスがつきます。このアドレスで、Mastodon などフェディバースのほかのサーバーの人をフォローでき、その人たちもあなたをフォローできます。",
     "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
   },
   "app.landing_features_heading": {
@@ -344,7 +344,7 @@
     "description": "On the landing page, an item of What you can do here, shown while every member may create events."
   },
   "app.landing_feature_voice": {
-    "defaultMessage": "ボイスルームで、ほかの人とその場で話せます。",
+    "defaultMessage": "通話のルームで、ほかの人とその場で話せます。",
     "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
   },
   "app.landing_feature_search": {
@@ -356,7 +356,7 @@
     "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
   },
   "app.landing_feature_supporters": {
-    "defaultMessage": "運営の費用をお金で支えられます。",
+    "defaultMessage": "このサーバーの運営資金を支えられます。",
     "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
   },
   "app.landing_feature_articles_name": {
@@ -400,7 +400,7 @@
     "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
   },
   "app.landing_sample_translated": {
-    "defaultMessage": "{language}から翻訳",
+    "defaultMessage": "投稿を{language}から翻訳",
     "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
   },
   "app.landing_without_account": {

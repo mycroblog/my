@@ -292,11 +292,11 @@
     "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
   },
   "app.landing_sign_up_invite": {
-    "defaultMessage": "Sign up with an invite",
+    "defaultMessage": "Create an account with an invite",
     "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
   },
   "app.landing_account": {
-    "defaultMessage": "Your account",
+    "defaultMessage": "Account",
     "description": "On the landing page, the name for assistive technology of the part that offers creating an account or signing in."
   },
   "app.landing_approval": {
@@ -320,7 +320,7 @@
     "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
   },
   "app.landing_week_posts": {
-    "defaultMessage": "{count, plural, one {public post this week} other {public posts this week}}",
+    "defaultMessage": "{count, plural, one {public post in the last 7 days} other {public posts in the last 7 days}}",
     "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
   },
   "app.landing_fediverse_heading": {
@@ -328,7 +328,7 @@
     "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
   },
   "app.landing_fediverse": {
-    "defaultMessage": "An account here has an address like @you@{domain}. With it you can follow people on other servers of the fediverse, Mastodon among them, and they can follow you back.",
+    "defaultMessage": "An account here has an address like @you@{domain}. With it you can follow people on Mastodon and the other servers of the fediverse, and they can follow you.",
     "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
   },
   "app.landing_features_heading": {
@@ -336,7 +336,7 @@
     "description": "On the landing page, the heading of the list of what members of this server can do besides posting (articles, events, voice rooms…), of what the server has on."
   },
   "app.landing_feature_articles": {
-    "defaultMessage": "Write articles, long pieces with headings and pictures, beside your posts.",
+    "defaultMessage": "Besides posts, write articles: long pieces with headings and images.",
     "description": "On the landing page, an item of What you can do here, shown while every member may write articles."
   },
   "app.landing_feature_events": {
@@ -344,7 +344,7 @@
     "description": "On the landing page, an item of What you can do here, shown while every member may create events."
   },
   "app.landing_feature_voice": {
-    "defaultMessage": "Talk live with others in voice rooms.",
+    "defaultMessage": "Talk live with others in voice chat rooms.",
     "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
   },
   "app.landing_feature_search": {
@@ -356,7 +356,7 @@
     "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
   },
   "app.landing_feature_supporters": {
-    "defaultMessage": "Support the server with money toward its running costs.",
+    "defaultMessage": "Help pay the costs of running this server.",
     "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
   },
   "app.landing_feature_articles_name": {
@@ -400,7 +400,7 @@
     "description": "On the landing page, after the price of the sample supporters' plan: the period it is paid for."
   },
   "app.landing_sample_translated": {
-    "defaultMessage": "Translated from {language}",
+    "defaultMessage": "Post translated from {language}",
     "description": "On the landing page, under a sample post shown translated in a miniature of a timeline: the language it was written in ({language}, a language's name)."
   },
   "app.landing_without_account": {

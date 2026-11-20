@@ -628,7 +628,7 @@
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.landing_features": {
-    "defaultMessage": "Show the features that are on",
+    "defaultMessage": "Show the features members can use",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
   "staff_settings.setting.featured_accounts": {
