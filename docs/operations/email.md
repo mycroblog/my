@@ -392,8 +392,9 @@ in the `development` profile, only the text version is written to the log.
 - There is one outer layout, with paragraphs, buttons, and a signature (server name, URL, contact, the reason for the email,
   and the unsubscribe link). `<html lang dir>` comes from the recipient's locale, and languages such as `ar` are laid out right to
   left.
-- It loads no external fonts or stylesheets. Colors are the default design tokens, and light and dark follow
-  `color-scheme` and `prefers-color-scheme`. The administrator's theme overrides do not affect email.
+- It loads no external fonts or stylesheets and uses the system's fonts. Colors are those of the published
+  [theme](instance-settings.md#theme) (the default design tokens without one), and light and dark follow `color-scheme` and
+  `prefers-color-scheme`.
 - It loads no images, except the instance's own logo when one is set ([logo and icon](instance-settings.md#logo-and-icon)):
   the HTML version then starts with the logo (`https://<host>/brand/...`, the dark logo instead where the email client follows
   a dark color scheme), the same URL for every recipient, so it tells nothing about who opened the email. Clients that load no
