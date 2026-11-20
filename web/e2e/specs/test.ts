@@ -4,6 +4,9 @@
 //
 // - `signIn(person)` signs in through the server's sign-in screen with the person's password and waits for the home
 //   screen's heading (a fresh person's home may show no feed).
+// - `signedIn(page, person)` gives the browser of `page` a session of the person made through the API, without the
+//   sign-in screen: the next page of the app it loads is signed in. For a spec that signs in people whose sign-in it
+//   does not test, in more browsers than one.
 // - `fresh` makes what a test changes, new on every run of it (src/fresh.ts), so that the specs pass in any order and
 //   with `--repeat-each`: a test that follows, favourites, accepts or posts acts on its own subjects, never on the
 //   scenario's people and posts, which every test reads.
@@ -58,8 +61,9 @@
 
 import { randomBytes } from "node:crypto";
 import { readFileSync } from "node:fs";
-import { expect, test as base } from "@playwright/test";
+import { expect, test as base, type Page } from "@playwright/test";
 import { Fresh } from "../src/fresh";
+import { sessionCookie } from "../src/seed/sign-in";
 import { mailedLinkTo } from "../src/mail";
 import { personOf, type Person } from "../src/scenario";
 import type { SeedState } from "../src/seed/seed";
@@ -100,6 +104,8 @@ export async function mailedLink(address: string, path: string): Promise<string>
 type Fixtures = {
   /** Signs in as `p` with the password and waits until the home screen shows. */
   signIn: (p: Person) => Promise<void>;
+  /** Gives the browser of `page` a session of `p` made through the API, for the next page it loads. */
+  signedIn: (page: Page, p: Person) => Promise<void>;
   /** Makes the test's own people, posts and follow requests on the demo server. */
   fresh: Fresh;
 };
@@ -113,6 +119,21 @@ export const test = base.extend<Fixtures>({
       await page.getByRole("button", { name: "Sign in", exact: true }).click();
       // The heading, not the feed: the home of a fresh person who follows no one shows no feed.
       await expect(page.getByRole("main").getByRole("heading", { level: 1, name: "Home", exact: true })).toBeVisible();
+    });
+  },
+  signedIn: async ({ baseURL, fresh }, use) => {
+    await use(async (page, p) => {
+      if (baseURL === undefined) throw new Error("e2e: no demo server; run the specs with scripts/task.sh web:e2e");
+      const value = await fresh.session(p);
+      // The cookie as the token endpoint sets it (internal/interface/oauth, setRefreshCookie): of the host alone (a
+      // domain without its leading dot), Secure, which Playwright gives a cookie of a `url` only on HTTPS, though the
+      // browser takes a Secure cookie from localhost over plain HTTP.
+      const domain = new URL(baseURL).hostname;
+      await page
+        .context()
+        .addCookies([
+          { name: sessionCookie, value, domain, path: "/", secure: true, httpOnly: true, sameSite: "Strict" },
+        ]);
     });
   },
   fresh: async ({ baseURL }, use) => {

@@ -458,23 +458,21 @@ test("a one-person server shows no way of signing up nor member invites, and say
 /** The words of the options of `box`, a select. */
 const optionsOf = (box: HTMLElement) => (box instanceof HTMLSelectElement ? [...box.options].map((o) => o.text) : []);
 
-test("each yes-or-no setting is one control that is On or Off, on every page", async () => {
-  for (const at of [...pages.map((page) => `/admin/settings/${page}`), "/admin/translation"]) {
+// A test a page: each renders the app anew, a test's worth of work on its own.
+for (const at of [...pages.map((page) => `/admin/settings/${page}`), "/admin/translation"])
+  test(`each yes-or-no setting is one control that is On or Off, on ${at}`, async () => {
     await atForm(at);
     const yesNo = main()
       .queryAllByRole("combobox")
       .filter((box) => optionsOf(box).some((option) => /^(On|Yes)$/.test(option)));
-    expect([at, yesNo.map(optionsOf).filter((options) => options.join() !== "On,Off")]).toEqual([at, []]);
-    expect([
-      at,
+    expect(yesNo.map(optionsOf).filter((options) => options.join() !== "On,Off")).toEqual([]);
+    expect(
       main()
         .queryAllByRole("radio")
         .filter((choice) => /^(On|Off|Yes|No)$/.test(words(choice.closest("label") ?? choice))),
-    ]).toEqual([at, []]);
-    expect([at, main().queryAllByRole("switch")]).toEqual([at, []]);
-    cleanup();
-  }
-});
+    ).toEqual([]);
+    expect(main().queryAllByRole("switch")).toEqual([]);
+  });
 
 // The icon and logo.
 
