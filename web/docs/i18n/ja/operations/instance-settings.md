@@ -25,7 +25,7 @@
 <!-- source: keys ae25d36239c2 -->
 ## キー
 
-<!-- source: settings-one-key-one-value a3d12269943c -->
+<!-- source: settings-one-key-one-value d7de299cd54d -->
 ### 設定（1 つのキーに 1 つの値）
 
 | キー | 型 | 既定値 | 説明 |
@@ -83,6 +83,7 @@
 | `link_cards` | `true` / `false` | `true` | 投稿のリンクにカードを表示するかどうか。`true` のとき、サーバーはリンク先のページを取得してカードを作ります。`false` のときは取得をやめ、すでに作ったカードも隠します。一部のドメインでだけ止めるには、[リンクのカードのドメイン](#link-card-domains)を参照してください |
 | `link_cards_ignore_robots_txt` | `true` / `false` | `false` | リンクのカードの取得で `robots.txt` を無視するかどうか。`false` のとき、サーバーはリンク先のサイトの `robots.txt` に従うので、`my-linkcard` か `*` を拒否しているサイトにはカードが付きません（[リンクプレビュー](link-previews.md#cards-of-links-in-posts)）。`/about/crawler` がリンク先のサイトにそのクローラーが何かを伝えます。`true` のとき、サーバーは `robots.txt` を取得も使用もせず、リンク先のサイトはそれでこの取得を拒めなくなります。それでもサーバーは `my-linkcard` と名乗ります。カードが欠けすぎるときにだけオンにしてください。オンの間に作ったカードは、オフにしたあとの次の取得し直しのときに確認されます。ページの指示とリンクのカードのドメインは、どちらの場合も適用されます |
 | `ux_measurement` | `true` / `false` | `false` | Web クライアントが応答の速さのサンプルを送り、このサーバーがそれを保存するかどうか（[UX の計測](error-reporting.md#ux-measurements)）。サンプルにはアカウント、アドレス、URL が含まれません。`false` のとき、サーバーはサンプルを取らず、`GET /api/v1/instance` の `ux_measurement` がクライアントに送らないよう伝えます |
+| `ux_measurement_share` | 整数 1-100（パーセント） | `10` | `ux_measurement` が `true` の間に、Web クライアントがサンプルを送るブラウザーのセッションの割合。セッションごとに、Web クライアントの起動時に一度だけ抽選します。小さなサーバーなら `100` にすると、すべてのセッションを計測できます |
 | `oauth_metadata_document_clients` | `true` / `false` | `true` | Client ID Metadata Document のクライアントを受け入れるかどうか。`true` のとき、`client_id` が `https` の URL である認可リクエストについて、サーバーはその URL のメタデータを取得し、それをクライアントとして扱います（事前の登録は不要です）。取得はリダイレクトをたどらず、読み込むのは最大 5 KB で、応答はキャッシュの指示に従って最長 24 時間再利用します。`false` のときは取得をやめ、これらのクライアントの認可リクエスト、トークンの交換、更新を拒否します |
 | `finance_visibility` | `private` / `totals` / `breakdown` | `private` | 運営費（`/admin/finance/costs` で記録し、`/admin/finance/publication` で設定します）をどこまで公開するか。`private`: 何も公開しません（`GET /api/v1/instance/cost_totals` は 404 です）。`totals`: 期間と通貨ごとの合計だけ。`breakdown`: 合計と、プロバイダーとカテゴリーごとの内訳。情報ページ（`/about` と `/about/costs`）と API で誰にでも表示されます。`breakdown` では、どのプロバイダー（たとえば、どのクラウド）で運用しているかがわかります。どの段階でも、項目の名前、メモ、個々の支払いは公開されません。今日（UTC）を含む期間までが公開されます |
 | `finance_viewer_item_names` | `true` / `false` | `false` | 権限 `view_finance` を持つ利用者が、会計の画面（`/finance`、`GET /api/v1/finance/cost_totals`）で費用の項目の名前と、取り込んだ費用のサービス名を見られるかどうか。合計と、プロバイダーとカテゴリーごとの内訳は、この設定にかかわらず常に表示されます |
@@ -99,6 +100,8 @@
 | `voice_public_summary` | `true` / `false` | `false` | 公開範囲が `local` の通話のルームのページで、このサーバーにログインしていない訪問者とリモートの利用者に、ルームの名前、説明、ホスト、まだ開いているかどうかを表示し、リンクプレビューにも出すかどうか。参加者は表示されません。`false` のとき、そうした訪問者には、このサーバーのローカルの利用者向けのルームであることだけが表示されます |
 | `event_creators` | `everyone` / `permitted` | `everyone` | イベントを作れる人（[イベント](#events)）。`everyone`: 凍結も制限もされていない、ログインしているローカルの利用者全員。`permitted`: 権限 `create_events` を持つ人だけ。この権限は既定では組み込みの `admin` ロールだけが持ち、サポーターのプランのロールに持たせることもできます |
 | `public_counts` | `true` / `false` | `true` | ランディングページ（`/`、ログアウト時）と `GET /api/v1/instance/overview` に、サーバーのメンバー数、直近 7 日の各日にサーバーの利用者がした公開投稿の数、サーバーの開始日を表示するかどうか。数えるのはこのサーバーの利用者の公開投稿だけで、数は数分ごとに更新されます。`false` のとき、API はこれらを含めません |
+| `landing_fediverse_explanation` | `true` / `false` | `true` | ランディングページ（`/`、ログアウト時）で、フェディバースの仕組み、つまりここのアカウントが他のサーバーの人をフォローしたり、フォローされたりすることを説明するかどうか |
+| `landing_features` | `true` / `false` | `true` | ランディングページに、このサーバーでソフトウェアにできること（通話のルーム、イベント、記事、検索、翻訳、サポーターのうち、オンになっている機能ごとの見本）を表示するかどうか |
 | `featured_accounts` | スペースかカンマで区切った、最大 20 個のローカルアカウントのユーザー名（空 = なし） | 空 | フォローする人のおすすめで、最近投稿したこのサーバーの人より先に、この順で表示するアカウント。持ち主が「おすすめに出し、名前の一部で見つかるようにする」をオフにしたアカウントはおすすめされません。[おすすめ](#suggestions-of-accounts)を参照してください |
 | `login_providers_only` | `true` / `false` | `false` | 有効なログインのプロバイダーが 1 つ以上ある間、登録とログインをログインのプロバイダーに限るかどうか。パスワードとパスキーではログインできなくなり、プロバイダーを連携していない利用者は、セッションが切れると再びログインできなくなります。有効なプロバイダーがなければ適用されません。`my instance set` は、有効なプロバイダーと連携していない有効な利用者の数を表示します。[ログインをログインのプロバイダーに限る](login-providers.md#limit-sign-in-to-login-providers)を参照してください。 |
 | `invite_creators` | `everyone` / `permitted` | `permitted` | `manage_invites` を持つスタッフのほかに、自分の招待を作れる人（[メンバーの招待](registration.md#member-invites)）。`everyone`: 凍結も制限もされていない、ログインしているローカルの利用者全員。`permitted`: 権限 `create_invites` を持つ人だけ。この権限は既定では組み込みの `admin` ロールだけが持ち、サポーターのプランのロールに持たせることもできます。`approval` の方式では、使える招待があると新しい利用者がすぐに承認されるので、`everyone` にすると全員が審査を飛ばせるようになります |
@@ -208,7 +211,7 @@
 - 1 人の利用者が作れるイベントは 1 時間に最大 10 件で、1 つのイベントが送れる招待は 1 時間に最大 100 件です。
 - 利用者はイベントを通報でき、モデレーターはイベントを中止できます。主催者を凍結または削除すると、まだ始まっていないその主催者のイベントが中止されます（[モデレーション](moderation.md#events)）。誰が回答し、誰が招待されたかは、イベントのあと `event_records_retention_days` の間保持され、候補日への投票も同じです。
 
-<!-- source: texts-one-key-one-value c639fc7dfe23 -->
+<!-- source: texts-one-key-one-value cc74b8e2bdda -->
 ### テキスト（1 つのキーに 1 つの値）
 
 | キー | 上限 | 説明 |
@@ -225,7 +228,7 @@
 - 各テキストの値は 1 つです。管理者は好きな言語で一度書き、どのロケールの読者にも同じ値が表示されます。ほかの言語の読者は機械翻訳などに頼ります。管理画面の欄のラベルと説明は、ほかの画面の文言と同じように見る人の言語に翻訳されます。翻訳されないのは管理者が書いた値だけです。
 - サーバーはテキストの言語を知らないので、Web クライアントとサーバーが描画する画面は、画面の言語を引き継がずに、`dir="auto"` と `lang=""`（言語が不明であることを表す HTML の値）でテキストを出力します。
 - テキストを空にすると削除されます。
-- テキストは CLI のほかに、Web クライアントの管理画面（名前、短い説明、説明は「サーバーの設定」の「全般」のページ `/admin/settings`、利用規約は「規約とポリシー」の最初のページ `/admin/documents`、プライバシーポリシーは `/admin/documents/privacy-policy`、販売者の表示などは `/admin/documents/commerce-disclosure`）と、クライアント API（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）でも変えられます。
+- テキストは CLI のほかに、Web クライアントの管理画面（名前、短い説明、説明は「サーバーの設定」の「全般」のページ `/admin/settings/general`、利用規約は `/admin/documents/terms`、プライバシーポリシーは `/admin/documents/privacy-policy`、販売者の表示は `/admin/documents/commerce-disclosure`。後者の 3 つはそれぞれ「規約とポリシー」（`/admin/documents`）のページです）と、クライアント API（`GET /api/v1/admin/instance_texts`、`PUT /api/v1/admin/instance_texts/{key}`）でも変えられます。
   どちらにもロールの権限 `manage_settings` が必要で、変更は監査ログに記録されます（`text_changed`）。
 
 <!-- source: terms-and-privacy-policy 82e7bc325cf1 -->
@@ -248,7 +251,7 @@
 - 名前はどのロケールでも同じです。名前がないときは、代わりにドメイン（`host`）が表示されます。
 - 変更は再起動なしで次のリクエストから反映されます。開いている Web クライアントのタブのタイトルとサイドバーは、管理画面で保存したときに更新されます。
 
-<!-- source: contact-and-thumbnail 71513ab82d51 -->
+<!-- source: contact-and-thumbnail 0c0f6038fb4e -->
 ### 連絡先とサムネイル
 
 運営者への連絡先（`contact_account`、`contact_email`）と、インスタンスを表す画像（`thumbnail` とテキストの `thumbnail_alt`）は、次の場所に表示されます。未設定のものは表示されません。
@@ -258,9 +261,9 @@
 - NodeInfo の `metadata`: Misskey の慣習による `maintainer`（`name` は連絡先のアカウントの表示名で、ないときはユーザー名です。`email` は `contact_email` です）、Pleroma と Akkoma の慣習による `staffAccounts`（連絡先のアカウントのアクター ID）、`thumbnail`（`url` と `alt`）、短い説明 `short_description` から作る `nodeDescription`。
 
 連絡先のアカウントが凍結または削除されたときは、アカウントは表示されず、メールアドレスだけが表示されます。
-これらは、Web クライアントの管理画面の「全般」のページ（「サーバーの設定」、`/admin/settings`）か、CLI かクライアント API で変えます。
+これらは、Web クライアントの管理画面の「全般」のページ（「サーバーの設定」、`/admin/settings/general`）か、CLI かクライアント API で変えます。
 
-<!-- source: one-person-server 6ba524c58a4f -->
+<!-- source: one-person-server ed3ac66244d6 -->
 ### 一人のサーバー
 
 運営者ひとりだけのサーバー、つまりフェディバースにおける運営者自身の住まいが、一人のサーバーです。`single_user` をオンにします。Web クライアントでは、管理者が **サーバーの設定** の **登録** のページにある **一人のサーバーにする** でオンとオフを切り替えます。ローカルアカウントが 2 つ以上あるときは、そこにサーバーが断った理由が表示されます。
@@ -335,28 +338,27 @@ my admin federation sever -direction both
 - リモート側に `Reject`（`in`）や `Undo`（`out`）が送られるのは、現在のモードがその方向に送るときだけです。送らないモード（`off` など）では、フォローはローカル側でだけ終わり、リモート側には知らされません。
 - 繰り返し実行しても安全です。終わらせたフォローの数を標準出力に表示します。
 
-<!-- source: admin-screens-and-the-client-api 887d153efcf9 -->
+<!-- source: admin-screens-and-the-client-api d5fece23283e -->
 ## 管理画面とクライアント API
 
 CLI で変えられる設定は、すべて Web クライアントの管理画面とクライアント API でも変えられます。どちらにもロールの権限 `manage_settings` が必要です（組み込みの `admin` ロールだけが持っています）。CLI と同じく、変更はリビジョンとして残り、キーごとに監査ログに記録されます（`setting_changed`。対象はその設定で、操作者はその利用者です）。監査ログは、モデレーションの画面（「監査ログ」、`/moderation/audit-log`）で確認してください。
 
-- **Web クライアント**（「サーバーの設定」、`/admin/settings`）: 画面は話題ごとに 1 つのページに分かれ、見出しの下にリンクがあります。各ページにはフォームと保存ボタンが 1 つずつあり、保存すると、そのページで変えたものだけが送られます。ほかのページの設定はそのままです。
+- **Web クライアント**（「サーバーの設定」、`/admin/settings`）: 画面は話題ごとに 1 つのページに分かれ、グループにまとめて一覧になっています。各ページにはフォームと保存ボタンが 1 つずつあり、保存すると、そのページで変えたものだけが送られます。ほかのページの設定はそのままです。選択肢ごとに大きく変わるものは、保存の前に、それぞれが何をするかを選択肢の下に示し、数値は、拒否されたときに範囲を示します。
 
   | ページ | セクションと設定 |
   | --- | --- |
-  | 全般（`/admin/settings`） | 名前と説明（`name`、`short_description`、`description`）、連絡先とサムネイル（`contact_account`、`contact_email`、`thumbnail`、テキストの `thumbnail_alt`） |
-  | アイコンとロゴ（`/admin/settings/branding`） | アイコン、ロゴ、暗い背景のロゴ。それぞれ専用のボタンで保存します（[ロゴとアイコン](#logo-and-icon)） |
-  | 登録（`/admin/settings/registration`） | 登録（`registration_mode`、`login_providers_only`）、メンバーの招待（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`）、アプリ（`user_app_registration`、`oauth_metadata_document_clients`、`dynamic_client_registration`） |
-  | コンテンツ（`/admin/settings/content`） | 言語（`default_locale`。アプリにある言語から選びます）、タイムライン（`local_timeline_visibility`、`federated_timeline_visibility`）、投稿（`require_media_description`）、ランディングページ（`public_counts`）、おすすめのアカウント（`featured_accounts`） |
-  | 投稿の自動削除（`/admin/settings/auto-delete`） | 新しいアカウントの既定値（`auto_delete_default_*` の設定）、上限（`auto_delete_max_age_days`、`auto_delete_max_allow_*` の設定、`auto_delete_max_kept_pins`、`auto_delete_grace_days`）。オンにした上限や厳しくした上限（日数、例外、ピン留めを減らす）を保存するときは、新たに対象になるアカウントに通知が届くので、先に確認を求めます（[投稿を保持する上限](#a-maximum-for-keeping-posts)） |
-  | 連合（`/admin/settings/federation`） | 連合（`federation_mode`、`federation_scope`（`allowlist` を保存するときは、その切り替えで終了するフォローを先に表示して確認を求めます。[許可したサーバーとだけ連合する](moderation.md#federating-only-with-allowed-servers)を参照）、`authorized_fetch`、`remote_media_policy`、`remote_media_cache_ttl_seconds`（1 時間、1 日、7 日、30 日、365 日から選びます）、`link_cards`、`link_cards_ignore_robots_txt`）、制限・凍結したサーバー（`domain_actions_visibility`、`domain_actions_rationale_visibility`）、外部の審査（`hook_*` の設定。[判定フック](decision-hooks.md)を参照） |
-  | 検索とクローラー（`/admin/settings/discovery`） | 検索エンジンと AI（`search_indexing`、`indexable_default`、`ai_usage`、`security_contact`）、投稿の検索（`search_visibilities`。サーバーに全文検索があるときだけ） |
-  | 通話（`/admin/settings/voice`） | `voice_room_starters`、`voice_public_summary`、`voice_participants_retention_days`。このページは、サーバーが通話を提供しているときだけ一覧に出ます |
+  | 全般（`/admin/settings/general`） | 名前と説明（`name`、`short_description`、`description`）、言語（`default_locale`。アプリにある言語から選びます）、連絡先（`contact_account`、`contact_email`）、画像（`thumbnail` とテキストの `thumbnail_alt`、`preview_image` とテキストの `preview_image_alt`） |
+  | アイコンとロゴ（`/admin/settings/branding`） | アイコン、ロゴ、暗い背景のロゴ（[ロゴとアイコン](#logo-and-icon)） |
+  | 登録（`/admin/settings/registration`） | 登録できる人（`registration_mode`。方式ごとに何をするかを示します）、一人のサーバー（`single_user`）、メンバーの招待（`invite_creators`、`member_invite_max_active`、`member_invite_max_uses`、`member_invite_max_lifetime_seconds`（時間単位））、ログインのプロバイダーだけ（`login_providers_only`。保存の前に確認を求め、ログインできなくなる有効な利用者の数と、自分もその一人かどうかを示します）、アプリ（`user_app_registration`、`dynamic_client_registration`、`oauth_metadata_document_clients`、`oauth_client_rate_limits`）。一人のサーバーでは、登録とメンバーの招待のセクションに、ほかの人は登録しないことが表示されます |
+  | 投稿と機能（`/admin/settings/content`） | 投稿（`max_status_length`、`require_media_description`）、タイムライン（`local_timeline_visibility`、`federated_timeline_visibility`）、リンクのカード（`link_cards`、`link_cards_ignore_robots_txt`）、下書きと予約投稿（`max_drafts`、`max_scheduled_posts`、`max_scheduled_posts_per_day`、`scheduled_post_min_lead_minutes`、`scheduled_post_max_lead_days`）、記事（`article_authoring`、`max_article_bytes`、`max_article_images`）、イベント（`event_creators`、`event_records_retention_days`）、トップページとおすすめ（`public_counts`、`landing_fediverse_explanation`、`landing_features`、`featured_accounts`） |
+  | 通話（`/admin/settings/voice`） | ルームを開ける人（`voice_room_starters`）、ルーム（`voice_public_summary`、`voice_participants_retention_days`） |
+  | 投稿の自動削除（`/admin/settings/auto-delete`） | 新しいアカウントの既定値（`auto_delete_default_*` の設定）、全員への上限（`auto_delete_max_age_days`、`auto_delete_grace_days`、`auto_delete_max_allow_*` の設定、`auto_delete_max_kept_pins`）。オンにした上限や短くした上限を保存するときは、先に確認を求めます（[投稿を保持する上限](#a-maximum-for-keeping-posts)） |
+  | 連合（`/admin/settings/federation`） | 方向（`federation_mode`）、サーバー（`federation_scope`。`allowlist` を保存するときは、その切り替えで終了するフォローを先に表示して確認を求めます。[許可したサーバーとだけ連合する](moderation.md#federating-only-with-allowed-servers)を参照）、署名付きの取得（`authorized_fetch`）、ほかのサーバーのメディア（`remote_media_policy`、`remote_media_cache_ttl_seconds`（分単位）、`remote_media_cache_max_bytes`（MiB 単位））、ほかのサーバーの投稿（`remote_status_retention_days`、`remote_status_max_retention_days`、`relay_status_retention_days`）、措置を取ったサーバー（`domain_actions_visibility`、`domain_actions_rationale_visibility`） |
+  | 検索とクローラー（`/admin/settings/discovery`） | 検索エンジン（`search_indexing`、`indexable_default`）、セキュリティ上の連絡先（`security_contact`）、AI（`ai_usage`）、全文検索（`search_visibilities`） |
+  | 外部の審査（`/admin/settings/hooks`） | 判定フックごとのセクション: モード（`enforce` は `off` でなくなってから選べます）、プラグインが失敗したときの動作、その他の設定。判定の記録（`hook_decisions_retention_days`）。[判定フック](decision-hooks.md)を参照 |
+  | 異議申し立てと記録（`/admin/settings/records`） | 異議申し立て（`appeal_window_days`）、記録の保持（`session_origins_retention_days`、`registration_origins_retention_days`、`reports_retention_days`、`moderation_actions_retention_days`、`audit_log_retention_days`） |
 
-  「全般」のページでは、画像は選んだときにアップロードされ、保存したときにサムネイルになります。運営費、収入、サポーターの一覧を見られる人は、「会計」と「サポーター」の画面で設定します。
-
-  `max_status_length`、`preview_image`、`appeal_window_days`、保持期間（`*_retention_days`）、`remote_media_cache_max_bytes`、`oauth_client_rate_limits` は画面に表示されません。
-  CLI かクライアント API で変えてください。翻訳の設定には、下のとおり専用の画面があります。
+  「全般」のページでは、画像は保存したときにアップロードされ、そのときにサムネイルやリンクプレビューの画像になります。運営費、収入、サポーターの一覧を見られる人は、「会計」と「サポーター」の画面で設定します。翻訳の設定には、下のとおり専用の画面があります。
 - **Web クライアント**（「翻訳」、`/admin/translation`）: このサーバーにあるプロバイダー、その順番と各プロバイダーが受け取ってよいもの、ブラウザーの翻訳、月の上限、翻訳の保持期間を、今月送った文字数とキャッシュのヒット率とともに扱います。各サーバーのプロセスは、キャッシュのヒット数を最大 1 分に 1 回ヒット率に加えるので、最新のリクエストが表示されるまでに 1 分かかることがあり、止まったプロセスの最後の 1 分は数えられないことがあります。サーバー側のプロバイダーを有効にする前に、プライバシーポリシーを更新してください（[ひな形](privacy-policy-template.md#the-services-you-choose)）。プロバイダーに送った文章は取り戻せません。プロバイダーの API キーと[翻訳のプラグイン](plugins.md#translating-posts)のアドレスは[デプロイの構成](../reference/configuration.md)にあります。
   どの設定にも、クライアント API のどの応答にも含まれません。
 - **翻訳の上限。** 数えるのは送った文字数（コードポイント単位）です。メンションやリンクなどの代わりに置く目印は数えず、サーバーがすでに保持している翻訳、すでに読む人の言語で書かれた投稿、ブラウザーの翻訳も数えません。プロバイダーへの呼び出しは、失敗したものも含めて 1 回ずつ数えます。プロバイダーが文章を受け取っている可能性があるためです。そのため、この数はプロバイダーの請求と異なることがあります。上限を超えると、リクエストは `429` で拒否され、プロバイダーは呼ばれません。そのとき Web クライアントは、許可されていて、ブラウザーがその投稿を翻訳できるなら、読む人のブラウザーの翻訳を使います。月は UTC で数えます。
@@ -385,7 +387,7 @@ my instance rule list                                  # active rules (-all incl
 - Web クライアントの管理画面（「ルール」、`/admin/rules`、`manage_rules`）では、一覧に有効なルールが順に表示され、「上へ」と「下へ」で並べ替えます。一覧の上のフィルターで、代わりに廃止したルールを表示できます。「ルールを追加する」で、文と補足を入力するページが開きます。ルールの文を選ぶとそのページが開き、そこで編集と廃止（確認のダイアログのあと）ができます。変更はすべて監査ログに記録されます（`rule_added`、`rule_revised`、`rule_moved`、`rule_retired`）。
 - 終了コードは設定と同じです（成功は 0、値の拒否またはデータベースのエラーは 1、引数の誤りは 2）。
 
-<!-- source: link-card-domains c8f674387fa8 -->
+<!-- source: link-card-domains 1b8839ab9f1d -->
 ## リンクのカードのドメイン
 
 投稿のリンクのカード（`link_cards`）はクローラーが作ります。サーバーがリンク先のページとその画像を取得します。ルールは、1 つのドメインとそのサブドメインでこのクローラーを止め、そのドメインについてのほかのことには手を付けません。ルールには 2 つのモードのどちらかがあります。ルールは運営者の選択で、リンク先のサイト自身が拒否していることに加えて適用されます（[リンクプレビュー](link-previews.md#cards-of-links-in-posts)）。
@@ -400,11 +402,11 @@ my instance rule list                                  # active rules (-all incl
 - 変更はすぐに、サーバーがすでに持っているカードにも反映されます。画像を止めている間は、それらのカードのプロキシした画像も配信されなくなります。
 - ルールを外すと、サーバーがすでに持っているカードは元どおりに戻ります。飛ばしたリンクは、次に投稿で必要になったときにカードが付きます。まとめて取得し直すことはありません。
   画像を止めている間に取得し直したカードは、次に取得し直すまで画像なしのままです。
-- Web クライアントの管理画面（「リンクのカードのドメイン」、`/admin/link-card-domains`、`manage_settings`）では、「ルールを追加」でメモとともにルールを設定します。一覧は 1 ページに 40 個のルールを表示し、ドメインで検索できます。ドメインを選ぶとそのルールのページが開き、そこでモードとメモを変えたり、ルールを外したり（確認のダイアログのあと）できます。
+- Web クライアントの管理画面（「リンクのカードのドメイン」、`/admin/link-card-domains`、`manage_settings`）では、「ルールを追加」でモードとメモを付けてルールを設定します。すでにルールのあるドメインは、そのルールへのリンクを示して拒否します。一覧はドメインごとにルールを 40 個ずつ表示し、「さらに表示」で続きを読み込みます。ドメインを選ぶとそのルールのページが開き、そこでモードとメモを変えたり、ルールを外したり（確認のダイアログのあと）できます。
 - 管理 API は `/api/v1/admin/link_card_domains`（一覧、設定。ドメインを指定した `DELETE` で外します）で、ロールの権限 `manage_settings` が必要です。サーバーが持てるルールは最大 1,000 個で、それぞれに最大 5,000 文字のメモを付けられます。
 - 変更はすべて監査ログに記録されます（`link_card_domain_fetch_stopped`、`link_card_domain_images_stopped`、`link_card_domain_rule_removed`）。
 
-<!-- source: theme d3ebe5db33cb -->
+<!-- source: theme 98c2eee35f30 -->
 ## テーマ
 
 サーバー全体のテーマは、Web クライアントのデザイントークンを上書きする 1 組の設定で、色ごとにライトとダークの値を持ちます。すべての閲覧者の Web クライアントと、サーバーが描画する画面（ログイン、登録、規約など）に適用されます。カスタム CSS はありません。
@@ -415,8 +417,8 @@ my instance rule list                                  # active rules (-all incl
   | --- | --- | --- |
   | `color-surface`, `color-surface-raised`, `color-surface-raised-hover`, `color-surface-raised-pressed`, `color-surface-hover`, `color-surface-pressed`, `color-text`, `color-muted-text`, `color-accent`, `color-on-accent`, `color-accent-text`, `color-quote-bar` | 色 | ライトとダークのそれぞれについて `#rrggbb` |
   | `font-sans-override`, `font-mono-override` | フォントファミリー | ファミリー名をカンマ区切りで指定します（最大 30）。`sans-serif` のような総称のファミリーは使えません。数字で始まる単語を含む名前は、`"M PLUS 1p"` のように引用符で囲みます |
-  | `text-tagline`, `text-title`, `text-body`, `text-caption` | 長さ | `0` か rem / px、0.625rem から 3rem |
-  | `text-*--line-height`（上の 4 つのそれぞれ） | 数値 | 1 から 2.5 |
+  | `text-tagline`, `text-headline`, `text-heading`, `text-title`, `text-reading`, `text-body`, `text-caption` | 長さ | `0` か rem / px、0.625rem から 3rem |
+  | `text-*--line-height`（上のそれぞれ） | 数値 | 1 から 2.5 |
   | `radius-control`, `radius-overlay` | 長さ | 0 から 2rem |
   | `duration-spin` | 時間 | ms / s、0 から 1000ms |
 
@@ -425,7 +427,7 @@ my instance rule list                                  # active rules (-all incl
 - 保存するときと公開するときに、サーバーは値の形と範囲、色のトークンのすべての組のコントラストを確認します（上書きしていないトークンは既定値を使います。ライトとダークの両方で WCAG 2.2 AA）。どれか 1 つでも通らなければ、何も保存も公開もされません。
 - 新しいバージョンで名前が変わったり廃止されたりしたトークンの上書き、または値がもうトークンに合わなくなった上書きがあっても、アップグレードは失敗しません。その上書きは保存済みのセットに残りますが、もう適用されません。管理 API は `stale_tokens` の下にそれを一覧し、`my instance theme get` はその名前を示し、下書きを次に保存すると取り除かれます。
 - 公開したリビジョンのスタイルシートは `/theme/{revision ID}.css`（`immutable`、長期間キャッシュされます）で配信されます。HTML のシェルには共有キャッシュ（60 秒と、再検証の 300 秒）があるので、公開してから全員に行き渡るまで数分かかります。すでに開いているページは、再読み込みするまで古い見た目のままです。
-- シェルの `<meta name="theme-color">`（ライトとダーク）と、Web App Manifest の `theme_color` / `background_color`（ライト）には、テーマの `color-surface` の値が入ります。メールは、テーマにかかわらず、トークンの既定の色を使います。
+- シェルの `<meta name="theme-color">`（ライトとダーク）と、Web App Manifest の `theme_color` / `background_color`（ライト）には、テーマの `color-surface` の値が入ります。これ以降にサーバーが送るすべてのメールの HTML 版は、公開したテーマの色（ライトとダーク）を使います。下書きがメールに届くことはありません。
 - トークンのないセットを公開すると、テーマは既定に戻り、スタイルシートは読み込まれなくなります。
 - テーマはクライアント API と CLI で変えられます。クライアント API にはロールの権限 `manage_settings` が必要です。`GET /api/v1/admin/theme` は下書きと有効なセットを読み、`PUT /api/v1/admin/theme/draft` は下書きを保存し、`GET /api/v1/admin/theme/draft/stylesheet` はプレビュー用に下書きのスタイルシートを返し、`POST /api/v1/admin/theme/publish` と `POST /api/v1/admin/theme/restore` は公開します。公開は監査ログに記録されます（`setting_changed`、対象は `theme`）。
 
@@ -446,7 +448,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
 }
 ```
 
-<!-- source: logo-and-icon a2d23def322b -->
+<!-- source: logo-and-icon 1269b80d7ad5 -->
 ## ロゴとアイコン
 
 サムネイルとプレビューの画像のほかに、インスタンスは独自のアイコン、ロゴ、暗い背景のロゴを持てます。それぞれ 1 つの SVG としてアップロードします。
@@ -465,7 +467,7 @@ echo '{"tokens":[]}' | my instance theme set && my instance theme publish   # ba
   以前のリビジョンのファイルも残るので、送ったメールのロゴはそのまま表示されます。
 - アイコンを設定すると、HTML のシェルはその PNG のファビコン、SVG、180 px の `apple-touch-icon` にリンクし、Web App Manifest はその 512 px、192 px、マスカブル、SVG のアイコンをこの順に並べ（ほかのフェディバースのサーバーは最初のものをこのサーバーのアイコンとして使います）、`/apple-touch-icon.png` は 180 px の版を返します。シェルの ETag は画像とともに変わり、シェルの共有キャッシュはテーマと同じく数分続きます。インストールしたアプリは、Android では Chrome が次にマニフェストを確認したときに新しいアイコンになります。デスクトップでは、インストールし直すまで古いアイコンのままです。
 - `GET /api/v1/instance` は、`icon`、`logo`、`logo_dark` を、SVG の URL、各 PNG 版の URL と大きさ、リビジョンとともに返します。組み込みの画像を使っている間は、それぞれ含まれません。
-- 設定は Web クライアントの **サーバーの設定** > **アイコンとロゴ**（`/admin/settings/branding`、ロールの権限 `manage_settings`）で行います。アイコン、ロゴ、暗い背景のロゴの SVG ファイルを選ぶと、サーバーがそれを確認し、ブラウザーが PNG 版を描き、フォームがそのプレビュー（ブラウザーのタブ、ホーム画面、アプリのアイコン、明るい背景と暗い背景のメール、リンクプレビュー）を、サーバーが取り除いたものの一覧とともに表示します。サーバーがファイルを拒否したときは、ボタンの下に理由と直し方が表示されます。アイコンについては、不透明な版の背景色もそこで設定します。**保存する** で SVG とすべての PNG 版を送ります。**組み込みのアイコンに戻す**、**組み込みのロゴに戻す**、**暗い背景のロゴを外す** でそれぞれを消します。Web クライアントは、表示した画像をオフラインで使えるように保持します。
+- 設定は Web クライアントの **サーバーの設定** > **アイコンとロゴ**（`/admin/settings/branding`、ロールの権限 `manage_settings`）で行います。アイコン、ロゴ、暗い背景のロゴの SVG ファイルを選ぶと、サーバーがそれをすぐに確認し、フォームには、サーバーが保持するとおりの画像が、サーバーが取り除いたものの一覧とともに表示されます。サーバーがファイルを拒否したときは、その下に理由と直し方が表示されます。アイコンについては、不透明な版の背景色もそこで設定します。**保存する** でブラウザーが PNG 版を描き、選んだそれぞれの画像と一緒に送ります。**組み込みの画像に戻す** は、保存したときに、その画像を組み込みのものに戻します。Web クライアントは、表示した画像をオフラインで使えるように保持します。
 - クライアント API でも、ロールの権限 `manage_settings` で同じことができます。
   `POST /api/v1/admin/instance/brand/sanitize` は SVG を確認し、サニタイズした SVG と、描くべき PNG 版を返します（何も保存しません）。`PUT /api/v1/admin/instance/brand/{icon|logo|logo_dark}` は SVG をすべての PNG 版とともに保存します（`multipart/form-data`、版ごとに 1 つのパート）。同じパスへの `DELETE` で 1 つを消し、`GET /api/v1/admin/instance/brand` は現在の画像をアイコンの背景色とともに返します。変更はすべてリビジョン（`instance_brand_revisions`）として残り、監査ログに記録されます（`setting_changed`、対象は `brand_icon`、`brand_logo`、`brand_logo_dark` のいずれか）。
 - PNG 版はクライアントが描くので、CLI では設定できません。ただし、表示したり、壊れたものを消したりはできます。
@@ -475,7 +477,7 @@ my instance brand show          # each image with its revision, when and by whom
 my instance brand clear icon    # back to the built-in icon (also logo, logo_dark)
 ```
 
-<!-- source: custom-emoji 5e0ddb3251cf -->
+<!-- source: custom-emoji 852330f1cc29 -->
 ## カスタム絵文字
 
 ローカルのカスタム絵文字は、投稿の本文や注意書き、または表示名、自己紹介、プロフィールの項目に `:shortcode:` と書くと、画像として表示されます。送り出す Note とアクターの `Emoji` タグを通じて、Mastodon、Misskey、GoToSocial、Akkoma にも届きます。
@@ -486,7 +488,7 @@ my instance brand clear icon    # back to the built-in icon (also logo, logo_dar
 - 無効にした絵文字はどこにも表示されず（投稿、プロフィール、連合、ピッカー）、`:shortcode:` は再び文字として表示されます。ピッカーから隠す設定にした絵文字は、ピッカーに出ないだけで、書けば使えます。ほかのサーバーから来た絵文字は、無効にするか、このサーバーの絵文字として複製することしかできません。
 - 複製は、メディアプロキシと同じ制限のもとでほかのサーバーの絵文字の画像を取得し（`reject_media` のドメインの画像は取得しません）、上と同じ確認をして、新しいローカルの絵文字として登録します。ショートコードは元のものか、指定したものになります。画像は 256 px の枠に縮小され、取得できなかったり確認を通らなかったりした画像は何も残しません。
 - 削除は元に戻せません。過去の投稿の絵文字も文字に戻り、同じショートコードをもう一度登録すると別の絵文字になります。連合先のサーバーが複製した画像は削除できません。
-- 管理画面（「カスタム絵文字」、`/admin/custom-emojis`）、クライアント API（`/api/v1/admin/custom_emojis`）、CLI は同じことができます。画面では、「カスタム絵文字を登録する」で登録のフォーム（`/admin/custom-emojis/new`）が開き、一覧で絵文字を選ぶとそのページ（`/admin/custom-emojis/{id}`）が開きます。そこで設定の変更、画像の差し替え、有効化と無効化、削除、ほかのサーバーの絵文字の複製ができます。一覧そのものでも、1 回押すだけで絵文字を有効にしたり無効にしたりできます。管理画面とクライアント API にはロールの権限 `manage_custom_emojis` が必要です（組み込みの `admin` だけが持っています）。登録、複製、画像の差し替え、設定と別名の変更、有効化と無効化、削除は、どの方法で行っても監査ログに記録されます（対象は `custom_emoji`。CLI からの操作は CLI の操作として記録されます）。
+- 管理画面（「カスタム絵文字」、`/admin/custom-emojis`）、クライアント API（`/api/v1/admin/custom_emojis`）、CLI は同じことができます。画面では、「カスタム絵文字を登録する」で登録のフォーム（`/admin/custom-emojis/new`）が開き、100 KiB を超える画像には警告が表示されます。一覧で絵文字を選ぶとそのページ（`/admin/custom-emojis/{id}`）が開き、そこで有効化と無効化、画像の差し替え、カテゴリー・別名・ピッカーでの表示の変更、ショートコードを入力したうえでの削除、ほかのサーバーの絵文字の複製ができます。管理画面とクライアント API にはロールの権限 `manage_custom_emojis` が必要です（組み込みの `admin` だけが持っています）。登録、複製、画像の差し替え、設定と別名の変更、有効化と無効化、削除は、どの方法で行っても監査ログに記録されます（対象は `custom_emoji`。CLI からの操作は CLI の操作として記録されます）。
 
 ```sh
 my admin emoji create -shortcode blobcat -category Cats -alias neko blobcat.png   # register one
@@ -504,7 +506,7 @@ my admin emoji requests approve <request id>                                    
 my admin emoji requests reject [-reason <text>] <request id>                      # reject a request (the requester sees the reason)
 ```
 
-- ロールの権限 `create_custom_emojis`（利用者の機能）を持つ利用者は、設定の「カスタム絵文字」（`/settings/custom-emojis`）から絵文字の作成を申請でき、自分が作った絵文字の別名、カテゴリー、ピッカーでの表示を変えたり、削除したりできます。画像の差し替えも申請になります。申請は、`manage_custom_emojis` を持つ人が承認するまでどこにも表示されません（ピッカー、投稿、リアクション、連合）。申請は、管理画面の「カスタム絵文字」の「申請」のページ（`/admin/custom-emojis/requests`）、クライアント API（`/api/v1/admin/custom_emoji_requests`）、上の CLI で承認または却下します。`manage_custom_emojis` を持つ人には申請が通知され（`admin_custom_emoji_request`）、申請者には承認か却下が通知されます。申請、取り下げ、承認、却下は監査ログに記録されます（対象は `custom_emoji_request`）。
+- ロールの権限 `create_custom_emojis`（利用者の機能）を持つ利用者は、設定の「カスタム絵文字」（`/settings/custom-emojis`）から絵文字の作成を申請でき、自分が作った絵文字の別名、カテゴリー、ピッカーでの表示を変えたり、削除したりできます。ページには、今月あと何件申請できるかが表示されます。画像の差し替えも申請になり、クライアント API（`POST /api/v1/custom_emoji_requests`、`kind` は `image`）で行います。設定のページにはこの操作はありません。申請は、`manage_custom_emojis` を持つ人が承認するまでどこにも表示されません（ピッカー、投稿、リアクション、連合）。申請は、管理画面の「カスタム絵文字」の「申請」のページ（`/admin/custom-emojis/requests`）、クライアント API（`/api/v1/admin/custom_emoji_requests`）、上の CLI で承認または却下します。`manage_custom_emojis` を持つ人には申請が通知され（`admin_custom_emoji_request`）、申請者には承認か却下が通知されます。申請、取り下げ、承認、却下は監査ログに記録されます（対象は `custom_emoji_request`）。
 - 保留中の作成の申請は、そのショートコードを予約します。保留中の申請が却下されるか取り下げられるまで、同じショートコードで申請や登録はできません。承認された絵文字の画像はインスタンスのアクターのアップロードとして複製されるので、申請者のアカウントが削除されても残ります。
 - 作成者が自分の絵文字を変えられるのは、`create_custom_emojis` を持っている間だけです。ロールを外されても絵文字は残ります。
   管理者は、作成者にかかわらずすべての絵文字を変更、削除できます。
