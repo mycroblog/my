@@ -276,6 +276,8 @@ export type FakeOptions = {
   registrations?: "open" | "approval" | "invite" | "closed";
   /** The instance's summary runs long. */
   longSummary?: boolean;
+  /** The instance's name runs long. */
+  longName?: boolean;
   /**
    * The counts of the instance (GET /instance/overview): its members, their public posts of each of the last 7 days
    * and when it started, by default; none while the instance setting `public_counts` is off (`false`).
@@ -2203,7 +2205,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
-    name: "mycroblog demo",
+    name: o.longName === true ? "Riverside Community Gardeners and Friends of the Old Mill" : "mycroblog demo",
     version: "0.0.0-demo",
     source_url: "https://example.invalid/mycroblog/my",
     ...about.instance,

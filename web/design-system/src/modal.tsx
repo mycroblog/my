@@ -35,8 +35,8 @@ import { DismissButton, Overlay } from "react-aria/Overlay";
 import { useModalOverlay } from "react-aria/useModalOverlay";
 import { OverlayTriggerStateContext } from "react-aria-components";
 
-/** The control points of a `cubic-bezier()` easing token. */
-function curve(easing: string): [number, number, number, number] {
+/** The control points of a `cubic-bezier()` easing token, as Motion takes them. */
+export function curve(easing: string): [number, number, number, number] {
   const [a = 0, b = 0, c = 1, d = 1] = (easing.match(/-?\d*\.?\d+/g) ?? []).map(Number);
   return [a, b, c, d];
 }

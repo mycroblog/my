@@ -15,6 +15,7 @@ import {
   fontFamily,
   fontWeight,
   formPage,
+  landing,
   motion,
   properties,
   radius,
@@ -235,6 +236,11 @@ const theme = {
       names(formPage)
         .filter((name) => name !== "bannerRatio")
         .map((name) => [`form-page-${kebab(name)}`, ref(`--form-page-${kebab(name)}`)]),
+    ),
+    ...Object.fromEntries(
+      names(landing)
+        .filter((name) => name !== "sampleScale")
+        .map((name) => [`landing-${kebab(name)}`, ref(`--landing-${kebab(name)}`)]),
     ),
     // Between the rows of a footer's links that wrap, so that the targets of two rows never overlap.
     "form-page-footer-rows": "max(var(--form-page-field-gap), calc(var(--target-minimum) - 1lh))",

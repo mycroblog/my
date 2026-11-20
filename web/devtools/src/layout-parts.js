@@ -47,7 +47,7 @@ export const LAYOUT_PARTS = {
     "CallPart",
   ],
   "web/design-system/src/form-page.tsx": ["FormPage", "GlyphLine"],
-  "web/design-system/src/landing.tsx": ["LandingFrame"],
+  "web/design-system/src/landing.tsx": ["LandingFrame", "SampleGrid", "SampleCell"],
   "web/design-system/src/banner-head.tsx": ["BannerHead"],
   "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
   "web/design-system/src/modal.tsx": ["ModalFrame", "ModalPanel"],

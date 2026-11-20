@@ -524,6 +524,22 @@ export const formPage = {
 } as const;
 
 /**
+ * A server's landing page, in rem: the most width of the figure of the fediverse; the least width of a sample of a
+ * screen in the grid of what a member can do, and the padding around the screen and inside it; and the share of its
+ * size a sample is drawn at, a screen in miniature.
+ */
+export const landing = { figure: 24, sample: 15, samplePadding: 0.75, sampleScale: 0.75 } as const;
+
+/**
+ * The motion of the landing page's figure of the fediverse: a post travels along a follow from this server to
+ * another, and another comes back, once in each `cycle` ms. Each sets out from under its server, travels for `travel`
+ * ms with `ease`, starting and stopping gently as a thing sent from one place to another, and goes under the server it
+ * reaches. The cycle runs `rounds` times, then the posts settle half way, as the still figure shows them with reduced
+ * motion: nothing loops on to draw the eye from the way to an account.
+ */
+export const figureMotion = { cycle: 7000, travel: 1800, rounds: 3, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
+
+/**
  * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row
  * and before what ends it; above a heading of a group of a list; around a thread's focused post and between its
  * lines; a step of a reply's indent, and the width of the column from which replies indent; the room between a profile's avatar and its banner's edge or its actions; the
@@ -690,7 +706,7 @@ const kebab = (name: string) => name.replace(/[A-Z]/g, (c) => `-${c.toLowerCase(
  * region's family), `--text-*` (with Tailwind's
  * `--line-height`, `--font-weight` and `--letter-spacing` suffixes), `--color-*` as `light-dark()`, which follows the
  * color scheme of the system or of `<html data-theme>`, and `--font-weight-*`, `--radius-*`, `--control-*`, `--icon-button-*`, `--focus-ring-*`,
- * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*`, `--event-*` and `--form-page-*`. The design system's stylesheet declares them on
+ * `--press-*`, `--duration-*`, `--transition-*`, `--spinner-*`, `--diff-*`, `--icon-*`, `--avatar-*`, `--shadow-overlay`, `--shadow-bar`, `--menu-*`, `--disclosure-*`, `--content-*`, `--article-*`, `--entry-*`, `--feed-*`, `--embed-*`, `--media-*`, `--viewer-*`, `--chip-*`, `--toggle-*`, `--emoji-picker-*`, `--dialog-*`, `--composer-*`, `--kbd-*`, `--shell-*`, `--screen-*`, `--voice-*`, `--event-*`, `--form-page-*` and `--landing-*`. The design system's stylesheet declares them on
  * :root.
  */
 export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Object.fromEntries<string>([
@@ -865,5 +881,9 @@ export const properties: Readonly<Record<string, string>> = /* @__PURE__ */ Obje
   ...Object.entries(formPage).map(([name, value]): [string, string] => [
     `--form-page-${kebab(name)}`,
     name === "bannerRatio" ? `${value}` : `${value}rem`,
+  ]),
+  ...Object.entries(landing).map(([name, value]): [string, string] => [
+    `--landing-${kebab(name)}`,
+    name === "sampleScale" ? `${value}` : `${value}rem`,
   ]),
 ]);
