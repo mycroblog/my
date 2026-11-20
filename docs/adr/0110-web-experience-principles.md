@@ -190,7 +190,7 @@ SVG を描くのは `TrendChart` と `Sparkline` だけである。帯・進み�
 - **強制カラーモード**: 系列の色は失われるので、`forced-colors:` で線と棒を `CanvasText`、強調を `Highlight` にし、系列は線の形で分ける。帯の区切りは境界線で残す。
 - **ダークモードと面**: 図は区画（`surface-raised`）の上に置き、格子の線は `border` のトークンにする。§12〜§14 の影を図の要素には使わない。
 - **RTL**: 時間の軸は行の向きに合わせ、RTL では新しい期間を左に置く。SVG は `dir` に従わないので、React Aria の `useLocale().direction` で x の目盛りを反転する。数と日時は `dir="ltr"` の `bdi` で出す。
-- **動き**: 描き始めの動きは付けない。値が変わったときの移り変わりだけを `motion-safe:` とトークンの長さ・緩急（`duration-fast`・`ease-standard`）で付ける。
+- **動き**: 描き始めの動きは付けない。値が変わったときの移り変わりだけを `motion-safe:` とトークンの長さ・緩急（`--transition-replace`・`--transition-ease-enter`）で付ける。
 
 ### 19. データの図: 検査
 
