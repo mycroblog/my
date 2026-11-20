@@ -60,16 +60,13 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 config="$root/scripts/docs-site/wrangler.jsonc"
-# Fetched by its exact version, since only the CI jobs run it, and run on Bun (ADR-0025 §10).
-wrangler_version="4.151.0"
+# The pinned wrangler, the limits of Workers static assets, and the Previews and the comment of a pull request.
+# shellcheck source=scripts/workers-preview.sh
+. "$root/scripts/workers-preview.sh"
 dry_run="${DRY_RUN:-}"
 work="${DOCS_SITE_WORK:-$root/.tmp/docs-site}"
 marker="<!-- docs-site-preview -->"
 
-# The limits of Workers static assets on the free plan, and a bound on the upload of a preview.
-max_files=20000
-max_file_bytes=$((25 * 1024 * 1024))
-max_preview_bytes=$((300 * 1024 * 1024))
 # The most pages the preview comment links; the rest are counted.
 max_listed=40
 
@@ -178,18 +175,9 @@ build() {
   cp "$out/$home/index.html" "$out/index.html"
   [[ ! -f "$out/$home/404.html" ]] || cp "$out/$home/404.html" "$out/404.html"
   index_site "$out"
-  check "$out"
+  check_assets "$out"
   check_site "$out"
   echo "docs-site: built next and $count released version(s) in $out" >&2
-}
-
-# check SITE fails when SITE exceeds the limits of Workers static assets.
-check() {
-  local site="$1" count bad
-  count="$(find "$site" -type f | wc -l)"
-  ((count <= max_files)) || die "the site has $count files, more than $max_files"
-  bad="$(find "$site" -type f -size +"$max_file_bytes"c -print -quit)"
-  [[ -z "$bad" ]] || die "${bad#"$site"/} is larger than $max_file_bytes bytes"
 }
 
 # What search engines read (web/docs/src/indexing.ts): one version is indexed, /latest/ once a release exists and
@@ -333,7 +321,7 @@ check_preview() {
 deploy() {
   local site="$1" stage="$work/deploy"
   [[ -f "$site/index.html" && -d "$site/next" ]] || die "$site is not a combined site of scripts/docs-site.sh build"
-  check "$site"
+  check_assets "$site"
   rm -rf "$stage"
   mkdir -p "$stage/site"
   cp -R "$site/." "$stage/site/"
@@ -354,27 +342,6 @@ stage_worker() {
   done
 }
 
-# wrangler_in DIR ARGS... runs the pinned wrangler on the config DIR/wrangler.jsonc, from DIR (which holds only the
-# config, worker/ and site/), with telemetry off.
-wrangler_in() {
-  local dir="$1"
-  shift
-  (cd "$dir" && WRANGLER_SEND_METRICS=false bunx --bun "wrangler@$wrangler_version" "$@" --config "$dir/wrangler.jsonc")
-}
-
-# wrangler_or_print DIR ARGS... is wrangler_in, which a dry run only prints.
-wrangler_or_print() {
-  if [[ -n "$dry_run" ]]; then
-    echo "dry run: wrangler ${*:2} --config $1/wrangler.jsonc" >&2
-    return 0
-  fi
-  wrangler_in "$@"
-}
-
-check_pr() {
-  [[ "$1" =~ ^[1-9][0-9]{0,8}$ ]] || die "not a pull request number: $1"
-}
-
 # build_preview OUT builds /next/ of this checkout alone in OUT/next: the site of a pull request's Preview.
 build_preview() {
   local out="$1" resolved="$work/preview-versions.json"
@@ -388,7 +355,7 @@ build_preview() {
   build_tree "$root" next /next/ main "$resolved" "$out/next" 1
   # Nothing of a Preview is indexed, so it has no sitemap.
   find "$out" -type f -name 'sitemap-*.xml' -delete
-  check "$out"
+  check_assets "$out"
   check_preview "$out"
 }
 
@@ -396,23 +363,10 @@ build_preview() {
 # DEST/site, with the Worker config, the Worker's code and the redirects of this checkout.
 stage_preview() {
   local build="$1" dest="$2" bad total
-  [[ -d "$build" ]] || die "no build directory: $build"
-  bad="$(find "$build" -mindepth 1 ! -type f ! -type d -print -quit)"
-  [[ -z "$bad" ]] || die "the build has a file that is not a regular file or a directory (a link?): ${bad#"$build"/}"
-  # Every name is plain: no dot files (.assetsignore, .wrangler), nothing a shell or a URL would read differently.
-  bad="$(find "$build" -mindepth 1 -printf '%P\n' |
-    grep -vE '^[A-Za-z0-9_@+~-][A-Za-z0-9._@+~-]*(/[A-Za-z0-9_@+~-][A-Za-z0-9._@+~-]*)*$' | head -n 1)" || true
-  [[ -z "$bad" ]] || die "the build has a name outside [A-Za-z0-9._@+~-] or starting with a dot: $bad"
-  # Workers static assets read these at the root as configuration; the preview takes none of them from a build.
-  bad="$(find "$build" -mindepth 1 \( -name _headers -o -name _redirects -o -name _worker.js -o -name _routes.json \) \
-    -printf '%P\n' -quit)"
-  [[ -z "$bad" ]] || die "the build has $bad, which the Worker would read as configuration"
+  total="$(check_plain "$build")"
   bad="$(find "$build" -mindepth 1 -maxdepth 1 ! -name next -printf '%P\n' -quit)"
   [[ -z "$bad" ]] || die "the build has $bad next to next/: a preview holds /next/ alone"
   [[ -f "$build/next/index.html" ]] || die "the build has no next/index.html: is it the output of scripts/docs-site.sh build-preview?"
-  check "$build"
-  total="$(find "$build" -type f -printf '%s\n' | awk '{ s += $1 } END { print s + 0 }')"
-  ((total <= max_preview_bytes)) || die "the build has $total bytes, more than $max_preview_bytes"
 
   rm -rf "$dest"
   mkdir -p "$dest/site"
@@ -451,23 +405,10 @@ pages() {
 # deploy_pr BUILD PR [CHANGED] publishes the preview build BUILD on the Preview pr-<PR> and writes the body of the pull
 # request's comment to WORK/pr/comment.md.
 deploy_pr() {
-  local build="$1" pr="$2" changed="${3:-}" stage="$work/pr" out url sha body
+  local build="$1" pr="$2" changed="${3:-}" stage="$work/pr" url sha body
   check_pr "$pr"
   stage_preview "$build" "$stage"
-  out="$work/pr-wrangler-output.jsonl"
-  : >"$out"
-  if [[ -n "$dry_run" ]]; then
-    # Checks the config and the assets as the upload would, without an account.
-    wrangler_in "$stage" deploy --dry-run
-  fi
-  WRANGLER_OUTPUT_FILE_PATH="$out" wrangler_or_print "$stage" preview --name "pr-$pr" --message "Pull request #$pr"
-  if [[ -n "$dry_run" ]]; then
-    url="https://pr-$pr-my-docs.example.workers.dev"
-  else
-    url="$(jq -r 'select(.type == "preview") | .preview_urls[0] // empty' "$out" | tail -n 1)"
-  fi
-  url="${url%/}"
-  [[ "$url" =~ ^https://pr-$pr-[a-z0-9.-]+$ ]] || die "wrangler gave no Preview URL of pr-$pr (got '$url')"
+  url="$(deploy_preview "$stage" "$pr")"
   sha="${HEAD_SHA:-}"
   [[ -z "$sha" || "$sha" =~ ^[0-9a-f]{40}$ ]] || die "HEAD_SHA is not a commit: $sha"
   body="$stage/comment.md"
@@ -483,60 +424,18 @@ deploy_pr() {
   echo "docs-site: wrote $body" >&2
 }
 
-# cleanup deletes the Preview pr-<number> of each closed or merged pull request. The Previews come from the Cloudflare
-# API (wrangler has no list command) and the state of each pull request from the GitHub API, so a Preview whose pull
-# request is open, or is not one, stays.
+# cleanup deletes the Previews pr-<number> of the closed or merged pull requests (delete_closed_previews).
 cleanup() {
-  local repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}" worker stage="$work/cleanup" page=1 body page_names
-  local names="" name pr state deleted=0
-  worker="$(grep -v '^[[:space:]]*//' "$config" | jq -r .name)"
-  # 100 Previews a page; the cap bounds a loop on an API that ignores the page.
-  while ((page <= 50)); do
-    body="$(curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is not set}" \
-      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is not set}/workers/workers/$worker/previews?per_page=100&page=$page")"
-    page_names="$(jq -r '.result[]?.name // empty' <<<"$body")"
-    [[ -n "$page_names" ]] || break
-    names+="$page_names"$'\n'
-    [[ "$(wc -l <<<"$page_names")" -ge 100 ]] || break
-    page=$((page + 1))
-  done
+  local stage="$work/cleanup"
   rm -rf "$stage"
   mkdir -p "$stage/site"
   stage_worker "$stage"
-  while IFS= read -r name; do
-    [[ "$name" =~ ^pr-([1-9][0-9]{0,8})$ ]] || continue
-    pr="${BASH_REMATCH[1]}"
-    if ! state="$(gh api "repos/$repo/pulls/$pr" --jq .state)"; then
-      echo "docs-site: cannot read pull request $pr; keeping $name" >&2
-      continue
-    fi
-    if [[ "$state" == closed ]]; then
-      echo "docs-site: deleting $name: pull request $pr is closed" >&2
-      wrangler_or_print "$stage" preview delete --name "$name" --skip-confirmation || echo "docs-site: could not delete $name" >&2
-      deleted=$((deleted + 1))
-    else
-      echo "docs-site: keeping $name: pull request $pr is $state" >&2
-    fi
-  done < <(sort -u <<<"$names")
-  echo "docs-site: closed pull requests with a Preview: $deleted" >&2
+  delete_closed_previews "$stage"
 }
 
 # comment PR BODY creates the preview comment of the pull request, or updates the one this workflow wrote before.
 comment() {
-  local pr="$1" body="$2" repo="${GITHUB_REPOSITORY:?GITHUB_REPOSITORY is not set}" id
-  check_pr "$pr"
-  [[ -f "$body" ]] || die "no comment body: $body"
-  if [[ -n "$dry_run" ]]; then
-    echo "dry run: create or update the comment of $repo#$pr with $body" >&2
-    return 0
-  fi
-  id="$(gh api --paginate "repos/$repo/issues/$pr/comments" \
-    --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id" | head -n 1)"
-  if [[ -n "$id" ]]; then
-    gh api --method PATCH "repos/$repo/issues/comments/$id" -F "body=@$body" --silent
-  else
-    gh api --method POST "repos/$repo/issues/$pr/comments" -F "body=@$body" --silent
-  fi
+  upsert_comment "$1" "$2" "$marker"
 }
 
 cmd="${1:-}"
@@ -555,6 +454,6 @@ case "$cmd" in
   cleanup) [[ $# -eq 0 ]] || usage; cleanup ;;
   comment) [[ $# -eq 2 ]] || usage; comment "$@" ;;
   # Run before the steps that hold the token, so that the package's install scripts never see it.
-  install) [[ $# -eq 0 ]] || usage; bunx --bun "wrangler@$wrangler_version" --version ;;
+  install) [[ $# -eq 0 ]] || usage; wrangler_install ;;
   *) usage ;;
 esac
