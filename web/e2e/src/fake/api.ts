@@ -71,7 +71,9 @@ import { articleHtml, serverHtml } from "./html";
 import { createSettings, defaultSettings, type FakeSettings } from "./settings";
 import { eventHandlers, fakeEventPlans, type FakeEventPlan, type FakeEvents } from "./events";
 import { financeHandlers, type FakeFinanceOptions } from "./finance";
+import { financeAdminHandlers, type FakeFinanceAdmin, type FakeFinanceAdminOptions } from "./finance-admin";
 import { supporterHandlers, type FakeSupporterOptions, type FakeSupporters } from "./supporters";
+import { supportersAdminHandlers, type FakeSupportersAdmin, type FakeSupportersAdminOptions } from "./supporters-admin";
 import { voiceHandlers, type FakeVoice, type FakeVoiceOpenRefusal } from "./voice";
 import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-settings";
 import { closureHandlers, type FakeClosureOptions } from "./closure";
@@ -494,6 +496,10 @@ export type FakeOptions = {
    * holds in place of the scenario's, and what each area starts with.
    */
   staffServer?: FakeStaffServerOptions;
+  /** The administrators' finance (finance-admin.ts): the cost items, the totals, the income, the billing imports. */
+  financeAdmin?: FakeFinanceAdminOptions;
+  /** The administrators' supporter program (supporters-admin.ts): the program, the tips, the plans, the subscriptions. */
+  supportersAdmin?: FakeSupportersAdminOptions;
 };
 
 /** Whom an interaction policy admits (the API's InteractionAudience). */
@@ -605,6 +611,10 @@ export type FakeApi = {
   readonly domains: FakeDomains;
   /** The IDs of the custom emoji, announcements and webhooks of the administration by their keys (staff-server.ts). */
   readonly staffServer: FakeStaffServer;
+  /** The IDs of the cost items by the fake's keys (finance-admin.ts). */
+  readonly financeAdmin: FakeFinanceAdmin;
+  /** The IDs of the plans and the subscriptions by the fake's keys (supporters-admin.ts). */
+  readonly supportersAdmin: FakeSupportersAdmin;
   /** The IDs of the rules, relays and login providers of the administration's fake (admin-settings.ts). */
   readonly admin: FakeAdmin;
   /** The IDs of the moderation's actions, appeals, registrations and the rest by the fake's keys (accounts.ts). */
@@ -1974,7 +1984,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         "manage_errors",
         "manage_announcements",
       ] as const),
-      ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance"] as const),
+      ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance", "manage_supporters"] as const),
       ...(["manage_login_providers", "manage_oauth_apps"] as const),
       "manage_service_closure",
       "manage_login_recovery",
@@ -2133,8 +2143,24 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     tips: supporting.instance.tips_enabled,
     problem,
     notFound,
+    accountId: idOf,
   });
   const fundingMeter = o.finance === undefined ? undefined : finance.meter(month);
+  // What the administrators keep of the finance and the supporter program (finance-admin.ts, supporters-admin.ts).
+  const financeAdmin = financeAdminHandlers({
+    options: o.financeAdmin,
+    started,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    problem,
+    notFound,
+  });
+  const supportersAdmin = supportersAdminHandlers({
+    options: o.supportersAdmin,
+    started,
+    accountId: idOf,
+    problem,
+    notFound,
+  });
 
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
@@ -2558,6 +2584,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ai_usage: o.crawlers?.ai ?? "allow",
       link_cards: "false",
       contact_email: "admins@demo.example",
+      // What the instance publishes of its finance and its supporters (finance.ts, supporters.ts), and the meter's target.
+      finance_visibility: finance.instance.finance_visibility,
+      income_visibility: finance.instance.income_visibility,
+      funding_meter_visibility: fundingMeter?.visibility ?? "off",
+      funding_meter_target_amount: "20000",
+      funding_meter_target_currency: "JPY",
+      funding_meter_rail: "true",
+      supporter_list_visibility: supporting.instance.supporter_list_visibility,
       ...(o.thumbnail === true ? { thumbnail: idAt(started, 990_900) } : {}),
       ...(o.translation?.provider === undefined ? {} : { translation_providers: translationProvider.id }),
       ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
@@ -3945,6 +3979,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
     ...supporting.handlers,
     ...finance.handlers,
+    ...financeAdmin.handlers,
+    ...supportersAdmin.handlers,
 
     // ---- The moderators' reports ------------------------------------------------------------------------------------
 
@@ -3958,6 +3994,9 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The administration of roles, custom emoji, announcements and webhooks ----------------------------------------
 
     ...staffServer.handlers,
+    // The roles a story of the supporters' administration names its plans on (supporters-admin.ts), where it asks
+    // for that administration; the administration of roles' own (staff-roles.ts) everywhere else.
+    ...supportersAdmin.roles,
     // ---- The administration's settings, texts, rules, relays, login providers and OAuth apps -------------------------
 
     ...administered.handlers,
@@ -4193,6 +4232,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     reports: moderated.reports,
     domains: federated.domains,
     staffServer: staffServer.server,
+    financeAdmin: financeAdmin.admin,
+    supportersAdmin: supportersAdmin.admin,
     admin: administered.admin,
     moderation: accounts.moderation,
     operations: operated.operations,

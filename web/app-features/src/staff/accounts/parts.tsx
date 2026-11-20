@@ -13,7 +13,6 @@ import {
   type ModeratedAccountState,
 } from "@my/app-data";
 import {
-  ListTitle,
   FieldError,
   FieldLabel,
   Select,
@@ -22,7 +21,7 @@ import {
   type RecordState,
   type SelectOption,
 } from "@my/design-system";
-import { useId, type ReactNode } from "react";
+import { useId } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 
 export { cursorOf, filtered, Pages, useSaid } from "../parts";
@@ -130,19 +129,6 @@ export function lengthOptions(t: T): SelectOption[] {
 
 /** The seconds of a choice of `lengthOptions`; undefined for until lifted. */
 export const secondsOf = (days: string): number | undefined => (days === "0" ? undefined : Number(days) * 86_400);
-
-/**
- * A section of a screen that holds fields or what is decided on (the form of a new action, the decision of an appeal),
- * under a title of the list's size: never smaller than the labels of the fields under it.
- */
-export function Section({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <Stack gap="entry-room">
-      <ListTitle>{title}</ListTitle>
-      {children}
-    </Stack>
-  );
-}
 
 /**
  * The handle a staff screen names the account of `id` by, from what `useStaffAccounts` read: while it is read, the

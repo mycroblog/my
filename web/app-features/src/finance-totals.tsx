@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// What the two finance screens share (ADR-0067 §4, §5, §10, §17, §20; FR-902, FR-917): the reader's window over the
+// What the finance screens share, /finance and /about/costs of the finance feature and the administrators'
+// /admin/finance of the staff's (ADR-0067 §4, §5, §10, §17, §20; FR-902, FR-917): the reader's window over the
 // periods (its length, how a payment longer than a month counts, and how far back it is), the choices and the way to
 // earlier and later periods, the table of the totals (costs, income and the balance, each a figure a currency on its
 // own line, never converted, an estimate marked on its currency's figure, the rules that cut the periods as its note),
@@ -10,6 +11,7 @@
 import {
   costBases,
   costGranularities,
+  digitsOf,
   financePeriodAfter,
   type CostBasis,
   type CostBreakdownLine,
@@ -44,7 +46,7 @@ import {
   type FinanceFigure,
 } from "@my/design-system";
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import { stringsIn } from "../locale";
+import { stringsIn } from "./locale";
 
 export type T = ReturnType<typeof stringsIn>["t"];
 
@@ -164,9 +166,14 @@ const instantOf = (date: string) => new Date(`${date}T00:00:00Z`);
 
 /** An amount in its currency, as the reader's language writes it. */
 export function moneyText(locale: string, money: Money): string {
-  return new Intl.NumberFormat(locale, { style: "currency", currency: money.currency }).format(
-    money.amount as `${number}`,
-  );
+  // The digits the server keeps for the currency (ISO 4217), which Intl's own (CLDR) do not always match.
+  const digits = digitsOf(money.currency);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: money.currency,
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(money.amount as `${number}`);
 }
 
 /** The period of a period of the totals as the API gives it. */
@@ -230,16 +237,33 @@ function estimatedIn(period: CostPeriodTotal | undefined, sources: CostTotalsRul
   return (currency) => currencies.has(currency);
 }
 
-/** The figures of a cell: an amount a currency, each marked where it comes from an estimate, or None. */
+/** An amount with its currency's code (JPY 1,970), where amounts of several currencies stand one under another. */
+export function moneyCoded(locale: string, money: Money): string {
+  const digits = digitsOf(money.currency);
+  return new Intl.NumberFormat(locale, {
+    style: "currency",
+    currency: money.currency,
+    currencyDisplay: "code",
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  }).format(money.amount as `${number}`);
+}
+
+/**
+ * The figures of a cell: an amount a currency, each marked where it comes from an estimate, or None; each named by its
+ * currency's code where `coded`.
+ */
 function figuresOf(
   t: T,
   locale: string,
   amounts: readonly Money[] | undefined,
   estimated: Estimated = notEstimated,
+  coded = false,
 ): FinanceFigure[] {
+  const shown = coded ? moneyCoded : moneyText;
   return amounts === undefined || amounts.length === 0
     ? [t("finance.none")]
-    : amounts.map((m) => ({ shown: moneyText(locale, m), estimated: estimated(m.currency) }));
+    : amounts.map((m) => ({ shown: shown(locale, m), estimated: estimated(m.currency) }));
 }
 
 /**
@@ -259,7 +283,7 @@ export function incomeBeside(net: readonly Money[], costs: readonly Money[]): Mo
  * The choice of the period's length, and of how a payment longer than a month counts, each named over it; the second
  * says what its option means, the one place that says it.
  */
-export function FinanceChoices({ view }: { view: FinanceView }) {
+export function FinanceChoices({ view, about = true }: { view: FinanceView; about?: boolean }) {
   const { t } = useFinanceStrings();
   return (
     <Stack gap="screen-row-gap">
@@ -277,7 +301,11 @@ export function FinanceChoices({ view }: { view: FinanceView }) {
         options={costBases.map((value) => ({ value, label: t(`finance.basis.${value}`) }))}
         value={view.basis}
         onChange={view.count}
-        about={t(view.basis === "amortized" ? "finance.basis.amortized_about" : "finance.basis.cash_about")}
+        about={
+          about
+            ? t(view.basis === "amortized" ? "finance.basis.amortized_about" : "finance.basis.cash_about")
+            : undefined
+        }
       />
     </Stack>
   );
@@ -302,7 +330,7 @@ export function FinancePages({ view }: { view: FinanceView }) {
   return (
     <>
       <div ref={pages}>
-        <Row wrap gap="entry-caption">
+        <Row wrap justify="center" gap="entry-caption">
           <Button size="target" onPress={view.earlier}>
             {t("finance.earlier", { granularity: view.granularity })}
           </Button>
@@ -401,6 +429,8 @@ export function TotalsTable({
   balance,
   sources,
   incomeRules,
+  rules = true,
+  coded = false,
 }: {
   view: FinanceView;
   costs: readonly CostPeriodTotal[] | undefined;
@@ -410,6 +440,10 @@ export function TotalsTable({
   sources: CostTotalsRules["sources"] | undefined;
   /** The income's rules, where the income is shown. */
   incomeRules: IncomeTotalsRules | undefined;
+  /** The rules that cut the periods as the table's note; the administrators' screen, which knows them, leaves them out. */
+  rules?: boolean;
+  /** Each figure named by its currency's code, where the table holds several currencies a column. */
+  coded?: boolean;
 }) {
   const { t, locale } = useFinanceStrings();
   const columns: FinanceColumn[] = [
@@ -434,7 +468,7 @@ export function TotalsTable({
       head={t(`finance.period.${view.granularity}`)}
       columns={columns}
       estimated={estimated ? t("finance.estimate") : undefined}
-      about={rulesOf(t, sources, incomeRules)}
+      about={rules ? rulesOf(t, sources, incomeRules) : undefined}
     >
       {rows.map((period) => {
         const cost = costs?.find((p) => p.label === period.label);
@@ -444,9 +478,9 @@ export function TotalsTable({
         const cells: FinanceCell[] = [
           ...(costs === undefined
             ? []
-            : [{ figures: figuresOf(t, locale, cost?.totals, marked), ...share(cost?.totals ?? []) }]),
-          ...(income === undefined ? [] : [{ figures: figuresOf(t, locale, net), ...share(net) }]),
-          ...(balance ? [{ figures: figuresOf(t, locale, got?.balance, marked) }] : []),
+            : [{ figures: figuresOf(t, locale, cost?.totals, marked, coded), ...share(cost?.totals ?? []) }]),
+          ...(income === undefined ? [] : [{ figures: figuresOf(t, locale, net, notEstimated, coded), ...share(net) }]),
+          ...(balance ? [{ figures: figuresOf(t, locale, got?.balance, marked, coded) }] : []),
         ];
         return (
           <FinanceRow

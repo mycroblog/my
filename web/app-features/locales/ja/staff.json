@@ -15,6 +15,10 @@
     "defaultMessage": "管理の画面",
     "description": "The name, for assistive technology, of the list of server administration screens at /admin."
   },
+  "staff.root.title": {
+    "defaultMessage": "{area, select, moderation {モデレーション} other {管理}}",
+    "description": "Title of the root of the moderation screens (/moderation) or of the administration screens (/admin), as the navigation names it."
+  },
   "staff.root.loading": {
     "defaultMessage": "使える画面を読み込んでいます…",
     "description": "At /moderation or /admin while the server has not yet said which screens the reader's permissions open."

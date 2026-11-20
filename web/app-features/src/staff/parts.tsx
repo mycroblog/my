@@ -12,8 +12,11 @@ import {
   CaptionLine,
   dateFormat,
   FeedNotice,
+  FieldError,
+  FieldLabel,
   FormAlert,
   GroupHeading,
+  ListTitle,
   RecordPages,
   Stack,
   TextButton,
@@ -40,9 +43,30 @@ export function useMoment(): (iso: string) => string {
   return (iso) => format.format(new Date(iso)).replace(/ /g, " ");
 }
 
+/** Writes a moment's date alone in the reader's zone, held together: a list's lines carry the day, not the time. */
+export function useMomentDay(): (iso: string) => string {
+  const { locale } = useLocale();
+  const zone = useTimeZone();
+  const format = dateFormat(locale, zone, { dateStyle: "medium" });
+  return (iso) => format.format(new Date(iso)).replace(/ /g, "\u00a0");
+}
+
 /** The handle a sentence names an account by; the words for an account that is gone without one. */
 export function handleIn(t: T, account: Account | undefined): string {
   return account === undefined ? t("staff.account_gone") : sentenceHandleOf(account);
+}
+
+/**
+ * A section of a screen that holds fields or what is decided on (the form of a new action, the decision of an appeal),
+ * under a title of the list's size: never smaller than the labels of the fields under it.
+ */
+export function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <Stack gap="entry-room">
+      <ListTitle>{title}</ListTitle>
+      {children}
+    </Stack>
+  );
 }
 
 /** A heading over what it heads, close under it. */
@@ -166,3 +190,31 @@ export function useSaid(): { say: (words: string, alert?: boolean) => void; stat
   );
   return { say, status };
 }
+
+/**
+ * A control that has no label of its own (a choice from a list, a number) under its label, and what is wrong with its
+ * value right under it, at `<id>-error`, which the control names among what describes it.
+ */
+export function Field({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string | undefined;
+  children: ReactNode;
+}): ReactNode {
+  return (
+    <Stack gap="entry-line">
+      <FieldLabel htmlFor={id}>{label}</FieldLabel>
+      {children}
+      {error !== undefined && <FieldError id={`${id}-error`}>{error}</FieldError>}
+    </Stack>
+  );
+}
+
+/** The ids that describe the control of `id`: its error, while it has one. */
+export const errorOf = (id: string, error: string | undefined): string | undefined =>
+  error === undefined ? undefined : `${id}-error`;

@@ -32,7 +32,7 @@ import {
   useFinanceStrings,
   useFinanceView,
   type FinanceView,
-} from "./parts";
+} from "../finance-totals";
 
 /** The finance page of a holder of `view_finance`. */
 export function FinanceScreen(): ReactNode {

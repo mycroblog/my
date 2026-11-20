@@ -5,7 +5,15 @@
 // there; or, where none is open to them, why. It lists nothing until the server said who the reader is, so that no
 // entry comes after the others painted.
 
-import { FeedNotice, SettingsGroup, SettingsItem, SettingsMenu, TextLink } from "@my/design-system";
+import {
+  FeedNotice,
+  ScreenStack,
+  ScreenTitle,
+  SettingsGroup,
+  SettingsItem,
+  SettingsMenu,
+  TextLink,
+} from "@my/design-system";
 import type { ReactNode } from "react";
 import {
   staffEntryPath,
@@ -32,36 +40,51 @@ export function StaffRoot({ area, rights }: { area: StaffArea; rights: boolean }
   const { t } = useStaffStrings();
   const facts = useStaffFacts();
   const entries = useStaffEntries(area);
-  if (!facts.known) return <FeedNotice lead>{t("staff.root.loading")}</FeedNotice>;
+  const title = <ScreenTitle>{t("staff.root.title", { area })}</ScreenTitle>;
+  if (!facts.known)
+    return (
+      <ScreenStack>
+        {title}
+        <FeedNotice lead>{t("staff.root.loading")}</FeedNotice>
+      </ScreenStack>
+    );
   if (entries.length === 0)
-    return <FeedNotice lead>{t(rights ? "staff.root.none_yet" : areaNames[area].none)}</FeedNotice>;
+    return (
+      <ScreenStack>
+        {title}
+        <FeedNotice lead>{t(rights ? "staff.root.none_yet" : areaNames[area].none)}</FeedNotice>
+      </ScreenStack>
+    );
   return (
-    <SettingsMenu label={t(areaNames[area].menu)}>
-      {staffGroups.map((group) => {
-        const own = entries.filter((e) => groupOf(e) === group.id);
-        if (own.length === 0) return null;
-        return (
-          <SettingsGroup key={group.id} heading={t(group.heading)}>
-            {own.map((entry) => {
-              const count = entry.count?.of(facts);
-              return (
-                <SettingsItem
-                  key={entry.path}
-                  icon={entry.icon}
-                  label={t(entry.name)}
-                  hint={t(entry.hint)}
-                  count={count}
-                  countLabel={
-                    count === undefined || entry.count === undefined ? undefined : t(entry.count.words, { count })
-                  }
-                  href={staffEntryPath(area, entry.path)}
-                />
-              );
-            })}
-          </SettingsGroup>
-        );
-      })}
-    </SettingsMenu>
+    <ScreenStack>
+      {title}
+      <SettingsMenu label={t(areaNames[area].menu)}>
+        {staffGroups.map((group) => {
+          const own = entries.filter((e) => groupOf(e) === group.id);
+          if (own.length === 0) return null;
+          return (
+            <SettingsGroup key={group.id} heading={t(group.heading)}>
+              {own.map((entry) => {
+                const count = entry.count?.of(facts);
+                return (
+                  <SettingsItem
+                    key={entry.path}
+                    icon={entry.icon}
+                    label={t(entry.name)}
+                    hint={t(entry.hint)}
+                    count={count}
+                    countLabel={
+                      count === undefined || entry.count === undefined ? undefined : t(entry.count.words, { count })
+                    }
+                    href={staffEntryPath(area, entry.path)}
+                  />
+                );
+              })}
+            </SettingsGroup>
+          );
+        })}
+      </SettingsMenu>
+    </ScreenStack>
   );
 }
 

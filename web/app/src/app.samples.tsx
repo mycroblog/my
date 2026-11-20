@@ -47,7 +47,9 @@ export type Fake = {
    * key), `{tip:open}` and `{tip:paid}` of the reader's tip of the fake's supporters left open or paid, `{report:deals}`
    * of the fake's report of that key in the moderators' queue, `{admin:rule:0}`, `{admin:relay:0}` and
    * `{admin:provider:0}` of the administration's rule, relay and login provider at that index of the fake's,
-   * `{account:kai}` of the account of the scenario's person of that username, `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
+   * `{cost:vps}` of the administrators' cost item of that key, `{plan:supporter}` and `{subscription:sam}` of their
+   * plan and subscription of that key, `{account:kai}` of the account of the scenario's person of that username,
+   * `{moderated:appeal:kai}` of the fake's item of that key of the moderation of accounts (an action,
    * an appeal, a registration, a decision of a hook and its appeal, a sign-up block, an invite: accounts.ts),
    * `{ops:job:dead-email}` and `{ops:error:panic}` of the operations' job and error group of that key (operations.ts),
    * `{server:webhook:alerts}` of the fake's thing of that
@@ -207,6 +209,9 @@ function pathOf(fake: FakeApi, at: string): string {
       .replace(/\{tip:(open|paid)\}/g, (_, key: "open" | "paid") => fake.supporters.tipId(key))
       .replace(/\{report:([\w-]+)\}/g, (_, key: string) => fake.reports.id(key))
       .replace(/\{server:(\w+):([\w-]+)\}/g, (_, area: string, key: string) => fake.staffServer.id(area, key))
+      .replace(/\{cost:([\w-]+)\}/g, (_, key: string) => fake.financeAdmin.costId(key))
+      .replace(/\{plan:([\w-]+)\}/g, (_, key: string) => fake.supportersAdmin.planId(key))
+      .replace(/\{subscription:([\w-]+)\}/g, (_, key: string) => fake.supportersAdmin.subscriptionId(key))
       .replace(/\{admin:(rule|relay|provider):(\d+)\}/g, (_, list: "rule" | "relay" | "provider", index: string) =>
         list === "rule"
           ? fake.admin.ruleId(Number(index))

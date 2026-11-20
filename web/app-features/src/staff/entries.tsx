@@ -26,6 +26,7 @@ import {
 import type { IconName } from "@my/design-system";
 import type { ComponentType } from "react";
 import type { MessageId } from "../messages.gen";
+import { FinanceAdminScreen } from "./finance/overview";
 import { queueOf, ReportQueueScreen } from "./reports/queue";
 import { serverEntries } from "./server/entries";
 import { AdminDocumentsScreen } from "./documents";
@@ -35,6 +36,7 @@ import { AdminRelaysScreen, loadRelays } from "./relays";
 import { AdminRulesScreen, loadRules } from "./rules";
 import { AdminSettingsScreen } from "./settings/screen";
 import { loadTranslationSettings, TranslationSettingsScreen } from "./settings/translation";
+import { loadSupportersAdmin, SupportersAdminScreen } from "./supporters/program";
 import { accountEntries, accountGroups } from "./accounts/entries";
 import { operationEntries, operationGroups } from "./operations/entries";
 import { domainEntries, domainGroups } from "./domains/entries";
@@ -52,6 +54,7 @@ export const staffGroups = [
   { id: "server", area: "admin", heading: "staff.group.server" },
   // What the server connects to and lets connect to it (#3262).
   { id: "connections", area: "admin", heading: "staff.group.connections" },
+  { id: "funding", area: "admin", heading: "staff_finance.group" },
   ...accountGroups,
   ...operationGroups,
   ...domainGroups,
@@ -73,6 +76,15 @@ export type StaffAddress = {
 
 /** What an entry's screen is given by the route that places it. */
 export type StaffEntryProps = StaffAddress;
+
+/**
+ * What a screen under an entry is given by its route (/admin/finance/costs/{id}): its address, and the way to another
+ * address, where a write takes the reader on (a cost item recorded, to its screen).
+ */
+export type StaffUnderProps = StaffAddress & {
+  /** Shows the screen at `href`, as a new entry of the history. */
+  readonly go: (href: string) => void;
+};
 
 /** What the root reads of the reader, for the entries it lists and their counts: one hook reads it (`useStaffFacts`). */
 export type StaffFacts = {
@@ -232,6 +244,31 @@ export const staffEntries: readonly StaffEntry[] = [
   },
   // Roles, custom emoji, announcements and webhooks (#3263).
   ...serverEntries,
+  {
+    // The server's running costs and income (FR-901–FR-905, FR-917): the totals, the cost items, the money movements,
+    // the billing imports, and what the server publishes of them.
+    path: "finance",
+    area: "admin",
+    group: "funding",
+    permission: "manage_finance",
+    icon: "finance",
+    name: "staff_finance.entry",
+    hint: "staff_finance.entry.hint",
+    Screen: FinanceAdminScreen,
+  },
+  {
+    // The supporter program (FR-910, FR-912, FR-914, FR-918, FR-919): the program, the tips, the payment provider's
+    // state, the plans and the subscriptions.
+    path: "supporters",
+    area: "admin",
+    group: "funding",
+    permission: "manage_supporters",
+    icon: "funding",
+    name: "staff_supporters.entry",
+    hint: "staff_supporters.entry.hint",
+    Screen: SupportersAdminScreen,
+    load: loadSupportersAdmin,
+  },
   ...accountEntries,
   ...operationEntries,
   ...domainEntries,

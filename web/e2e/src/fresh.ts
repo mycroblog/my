@@ -588,6 +588,18 @@ export class Fresh {
   }
 
   /**
+   * A new role of `staff`, a fresh person made with `admin: true`, that a supporter plan can be on: no holders, no
+   * permission, below the moderators. It returns the role's key, unique to the test and the run.
+   */
+  async planRole(staff: FreshPerson): Promise<string> {
+    const key = `plan_${unique()}`;
+    const api = await this.#api(staff);
+    const { error } = await api.POST("/admin/roles", { body: { key, position: 10, permissions: [] } });
+    if (error !== undefined) throw new Error(`fresh: the role ${key} was refused`);
+    return key;
+  }
+
+  /**
    * Puts a job into the queue that the server's own worker fails for good at once (`bin/my dev dead-job` of the test
    * build: a real type with a payload its handler cannot read), and returns its idempotency key, by which `deadJob`
    * and `forgetJob` find it.

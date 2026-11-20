@@ -276,6 +276,8 @@ const form = tv({
     widget: "min-h-form-page-widget",
   },
   variants: {
+    // An amount, at the field's end in figures of one width, as a number field holds its number.
+    figures: { true: { input: "text-end tabular-nums" } },
     // A textarea starts at a control's height, or as tall as the lines it says it shows (`rows`), and the reader may
     // make it taller.
     height: {
@@ -390,7 +392,7 @@ export type TextFieldProps = {
   error?: string | undefined;
   defaultValue?: string | undefined;
   autoComplete?: string | undefined;
-  inputMode?: "text" | "email" | "numeric" | undefined;
+  inputMode?: "text" | "email" | "numeric" | "decimal" | undefined;
   autoCapitalize?: "none" | "characters" | undefined;
   required?: boolean | undefined;
   minLength?: number | undefined;
@@ -409,6 +411,8 @@ export type TextFieldProps = {
   describedBy?: string | undefined;
   /** It takes the focus as it mounts (a field the reader just opened: a list's name). */
   autoFocus?: boolean | undefined;
+  /** It holds an amount (a price): at its end, in figures of one width, as a number field does. */
+  figures?: boolean | undefined;
   /** Its value as the reader types it (a search as they type); else the form reads it as it posts. */
   onChange?: ((value: string) => void) | undefined;
   /**
@@ -452,10 +456,11 @@ export function TextField({
   autoFocus,
   onChange,
   labelHidden = false,
+  figures = false,
   row = false,
   placeholder,
 }: TextFieldProps) {
-  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows" });
+  const s = form({ height: !multiline ? "line" : rows === undefined ? "area" : "rows", figures });
   const holder = use(FieldContext);
   const described = idsOf(
     describedBy,
@@ -922,13 +927,15 @@ const bare = tv({
 });
 
 /**
- * A field of a date and a time (`datetime-local`) with no label of its own: `label` names it for assistive technology,
+ * A field of a date and a time (`datetime-local`), or of a date alone (`date`: a calendar date, 2026-11-16), with no
+ * label of its own: `label` names it for assistive technology,
  * `value`, `min` and `max` are as the browser holds them (2026-11-16T09:00), `invalid` draws the line of a refusal,
  * and `describedBy` names the ids that describe it. With `id`, what holds it gives it the focus when its value is
  * refused (`focusRefusedField`, its error at `<id>-error`), and a label of the page can be for it.
  */
 export function DateTimeField({
   id,
+  date = false,
   label,
   value,
   onChange,
@@ -939,6 +946,8 @@ export function DateTimeField({
   disabled,
 }: {
   id?: string | undefined;
+  /** A date alone, which no time zone cuts (a payment's date). */
+  date?: boolean | undefined;
   label: string;
   value: string;
   onChange: (value: string) => void;
@@ -956,7 +965,7 @@ export function DateTimeField({
       as={
         <input
           id={id}
-          type="datetime-local"
+          type={date ? "date" : "datetime-local"}
           className={bare().dateTime()}
           aria-label={label}
           aria-invalid={invalid ? true : undefined}

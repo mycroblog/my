@@ -7,7 +7,7 @@
 // `amortized` with the cumulative rounding, an imported usage charge spreads over its billing month under both bases,
 // and the current month's charge is an estimate where the options say so. Amounts are never converted.
 
-import { day } from "./common";
+import { day, idAt, page } from "./common";
 import type { Answer, Handlers, Refusal, Schema } from "./spec";
 
 type Money = Schema<"Money">;
@@ -55,6 +55,8 @@ export type FinanceContext = {
   readonly tips: boolean;
   readonly problem: (status: number, title: string, more?: Partial<Schema<"Problem">>) => Refusal;
   readonly notFound: () => Refusal;
+  /** The account ID of the seed's person of `username`, who paid a movement of the income. */
+  readonly accountId: (username: string) => string;
 };
 
 // ---- Dates as day numbers (days from 1970-01-01, UTC) -----------------------------------------------------------------
@@ -494,6 +496,117 @@ export function financeHandlers(c: FinanceContext): {
       };
     },
   };
+
+  // ---- What a holder of `manage_finance` reads: the gross and the fees of the income, and its movements one by one ----
+
+  /** A movement's fee, the provider's share of a payment; none on a refund. */
+  const feeOf = (mv: Movement) => (mv.minor > 0 ? Math.round(mv.minor * 0.04) : 0);
+  /** Who paid a movement of the fake: the members of the plans in turn, the tips the reader's. */
+  const payers = ["hana", "sam", "mio", "marco"] as const;
+  const tipOf = (mv: Movement) => ymd(mv.on).d === 18;
+
+  Object.assign(handlers, {
+    "GET /admin/cost_totals": ({ query }): Answer<"GET /admin/cost_totals"> => {
+      if (!may("manage_finance")) return missingPermission();
+      const q = periods(query, false);
+      if ("problem" in q) return q;
+      return {
+        status: 200,
+        body: {
+          granularity: q.granularity,
+          basis: q.basis,
+          periods: costPeriods(q).map(({ p, lines, estimate }) => ({
+            label: p.label,
+            starts_on: dateOf(p.start),
+            ends_on: dateOf(p.end),
+            totals: sumByCurrency(lines),
+            breakdown: breakdownOf(lines),
+            estimated: estimate,
+          })),
+          rules: { week_start: "monday", sources },
+        },
+      };
+    },
+    "GET /admin/income_totals": ({ query }): Answer<"GET /admin/income_totals"> => {
+      if (!may("manage_finance")) return missingPermission();
+      const q = periods(query, false);
+      if ("problem" in q) return q;
+      const moves = movements(Math.min(q.periods.at(-1)?.end ?? today, today), c.tips);
+      const nets = incomeOf(q, true);
+      return {
+        status: 200,
+        body: {
+          granularity: q.granularity,
+          basis: q.basis,
+          periods: q.periods.map((p, i) => {
+            const net = nets[i];
+            // The fees spread as their payments do, so that the gross is always the net and its fees.
+            const fee = incomeIn(
+              moves.map((mv) => ({ ...mv, minor: feeOf(mv) })),
+              q.basis,
+              p.start,
+              p.end,
+            );
+            const netMinor = incomeIn(moves, q.basis, p.start, p.end);
+            const yen = (minor: number | undefined) => (minor === undefined ? [] : [money(minor, "JPY")]);
+            const of = (list: readonly Movement[]) => incomeIn(list, q.basis, p.start, p.end);
+            const tips = of(moves.filter(tipOf));
+            return {
+              label: p.label,
+              starts_on: dateOf(p.start),
+              ends_on: dateOf(p.end),
+              gross: yen(netMinor === undefined ? undefined : netMinor + (fee ?? 0)),
+              fee: yen(netMinor === undefined ? undefined : (fee ?? 0)),
+              net: net?.net ?? [],
+              balance: net?.balance ?? [],
+              net_by_source:
+                netMinor === undefined
+                  ? []
+                  : [
+                      { source: "subscription" as const, net: yen(of(moves.filter((mv) => !tipOf(mv))) ?? 0) },
+                      ...(tips === undefined ? [] : [{ source: "one_time" as const, net: yen(tips) }]),
+                    ],
+            };
+          }),
+          plans: c.planCounts(),
+          tips: c.tips,
+          rules: incomeRules,
+        },
+      };
+    },
+    "GET /admin/income_movements": ({ query }): Answer<"GET /admin/income_movements"> => {
+      if (!may("manage_finance")) return missingPermission();
+      const kind = query.get("kind");
+      const all = movements(today, c.tips)
+        .map((mv, i): Schema<"IncomeMovement"> => {
+          const tip = tipOf(mv);
+          const payer = payers[i % payers.length] ?? "hana";
+          const at = new Date(mv.on * day + 9 * 3_600_000).toISOString();
+          return {
+            id: idAt(mv.on * day, 76_000 + i),
+            provider: "stripe",
+            provider_id: `txn_${String(76_000 + i)}`,
+            kind: mv.minor < 0 ? "refund" : "payment",
+            source: tip ? "one_time" : "subscription",
+            ...(tip ? { tip_id: idAt(mv.on * day, 77_000 + i) } : { subscription_id: idAt(mv.on * day, 78_000 + i) }),
+            account_id: c.accountId(payer),
+            username: payer,
+            occurred_at: at,
+            occurred_on: dateOf(mv.on),
+            ...(mv.covers === undefined
+              ? {}
+              : { covers_starts_on: dateOf(mv.on), covers_ends_on: dateOf(mv.on + mv.covers - 1) }),
+            gross: money(mv.minor + feeOf(mv), "JPY"),
+            fee: money(feeOf(mv), "JPY"),
+            net: money(mv.minor, "JPY"),
+            recorded_at: at,
+          };
+        })
+        .filter((m) => kind === null || m.kind === kind)
+        .toSorted((a, b) => b.occurred_at.localeCompare(a.occurred_at) || b.id.localeCompare(a.id));
+      return { status: 200, body: page(all, query).body };
+    },
+  } satisfies Handlers);
 
   /**
    * The funding meter of the month `month` (`2026-11`), as ADR-0067 §22 shows it: this month's net income up to today

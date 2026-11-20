@@ -225,6 +225,8 @@ export type NumberFieldProps = {
   /** What it counts, after the field ("days"). */
   unit?: string | undefined;
   isDisabled?: boolean | undefined;
+  /** What it holds is refused (its error stands under it): it is marked invalid, as what holds it may mark it too. */
+  invalid?: boolean | undefined;
 };
 
 /** A whole number, written as the reader typed it: no fraction, no grouping. */
@@ -247,6 +249,7 @@ export function NumberField({
   max,
   unit,
   isDisabled,
+  invalid,
 }: NumberFieldProps) {
   const s = field();
   const holder = use(FieldContext);
@@ -311,7 +314,7 @@ export function NumberField({
           {...(max === undefined ? {} : { maxValue: max })}
           formatOptions={WHOLE}
           isWheelDisabled
-          isInvalid={holder.invalid === true}
+          isInvalid={invalid === true || holder.invalid === true}
           isDisabled={isDisabled ?? holder.disabled ?? false}
         />
       }

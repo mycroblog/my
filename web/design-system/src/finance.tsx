@@ -49,26 +49,48 @@ export type FinanceCell = string | FinanceFigures;
  * its widest, so that the bars of every column compare true.
  */
 const TRACKS = {
-  1: "grid-cols-[minmax(0,1fr)] @min-[30rem]:grid-cols-[minmax(0,1fr)_minmax(max-content,7.5rem)]",
-  2: "grid-cols-[repeat(2,minmax(0,1fr))] @min-[30rem]:grid-cols-[minmax(0,1fr)_repeat(2,minmax(max-content,7.5rem))]",
-  3: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[30rem]:grid-cols-[minmax(0,1fr)_repeat(3,minmax(max-content,7.5rem))]",
-  4: "grid-cols-[repeat(4,minmax(0,1fr))] @min-[30rem]:grid-cols-[minmax(0,1fr)_repeat(4,minmax(max-content,7.5rem))]",
+  1: "grid-cols-[minmax(0,1fr)] @min-[16rem]:grid-cols-[minmax(0,1fr)_minmax(max-content,7.5rem)]",
+  2: "grid-cols-[repeat(2,minmax(0,1fr))] @min-[20rem]:grid-cols-[minmax(0,1fr)_repeat(2,minmax(max-content,6.5rem))]",
+  3: "grid-cols-[repeat(3,minmax(0,1fr))] @min-[30rem]:grid-cols-[minmax(max-content,1fr)_repeat(3,minmax(max-content,7rem))]",
+  4: "grid-cols-[repeat(4,minmax(0,1fr))] @min-[34rem]:grid-cols-[minmax(max-content,1fr)_repeat(4,minmax(max-content,6.5rem))]",
 } as const;
 
+type Count = keyof typeof TRACKS;
+
 /**
- * The table's frame, which knows its own width: its rows one under another, on its tracks, reaching past its
- * container by a row's inset, so that what the rows hold lines up with what stands above and below the table, and the
- * surface of its total reaches past it.
+ * Where a table of so many columns sets its rows side by side, its heads down the start: as soon as its columns fit
+ * beside a head (a phone holds one or two), as a class each, written out for Tailwind to find.
+ */
+const WIDE = {
+  head: {
+    1: "col-span-full min-w-0 @min-[16rem]:col-span-1",
+    2: "col-span-full min-w-0 @min-[20rem]:col-span-1",
+    3: "col-span-full min-w-0 @min-[30rem]:col-span-1",
+    4: "col-span-full min-w-0 @min-[34rem]:col-span-1",
+  },
+  line: {
+    1: "@min-[16rem]:gap-y-0",
+    2: "@min-[20rem]:gap-y-0",
+    3: "@min-[30rem]:gap-y-0",
+    4: "@min-[34rem]:gap-y-0",
+  },
+} as const satisfies Record<string, Record<Count, string>>;
+
+const countOf = (columns: number): Count => Math.min(4, Math.max(1, columns)) as Count;
+
+/**
+ * The table's frame, which knows its own width: its rows one under another, on its tracks, within its container, the
+ * surface of its total too, what the rows hold set in by a row's inset.
  */
 function FinanceFrame({
   columns,
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement> & { columns: number; className: string }) {
-  const tracks = TRACKS[Math.min(4, Math.max(1, columns)) as keyof typeof TRACKS];
+  const tracks = TRACKS[countOf(columns)];
   return (
     <div className="@container">
-      <div {...rest} className={`${className} -mx-screen-row-inline grid gap-x-entry-avatar ${tracks}`} />
+      <div {...rest} className={`${className} grid gap-x-entry-avatar ${tracks}`} />
     </div>
   );
 }
@@ -83,19 +105,19 @@ function FinanceLine({
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement> & { head?: boolean; continued?: boolean; className: string }) {
+  const wide = WIDE.line[countOf(use(TableContext).columns.length)];
   const shown = head
     ? "pb-screen-air"
     : continued
-      ? "pb-screen-row-block @min-[30rem]:gap-y-0"
-      : "gap-y-entry-line py-screen-row-block @min-[30rem]:gap-y-0";
+      ? `pb-screen-row-block ${wide}`
+      : `gap-y-entry-line py-screen-row-block ${wide}`;
   return <div {...rest} className={`${className} col-span-full grid grid-cols-subgrid items-start ${shown}`} />;
 }
 
 const PLACE = {
-  // The head of a row: narrow, a line of its own; wide, the first column.
-  head: "col-span-full min-w-0 @min-[30rem]:col-span-1",
-  // The name of the heads' column, which a narrow table says to assistive technology alone.
-  corner: "sr-only @min-[30rem]:not-sr-only",
+  // The head of a row, and the name of the heads' column: narrow, a line of its own; wide, the first column (WIDE).
+  head: "",
+  corner: "",
   // A cell of figures, at its column's end.
   figures: "min-w-0 justify-self-stretch text-end",
   // A cell of words, from its column's start.
@@ -108,7 +130,8 @@ function FinancePlace({
   className,
   ...rest
 }: { at: keyof typeof PLACE; className: string } & HTMLAttributes<HTMLElement>) {
-  return <div {...rest} className={`${className} ${PLACE[at]}`} />;
+  const wide = at === "head" || at === "corner" ? WIDE.head[countOf(use(TableContext).columns.length)] : "";
+  return <div {...rest} className={`${className} ${PLACE[at]} ${wide}`} />;
 }
 
 const table = tv({
@@ -151,7 +174,7 @@ const TotalContext = createContext(false);
 export type FinanceTableProps = {
   /** What the table is, for assistive technology ("Totals by month"). */
   label: string;
-  /** The name of the rows' heads' column ("Month", "Provider"), which a narrow table says to assistive technology alone. */
+  /** The name of the rows' heads' column ("Month", "Provider"), over the columns' names on a narrow table. */
   head: string;
   /** The columns after the heads, one to four: "Costs", "Income", "Balance"; "Category", "Amount". */
   columns: readonly FinanceColumn[];
@@ -188,22 +211,22 @@ export function FinanceTable({ label, head, columns, estimated, about, children,
         columns={columns.length}
         className={s.root()}
       >
-        <FinanceLine role="row" head className={s.line()}>
-          <FinancePlace at="corner" role="columnheader" className={s.column()}>
-            {head}
-          </FinancePlace>
-          {columns.map((column) => (
-            <FinancePlace
-              key={column.label}
-              at={column.figures === true ? "figures" : "words"}
-              role="columnheader"
-              className={s.column()}
-            >
-              {column.label}
-            </FinancePlace>
-          ))}
-        </FinanceLine>
         <TableContext value={{ columns, estimated: estimated ?? "" }}>
+          <FinanceLine role="row" head className={s.line()}>
+            <FinancePlace at="corner" role="columnheader" className={s.column()}>
+              {head}
+            </FinancePlace>
+            {columns.map((column) => (
+              <FinancePlace
+                key={column.label}
+                at={column.figures === true ? "figures" : "words"}
+                role="columnheader"
+                className={s.column()}
+              >
+                {column.label}
+              </FinancePlace>
+            ))}
+          </FinanceLine>
           {children}
           {total !== undefined && <TotalContext value>{total}</TotalContext>}
         </TableContext>
@@ -258,10 +281,11 @@ export function FinanceRow({ head, caption, cells, continued = false, code = fal
         {continued ? (
           <Spoken>{head}</Spoken>
         ) : (
-          <Stack as="span" gap="hair">
+          // Its line on the head's own line where it fits, never beside a figure of the row's next currency.
+          <Row as="span" wrap align="baseline" gapX="entry-caption">
             {code ? <CodeText>{head}</CodeText> : <span dir="auto">{head}</span>}
             {caption !== undefined && <span className={s.caption()}>{caption}</span>}
-          </Stack>
+          </Row>
         )}
       </FinancePlace>
       {cells.map((cell, i) => {

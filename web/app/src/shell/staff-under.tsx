@@ -1,11 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// A screen under an entry of Moderation (an account, an appeal, a sign-up block, ADR-0058 §2), as each route of one
-// renders it: under its title once its entry is open to the reader; that the address names no screen open to them
-// once their permissions turn out not to open the entry; and the ask to sign in without a session. Its query, which a
-// list's filters and page keep, is read and changed through the router.
+// A screen under an entry of the staff's screens (an account, an appeal, a sign-up block under Moderation; a cost item,
+// a plan under Administration; ADR-0058 §2), as each route of one renders it: under its title once its entry is open
+// to the reader; that the address names no screen open to them once their permissions turn out not to open the entry;
+// and the ask to sign in without a session. Its query, which a list's filters and page keep, is read and changed
+// through the router.
 
-import { StaffMissing, staffHref, useStaffEntry, useStaffFacts, type StaffSearch } from "@my/app-features";
+import {
+  StaffMissing,
+  staffHref,
+  useStaffEntry,
+  useStaffFacts,
+  useStaffTitle,
+  type StaffArea,
+  type StaffSearch,
+  type StaffUnderProps,
+} from "@my/app-features";
 import { useLocation, useRouter } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useStrings } from "../locale";
@@ -67,6 +77,59 @@ export function StaffSignedOut({ returnTo }: { returnTo: string }) {
     <>
       <ScreenHeading>{t("app.moderation")}</ScreenHeading>
       <SignedOut returnTo={returnTo} />
+    </>
+  );
+}
+
+type UnderProps = {
+  area: StaffArea;
+  /** The entry the screen is under (`finance`). */
+  entry: string;
+  /**
+   * The screen's title (a thing's name, which a component of the route under the signed-in check reads); the entry's
+   * name while it has none.
+   */
+  title?: string | undefined;
+  /** The feature's screen, given its address. */
+  screen: (address: StaffUnderProps) => ReactNode;
+};
+
+function Under({ area, entry, title, screen }: UnderProps) {
+  const t = useStrings();
+  const address = useStaffAddress();
+  const known = useStaffFacts().known;
+  const open = useStaffEntry(area, entry) !== undefined;
+  const name = useStaffTitle(area, entry);
+  const areaName = t(area === "moderation" ? "app.moderation" : "app.admin");
+  // Nothing of the screen, and none of its reads, before the reader's permissions say it is open.
+  if (!known) return <ScreenHeading>{title ?? name ?? areaName}</ScreenHeading>;
+  if (!open)
+    return (
+      <>
+        <ScreenHeading>{areaName}</ScreenHeading>
+        <StaffMissing area={area} />
+      </>
+    );
+  return (
+    <>
+      <ScreenHeading>{title ?? name ?? areaName}</ScreenHeading>
+      {screen(address)}
+    </>
+  );
+}
+
+/**
+ * The screen under the entry of `area` at `entry` given its address, for a signed-in reader; without a session, the
+ * ask to sign in, which comes back to the screen's address.
+ */
+export function StaffUnderPage({ signedIn, ...props }: UnderProps & { signedIn: boolean }) {
+  const t = useStrings();
+  const pathname = useLocation({ select: (l) => l.pathname });
+  if (signedIn) return <Under {...props} />;
+  return (
+    <>
+      <ScreenHeading>{t(props.area === "moderation" ? "app.moderation" : "app.admin")}</ScreenHeading>
+      <SignedOut returnTo={pathname} />
     </>
   );
 }

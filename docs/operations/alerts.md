@@ -531,7 +531,7 @@ Check:
 
 Fix:
 
-- Fix the cause (permissions, the billing export, the request cap), then press "Import now" in Administration → Costs → Billing imports instead of waiting for the next day.
+- Fix the cause (permissions, the billing export, the request cap), then press "Import now" in Administration → Costs and income → Billing imports instead of waiting for the next day.
 
 Without Prometheus (Cloud Run with `metrics_exporter = none`), make a log-based alert on the `billing import failed` line instead.
 

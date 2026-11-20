@@ -72,6 +72,7 @@ const stateWords: Record<RecordState, string> = {
   expired: "Expired",
   lifted: "Lifted",
   pending: "Pending",
+  ending: "Ends Apr 10",
   failed: "Failed",
   disabled: "Disabled",
   queued: "Queued",

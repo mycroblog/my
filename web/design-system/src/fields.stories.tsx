@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
-// The fields with no label of their own: a date and a time, and a box of a few lines that grows with its text, each
+// The fields with no label of their own: a date and a time, a date alone, and a box of a few lines that grows with its text, each
 // named for assistive technology; a label of the page for one, and the fields of a checked choice set in under it.
 // The words are samples in English.
 
 import { rootPx } from "@my/design-tokens";
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { useState, type ReactNode } from "react";
+import { NumberField } from "./field";
 import { BareTextArea, CheckField, DateTimeField, FieldLabel, NestedFields, TextField } from "./form-page";
 import { Stack } from "./layout";
 
@@ -38,6 +39,36 @@ export const DateTime: Story = {
       </Column>
     );
   },
+};
+
+/** A date alone, of the calendar (a payment's date). */
+export const DateOnly: Story = {
+  render: () => {
+    const [value, setValue] = useState("2026-11-16");
+    return (
+      <Column>
+        <DateTimeField date label="Date" value={value} onChange={setValue} min="2026-01-01" />
+      </Column>
+    );
+  },
+};
+
+/** An amount, at the field's end as a number is. */
+export const Amount: Story = {
+  render: () => (
+    <Column>
+      <TextField id="amount" name="amount" label="Monthly price" inputMode="decimal" figures defaultValue="1500" />
+    </Column>
+  ),
+};
+
+/** A number that is refused: marked invalid, as the field of its error is. */
+export const NumberInvalid: Story = {
+  render: () => (
+    <Column>
+      <NumberField label="Role position" defaultValue={120} min={0} max={999} invalid />
+    </Column>
+  ),
 };
 
 /** A date and a time that is refused: the line of the text's color. */
