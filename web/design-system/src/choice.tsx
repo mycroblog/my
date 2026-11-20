@@ -6,7 +6,7 @@
 // mark; a single choice among a few short options side by side, as segments (a period, an amount); and a share of a
 // whole as a bar. Every word is the caller's.
 
-import { useId, type ReactElement, type ReactNode } from "react";
+import { useId, type ReactElement, type ReactNode, type Ref } from "react";
 import { tv } from "tailwind-variants/lite";
 import { FieldError } from "./form-page";
 import { IconButton } from "./icon-button";
@@ -97,8 +97,8 @@ function MarkPlace({ children }: { children: ReactNode }) {
   );
 }
 
-/** One option open to a choice. */
-export type ChoiceItem = { key: string; label: ReactNode };
+/** One option open to a choice; `ref` that of its input, for a list that grows under Show more (`useAddedFocus`). */
+export type ChoiceItem = { key: string; label: ReactNode; ref?: Ref<HTMLInputElement> | undefined };
 
 /**
  * The options open to a choice, named `label`: a radio or a checkbox each, as a pressable row headed by its mark;
@@ -144,6 +144,7 @@ export function ChoiceList({
               full="both"
               as={
                 <input
+                  ref={item.ref}
                   className={s.input()}
                   type={multiple ? "checkbox" : "radio"}
                   name={name}

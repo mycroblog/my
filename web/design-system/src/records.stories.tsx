@@ -25,7 +25,7 @@ import {
   type RecordSort,
   type RecordState,
 } from "./records";
-import { Pager, ShowMore } from "./pager";
+import { Pager, ShowMore, useAddedFocus } from "./pager";
 import { Frame, FrameAside, FrameDock, FrameHeading, FrameMain, FrameMark, FrameSide, NavItem, NavList } from "./shell";
 
 const rem = (px: number) => `${px / rootPx}rem`;
@@ -691,6 +691,37 @@ export const Jobs: Story = {
               onPress={() => {
                 setBusy(true);
               }}
+            />
+          </Stack>
+        </Column>
+      );
+    }
+    return <Screen />;
+  },
+};
+
+/**
+ * The jobs' table growing under Show more, four rows a press: the head of the first row each press added takes the
+ * focus (`itemRef` with `useAddedFocus`), and Show more goes once the list is read to its end.
+ */
+export const GrowingRows: Story = {
+  render: () => {
+    function Screen() {
+      const [shown, setShown] = useState(4);
+      const added = useAddedFocus(shown);
+      const rows = Array.from({ length: shown }, (_, i) => {
+        const sample = jobs[i % jobs.length];
+        return sample === undefined ? undefined : { ...sample, id: `${sample.id}-${String(i)}` };
+      }).filter((row) => row !== undefined);
+      return (
+        <Column>
+          <Stack gap="entry-room">
+            <RecordTable label="Jobs" head={{ label: "Job" }} columns={jobColumns} rows={rows} itemRef={added.item} />
+            <ShowMore
+              more={shown < 12}
+              onPress={added.press(() => {
+                setShown((n) => n + 4);
+              })}
             />
           </Stack>
         </Column>

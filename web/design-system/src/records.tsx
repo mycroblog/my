@@ -30,6 +30,7 @@ import {
   type CSSProperties,
   type HTMLAttributes,
   type ReactNode,
+  type RefCallback,
 } from "react";
 import { Button as AriaButton, Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
@@ -223,6 +224,12 @@ export type RecordTableProps<K extends string> = {
    * inset, so that their words line up with what stands above and below.
    */
   contained?: boolean | undefined;
+  /**
+   * The ref of the row at `index` (from 0), for its focusable element: the link or the button that opens it, else its
+   * head, which `useAddedFocus` makes focusable by script alone. A list that grows under Show more passes `useAddedFocus().item`, so that the
+   * first row added takes the focus.
+   */
+  itemRef?: ((index: number) => RefCallback<HTMLElement> | undefined) | undefined;
 };
 
 // A column of words keeps its longest word and shares the room left; the heads' column takes what its heads need, up
@@ -602,6 +609,7 @@ export function RecordTable<K extends string>({
   empty,
   even = false,
   contained = false,
+  itemRef,
 }: RecordTableProps<K>) {
   const s = table();
   const { lang } = useReader(undefined);
@@ -772,10 +780,11 @@ export function RecordTable<K extends string>({
               current,
             }}
           >
-            {rows.map((row) => (
+            {rows.map((row, index) => (
               <Record
                 key={row.id}
                 row={row}
+                focusRef={itemRef?.(index)}
                 columns={columns}
                 picks={picks}
                 pickable={selection?.selectable?.(row.id) ?? true}
@@ -791,11 +800,14 @@ export function RecordTable<K extends string>({
 /** A record: its checkbox, its head (the link that opens it) over its caption, and its cells. */
 function Record<K extends string>({
   row,
+  focusRef,
   columns,
   picks,
   pickable,
 }: {
   row: RecordRow<K>;
+  /** The ref of its focusable element (`itemRef`). */
+  focusRef: RefCallback<HTMLElement> | undefined;
   columns: readonly RecordColumn<K>[];
   picks: boolean;
   /** Its checkbox is there: it may be picked. */
@@ -832,6 +844,7 @@ function Record<K extends string>({
         <Stack as="span" gap="hair">
           {row.href !== undefined ? (
             <Link
+              ref={focusRef}
               href={row.href}
               data-open=""
               {...(open ? { "aria-current": "page" as const } : {})}
@@ -841,6 +854,7 @@ function Record<K extends string>({
             </Link>
           ) : onOpen !== undefined ? (
             <AriaButton
+              ref={focusRef}
               data-open=""
               {...(open ? { "aria-current": "true" as const } : {})}
               onPress={() => {
@@ -851,7 +865,7 @@ function Record<K extends string>({
               {words}
             </AriaButton>
           ) : (
-            <span className={s.plain()}>
+            <span ref={focusRef} className={s.plain()}>
               <HeadWords code={code}>{row.head}</HeadWords>
             </span>
           )}

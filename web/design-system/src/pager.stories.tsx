@@ -114,7 +114,7 @@ function Months({ from, to }: { from: string; to: string }) {
 /**
  * The same part under a window of months (the finance screens): Later toward today, Earlier back, the window's months
  * after them, on a line of their own where the line has no room; the window that ends with this month, Later disabled
- * where it stands; one further back.
+ * where it stands; one further back; the earlier months failed, named as months.
  */
 export const Periods: Story = {
   render: () => (
@@ -128,6 +128,15 @@ export const Periods: Story = {
             periods="month"
             previous={{ onPress: none }}
             next={{ onPress: none }}
+            position={<Months from="2025-12" to="2026-05" />}
+          />
+        </Case>
+        <Case name="Earlier months failed">
+          <Pager
+            periods="month"
+            previous={{ onPress: none }}
+            next={{ onPress: none }}
+            failed="next"
             position={<Months from="2025-12" to="2026-05" />}
           />
         </Case>
@@ -224,7 +233,7 @@ export const Growing: Story = {
         <Stack gap="entry-room">
           <Stack gap="screen-row-gap">
             {Array.from({ length: shown }, (_, i) => (
-              <div key={i} ref={added.item(i)} tabIndex={-1}>
+              <div key={i} ref={added.item(i)}>
                 <Delivery n={i} />
               </div>
             ))}

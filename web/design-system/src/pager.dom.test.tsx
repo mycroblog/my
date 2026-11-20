@@ -58,6 +58,14 @@ test("a window of periods names its two ways Later and Earlier and says what it 
   expect(within(pages).getByRole("status").textContent).toBe("Jun – Nov 2026");
 });
 
+test("a window of periods that failed names the periods, not a page", () => {
+  render(
+    <Pager periods="month" previous={{ onPress: () => undefined }} next={{ onPress: () => undefined }} failed="next" />,
+  );
+  expect(screen.getByRole("alert").textContent).toBe("The earlier months could not be loaded.");
+  expect(screen.getByRole("button", { name: "Try again" })).toBeTruthy();
+});
+
 test("Show more stays the one button, named Try again after it failed, and goes with the list's end", () => {
   const { rerender } = render(<ShowMore more onPress={() => undefined} />);
   const button = screen.getByRole("button", { name: "Show more" });
@@ -80,7 +88,7 @@ function Growing({ total }: { total: number }) {
     <>
       <ul>
         {Array.from({ length: shown }, (_, i) => (
-          <li key={i} ref={added.item(i)} tabIndex={-1}>
+          <li key={i} ref={added.item(i)}>
             {`Item ${String(i + 1)}`}
           </li>
         ))}
@@ -107,7 +115,7 @@ function Growing({ total }: { total: number }) {
 
 test("the first item a press of Show more added takes the focus, the last press's too as Show more goes", async () => {
   const user = userEvent.setup();
-  render(<Growing total={4} />);
+  const { rerender } = render(<Growing total={4} />);
   await user.click(screen.getByRole("button", { name: "Show more" }));
   // Nothing added yet: the focus stays on the busy button.
   expect(document.activeElement).toBe(screen.getByRole("button", { name: "Show more" }));
@@ -115,8 +123,12 @@ test("the first item a press of Show more added takes the focus, the last press'
     screen.getByRole("button", { name: "Answer" }).click();
   });
   expect(document.activeElement?.textContent).toBe("Item 3");
+  // The row took no focus of its own: it was given it, and keeps it through the render after, as its ref goes.
+  expect(document.activeElement?.getAttribute("tabindex")).toBe("-1");
   // The list is read to its end: Show more is gone, and the focus was never on it.
   expect(screen.queryByRole("button", { name: "Show more" })).toBeNull();
+  rerender(<Growing total={4} />);
+  expect(document.activeElement?.textContent).toBe("Item 3");
   // A later render takes the focus nowhere.
   act(() => {
     screen.getByRole("button", { name: "Answer" }).focus();

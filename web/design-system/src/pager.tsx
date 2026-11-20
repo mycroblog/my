@@ -118,7 +118,13 @@ export function Pager({ previous, next, busy, failed, position, periods }: Pager
   const retry = t("records.retry");
   return (
     <Stack gap="screen-row-gap">
-      {failed !== undefined && <Failed>{t("records.page_failed", { direction: failed })}</Failed>}
+      {failed !== undefined && (
+        <Failed>
+          {periods === undefined
+            ? t("records.page_failed", { direction: failed })
+            : t("records.periods_failed", { direction: failed, granularity: periods })}
+        </Failed>
+      )}
       <Row as="nav" wrap align="center" gap="screen-tabs-gap" aria-label={t("records.pages")}>
         <Row wrap gap="entry-caption">
           <PageButton target={previous} busy={busy === "previous"} icon="previous" end={false}>
@@ -183,8 +189,9 @@ export type AddedFocus = {
   /** The press of Show more: it notes where the items to come start, then asks for them with `load`. */
   press: (load: () => void) => () => void;
   /**
-   * The ref of the item at `index` of the list (from 0), for its focusable element (its link, or the row itself with
-   * `tabIndex={-1}`): the first item a press added takes the focus once it is drawn, then no other.
+   * The ref of the item at `index` of the list (from 0), for its link or the row itself: the first item a press added
+   * takes the focus once it is drawn, then no other; a row that takes no focus of its own is given `tabindex="-1"`
+   * for good, so that the focus stays on it through the renders after.
    */
   item: (index: number) => RefCallback<HTMLElement> | undefined;
 };
@@ -206,6 +213,9 @@ export function useAddedFocus(shown: number): AddedFocus {
         ? (element) => {
             if (element === null || from.current !== index) return;
             from.current = undefined;
+            // An element that takes no focus of its own (a row) is given it, and keeps it: the ref goes once it has
+            // focused, and a tabindex that went with it would send the focus to the page's body on the next render.
+            if (element.tabIndex < 0 && !element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");
             element.focus();
           }
         : undefined,

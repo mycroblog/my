@@ -47,6 +47,10 @@
     "defaultMessage": "{direction, select, previous {The previous page could not be loaded.} other {The next page could not be loaded.}}",
     "description": "Over Previous and Next under a long list, when the page asked for could not be read: direction is previous or next, the way the reader asked for; the button that asked for it reads Try again (records.retry) meanwhile."
   },
+  "records.periods_failed": {
+    "defaultMessage": "{direction, select, previous {{granularity, select, week {The later weeks could not be loaded.} month {The later months could not be loaded.} other {The later years could not be loaded.}}} other {{granularity, select, week {The earlier weeks could not be loaded.} month {The earlier months could not be loaded.} other {The earlier years could not be loaded.}}}}",
+    "description": "Over Later and Earlier under a window of periods (the finance totals), when the periods asked for could not be read: direction is previous (Later, toward today) or next (Earlier), granularity week, month or year; the button that asked for them reads Try again (records.retry) meanwhile."
+  },
   "records.more": {
     "defaultMessage": "Show more",
     "description": "Under a list that grows in place (a table of records, a list inside a detail or the settings), adds the next items under those shown."
