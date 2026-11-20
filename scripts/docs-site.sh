@@ -33,7 +33,7 @@
 #                                                               publish the Preview pr-<pr>; writes <work>/pr/comment.md
 #   scripts/docs-site.sh cleanup                                delete the Previews pr-<number> of closed pull requests
 #   scripts/docs-site.sh comment <pr> <body file>               create or update the preview comment
-#   scripts/docs-site.sh install                                fetch the pinned wrangler into the npm cache
+#   scripts/docs-site.sh install                                fetch the pinned wrangler into Bun's cache
 #
 # <releases> is a file with the tag of each published release, one per line; without it `resolve` reads them from the
 # GitHub API (GH_TOKEN, GITHUB_REPOSITORY). Drafts and prereleases never count. A minor version listed in versions.json
@@ -60,8 +60,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "$0")/.." && pwd)"
 config="$root/scripts/docs-site/wrangler.jsonc"
-# Fetched by its exact version, since only the CI jobs run it. Wrangler does not run on Bun (#2954): npx runs it on the
-# Node.js of the workflow.
+# Fetched by its exact version, since only the CI jobs run it, and run on Bun (ADR-0025 §10).
 wrangler_version="4.151.0"
 dry_run="${DRY_RUN:-}"
 work="${DOCS_SITE_WORK:-$root/.tmp/docs-site}"
@@ -360,7 +359,7 @@ stage_worker() {
 wrangler_in() {
   local dir="$1"
   shift
-  (cd "$dir" && WRANGLER_SEND_METRICS=false npx --yes "wrangler@$wrangler_version" "$@" --config "$dir/wrangler.jsonc")
+  (cd "$dir" && WRANGLER_SEND_METRICS=false bunx --bun "wrangler@$wrangler_version" "$@" --config "$dir/wrangler.jsonc")
 }
 
 # wrangler_or_print DIR ARGS... is wrangler_in, which a dry run only prints.
@@ -556,6 +555,6 @@ case "$cmd" in
   cleanup) [[ $# -eq 0 ]] || usage; cleanup ;;
   comment) [[ $# -eq 2 ]] || usage; comment "$@" ;;
   # Run before the steps that hold the token, so that the package's install scripts never see it.
-  install) [[ $# -eq 0 ]] || usage; npx --yes "wrangler@$wrangler_version" --version ;;
+  install) [[ $# -eq 0 ]] || usage; bunx --bun "wrangler@$wrangler_version" --version ;;
   *) usage ;;
 esac

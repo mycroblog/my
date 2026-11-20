@@ -66,12 +66,12 @@ jobs:
           path: ${{ runner.temp }}/build
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-      # Wrangler does not run on Bun (#2954).
-      - name: Set up Node
+      # Wrangler runs on Bun (ADR-0025 §10). The job installs no package of the workspace, so it restores no cache.
+      - name: Set up Bun
         if: steps.pr.outputs.number != ''
-        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        uses: ./.github/actions/setup-bun
         with:
-          node-version: "26.12.1"
+          restore: "false"
       - name: Install wrangler
         if: steps.pr.outputs.number != ''
         run: scripts/docs-site.sh install
