@@ -3237,6 +3237,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     "GET /accounts/lookup": ({ query }) => {
       // A handle, or the address of a profile (`https://host/@user`); the person of another server this one has not
       // met is found only by `resolve`, which fetches and keeps their account (FR-305).
+      // Fetching an account from its server is a reader's: a visitor's resolve is refused, as the server refuses it.
+      if (visitor && query.get("resolve") === "true") return problem(401, "Unauthorized");
       const asked = (query.get("acct") ?? "").replace(/^@/u, "");
       const profile = /^https?:\/\/([^/]+)\/@([^/@]+)\/?$/u.exec(asked);
       const handle = profile === null ? asked : `${profile[2] ?? ""}@${profile[1] ?? ""}`;

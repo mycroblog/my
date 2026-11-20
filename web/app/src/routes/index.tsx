@@ -29,7 +29,7 @@ function Visitor() {
   if (operator === undefined) return null;
   return (
     <>
-      <ProfileHeading acct={operator.acct} />
+      <ProfileHeading acct={operator.acct} signedIn={false} />
       <Profile acct={operator.acct} signIn={signIn} />
     </>
   );

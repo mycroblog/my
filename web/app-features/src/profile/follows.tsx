@@ -133,7 +133,7 @@ export function Follows({
   signIn?: ((returnTo: string) => void) | undefined;
 }) {
   const { t, lang } = stringsIn(useLocale().locale);
-  const { account, error, missing } = useAccount(acct);
+  const { account, error, missing } = useAccount(acct, signIn === undefined);
   const back = <BackButton onPress={onBack}>{t("profile.follows_back")}</BackButton>;
   // An account that is not there has no lists either.
   if (missing)

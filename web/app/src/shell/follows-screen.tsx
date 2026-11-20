@@ -25,7 +25,7 @@ export function FollowsScreen({
   const signIn = useVisitorSignIn(signedIn);
   return (
     <>
-      <ProfileHeading acct={acct} />
+      <ProfileHeading acct={acct} signedIn={signedIn} />
       <Follows
         key={acct}
         acct={acct}

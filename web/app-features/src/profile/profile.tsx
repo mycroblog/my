@@ -118,13 +118,13 @@ export async function loadOwnProfile(data: AppData): Promise<void> {
 
 /**
  * The title of the profile of a handle (the viewer's own without one), once its account is known: its name and its
- * handle.
+ * handle; for a reader without a session (`signedIn` false), of an account the server knows.
  */
-export function useProfileTitle(acct: string | undefined): string | undefined {
+export function useProfileTitle(acct: string | undefined, signedIn = true): string | undefined {
   const { t } = stringsIn(useLocale().locale);
   // The viewer's own is read only for their own profile, which a visitor has none of.
   const viewer = useViewer(acct === undefined);
-  const { account } = useAccount(acct ?? viewer?.acct);
+  const { account } = useAccount(acct ?? viewer?.acct, signedIn);
   return account === undefined ? undefined : t("profile.title", { name: nameOf(account), handle: handleOf(account) });
 }
 
@@ -822,8 +822,8 @@ export function Profile({
   signIn?: ((returnTo: string) => void) | undefined;
 }) {
   const { t, lang } = stringsIn(useLocale().locale);
-  const { account, error, missing } = useAccount(acct);
   const signedIn = signIn === undefined;
+  const { account, error, missing } = useAccount(acct, signedIn);
   const viewer = useViewer(signedIn);
   const own = account !== undefined && viewer?.id === account.id;
   const relationship = useRelationship(account === undefined || own || missing || !signedIn ? undefined : account.id);

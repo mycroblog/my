@@ -27,7 +27,7 @@ function ProfileScreen() {
   const signIn = useVisitorSignIn(data !== null);
   return (
     <>
-      <ProfileHeading acct={acct} />
+      <ProfileHeading acct={acct} signedIn={data !== null} />
       <Profile
         key={acct}
         acct={acct}
