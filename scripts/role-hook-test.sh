@@ -40,6 +40,32 @@ expect 2 visual-evaluator '{"tool_name":"Glob","tool_input":{"pattern":"/r/.clau
 expect 2 visual-evaluator '{"tool_name":"WebFetch","tool_input":{"url":"https://example.com"}}'
 expect 2 visual-evaluator '{"tool_name":"Agent","tool_input":{"prompt":"read web/design-system/src/button.stories.tsx"}}'
 
+expect 2 builder '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/walker/index.md"}}'
+expect 2 builder '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/agents/walker.md"}}'
+expect 0 builder '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- look"}}'
+
+# The walker (ADR-0169 §2): its browser, its shots and its knowledge, never the source.
+expect 0 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- open http://localhost:8787/ --viewport mobile"}}'
+expect 0 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- click button \"Sign in\""}}'
+expect 0 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- fill textbox '\''Post'\'' '\''a; b | c > d $(e)'\''"}}'
+expect 0 walker '{"tool_name":"Bash","tool_input":{"command":"/r/scripts/task.sh web:walk -- close"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- look; cat web/app/src/main.tsx"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- look && ls web"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- fill textbox \"$(cat web/app/src/main.tsx)\" x"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk -- look > /tmp/x"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:walk go:bin -- look"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/task.sh web:e2e"}}'
+expect 2 walker '{"tool_name":"Bash","tool_input":{"command":"scripts/agentkit.sh show web/app/src/main.tsx"}}'
+expect 0 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/.tmp/walk/shots/003.png"}}'
+expect 0 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/.claude/knowledge/walker/decisions.md"}}'
+expect 2 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/.tmp/walk/shots/../../../web/app/src/main.tsx"}}'
+expect 2 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/web/app/src/main.tsx"}}'
+expect 2 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/web/e2e/src/scenario.ts"}}'
+expect 2 walker '{"tool_name":"Read","tool_input":{"file_path":"/r/.tmp/visual/page/page-mobile.png"}}'
+expect 2 walker '{"tool_name":"Grep","tool_input":{"pattern":"Sign in","path":"/r/web"}}'
+expect 2 walker '{"tool_name":"Agent","tool_input":{"prompt":"read the source"}}'
+expect 0 walker '{"tool_name":"SubagentHandback","tool_input":{"message":"walked: ..."}}'
+
 # The test roles (ADR-0170 §2): the tests, their helpers, the issue, the ADRs and the public interface, never the
 # implementation.
 expect 0 go-test-developer '{"tool_name":"Read","tool_input":{"file_path":"/r/internal/app/content/post_test.go"}}'

@@ -59,7 +59,7 @@ expect "two packages add up" "$fake design-system platform" web/design-system/sr
 expect "the fake API" "$fake" web/e2e/src/fake/api.ts
 expect "the scenario the fake API reads" "$fake" web/e2e/src/scenario.ts
 expect "the specs of the E2E tests, which are the fake API's package too" "$fake" web/e2e/specs/sign-in.spec.ts
-expect "a DOM preload: the packages with tests on a DOM, what depends on them, and its own" "$parts devtools" web/devtools/src/happy-dom.ts
+expect "a DOM preload: the packages with tests on a DOM, what depends on them, its own, and @my/e2e, whose walker reads the viewports" "$fake design-system devtools" web/devtools/src/happy-dom.ts
 expect "the client library the server data is built on" "$fake" pkg/mykit/ts/src/client.ts
 expect "the spec its types are generated from" "$fake" api/openapi.yaml
 expect "a catalog of a package" "$parts" web/design-system/locales/en/disclosure.json

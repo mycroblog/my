@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // On a phone the main navigation is the tab bar: moving between its items moves the focus to the new screen's heading,
-// and its last item, Menu, opens a sheet with the places the tab bar does not hold, which closes. That the tab bar,
-// and not the rail, is what a phone shows is the frame's layout, which a browser tests.
+// and its last item, Menu, opens a sheet with the places the tab bar does not hold, which closes; each place opens
+// its page by a press, by Enter and as a link. That the tab bar, and not the rail, is what a phone shows is the frame's
+// layout, which a browser tests.
 
 import { expect, test } from "bun:test";
 import { screen, within } from "@testing-library/react";
@@ -56,5 +57,34 @@ test("a place chosen in the Menu closes it and moves the focus to the heading of
   await app.user.click(within(await openMenu(app)).getByRole("menuitem", { name: "Profile" }));
 
   expect(app.focused()).toBe(await heading(/^Yuki 雪 \(@yuki@/));
+  expect(screen.queryByRole("menu")).toBeNull();
+});
+
+test("a place of the Menu opens by Enter", async () => {
+  onAPhone();
+  const app = await renderApp("/lists", { viewer: "yuki" });
+  const profile = within(await openMenu(app)).getByRole("menuitem", { name: "Profile" });
+
+  profile.focus();
+  await app.user.keyboard("{Enter}");
+
+  expect(app.focused()).toBe(await heading(/^Yuki 雪 \(@yuki@/));
+  expect(screen.queryByRole("menu")).toBeNull();
+});
+
+test("a place of the Menu is a link to its page, which opens as a link does, and the page under it offers none", async () => {
+  onAPhone();
+  const app = await renderApp("/lists", { viewer: "yuki" });
+  const menu = within(await openMenu(app));
+  const settings = menu.getByRole("menuitem", { name: "Settings" });
+  expect(settings.getAttribute("href")).toBe("/settings");
+  // The page under the sheet takes no press: its own links to the same places are out of reach while it is open.
+  for (const link of screen.queryAllByRole("link", { name: /^(?:Profile|Settings)$/ }))
+    expect(link.closest("[inert]")).not.toBeNull();
+
+  // A link's activation as a script or assistive technology sends it: a click with no pointer.
+  settings.click();
+
+  expect(await heading("Settings")).toBeDefined();
   expect(screen.queryByRole("menu")).toBeNull();
 });

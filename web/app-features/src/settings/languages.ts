@@ -29,15 +29,21 @@ const made = new Map<string, readonly SelectOption[]>();
 
 /**
  * The languages as the options of a choice, each by its own name, in the order of `lang`; a language the platform
- * has no name for is left out.
+ * has no name for is left out, and so is one it names as an earlier one: a platform whose CLDR takes Twi for Akan
+ * names `tw` as `ak` does.
  */
 export function languageOptions(lang: string): readonly SelectOption[] {
   let options = made.get(lang);
   if (options === undefined) {
     const collator = new Intl.Collator(lang);
+    const named = new Set<string>();
     options = offered
       .map((value) => ({ value, label: ownName(value) }))
-      .filter((o) => o.label.toLowerCase() !== o.value.toLowerCase())
+      .filter((o) => {
+        if (o.label.toLowerCase() === o.value.toLowerCase() || named.has(o.label)) return false;
+        named.add(o.label);
+        return true;
+      })
       .toSorted((a, b) => collator.compare(a.label, b.label));
     made.set(lang, options);
   }

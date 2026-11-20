@@ -1,0 +1,12 @@
+# motion: decisions, screens
+
+A change of screen: its kind, its time and its easing, the values of `transition` in web/design-tokens. One line each:
+`- <decision> — <why> — <from: the decider's correction or choice> — <YYYY-MM-DD> — held N / missed N`.
+
+- Every change of screen is one of five kinds, which the app picks for each navigation: `push` deeper, to what the reader opened; `pop` back out of it; `modal` a screen raised over the one the reader was on; `replace` a sibling in its place, between the places of the navigation; `none` the first screen, or a change of the address alone — the same meaning moves the same way on every screen (ADR-0110 P4), and the kind says where the reader went — the interaction kinds of #2893, merged by the decider in #3041 — 2026-11-14 — held 0 / missed 0
+- Push and pop move along the line by 2rem with a fade-through: the old screen fades out by 35% of the time and the new one fades in after it; a push leaves toward the start of the line, a pop the other way, mirrored right to left — the smallest move that still shows the direction — the decider's pick push-pop-motion (20261114-111313-1673.1), #2893 — 2026-11-14 — held 0 / missed 0
+- A push takes 300 ms and a pop 250 ms: going back lands on a screen the reader already knows, which needs less time to read as it arrives — the durations of #2893, merged by the decider in #3041 — 2026-11-14 — held 0 / missed 0
+- A modal rises 3rem with a fade in 300 ms over a screen that stays, and leaves the same way back; a modal over the page (the composer) moves with the same time and easings — a raised screen comes from below and leaves the reader where they were — #2893, and the modal of #3067 — 2026-11-14 — held 0 / missed 0
+- A replace crossfades in 150 ms, linear, and nothing moves: a sibling has no direction, and the places of the navigation are changed often and in a row — #2893, merged by the decider in #3041 — 2026-11-14 — held 0 / missed 0
+- What enters slows into place, cubic-bezier(0.05, 0.7, 0.1, 1); what leaves speeds away, cubic-bezier(0.3, 0, 0.8, 0.15) — a screen is still by the time it is read, and one that leaves gets out of the way at once — #2893, merged by the decider in #3041 — 2026-11-14 — held 0 / missed 0
+- Only the screen moves: the frame's bars and the page around it change at once; a shared element (a post's avatar) moves from its old place to its new one in the kind's time, with the easing of what enters — what stays in place reads as the same place — #2893, merged by the decider in #3041 — 2026-11-14 — held 0 / missed 0

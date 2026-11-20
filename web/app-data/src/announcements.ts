@@ -2,10 +2,11 @@
 // The server's announcements (ADR-0125 §2–§5): those the viewer sees now, the unread first, then the read, each group
 // newest first, for the column beside the timeline and, unread only, above the home timeline; all that ever showed,
 // the ended ones included, newest first, a page at a time, for their list; one of them, for its page; and marking one
-// read, which puts the server's answer wherever the announcement is cached.
+// read, which puts the server's answer wherever the announcement is cached and reads its notification.
 import type { components } from "@mycroblog/mykit";
 import { useQuery, type InfiniteData } from "@tanstack/react-query";
 import type { AppData } from "./app-data";
+import { readAnnouncementNotifications } from "./notifications";
 import { pagedQuery, usePagedList, type Page, type PagedList } from "./paged";
 import { useAppData } from "./provider";
 
@@ -79,12 +80,14 @@ function cacheRead(data: AppData, read: Announcement): void {
 }
 
 /**
- * Marks the announcement of `id` read, and puts the server's answer wherever it is cached. It rejects with the problem
- * (one that no longer shows).
+ * Marks the announcement of `id` read, and puts the server's answer wherever it is cached; its notification is read
+ * with it. It rejects with the problem (one that no longer shows).
  */
 export async function markAnnouncementRead(data: AppData, id: string): Promise<void> {
   const { data: read } = await data.api.POST("/announcements/{id}/read", { params: { path: { id } } });
-  if (read !== undefined) cacheRead(data, read);
+  if (read === undefined) return;
+  cacheRead(data, read);
+  if (read.read) readAnnouncementNotifications(data, read.id);
 }
 
 /** Marks an announcement read, from a screen (`markAnnouncementRead`). */
