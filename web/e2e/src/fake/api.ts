@@ -276,6 +276,11 @@ export type FakeOptions = {
   registrations?: "open" | "approval" | "invite" | "closed";
   /** The instance's summary runs long. */
   longSummary?: boolean;
+  /**
+   * The counts of the instance (GET /instance/overview): its members, their public posts of each of the last 7 days
+   * and when it started, by default; none while the instance setting `public_counts` is off (`false`).
+   */
+  publicCounts?: boolean;
   /** The closure of the service: announced, or the server closed. */
   closure?: "announced" | "closed";
   /** The closure as its administrators run it (closure.ts): its date passed, a short notice, delivered, warnings. */
@@ -3141,6 +3146,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         : o.about?.instance === "fails"
           ? problem(500, "Internal Server Error")
           : { status: 200, body: closing.instanceOf(instanceBody) },
+    "GET /instance/overview": () => {
+      if (o.publicCounts === false) return { status: 200, body: {} };
+      const counts: Schema<"InstanceCounts"> = {
+        members: 1284,
+        daily_posts: [212, 187, 240, 198, 263, 231, 219],
+        started_at: new Date(started - 2 * 365 * day).toISOString(),
+        counted_at: new Date(started).toISOString(),
+      };
+      return { status: 200, body: { counts } };
+    },
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
       return { status: 200, body: health };
@@ -4122,7 +4137,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/overview|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

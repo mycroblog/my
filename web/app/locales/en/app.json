@@ -291,6 +291,14 @@
     "defaultMessage": "Create an account",
     "description": "The landing page's primary action for a visitor while the server takes new accounts; it opens the server's registration page."
   },
+  "app.landing_sign_up_invite": {
+    "defaultMessage": "Sign up with an invite",
+    "description": "The landing page's primary action while the server takes new accounts by invite only; it opens the registration page, which asks for the invite."
+  },
+  "app.landing_account": {
+    "defaultMessage": "Your account",
+    "description": "On the landing page, the name for assistive technology of the part that offers creating an account or signing in."
+  },
   "app.landing_approval": {
     "defaultMessage": "A moderator reviews each new account before it can be used.",
     "description": "On the landing page, under Create an account and Sign in, when the registration mode is approval."
@@ -302,6 +310,54 @@
   "app.landing_closed": {
     "defaultMessage": "This server is not accepting new accounts.",
     "description": "On the landing page, under Sign in, when the server takes no new accounts (registration closed, a one-person server, a closure)."
+  },
+  "app.landing_counts": {
+    "defaultMessage": "This server in numbers",
+    "description": "On the landing page, the name for assistive technology of the server's counts (members, public posts this week)."
+  },
+  "app.landing_members": {
+    "defaultMessage": "{count, plural, one {member} other {members}}",
+    "description": "On the landing page, the label under the number of the server's members; the number itself stands above it."
+  },
+  "app.landing_week_posts": {
+    "defaultMessage": "{count, plural, one {public post this week} other {public posts this week}}",
+    "description": "On the landing page, the label under the number of public posts the server's members made in the last 7 days; the number stands above it."
+  },
+  "app.landing_fediverse_heading": {
+    "defaultMessage": "Part of the fediverse",
+    "description": "On the landing page, the heading of the software's explanation of the fediverse (independent servers that follow one another)."
+  },
+  "app.landing_fediverse": {
+    "defaultMessage": "An account here has an address like @you@{domain}. With it you can follow people on other servers of the fediverse, Mastodon among them, and they can follow you back.",
+    "description": "On the landing page, under Part of the fediverse: how an account of this server follows and is followed by people on other servers. {domain} is this server's domain; @you is a sample name."
+  },
+  "app.landing_features_heading": {
+    "defaultMessage": "What you can do here",
+    "description": "On the landing page, the heading of the list of what members of this server can do besides posting (articles, events, voice rooms…), of what the server has on."
+  },
+  "app.landing_feature_articles": {
+    "defaultMessage": "Write articles, long pieces with headings and pictures, beside your posts.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may write articles."
+  },
+  "app.landing_feature_events": {
+    "defaultMessage": "Plan events and see who is coming.",
+    "description": "On the landing page, an item of What you can do here, shown while every member may create events."
+  },
+  "app.landing_feature_voice": {
+    "defaultMessage": "Talk live with others in voice rooms.",
+    "description": "On the landing page, an item of What you can do here, shown while the server's voice rooms are on."
+  },
+  "app.landing_feature_search": {
+    "defaultMessage": "Search posts by their words, not only by hashtags.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has full-text search."
+  },
+  "app.landing_feature_translation": {
+    "defaultMessage": "Read posts from anywhere translated into your language.",
+    "description": "On the landing page, an item of What you can do here, shown while the server has a translation provider."
+  },
+  "app.landing_feature_supporters": {
+    "defaultMessage": "Support the server with money toward its running costs.",
+    "description": "On the landing page, an item of What you can do here, shown while the server takes supporters or tips."
   },
   "app.landing_without_account": {
     "defaultMessage": "Without an account",

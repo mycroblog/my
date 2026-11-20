@@ -100,7 +100,7 @@ const mark = tv({
  * The server's mark: its own logo (for light and dark) with its name, else the built-in wordmark with its name; `title`
  * makes the name the page's h1.
  */
-function Mark({
+export function Mark({
   server,
   wordmark,
   size,

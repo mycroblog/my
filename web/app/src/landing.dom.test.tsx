@@ -12,7 +12,7 @@ import { renderApp } from "./test/app";
 const server = { visitor: true, timelines: { local: "everyone", federated: "signed_in" } } as const;
 
 /** The places the landing page leads a visitor to without an account. */
-const places = () => within(screen.getByRole("region", { name: "Without an account" }));
+const places = () => within(screen.getByRole("navigation", { name: "Without an account" }));
 
 test("a visitor at the server's address sees its landing page, with the way to an account", async () => {
   const app = await renderApp("/", server);

@@ -17,7 +17,7 @@ import { useStrings } from "../locale";
 import type { RouterContext } from "../router";
 import { isArticleEditor } from "../shell/article";
 import { ScreenHeading, useFocusOnNavigation } from "../shell/heading";
-import { Landing } from "../shell/landing";
+import { LandingPanel } from "../shell/landing";
 import { ClosedPage, MaintenancePage, pageServer } from "../shell/pages";
 import { useScreenScroll } from "../shell/scroll";
 import { Shell } from "../shell/shell";
@@ -119,7 +119,7 @@ function Screens({ pathname, signedIn, serverName }: { pathname: string; signedI
   const operator = useInstance()?.single_user_account;
   const narrow = useNarrowViewport();
   const welcome = useShowsWelcome();
-  if (!signedIn && pathname === "/" && operator === undefined) return <Landing serverName={serverName} />;
+  if (!signedIn && pathname === "/" && operator === undefined) return <LandingPanel serverName={serverName} />;
   // The welcome step of a signed-in reader is a page of its own; a visitor is asked to sign in, in the shell.
   if (signedIn && welcome) return <Outlet />;
   // The article editor is a screen of its own, with no navigation around it; its menus and its schedule's form open as
