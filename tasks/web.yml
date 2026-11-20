@@ -181,6 +181,19 @@ tasks:
     cmds:
       - bun --bun playwright test {{.CLI_ARGS}}
 
+  # The screenshots of the documentation site (web/docs/src/assets/screenshots/; ADR-0015 §5): the demo server of
+  # web/e2e seeded with the scenario, each screen of web/e2e/shots/list.ts shot in light and dark. Run by hand when a
+  # pictured screen changes, never in CI. A task of the workspace's, as web:e2e is: a task of tasks/docs.yml that
+  # builds bin/my would make every change of tasks/go.yml build the site too (scripts/changed-contexts.sh).
+  docs-screenshots:
+    desc: Build the test build of bin/my (GO_TAGS=e2e_fakes), start the demo server seeded with the scenario, and shoot every screenshot of the documentation site (web/e2e/shots/list.ts) in light and dark into web/docs/src/assets/screenshots/ (CLI_ARGS go to Playwright, e.g. `-g home`)
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c shots/playwright.config.ts {{.CLI_ARGS}}
+
   # The UX in the lab (ADR-0167 §4): the scenarios of web/e2e/ux against the same demo server, with the CPU throttled,
   # each three times; it writes .tmp/ux/report.md and report.json, judged against the report UX_LAST names. The
   # Nightly runs it (web-ux), never the merge queue, and a finding fails nothing.
