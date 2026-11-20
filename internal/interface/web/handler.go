@@ -819,7 +819,7 @@ type Entry struct {
 	// Integrity is the Subresource Integrity of Script and of each of Preloads, by URL, for an
 	// entry whose document checks them (the payment entry's); nil otherwise.
 	Integrity map[string]string
-	// Links are the Link header values that hint Stylesheets, Script, and Preloads to the browser,
+	// Links are the Link header values that hint Stylesheets and Script to the browser,
 	// which WriteLinks puts on the document's response and, when EarlyHints, first sends in a 103
 	// Early Hints response. Nil in development, and for the payment entry.
 	Links      []string

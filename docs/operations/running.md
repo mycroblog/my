@@ -848,13 +848,12 @@ A process whose `role` is `web` or `all` serves the web client embedded in the b
   Serve only `/assets/*` from the CDN.
 - The build's text files (scripts, stylesheets, SVG images, license notices) are embedded compressed only. A request that accepts Brotli gets them with `Content-Encoding: br`, one that accepts gzip with `Content-Encoding: gzip`, and any other request gets them decompressed, always with `Vary: Accept-Encoding` and an ETag for each encoding.
   A proxy in front needs no compression of its own for them, and a CDN must keep `Vary: Accept-Encoding` (or the encoding) in its cache key for `/assets/*`.
-- The shell and the sign-in screens carry `Link` headers that name the stylesheets and scripts the page loads, from which a CDN such as Cloudflare (its Early Hints feature) can make early hints of its own.
+- The shell and the sign-in screens carry `Link` headers that name the stylesheets and the entry script the page loads first, from which a CDN such as Cloudflare (its Early Hints feature) can make early hints of its own.
   With [`web_early_hints`](../reference/configuration.md#web_early_hints) = `true`, the server also sends them first in a `103 Early Hints` response, so that the browser fetches the files while the server prepares the page. It is off by default, since a proxy that cannot pass a 103 on may fail the request:
   - A Google Cloud external Application Load Balancer answers 502 or 503 (`backend_interim_response_not_supported`): leave it off behind one, as the Cloud Run deployment does.
   - nginx passes it on from 1.29.0, with `early_hints` set.
   - Caddy's `reverse_proxy` passes it on; an `encode` directive drops it in releases before 2.8.
   - Browsers use a 103 only for a page they navigate to, and Chrome and Edge only over HTTP/2 and HTTP/3.
-  The shell's `Link` headers come to about 15 KB, so a proxy in front must accept response headers of 32 KB: nginx answers 502 with its default `proxy_buffer_size` (raise it to `32k`).
 - A binary built without the web client (a plain `go build`, without building the client first) logs a warning at start-up and serves a shell without scripts.
 
 ## Federation endpoints

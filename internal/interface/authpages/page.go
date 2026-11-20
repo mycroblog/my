@@ -32,7 +32,7 @@ type Entry struct {
 	// ViteClient is the client script of a Vite dev server, and DevOrigin that server's origin,
 	// which the screens' policy then allows; both empty in production.
 	ViteClient, DevOrigin string
-	// Links are the Link header values that hint Stylesheets, Script, and Preloads on the screen's
+	// Links are the Link header values that hint Stylesheets and Script on the screen's
 	// response, and EarlyHints first sends them in a 103 Early Hints response.
 	Links      []string
 	EarlyHints bool

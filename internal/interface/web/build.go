@@ -244,22 +244,20 @@ func entryOf(manifest map[string]chunk, key string) (entryTags, error) {
 	return tags, nil
 }
 
-// links returns the Link header values (RFC 8288) that hint the files a document of the entry loads,
-// in the order of its tags: each stylesheet as rel=preload; as=style, then the static imports and
-// the entry module as rel=preload; as=script; crossorigin. Browsers take no rel=modulepreload from
-// a 103 Early Hints response; a preload in CORS mode with the same-origin credentials is the fetch
-// of a module script of this site, so the module reuses its response, as a stylesheet does that of
-// its no-cors preload. An entry without a script hints nothing.
+// links returns the Link header values (RFC 8288) that hint the files a document of the entry needs
+// first: each stylesheet as rel=preload; as=style, then the entry module as rel=preload; as=script;
+// crossorigin. Browsers take no rel=modulepreload from a 103 Early Hints response; a preload in
+// CORS mode with the same-origin credentials is the fetch of a module script of this site, so the
+// module reuses its response, as a stylesheet does that of its no-cors preload. The chunks the entry
+// imports are left to the document's modulepreload tags, which keeps the headers small. An entry
+// without a script hints nothing.
 func (t entryTags) links() []string {
 	if t.Script == "" {
 		return nil
 	}
-	links := make([]string, 0, len(t.Stylesheet)+1+len(t.Preload))
+	links := make([]string, 0, len(t.Stylesheet)+1)
 	for _, u := range t.Stylesheet {
 		links = append(links, "<"+u+">; rel=preload; as=style")
-	}
-	for _, u := range t.Preload {
-		links = append(links, "<"+u+">; rel=preload; as=script; crossorigin")
 	}
 	return append(links, "<"+t.Script+">; rel=preload; as=script; crossorigin")
 }
