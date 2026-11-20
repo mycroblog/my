@@ -385,7 +385,7 @@ While it is on:
   `/api/v1/problems/single-user-mode`.
 - **No new local posts.** On a server of one person, a post for "Neighbors" reaches nobody but the followers, so a new
   post cannot be local: the client API answers `422` and leaves it out of what an account may post. A default visibility
-  of "This server" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
+  of "Neighbors" reads as "Followers" and cannot be saved, and a voice chat room for the people of this server announces
   itself in a post for the followers. Posts that are already local stay local.
 - **The server says what it is.** `single_user` in `GET /api/v1/instance` is `true`, with the effective registration mode
   and timelines and the operator's account as `single_user_account`, and NodeInfo answers `openRegistrations: false` with
@@ -394,7 +394,7 @@ While it is on:
   of its one account, with the way to sign in and links to the about page, the terms of service, and the privacy policy
   that the server publishes. The web client hides what the server does not offer, from its navigation, menus, and
   administration screens: the local and federated timelines, signing up, suggested accounts, invites, the review of
-  registrations, the sign-up blocks, the visibility "This server", and the settings of registration, invites, the public
+  registrations, the sign-up blocks, the visibility "Neighbors", and the settings of registration, invites, the public
   timelines, the landing page, and suggested accounts.
 
 Federation, moderation, the full-text search, the supporter program, the documents, and the admin screens work as on any
