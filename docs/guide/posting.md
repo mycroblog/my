@@ -44,9 +44,9 @@ under "New posts" in the "Display and posting" settings.
 
 | Choice | Who can see it |
 | --- | --- |
-| Public | Anyone, here and on other servers. It is shown on the public timelines. |
-| Local | People signed in to this server, and your followers on other servers. It is shown on this server's local timeline. |
-| Quiet public | Anyone with the link, but it is not shown on the public timelines. |
+| Public | Anyone, here and on other servers. It is shown on the public timelines and hashtags. |
+| Neighbors | People signed in to this server, and your followers on other servers. It is shown on this server's local timeline. |
+| Quiet public | Anyone with the link or your profile, but it is not shown on the public timelines or hashtags. |
 | Followers only | Only your followers and the people you mention. |
 | Direct | Only the people you mention. |
 
@@ -55,32 +55,32 @@ under "New posts" in the "Display and posting" settings.
 Row by row, on this server and then on other servers:
 
 - **Public**: anyone, also people who are not signed in, and the post is shown on the local and federated timelines. On other servers anyone can read it, and it is sent to your followers and the people you mention.
-- **Local**: the people signed in to this server, and the post is shown on the local timeline. Other servers receive it only for your followers there, who see it as a "Followers only" post; it is not sent to anyone else.
-- **Quiet public**: anyone with the link, but the post is not shown on the public timelines. On other servers too, anyone with the link can read it, and it is sent to your followers and the people you mention.
+- **Neighbors**: the people signed in to this server, and the post is shown on the local timeline. Other servers receive it only for your followers there, who see it as a "Followers only" post; it is not sent to anyone else.
+- **Quiet public**: anyone with the link or your profile, but the post is not shown on the public timelines or hashtags. On other servers too, anyone with the link can read it, and it is sent to your followers and the people you mention.
 - **Followers only**: your followers and the people you mention, on this server and on other servers.
 - **Direct**: only the people you mention, on this server and on other servers.
 
-On a server of one person, where nobody else is signed in, "Local" means no more than "Followers only": new posts
-cannot have it, and a default of "Local" works as "Followers only". "Who can see it" and the default in the settings
-leave it out, and a reply to a "Local" post is "Followers only". Posts that already have it keep it.
+On a server of one person, where nobody else is signed in, "Neighbors" means no more than "Followers only": new posts
+cannot have it, and a default of "Neighbors" works as "Followers only". "Who can see it" and the default in the settings
+leave it out, and a reply to a post for neighbors is "Followers only". Posts that already have it keep it.
 
 A block always wins: someone who blocks you, or whom you block, does not see your post whatever you chose.
 
-### "Local"
+### "Neighbors"
 
-A post set to "Local" stays on your server. People who are not signed in to it cannot read it, even with the
+A post for neighbors stays on your server. People who are not signed in to it cannot read it, even with the
 link, and it never appears on the federated timeline. Other servers receive it only for your followers there, and they
 show it to those followers as a post for followers only.
 
 - If you mention someone on another server who does not follow you, they do not receive the post, and your followers there see the mention as a plain link. The form warns you about this.
-- Accounts of your server can boost a "Local" post, and the boost is shown only on this server.
-- A reply to a "Local" post starts as "Local" too; you can change it.
+- Accounts of your server can boost a post for neighbors, and the boost is shown only on this server.
+- A reply to a post for neighbors starts as "Neighbors" too; you can change it.
 
 ### Other things to know
 
 - You cannot change who can see a post after posting it. An edit keeps who can see it and the post it replies to.
 - A moderator can limit how widely an account posts. The form then says "Your account can post at most as ..." and a wider choice is posted at the widest level allowed.
-- Anyone who can see a "Public", "Local", or "Quiet public" post can boost it. Only you can boost your own "Followers only" posts, and only your followers see that boost. "Direct" posts cannot be boosted.
+- Anyone who can see a "Public", "Neighbors", or "Quiet public" post can boost it. Only you can boost your own "Followers only" posts, and only your followers see that boost. "Direct" posts cannot be boosted.
 - The author of a post can choose who may reply to it and who may boost it; posts from some other servers carry such a choice too. A reply or a boost outside it is refused, with a message such as "The author of this post does not let you reply to it." The author, the people the post mentions, and the author of the post it replies to can always reply.
 - The author may also let some people reply or boost only once they approve it. Such a reply or boost waits: you are notified ("... asked to reply to your post"), and it stays off your post until you approve it. A waiting reply from another server is not in the conversation under your post or in its count of replies; it still appears on its author's profile and on its own page. A waiting boost is not counted. Approving it adds it to your post; declining it keeps it off, and the other server is told either way.
 - A reply or a boost from another server that is outside your choice altogether is kept off your post in the same way, and notifies you of nothing.
