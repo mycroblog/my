@@ -440,7 +440,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 
 `GET /api/v1/admin/counts` 返回待处理举报数（`open_reports`，需要 `manage_reports`）、等待批准的注册数（`pending_registrations`）和等待审核的申诉数（`pending_appeals`）（两者都需要 `manage_accounts`）、等待决定的自定义表情请求数（`pending_custom_emoji_requests`，需要 `manage_custom_emojis`），以及未处理的错误组数，即新出现的、复发的或取消静音的错误组（`open_error_groups`，需要 `manage_errors`）。你没有权限的项目不会返回。
 
-<!-- source: audit-log 4d53a2539898 -->
+<!-- source: audit-log 8334cc0280f5 -->
 ## 审计日志
 
 审核员和管理员的操作会在与操作相同的事务中，以每次一行的形式记录到审计日志（`audit_log_entries`）中。失败的操作和没有改变任何东西的操作不会记录：解除已解除的操作、处理已处理的举报、分配给相同的负责人、停用已停用的规则、移动到相同的位置、授予用户已有的角色，以及撤销用户没有的角色。
@@ -469,7 +469,7 @@ my admin report forward -comment "Spam account, see the linked posts" <report id
 | `supporter_subscription` | `supporter_subscription_ended`（管理员立即结束了某个订阅；目标名称为方案名称和用户的用户名） |
 | `custom_emoji_request` | `custom_emoji_request_submitted`、`custom_emoji_request_withdrawn`、`custom_emoji_request_approved`、`custom_emoji_request_rejected`（提交、撤回、批准和拒绝自定义表情请求；目标名称为 `:shortcode:`） |
 | `payment_provider` | `payment_reconcile_queued`（手动开始了与支付服务商的对账；目标名称为服务商名称） |
-| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用 OAuth 客户端和撤销停用；停用会撤销其所有令牌；目标名称为客户端名称和 `client_id`） |
+| `oauth_client` | `oauth_client_disabled`、`oauth_client_enabled`（停用和启用 OAuth 客户端；停用会撤销其所有令牌；目标名称为客户端名称和 `client_id`） |
 | `oauth_client_host` | `oauth_client_host_denied`、`oauth_client_host_allowed`（拒绝 Client ID Metadata Document 主机和撤销拒绝；拒绝会撤销该主机上客户端的令牌；目标名称为主机） |
 | `instance` | `service_closure_announced`、`service_closure_withdrawn`、`service_closure_closed`、`service_closure_delivery_completed`（公告关闭服务或更改日期、撤回公告、关闭，以及完成关闭的投递；目标名称为 `service_closure`） |
 | `voice_room` | `voice_room_ended`（审核员结束了正在进行的语音聊天房间；目标名称为房间 ID，因为名称会在写下它的账号被抹除时消失；举报详情会显示名称） |
