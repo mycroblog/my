@@ -1,15 +1,17 @@
-<!-- source: external-login-providers 48a582ab87ec -->
+<!-- source: external-login-providers e0088b122632 -->
 # Fournisseurs de connexion externes
 
-Un fournisseur de connexion externe permet aux utilisateurs de se connecter avec un compte qu’ils possèdent ailleurs : un fournisseur OpenID Connect
+Un fournisseur de connexion externe permet aux utilisateurs de se connecter avec un compte qu’ils ont ailleurs : un fournisseur OpenID Connect
 (Google Workspace, Microsoft Entra ID, Keycloak, etc.), GitHub, Discord ou un serveur Mastodon.
 Vous configurez les fournisseurs avec la commande `my login-provider` sur un hôte qui dispose de la configuration du serveur, ou via l’API
 d’administration (`/api/v1/admin/login_providers`) avec la permission `manage_login_providers`, que seul le rôle intégré
 `admin` possède. La commande fonctionne avant qu’un administrateur puisse se connecter ; vous pouvez donc l’utiliser pour la première configuration.
-Dans le client web, les administrateurs disposant de cette permission utilisent « Fournisseurs de connexion » dans le menu d’administration. La liste
-affiche le type de chaque fournisseur, son état et si l’inscription est autorisée ; « Ajouter un fournisseur » ouvre le formulaire qui en crée un.
-Choisir un fournisseur ouvre sa page, qui affiche son URL de rappel avec un bouton qui la copie et le nombre d’utilisateurs
-associés, et où vous modifiez ses paramètres, lui donnez un nouveau secret client, l’activez, le désactivez et le supprimez.
+Dans le client web, les administrateurs qui ont cette permission utilisent « Fournisseurs de connexion » dans le menu d’administration. La liste
+affiche le type de chaque fournisseur, son état, le nombre d’utilisateurs liés et si l’inscription est autorisée, sous un résumé de la
+[limitation aux fournisseurs de connexion](#limit-sign-in-to-login-providers) lorsqu’elle est active ; « Ajouter un fournisseur de connexion » ouvre le formulaire qui
+en crée un. Choisir un fournisseur ouvre sa page, qui affiche son URL de rappel avec un bouton qui la copie, et où vous
+modifiez ses paramètres, l’activez ou le désactivez et lui donnez un nouveau secret client, le tout enregistré avec un seul bouton, et le supprimez, ce qui
+vous demande de saisir son nom.
 
 <!-- source: what-external-sign-in-does 25fa37e22a50 -->
 ## Ce que fait la connexion externe

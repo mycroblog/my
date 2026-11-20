@@ -3,34 +3,45 @@
 
 Un filtre de mots-clés replie ou masque les publications qui contiennent l’un de ses mots, quel qu’en soit l’auteur : les spoilers d’une série que vous n’avez pas encore vue, un sujet dont vous avez besoin de vous reposer. Le serveur évalue les publications, donc toutes les applications que vous utilisez affichent le même résultat. Vous seul voyez vos filtres, et personne n’en est informé.
 
-<!-- source: adding-a-filter 28f5b63e22b2 -->
+<!-- source: adding-a-filter 455f52213244 -->
 ## Ajouter un filtre
 
-Ouvrez « Filtres de mots-clés » sous « Affichage et notifications » dans les paramètres, puis choisissez « Ajouter un filtre » :
+Ouvrez « Filtres de mots-clés » sous « Personnes et filtres » dans les paramètres, puis choisissez « Ajouter un filtre » :
 
-1. **Nom :** ce qu’affiche à sa place une publication repliée (« Filtré : Final de saison »), 50 caractères au plus.
-2. **Mots :** un ou plusieurs mots ou expressions. « Ajouter un mot » en ajoute un autre, jusqu’à 100 dans un filtre. « Mot entier » à côté d’un mot fait qu’il ne correspond qu’en tant que mot entier (voir [Comment les mots correspondent](#how-words-match)).
-3. **Où il s’applique :** votre fil d’accueil et vos listes, vos notifications, les fils local, fédéré et de hashtags, les discussions et les profils. Un nouveau filtre s’applique partout ; décochez les endroits que vous ne voulez pas.
-4. **Ce qu’il fait :** « Replier » place la publication derrière le nom du filtre, avec « Afficher » pour la lire. « Masquer » laisse la publication de côté, ainsi que sa notification.
-5. **Fin :** « Jamais », ou après l’une des durées proposées, de 30 minutes à une semaine.
+1. **Nom :** ce qu’une publication repliée affiche à sa place (« Correspond au filtre “Finale de la saison” »), 50 caractères au maximum.
+2. **Publications concernées :** « Replier derrière le nom du filtre » n’affiche que ce nom à la place de la publication, avec « Afficher » pour la lire.
+   « Masquer complètement » exclut la publication, ainsi que sa notification.
+3. **Fin :** « Jamais », au bout de l’une des durées proposées, de 30 minutes à une semaine, ou « À une date et une heure ».
+4. **Mots :** un ou plusieurs mots ou expressions. « Ajouter un mot » en ajoute un autre, jusqu’à 100 par filtre. « Mot entier » à côté d’un mot
+   le fait correspondre uniquement en tant que mot entier (voir [Comment les mots correspondent](#how-words-match)).
+5. **Où il s’applique :** « Accueil et listes », « Notifications », « Fils publics » (les fils local, fédéré et de hashtag),
+   « Discussions » et « Profils ». Un nouveau filtre s’applique partout ; décochez les endroits que vous ne voulez pas.
 
-Choisissez « Ajouter ». « Modifier » sur un filtre change n’importe lequel de ces réglages, et « Supprimer » le retire avec ses mots après confirmation. Un filtre s’applique immédiatement à toutes les publications, même les anciennes ; les fils ouverts à l’écran se rechargent pour afficher le changement.
+Choisissez « Ajouter ». Un filtre de la liste l’ouvre pour modifier chacun de ces éléments, et « Supprimer… » le supprime avec ses mots après
+confirmation. Un filtre s’applique aussitôt à toutes les publications, y compris les anciennes ; les fils se rouvrent à l’écran pour afficher le changement.
 
-La recherche, vos marque-pages et vos favoris, ainsi que vos messages directs ne sont jamais filtrés. Vos propres publications et boosts non plus, ni les publications qu’ils citent.
+La recherche, vos favoris et vos marque-pages, ainsi que vos messages directs ne sont jamais filtrés. Vos propres publications et
+boosts non plus, ni les publications qu’ils citent.
 
-<!-- source: what-a-filtered-post-looks-like 2a5fd3cd5b3c -->
+<!-- source: what-a-filtered-post-looks-like 52e0483be326 -->
 ## À quoi ressemble une publication filtrée
 
-Une publication qui correspond à un filtre « Replier » n’affiche que « Filtré : » et les noms des filtres qui correspondent, ainsi que « Afficher ». Son auteur, son texte et ses images restent cachés, et un lecteur d’écran ne lit que cette ligne, jusqu’à ce que vous choisissiez « Afficher ». Une publication se replie de nouveau lorsque vous revenez sur la page.
+Une publication qu’un filtre de repli concerne n’affiche que « Correspond au filtre » avec les noms des filtres qui l’ont retenue, et « Afficher ».
+Son auteur, son texte et ses images restent cachés, et un lecteur d’écran ne lit que cette ligne, jusqu’à ce que vous choisissiez « Afficher » ;
+« Masquer » la replie de nouveau, tout comme le fait de revenir sur la page.
 
-Une notification à propos d’une telle publication affiche la même ligne à la place du texte de la publication. Lorsque seule une publication citée correspond, seule la citation est repliée, même pour « Masquer », avec « Afficher la publication citée ». Un boost est filtré selon la publication qu’il partage.
+Une notification concernant une telle publication affiche la même ligne à la place du texte de la publication. Lorsque seule une publication citée correspond, seule
+la citation est repliée, même avec « Masquer », avec son propre « Afficher ». Un boost est filtré selon la publication qu’il booste.
 
-Une publication que vous ouvrez vous-même, depuis un lien ou une notification, est repliée plutôt que masquée, afin que le lien affiche tout de même quelque chose.
+Une publication que vous ouvrez vous-même, depuis un lien ou une notification, est repliée plutôt que masquée, afin que le lien affiche toujours
+quelque chose.
 
-<!-- source: when-a-filter-ends 2657ec875f16 -->
+<!-- source: when-a-filter-ends d70431d92b82 -->
 ## Quand un filtre prend fin
 
-Un filtre qui a une fin cesse de s’appliquer à ce moment. Il reste dans votre liste, marqué « Expiré », jusqu’à ce que vous le supprimiez. Pour le réutiliser, choisissez « Modifier » et une nouvelle fin, ou « Jamais ». Pendant que vous modifiez un filtre qui a une fin, « Conserver » laisse la fin telle quelle.
+Un filtre qui a une fin cesse de s’appliquer à ce moment-là. Il reste dans votre liste, marqué « Expiré », jusqu’à ce que vous le supprimiez. Pour
+le réutiliser, ouvrez-le et choisissez une nouvelle fin, ou « Jamais ». Pendant que vous modifiez un filtre qui a une fin, « Ne pas changer » laisse la fin telle
+qu’elle est.
 
 <!-- source: how-words-match aeca692b00c3 -->
 ## Comment les mots correspondent
@@ -56,9 +67,10 @@ Certaines écritures notent les mots sans espaces entre eux : le chinois, le j
 
 Un filtre n’a ni caractères génériques ni expressions régulières. Ses mots correspondent dès que l’un d’eux correspond ; pour replier des publications uniquement lorsque deux mots apparaissent ensemble, écrivez-les comme une seule expression.
 
-<!-- source: limits e41fa1ca05b0 -->
+<!-- source: limits 2f4588a30027 -->
 ## Limites
 
 Vous pouvez avoir jusqu’à 100 filtres, avec jusqu’à 100 mots chacun et 1 000 mots au total. Un mot compte au plus 100 caractères.
 
-L’archive de « Archive et suppression » dans les paramètres contient vos filtres, y compris ceux qui ont expiré, sous le nom `keyword_filters.json`.
+L’archive de « Exporter », sous « Compte et données » dans les paramètres, contient vos filtres, y compris ceux qui ont expiré, dans
+`keyword_filters.json`.

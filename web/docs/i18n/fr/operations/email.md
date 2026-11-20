@@ -64,15 +64,18 @@ Chaque e-mail porte `Auto-Submitted: auto-generated`.
 Transmettez les secrets par variable d’environnement ou par fichier (`MY_MAIL_SMTP_PASSWORD` ou `MY_MAIL_SMTP_PASSWORD_FILE`). Ne les mettez pas dans le
 fichier de configuration.
 
-<!-- source: amazon-ses-api 1cef4371e61c -->
+<!-- source: amazon-ses-api f2d42a2b8b19 -->
 ### Amazon SES (API)
 
-Si vous êtes sur AWS, `mail = ses` utilise l’API SES v2. Les identifiants proviennent de la chaîne par défaut du SDK AWS (le rôle de tâche d’
-ECS, les variables d’environnement, le fichier de configuration partagé) : il n’y a donc aucun secret à configurer.
+Lorsque vous êtes sur AWS, `mail = ses` utilise l’API SES v2. Les identifiants proviennent de la chaîne par défaut du SDK AWS (le rôle de tâche d’
+ECS, les variables d’environnement, le fichier de configuration partagé) ; il n’y a donc aucun secret à configurer.
 
-1. Dans SES, vérifiez le domaine de `mail_from` comme identité et activez Easy DKIM (voir plus bas).
-2. Demandez l’accès à la production pour quitter le sandbox. Dans le sandbox, vous ne pouvez envoyer qu’à des adresses vérifiées.
+1. Dans SES, vérifiez le domaine de `mail_from` comme identité et activez Easy DKIM (voir ci-dessous).
+2. Demandez l’accès à la production pour sortir du bac à sable. Dans le bac à sable, vous ne pouvez envoyer qu’à des adresses vérifiées.
 3. Autorisez `ses:SendEmail` pour le rôle d’exécution sur l’identité de `mail_from` (et sur le jeu de configuration, si vous en utilisez un).
+
+[Envoyer des e-mails avec Amazon SES](email-ses.md) détaille les enregistrements, le bac à sable et la demande d’accès à la production,
+et ce que le module OpenTofu pour AWS en fait.
 
 ```sh
 MY_MAIL=ses
@@ -81,11 +84,11 @@ MY_MAIL_SES_REGION=ap-northeast-1          # the region where you verified the i
 MY_MAIL_SES_CONFIGURATION_SET=my-events    # optional; a configuration set with event destinations
 ```
 
-Lorsque `mail_ses_configuration_set` est défini, chaque e-mail utilise ce jeu de configuration. SES remplace le `Message-ID` et le `Date` de
-l’e-mail par ses propres valeurs.
-SES ne rejette jamais un destinataire de manière synchrone à l’envoi. Il accepte un envoi vers une adresse de la liste de suppression du compte, puis
-ne le distribue pas, et le bounce arrive plus tard sous forme de notification (SNS).
-Pour enregistrer les bounces et les plaintes, configurez les notifications SES ci-dessous pour qu’elles arrivent par SNS.
+Lorsque `mail_ses_configuration_set` est défini, chaque e-mail utilise ce jeu de configuration. SES écrase le `Message-ID` et le `Date` de l’
+e-mail par ses propres valeurs.
+SES ne rejette jamais un destinataire de façon synchrone au moment de l’envoi. Il accepte un envoi vers une adresse de la liste de suppression du compte, puis
+ne le distribue pas, et le rebond arrive plus tard sous forme de notification (SNS).
+Pour enregistrer les rebonds et les plaintes, configurez les notifications SES ci-dessous pour qu’elles arrivent par SNS.
 
 <!-- source: a-plugin-mail--plugin 65b46feaf1cf -->
 ### Un plugin (`mail = plugin`)
@@ -380,22 +383,23 @@ List-Unsubscribe=One-Click` (RFC 8058). Le bouton « se désabonner » des c
   des avis touchant à la sécurité d’arriver. Ces e-mails ne comportent pas non plus ces en-têtes.
 - Les utilisateurs peuvent modifier le même paramètre sur la page **Notifications** des paramètres.
 
-<!-- source: the-html-version 2ca008b1a48a -->
+<!-- source: the-html-version fc06d2fa37c4 -->
 ## La version HTML
 
-Chaque e-mail est `multipart/alternative` avec le même contenu en `text/plain` et `text/html` (tous deux en UTF-8). Avec `mail = none`
+Chaque e-mail est `multipart/alternative` avec le même contenu en `text/plain` et en `text/html` (tous deux en UTF-8). Avec `mail = none`
 dans le profil `development`, seule la version texte est écrite dans le journal.
 
-- Il y a une mise en page externe unique, avec des paragraphes, des boutons et une signature (nom du serveur, URL, contact, la raison de l’e-mail,
-  et le lien de désabonnement). `<html lang dir>` provient de la langue du destinataire, et les langues comme `ar` sont disposées de droite à
+- Il y a une seule mise en page extérieure, avec des paragraphes, des boutons et une signature (nom du serveur, URL, contact, raison de l’e-mail
+  et lien de désabonnement). `<html lang dir>` provient de la locale du destinataire, et les langues comme `ar` sont mises en page de droite à
   gauche.
-- Il ne charge ni polices ni feuilles de style externes. Les couleurs sont les design tokens par défaut, et le clair et le sombre suivent
-  `color-scheme` et `prefers-color-scheme`. Les surcharges de thème de l’administrateur n’affectent pas l’e-mail.
-- Il ne charge aucune image, sauf le logo propre à l’instance lorsqu’il y en a un ([logo et icône](instance-settings.md#logo-and-icon)) :
+- Elle ne charge ni polices externes ni feuilles de style externes et utilise les polices du système. Les couleurs sont celles du
+  [thème](instance-settings.md#theme) publié (les jetons de conception par défaut sans thème), et le clair et le sombre suivent `color-scheme` et
+  `prefers-color-scheme`.
+- Elle ne charge aucune image, sauf le logo de l’instance lorsqu’il y en a un ([logo et icône](instance-settings.md#logo-and-icon)) :
   la version HTML commence alors par le logo (`https://<host>/brand/...`, le logo sombre à la place lorsque le client de messagerie suit
-  un jeu de couleurs sombre), la même URL pour tous les destinataires, de sorte qu’elle ne révèle pas qui a ouvert l’e-mail. Les clients qui ne chargent aucune
+  un jeu de couleurs sombre), la même URL pour chaque destinataire, de sorte qu’elle n’apprend rien sur qui a ouvert l’e-mail. Les clients qui ne chargent aucune
   image externe affichent à la place le nom du serveur (le texte alternatif de l’image). Sans logo, ou lorsque l’URL du serveur n’est pas en `https`,
   l’e-mail n’a aucune image.
-- Seules les URL en `https` deviennent des liens. Lorsqu’une URL est en `http`, comme dans une configuration de développement où `web_origin` vaut `http://{host}`, l’URL
+- Seules les URL `https` deviennent des liens. Lorsqu’une URL est en `http`, comme dans une installation de développement où `web_origin` est `http://{host}`, l’URL
   est écrite en texte au lieu d’un bouton ou d’un lien de désabonnement, et l’URL du serveur dans la signature est omise.
-- La mise en page fait partie du binaire : aucun JavaScript ne s’exécute donc dans le serveur à l’exécution.
+- La mise en page fait partie du binaire ; aucun JavaScript ne s’exécute donc dans le serveur à l’exécution.

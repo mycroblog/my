@@ -18,12 +18,17 @@ Du haut du schéma vers le bas :
 
 Les sections ci-dessous décrivent chaque étape.
 
-<!-- source: the-sign-up-page 111fbe5ecf64 -->
+<!-- source: the-sign-up-page 9a7c6e5bdf58 -->
 ## La page d’inscription
 
-Les utilisateurs s’inscrivent sur `https://<host>/auth/sign_up` avec un nom d’utilisateur, une adresse e-mail et un mot de passe, sauf si [l’inscription est limitée aux fournisseurs de connexion](#registration-limited-to-login-providers). Après l’inscription, ce navigateur est connecté immédiatement. La page fonctionne sans JavaScript et, comme la page de connexion, est protégée par un jeton CSRF et par le rejet des requêtes inter-origines. Lorsque vous choisissez un CAPTCHA pour la protection contre les robots, les pages d’inscription et de connexion affichent son widget et ont besoin de JavaScript ([CAPTCHA](captcha.md)).
+Les utilisateurs s’inscrivent à `https://<host>/auth/sign_up` avec un nom d’utilisateur, une adresse e-mail et un mot de passe, sauf si [l’inscription est limitée aux fournisseurs de connexion](#registration-limited-to-login-providers).
+Après l’inscription, ce navigateur est connecté aussitôt.
+Comme la page de connexion, elle est protégée par un jeton CSRF et par le rejet des requêtes inter-origines.
+Lorsque vous choisissez un CAPTCHA pour la protection anti-bot, les pages d’inscription et de connexion affichent son widget et exigent JavaScript ([CAPTCHA](captcha.md)).
 
-Le mode d’inscription est le paramètre d’instance `registration_mode`. Choisissez-le avec la CLI ou dans le client web sur la page « Inscription » des « Paramètres du serveur » (`/admin/settings/registration`) ([paramètres d’instance](instance-settings.md)). Une modification s’applique à partir de l’inscription suivante. Tant que le serveur annonce sa fermeture et après sa fermeture, l’inscription est traitée comme `closed` quel que soit le paramètre ([CLI d’administration](admin-cli.md#announcing-the-end-of-the-service)). Il en va de même sur un [serveur d’une seule personne](instance-settings.md#one-person-server), où les invitations, l’examen des inscriptions et les blocages d’inscription ne sont pas proposés non plus, et où aucun moyen ne crée de compte, `my admin create` compris.
+Le mode d’inscription est le paramètre d’instance `registration_mode`. Choisissez-le avec la CLI ou dans le client web sur la page « Inscription » des « Paramètres du serveur » (`/admin/settings/registration`) ([paramètres de l’instance](instance-settings.md)). Un changement s’applique à partir de l’inscription suivante.
+Tant que le serveur annonce sa fermeture et après sa fermeture, l’inscription est traitée comme `closed` quel que soit le paramètre ([CLI d’administration](admin-cli.md#announcing-the-end-of-the-service)).
+Il en va de même sur un [serveur d’une seule personne](instance-settings.md#one-person-server), où les invitations, l’examen des inscriptions et les blocages d’inscription ne sont pas proposés non plus, et où aucun moyen ne crée de compte, `my admin create` compris.
 
 ```sh
 my instance set registration_mode invite
@@ -31,21 +36,35 @@ my instance set registration_mode invite
 
 | Mode | Page | État juste après l’inscription |
 | --- | --- | --- |
-| `open` | Tout le monde peut s’inscrire ; un code d’invitation est facultatif | Approuvée, sauf avec `mail = none`, où elle attend l’approbation d’un modérateur (voir ci-dessous). Une invitation ne change rien d’autre que d’enregistrer qui a invité l’utilisateur |
-| `approval` (par défaut) | Demande aussi « Pourquoi souhaitez-vous nous rejoindre ? » (facultatif, jusqu’à 1 000 caractères) ; un code d’invitation est facultatif | En attente d’approbation ; approuvée immédiatement avec une invitation utilisable |
-| `invite` | Un code d’invitation est obligatoire | Approuvée |
+| `open` | Tout le monde peut s’inscrire ; un code d’invitation est facultatif | Approuvé, sauf avec `mail = none`, où il attend l’approbation d’un modérateur (voir ci-dessous). Une invitation ne change rien d’autre que d’enregistrer qui a invité l’utilisateur |
+| `approval` (par défaut) | Demande aussi « Pourquoi souhaitez-vous nous rejoindre ? » (facultatif, jusqu’à 1 000 caractères) ; un code d’invitation est facultatif | En attente d’approbation ; approuvé aussitôt avec une invitation utilisable |
+| `invite` | Un code d’invitation est obligatoire | Approuvé |
 | `closed` | Indique seulement que l’inscription n’est pas acceptée | Aucun |
 
 - Dans tous les modes sauf `closed`, la page comporte un champ de code d’invitation, rempli à partir du lien d’une invitation (`?invite=<code>`). Un code qui ne fonctionne pas (inconnu, révoqué, expiré, épuisé, ou d’un membre qui ne peut plus inviter) est refusé dans tous les modes, et non ignoré, afin qu’un code mal saisi ne passe pas inaperçu.
-- Un blocage d’inscription qui exige une approbation maintient une inscription en attente d’approbation même avec une invitation ([blocages d’inscription](#sign-up-blocks)).
-- Avec un plugin configuré pour le point de décision [`signup.check`](decision-hooks.md#sign-ups), une inscription sans invitation est aussi examinée par ce plugin après le CAPTCHA et les blocages, et il peut la mettre en attente d’approbation ou la refuser.
+- Un blocage d’inscription qui exige l’approbation garde une inscription en attente d’approbation même avec une invitation ([blocages d’inscription](#sign-up-blocks)).
+- Avec un plugin défini pour le hook de décision [`signup.check`](decision-hooks.md#sign-ups), une inscription sans invitation est aussi examinée par ce plugin après le CAPTCHA et les blocages, qui peut la mettre en attente d’approbation ou la refuser.
 
 - Les inscriptions depuis le même réseau (adresse IP ; `/64` pour IPv6) sont limitées à 5 par 30 minutes. Au-delà, le serveur renvoie `429` avec `Retry-After`.
-- Si le nom d’utilisateur ou l’adresse e-mail est déjà pris, la page affiche une erreur sur ce champ et n’écrit rien (une invitation n’est pas consommée non plus).
-- Lorsque vous configurez des [fournisseurs de connexion externes](login-providers.md) (OpenID Connect, GitHub, Discord ou Mastodon) et laissez les nouveaux utilisateurs s’inscrire avec l’un d’eux, les pages de connexion et d’inscription affichent un bouton pour chaque fournisseur activé, libellé avec le nom d’affichage du fournisseur exactement tel que vous l’avez saisi (un fournisseur GitHub affiche « Se connecter avec GitHub », et un fournisseur Discord « Se connecter avec Discord », dans la langue du visiteur). Une personne dont le compte chez le fournisseur n’est associé à aucun utilisateur de ce serveur obtient le même formulaire d’inscription sans le champ du mot de passe, et le nouvel utilisateur se connecte uniquement avec le fournisseur. Le mode d’inscription, le code d’invitation, la raison, le CAPTCHA, les blocages d’inscription, `signup.check` et la limite par réseau s’appliquent comme sur le formulaire avec mot de passe ; en mode `closed`, ou lorsque le fournisseur n’autorise pas les inscriptions, la page de connexion indique qu’aucun compte n’est associé. Une adresse que le fournisseur marque comme vérifiée (`email_verified` ; pour GitHub, l’adresse principale lorsqu’elle est vérifiée ; pour Discord, l’adresse lorsque Discord la marque comme vérifiée) est confirmée immédiatement si l’utilisateur la conserve ; toute autre adresse, ainsi que chaque adresse d’un utilisateur qui s’inscrit avec un serveur Mastodon, qui n’en fournit aucune, est confirmée par e-mail comme ci-dessous. Une adresse e-mail qui correspond à un utilisateur existant n’associe jamais cet utilisateur : le formulaire indique que l’adresse est déjà prise. Un utilisateur avec authentification à deux facteurs saisit quand même le code après s’être connecté avec un fournisseur. Un fournisseur GitHub demande à GitHub la portée `user:email`, et aussi `read:org` lorsque vous listez des organisations autorisées ; le serveur vérifie alors à chaque connexion que l’utilisateur appartient à l’une d’elles et refuse la connexion sinon. Enregistrez `https://<host>/auth/external/<provider ID>/callback` comme URL de rappel de votre application OAuth GitHub. Un fournisseur Discord demande à Discord les portées `identify` et `email`, et aussi `guilds` lorsque vous listez des serveurs autorisés ; le serveur vérifie alors à chaque connexion que l’utilisateur appartient à l’un d’eux. Enregistrez la même URL de rappel dans votre application Discord.
-- Un utilisateur connecté associe un compte chez un fournisseur sous « Comptes associés » dans les paramètres, après confirmation par le mot de passe, une clé d’accès ou un autre compte associé, et uniquement pour les fournisseurs qui autorisent les associations. Le navigateur doit être connecté aux pages de connexion en tant que le même utilisateur ; sinon le serveur demande de se connecter d’abord. Un compte chez un fournisseur qu’un autre utilisateur a associé est refusé, et un utilisateur associe au plus un compte par fournisseur. Un utilisateur peut dissocier un compte sauf s’il s’agit du dernier moyen de se connecter (pas de mot de passe, pas de clé d’accès et pas d’autre compte associé).
-- Un utilisateur sans mot de passe et sans clés d’accès confirme les opérations qui les demandent autrement (définir un mot de passe, ajouter une clé d’accès, supprimer ou déplacer le compte, associer un autre compte) en se connectant à nouveau chez un fournisseur associé. Un fournisseur OpenID Connect est invité à authentifier à nouveau l’utilisateur (`max_age=0` et `prompt=login`), et une authentification antérieure est refusée. La confirmation fonctionne une fois, pour cette opération seulement, dans un délai de 10 minutes ; se connecter avec un compte qui n’est pas celui associé compte comme une tentative erronée, soumise à la même limite qu’un mauvais mot de passe.
-- À chaque inscription et chaque connexion, le serveur enregistre l’adresse IP du client (et, pour une connexion, le User-Agent). Les enregistrements sont supprimés automatiquement après 180 jours (les paramètres d’instance `session_origins_retention_days` et `registration_origins_retention_days`, d’au moins 90 jours). Les enregistrements d’un compte soumis à une conservation obligatoire sont gardés ([conservation et blocage des enregistrements](moderation.md#record-retention-and-holds)). Indiquez cette durée de conservation dans votre politique de confidentialité ([modèle de politique de confidentialité](privacy-policy-template.md)).
+- Si le nom d’utilisateur ou l’adresse e-mail est pris, la page affiche une erreur sur ce champ et n’écrit rien (une invitation n’est pas consommée non plus).
+- Lorsque vous configurez des [fournisseurs de connexion externes](login-providers.md) (OpenID Connect, GitHub, Discord ou Mastodon) et laissez les nouveaux utilisateurs s’inscrire avec l’un d’eux, les pages de connexion et d’inscription affichent un bouton pour chaque fournisseur activé, étiqueté avec le nom d’affichage du fournisseur exactement tel que vous l’avez saisi (un fournisseur GitHub affiche « Se connecter avec GitHub », et un fournisseur Discord « Se connecter avec Discord », dans la langue du visiteur).
+  Une personne dont le compte chez le fournisseur n’est lié à aucun utilisateur de ce serveur obtient le même formulaire d’inscription sans le champ du mot de passe, et le nouvel utilisateur se connecte uniquement avec le fournisseur.
+  Le mode d’inscription, le code d’invitation, le motif, le CAPTCHA, les blocages d’inscription, `signup.check` et la limite par réseau s’appliquent comme sur le formulaire à mot de passe ; en mode `closed`, ou lorsque le fournisseur n’autorise pas les inscriptions, la page de connexion indique qu’aucun compte n’est lié.
+  Une adresse que le fournisseur marque comme vérifiée (`email_verified` ; pour GitHub, l’adresse principale lorsqu’elle est vérifiée ; pour Discord, l’adresse lorsque Discord la marque comme vérifiée) est confirmée aussitôt si l’utilisateur la conserve ; toute autre adresse, et toute adresse d’un utilisateur qui s’inscrit avec un serveur Mastodon, qui n’en fournit aucune, est confirmée par e-mail comme ci-dessous.
+  Une adresse e-mail qui correspond à un utilisateur existant ne lie jamais cet utilisateur : le formulaire indique que l’adresse est prise.
+  Un utilisateur avec l’authentification à deux facteurs saisit quand même le code après s’être connecté avec un fournisseur.
+  Un fournisseur GitHub demande à GitHub la portée `user:email`, et aussi `read:org` lorsque vous listez des organisations autorisées ; le serveur vérifie alors à chaque connexion que l’utilisateur appartient à l’une d’elles et refuse sinon la connexion. Enregistrez `https://<host>/auth/external/<provider ID>/callback` comme URL de rappel de votre application OAuth GitHub.
+  Un fournisseur Discord demande à Discord les portées `identify` et `email`, et aussi `guilds` lorsque vous listez des serveurs autorisés ; le serveur vérifie alors à chaque connexion que l’utilisateur appartient à l’un d’eux. Enregistrez la même URL de rappel dans votre application Discord.
+- Un utilisateur connecté lie un compte chez un fournisseur sous « Comptes liés » dans les paramètres, après avoir confirmé avec le mot de passe, une clé d’accès ou un autre compte lié, et uniquement pour les fournisseurs qui autorisent les liaisons.
+  Le navigateur doit être connecté aux pages de connexion en tant que le même utilisateur ; sinon le serveur demande de se connecter d’abord.
+  Un compte chez un fournisseur qu’un autre utilisateur lie est refusé, et un utilisateur lie au plus un compte par fournisseur.
+  Un utilisateur peut délier un compte, sauf s’il s’agit du dernier moyen de se connecter (ni mot de passe, ni clé d’accès, ni autre compte lié).
+- Un utilisateur sans mot de passe et sans clés d’accès confirme les opérations qui les demandent autrement (définir un mot de passe, ajouter une clé d’accès, supprimer ou déménager le compte, lier un autre compte) en se reconnectant chez un fournisseur lié.
+  Un fournisseur OpenID Connect est invité à authentifier de nouveau l’utilisateur (`max_age=0` et `prompt=login`), et une authentification antérieure est refusée.
+  La confirmation ne fonctionne qu’une fois, pour cette opération seulement, dans les 10 minutes ; se connecter avec un compte qui n’est pas celui qui est lié compte comme une tentative erronée, avec la même limite qu’un mot de passe erroné.
+- À chaque inscription et connexion, le serveur enregistre l’adresse IP du client (et, pour la connexion, le User-Agent). Les enregistrements sont supprimés automatiquement après 180 jours
+  (les paramètres d’instance `session_origins_retention_days` et `registration_origins_retention_days`, au moins 90 jours). Les enregistrements d’un compte soumis à une conservation légale sont gardés ([conservation des enregistrements et gels](moderation.md#record-retention-and-holds)).
+  Indiquez cette durée de conservation dans votre politique de confidentialité ([modèle de politique de confidentialité](privacy-policy-template.md)).
 
 <!-- source: when-a-user-can-use-the-app 317d6d8b7688 -->
 ## Quand un utilisateur peut utiliser l’application
@@ -81,10 +100,10 @@ Tant que le paramètre d’instance `login_providers_only` s’applique, les lie
 - Un utilisateur connecté peut changer le mot de passe sous « Mot de passe » dans les paramètres en saisissant le mot de passe actuel (les saisies erronées sont limitées à 5 par heure et par utilisateur).
 - Une réinitialisation ou un changement révoque les autres sessions et les jetons d’application de l’utilisateur (un changement depuis les paramètres ne conserve que l’application qui a fait le changement). Les clés d’accès et l’authentification à deux facteurs restent. Une connexion qui attend son code à deux facteurs, et une autorisation d’application pas encore terminée, cessent aussi de fonctionner : l’utilisateur les recommence. Avec `mail = smtp`, le serveur envoie aussi un e-mail à l’utilisateur pour indiquer que le mot de passe a changé.
 
-<!-- source: invite-codes 441b486504dd -->
+<!-- source: invite-codes 4d49dd1f0927 -->
 ## Codes d’invitation
 
-Les invitations fonctionnent dans les modes `open`, `approval` et `invite`. Les invitations du personnel se créent avec la CLI, les écrans de modération et l’API d’administration ci-dessous ; les membres peuvent aussi créer leurs propres invitations ([invitations des membres](#member-invites)).
+Les invitations fonctionnent dans les modes `open`, `approval` et `invite`. Les invitations du personnel se font avec la CLI, les écrans de modération et l’API d’administration ci-dessous ; les membres peuvent aussi créer leurs propres invitations ([invitations des membres](#member-invites)).
 En mode `closed`, aucune invitation ne peut être créée et aucune ne fonctionne.
 
 ```sh
@@ -95,47 +114,57 @@ my invite list                            # newest first; states: usable / revok
 my invite revoke <code>
 ```
 
-- `create` affiche le code (16 caractères) et le lien vers la page d’inscription avec le code déjà renseigné (`https://<host>/auth/sign_up?invite=<code>`).
+- `create` affiche le code (16 caractères) et le lien vers la page d’inscription avec le code rempli (`https://<host>/auth/sign_up?invite=<code>`).
 - Les codes sont comparés sans tenir compte de la casse, des espaces et des tirets.
 - Même lorsque plusieurs personnes s’inscrivent en même temps, un code n’est jamais utilisé au-delà de sa limite (une contrainte d’unicité sur `invite_redemptions`).
 - Un code révoqué, expiré ou épuisé donne la même erreur (une invitation inutilisable).
-- Outre la CLI, vous pouvez créer, lister et révoquer des invitations dans les écrans de modération du client web (« Invitations », `/moderation/invites`) et via l’API cliente (`GET` / `POST /api/v1/admin/invites` et `POST /api/v1/admin/invites/{id}/revoke`). Les deux exigent la permission de rôle `manage_invites` (le rôle intégré `moderator` ne l’a pas ; pour déléguer cette tâche, créez donc un rôle avec cette permission et attribuez-le).
-  Un service qui distribue lui-même des invitations appelle la même API avec un jeton du périmètre `admin:manage_invites` ([laisser un autre service utiliser l’API d’administration](moderation.md#letting-another-service-use-the-admin-api)).
+- Outre la CLI, vous pouvez créer, lister et révoquer des invitations dans les écrans de modération du client web (« Invitations », `/moderation/invites`) et via l’API cliente
+  (`GET` / `POST /api/v1/admin/invites` et `POST /api/v1/admin/invites/{id}/revoke`). Les deux exigent la permission de rôle `manage_invites`
+  (le `moderator` intégré ne l’a pas ; pour la déléguer, créez un rôle avec cette permission et attribuez-le).
+  Un service qui distribue lui-même des invitations appelle la même API avec un jeton de portée `admin:manage_invites` ([laisser un autre service utiliser l’API d’administration](moderation.md#letting-another-service-use-the-admin-api)).
   « Créer une invitation » dans la liste ouvre le formulaire (`/moderation/invites/new`), qui affiche le code et le lien d’inscription de la nouvelle invitation.
-  La liste permet de copier le lien d’une invitation utilisable et de la révoquer.
-- La liste affiche chaque invitation, celles du personnel et celles des membres, avec la personne qui l’a créée (`created_by`) et la manière (`creator_kind` : `staff` ou `member`). Les détenteurs de `manage_invites` peuvent révoquer n’importe laquelle d’entre elles.
-- La page d’examen du compte dans les écrans de modération (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) affiche l’invitation avec laquelle le compte s’est inscrit et qui l’a créée, c’est-à-dire la personne qui a invité l’utilisateur.
-- Créer et révoquer une invitation est enregistré dans le journal d’audit (`invite_created`, `invite_revoked`) depuis l’écran, l’API et la CLI de la même façon. Le nom de la cible est constitué des 4 premiers caractères du code (`ABCD…`) ; le code complet n’est pas copié dans le journal d’audit.
-  Révoquer une invitation déjà révoquée ne change rien ; ce n’est donc pas enregistré.
+  La liste affiche le code de chaque invitation, qui l’a créée, combien de personnes se sont inscrites avec elle, sa fin et son état ; sélectionnez des invitations et choisissez « Révoquer », qui demande d’abord confirmation.
+- La liste affiche chaque invitation, celles du personnel et celles des membres, avec qui l’a créée (`created_by`) et comment (`creator_kind` : `staff` ou `member`). Les titulaires de `manage_invites` peuvent révoquer n’importe laquelle.
+- La page Examen du compte dans les écrans de modération (`GET /api/v1/admin/accounts/{id}`, permission `manage_accounts`) affiche l’invitation avec laquelle le compte s’est inscrit et qui l’a créée, la personne qui a invité l’utilisateur.
+- La création et la révocation d’une invitation sont enregistrées dans le journal d’audit (`invite_created`, `invite_revoked`) depuis l’écran, l’API et la CLI indifféremment. Le nom de la cible est constitué des 4 premiers caractères du code (`ABCD…`) ; le code complet n’est pas copié dans le journal d’audit.
+  Révoquer une invitation déjà révoquée ne change rien, et n’est donc pas enregistré.
 
-<!-- source: member-invites db3bff74ed69 -->
+<!-- source: member-invites 85edfb5c0806 -->
 ## Invitations des membres
 
-Les membres peuvent créer leurs propres invitations, en plus de l’équipe. Qui peut le faire est défini par le paramètre d’instance `invite_creators` ([paramètres d’instance](instance-settings.md)) :
+Les membres peuvent créer leurs propres invitations, en plus du personnel.
+Qui le peut est défini par le paramètre d’instance `invite_creators` ([paramètres de l’instance](instance-settings.md)) :
 
-- `permitted` (par défaut) : uniquement les utilisateurs dont les rôles ont la permission `create_invites`. Seul le rôle intégré `admin` l’a par défaut. Vous pouvez l’ajouter à un rôle que vous attribuez à la main, ou au rôle d’une [formule de soutien](supporters.md), afin que les personnes qui soutiennent le serveur puissent inviter.
-- `everyone` : chaque utilisateur local connecté.
+- `permitted` (par défaut) : uniquement les utilisateurs dont les rôles ont la permission `create_invites`. Seul le rôle intégré `admin` l’a par défaut. Vous pouvez l’ajouter à un rôle que vous attribuez à la main, ou au rôle d’une [formule de soutien](supporters.md), afin que les soutiens puissent inviter des personnes.
+- `everyone` : tout utilisateur local connecté.
 
-Dans les deux cas, un utilisateur dont le compte est suspendu ou limité, ou dont l’inscription n’est pas approuvée, ne peut pas créer d’invitations, et personne ne le peut tant que le mode d’inscription est `closed`. Les détenteurs de `manage_invites` continuent de créer des invitations de l’équipe, auxquelles aucune des limites ci-dessous ne s’applique.
+Dans les deux cas, un utilisateur dont le compte est suspendu ou limité, ou dont l’inscription n’est pas approuvée, ne peut pas créer d’invitations, et personne ne le peut tant que le mode d’inscription est `closed`.
+Les titulaires de `manage_invites` continuent de faire des invitations du personnel, auxquelles aucune des limites ci-dessous ne s’applique.
 
-Un membre crée, liste, copie et révoque ses propres invitations dans les paramètres du client web (« Vos invitations », `/settings/invites`), ou via l’API cliente (`GET` / `POST /api/v1/invites` et `POST /api/v1/invites/{id}/revoke`). Les paramètres n’affichent la page que pour un utilisateur qui peut créer des invitations actuellement ; un utilisateur qui ne le peut plus l’ouvre quand même depuis son adresse pour copier et révoquer les invitations qu’il a créées. La liste indique, pour chaque invitation, si elle est utilisable, révoquée, expirée, épuisée, ou inutilisable parce que son créateur ne peut plus inviter.
+Un membre crée, liste et révoque ses propres invitations, et copie le lien d’une invitation utilisable, dans les paramètres du client web (« Invitations », `/settings/invites`), ou via l’API cliente (`GET` / `POST /api/v1/invites` et `POST /api/v1/invites/{id}/revoke`).
+Les paramètres ne listent la page que pour un utilisateur qui peut créer des invitations maintenant ; un utilisateur qui ne le peut pas l’ouvre quand même depuis son adresse, où elle indique pourquoi, afin de révoquer les invitations qu’il a créées.
+La liste indique, pour chaque invitation, si elle est utilisable, révoquée, expirée, épuisée, ou inutilisable tant que son créateur ne peut pas créer d’invitations.
 
-Les limites, qui sont aussi des paramètres d’instance, ne s’appliquent qu’aux invitations des membres. Les administrateurs les modifient, ainsi que `invite_creators`, sous « Invitations des membres » sur la page « Inscription » des paramètres du serveur (`/admin/settings/registration`) :
+Les limites, également des paramètres d’instance, ne s’appliquent qu’aux invitations des membres.
+Les administrateurs les modifient, ainsi que `invite_creators`, sous « Invitations des membres » sur la page « Inscription » des paramètres du serveur (`/admin/settings/registration`) :
 
 | Paramètre | Signification | Par défaut | Plage |
 | --- | --- | --- | --- |
-| `member_invite_max_active` | Combien d’invitations utilisables (ni révoquées, ni expirées, ni épuisées) un membre peut détenir en même temps | `5` | 0-100 (0 : les membres ne peuvent pas créer d’invitations) |
+| `member_invite_max_active` | Combien d’invitations utilisables (ni révoquées, ni expirées, ni épuisées) un membre peut détenir à la fois | `5` | 0-100 (0 : les membres ne peuvent pas créer d’invitations) |
 | `member_invite_max_uses` | Combien de personnes peuvent s’inscrire avec une même invitation | `10` | 1-1 000 |
 | `member_invite_max_lifetime_seconds` | Pendant combien de temps une invitation peut fonctionner, en secondes | `2592000` (30 jours) | 3 600 (1 heure) à 31 536 000 (365 jours) |
 
-- Un membre choisit le nombre d’utilisations et la durée de vie dans les limites ; sans choix, une invitation permet 1 inscription et fonctionne pendant 7 jours (ou moins, lorsqu’une limite est plus basse). Une invitation sans limite d’utilisations ou de durée ne peut pas être créée.
-- Abaisser une limite ne modifie pas les invitations existantes ; elle s’applique à la prochaine invitation créée.
-- Chaque inscription avec l’invitation d’un membre vérifie que son créateur peut encore créer des invitations. Lorsque le créateur a perdu `create_invites` (par exemple, parce que sa formule a pris fin), que `invite_creators` est revenu à `permitted`, ou que le compte a été suspendu, limité ou supprimé, l’invitation ne fonctionne pas et la page d’inscription indique qu’elle n’est pas valide. L’invitation elle-même n’est pas modifiée, elle refonctionne donc, avant son expiration, lorsque le créateur peut de nouveau inviter.
-- La création et la révocation par un membre sont consignées dans le journal d’audit sous les noms `invite_created` et `invite_revoked`, avec le membre comme acteur.
+- Un membre choisit le nombre d’utilisations et la durée de vie dans les limites ; sans choix, une invitation permet 1 inscription et fonctionne pendant 7 jours (ou moins, lorsqu’une limite est plus basse). Une invitation sans limite d’utilisations ni de durée ne peut pas être créée.
+- Abaisser une limite ne change pas les invitations existantes ; elle s’applique à la prochaine invitation créée.
+- Chaque inscription avec l’invitation d’un membre vérifie que son créateur peut encore créer des invitations. Lorsque le créateur a perdu `create_invites` (par exemple, sa formule a pris fin), que `invite_creators` est revenu à `permitted`, ou que le compte a été suspendu, limité ou supprimé, l’invitation ne fonctionne pas et la page d’inscription indique qu’elle n’est pas valide.
+  L’invitation elle-même n’est pas modifiée ; elle fonctionne donc de nouveau, dans la limite de son expiration, lorsque le créateur peut de nouveau inviter.
+- La création et la révocation d’un membre sont enregistrées dans le journal d’audit sous `invite_created` et `invite_revoked`, avec le membre comme acteur.
 
-En mode `approval`, une invitation utilisable approuve immédiatement le nouvel utilisateur : la personne qui l’a invité tient lieu d’examen par les modérateurs. Avec `invite_creators = everyone`, chaque utilisateur peut donc faire entrer des gens sans examen, ce qui affaiblit le mode d’approbation. Si vous comptez sur l’examen, gardez `permitted` et ne donnez `create_invites` qu’à des personnes de confiance, ou gardez `member_invite_max_active` et `member_invite_max_uses` bas.
+En mode `approval`, une invitation utilisable approuve aussitôt le nouvel utilisateur : la personne qui l’a invité tient lieu d’examen par les modérateurs.
+Avec `invite_creators = everyone`, chaque utilisateur peut donc faire entrer des personnes sans examen, ce qui affaiblit le mode d’approbation.
+Si vous comptez sur l’examen, conservez `permitted` et ne donnez `create_invites` qu’à des personnes de confiance, ou maintenez `member_invite_max_active` et `member_invite_max_uses` à des valeurs basses.
 
-<!-- source: approving-and-rejecting e68676f67aab -->
+<!-- source: approving-and-rejecting 34e7c6193247 -->
 ## Approuver et rejeter
 
 ```sh
@@ -146,19 +175,20 @@ my registration reject -note "spam" bob
 ```
 
 - L’argument est le nom d’utilisateur d’un compte local (le `@` initial peut être omis).
-- Seules les inscriptions en attente d’approbation peuvent être tranchées. Pour une inscription déjà tranchée, ou un utilisateur créé sans passer par la page d’inscription (`my admin create`), la commande ne change rien et se termine avec le code 1.
+- Seules les inscriptions en attente d’approbation peuvent faire l’objet d’une décision. Pour une inscription déjà décidée, ou un utilisateur créé sans la page d’inscription (`my admin create`), la commande ne change rien et se termine avec le code 1.
 - Le code de sortie 2 signifie un argument erroné.
 
 Les mêmes décisions peuvent être prises depuis les écrans d’administration (l’API cliente). Toutes exigent la permission `manage_accounts`.
+Dans le client web, Modération → Inscriptions (`/moderation/registrations`) liste les inscriptions en attente d’approbation avec leur adresse e-mail, si elle est confirmée et le motif de l’inscription ; sélectionnez-les et choisissez « Approuver » ou « Rejeter », qui demande d’abord confirmation, avec une note pour les modérateurs. Un serveur d’une seule personne ne l’affiche pas.
 
 | Opération | Ce qu’elle fait |
 | --- | --- |
-| `GET /api/v1/admin/registrations` | Les inscriptions en attente d’approbation (attente la plus longue en premier). Renvoie l’ID de l’inscription, la raison de l’inscription, l’adresse e-mail et si elle est confirmée, ainsi que le compte local |
-| `POST /api/v1/admin/registrations/{id}/approve` | Approuve. Le corps `{"note": "..."}` est facultatif. La réponse affiche la note sous `decision_note`, et une réponse sur une inscription déjà tranchée ne contient pas d’adresse e-mail |
+| `GET /api/v1/admin/registrations` | Les inscriptions en attente d’approbation (attente la plus longue d’abord). Renvoie l’ID de l’inscription, le motif de l’inscription, l’adresse e-mail et si elle est confirmée, et le compte local |
+| `POST /api/v1/admin/registrations/{id}/approve` | Approuve. Le corps `{"note": "..."}` est facultatif. La réponse affiche la note sous `decision_note`, et une réponse sur une inscription déjà décidée n’a pas d’adresse e-mail |
 | `POST /api/v1/admin/registrations/{id}/reject` | Rejette. Le corps est le même que pour `approve` |
 
-- C’est le même cas d’usage que la CLI, et il consigne la décision dans `registration_decisions` et dans le journal d’audit (`registration_approved`, `registration_rejected`). L’acteur d’une décision par la CLI est `cli` ; l’acteur d’une décision par l’API est le modérateur qui a tranché.
-- Trancher une inscription déjà tranchée ne change rien et renvoie l’état actuel (si deux personnes tranchent en même temps, une seule décision est consignée). Un utilisateur créé sans passer par la page d’inscription donne 404.
+- C’est le même cas d’usage que la CLI, et il enregistre la décision dans `registration_decisions` et dans le journal d’audit (`registration_approved`, `registration_rejected`). L’acteur d’une décision par CLI est `cli` ; l’acteur d’une décision par API est le modérateur qui a décidé.
+- Décider d’une inscription déjà décidée ne change rien et renvoie l’état actuel (si deux personnes décident en même temps, une seule décision est enregistrée). Un utilisateur créé sans la page d’inscription donne 404.
 
 <!-- source: sign-up-blocks b70eb18cd52f -->
 ## Blocages d’inscription

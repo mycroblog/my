@@ -130,28 +130,28 @@ Ce que fait chaque réponse à un téléversement :
 La tâche de traitement attend le plugin jusqu’à `plugin_media_check_timeout` (10 secondes par défaut). Ajouter un émoji personnalisé
 d’un autre serveur ou approuver une demande d’émoji traite l’image pendant que le modérateur attend ; cette attente est donc la sienne.
 
-<!-- source: sign-ups be7ddf1149a9 -->
+<!-- source: sign-ups c67c61b5e627 -->
 ## Inscriptions
 
 `signup.check` s’exécute sur les inscriptions depuis la page d’inscription et via un fournisseur de connexion, après le CAPTCHA et la
-[liste de blocage des inscriptions](moderation.md), de sorte qu’une demande que l’un des deux refuse n’atteint jamais le plugin. Une inscription avec un
+[liste de blocage des inscriptions](moderation.md), si bien qu’une demande que l’un ou l’autre refuse n’atteint jamais le plugin. Une inscription avec un
 code d’invitation ne l’appelle jamais. Il envoie l’adresse e-mail saisie par le candidat et l’adresse IP du client ; le compte
-n’existe pas encore, la clé du sujet est donc l’ID que recevrait le compte, et un candidat qui réessaie est un nouveau sujet.
+n’existe pas encore, donc la clé du sujet est l’ID que le compte recevrait, et un candidat qui réessaie est un nouveau sujet.
 
-Les réponses agissent comme celles de la liste de blocage lorsque le hook applique :
+Les réponses agissent comme celles de la liste de blocage lorsque le hook applique ses décisions :
 
-- `require_approval` laisse l’inscription en attente sous **Modération** > **Inscriptions**, comme le fait un blocage de même
-  gravité, dans tous les modes d’inscription. Approuvez-la ou rejetez-la là : annuler la décision ne modifie pas l’inscription.
-- `reject` ne fait rien tant que vous n’activez pas `hook_signup_check_reject` (**Paramètres du serveur** > **Fédération** > **Examen externe**, désactivé par
-  défaut). Tant qu’il est désactivé, un `reject` est enregistré en `observe`, puisqu’il n’arrête rien, et l’inscription se poursuit. Tant qu’il
+- `require_approval` laisse l’inscription en attente sous **Modération** > **Inscriptions**, comme le fait un blocage de même gravité,
+  dans tous les modes d’inscription. Approuvez-la ou rejetez-la à cet endroit : annuler la décision ne change pas l’inscription.
+- `reject` ne fait rien tant que vous n’avez pas activé `hook_signup_check_reject` (**Paramètres du serveur** > **Examen externe**, désactivé par
+  défaut). Tant qu’il est désactivé, un `reject` est enregistré en `observe`, puisqu’il n’arrête rien, et l’inscription continue. Lorsqu’il
   est activé, le candidat voit le même texte fixe que pour un blocage (« Ce serveur ne peut pas accepter cette inscription. »). Aucun compte n’est
-  écrit ; annuler une telle décision ne modifie donc que son enregistrement, et le candidat s’inscrit de nouveau.
+  écrit : annuler une telle décision ne change donc que son enregistrement, et le candidat s’inscrit de nouveau.
 
 Les candidats ne voient jamais le motif ni la note d’une décision.
 
-La requête du candidat attend le plugin jusqu’à `plugin_signup_check_timeout` (2 secondes par défaut ; gardez-le court, car
-une personne attend). L’attente ne fait pas partie d’une transaction de base de données. Une inscription qui échoue ensuite, par exemple pour un nom d’utilisateur
-déjà pris, conserve sa décision jusqu’à ce que la conservation la supprime.
+La requête du candidat attend le plugin pendant `plugin_signup_check_timeout` au plus (2 secondes par défaut ; gardez ce délai court, car
+une personne attend). L’attente ne fait pas partie d’une transaction de base de données. Une inscription qui échoue ensuite, par exemple pour un nom
+d’utilisateur déjà pris, conserve sa décision jusqu’à ce que la rétention la supprime.
 
 <!-- source: profiles-from-other-servers e324990a50b1 -->
 ## Profils d’autres serveurs
@@ -190,38 +190,36 @@ et jusqu’à ce qu’il la renvoie.
 Annuler un `drop` de `inbound.actor` récupère de nouveau le compte auprès de son serveur, qui stocke le profil qu’il sert maintenant
 sans appeler le plugin lorsque c’est celui qui avait été abandonné, et interroge à son sujet lorsqu’il a changé depuis.
 
-<!-- source: local-posts 37ba27537191 -->
+<!-- source: local-posts a7f29a329b2f -->
 ## Publications locales
 
-`local.status` examine une publication d’un compte de votre serveur avant que le serveur ne la crée, et chaque modification de celle-ci avant que le
-serveur ne la stocke. L’auteur attend le plugin ;
-l’attente est donc courte : `plugin_local_status_timeout` (1 seconde par défaut). Un échec, un délai dépassé ou un disjoncteur ouvert laisse toujours passer la
-publication (`pass` est son seul comportement en cas d’échec), et l’attente ne fait pas partie d’une transaction de base de données.
+`local.status` examine une publication d’un compte de votre serveur avant que le serveur la crée, et chaque modification d’une publication avant que le
+serveur la stocke. L’auteur attend le plugin ; l’attente est donc courte : `plugin_local_status_timeout` (1 seconde par défaut). Un échec, un délai dépassé ou un disjoncteur ouvert laisse toujours
+passer la publication (`pass` est son seul comportement en cas d’échec), et l’attente ne fait pas partie d’une transaction de base de données.
 
 Ce qu’il envoie et quand :
 
-- Uniquement les publications des comptes plus jeunes que `hook_local_status_account_age_days` (**Paramètres du serveur** > **Fédération** >
+- Uniquement les publications des comptes plus récents que `hook_local_status_account_age_days` (**Paramètres du serveur** >
   **Examen externe**, 7 jours par défaut ; `0` envoie les publications de tous les comptes). Les nouveaux comptes sont la source de la plupart des spams, et les comptes
   établis ne sont pas envoyés.
 - Uniquement les publications `public`, `local` et `unlisted`. Les publications `private` et `direct` ne sont jamais envoyées.
-- Le texte tel que l’auteur l’a saisi et tel que le serveur l’affiche, l’avertissement de contenu, la langue, le fait qu’elle soit marquée
-  comme sensible, les descriptions d’images, les options du sondage, les hashtags, le nombre de comptes qu’elle mentionne, l’adresse que la publication
+- Le texte tel que l’auteur l’a saisi et tel que le serveur le rend, l’avertissement de contenu, la langue, le caractère sensible éventuel, les descriptions d’images, les options du sondage, les hashtags, le nombre de comptes qu’elle mentionne, l’adresse que la publication
   recevrait, la publication à laquelle elle répond ou qu’elle cite (par adresse uniquement), l’adresse et le nom d’utilisateur de l’auteur, et la date de
   création du compte. Aucun média n’est envoyé.
-- La clé du sujet est l’ID que recevrait la publication. Renvoyer une publication avec le même `Idempotency-Key` renvoie la publication
-  qui a été créée, sans appeler le plugin ; une nouvelle tentative est un nouveau sujet.
-- Une modification est envoyée de la même manière, avec la publication telle que modifiée, aux mêmes comptes : ceux qui sont dans
+- La clé du sujet est l’ID que la publication recevrait. Renvoyer une publication avec le même `Idempotency-Key` renvoie la publication
+  créée, sans appeler le plugin ; une nouvelle tentative est un nouveau sujet.
+- Une modification est envoyée de la même façon, avec la publication telle que modifiée, pour les mêmes comptes : ceux qui sont dans la limite de
   `hook_local_status_account_age_days`. Sa clé est l’ID de la publication, `#`, et l’ID de la nouvelle révision ; chaque modification est donc un
-  sujet à part entière.
-- Le démarrage d’un salon vocal publie sa première publication sans ce hook.
+  sujet à part.
+- L’ouverture d’un salon de chat vocal publie sa première publication sans ce hook.
 
-Lorsqu’il applique, `reject` refuse la publication et rien n’est stocké. L’auteur voit un texte fixe (« Cette publication n’a pas été publiée. »)
+Lorsqu’il applique ses décisions, `reject` refuse la publication et rien n’est stocké. L’auteur voit un texte fixe (« Cette publication n’a pas été publiée. »)
 et un moyen de contester ; jamais le motif ni la note. `flag` laisse passer la publication et dépose un signalement à son sujet, contre son
 auteur.
 
 Sur une modification, `reject` refuse cette seule modification : la publication reste telle qu’elle était, et l’auteur voit un texte fixe (« Cette modification n’a pas été
-enregistrée. »). Une modification ne peut pas être contestée, puisque la publication est toujours là et que vos modérateurs peuvent agir dessus comme d’habitude. `flag` stocke
-la modification et dépose un signalement de la publication, et `allow` la laisse passer.
+enregistrée. »). Une modification ne peut pas être contestée, puisque la publication est toujours là pour que vos modérateurs agissent comme d’habitude. `flag` enregistre la
+modification et dépose un signalement de la publication, et `allow` la laisse passer.
 
 <!-- source: appeals 79991f552151 -->
 ### Contestations
@@ -245,36 +243,37 @@ note. Un client officiel lit l’état d’une contestation avec `GET /api/v1/ho
 Un compte qu’une contestation acceptée a retiré du hook en reste exclu jusqu’à la suppression du compte. S’il est repris plus tard,
 `local.status` ne l’examine plus.
 
-<!-- source: local-profiles dbafa1545e2a -->
+<!-- source: local-profiles 83ef61114409 -->
 ## Profils locaux
 
-`local.profile` examine une modification du profil d’un compte de votre serveur avant que le serveur ne la stocke. Le titulaire attend
+`local.profile` examine une modification du profil d’un compte de votre serveur avant que le serveur la stocke. Le titulaire attend
 le plugin ; l’attente est donc courte : `plugin_local_profile_timeout` (1 seconde par défaut). Un échec, un délai dépassé ou un
-disjoncteur ouvert laisse toujours passer la modification (`pass` est son seul comportement en cas d’échec), et l’attente ne fait pas partie d’une transaction
-de base de données.
+disjoncteur ouvert laisse toujours passer la modification (`pass` est son seul comportement en cas d’échec), et l’attente ne fait pas partie d’une
+transaction de base de données.
 
 Ce qu’il envoie et quand :
 
-- Uniquement les modifications des comptes plus jeunes que `hook_local_profile_account_age_days` (**Paramètres du serveur** > **Fédération** >
+- Uniquement les modifications des comptes plus récents que `hook_local_profile_account_age_days` (**Paramètres du serveur** >
   **Examen externe**, 7 jours par défaut ; `0` envoie celles de tous les comptes).
-- Uniquement une modification de ce que voit le hook : le nom affiché, la biographie, les champs de profil, l’avatar ou l’en-tête. Une modification
+- Uniquement une modification de ce que le hook voit : le nom d’affichage, la bio, les champs du profil, l’avatar ou l’en-tête. Une modification
   qui ne fait que verrouiller le compte ou changer ses paramètres de découverte n’est pas envoyée.
-- Le nom affiché, la biographie telle que saisie et telle que le serveur l’affiche, le nom et la valeur de chaque champ de profil (tels que saisis et
-  tels qu’affichés), le fait que la modification définisse, remplace ou supprime l’avatar ou l’en-tête, l’adresse et le nom d’utilisateur du compte,
-  et la date de création du compte. Aucune image n’est envoyée. Le profil est public ; le hook peut donc utiliser du TCP en clair.
-- La clé du sujet est l’ID du compte, `#`, et l’ID de la révision de profil que la modification stockerait ; chaque modification
-  est donc un sujet à part entière.
+- Le nom d’affichage, la bio telle que saisie et telle que le serveur la rend, le nom et la valeur de chaque champ du profil (tels que saisis et tels
+  que rendus), si la modification définit, remplace ou supprime l’avatar ou l’en-tête, l’adresse et le nom d’utilisateur du compte,
+  et la date de création du compte. Aucune image n’est envoyée. Le profil est public ; le hook peut donc utiliser le TCP simple.
+- La clé du sujet est l’ID du compte, `#`, et l’ID de la révision du profil que la modification stockerait ; chaque modification
+  est donc un sujet à part.
 
-Lorsqu’il applique, `reject` refuse cette seule modification : le profil reste tel qu’il était, et le titulaire voit un texte fixe (« Cette
+Lorsqu’il applique ses décisions, `reject` refuse cette seule modification : le profil reste tel qu’il était, et le titulaire voit un texte fixe (« Cette
 modification de votre profil n’a pas été enregistrée. »), jamais le motif ni la note. Il n’y a pas de contestation : le titulaire peut modifier le profil
-et l’enregistrer de nouveau. `flag` enregistre la modification et dépose un signalement contre le compte, qui ne nomme aucune publication ; son auteur,
-sa catégorie et son commentaire sont ceux du [signalement d’une publication](#what-inboundstatus-reviews).
+et l’enregistrer de nouveau. `flag` enregistre la modification et dépose un signalement contre le compte, qui ne nomme aucune publication ; son auteur, sa
+catégorie et son commentaire sont ceux du [signalement d’une publication](#what-inboundstatus-reviews).
 
-<!-- source: modes 6133f824d202 -->
+<!-- source: modes 712db07d039e -->
 ## Modes
 
-Chaque hook a un mode, un [paramètre du serveur](instance-settings.md) (`hook_inbound_status_mode`, etc.) que vous modifiez sous
-**Paramètres du serveur** > **Fédération** > **Examen externe**. Les modifications sont inscrites dans le journal d’audit sous `setting_changed`.
+Chaque hook a un mode, un [paramètre d’instance](instance-settings.md) (`hook_inbound_status_mode` et ainsi de suite) que vous changez sous
+**Paramètres du serveur** > **Examen externe**, qui ne propose `enforce` que lorsque le mode n’est pas `off`. Les changements sont consignés dans le journal
+d’audit sous `setting_changed`.
 
 | Mode | Ce qu’il fait |
 | --- | --- |
@@ -282,7 +281,7 @@ Chaque hook a un mode, un [paramètre du serveur](instance-settings.md) (`hook_i
 | `observe` | Enregistre le verdict et n’agit sur rien. C’est la valeur par défaut de chaque hook. |
 | `enforce` | Agit selon le verdict. |
 
-Un hook ne passe de `off` à `enforce` qu’en passant par `observe`.
+Un hook ne passe de `off` à `enforce` que par `observe`.
 
 <!-- source: when-the-plugin-fails 7c987d71eb78 -->
 ## Lorsque le plugin échoue

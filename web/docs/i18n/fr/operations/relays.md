@@ -3,10 +3,14 @@
 
 Un relais est un serveur qui transmet les publications publiques des serveurs qui l’ont rejoint aux autres serveurs inscrits. Même une petite instance qui a peu d’abonnements obtient un fil fédéré et des fils de hashtags bien remplies, et ses propres publications publiques portent plus loin. Une instance qui ne rejoint aucun relais ne gagne ni lignes ni tâches.
 
-<!-- source: join-a-relay 147b07e65534 -->
+<!-- source: join-a-relay 5c97a6145f1b -->
 ## Rejoindre un relais
 
-Utilisez « Relais » dans la zone d’administration (`/admin/relays`). Il faut la permission `manage_settings`, que le rôle intégré `admin` possède. « Rejoindre un relais » ouvre le formulaire qui en enregistre un. La liste affiche l’état de chaque relais avec un bouton pour le quitter ou le rejoindre à nouveau ; choisir un relais ouvre sa page, avec ses adresses, ce qu’il a apporté durant les dernières 24 heures et le bouton qui le supprime. La CLI est `my admin relay` (`my admin relay -help`) :
+Utilisez « Relais » dans la zone d’administration (`/admin/relays`). Il exige la permission `manage_settings`, que le rôle intégré `admin` possède.
+« Rejoindre un relais » ouvre le formulaire qui en enregistre un. La liste affiche l’état de chaque relais et ce qu’il a apporté au cours des dernières 24
+heures ; choisir un relais ouvre sa page, avec ses adresses et le bouton qui le quitte, ou, une fois qu’il a été quitté ou qu’il a rejeté
+le serveur, les boutons qui le rejoignent de nouveau et le suppriment. Quitter et supprimer demandent d’abord confirmation.
+La CLI est `my admin relay` (`my admin relay -help`) :
 
 ```sh
 my admin relay list                                               # every relay, its state, and what it brought in during the last 24 hours
@@ -17,13 +21,15 @@ my admin relay delete <relay id>                                  # delete a rel
 ```
 
 1. Enregistrez l’URL du relais. Il existe deux protocoles :
-   - **Mastodon** : l’**URL de la boîte de réception** du relais (par exemple `https://relay.example/inbox`). De nombreux relais, dont pub-relay et Activity-Relay, l’acceptent.
-   - **LitePub** : l’**URL de l’acteur** du relais (par exemple `https://relay.example/relay`). C’est le protocole des relais Pleroma et Akkoma.
+   - **Mastodon** : l’**URL de la boîte de réception** du relais (comme `https://relay.example/inbox`). De nombreux relais, dont pub-relay et Activity-Relay, l’acceptent.
+   - **LitePub** : l’**URL de l’acteur** du relais (comme `https://relay.example/relay`). C’est le protocole des relais Pleroma et Akkoma.
    Si vous ne choisissez pas de protocole (« Détecter automatiquement »), le serveur utilise LitePub lorsque l’URL sert un document d’acteur, et Mastodon sinon.
-2. Après l’enregistrement, l’acteur de l’instance envoie un `Follow` au relais, et l’état est « En attente de la réponse du relais » (`pending`). Lorsque le relais accepte, l’état devient « Rejoint » (`accepted`) ; lorsqu’il refuse, « Rejeté par le relais » (`rejected`). Certains relais mettent du temps à répondre, car un opérateur approuve chaque demande à la main.
-3. Si vous désactivez « Recevoir les publications du relais » lors de l’enregistrement, le serveur ne fait qu’envoyer. Pour changer cela, quittez le relais et enregistrez-le à nouveau.
+2. Après l’enregistrement, l’acteur de l’instance envoie un `Follow` au relais, et l’état est « En attente de la réponse du relais » (`pending`).
+   Lorsque le relais accepte, l’état devient « Rejoint » (`accepted`) ; lorsqu’il refuse, « Rejeté par le relais » (`rejected`). Certains relais mettent du temps, car un opérateur approuve chaque demande à la main.
+3. Si vous désactivez « Recevoir les publications du relais » lors de l’enregistrement, le serveur ne fait qu’envoyer. Pour changer cela, quittez le relais et enregistrez-le de nouveau.
 
-Vous ne pouvez pas enregistrer le relais d’un serveur soumis à une action de domaine (`suspend`). Si le serveur d’un relais rejoint est suspendu par la suite, l’état ne change pas, mais rien n’est envoyé à ce relais ni reçu de lui, et la zone d’administration affiche un avertissement.
+Vous ne pouvez pas enregistrer le relais d’un serveur soumis à une action de domaine (`suspend`). Si le serveur d’un relais rejoint est suspendu par la suite, l’état ne change pas,
+mais rien n’est envoyé à ce relais ni reçu de lui, et la zone d’administration l’indique dans l’état du relais.
 
 <!-- source: what-the-server-sends 1db52c508f9c -->
 ## Ce que le serveur envoie

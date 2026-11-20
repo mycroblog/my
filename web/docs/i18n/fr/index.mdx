@@ -1,12 +1,12 @@
 ---
-# source: b4ce098ad39e
+# source: fca949a4a2de
 title: mycroblog
 description: Un microblog pour le fédivers qui démarre petit et grandit avec votre communauté.
 template: splash
 hero:
   tagline: |
     <p><strong>mycroblog</strong> — un microblog pour le fédivers qui démarre petit et grandit avec votre communauté.</p>
-    <p><code>my</code>, le serveur de mycroblog, parle ActivityPub et est écrit en Go. Démarrez sur une petite machine ou dans un conteneur qui descend à zéro, avec SQLite. Quand votre communauté grandit, passez à PostgreSQL, à une file de tâches, à un broker de flux et à des processus web et worker séparés : même code, mêmes données.</p>
+    <p><code>my</code>, le serveur de mycroblog, parle ActivityPub et est écrit en Go. Démarrez sur une petite machine ou dans un conteneur qui descend à zéro, avec SQLite. Quand votre communauté grandit, passez à PostgreSQL, à une file de jobs, à un courtier de flux et à des processus web et worker séparés : même code, mêmes données.</p>
   image:
     light: ../../assets/wordmark-light.svg
     dark: ../../assets/wordmark-dark.svg
@@ -31,38 +31,38 @@ import Screenshot from "../../components/Screenshot.astro";
 
 <Screenshot
   name="home"
-  alt="Le fil d’accueil de mycroblog : une publication qui cite deux photos d’un lac et d’un coucher de soleil, avec des réactions en émojis personnalisés, puis une publication en japonais sur le pain, à côté de la navigation, des dernières notifications et des informations du serveur."
+  alt="Le fil d’accueil de mycroblog : une publication boostée sur la traduction de blagues, une publication de bienvenue en japonais et une publication sur le levain avec la photo du pain, à côté de la navigation, des annonces du serveur, de ses prochains événements et des dernières notifications."
   eager
 />
 
-## Ce que ça fait
+## Ce qu'il fait
 
 <CardGrid>
-  <Card title="Démarrer petit, grandir ensuite" icon="rocket">
+  <Card title="Démarrer petit, monter en charge" icon="rocket">
     Un seul binaire et SQLite sur une VM à 5 $, ou un conteneur qui descend à zéro. Évoluez vers PostgreSQL, Cloud Tasks, Valkey,
     Pub/Sub ou SNS, S3 ou GCS derrière un CDN, et autant de processus web et worker que nécessaire.
   </Card>
-  <Card title="Fédéré" icon="random">
-    Les abonnements, les publications, les citations et les réactions en émojis personnalisés circulent entre votre serveur et Mastodon, Misskey, GoToSocial et d’autres.
-    La visibilité « Ce serveur » garde une publication au sein de votre serveur et de vos abonnés.
+  <Card title="Fédère" icon="random">
+    Les abonnements, les publications, les citations et les réactions par émoji personnalisé circulent vers et depuis Mastodon, Misskey, GoToSocial et d’autres.
+    Les publications « Voisins » restent dans votre serveur et chez vos abonnés.
   </Card>
   <Card title="Soutiens et comptes ouverts" icon="heart">
-    Des formules payantes via Stripe ou PAY.JP qui accordent des rôles, des badges et le droit d’ajouter des émojis personnalisés. Consignez ce que
-    coûte le serveur, importez automatiquement les frais d’AWS, de Google Cloud et de Cloudflare, et publiez les coûts et les revenus auprès de votre communauté.
+    Des formules payantes via Stripe ou PAY.JP qui accordent des rôles, des badges et le droit d’ajouter des émojis personnalisés. Enregistrez ce que le
+    serveur coûte, importez automatiquement les frais d’AWS, de Google Cloud et de Cloudflare, et publiez les coûts et les revenus auprès de votre communauté.
   </Card>
   <Card title="Salons vocaux" icon="comment">
-    Des salons audio en direct pour les membres de votre serveur, avec hôtes, intervenants, invitations et réactions. En pair à pair pour
-    les petits salons, avec LiveKit ou Sora pour les grands.
+    Des salons audio en direct pour les personnes de votre serveur, avec hôtes, intervenants, invitations et réactions. En pair à pair pour
+    les petits salons, LiveKit ou Sora pour les grands.
   </Card>
   <Card title="Une application web pour tout le monde" icon="laptop">
-    Une application web installable avec notifications push et passkeys, traduite dès le premier jour.
+    Une application web installable avec notifications push et clés d’accès, traduite dès le premier jour.
   </Card>
   <Card title="Modération intégrée" icon="approve-check-circle">
-    Des signalements avec contestation, des blocages de domaines, un journal d’audit et des hooks de décision qui permettent à votre propre programme d’examiner les publications et
-    les inscriptions avant qu’elles ne soient acceptées.
+    Des signalements avec contestations, des blocages de domaines, un journal d’audit, et des hooks de décision qui laissent votre propre programme examiner les publications et
+    les inscriptions avant qu’elles soient acceptées.
   </Card>
-  <Card title="À étendre" icon="puzzle">
-    Des plugins via un protocole versionné, des webhooks du serveur, des applications OAuth, et des bibliothèques client et bot pour Go et TypeScript.
+  <Card title="Étendez-le" icon="puzzle">
+    Des plugins via un protocole versionné, des webhooks du serveur, des applications OAuth, et des bibliothèques clientes et de bots pour Go et TypeScript.
     La traduction des publications passe par un plugin de votre choix.
   </Card>
 </CardGrid>
@@ -72,23 +72,23 @@ import Screenshot from "../../components/Screenshot.astro";
 <CardGrid>
   <Screenshot
     name="post"
-    caption="Fédéré"
-    alt="Une publication qui cite la publication d’un autre serveur avec deux photos, avec ses réponses, ses boosts, ses favoris et ses réactions en émojis personnalisés."
+    caption="Fédère"
+    alt="Une publication en japonais avec la photo de crêtes de montagnes à l’aube, avec ses réponses, ses boosts, ses favoris et ses réactions par émoji personnalisé, et les personnes qui ont réagi."
   />
   <Screenshot
     name="supporters"
     caption="Soutiens et comptes ouverts"
-    alt="La page des soutiens d’un serveur : les membres de chaque formule payante, Coffee et A whole loaf of sourdough every month, avec leurs avatars."
+    alt="La page des soutiens d’un serveur : deux formules mensuelles, Café et Une miche entière, avec leurs prix annuels, et les soutiens qui ont choisi d’être listés sous chaque formule, avec leurs avatars."
   />
   <Screenshot
     name="voice-room"
     caption="Salons vocaux"
-    alt="Un salon vocal en direct, Sunday baking club, ouvert depuis 47 minutes : l’hôte, un co-hôte et deux intervenants sur la scène, et quatre auditeurs, dont un avec la main levée."
+    alt="Un salon vocal en direct, Rencontre du samedi : pain et thé : l’hôte, un co-hôte et deux autres intervenants, et trois auditeurs, dont un avec la main levée."
   />
   <Screenshot
     name="reports"
     caption="Modération intégrée"
-    alt="La file des signalements des modérateurs : cinq signalements ouverts avec leur catégorie, la personne qui les a faits, la personne qui les traite et leur temps d’attente."
+    alt="La file de signalements des modérateurs : quatre signalements ouverts d’un même compte avec leur catégorie, qui les a faits et quand, dont un assigné au modérateur."
   />
 </CardGrid>
 
@@ -120,9 +120,9 @@ import Screenshot from "../../components/Screenshot.astro";
     title="Construire sur mycroblog"
     icon="pencil"
     links={[
-      { path: "docs/developers/client-api.md", label: "L’API client" },
+      { path: "docs/developers/client-api.md", label: "L’API cliente" },
       { path: "api/openapi.yaml", label: "Référence de l’API" },
-      { path: "docs/developers/libraries.md", label: "Bibliothèques client" },
+      { path: "docs/developers/libraries.md", label: "Bibliothèques clientes" },
     ]}
   />
   <DocLinks
@@ -136,12 +136,12 @@ import Screenshot from "../../components/Screenshot.astro";
   />
 </CardGrid>
 
-**Statut : en développement, avant la première version (v0).** Les données peuvent ne pas survivre à une mise à jour avant `v0.1.0` : la
-base de données devra peut-être être recréée. À partir de `v0.1.0`, chaque mise à jour entre deux versions conserve vos données.
+**Statut : en développement, avant la première version (v0).** Les données peuvent ne pas survivre à une mise à niveau avant `v0.1.0` : la
+base de données peut devoir être recréée. À partir de `v0.1.0`, chaque mise à niveau entre versions conserve vos données.
 
 ## Sponsors
 
-mycroblog est soutenu par ses sponsors. Pour les rejoindre, consultez [GitHub Sponsors](https://github.com/sponsors/mycroblog).
+mycroblog est soutenu par ses sponsors. Pour les rejoindre, voir [GitHub Sponsors](https://github.com/sponsors/mycroblog).
 
 <a href="https://github.com/sponsors/mycroblog">
   <img src="https://sponsors.mycroblog.dev/canopy.svg" alt="Les sponsors Canopy de mycroblog" width="800" height="160" />
@@ -149,5 +149,5 @@ mycroblog est soutenu par ses sponsors. Pour les rejoindre, consultez [GitHub Sp
 
 ## Licence
 
-`my` est un logiciel libre sous licence GNU Affero General Public License, version 3 uniquement (AGPL-3.0-only). Les bibliothèques
-client de son API sont sous licence MIT.
+`my` est un logiciel libre sous la GNU Affero General Public License, version 3 uniquement (AGPL-3.0-only). Les bibliothèques
+clientes de son API sont sous licence MIT.
