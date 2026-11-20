@@ -3,11 +3,11 @@
 // The settings (ADR-0110 §5): the menu of their screens, a screen of them, and what a section holds.
 //
 // The menu lists the screens in groups, each a raised surface under its heading (ADR-0110 §12): an entry is its glyph,
-// its name over a line of what it holds, how many things wait there for the reader (a badge knocked out of the text's
-// color, as the navigation's), and a chevron; the whole row leads to its screen. What ends the menu stands apart,
-// after a gap (signing out, which leaves the app: no chevron). Beside a screen, in the column beside the main one
-// (`compact`), the menu sits on the page as that column's sections do: an entry is its glyph, its name and the badge
-// alone, and the one the reader is at stands on the raised surface, strong.
+// its name, which says alone what it opens (it carries no hint), how many things wait there for the reader (a badge
+// knocked out of the text's color, as the navigation's), and a chevron; the whole row leads to its screen. What ends
+// the menu stands apart, after a gap (signing out, which leaves the app: no chevron). Beside a screen, in the column
+// beside the main one (`compact`), the menu sits on the page as that column's sections do, and the entry the reader
+// is at stands on the raised surface, strong.
 //
 // A screen is its sections one under another, each a raised surface under its heading, and what ends it (the submit
 // bar of a form saved as a whole). Its head, the entry's glyph and name under the way back to the menu, shows where the
@@ -78,7 +78,6 @@ const menu = tv({
     ],
     glyph: "text-muted-text",
     title: "[word-break:auto-phrase]",
-    hint: "text-caption font-normal text-muted-text [word-break:auto-phrase]",
     badge: [
       "box-border h-shell-badge min-w-shell-badge rounded-[calc(var(--shell-badge)/2)]",
       "bg-text px-shell-badge-inline text-[0.6875rem] leading-none font-label text-surface tabular-nums",
@@ -105,8 +104,8 @@ const menu = tv({
 
 /**
  * The menu of the settings' screens, a navigation named `label`: its groups (`SettingsGroup`) one under another, and
- * `end`, the entry that ends it apart (signing out). `compact`, beside a screen: on the page, an entry its glyph, its
- * name and its badge alone.
+ * `end`, the entry that ends it apart (signing out). `compact`, beside a screen: on the page, with no
+ * chevron.
  */
 export function SettingsMenu({
   label,
@@ -182,14 +181,13 @@ function useCount(count: number | undefined): string | undefined {
 }
 
 /**
- * An entry of the menu, a link to its screen: its glyph, its name over a line of what the screen holds, how many
- * things wait there for the reader, and a chevron. `current` marks the screen the reader is at, where the menu stands
- * beside it. `away`: it leaves the app (signing out), so it ends with no chevron.
+ * An entry of the menu, a link to its screen: its glyph, its name, how many things wait there for the reader, and a
+ * chevron. It carries no hint: its name says what it opens. `current` marks the screen the reader is at, where the
+ * menu stands beside it. `away`: it leaves the app (signing out), so it ends with no chevron.
  */
 export function SettingsItem({
   icon,
   label,
-  hint,
   count,
   countLabel,
   href,
@@ -198,8 +196,6 @@ export function SettingsItem({
 }: {
   icon: IconName;
   label: string;
-  /** What its screen holds, in a few words; left out beside a screen. */
-  hint?: string | undefined;
   /** How many things wait there for the reader; none or zero shows no badge. */
   count: number | undefined;
   /** What the count is, for assistive technology ("1 unread"); without it, the number alone is read. */
@@ -212,8 +208,8 @@ export function SettingsItem({
   const s = menu({ compact });
   const shown = useCount(count);
   return (
-    // The row fills the entry. Its parts are a space apart in its name ("Security Password, passkeys…", "Account and
-    // data 1 unread"), which no box of the row shows.
+    // The row fills the entry. Its parts are a space apart in its name ("Account and data 1 unread"), which no box of
+    // the row shows.
     <Stack as="li">
       <LinkRow as={<Link href={href} className={s.item()} {...(current ? { "aria-current": "page" as const } : {})} />}>
         <Row as="span" inline rigid className={s.glyph()}>
@@ -221,12 +217,6 @@ export function SettingsItem({
         </Row>
         <Stack as="span" grow>
           <span className={s.title()}>{label}</span>
-          {hint !== undefined && !compact && (
-            <>
-              {" "}
-              <span className={s.hint()}>{hint}</span>
-            </>
-          )}
         </Stack>
         {shown !== undefined && (
           <>

@@ -52,8 +52,11 @@ export const boxesAtRest = <K extends string>(parts: Record<K, Locator>): Promis
 export const pageWidth = (page: Page): Promise<number> => page.evaluate(() => document.documentElement.clientWidth);
 
 /**
- * How the page scrolls sideways: by how much it is wider than its viewport, then the innermost elements that reach
- * past an edge; empty when it does not.
+ * How the page scrolls sideways: by how much it is wider than its viewport, then the outermost few elements that reach
+ * past an edge of it, those whose parent stays inside; empty when it does not. Each is said with what finds it in the
+ * code: a short selector, its role and name, the `file:line` of its JSX where a development build placed one
+ * (`data-source`), its direction and its parent's (`own` when its `dir` sets it, else inherited), its box and the
+ * viewport's width.
  */
 export const sidewaysScroll = (page: Page): Promise<string[]> =>
   page.evaluate(() => {
@@ -70,12 +73,28 @@ export const sidewaysScroll = (page: Page): Promise<string[]> =>
         if (getComputedStyle(el).overflowX !== "visible" && !reaches(el)) return true;
       return false;
     };
-    const past = [...document.body.querySelectorAll("*")].filter((element) => reaches(element) && !clipped(element));
-    const innermost = past.filter((element) => ![...element.children].some((child) => past.includes(child)));
-    const said = innermost.slice(0, 5).map((element) => {
-      const box = element.getBoundingClientRect();
-      const text = element.textContent.trim().replaceAll(/\s+/g, " ").slice(0, 60);
-      return `<${element.tagName.toLowerCase()}> "${text}" from ${String(Math.round(box.left))} to ${String(Math.round(box.right))}`;
+    const past = new Set([...document.body.querySelectorAll("*")].filter((el) => reaches(el) && !clipped(el)));
+    const outermost = [...past].filter((element) => element.parentElement === null || !past.has(element.parentElement));
+    const selector = (element: Element) => {
+      const id = element.id === "" ? "" : `#${element.id}`;
+      const classes = [...element.classList].slice(0, 3).map((name) => `.${name}`);
+      const more = element.classList.length > 3 ? "…" : "";
+      return `<${element.tagName.toLowerCase()}${id}${classes.join("")}${more}>`;
+    };
+    const direction = (element: Element) =>
+      `${getComputedStyle(element).direction} (${element.hasAttribute("dir") ? "own" : "inherited"})`;
+    const said = outermost.slice(0, 3).map((element) => {
+      const { left, right, width } = element.getBoundingClientRect();
+      const { role } = element;
+      const name = element.ariaLabel ?? element.textContent.trim().replaceAll(/\s+/g, " ").slice(0, 60);
+      const source = element.closest<HTMLElement>("[data-source]");
+      const where = source === null ? "" : ` ${source === element ? "at" : "inside"} ${source.dataset["source"] ?? ""}`;
+      const parent = element.parentElement;
+      return [
+        `${selector(element)}${role === null ? "" : ` role ${role}`} "${name}"${where}`,
+        `dir ${direction(element)}, its parent's ${parent === null ? "none" : direction(parent)}`,
+        `from ${String(Math.round(left))} to ${String(Math.round(right))}, ${String(Math.round(width))} px wide in a ${String(root.clientWidth)} px viewport`,
+      ].join("; ");
     });
     return [`the page is ${String(over)} px wider than its ${String(root.clientWidth)} px viewport`, ...said];
   });

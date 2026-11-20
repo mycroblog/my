@@ -522,13 +522,13 @@ describe("requiring media descriptions", () => {
 });
 
 describe("who can see a new post", () => {
-  test("offers Local between Public and Quiet public", async () => {
+  test("offers Neighbors between Public and Quiet public", async () => {
     await read();
 
-    expect(offered("Who can see it")).toEqual(["Public", "Local", "Quiet public", "Followers only"]);
+    expect(offered("Who can see it")).toEqual(["Public", "Neighbors", "Quiet public", "Followers only"]);
   });
 
-  test("offers no Local on a one-person server", async () => {
+  test("offers no Neighbors on a one-person server", async () => {
     await read({ singleUser: true });
 
     expect(offered("Who can see it")).toEqual(["Public", "Quiet public", "Followers only"]);

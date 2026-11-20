@@ -168,8 +168,8 @@
     "description": "The caption of the visibility choices in the audience menu, and the name of the menu's tool."
   },
   "compose.audience.tool": {
-    "defaultMessage": "{visibility, select, public {見られる人: 公開} local {見られる人: ローカル限定} unlisted {見られる人: ひかえめな公開} private {見られる人: フォロワー限定} other {見られる人: ダイレクト}}{limited, select, yes {、返信・ブースト・引用を制限中} other {}}",
-    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Local, Quiet public, Followers only, Direct)."
+    "defaultMessage": "{visibility, select, public {見られる人: 公開} local {見られる人: ご近所} unlisted {見られる人: ひっそり公開} private {見られる人: フォロワーのみ} other {見られる人: ダイレクト}}{limited, select, yes {、返信・ブースト・引用を制限中} other {}}",
+    "description": "The name of the audience tool for assistive technology: the post's visibility, and whether who may interact is limited. The visibilities are the post's (Public, Neighbors, Quiet public, Followers only, Direct)."
   },
   "compose.audience.everyone": {
     "defaultMessage": "誰でも",
@@ -200,15 +200,15 @@
     "description": "A visibility in the audience menu; the same word as a post's visibility glyph. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.local": {
-    "defaultMessage": "ローカル限定",
-    "description": "A visibility in the audience menu: on this server's local timeline, and to the author's followers elsewhere. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+    "defaultMessage": "ご近所",
+    "description": "A visibility in the audience menu: people on this server, and the author's followers on other servers. It names whom the author speaks to. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.unlisted": {
-    "defaultMessage": "ひかえめな公開",
-    "description": "A visibility in the audience menu: public, kept out of the public timelines. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
+    "defaultMessage": "ひっそり公開",
+    "description": "A visibility in the audience menu: anyone with the link or the author's profile, kept off the timelines and hashtags. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.private": {
-    "defaultMessage": "フォロワー限定",
+    "defaultMessage": "フォロワーのみ",
     "description": "A visibility in the audience menu: the author's followers and the accounts the post mentions. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), the visibility a new post starts with."
   },
   "compose.visibility.direct": {
@@ -216,15 +216,15 @@
     "description": "A visibility in the audience menu: the accounts the post mentions alone. Also an option of Who can see it on the Display and posting page of the settings (settings.display.audience), only while it is the visibility the account's new posts start with."
   },
   "compose.visibility.public.about": {
-    "defaultMessage": "誰でも、どのサーバーからでも",
+    "defaultMessage": "どのサーバーの誰でも。タイムラインやハッシュタグにも出ます",
     "description": "The line under Public in the audience menu: who sees the post. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.local.about": {
-    "defaultMessage": "{server} の全員と、ほかのサーバーのフォロワー",
-    "description": "The line under Local in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
+    "defaultMessage": "{server} の人と、ほかのサーバーのフォロワー",
+    "description": "The line under Neighbors in the audience menu. server is this server's domain. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.unlisted.about": {
-    "defaultMessage": "誰でも。ローカルと連合のタイムラインには載せない",
+    "defaultMessage": "リンクかプロフィールを開いた人なら誰でも。タイムラインやハッシュタグには出ません",
     "description": "The line under Quiet public in the audience menu. Also the line under Who can see it on the Display and posting page of the settings while this visibility is the one chosen there."
   },
   "compose.visibility.private.about": {
@@ -276,7 +276,7 @@
     "description": "The error under the composer's text once it is past the limit; the server's own words (errors.status.text_too_long)."
   },
   "compose.quote_remote": {
-    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひかえめな公開」にしてください。",
+    "defaultMessage": "ほかのサーバーの投稿を引用するときは、見られる人を「公開」か「ひっそり公開」にしてください。",
     "description": "The note under the visibilities when the post quotes a post from another server, whose other visibilities are disabled: which ones to choose."
   },
   "compose.replying_to": {
@@ -560,11 +560,11 @@
     "description": "Over the scheduled posts: the reader's time zone, in which their times read."
   },
   "compose.drafts.empty.drafts": {
-    "defaultMessage": "まだ下書きはありません。投稿を下書きに保存すると、ここに表示されます。",
+    "defaultMessage": "まだ下書きはありません。",
     "description": "The drafts' section of the list when it has none, while there are scheduled posts."
   },
   "compose.drafts.empty": {
-    "defaultMessage": "まだ下書きも予約投稿もありません。投稿を下書きに保存するか予約すると、ここに表示されます。",
+    "defaultMessage": "まだ下書きも予約投稿もありません。",
     "description": "The list of drafts and scheduled posts when it has neither."
   },
   "compose.drafts.loading": {
@@ -624,7 +624,7 @@
     "description": "In the preview's place when the server did not render the body; followed by Try again."
   },
   "compose.article.preview.empty": {
-    "defaultMessage": "まだ何も書かれていません。本文を書くと、ここにプレビューが表示されます。",
+    "defaultMessage": "まだ何も書かれていません。",
     "description": "In the preview's place while the body is empty."
   },
   "compose.article.field.title": {

@@ -28,7 +28,7 @@ export class Operations {
     await this.page.goto("/admin");
     await this.main
       .getByRole("navigation", { name: "Administration screens", exact: true })
-      .getByRole("link", { name: new RegExp(`^${escape(name)} .+$`) })
+      .getByRole("link", { name: new RegExp(`^${escape(name)}(?: .+)?$`) })
       .click();
     await expect(this.main.getByRole("heading", { level: 1, name, exact: true })).toBeVisible();
   }

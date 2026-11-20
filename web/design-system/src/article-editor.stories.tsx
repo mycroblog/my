@@ -86,7 +86,7 @@ const words = {
     bodyPlaceholder: "Write in Markdown…",
     source:
       "## The hardware\n\nAn old laptop and a backup drive did the job. The setup took **one evening**.\n\n![The rack in the hallway closet](upload:rack.jpg)\n\n## The rules\n\n1. Be kind.\n2. Write down why.\n3. Keep the rules short.\n\n> The timeline is slow, and that is the point.",
-    emptyBody: "Nothing written yet. Write the body, and its preview shows here.",
+    emptyBody: "Nothing written yet.",
     rendered: {
       h1: "The hardware",
       p1: "An old laptop and a backup drive did the job. The setup took ",
@@ -165,7 +165,7 @@ const words = {
     bodyPlaceholder: "Markdown で書く…",
     source:
       "## 機材\n\n古いノートパソコンとバックアップ用のディスクで足りた。設定は**ひと晩**で終わった。\n\n![廊下の物入れのラック](upload:rack.jpg)\n\n## ルール\n\n1. 親切に。\n2. なぜかを書いておく。\n3. ルールは短く。\n\n> タイムラインはゆっくり流れるけれど、それでいい。",
-    emptyBody: "まだ何も書かれていません。本文を書くと、ここにプレビューが表示されます。",
+    emptyBody: "まだ何も書かれていません。",
     rendered: {
       h1: "機材",
       p1: "古いノートパソコンとバックアップ用のディスクで足りた。設定は",

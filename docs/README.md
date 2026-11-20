@@ -7,7 +7,7 @@ reference is there too. The contributing and design documents below are read her
 ## Using mycroblog
 
 - [Signing up and signing in](guide/signing-in.md)
-- [Posting and choosing who sees a post](guide/posting.md) (public, this server, unlisted, followers, and mentioned people)
+- [Posting and choosing who sees a post](guide/posting.md) (public, neighbors, quiet public, followers only, and direct)
 - [Following people and reading timelines](guide/following.md)
 - [Notifications](guide/notifications.md)
 - [Blocking and muting](guide/safety.md)

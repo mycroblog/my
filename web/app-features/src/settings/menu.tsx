@@ -2,10 +2,10 @@
 
 // The menu of the settings (ADR-0110 §5): the entries it lists for the reader (entries.tsx) in their groups, a group with
 // none left out, and Sign out…, apart at its end, which leads to the confirmation the app shows at `signOutHref`. At
-// /settings it is the screen, each entry with a line of what its screen holds; beside an entry's screen it is compact,
-// the entry the reader is at marked. Sign out… is there from the first paint; the entries come once the server has said
-// which of them the menu lists, all at once, so that none comes after the others painted, or, when the server has not
-// said by then, after `settingsFactsWaitMs`, without the ones it has not said (the invites).
+// /settings it is the screen; beside an entry's screen it is compact, the entry the reader is at marked. Sign out… is
+// there from the first paint; the entries come once the server has said which of them the menu lists, all at once, so
+// that none comes after the others painted, or, when the server has not said by then, after `settingsFactsWaitMs`,
+// without the ones it has not said (the invites).
 
 import { SettingsGroup, SettingsItem, SettingsMenu, useLocale } from "@my/design-system";
 import { useEffect, useState } from "react";
@@ -64,7 +64,6 @@ function Menu({ compact, current, signOutHref }: MenuProps & { compact: boolean;
                 key={entry.path}
                 icon={entry.icon}
                 label={t(entry.name)}
-                hint={t(entry.hint)}
                 count={entry.waiting}
                 countLabel={
                   entry.waiting === undefined ? undefined : t("settings.entry.count", { count: entry.waiting })
@@ -80,7 +79,7 @@ function Menu({ compact, current, signOutHref }: MenuProps & { compact: boolean;
   );
 }
 
-/** The menu as the screen at /settings: every entry with what its screen holds. */
+/** The menu as the screen at /settings. */
 export function SettingsIndex({ signOutHref }: MenuProps) {
   return <Menu compact={false} signOutHref={signOutHref} />;
 }

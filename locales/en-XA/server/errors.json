@@ -680,7 +680,7 @@
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.local_unavailable": {
-    "defaultMessage": "[Ƥǿǿşŧş ǿǿƞ ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř ƈȧȧƞƞǿǿŧ ƀḗḗ ŀǿǿƈȧȧŀ. Ƈħȧȧƞɠḗḗ ẇħǿǿ ƈȧȧƞ şḗḗḗḗ īŧ.]",
+    "defaultMessage": "[Ǿƞ ȧȧ ǿǿƞḗḗ-ƥḗḗřşǿǿƞ şḗḗřṽḗḗř, ẏǿǿŭŭ ƈȧȧƞƞǿǿŧ ƥǿǿşŧ ŧǿǿ Ƞḗḗīɠħƀǿǿřş. Ƈħȧȧƞɠḗḗ ẇħǿǿ ƈȧȧƞ şḗḗḗḗ īŧ.]",
     "description": "Generated from en by tools/i18n; do not edit."
   },
   "errors.status.media_not_found": {

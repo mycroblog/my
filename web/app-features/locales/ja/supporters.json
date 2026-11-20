@@ -104,7 +104,7 @@
     "description": "The button of the question before subscribing that closes it with nothing done."
   },
   "supporters.checkout.text": {
-    "defaultMessage": "今 {price} を支払い、解約するまで{interval, select, month {毎月} other {毎年}} {price} を支払います。特典は支払いが済むと始まります。解約は設定の「サポーター」からいつでもでき、支払った期間の終わりまで特典は続きます。",
+    "defaultMessage": "今 {price} を支払い、解約するまで{interval, select, month {毎月} other {毎年}} {price} を支払います。特典は支払いが済むと始まります。解約は設定の「サポーターのプランとチップ」からいつでもでき、支払った期間の終わりまで特典は続きます。",
     "description": "What subscribing does, in the question before the payment provider's checkout ({price}: the plan's price at the period; {interval}: month or year)."
   },
   "supporters.checkout.title": {

@@ -23,9 +23,9 @@ export class StaffDomains {
     return this.main.getByRole("navigation", { name: "Moderation screens", exact: true });
   }
 
-  /** The root's link to Domain actions, with its hint. */
+  /** The root's link to Domain actions. */
   get domainActionsLink(): Locator {
-    return this.screens.getByRole("link", { name: /^Domain actions .+$/ });
+    return this.screens.getByRole("link", { name: "Domain actions", exact: true });
   }
 
   /** Opens the form of a new domain action from the list. */

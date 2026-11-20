@@ -7,10 +7,6 @@
     "defaultMessage": "監査ログ",
     "description": "The name of the moderators' audit log, in the list of moderation screens, as its title and as the name of its log. Read by moderators."
   },
-  "staff_audit.entry.audit_log.hint": {
-    "defaultMessage": "誰が何をしたかの記録、新しい順",
-    "description": "The line under Audit log in the list of moderation screens. Read by moderators."
-  },
   "staff_audit.forbidden": {
     "defaultMessage": "あなたのアカウントには、もう監査ログを読む権限がありません。",
     "description": "On the audit log of the moderators (/moderation/audit-log), in its place when the server refuses the reader the log. Read by moderators."

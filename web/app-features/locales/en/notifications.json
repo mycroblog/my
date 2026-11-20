@@ -40,7 +40,7 @@
     "description": "What the screen of what waits for the reader's approval (notifications.waiting) says under its list when more could not be loaded, beside a button to try again."
   },
   "notifications.waiting_empty": {
-    "defaultMessage": "Nothing is waiting for your approval. When someone asks to reply to, boost or quote your post, it shows here.",
+    "defaultMessage": "Nothing is waiting for your approval.",
     "description": "What the screen of the replies, boosts and quotes waiting for the reader's approval (notifications.waiting) says when none waits."
   },
   "notifications.requests_hint": {
@@ -348,7 +348,7 @@
     "description": "The row over the notifications that counts the follow requests and opens their screen. count is how many."
   },
   "notifications.follow_requests_empty": {
-    "defaultMessage": "When someone asks to follow you, they appear here.",
+    "defaultMessage": "No follow requests.",
     "description": "In place of the follow requests when there are none."
   },
   "notifications.follow_requests_loading": {
@@ -396,7 +396,7 @@
     "description": "What the screens of the held-back notifications say when they could not be loaded, beside a button to try again."
   },
   "notifications.held_empty": {
-    "defaultMessage": "No notifications are held back. Notifications your notification settings hold back show here.",
+    "defaultMessage": "No notifications are held back.",
     "description": "What the screen of the held-back notifications says when none is held back."
   },
   "notifications.held_none": {
