@@ -18,6 +18,7 @@
 import { createContext, use, useId, type HTMLAttributes, type ReactNode } from "react";
 import { tv } from "tailwind-variants/lite";
 import { ShareBar } from "./choice";
+import { CodeText } from "./code-text";
 import { Icon } from "./icons";
 import { Row, Spoken, Stack } from "./layout";
 
@@ -262,13 +263,15 @@ export type FinanceRowProps = {
    * and the row stands close under that one.
    */
   continued?: boolean | undefined;
+  /** The head is code (a route, an action's ID): in the code's face, left to right. */
+  code?: boolean | undefined;
 };
 
 /**
  * A row of a `FinanceTable`: its head, with a line under it; then its cells, a figure a currency, one under another,
  * a figure from an estimate with the estimate's glyph before it on its line, and their bar right under them.
  */
-export function FinanceRow({ head, caption, cells, continued = false }: FinanceRowProps) {
+export function FinanceRow({ head, caption, cells, continued = false, code = false }: FinanceRowProps) {
   const s = table();
   const { columns, estimated } = use(TableContext);
   const total = use(TotalContext);
@@ -280,7 +283,7 @@ export function FinanceRow({ head, caption, cells, continued = false }: FinanceR
         ) : (
           // Its line on the head's own line where it fits, never beside a figure of the row's next currency.
           <Row as="span" wrap align="baseline" gapX="entry-caption">
-            <span dir="auto">{head}</span>
+            {code ? <CodeText>{head}</CodeText> : <span dir="auto">{head}</span>}
             {caption !== undefined && <span className={s.caption()}>{caption}</span>}
           </Row>
         )}

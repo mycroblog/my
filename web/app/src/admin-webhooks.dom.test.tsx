@@ -95,12 +95,13 @@ test("a new webhook is set up with the events chosen, and its secret is shown on
   expect(await main().findByRole("heading", { level: 2, name: "hooks.example.com" })).toBeDefined();
 });
 
-test("the administrator's form offers the servers' events, and none of the errors', which their roles leave out", async () => {
+test("the administrator's form offers the servers' events and the errors', which their roles grant", async () => {
   await opened(() => "/admin/webhooks/new", admin);
 
   expect(sections()).toContain("Other servers");
+  expect(sections()).toContain("Errors");
   expect(offeredEvents()).toContain("A server is moderated");
-  expect(offeredEvents()).toHaveLength(15);
+  expect(offeredEvents()).toHaveLength(17);
 });
 
 test("the lead's form offers no event of a permission they lack: no server's and no error's", async () => {

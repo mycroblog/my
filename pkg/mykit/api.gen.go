@@ -11118,6 +11118,20 @@ type DomainMutePage struct {
 	NextCursor *Cursor `json:"next_cursor,omitempty"`
 }
 
+// DomainSuspendImpact What a `suspend` of a domain would end now: the accepted follows, in both
+// directions, between the local accounts and the accounts of the domain and its subdomains.
+// The suspension ends them for good, and each local user who loses one is notified.
+type DomainSuspendImpact struct {
+	// Domain The domain counted for, normalized.
+	Domain string `json:"domain"`
+
+	// Follows How many follows would end.
+	Follows int `json:"follows"`
+
+	// LocalAccounts How many local accounts would lose a follow.
+	LocalAccounts int `json:"local_accounts"`
+}
+
 // Draft A draft of a post or of an article (`article`), saved on the server so that the user goes on
 // writing it on another device, and publishes it at once or at a chosen time. Only the user reads
 // it; it is never federated.
@@ -18656,6 +18670,12 @@ type ListDomainActionsParams struct {
 	Limit *Limit `form:"limit,omitempty" json:"limit,omitempty"`
 }
 
+// GetDomainSuspendImpactParams defines parameters for GetDomainSuspendImpact.
+type GetDomainSuspendImpactParams struct {
+	// Domain The domain to count for; its subdomains are counted with it.
+	Domain string `form:"domain" json:"domain"`
+}
+
 // ListDomainListSubscriptionsParams defines parameters for ListDomainListSubscriptions.
 type ListDomainListSubscriptionsParams struct {
 	// Cursor The `next_cursor` of the previous page; omitted for the first page.
@@ -23557,6 +23577,17 @@ type ClientInterface interface {
 	//
 	// Corresponds with GET /admin/domain_actions/export (the `ExportDomainBlocks` operationId).
 	ExportDomainBlocks(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetDomainSuspendImpact Count what suspending a domain would end
+	//
+	// How many follows a `suspend` of `domain` would end now, and how many local accounts would
+	// lose one. Moderators read it before they confirm a suspension, which ends those follows for
+	// good. The domain is normalized like the domain of a new action; one that is not a valid
+	// domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+	// zeros. Needs the `manage_domains` permission.
+	//
+	// Corresponds with GET /admin/domain_actions/impact (the `GetDomainSuspendImpact` operationId).
+	GetDomainSuspendImpact(ctx context.Context, params *GetDomainSuspendImpactParams, reqEditors ...RequestEditorFn) (*http.Response, error)
 
 	// ImportDomainBlocksWithBody Import the chosen rows of a Mastodon domain block CSV
 	//
@@ -32280,6 +32311,27 @@ func (c *Client) CreateDomainAction(ctx context.Context, body CreateDomainAction
 // Corresponds with GET /admin/domain_actions/export (the `ExportDomainBlocks` operationId).
 func (c *Client) ExportDomainBlocks(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
 	req, err := NewExportDomainBlocksRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// GetDomainSuspendImpact Count what suspending a domain would end
+//
+// How many follows a `suspend` of `domain` would end now, and how many local accounts would
+// lose one. Moderators read it before they confirm a suspension, which ends those follows for
+// good. The domain is normalized like the domain of a new action; one that is not a valid
+// domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+// zeros. Needs the `manage_domains` permission.
+//
+// Corresponds with GET /admin/domain_actions/impact (the `GetDomainSuspendImpact` operationId).
+func (c *Client) GetDomainSuspendImpact(ctx context.Context, params *GetDomainSuspendImpactParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetDomainSuspendImpactRequest(c.Server, params)
 	if err != nil {
 		return nil, err
 	}
@@ -47127,6 +47179,56 @@ func NewExportDomainBlocksRequest(server string) (*http.Request, error) {
 	queryURL, err := serverURL.Parse(operationPath)
 	if err != nil {
 		return nil, err
+	}
+
+	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
+}
+
+// NewGetDomainSuspendImpactRequest constructs an http.Request for the GetDomainSuspendImpact method
+func NewGetDomainSuspendImpactRequest(server string, params *GetDomainSuspendImpactParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/admin/domain_actions/impact")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+		// queryValues collects non-styled parameters (passthrough, JSON)
+		// that are safe to round-trip through url.Values.Encode().
+		queryValues := queryURL.Query()
+		// rawQueryFragments collects pre-encoded query fragments from
+		// styled parameters, preserving literal commas as delimiters
+		// per the OpenAPI spec (e.g. "color=blue,black,brown").
+		var rawQueryFragments []string
+
+		if queryFrag, err := runtime.StyleParamWithOptions("form", true, "domain", params.Domain, runtime.StyleParamOptions{ParamLocation: runtime.ParamLocationQuery, Type: "string", Format: ""}); err != nil {
+			return nil, err
+		} else {
+			for _, qp := range strings.Split(queryFrag, "&") {
+				rawQueryFragments = append(rawQueryFragments, qp)
+			}
+		}
+
+		if encoded := queryValues.Encode(); encoded != "" {
+			rawQueryFragments = append(rawQueryFragments, encoded)
+		}
+		queryURL.RawQuery = strings.Join(rawQueryFragments, "&")
 	}
 
 	req, err := http.NewRequest(http.MethodGet, queryURL.String(), nil)
@@ -65198,6 +65300,19 @@ type ClientWithResponsesInterface interface {
 	// Corresponds with GET /admin/domain_actions/export (the `ExportDomainBlocks` operationId).
 	ExportDomainBlocksWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*ExportDomainBlocksResponse, error)
 
+	// GetDomainSuspendImpactWithResponse Count what suspending a domain would end
+	//
+	// How many follows a `suspend` of `domain` would end now, and how many local accounts would
+	// lose one. Moderators read it before they confirm a suspension, which ends those follows for
+	// good. The domain is normalized like the domain of a new action; one that is not a valid
+	// domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+	// zeros. Needs the `manage_domains` permission.
+	//
+	// Returns a wrapper object for the known response body format(s).
+	//
+	// Corresponds with GET /admin/domain_actions/impact (the `GetDomainSuspendImpact` operationId).
+	GetDomainSuspendImpactWithResponse(ctx context.Context, params *GetDomainSuspendImpactParams, reqEditors ...RequestEditorFn) (*GetDomainSuspendImpactResponse, error)
+
 	// ImportDomainBlocksWithBodyWithResponse Import the chosen rows of a Mastodon domain block CSV
 	//
 	// Issues the domain actions of each block, as the preview names them: the kinds
@@ -77481,6 +77596,71 @@ func (r ExportDomainBlocksResponse) StatusCode() int {
 
 // ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
 func (r ExportDomainBlocksResponse) ContentType() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Header.Get("Content-Type")
+	}
+	return ""
+}
+
+// GetDomainSuspendImpactResponse200Headers the declared response headers of an HTTP 200 response for GetDomainSuspendImpact
+type GetDomainSuspendImpactResponse200Headers struct {
+	CacheControl *string
+}
+
+// GetDomainSuspendImpactResponseDefaultHeaders the declared response headers of an HTTP default response for GetDomainSuspendImpact
+type GetDomainSuspendImpactResponseDefaultHeaders struct {
+	CacheControl    *string
+	ContentLanguage *string
+	RetryAfter      *int
+	WWWAuthenticate *string
+}
+
+type GetDomainSuspendImpactResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	// JSON200 the response for an HTTP 200 `application/json` response
+	JSON200 *DomainSuspendImpact
+	// ApplicationproblemJSONDefault the response for an HTTP default `application/problem+json` response
+	ApplicationproblemJSONDefault *Problem
+	// Headers200 the parsed response headers for an HTTP 200 response
+	Headers200 *GetDomainSuspendImpactResponse200Headers
+	// HeadersDefault the parsed response headers for an HTTP default response
+	HeadersDefault *GetDomainSuspendImpactResponseDefaultHeaders
+}
+
+// GetJSON200 returns the response for an HTTP 200 `application/json` response
+func (r GetDomainSuspendImpactResponse) GetJSON200() *DomainSuspendImpact {
+	return r.JSON200
+}
+
+// GetApplicationproblemJSONDefault returns the response for an HTTP default `application/problem+json` response
+func (r GetDomainSuspendImpactResponse) GetApplicationproblemJSONDefault() *Problem {
+	return r.ApplicationproblemJSONDefault
+}
+
+// GetBody returns the raw response body bytes
+func (r GetDomainSuspendImpactResponse) GetBody() []byte {
+	return r.Body
+}
+
+// Status returns HTTPResponse.Status
+func (r GetDomainSuspendImpactResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetDomainSuspendImpactResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// ContentType is a convenience method to retrieve the Content-Type value from the HTTP response headers
+func (r GetDomainSuspendImpactResponse) ContentType() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Header.Get("Content-Type")
 	}
@@ -104267,6 +104447,25 @@ func (c *ClientWithResponses) ExportDomainBlocksWithResponse(ctx context.Context
 	return ParseExportDomainBlocksResponse(rsp)
 }
 
+// GetDomainSuspendImpactWithResponse Count what suspending a domain would end
+//
+// How many follows a `suspend` of `domain` would end now, and how many local accounts would
+// lose one. Moderators read it before they confirm a suspension, which ends those follows for
+// good. The domain is normalized like the domain of a new action; one that is not a valid
+// domain, or this server's own, is a 422 naming `domain`. A domain with no follows counts
+// zeros. Needs the `manage_domains` permission.
+//
+// Returns a wrapper object for the known response body format(s).
+//
+// Corresponds with GET /admin/domain_actions/impact (the `GetDomainSuspendImpact` operationId).
+func (c *ClientWithResponses) GetDomainSuspendImpactWithResponse(ctx context.Context, params *GetDomainSuspendImpactParams, reqEditors ...RequestEditorFn) (*GetDomainSuspendImpactResponse, error) {
+	rsp, err := c.GetDomainSuspendImpact(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetDomainSuspendImpactResponse(rsp)
+}
+
 // ImportDomainBlocksWithBodyWithResponse Import the chosen rows of a Mastodon domain block CSV
 //
 // Issues the domain actions of each block, as the preview names them: the kinds
@@ -120586,6 +120785,83 @@ func ParseExportDomainBlocksResponse(rsp *http.Response) (*ExportDomainBlocksRes
 		response.Headers200 = &headers
 	case true:
 		var headers ExportDomainBlocksResponseDefaultHeaders
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		if values := rsp.Header.Values("Content-Language"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Content-Language", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.ContentLanguage = &value
+		}
+		if values := rsp.Header.Values("Retry-After"); len(values) > 0 {
+			var value int
+			if err := runtime.BindStyledParameterWithOptions("simple", "Retry-After", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "integer", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.RetryAfter = &value
+		}
+		if values := rsp.Header.Values("WWW-Authenticate"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "WWW-Authenticate", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.WWWAuthenticate = &value
+		}
+		response.HeadersDefault = &headers
+	}
+
+	return response, nil
+}
+
+// ParseGetDomainSuspendImpactResponse parses an HTTP response from a GetDomainSuspendImpactWithResponse call
+func ParseGetDomainSuspendImpactResponse(rsp *http.Response) (*GetDomainSuspendImpactResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetDomainSuspendImpactResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest DomainSuspendImpact
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && true:
+		var dest Problem
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.ApplicationproblemJSONDefault = &dest
+
+	}
+
+	switch {
+	case rsp.StatusCode == 200:
+		var headers GetDomainSuspendImpactResponse200Headers
+		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
+			var value string
+			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {
+				return nil, err
+			}
+			headers.CacheControl = &value
+		}
+		response.Headers200 = &headers
+	case true:
+		var headers GetDomainSuspendImpactResponseDefaultHeaders
 		if values := rsp.Header.Values("Cache-Control"); len(values) > 0 {
 			var value string
 			if err := runtime.BindStyledParameterWithOptions("simple", "Cache-Control", values[0], &value, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationHeader, Explode: false, Required: false, Type: "string", Format: ""}); err != nil {

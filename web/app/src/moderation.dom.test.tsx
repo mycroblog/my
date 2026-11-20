@@ -91,8 +91,8 @@ test("a reader with other moderation permissions but not manage_reports is not s
   });
   await renderApp("/moderation", { on });
 
-  expect(await main().findByText("None of the screens here is open to your permissions yet.")).toBeDefined();
-  expect(listed()).toEqual([]);
+  await main().findByRole("navigation", { name: "Moderation screens" });
+  expect(listed()).toEqual(["/moderation/domain-actions", "/moderation/instances", "/moderation/audit-log"]);
   expect(main().queryAllByRole("link", { name: /^Reports/ })).toHaveLength(0);
 });
 

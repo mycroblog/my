@@ -3,8 +3,8 @@
 // What an E2E test makes for itself on the demo server, so that it changes nothing another test or a second run of it
 // reads (`--repeat-each`): a person, a post, a follow request. Each is made as the seed makes the scenario (seed.ts):
 // the person with `bin/my admin create`, the rest with the client API through @mycroblog/mykit, signed in as each
-// person, and no SQL. Each name holds a part of a random UUID, so that it is unique to the test and the run without
-// reading the clock.
+// person, and no SQL; a failed job with `bin/my dev dead-job` of the test build. Each name holds a part of a random UUID,
+// so that it is unique to the test and the run without reading the clock.
 
 import { randomBytes, randomUUID } from "node:crypto";
 import { all, ProblemError, type Api, type components } from "@mycroblog/mykit";
@@ -597,6 +597,99 @@ export class Fresh {
     const { error } = await api.POST("/admin/roles", { body: { key, position: 10, permissions: [] } });
     if (error !== undefined) throw new Error(`fresh: the role ${key} was refused`);
     return key;
+  }
+
+  /**
+   * Puts a job into the queue that the server's own worker fails for good at once (`bin/my dev dead-job` of the test
+   * build: a real type with a payload its handler cannot read), and returns its idempotency key, by which `deadJob`
+   * and `forgetJob` find it.
+   */
+  failingJob(): string {
+    return this.#o.runMy(["dev", "dead-job"]).trim();
+  }
+
+  /** The job of the idempotency key `key` in the queue or among the failed ones, as `admin` reads it; none once it is gone. */
+  async #jobOf(admin: Person, key: string): Promise<components["schemas"]["AdminJob"] | undefined> {
+    const api = await this.#api(admin);
+    for (const state of ["dead", undefined] as const)
+      for await (const job of all(async (cursor) => {
+        const { data } = await api.GET("/admin/jobs", {
+          params: {
+            query: {
+              type: "notification.post_subscribers",
+              limit: 40,
+              ...(state === undefined ? {} : { state }),
+              ...(cursor === undefined ? {} : { cursor }),
+            },
+          },
+        });
+        return body(data, "the jobs");
+      }))
+        if (job.idempotency_key === key) return job;
+    return undefined;
+  }
+
+  /** The job of `key` (`failingJob`) once the server failed it for good: its ID and type. */
+  async deadJob(admin: Person, key: string): Promise<{ id: string; type: string }> {
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const job = await this.#jobOf(admin, key);
+      if (job?.state === "dead") return { id: job.id, type: job.type };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`fresh: the job ${key} never failed`);
+  }
+
+  /**
+   * Deletes the job of `key` once it is a failed job again (a job run again fails as it did), as `bin/my job delete`
+   * does, so that the test leaves no failed job behind. It never throws, so that it hides no failure of the test it
+   * ends: what goes wrong is logged.
+   */
+  async forgetJob(admin: Person, key: string): Promise<void> {
+    try {
+      for (let attempt = 0; attempt < 300; attempt++) {
+        const job = await this.#jobOf(admin, key);
+        if (job === undefined) return;
+        if (job.state === "dead") {
+          this.#o.runMy(["job", "delete", job.id]);
+          return;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 100));
+      }
+      console.warn(`fresh: the job ${key} never failed again, and stays in the queue`);
+    } catch (error) {
+      console.warn(`fresh: the job ${key} could not be deleted: ${String(error)}`);
+    }
+  }
+
+  /**
+   * An error the web client reports, as a browser that is not signed in sends it (counted, notifying nobody): a name
+   * and a message unique to it, from a script of the server's own origin. Its group, as `admin` reads it from the open
+   * groups once the server counted it.
+   */
+  async clientError(admin: Person): Promise<{ id: string; type: string; message: string }> {
+    // Letters only: the server scrubs digits, IDs and addresses out of a message.
+    const word = [...randomBytes(10)].map((b) => String.fromCharCode(97 + (b % 26))).join("");
+    const type = `FreshError${word.slice(0, 1).toUpperCase()}${word.slice(1)}`;
+    const response = await fetch(new URL("/api/v1/client_errors", this.#o.server), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Forwarded-For": clientIP() },
+      body: JSON.stringify({
+        name: type,
+        message: `fresh ${word} went wrong`,
+        stack: `${type}: fresh ${word} went wrong\n    at render (${new URL(`/assets/fresh-${word}.js`, this.#o.server).href}:1:10)`,
+        route: "/_app/",
+        kind: "uncaught",
+      }),
+    });
+    if (response.status !== 204) throw new Error(`fresh: the error report answered ${String(response.status)}`);
+    const api = await this.#api(admin);
+    for (let attempt = 0; attempt < 300; attempt++) {
+      const { data } = await api.GET("/admin/error_groups", { params: { query: { state: "open", source: "web" } } });
+      const group = data?.items.find((g) => g.type === type);
+      if (group !== undefined) return { id: group.id, type, message: group.message };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    throw new Error(`fresh: the error ${type} was never counted`);
   }
 
   /**

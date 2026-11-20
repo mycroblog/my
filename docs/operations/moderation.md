@@ -40,7 +40,7 @@ The navigation shows "Moderation" and "Administration" only to people whose role
 | Group | Permissions | Screens |
 | --- | --- | --- |
 | Moderation (`/moderation`) | `manage_reports`, `manage_accounts`, `manage_domains`, `manage_invites`, `view_audit` | Reports (`/moderation/reports`), Appeals (`/moderation/appeals`), Registrations (`/moderation/registrations`), Automated reviews (`/moderation/hook-decisions`), Accounts (`/moderation/accounts`), Sign-up blocks (`/moderation/signup-blocks`), Invites (`/moderation/invites`), Domain actions (`/moderation/domain-actions`), Remote servers (`/moderation/instances`), Audit log (`/moderation/audit-log`) |
-| Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), the job queue and failed jobs (`/admin/jobs`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), Costs and income (`/admin/finance`, `manage_finance`), Supporters (`/admin/supporters`, `manage_supporters`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) and `manage_roles` (granting and revoking an account's roles) appear as sections of an account's Management page (`/moderation/accounts/{id}/manage`, which also needs `manage_accounts`) |
+| Server administration (`/admin`) | `manage_settings`, `manage_rules`, `manage_roles`, `manage_jobs`, `manage_login_recovery`, `manage_custom_emojis`, `manage_webhooks`, `manage_announcements`, `manage_finance`, `manage_supporters`, `manage_oauth_apps`, `manage_service_closure`, `manage_errors`, `manage_login_providers` | Server settings (`/admin/settings`), Rules (`/admin/rules`), Terms and policies (`/admin/documents`), Link card domains (`/admin/link-card-domains`), the job queue and failed jobs (`/admin/jobs`), Errors (`/admin/errors`, `manage_errors`), UX measurements (`/admin/ux-measurements`, `manage_errors`), Custom emoji (`/admin/custom-emojis`), Announcements (`/admin/announcements`), Webhooks (`/admin/webhooks`), Costs and income (`/admin/finance`, `manage_finance`), Supporters (`/admin/supporters`, `manage_supporters`). `manage_login_recovery` (login recovery: removing two-factor authentication and issuing a password-reset link) and `manage_roles` (granting and revoking an account's roles) appear as sections of an account's Management page (`/moderation/accounts/{id}/manage`, which also needs `manage_accounts`) |
 
 - The badge on "Moderation" is the total of open reports, registrations waiting for approval and appeals waiting for review ([notifications for moderators and the pending counts](#notifications-for-moderators-and-the-pending-counts)). "Administration" shows no count.
 - Each group opens on a list of its screens that your role's permissions open, each with a line of what it holds and, for a queue, how many things wait there (Reports counts the open reports, Appeals those waiting for review, Registrations those waiting for approval); a group none of whose screens is open to you says why.
@@ -245,10 +245,12 @@ my admin domain lift <action id>
 ```
 
 In the admin API: `POST /api/v1/admin/domain_actions` (the body has `domain`, `kind`, `public_comment`, `private_note`, `obfuscate` and `expires_in` in seconds),
-`GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, and `POST .../{id}/lift`.
+`GET /api/v1/admin/domain_actions` (filter with `domain` and `active`), `GET .../{id}`, `POST .../{id}/lift`,
+and `GET .../impact?domain=`, which counts the follows that a `suspend` of the domain would end.
 
-In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, kind, state and end, in effect or all;
-"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its comments and dates, where "Lift" ends it.
+In the web client, open Moderation → Domain actions (`/moderation/domain-actions`). The list shows each action's domain, public reason, kind, end and state, in effect or all, of every domain or of the one you search for;
+"New action" opens the form (`/moderation/domain-actions/new`), and choosing a domain opens the action's page with its reasons and dates, where "Lift" ends it.
+A `suspend` asks first: the confirmation says how many follows between local users and the domain's accounts it ends for good, and asks you to type the domain.
 The "Domain actions" link on a remote server's page lists only that domain's actions, and "New action" there starts the form with the domain filled in.
 
 - Domains are recorded normalized to the IDNA A-label (lower case, no trailing dot). `例え.jp` and `xn--r8jz45g.jp` are the same domain.
@@ -271,7 +273,7 @@ my admin domain import -apply -only spam.example,bad.example domain_blocks.csv
 
 In the admin API: `GET /api/v1/admin/domain_actions/export` (`text/csv`), `POST .../import/preview` (the body has `csv`), and `POST .../import` (the body has `blocks`, the chosen rows, and `private_note`).
 A row for this server's own domain is skipped (`own_domain`), and a domain action on it is refused.
-In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Export CSV" saves the file, and the import previews a pasted or chosen file before it imports the rows you keep.
+In the web client, open Moderation → Domain actions and choose "Mastodon's CSV" (`/moderation/domain-actions/import`): "Save as CSV" saves the file, and the import previews a chosen file before it imports the rows you keep; a `suspend` among them asks first.
 
 | CSV row | Action on this server |
 | --- | --- |
@@ -453,9 +455,9 @@ In the web client, use "Refetch posts" on the account's Review page (`/moderatio
 When a user asks whether a post, a follow, or an accept reached another server, list the deliveries to that server with the admin API.
 It shows each delivery of an activity to an inbox of the server, newest first, with every attempt and what the server answered, the deliveries that succeeded included.
 It needs the `manage_domains` permission.
-In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show masked fields** on each masked delivery; the screen says which of them are recorded in the audit log before they run.
+In the web client, the **Deliveries** section of the remote server screen (`/moderation/instances/{domain}`) shows the same list, with its filters by **Activity ID** and **Local account**, and **Show** for each hidden field under **Details** of a masked delivery; the screen says which of them are recorded in the audit log before they run.
 The Remote servers list shows only the servers that deliveries failed to reach. To open any other server, enter its domain, a handle on it, or a URL on it in **Open a server** above the list,
-or use **Open the account's server** on a remote account's Review page or on a report about a remote account, or **Open the server's page** on an audit log entry about a domain.
+or use **Open the account's server** on a remote account's Review page or on a report about a remote account, or the domain in an audit log entry about a domain.
 
 ```sh
 curl -H "Authorization: Bearer $TOKEN" \
@@ -633,6 +635,8 @@ my admin audit list -target-kind domain -target-id spam.example
 ```
 
 In the admin API: `GET /api/v1/admin/audit_log` (filter with `actor_account_id`, `action`, `target_kind` and `target_id`). It needs the `view_audit` permission.
+In the web client, open Moderation → Audit log (`/moderation/audit-log`): each entry reads as a sentence of who did what to what, newest first, the person and the target linked to their screens.
+Filter it by who did it (you, or the person of an entry's "Their other operations"), by the kind of target and then of operation, and by one target (an entry's "Other operations on this").
 
 - A row is the actor (the user for `user`, or `cli` for the CLI), the operation, the target kind and ID, the target's display name, the ID of the original record, and the time.
   The target ID is the ID of the account, report, appeal, user, rule, role or sign-up block; for a domain action it is the domain; for settings and texts it is the key.

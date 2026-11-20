@@ -3,8 +3,10 @@
 package notificationtest
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
+	"slices"
 	"testing"
 	"time"
 
@@ -68,6 +70,19 @@ type severanceEnv struct {
 	handlers *queue.JobHandlerRegistry
 	// scopes is the federation_scope that the moderation service reads, open at first.
 	scopes *moderationtest.StubScopes
+	// deps are the dependencies of mod.
+	deps appmoderation.Deps
+}
+
+// readFollows is the graph module that records the accounts whose follows ActiveFollowsOf read.
+type readFollows struct {
+	*appgraph.Service
+	read []string
+}
+
+func (r *readFollows) ActiveFollowsOf(ctx context.Context, tx uow.Tx, ids []string) ([]appgraph.ActiveFollow, error) {
+	r.read = append(r.read, ids...)
+	return r.Service.ActiveFollowsOf(ctx, tx, ids)
 }
 
 func newSeveranceEnv(t *testing.T, newHarness SeveranceFactory) *severanceEnv {
@@ -85,11 +100,12 @@ func newSeveranceEnv(t *testing.T, newHarness SeveranceFactory) *severanceEnv {
 		RemoteFollowEnv: re, jobs: &federationtest.FedJobs{Seen: map[string]bool{}}, handlers: &queue.JobHandlerRegistry{},
 		scopes: &moderationtest.StubScopes{},
 	}
-	e.mod = appmoderation.NewService(appmoderation.Deps{
+	e.deps = appmoderation.Deps{
 		UnitOfWork: re.H.UnitOfWork, Repository: mods, Accounts: re.Accounts, Clock: re.Clock, IDs: re.IDs,
 		Follows: re.Graph, Directory: re.Accounts, Outbox: queue.AfterCommit(projectors, e.jobs, nil), FanOutSize: 1,
 		Scopes: e.scopes,
-	})
+	}
+	e.mod = appmoderation.NewService(e.deps)
 	e.mod.RegisterJobs(e.handlers, queue.NewScheduler(e.jobs, re.Clock, nil))
 	return e
 }
@@ -255,8 +271,37 @@ func severanceOfDomain(t *testing.T, e *severanceEnv) {
 	e.followedBy(t, bad, bob, "https://bad.example/follows/1")
 	e.followedBy(t, sub, bob, "https://sub.bad.example/follows/2")
 	e.accepted(t, carol, good)
-	for _, id := range []string{outgoing.ID, incoming.ID} {
+	request := e.requested(t, carol, sub) // a follow request only
+	for _, id := range []string{outgoing.ID, incoming.ID, request.ID} {
 		e.Sent(t, id)
+	}
+
+	// Before the suspension, its impact counts the accepted follows with the domain and its
+	// subdomains, in both directions, and not those with a domain that only ends alike.
+	for domain, want := range map[string]appmoderation.SuspendImpact{
+		"bad.example":     {Follows: 4, LocalAccounts: 2},
+		"sub.bad.example": {Follows: 2, LocalAccounts: 2},
+		"notbad.example":  {Follows: 2, LocalAccounts: 2},
+		"quiet.example":   {},
+	} {
+		if got, err := e.mod.DomainSuspendImpact(ctx, domain); err != nil || got != want {
+			t.Errorf("DomainSuspendImpact(%s) = %+v, %v; want %+v", domain, got, err, want)
+		}
+	}
+	// It reads the follows of the domain's accounts only, and none for a domain without accounts.
+	reads := &readFollows{Service: e.Graph}
+	deps := e.deps
+	deps.Follows = reads
+	counting := appmoderation.NewService(deps)
+	for domain, want := range map[string][]string{"bad.example": {bad, sub}, "quiet.example": nil} {
+		reads.read = nil
+		if _, err := counting.DomainSuspendImpact(ctx, domain); err != nil {
+			t.Fatalf("DomainSuspendImpact(%s): %v", domain, err)
+		}
+		slices.Sort(reads.read)
+		if w := slices.Sorted(slices.Values(want)); !slices.Equal(reads.read, w) {
+			t.Errorf("DomainSuspendImpact(%s) read the follows of %v, want of %v", domain, reads.read, w)
+		}
 	}
 
 	e.Clock.Advance(time.Minute)

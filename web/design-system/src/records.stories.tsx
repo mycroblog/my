@@ -75,6 +75,10 @@ const stateWords: Record<RecordState, string> = {
   ending: "Ends Apr 10",
   failed: "Failed",
   disabled: "Disabled",
+  queued: "Queued",
+  running: "Running",
+  retrying: "Waiting to retry",
+  muted: "Muted",
 };
 
 const reports: readonly Report[] = [
@@ -457,6 +461,7 @@ const job = (id: number, head: string, caption: string, state: RecordState, atte
   id: `j${String(id)}`,
   head,
   caption,
+  code: true,
   href: `#/admin/jobs/j${String(id)}`,
   cells: {
     attempts,
@@ -636,6 +641,35 @@ export const DomainActions: Story = {
     <Column>
       <RecordTable label="Domain actions" head={{ label: "Domain" }} columns={domainColumns} rows={domains} />
     </Column>
+  ),
+};
+
+/** Subscriptions to block lists: each one's address under its title, in the code's face, breaking after a slash. */
+export const CodeCaptions: Story = {
+  render: () => (
+    <RecordTable
+      label="Block list subscriptions"
+      head={{ label: "Subscription" }}
+      columns={[{ key: "mode", label: "Mode", kind: "fit", beside: true }]}
+      rows={[
+        {
+          id: "s1",
+          head: "Neighbours' published blocks",
+          caption: "https://moderation.example/api/v1/instance/domain_blocks",
+          captionCode: true,
+          href: "#/moderation/domain-actions/subscriptions/s1",
+          cells: { mode: "Automatic" },
+        },
+        {
+          id: "s2",
+          head: "Shared block list",
+          caption: "https://lists.example/blocklist.csv",
+          captionCode: true,
+          href: "#/moderation/domain-actions/subscriptions/s2",
+          cells: { mode: "Drafts" },
+        },
+      ]}
+    />
   ),
 };
 

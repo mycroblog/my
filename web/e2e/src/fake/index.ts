@@ -29,4 +29,5 @@ export type { FakeEventPlan, FakeEvents } from "./events";
 export type { FakeFinanceOptions } from "./finance";
 export type { FakeSupporterOptions, FakeSupporters } from "./supporters";
 export type { FakeReportOptions, FakeReports } from "./reports";
+export type { FakeOperations, FakeOperationsOptions } from "./operations";
 export type { FakeStaffServer, FakeStaffServerOptions } from "./staff-server";

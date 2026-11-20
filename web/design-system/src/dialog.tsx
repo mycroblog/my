@@ -136,7 +136,7 @@ function DialogHead({
 export type ConfirmDialogProps = {
   /** The question (Delete this post?). */
   title: string;
-  /** What follows the confirmation, in a sentence or two. */
+  /** What follows the confirmation, in a sentence or two, or a few lines of them. */
   children: ReactNode;
   /** The close button's name, where the design system's own word (Close) does not fit; it cancels, as Cancel does. */
   closeLabel?: string | undefined;
@@ -149,6 +149,11 @@ export type ConfirmDialogProps = {
   onConfirm: (entered: string) => void;
   /** The confirmed action in flight: the confirmation spins and the dialog stays. */
   busy?: boolean | undefined;
+  /**
+   * What the reader must read before confirming is still on its way (the follows a suspend ends, as the server counts
+   * them): the confirmation stays disabled until it came, or until the dialog says it could not.
+   */
+  pending?: boolean | undefined;
   /**
    * The text the reader types to unlock the confirmation, before what is grave as well as final (the account's handle
    * before a ban, the server's domain before closing it, the role's name before deleting it): the confirmation stays
@@ -172,6 +177,7 @@ export function ConfirmDialog({
   onCancel,
   onConfirm,
   busy = false,
+  pending = false,
   phrase,
   layer = true,
 }: ConfirmDialogProps) {
@@ -182,7 +188,7 @@ export function ConfirmDialog({
   const fieldId = useId();
   const [entered, setEntered] = useState("");
   // Without a text to type, the confirmation is open from the start.
-  const unlocked = phrase === undefined || folded(entered) === folded(phrase);
+  const unlocked = !pending && (phrase === undefined || folded(entered) === folded(phrase));
   // Over the page, the focus starts in the field of the text to type: the reader came to type it.
   const typing = phrase !== undefined;
   useEffect(() => {
@@ -198,9 +204,10 @@ export function ConfirmDialog({
         onClose={onCancel}
         busy={busy}
       />
-      <p id={textId} className={s.text()}>
+      {/* A block, so that what follows may be a few lines, each its own. */}
+      <div id={textId} className={s.text()}>
         {children}
-      </p>
+      </div>
       {phrase !== undefined && (
         <TextField
           id={fieldId}
@@ -220,6 +227,7 @@ export function ConfirmDialog({
             kind="primary"
             size="form"
             busy={busy}
+            isDisabled={pending}
             onPress={() => {
               onConfirm("");
             }}

@@ -135,5 +135,14 @@
   ],
   "The server's translation service is down: the post stays readable in its own language, and nothing the reader does brings the service back.": [
     "appcomponents:post.translation_failed"
+  ],
+  "It tells of a past fetch in a log of a subscription's fetches, whose page offers Fetch now: the entry itself has no step.": [
+    "appfeatures:staff_domains.fetch.failed#http_status",
+    "appfeatures:staff_domains.fetch.failed#network",
+    "appfeatures:staff_domains.fetch.failed#forbidden_destination",
+    "appfeatures:staff_domains.fetch.failed#too_large",
+    "appfeatures:staff_domains.fetch.failed#too_many_entries",
+    "appfeatures:staff_domains.fetch.failed#malformed",
+    "appfeatures:staff_domains.fetch.failed#other"
   ]
 }

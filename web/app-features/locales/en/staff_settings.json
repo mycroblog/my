@@ -411,6 +411,10 @@
     "defaultMessage": "Security contact",
     "description": "The heading of the section of the security contact on the Search and crawlers page of Server settings. Read by administrators."
   },
+  "staff_settings.section.ux_measurement": {
+    "defaultMessage": "Measuring",
+    "description": "The heading of the section of the setting that measures the web client, under the UX measurements. Read by administrators."
+  },
   "staff_settings.text.name": {
     "defaultMessage": "Name",
     "description": "The label of a text of the instance on the General page of Server settings. Read by administrators."
@@ -998,6 +1002,10 @@
   "staff_settings.setting.max_article_bytes.about": {
     "defaultMessage": "How large the body of an article may be, counted in the HTML it makes (1,000 to 100,000).",
     "description": "The line about the setting Largest article: what it does where that is not plain. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement": {
+    "defaultMessage": "Measure the web client",
+    "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {Anyone} approval {After a moderator approves} invite {Only with an invite} other {Nobody}}",

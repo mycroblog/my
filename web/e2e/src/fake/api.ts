@@ -79,9 +79,11 @@ import { adminHandlers, type FakeAdmin, type FakeAdminOptions } from "./admin-se
 import { closureHandlers, type FakeClosureOptions } from "./closure";
 import { themeHandlers, type FakeThemeOptions } from "./theme";
 import { fakeRules, reportHandlers, type FakeReportOptions, type FakeReports } from "./reports";
+import { domainHandlers, type FakeDomainOptions, type FakeDomains } from "./domains";
 import { permissionsOfRoles } from "./staff-roles";
 import { refusalOf, staffServerHandlers, type FakeStaffServer, type FakeStaffServerOptions } from "./staff-server";
 import { moderationHandlers, type FakeModeration, type FakeModerationOptions } from "./accounts";
+import { operationsHandlers, type FakeOperations, type FakeOperationsOptions } from "./operations";
 import { createScripts, type Script, type Scripted } from "./script";
 import {
   accessHandlers,
@@ -334,6 +336,8 @@ export type FakeOptions = {
   };
   /** The moderators' queue of reports (reports.ts): the fake's own reports by default, or none. */
   reports?: FakeReportOptions;
+  /** The domain actions, the allowlist, the subscriptions, the servers and the audit log (domains.ts), or none. */
+  domains?: FakeDomainOptions;
   /** The administration's relays, login providers and OAuth apps (admin-settings.ts): the fake's, or none. */
   admin?: FakeAdminOptions;
   /**
@@ -341,6 +345,12 @@ export type FakeOptions = {
    * sign-up blocks and invites by default, or none of them.
    */
   moderation?: FakeModerationOptions;
+  /**
+   * The operations (operations.ts): the fake's jobs, error groups and rules of the link card crawler by default, or
+   * none; `uxMeasurement`, the instance measures the web client (`ux_measurement`), whose samples the fake then holds.
+   */
+  operations?: FakeOperationsOptions;
+  uxMeasurement?: boolean;
   /** The keys of the posts the reader bookmarked besides the seed's, the newest bookmark first. */
   bookmarks?: readonly string[];
   /** The most hashtags the reader may follow, the server's 100 by default; 0 refuses every follow. */
@@ -597,6 +607,8 @@ export type FakeApi = {
   readonly supporters: FakeSupporters;
   /** The reports' IDs by the fake's keys, the open ones, and a report filed by a person of the fake (reports.ts). */
   readonly reports: FakeReports;
+  /** The domain actions' and the subscriptions' IDs by the fake's keys, and the audit log (domains.ts). */
+  readonly domains: FakeDomains;
   /** The IDs of the custom emoji, announcements and webhooks of the administration by their keys (staff-server.ts). */
   readonly staffServer: FakeStaffServer;
   /** The IDs of the cost items by the fake's keys (finance-admin.ts). */
@@ -607,6 +619,8 @@ export type FakeApi = {
   readonly admin: FakeAdmin;
   /** The IDs of the moderation's actions, appeals, registrations and the rest by the fake's keys (accounts.ts). */
   readonly moderation: FakeModeration;
+  /** The IDs of the operations' jobs and error groups by the fake's keys (operations.ts). */
+  readonly operations: FakeOperations;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
   /**
@@ -1962,7 +1976,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     if (staff !== "admin") return [...finance];
     return [
       ...moderation,
-      ...(["manage_settings", "manage_rules", "manage_roles", "manage_jobs", "manage_announcements"] as const),
+      ...([
+        "manage_settings",
+        "manage_rules",
+        "manage_roles",
+        "manage_jobs",
+        "manage_errors",
+        "manage_announcements",
+      ] as const),
       ...(["manage_custom_emojis", "manage_webhooks", "manage_finance", "view_finance", "manage_supporters"] as const),
       ...(["manage_login_providers", "manage_oauth_apps"] as const),
       "manage_service_closure",
@@ -2171,6 +2192,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
     link_cards_ignore_robots_txt: false,
+    ux_measurement: o.uxMeasurement === true,
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
@@ -2491,6 +2513,23 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     host: fakeHost,
   });
 
+  // The domains, the remote servers and the audit log (domains.ts), the fake's own.
+  const federated = domainHandlers({
+    started,
+    options: o.domains,
+    viewer,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    accountOf,
+    known: (username) => people.some((p) => p.username === username),
+    accountId: idOf,
+    accountById: (id) => {
+      const username = usernameOf.get(id);
+      return username === undefined ? undefined : accountOf(username);
+    },
+    follows: () => following,
+    host: fakeHost,
+  });
+
   // The instance theme (theme.ts) and the closure of the service as its administrators run it (closure.ts), whose state
   // the instance says.
   const theming = themeHandlers({
@@ -2557,6 +2596,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(o.translation?.provider === undefined ? {} : { translation_providers: translationProvider.id }),
       ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
       ...(o.translation?.reports === true ? { translation_reports_to_server: "true" } : {}),
+      ...(o.uxMeasurement === true ? { ux_measurement: "true" } : {}),
     },
     texts: {
       name: instanceBody.name,
@@ -2584,6 +2624,14 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     accountOf,
     viewer,
     host: fakeHost,
+  });
+
+  // The operations (operations.ts): the job queue, the error groups, the UX measurements, the link card crawler's rules.
+  const operated = operationsHandlers({
+    started,
+    options: o.operations,
+    permissions: () => (visitor ? [] : permissionsOf(viewer)),
+    setting: (key) => administered.admin.setting(key),
   });
 
   // The moderation of accounts (accounts.ts): actions, appeals, registrations, hooks' decisions, sign-up blocks, invites.
@@ -3939,6 +3987,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ...moderated.handlers,
     ...accounts.handlers,
 
+    // ---- The domains, the remote servers and the audit log ------------------------------------------------------------
+
+    ...federated.handlers,
+
     // ---- The administration of roles, custom emoji, announcements and webhooks ----------------------------------------
 
     ...staffServer.handlers,
@@ -3948,6 +4000,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     // ---- The administration's settings, texts, rules, relays, login providers and OAuth apps -------------------------
 
     ...administered.handlers,
+
+    // ---- The operations: jobs, error groups, UX measurements, the link card crawler's rules ------------------------
+
+    ...operated.handlers,
 
     // ---- The instance theme and the closure of the service --------------------------------------------------------
 
@@ -4174,11 +4230,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     events: events.events,
     supporters: supporting.supporters,
     reports: moderated.reports,
+    domains: federated.domains,
     staffServer: staffServer.server,
     financeAdmin: financeAdmin.admin,
     supportersAdmin: supportersAdmin.admin,
     admin: administered.admin,
     moderation: accounts.moderation,
+    operations: operated.operations,
     unimplemented,
     revocations,
     newPosts,

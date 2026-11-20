@@ -81,7 +81,7 @@ const useWords = () => words[new Intl.Locale(useLocale().locale).language === "j
 const handle = "spam_bot_7731@social.example";
 
 /** The ban's confirmation, in the flow of the page, or over it. */
-function Ban({ busy = false, layer = false }: { busy?: boolean; layer?: boolean }) {
+function Ban({ busy = false, pending = false, layer = false }: { busy?: boolean; pending?: boolean; layer?: boolean }) {
   const w = useWords();
   return (
     <ConfirmDialog
@@ -91,6 +91,7 @@ function Ban({ busy = false, layer = false }: { busy?: boolean; layer?: boolean 
       confirm={w.ban.confirm}
       phrase={handle}
       busy={busy}
+      pending={pending}
       onCancel={none}
       onConfirm={none}
     >
@@ -161,6 +162,17 @@ export const TypedConfirmTyped: Story = {
     <Column>
       <TypedIn text={handle}>
         <Ban />
+      </TypedIn>
+    </Column>
+  ),
+};
+
+/** The handle typed while what the reader reads first is on its way: the confirmation stays disabled. */
+export const TypedConfirmPending: Story = {
+  render: () => (
+    <Column>
+      <TypedIn text={handle}>
+        <Ban pending />
       </TypedIn>
     </Column>
   ),
