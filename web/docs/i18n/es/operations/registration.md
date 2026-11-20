@@ -162,7 +162,7 @@ my invite revoke <code>
 Los miembros pueden crear invitaciones propias, además del personal.
 Quién puede lo decide el ajuste de la instancia `invite_creators` ([ajustes de la instancia](instance-settings.md)):
 
-- `permitted` (predeterminado): solo los usuarios cuyos roles tienen el permiso `create_invites`. Por defecto solo lo tiene el rol integrado `admin`. Puedes añadirlo a un rol que concedas a mano, o al rol de un [plan de colaborador](supporters.md), para que los colaboradores puedan invitar a personas.
+- `permitted` (predeterminado): solo los usuarios cuyos roles tienen el permiso `create_invites`. Por defecto solo lo tiene el rol integrado `admin`. Puedes añadirlo a un rol que concedas a mano, o al rol de un [plan de mecenas](supporters.md), para que los mecenas puedan invitar a personas.
 - `everyone`: todos los usuarios locales con sesión iniciada.
 
 En cualquier caso, un usuario cuya cuenta está suspendida o limitada, o cuyo registro no está aprobado, no puede crear invitaciones, y nadie puede mientras el modo de registro es `closed`.

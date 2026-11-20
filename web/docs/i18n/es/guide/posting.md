@@ -191,7 +191,7 @@ cambiarlos como cualquier otro ajuste.
 Un servidor también puede conservar las publicaciones durante un máximo de días. La página «Acerca de» del servidor lo dice antes de que te registres. Con ese
 máximo, la eliminación automática siempre está activada para ti, la edad que eliges no puede ser mayor que el máximo, y solo se pueden conservar los
 tipos de publicaciones que el servidor permite (por defecto solo las publicaciones fijadas, así que tus artículos también se eliminan
-salvo que el servidor permita conservarlos). Algunos servidores permiten que algunas personas conserven sus publicaciones más tiempo, por ejemplo como ventaja de un plan de colaborador.
+salvo que el servidor permita conservarlos). Algunos servidores permiten que algunas personas conserven sus publicaciones más tiempo, por ejemplo como ventaja de un plan de mecenas.
 
 Cuando un máximo empieza a aplicarse a ti (el servidor lo introduce o lo reduce, o pierdes el derecho a conservar publicaciones más tiempo),
 recibes una notificación, que lleva a esa página, y un correo, salvo que lo hayas desactivado, que dice desde cuándo se aplica.

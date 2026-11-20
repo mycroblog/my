@@ -7,27 +7,33 @@ personalizados a un relé de Slack o Discord, a un sistema de tickets o a una he
 servidor sin webhooks configurados no guarda filas adicionales ni ejecuta trabajos adicionales. Lo que recibe un
 receptor (encabezados, firma, eventos, cuerpo) se describe en la [referencia de webhooks](../reference/webhooks.md).
 
-<!-- source: set-up-a-webhook c8a80bc40038 -->
+<!-- source: set-up-a-webhook 20c889b84876 -->
 ## Configurar un webhook
 
-Cualquier persona con el permiso `manage_webhooks` puede configurar webhooks en la pantalla de administración
-«Webhooks» (`/admin/webhooks`). El rol integrado `admin` lo tiene. «Añadir un webhook» abre el formulario; al elegir un
-webhook de la lista se abre su página, donde puedes cambiarlo, probarlo, activarlo, desactivarlo y eliminarlo, darle un
-secreto nuevo y ver sus entregas.
+Cualquiera con el permiso `manage_webhooks` puede configurar webhooks en la pantalla de administración «Webhooks» (`/admin/webhooks`).
+El rol integrado `admin` lo tiene. «Configurar un webhook» abre el formulario; al elegir un webhook de la lista se abre su página, donde
+lo pruebas, lo desactivas y activas, lo cambias, ves sus entregas de los últimos 14 días y reenvías una, le das un nuevo
+secreto y lo eliminas tras escribir el nombre de host de su URL. La página dice cuándo las entregas siguen fallando y cuándo
+el servidor desactivó el webhook. El historial muestra el evento, el estado, los intentos y el último intento de cada entrega, y el cuerpo
+que envió, que puede contener datos personales y se muestra solo a quien también tiene el permiso que necesita su evento (abajo).
 
-1. Crea un webhook con una URL de destino, una descripción y los eventos a los que suscribirte. Además de `manage_webhooks`, cada evento necesita su propio permiso: `manage_reports` para denuncias, `manage_accounts` para registros, cuentas, acciones de moderación y apelaciones, `manage_domains` para acciones sobre dominios, `manage_custom_emojis` para emoji personalizados y `manage_errors` para grupos de errores. Las publicaciones públicas no necesitan ningún permiso adicional. No puedes seleccionar un evento cuyo permiso no tienes.
-2. El secreto (`whsec_...`) se muestra una sola vez, cuando se crea el webhook. Defínelo en el receptor. No se puede volver a mostrar.
-3. En la página del webhook, elige «Enviar una prueba» para enviar `webhook.test` y comprueba en sus entregas que ha llegado.
+1. Crea un webhook con una URL de destino, una descripción y los eventos a los que suscribirse. Cada evento también necesita su propio
+   permiso además de `manage_webhooks`: `manage_reports` para denuncias, `manage_accounts` para registros, cuentas,
+   acciones de moderación y apelaciones, `manage_domains` para acciones de dominio, `manage_custom_emojis` para emoji personalizados, y
+   `manage_errors` para grupos de errores.
+   Las publicaciones públicas no necesitan ningún permiso adicional. No puedes seleccionar un evento cuyo permiso no tienes.
+2. El secreto (`whsec_...`) se muestra una vez, cuando se crea el webhook. Defínelo en el receptor. No puede mostrarse de nuevo.
+3. En la página del webhook, elige «Enviar una prueba» para enviar `webhook.test`, y comprueba en sus entregas que llegó.
 
-Crear, cambiar, eliminar, activar y desactivar un webhook, y renovar su secreto, queda registrado en el registro de
-auditoría. El objetivo se muestra como la descripción y el nombre de host de la URL; la URL en sí no se registra.
+Crear, cambiar, eliminar, activar, desactivar y rotar el secreto de un webhook se anotan en el registro de auditoría.
+El destino se muestra como la descripción y el nombre de host de la URL; la URL en sí no se anota.
 
-<!-- source: rotate-the-secret 928c62f87538 -->
-## Renovar el secreto
+<!-- source: rotate-the-secret fc0bedd73653 -->
+## Rotar el secreto
 
-«Nuevo secreto» crea un secreto nuevo y lo muestra una sola vez. Durante las 24 horas siguientes los mensajes también se
-firman con el secreto antiguo (`webhook-signature` lleva dos firmas), de modo que puedes cambiar el receptor al secreto
-nuevo en ese intervalo. Los secretos se sellan con `kernel.Sealer` antes de guardarse en la base de datos; la clave es la
+«Crear un secreto nuevo» crea un secreto nuevo y lo muestra una vez. Durante las 24 horas siguientes los mensajes también se firman con el secreto antiguo
+(`webhook-signature` lleva dos firmas), así que puedes cambiar el receptor al secreto nuevo en esa ventana.
+Los secretos se sellan con `kernel.Sealer` antes de almacenarse en la base de datos; la clave es la
 [KEK](key-management.md).
 
 <!-- source: failures-and-redelivery 65aba0d2089e -->
