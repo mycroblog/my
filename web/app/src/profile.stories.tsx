@@ -4,7 +4,8 @@
 // posts off, then on), locked and followed, following them, blocked and muted, an account of another server that
 // follows them, and the same with its server muted; one that moved, and one that is not there (nao's, deactivated);
 // the reader's private note on it; the home of a reader who mutes a server; and a story per state every screen is
-// shown in (app.samples.tsx), on a profile of another. What a press opens or leaves is the part's own: the note's
+// shown in (app.samples.tsx), on a profile of another; a visitor's, of a local account and of a remote one, and the
+// first page of a visitor of a one-person server, its operator's profile. What a press opens or leaves is the part's own: the note's
 // editor (the app components' Profile note), the profile's and a post's menu (the design system's Menu everywhere), a
 // confirmation (its List management), and the line in a post's place once its author was muted or blocked (its
 // Caption line).
@@ -45,3 +46,10 @@ export const Empty: Story = { parameters: screen({ at: other, state: "empty" }) 
 export const Loading: Story = { parameters: screen({ at: other, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: other, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: other, state: "long" }) };
+/** Read without a session: Follow and the menu's Report lead to the sign-in, as their posts' actions do. */
+export const Visitor: Story = { parameters: screen({ at: other, signedOut: true }) };
+export const VisitorRemote: Story = { parameters: screen({ at: remote, signedOut: true }) };
+/** The first page of a one-person server, signed out: its operator's profile (ADR-0152 §7). */
+export const VisitorSingleUser: Story = {
+  parameters: screen({ at: "/", signedOut: true, server: { singleUser: true } }),
+};

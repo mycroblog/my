@@ -8,9 +8,12 @@
 // a feed owns its articles alone, so the replies' heading stands in the first reply, above it, and each fold in the
 // entry before it. Who reacted to the focused post stands inside it, after its actions (reactors.tsx).
 // A post's actions are answered as on every screen (post-actions.tsx). An article (ADR-0160) focused here is its page:
-// its text in full, its replies under it as a thread's.
+// its text in full, its replies under it as a thread's. A visitor reads it too, and the actions of its posts that need
+// an account lead them to sign in, coming back to the post they pressed one on. A post the reader may not see is not
+// found, as the server answers it.
 
-import { FeedKeys, PostContent, PostDetails } from "@my/app-components";
+import { FeedKeys, PostContent, PostDetails, statusPath, type PostStatus } from "@my/app-components";
+import { ProblemError } from "@mycroblog/mykit";
 import { statusContextQuery, statusQuery, useStatusGone, useThread, type AppData, type Status } from "@my/app-data";
 import {
   BackButton,
@@ -58,8 +61,19 @@ function depths(focused: string, descendants: readonly Status[]): ReadonlyMap<st
   return depth;
 }
 
-/** The post of `id` in its thread; `onBack` goes back to where the reader came from. */
-export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
+/**
+ * The post of `id` in its thread; `onBack` goes back to where the reader came from. With `signIn`, for a visitor, the
+ * actions of its posts that need an account lead to sign in, given the address of the post to come back to.
+ */
+export function Thread({
+  id,
+  onBack,
+  signIn,
+}: {
+  id: string;
+  onBack: () => void;
+  signIn?: ((returnTo: string) => void) | undefined;
+}) {
   const { t } = stringsIn(useLocale().locale);
   const { status, context, error, refetch } = useThread(id);
   const [earlier, setEarlier] = useState(false);
@@ -78,13 +92,25 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
     onBack();
   }, [gone, onBack]);
   const picker = usePostPicker();
+  // What a post's actions are given: for a visitor, the sign-in in place of what is the reader's own.
+  const reader = (s: Status) =>
+    signIn === undefined
+      ? { voting: votingOf(s), own: ownOf(s), picker }
+      : {
+          signIn: (shown: PostStatus) => {
+            signIn(statusPath(shown));
+          },
+        };
   const back = <BackButton onPress={onBack}>{t("thread.back")}</BackButton>;
+  const missing = error instanceof ProblemError && (error.status === 404 || error.status === 410);
   if (status === undefined)
     return (
       <ScreenStack>
         {back}
         {error === null ? (
           <FeedNotice>{t("thread.loading")}</FeedNotice>
+        ) : missing ? (
+          <FeedNotice>{t("thread.not_found")}</FeedNotice>
         ) : (
           <FeedNotice alert action={<TextButton onPress={refetch}>{t("thread.retry")}</TextButton>}>
             {t("thread.failed")}
@@ -103,7 +129,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
   const positions = new Map([...first, ...last, status, ...replies].map((s, i) => [s.id, i + 1]));
   const item = (s: Status, children?: ReactNode) => (
     <FeedItem key={s.id} id={s.id} position={positions.get(s.id) ?? 0}>
-      {children ?? <Post status={s} onAction={onAction} voting={votingOf(s)} own={ownOf(s)} picker={picker} />}
+      {children ?? <Post status={s} onAction={onAction} {...reader(s)} />}
     </FeedItem>
   );
   const count = positions.size;
@@ -153,17 +179,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
       >
         <FeedKeys />
         {first.map((s) =>
-          item(
-            s,
-            <Post
-              status={s}
-              onAction={onAction}
-              voting={votingOf(s)}
-              own={ownOf(s)}
-              picker={picker}
-              after={earlierFold || undefined}
-            />,
-          ),
+          item(s, <Post status={s} onAction={onAction} {...reader(s)} after={earlierFold || undefined} />),
         )}
         {last.map((s) => item(s))}
         <ThreadFocus key="focus">
@@ -182,9 +198,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
                 />
               }
               onAction={onAction}
-              voting={votingOf(status)}
-              own={ownOf(status)}
-              picker={picker}
+              {...reader(status)}
               after={<PostReactors status={status} />}
             />,
           )}
@@ -196,9 +210,7 @@ export function Thread({ id, onBack }: { id: string; onBack: () => void }) {
               <Post
                 status={s}
                 onAction={onAction}
-                voting={votingOf(s)}
-                own={ownOf(s)}
-                picker={picker}
+                {...reader(s)}
                 context={i === 0 ? <GroupHeading>{t("thread.replies")}</GroupHeading> : undefined}
                 replyingTo={!(article && s.in_reply_to_id === status.id)}
                 after={(s === lastReply && laterFold) || undefined}

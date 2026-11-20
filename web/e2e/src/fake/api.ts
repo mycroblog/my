@@ -1272,7 +1272,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(card.author === undefined ? {} : { author: accountOf(card.author) }),
     });
 
-  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may.
+  // A reply waiting for its approval, or refused it, shows to its author alone; a visitor sees what anyone may, which
+  // leaves out a post for this server's people (`local`).
   const visible = (p: Post) => {
     const own = !visitor && p.author === viewer;
     return (
@@ -1281,7 +1282,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       (own ||
         p.visibility === "public" ||
         p.visibility === "unlisted" ||
-        p.visibility === "local" ||
+        (!visitor && p.visibility === "local") ||
         (!visitor && p.visibility === "private" && follows_(viewer, p.author)) ||
         (!visitor && p.visibility === "direct" && mentioned(p.text).includes(viewer)))
     );
@@ -2906,7 +2907,13 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     const username = usernameOf.get(id);
     if (username === undefined) return Promise.resolve(notFound());
     const shown = followsVisibility[username] ?? "public";
-    if (username !== viewer && shown !== "public" && !(shown === "followers" && follows_(viewer, username)))
+    // A visitor is no one's follower, and owns no list.
+    const reader = visitor ? undefined : viewer;
+    if (
+      username !== reader &&
+      shown !== "public" &&
+      !(shown === "followers" && reader !== undefined && follows_(reader, username))
+    )
       return Promise.resolve(
         problem(403, "This account's follows are not shown", { type: "/api/v1/problems/follows-hidden" }),
       );
@@ -3570,7 +3577,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     },
     "GET /statuses/{id}/context": ({ params }) => {
       if (made.has(params.id)) return { status: 200, body: { ancestors: [], descendants: [] } };
-      const key = keyOf.get(params.id);
+      // The thread of a post the reader may not see is not there either.
+      const key = shownPost(params.id)?.key;
       if (key === undefined) return notFound();
       const { ancestors, descendants } = contextOf(key);
       return {
@@ -4102,7 +4110,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

@@ -3,7 +3,8 @@
 // A post's page, a story per state: a reply in its thread, a post alone with no replies, a post with reactions and who
 // reacted under it, a thread folded (both folds), its posts in another language offered for translation by a provider
 // that answers, and by one that fails, and each state every screen is shown in (app.samples.tsx); an article's page;
-// and the servers on which a translation goes each of its ways.
+// and the servers on which a translation goes each of its ways; a visitor's thread, and a followers-only post a visitor
+// may not see, which is not found.
 
 import type { Meta, StoryObj } from "@storybook/react-vite";
 import { screen, screenMeta } from "./app.samples";
@@ -29,6 +30,10 @@ export const Empty: Story = { parameters: screen({ at: thread, state: "empty" })
 export const Loading: Story = { parameters: screen({ at: thread, state: "loading" }) };
 export const Failed: Story = { parameters: screen({ at: thread, state: "error" }) };
 export const LongText: Story = { parameters: screen({ at: thread, state: "long" }) };
+/** Read without a session: the actions that need an account lead to the sign-in, coming back to the post. */
+export const Visitor: Story = { parameters: screen({ at: thread, signedOut: true }) };
+/** A followers-only post opened by a visitor: the server answers that it is not there. */
+export const VisitorNotFound: Story = { parameters: screen({ at: "ren-followers", signedOut: true }) };
 /**
  * With a translation provider on the server: the posts in another language than the reader's offer Translate (in en,
  * the Japanese ones; in ja, the English ones), which the provider answers.

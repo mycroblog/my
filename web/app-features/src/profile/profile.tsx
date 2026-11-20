@@ -12,7 +12,9 @@
 // there, with neither follow nor "Follows you"; an account that is not there (§15) shows back and a line, whatever
 // the reason. A failed action is told at the bottom of the page (usePostNotice). Under
 // it, the tabs of its posts (posts, posts and replies, media, articles), the pinned posts first under the first two. A blocked
-// account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx).
+// account shows its head and no posts. A post's actions are answered as on every screen (post-actions.tsx). A visitor
+// reads it too, without what is the reader's own (the relationship, the note, the muted server, the rooms and the
+// events): Follow, the menu's Report and their posts' actions that need an account lead them to sign in, coming back.
 
 import {
   AccountName,
@@ -27,8 +29,10 @@ import {
   NoteEditor,
   NoteLine,
   PostContent,
+  type PostStatus,
   ProfileHead,
   sentenceHandleOf,
+  statusPath,
   TagList,
   VoiceRoomEntryLine,
 } from "@my/app-components";
@@ -118,7 +122,8 @@ export async function loadOwnProfile(data: AppData): Promise<void> {
  */
 export function useProfileTitle(acct: string | undefined): string | undefined {
   const { t } = stringsIn(useLocale().locale);
-  const viewer = useViewer();
+  // The viewer's own is read only for their own profile, which a visitor has none of.
+  const viewer = useViewer(acct === undefined);
   const { account } = useAccount(acct ?? viewer?.acct);
   return account === undefined ? undefined : t("profile.title", { name: nameOf(account), handle: handleOf(account) });
 }
@@ -439,6 +444,38 @@ function More({
 }
 
 /**
+ * A visitor's main action and menu on another account's profile: Follow (Request to follow for a locked account), and
+ * a menu of the original page of a remote account and Report, each that needs an account leading to sign in, given
+ * the profile's address to come back to.
+ */
+function VisitorActions({ account, signIn, t }: { account: Account; signIn: (returnTo: string) => void; t: T }) {
+  const back = () => {
+    signIn(accountPath(account));
+  };
+  return (
+    <>
+      <Button size="timeline" kind="primary" onPress={back}>
+        {t(account.locked ? "profile.request_follow" : "profile.follow")}
+      </Button>
+      <MenuButton icon="more" label={t("profile.more")}>
+        {account.acct.includes("@") && (
+          <MenuGroup>
+            <MenuItem id="open" icon="open" onAction={openOriginal(account)}>
+              {t("profile.open_original")}
+            </MenuItem>
+          </MenuGroup>
+        )}
+        <MenuGroup title={sentenceHandleOf(account)}>
+          <MenuItem id="report" icon="report" onAction={back}>
+            {t("report.menu")}
+          </MenuItem>
+        </MenuGroup>
+      </MenuButton>
+    </>
+  );
+}
+
+/**
  * The reader's private note on the account, a line under the counts that opens its editor in place: the note, or with
  * none, what adding one does. Saving an empty note removes it; Cancel keeps it as it was.
  */
@@ -487,9 +524,8 @@ function Note({ account, note, t }: { account: Account; note: string; t: T }) {
  * The open voice chat room where the account hosts or speaks, which the reader sees (ADR-0100 §8), as a line that
  * leads to it; nothing for none, for a listener, without a session, or while the voice chat is off.
  */
-function VoiceEntry({ account }: { account: Account }) {
+function VoiceEntry({ account, signedIn }: { account: Account; signedIn: boolean }) {
   const on = useInstance()?.voice_enabled === true;
-  const signedIn = useViewer() !== undefined;
   const entry = useAccountVoiceRoom(account.id, on && signedIn);
   return entry === undefined || entry === null ? null : <VoiceRoomEntryLine entry={entry} />;
 }
@@ -501,8 +537,7 @@ const eventsShown = 3;
  * The upcoming events the account organizes that the reader sees (ADR-0161 §9, FR-951), the nearest first, as lines
  * that lead to them; nothing for none, without a session, or for an account of another server, which has none here.
  */
-function EventsEntry({ account, t }: { account: Account; t: T }) {
-  const signedIn = useViewer() !== undefined;
+function EventsEntry({ account, signedIn, t }: { account: Account; signedIn: boolean; t: T }) {
   const list = useEvents({ organizerId: account.id }, signedIn && !account.acct.includes("@"));
   if (list.items.length === 0) return null;
   const now = Date.now();
@@ -521,12 +556,14 @@ function Head({
   account,
   relationship,
   own,
+  signIn,
   t,
   lang,
 }: {
   account: Account;
   relationship: Relationship | undefined;
   own: boolean;
+  signIn: ((returnTo: string) => void) | undefined;
   t: T;
   lang: string;
 }) {
@@ -539,12 +576,18 @@ function Head({
   );
   const blocked = relationship?.blocking ?? false;
   const remote = account.acct.includes("@");
-  const mutedDomain = useMutedDomain(remote && !own ? account.domain : undefined);
+  const signedIn = signIn === undefined;
+  const mutedDomain = useMutedDomain(remote && !own && signedIn ? account.domain : undefined);
   const muteServer = useMuteDomain();
   const write = useAccountWrite(t);
   const avatar = account.avatar?.medium.url ?? account.avatar?.small.url;
   // A moved account's main action leads to the account it moved to, which offers follow; its followers moved with it.
   const moved = account.moved;
+  const goToNew = moved && (
+    <LinkButton href={accountPath(moved)} kind="primary" size="timeline">
+      {t("profile.go_to_new")}
+    </LinkButton>
+  );
   return (
     <ProfileHead
       nameId={nameId}
@@ -555,19 +598,15 @@ function Head({
           <LinkButton href={profileEditPath} size="timeline">
             {t("settings.profile.edit")}
           </LinkButton>
+        ) : signIn !== undefined ? (
+          (goToNew ?? <VisitorActions account={account} signIn={signIn} t={t} />)
         ) : (
           relationship !== undefined && (
             <>
               {moved === undefined && relationship.following === true && !blocked && (
                 <Bell account={account} relationship={relationship} t={t} />
               )}
-              {moved === undefined ? (
-                <Follow account={account} relationship={relationship} t={t} />
-              ) : (
-                <LinkButton href={accountPath(moved)} kind="primary" size="timeline">
-                  {t("profile.go_to_new")}
-                </LinkButton>
-              )}
+              {goToNew ?? <Follow account={account} relationship={relationship} t={t} />}
               <More account={account} relationship={relationship} mutedDomain={mutedDomain} t={t} />
             </>
           )
@@ -658,8 +697,8 @@ function Head({
           />
         )}
       </MetaLine>
-      {!blocked && <VoiceEntry account={account} />}
-      {!blocked && <EventsEntry account={account} t={t} />}
+      {!blocked && <VoiceEntry account={account} signedIn={signedIn} />}
+      {!blocked && <EventsEntry account={account} signedIn={signedIn} t={t} />}
       {!own && relationship?.note !== undefined && <Note account={account} note={relationship.note} t={t} />}
       {mutedDomain !== undefined && (
         <CaptionLine
@@ -703,7 +742,19 @@ function Head({
 /** A post of the list: the pinned ones first, keyed apart from the same post further down. */
 type Item = { readonly status: Status; readonly pinned: boolean };
 
-function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed: boolean; t: T }) {
+function Posts({
+  account,
+  tab,
+  closed,
+  signIn,
+  t,
+}: {
+  account: Account;
+  tab: Tab;
+  closed: boolean;
+  signIn: ((returnTo: string) => void) | undefined;
+  t: T;
+}) {
   const posts = useAccountStatuses(account.id, tab);
   // The pinned posts lead the lists of all posts, not the filters of some (media, articles).
   const withPinned = tab === "posts" || tab === "replies";
@@ -729,9 +780,13 @@ function Posts({ account, tab, closed, t }: { account: Account; tab: Tab; closed
           status={item.status}
           context={item.pinned ? <CaptionLine icon="pin">{t("profile.pinned")}</CaptionLine> : undefined}
           onAction={onAction}
-          voting={votingOf(item.status)}
-          own={ownOf(item.status)}
-          picker={picker}
+          {...(signIn === undefined
+            ? { voting: votingOf(item.status), own: ownOf(item.status), picker }
+            : {
+                signIn: (status: PostStatus) => {
+                  signIn(statusPath(status));
+                },
+              })}
         />
       )}
     </ListColumn>
@@ -754,14 +809,24 @@ function NotFound({ acct, onBack }: { acct: string; onBack: (() => void) | undef
 
 /**
  * The profile of the account of a handle (`user`, or `user@domain` for a remote one); `onBack` leaves the profile of
- * an account that is not there.
+ * an account that is not there. With `signIn`, for a visitor, the actions that need an account lead to sign in, given
+ * the address to come back to.
  */
-export function Profile({ acct, onBack }: { acct: string; onBack?: (() => void) | undefined }) {
+export function Profile({
+  acct,
+  onBack,
+  signIn,
+}: {
+  acct: string;
+  onBack?: (() => void) | undefined;
+  signIn?: ((returnTo: string) => void) | undefined;
+}) {
   const { t, lang } = stringsIn(useLocale().locale);
   const { account, error, missing } = useAccount(acct);
-  const viewer = useViewer();
+  const signedIn = signIn === undefined;
+  const viewer = useViewer(signedIn);
   const own = account !== undefined && viewer?.id === account.id;
-  const relationship = useRelationship(account === undefined || own || missing ? undefined : account.id);
+  const relationship = useRelationship(account === undefined || own || missing || !signedIn ? undefined : account.id);
   const [tab, setTab] = useState<Tab>("posts");
   if (missing) return <NotFound acct={acct} onBack={onBack} />;
   if (account === undefined)
@@ -776,7 +841,7 @@ export function Profile({ acct, onBack }: { acct: string; onBack?: (() => void) 
   const closed = account.locked && !own && !(relationship?.following ?? false);
   return (
     <ScreenStack>
-      <Head account={account} relationship={relationship} own={own} t={t} lang={lang} />
+      <Head account={account} relationship={relationship} own={own} signIn={signIn} t={t} lang={lang} />
       {blocked ? (
         <FeedNotice>{t("profile.blocked_posts")}</FeedNotice>
       ) : (
@@ -791,7 +856,7 @@ export function Profile({ acct, onBack }: { acct: string; onBack?: (() => void) 
           current={tab}
           onChange={setTab}
         >
-          <Posts account={account} tab={tab} closed={closed} t={t} />
+          <Posts account={account} tab={tab} closed={closed} signIn={signIn} t={t} />
         </TabRow>
       )}
     </ScreenStack>
