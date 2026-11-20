@@ -3,7 +3,8 @@
 // A visitor without a session reads a profile, its lists of follows and a post with its thread, as the server shows
 // them to everyone, and the first page of a one-person server, its operator's profile (ADR-0152 §7); what needs an
 // account (following, reporting, a post's actions) leads them to the app's sign-in, which comes back to where they
-// were (ADR-0090 §16). What the server keeps from a visitor reads as the server answers it, never as "sign in".
+// were (ADR-0090 §16). What the server keeps from a visitor reads as the server answers it, never as "sign in". The
+// app of a visitor never asks for what needs a session (renderApp fails a test that does).
 
 import { expect, test } from "bun:test";
 import { scenario } from "@my/e2e/fake";

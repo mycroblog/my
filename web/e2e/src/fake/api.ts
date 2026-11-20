@@ -637,6 +637,8 @@ export type FakeApi = {
   readonly operations: FakeOperations;
   /** The requests for an operation the fake does not implement, each as `METHOD /path`, which `serve` refused. */
   readonly unimplemented: readonly string[];
+  /** The requests of a visitor (`visitor`) for an operation that needs a session, each as `METHOD /path`, answered 401. */
+  readonly refused: readonly string[];
   /**
    * The token revocations the server took (POST /oauth/revoke), each as the form it was sent with: the client
    * (`client_id`) and the token it names. One it took ended the reader's session.
@@ -4125,6 +4127,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     json(body, 503, { "Content-Type": "application/json", ...headers });
 
   const unimplemented: string[] = [];
+  const refused: string[] = [];
   const route = createRouter(
     handlers,
     (error) => {
@@ -4170,7 +4173,10 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
             503,
             { "Retry-After": "3600" },
           );
-    if (o.visitor === true && !publicPath.test(path)) return json(problem(401, "Unauthorized").problem, 401);
+    if (o.visitor === true && !publicPath.test(path)) {
+      refused.push(`${request.method} ${path}`);
+      return json(problem(401, "Unauthorized").problem, 401);
+    }
     const response = await route(request);
     if (o.newerEpoch === true) response.headers.set("X-Web-Client-Epoch", "999");
     return response;
@@ -4275,6 +4281,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     moderation: accounts.moderation,
     operations: operated.operations,
     unimplemented,
+    refused,
     revocations,
     newPosts,
     newNotification,

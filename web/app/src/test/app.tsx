@@ -99,6 +99,12 @@ export async function renderApp(
   });
   // A stream in this tab alone: a simulation has no other tab to share it with.
   if (!visitor) onTestFinished(startStream(data, { tabs: null }));
+  // A visitor's app asks only for what the server shows to everyone: a request that needs a session fails the test.
+  else
+    onTestFinished(() => {
+      if (fake.refused.length > 0)
+        throw new Error(`test: the visitor's app asked for what needs a session: ${fake.refused.join(", ")}`);
+    });
   const left: string[] = [];
   const router = createAppRouter({
     data: visitor ? null : data,
