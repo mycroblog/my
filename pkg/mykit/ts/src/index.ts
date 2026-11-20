@@ -5,8 +5,12 @@
 // the Idempotency-Key, media upload,
 // PKCE, and the client of the event stream.
 export { apiBasePath, createClient, type Api, type ClientOptions } from "./client.js";
-// oxlint-disable-next-line typescript/no-deprecated -- the deprecated export stays until its removal (ADR-0093 §8).
-export { idempotencyKeyOperations, writesWithoutIdempotencyKey } from "./idempotency.js";
+export {
+  // oxlint-disable-next-line typescript/no-deprecated -- the deprecated export stays until its removal (ADR-0093 §8).
+  idempotencyKeyOperations,
+  writesSentWithoutIdempotencyKey,
+  writesWithoutIdempotencyKey,
+} from "./idempotency.js";
 export { codeChallenge, exchange, newCodeVerifier, OAuthError, tokenPath, type OAuthConfig } from "./oauth.js";
 export { all, type Page, type PageFetcher } from "./paging.js";
 export { NetworkError, ProblemError, problemFromResponse, problemTypeAboutBlank, type Problem } from "./problem.js";

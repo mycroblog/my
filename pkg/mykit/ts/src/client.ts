@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 import createFetchClient, { type Client, type Middleware } from "openapi-fetch";
-import { acceptsIdempotencyKey, idempotencyKeyHeader } from "./idempotency.js";
+import { addsIdempotencyKey, idempotencyKeyHeader } from "./idempotency.js";
 import { problemFromResponse } from "./problem.js";
 import type { paths } from "./schema.gen.js";
 import type { TokenSource } from "./token.js";
@@ -65,7 +65,7 @@ function middleware(acceptLanguage: ClientOptions["acceptLanguage"]): Middleware
       if (!request.headers.has("Accept-Language") && language !== undefined && language !== null && language !== "") {
         request.headers.set("Accept-Language", language);
       }
-      if (!request.headers.has(idempotencyKeyHeader) && acceptsIdempotencyKey(request.method, schemaPath)) {
+      if (!request.headers.has(idempotencyKeyHeader) && addsIdempotencyKey(request.method, schemaPath)) {
         // One key for every attempt, so that the server applies the request once.
         request.headers.set(idempotencyKeyHeader, crypto.randomUUID());
       }

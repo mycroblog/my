@@ -37,6 +37,29 @@ export const writesWithoutIdempotencyKey: readonly { readonly method: string; re
 ];
 
 /**
+ * The writes that take an Idempotency-Key but to which the client adds none, as the method and the path of the spec:
+ * each is sent often, and a lost one is overtaken by the next (a voice room's signals, heartbeat, and microphone
+ * state) or not worth a retry (the reports of the client's errors and measurements), so that a key would only fill the
+ * server's store. A key the caller sends is kept, and makes the request retried as any other.
+ */
+export const writesSentWithoutIdempotencyKey: readonly { readonly method: string; readonly path: string }[] = [
+  { method: "POST", path: "/voice/rooms/{id}/signals" },
+  { method: "POST", path: "/voice/rooms/{id}/heartbeat" },
+  { method: "POST", path: "/voice/rooms/{id}/mic" },
+  { method: "POST", path: "/client_errors" },
+  { method: "POST", path: "/client_measurements" },
+];
+
+/** Whether the client adds an Idempotency-Key to a request to the spec path `schemaPath` that has none. */
+export function addsIdempotencyKey(method: string, schemaPath: string): boolean {
+  const m = method.toUpperCase();
+  return (
+    acceptsIdempotencyKey(m, schemaPath) &&
+    !writesSentWithoutIdempotencyKey.some((op) => op.method === m && op.path === schemaPath)
+  );
+}
+
+/**
  * The operations whose spec takes an Idempotency-Key, as the method and the path of the spec (with its `{param}`s):
  * every write but writesWithoutIdempotencyKey. A test keeps the list equal to the operations of schema.gen.ts that
  * take the header.

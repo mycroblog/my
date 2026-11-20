@@ -4,8 +4,10 @@ import { describe, expect, test } from "bun:test";
 import {
   acceptsIdempotencyKey,
   acceptsIdempotencyKeyAt,
+  addsIdempotencyKey,
   idempotencyKeyOperations,
   isWrite,
+  writesSentWithoutIdempotencyKey,
   writesWithoutIdempotencyKey,
 } from "./idempotency.js";
 
@@ -57,5 +59,18 @@ describe("writesWithoutIdempotencyKey", () => {
     // The deprecated list is every operation that takes the key, in the order of the spec.
     // oxlint-disable-next-line typescript/no-deprecated -- the test keeps the deprecated list true until it goes.
     expect([...idempotencyKeyOperations]).toEqual(listed);
+  });
+});
+
+describe("writesSentWithoutIdempotencyKey", () => {
+  test("take a key in the spec, and get none from the client", () => {
+    for (const op of writesSentWithoutIdempotencyKey) {
+      expect({ ...op, takes: acceptsIdempotencyKey(op.method, op.path) }).toEqual({ ...op, takes: true });
+      expect({ ...op, adds: addsIdempotencyKey(op.method, op.path) }).toEqual({ ...op, adds: false });
+      // oxlint-disable-next-line typescript/no-deprecated -- the list of the spec's keyed operations.
+      expect(idempotencyKeyOperations).toContainEqual(op);
+    }
+    expect(addsIdempotencyKey("POST", "/statuses")).toBe(true);
+    expect(addsIdempotencyKey("POST", "/oauth_apps")).toBe(false);
   });
 });

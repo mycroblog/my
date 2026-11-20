@@ -259,6 +259,19 @@ describe("retries after 429 and 503", () => {
     expect(keys[1]).not.toBe(keys[2] ?? "");
   });
 
+  test("a frequent write gets no automatic Idempotency-Key, and is not sent again without an answer", async () => {
+    const f = fakeFetch(() => Promise.reject(new TypeError("connection reset")));
+    const s = fakeSleep();
+    const api = createClient({ server, fetch: f.fetch, sleep: s.sleep });
+    const error: unknown = await api
+      .POST("/voice/rooms/{id}/heartbeat", { params: { path: { id: "r1" } }, body: { session: "s1" } })
+      .catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(NetworkError);
+    expect(f.requests).toHaveLength(1);
+    expect(f.requests[0]?.request.headers.has("Idempotency-Key")).toBe(false);
+    expect(s.waits).toEqual([]);
+  });
+
   test("an Idempotency-Key on an operation that takes none does not make it retried", async () => {
     const f = fakeFetch(() => problem(429, "/api/v1/problems/rate-limited", {}, { "Retry-After": "1" }));
     const s = fakeSleep();
@@ -333,7 +346,9 @@ describe("retries after 429 and 503", () => {
 
     const busy = fakeFetch(() => problem(409, "/api/v1/problems/idempotency-key-in-use", {}, { "Retry-After": "1" }));
     const limited = createClient({ server, fetch: busy.fetch, sleep: fakeSleep().sleep, retry: { maxRetries: 2 } });
-    const error = (await limited.POST("/statuses", { body: createStatusBody }).catch((e: unknown) => e)) as ProblemError;
+    const error = (await limited
+      .POST("/statuses", { body: createStatusBody })
+      .catch((e: unknown) => e)) as ProblemError;
     expect(error.status).toBe(409);
     expect(busy.requests).toHaveLength(3);
   });

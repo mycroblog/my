@@ -129,7 +129,8 @@ These work as in the [mykit README](../README.md): 429 and 503 are retried after
 the operations that take an `Idempotency-Key`, which is every write but a few, and a write that got no answer is sent
 again with its key, as is the 409 of a key whose first request is still being carried out (`retry: { disabled, maxRetries, maxWait }`; `maxWait` is in milliseconds); the key is added for
 you and kept across retries, and a `NetworkError` carries it as `idempotencyKey` to send the write again with
-(`writesWithoutIdempotencyKey` lists the writes that take none; `idempotencyKeyOperations`, the ones that take it, is
+(`writesWithoutIdempotencyKey` lists the writes that take none, and `writesSentWithoutIdempotencyKey` the frequent ones,
+such as a voice room's heartbeat, to which the client adds none; `idempotencyKeyOperations`, the ones that take it, is
 `@deprecated`); `uploadMedia(api, { file: blob, description })` uploads a
 `Blob`; the `admin` operations answer 403 to a token of a third-party app; and `/api/v1` follows the
 [stability policy](../README.md#versions-and-api-stability) (a `@deprecated` tag marks what will go).
