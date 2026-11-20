@@ -210,7 +210,7 @@ test("the setting's own Save sends the measuring alone, and once it is off the p
 test("while measuring is on, the share of the sessions is saved with it, and an empty share is refused", async () => {
   const { app, on } = await atMeasurements();
   const patch = on.fake.script("PATCH /admin/settings");
-  const share = main().getByRole("textbox", { name: "Sessions measured" });
+  const share = main().getByRole("textbox", { name: "Share of sessions measured" });
   expect((share as HTMLInputElement).value).toBe("10");
 
   await app.user.clear(share);
@@ -225,7 +225,7 @@ test("while measuring is on, the share of the sessions is saved with it, and an 
 test("while measuring is off, the share of the sessions is not offered", async () => {
   const { app } = await atMeasurements();
   await app.user.selectOptions(main().getByRole("combobox", { name: "Measure the web client" }), "Off");
-  expect(main().queryByRole("textbox", { name: "Sessions measured" })).toBeNull();
+  expect(main().queryByRole("textbox", { name: "Share of sessions measured" })).toBeNull();
 });
 
 for (const settings of [true, false])
