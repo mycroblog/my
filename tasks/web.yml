@@ -181,6 +181,18 @@ tasks:
     cmds:
       - bun --bun playwright test {{.CLI_ARGS}}
 
+  # The UX in the lab (ADR-0167 §4): the scenarios of web/e2e/ux against the same demo server, with the CPU throttled,
+  # each three times; it writes .tmp/ux/report.md and report.json, judged against the report UX_LAST names. The
+  # Nightly runs it (web-ux), never the merge queue, and a finding fails nothing.
+  e2e-ux:
+    desc: Build the test build of bin/my and measure the UX of the web client in the lab (LCP, INP, long animation frames, the bundle of each entry) on the scenarios of web/e2e/ux, writing .tmp/ux/report.md (UX_LAST=<report.json> compares with a last run)
+    deps:
+      - task: ":go:bin"
+        vars: { GO_TAGS: e2e_fakes }
+    dir: web/e2e
+    cmds:
+      - bun --bun playwright test -c ux/playwright.config.ts {{.CLI_ARGS}}
+
   typecheck:
     desc: Type-check web/design-tokens, web/mail, web/design-system, web/app-components, web/platform, web/rtc, web/app-data, web/app-features, web/app (with its Service Worker), web/devtools, web/storybook and web/e2e with tsc
     deps: [generated]
