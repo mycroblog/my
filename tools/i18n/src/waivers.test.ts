@@ -34,7 +34,7 @@ test("a waiver of a finding the message has passes; one without a reason, of a b
   expect(waiverErrors([waiver({ locale: "de" })], found).join("\n")).toMatch(/en and ja only/);
   expect(waiverErrors([waiver(), waiver()], found).join("\n")).toMatch(/given twice/);
   expect(waiverErrors([waiver(), waiver({ locale: "ja" })], found).join("\n")).toMatch(/the same reason as/);
-  expect(waiverErrors([{ id: "server:x" } as Waiver], found).join("\n")).toMatch(/a waiver is/);
+  expect(waiverErrors([{ id: "server:x" }], found).join("\n")).toMatch(/a waiver is/);
 });
 
 test("more than CAP waivers added in one change are refused", () => {

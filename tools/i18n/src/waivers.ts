@@ -93,26 +93,28 @@ export function reasonProblem(reason: string): string | undefined {
   return undefined;
 }
 
+/** Whether `w`, as waivers.json gives it, has the shape of a waiver: its four strings and nothing else. */
+function isWaiver(w: unknown): w is Waiver {
+  if (typeof w !== "object" || w === null || Object.keys(w).sort().join(",") !== "id,locale,reason,rule") return false;
+  const { id, locale, rule, reason } = w as Record<string, unknown>;
+  return [id, locale, rule, reason].every((v) => typeof v === "string");
+}
+
 /**
  * The errors of the waivers against the keys of the waivable findings they may waive (waiverKey): a waiver out of
  * shape, of a rule that is not waivable, given twice, with a refused reason or the reason of another waiver, or that
  * waives nothing.
  */
-export function waiverErrors(waivers: Waiver[], found: Set<string>): string[] {
+export function waiverErrors(waivers: readonly unknown[], found: Set<string>): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   const reasons = new Map<string, string>();
   for (const w of waivers) {
-    const where = `${WAIVERS} ${w?.id} ${w?.locale} ${w?.rule}`;
-    if (
-      typeof w !== "object" ||
-      w === null ||
-      Object.keys(w).sort().join(",") !== "id,locale,reason,rule" ||
-      ![w.id, w.locale, w.rule, w.reason].every((v) => typeof v === "string")
-    ) {
+    if (!isWaiver(w)) {
       out.push(`${WAIVERS}: a waiver is {"id": "<namespace>:<key>", "locale", "rule", "reason"}: ${JSON.stringify(w)}`);
       continue;
     }
+    const where = `${WAIVERS} ${w.id} ${w.locale} ${w.rule}`;
     if (!COPY_LOCALES.includes(w.locale)) out.push(`${where}: the copy lint reads ${COPY_LOCALES.join(" and ")} only`);
     if (!WAIVABLE.includes(w.rule))
       out.push(

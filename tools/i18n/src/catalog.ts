@@ -95,7 +95,7 @@ const jsonFiles = (dir: string): string[][] =>
  */
 export function loadCatalogFiles(): CatalogFile[] {
   const files: CatalogFile[] = [];
-  const read = (path: string): Namespace => JSON.parse(readFileSync(path, "utf8"));
+  const read = (path: string) => JSON.parse(readFileSync(path, "utf8")) as Namespace;
   for (const locale of localeNames(localesDir)) {
     for (const [ns = "", ...area] of jsonFiles(join(localesDir, locale))) {
       const path = `${join(localesDir, locale, ns, ...area)}.json`;

@@ -394,9 +394,9 @@ function changedIds(base: string): Set<string> | undefined {
     const [locale = "", ns = "", ...area] = tsNs ? [segments[3] ?? "", tsNs, ...segments.slice(4)] : segments.slice(1);
     if (!path.endsWith(".json") || !area.length || isPseudo(locale)) continue;
     const before = git("show", `${ref}:${path}`);
-    const old: Record<string, Entry> = before.ok ? JSON.parse(before.out) : {};
+    const old = (before.ok ? JSON.parse(before.out) : {}) as Record<string, Entry>;
     const file = join(repoRoot, path);
-    const now: Record<string, Entry> = existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {};
+    const now = (existsSync(file) ? JSON.parse(readFileSync(file, "utf8")) : {}) as Record<string, Entry>;
     for (const key of new Set([...Object.keys(old), ...Object.keys(now)])) {
       if (JSON.stringify(old[key]) !== JSON.stringify(now[key])) ids.add(`${ns}:${key}`);
     }

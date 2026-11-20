@@ -21,9 +21,12 @@
 //   It does not see, for want of other files and of types:
 //   - a component that another package re-exports under another name (`export { Button as X }` in app-components);
 //   - a wrapper that spreads its own props onto a component (`(p) => <Button {...p} />`), whose callers can pass them.
-//   In the layers above it (app-components, app-features, app) an element of the DOM gets neither: only the design
-//   system writes a class, and its stylesheet holds the classes of its own files alone. A story and a test may, to
-//   stand a specimen in a width.
+//   In the layers above it (app-components, app-features, app) no element gets either, of the DOM or a component of
+//   their own, and no class is written otherwise: no `className` or `style` assigned, no `classList`, no
+//   `setAttribute("class" or "style")`, and no import of a library that composes classes (tailwind-variants,
+//   tailwind-merge, clsx). Only the design system writes a class, and its stylesheet holds the classes of its own
+//   files alone. A story and a test may give an element of the DOM a class and a style, to stand a specimen in a
+//   width.
 //
 // - platform-globals: in a layer other than @my/platform, nothing checks the browser, the PWA or the OS (ADR-0028
 //   §17): no `navigator` or other global of the platform (as a global or a member of any object), no `"x" in window`
@@ -71,6 +74,13 @@
 // - page-trail: in the staff's screens (a file under staff/ of @my/app-features but its parts.tsx), no list keeps the
 //   trail of its pages in the address itself (#3279): no `trail` read or written as a member or a key. useAddressPages
 //   of staff/parts.tsx is the one place that keeps a list's cursor and trail.
+//
+// - html-sinks: in the web client, no string reaches the browser as markup (#3295). The shell requires Trusted Types
+//   and lets two policies be created (ADR-0019 §9; internal/interface/web/shell.go), so the browser throws on an HTML
+//   sink given a string, and the screen breaks (#3272, #3262). It refuses a write of `innerHTML`, `outerHTML` and
+//   `srcdoc` (an assignment, `setAttribute("srcdoc", …)`), a call of `insertAdjacentHTML`, `DOMParser`, and the props
+//   `dangerouslySetInnerHTML` and `srcDoc` (an attribute, or a key of an object of props). A read of `innerHTML` is
+//   no sink. It refuses the members by name on any object.
 
 import { rules as styles } from "./styles.js";
 
@@ -103,6 +113,9 @@ function keyName(/** @type {Node} */ property) {
   if (key.type === "TemplateLiteral" && key.expressions.length === 0) return key.quasis[0].value.cooked;
   return undefined;
 }
+
+/** The libraries that compose classes, which only @my/design-system imports. */
+const CLASS_LIBRARIES = /^(?:tailwind-variants|tailwind-merge|clsx|classnames)(?:\/|$)/;
 
 /** The layers above @my/design-system, by their directories of web/: no element of theirs gets a class or a style. */
 const ABOVE = new Set(["app-components", "app-features", "app"]);
@@ -161,49 +174,76 @@ function create(context) {
   const above = ABOVE.has(webDir(filename) ?? "") && !STORY_FILE.test(filename) && !TEST_FILE.test(filename);
   const { resolve, isDesignSystem } = bindings(context);
 
-  function report(/** @type {Node} */ node, /** @type {string} */ prop, /** @type {string} */ component) {
+  const writesNone =
+    "a layer above it writes no class and no style (ADR-0025 §4), and its stylesheet holds no class written here. " +
+    "Compose the parts of @my/design-system by their props, or add the part or the variant it lacks to " +
+    "@my/design-system.";
+
+  /** Reports `prop` given to `component`, a part of @my/design-system (`ds`) or an element above it. */
+  function report(
+    /** @type {Node} */ node,
+    /** @type {string} */ prop,
+    /** @type {string} */ component,
+    /** @type {boolean} */ ds,
+  ) {
     context.report({
       node,
-      message: /^[a-z]/.test(component)
-        ? `<${component}> above @my/design-system gets \`${prop}\`: a layer above it writes no class and no style ` +
-          "(ADR-0025 §4), and its stylesheet holds no class written here. Compose the parts of @my/design-system " +
-          "by their props, or add the part or the variant it lacks to @my/design-system."
-        : `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
-          "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system.",
+      message: ds
+        ? `<${component}> of @my/design-system gets \`${prop}\`: outside the package a component takes no class and ` +
+          "no style (ADR-0025 §4). Use its props and variants, or add the variant it lacks to @my/design-system."
+        : `<${component}> above @my/design-system gets \`${prop}\`: ${writesNone}`,
     });
   }
+
+  /** Reports a class or a style written above @my/design-system outside an element's props. */
+  function reportWritten(/** @type {Node} */ node, /** @type {string} */ what) {
+    context.report({ node, message: `\`${what}\` writes a class or a style above @my/design-system: ${writesNone}` });
+  }
+
+  /** The name of the member a member expression reads, written as a name or as a string. */
+  const memberName = (/** @type {Node} */ member) =>
+    !member.computed
+      ? member.property.name
+      : member.property.type === "Literal" && typeof member.property.value === "string"
+        ? member.property.value
+        : undefined;
 
   /**
    * Reports each `className` or `style` that the spread object `node` holds: an object literal, or a variable holding
    * one (with what is assigned to its members), through casts, conditionals and nested spreads.
    */
-  function checkSpread(/** @type {Node} */ node, /** @type {string} */ component, /** @type {number} */ depth) {
+  function checkSpread(
+    /** @type {Node} */ node,
+    /** @type {string} */ component,
+    /** @type {boolean} */ ds,
+    /** @type {number} */ depth,
+  ) {
     if (depth > MAX_DEPTH) return;
     const expression = unwrap(node);
     switch (expression.type) {
       case "ObjectExpression":
         for (const property of expression.properties) {
-          if (property.type === "SpreadElement") checkSpread(property.argument, component, depth + 1);
+          if (property.type === "SpreadElement") checkSpread(property.argument, component, ds, depth + 1);
           else {
             const name = keyName(property);
-            if (name !== undefined && LAYOUT_PROPS.has(name)) report(property, name, component);
+            if (name !== undefined && LAYOUT_PROPS.has(name)) report(property, name, component, ds);
           }
         }
         return;
       case "ConditionalExpression":
-        checkSpread(expression.consequent, component, depth + 1);
-        checkSpread(expression.alternate, component, depth + 1);
+        checkSpread(expression.consequent, component, ds, depth + 1);
+        checkSpread(expression.alternate, component, ds, depth + 1);
         return;
       case "LogicalExpression":
-        checkSpread(expression.left, component, depth + 1);
-        checkSpread(expression.right, component, depth + 1);
+        checkSpread(expression.left, component, ds, depth + 1);
+        checkSpread(expression.right, component, ds, depth + 1);
         return;
       case "Identifier": {
         const variable = resolve(expression, expression.name);
         if (!variable) return;
         for (const def of variable.defs)
           if (def.type === "Variable" && def.node.id.type === "Identifier" && def.node.init)
-            checkSpread(def.node.init, component, depth + 1);
+            checkSpread(def.node.init, component, ds, depth + 1);
         // `props.className = …`, `props["style"] = …`.
         for (const reference of variable.references) {
           const member = reference.identifier.parent;
@@ -215,7 +255,7 @@ function create(context) {
               ? member.property.value
               : undefined
             : member.property.name;
-          if (name !== undefined && LAYOUT_PROPS.has(name)) report(member, name, component);
+          if (name !== undefined && LAYOUT_PROPS.has(name)) report(member, name, component, ds);
         }
         return;
       }
@@ -227,15 +267,44 @@ function create(context) {
   return {
     JSXOpeningElement(/** @type {Node} */ node) {
       const name = node.name;
-      // A lower-case name is a DOM element, which takes a class and a style below the layers above the design system.
+      if (name.type === "JSXNamespacedName") return;
+      // A lower-case name is a DOM element; it and a component of the file's own layer take a class and a style below
+      // the layers above the design system.
       const dom = name.type === "JSXIdentifier" && !/^[A-Z]/.test(name.name);
-      if (dom ? !above : name.type === "JSXNamespacedName" || !isDesignSystem(name, 0)) return;
+      const ds = !dom && isDesignSystem(name, 0);
+      if (!ds && !above) return;
       const component = elementName(name);
       for (const attribute of node.attributes) {
-        if (attribute.type === "JSXSpreadAttribute") checkSpread(attribute.argument, component, 0);
+        if (attribute.type === "JSXSpreadAttribute") checkSpread(attribute.argument, component, ds, 0);
         else if (attribute.name.type === "JSXIdentifier" && LAYOUT_PROPS.has(attribute.name.name))
-          report(attribute, attribute.name.name, component);
+          report(attribute, attribute.name.name, component, ds);
       }
+    },
+    // `element.className = …`, `element.style = …`.
+    AssignmentExpression(/** @type {Node} */ node) {
+      const left = unwrap(node.left);
+      const name = left.type === "MemberExpression" ? memberName(left) : undefined;
+      if (above && name !== undefined && LAYOUT_PROPS.has(name)) reportWritten(left, `.${name} =`);
+    },
+    // `element.classList.add(…)`, `element.setAttribute("class", …)`.
+    CallExpression(/** @type {Node} */ node) {
+      if (!above) return;
+      const callee = unwrap(node.callee);
+      if (callee.type !== "MemberExpression") return;
+      const object = unwrap(callee.object);
+      if (object.type === "MemberExpression" && memberName(object) === "classList")
+        reportWritten(callee, `classList.${memberName(callee) ?? "…"}()`);
+      const [attribute] = node.arguments;
+      if (
+        memberName(callee) === "setAttribute" &&
+        attribute?.type === "Literal" &&
+        (attribute.value === "class" || attribute.value === "style")
+      )
+        reportWritten(node, `setAttribute("${attribute.value}")`);
+    },
+    ImportDeclaration(/** @type {Node} */ node) {
+      const source = node.source.value;
+      if (above && typeof source === "string" && CLASS_LIBRARIES.test(source)) reportWritten(node.source, source);
     },
   };
 }
@@ -1240,10 +1309,100 @@ function createPageTrail(context) {
   };
 }
 
+/** The members whose write hands a string to the browser as markup. */
+const HTML_MEMBERS = new Set(["innerHTML", "outerHTML", "srcdoc"]);
+/** The props of React that do. */
+const HTML_PROPS = new Set(["dangerouslySetInnerHTML", "srcDoc", "srcdoc"]);
+
+/**
+ * html-sinks (#3295): no HTML sink in the web client.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createHtmlSinks(context) {
+  const { sourceCode } = context;
+  function report(/** @type {Node} */ node, /** @type {string} */ what) {
+    context.report({
+      node,
+      message:
+        `\`${what}\` hands the browser a string as markup: the shell requires Trusted Types and lets only the ` +
+        "policies my-server-sanitized-html and my-service-worker be created (ADR-0019 §9), so the browser throws " +
+        "here and the screen breaks (#3272, #3262). Build the element with React or the DOM (`createElement`, " +
+        "`textContent`, `replaceChildren`); a text the server rendered is read as data by html.ts of " +
+        "@my/app-components and drawn with React; a script's URL goes through the policy of push.ts of @my/platform.",
+    });
+  }
+
+  /** Whether the identifier `node` is the global of its name as a value: no binding of the file, no type, no key. */
+  function isGlobal(/** @type {Node} */ node) {
+    const parent = node.parent;
+    if (parent?.type.startsWith("TS") && !VALUE_WRAPPERS.has(parent.type)) return false;
+    if (parent?.type === "MemberExpression" && parent.property === node && !parent.computed) return false;
+    if ((parent?.type === "Property" || parent?.type === "PropertyDefinition") && parent.key === node)
+      if (!parent.computed && !parent.shorthand) return false;
+    for (let scope = sourceCode.getScope(node); scope; scope = scope.upper) {
+      const variable = scope.set.get(node.name);
+      if (variable && variable.defs.length > 0) return false;
+    }
+    return true;
+  }
+
+  /** The name of the member a member expression reads, written as a name or as a string. */
+  const memberName = (/** @type {Node} */ member) =>
+    !member.computed
+      ? member.property.name
+      : member.property.type === "Literal" && typeof member.property.value === "string"
+        ? member.property.value
+        : undefined;
+
+  return {
+    AssignmentExpression(/** @type {Node} */ node) {
+      const left = unwrap(node.left);
+      if (left.type !== "MemberExpression") return;
+      const name = memberName(left);
+      if (name !== undefined && HTML_MEMBERS.has(name)) report(left, `.${name} =`);
+    },
+    CallExpression(/** @type {Node} */ node) {
+      const callee = unwrap(node.callee);
+      if (callee.type !== "MemberExpression") return;
+      const name = memberName(callee);
+      if (name === "insertAdjacentHTML") report(callee.property, ".insertAdjacentHTML()");
+      const [attribute] = node.arguments;
+      if (
+        name === "setAttribute" &&
+        attribute?.type === "Literal" &&
+        typeof attribute.value === "string" &&
+        attribute.value.toLowerCase() === "srcdoc"
+      )
+        report(node, 'setAttribute("srcdoc")');
+    },
+    Identifier(/** @type {Node} */ node) {
+      if (node.name === "DOMParser" && isGlobal(node)) report(node, "DOMParser");
+    },
+    MemberExpression(/** @type {Node} */ node) {
+      if (memberName(node) === "DOMParser") report(node.property, ".DOMParser");
+    },
+    JSXAttribute(/** @type {Node} */ node) {
+      if (node.name.type === "JSXIdentifier" && HTML_PROPS.has(node.name.name)) report(node, node.name.name);
+    },
+    Property(/** @type {Node} */ node) {
+      const name = node.parent?.type === "ObjectExpression" ? keyName(node) : undefined;
+      if (name !== undefined && HTML_PROPS.has(name)) report(node, name);
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
     ...styles,
+    "html-sinks": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow an HTML sink, which the shell's Trusted Types refuse a string" },
+        schema: [],
+      },
+      create: createHtmlSinks,
+    },
     "pager-parts": {
       meta: {
         type: "problem",

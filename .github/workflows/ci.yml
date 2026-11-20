@@ -820,7 +820,8 @@ jobs:
 
   i18n-test:
     # The catalogs and their tools (ADR-0009): the catalog lint with the copy lint and the generated files, the
-    # catalogs of the web packages compile, tsc and knip pass on tools/i18n and web/i18n, and their tests. The tests
+    # catalogs of the web packages compile, tsc, Oxlint (tools/i18n; web-static lints web/i18n) and knip pass on
+    # tools/i18n and web/i18n, and their tests. The tests
     # start the CLI as a process per case, and a case that waits for a core passes bun test's 5 s: they run last, with
     # nothing beside them.
     needs: select
@@ -842,6 +843,8 @@ jobs:
         run: scripts/task.sh i18n:compile
       - name: i18n:typecheck
         run: scripts/task.sh i18n:typecheck
+      - name: i18n:ts-lint
+        run: scripts/task.sh i18n:ts-lint
       - name: i18n:knip
         run: scripts/task.sh i18n:knip
       - name: i18n:test

@@ -15,9 +15,11 @@ const write = (path: string, content: string) => {
   mkdirSync(dirname(join(root, path)), { recursive: true });
   writeFileSync(join(root, path), content);
 };
-const writeCatalog = (path: string, entries: Entries) => write(path, `${JSON.stringify(entries, null, 2)}\n`);
+const writeCatalog = (path: string, entries: Entries) => {
+  write(path, `${JSON.stringify(entries, null, 2)}\n`);
+};
 const read = (path: string) => readFileSync(join(root, path), "utf8");
-const catalog = (path: string): Entries => JSON.parse(read(path));
+const catalog = (path: string) => JSON.parse(read(path)) as Entries;
 const keys = (path: string) => Object.keys(catalog(path));
 const message = (path: string, key: string) => catalog(path)[key]?.defaultMessage;
 
