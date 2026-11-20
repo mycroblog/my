@@ -109,8 +109,15 @@ delete_closed_previews() {
   worker="$(worker_name "$stage/wrangler.jsonc")"
   # 100 Previews a page; the cap bounds a loop on an API that ignores the page.
   while ((page <= 50)); do
-    body="$(curl -fsS -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is not set}" \
-      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is not set}/workers/workers/$worker/previews?per_page=100&page=$page")"
+    # A Worker that does not exist yet (before main's first deploy creates it) has no Preview to delete: 404.
+    body="$(curl -sS -w '\n%{http_code}' -H "Authorization: Bearer ${CLOUDFLARE_API_TOKEN:?CLOUDFLARE_API_TOKEN is not set}" \
+      "https://api.cloudflare.com/client/v4/accounts/${CLOUDFLARE_ACCOUNT_ID:?CLOUDFLARE_ACCOUNT_ID is not set}/workers/workers/$worker/previews?per_page=100&page=$page")" ||
+      { echo "$worker: the Cloudflare API did not answer" >&2; return 1; }
+    case "${body##*$'\n'}" in
+      200) body="${body%$'\n'*}" ;;
+      404) echo "$worker: no such Worker yet; no Preview to delete" >&2; return 0 ;;
+      *) echo "$worker: the Cloudflare API answered ${body##*$'\n'}" >&2; return 1 ;;
+    esac
     page_names="$(jq -r '.result[]?.name // empty' <<<"$body")"
     [[ -n "$page_names" ]] || break
     names+="$page_names"$'\n'
