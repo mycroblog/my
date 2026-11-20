@@ -1,0 +1,8 @@
+<!-- The rules kept: a table of text with an inline style, the logo, and the dark colors in the head. -->
+<!doctype html>
+<html lang="{{.Lang}}" dir="{{.Dir}}"><head><title>{{.Subject}}</title><style>
+:root { color-scheme: light dark; supported-color-schemes: light dark; }
+@media (prefers-color-scheme: dark) {
+  .mail-text { color: {{$.Colors.Dark.Text}} !important; }
+}
+</style></head><body style="margin:0"><table role="presentation"><tbody><tr><td class="mail-text" style="color:{{$.Colors.Light.Text}}">{{with .Logo}}<img src="{{.URL}}" alt="{{$.Site.Name}}" class="mail-logo-light" style="display:block">{{end}}Hello, <a href="{{.URL}}" style="color:{{$.Colors.Light.AccentText}}">here</a>.</td></tr></tbody></table>{{comment `<!--[if mso]><table><tr><td><![endif]-->`}}</body></html>
