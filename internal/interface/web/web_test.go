@@ -169,7 +169,9 @@ func TestAuthEntry(t *testing.T) {
 
 	dev, _ := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173"})
 	if got, want := dev.AuthEntry(), (web.Entry{
-		Script: "http://localhost:5173/src/auth.tsx", ViteClient: "http://localhost:5173/@vite/client", DevOrigin: "http://localhost:5173",
+		Script:     "http://localhost:5173/src/auth.tsx",
+		DevScripts: []string{"http://localhost:5173/@vite/client", "http://localhost:5173/@id/@vitejs/plugin-react/preamble"},
+		DevOrigin:  "http://localhost:5173",
 	}); !reflect.DeepEqual(got, want) {
 		t.Errorf("AuthEntry() with a dev server = %+v, want %+v", got, want)
 	}
@@ -512,12 +514,17 @@ func TestDevViteOriginBehindHTTPS(t *testing.T) {
 	}
 }
 
+// TestDevViteOrigin checks that the shell loads the client from a Vite dev server: Vite's client, the
+// React Refresh preamble as a module of the dev server (no inline script, which the policy refuses),
+// then the entry, in that order.
 func TestDevViteOrigin(t *testing.T) {
 	_, mux := newHandler(t, web.Options{DevViteOrigin: "http://localhost:5173", Host: "localhost:8080"})
 	rec := get(mux, "/", nil)
 	body := rec.Body.String()
 	for _, want := range []string{
-		`<script type="module" src="http://localhost:5173/@vite/client"></script>` + "\n" + `<script type="module" src="http://localhost:5173/src/main.tsx"></script>`,
+		`<script type="module" src="http://localhost:5173/@vite/client"></script>` + "\n" +
+			`<script type="module" src="http://localhost:5173/@id/@vitejs/plugin-react/preamble"></script>` + "\n" +
+			`<script type="module" src="http://localhost:5173/src/main.tsx"></script>`,
 		`"apiOrigin":"http://localhost:8080"`,
 	} {
 		if !strings.Contains(body, want) {

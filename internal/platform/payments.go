@@ -76,7 +76,7 @@ func (a *App) setUpPayments(cfg *config.Config, repo supporters.PaymentRepositor
 		PageEnv: supporters.PageEnv{Locales: a.Locales, Logger: a.Logger, Render: paymentshttp.Shell{
 			Entry: paymentshttp.PageEntry{
 				Script: entry.Script, Stylesheets: entry.Stylesheets, Preloads: entry.Preloads, Integrity: entry.Integrity,
-				ViteClient: entry.ViteClient, DevOrigin: entry.DevOrigin,
+				DevScripts: entry.DevScripts, DevOrigin: entry.DevOrigin,
 			},
 			ThemeStylesheet: a.themeStylesheet, Logger: a.Logger,
 			// The pages name the server that is paid, as the sign-in screens introduce it.
