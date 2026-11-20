@@ -100,7 +100,7 @@
     "description": "An option of a setting that is on or off, in the select of its row. Read by administrators."
   },
   "staff_settings.unit": {
-    "defaultMessage": "{unit, select, days {日} hours {時間} minutes {分} characters {文字} posts {件} mebibytes {MiB} invites {件} people {人} images {枚} times {回} pins {個} other {}}",
+    "defaultMessage": "{unit, select, days {日} hours {時間} minutes {分} characters {文字} posts {件} mebibytes {MiB} invites {件} people {人} images {枚} times {回} pins {個} percent {%} other {}}",
     "description": "What a number of a setting counts, after its field. Read by administrators."
   },
   "staff_settings.rule": {
@@ -1006,6 +1006,10 @@
   "staff_settings.setting.ux_measurement": {
     "defaultMessage": "Web クライアントを計測する",
     "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
+  },
+  "staff_settings.setting.ux_measurement_share": {
+    "defaultMessage": "計測するセッションの割合",
+    "description": "The setting ux_measurement_share, under the switch Measure the web client while it is on: the share of browser sessions whose web client sends samples, a number of percent after it. Read by administrators."
   },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {誰でも} approval {モデレーターの承認のあと} invite {招待がある人だけ} other {誰も登録できない}}",

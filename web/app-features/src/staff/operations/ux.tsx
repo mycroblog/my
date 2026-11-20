@@ -6,7 +6,8 @@
 // with its samples and the bound under which three quarters of them fall, and, for LCP and INP, the share that is good
 // and the share that is poor by their thresholds, a 75th percentile past the good one marked. Under them, for a holder
 // of `manage_settings` alone, whether the web client sends samples at all, the instance setting `ux_measurement` (off
-// by default) with its own Save; while it is off and nothing was kept, the screen says so and offers no period.
+// by default), and while it is on the share of the browser sessions that send them, `ux_measurement_share` (1 to 100 %,
+// 10 by default), with their own Save; while it is off and nothing was kept, the screen says so and offers no period.
 
 import {
   loadAdminSettings,
@@ -32,9 +33,11 @@ import {
   FinanceTable,
   FormAlert,
   ModalPresence,
+  NumberField,
   Row,
   SaveState,
   ScreenStack,
+  SettingRow,
   ScreenTitle,
   SegmentChoice,
   Stack,
@@ -222,9 +225,14 @@ type UXScreenProps = Partial<AdminSubProps> & {
 /** Where the setting's last save is. */
 type Sent = "idle" | "sending" | "saved" | "failed";
 
+/** The share of the sessions measured where the server names none, in percent. */
+const defaultShare = 10;
+
 /**
- * Whether the web client is measured, the setting `ux_measurement`, with its own Save beside it, for a holder of
- * `manage_settings`: once the settings are read, and holding the reader back while it has a change not saved.
+ * Whether the web client is measured, the setting `ux_measurement`, and while it is on the share of the sessions it
+ * measures, `ux_measurement_share`, with their own Save beside them, for a holder of `manage_settings`: once the
+ * settings are read, and holding the reader back while it has a change not saved. Save sends the share only while
+ * measuring is on, and refuses an empty share by the rule of its field.
  */
 function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): ReactNode {
   const { t } = useStaffStrings();
@@ -233,10 +241,16 @@ function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): React
   const writes = useAdminSettingsWrites();
   const forget = useForgetUXMeasurements();
   const saved = read.settings?.get("ux_measurement")?.value === "true";
+  const shareSetting = read.settings?.get("ux_measurement_share");
+  const savedShare = shareSetting === undefined ? defaultShare : Number(shareSetting.value);
   const [on, setOn] = useState<boolean | undefined>(undefined);
+  // The share the reader entered: undefined while untouched, null for an empty field.
+  const [share, setShare] = useState<number | null | undefined>(undefined);
+  const [refused, setRefused] = useState(false);
   const [sent, setSent] = useState<Sent>("idle");
   const chosen = on ?? saved;
-  const unsaved = chosen !== saved;
+  const chosenShare = share === undefined ? savedShare : share;
+  const unsaved = chosen !== saved || (chosen && chosenShare !== savedShare);
   useEffect(() => {
     onUnsaved?.(unsaved && sent !== "sending");
   }, [onUnsaved, unsaved, sent]);
@@ -259,10 +273,19 @@ function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): React
     );
   const save = () => {
     if (sent === "sending") return;
+    if (chosen && chosenShare === null) {
+      setRefused(true);
+      return;
+    }
+    setRefused(false);
     setSent("sending");
-    writes.save({ ux_measurement: chosen ? "true" : "false" }).then(
+    const values: Record<string, string> = { ux_measurement: chosen ? "true" : "false" };
+    if (chosen && chosenShare !== savedShare && chosenShare !== null)
+      values["ux_measurement_share"] = String(chosenShare);
+    writes.save(values).then(
       () => {
         setOn(undefined);
+        setShare(undefined);
         setSent("saved");
         // What was measured before is read again as the server holds it now, the period with it.
         void forget();
@@ -286,6 +309,37 @@ function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): React
             }}
             disabled={sent === "sending"}
           />
+          {chosen && (
+            <SettingRow
+              id={`${id}-share`}
+              label={t("staff_settings.setting.ux_measurement_share")}
+              form
+              error={
+                refused
+                  ? t("staff_settings.rule", {
+                      kind: "int",
+                      min: shareSetting?.minimum ?? 1,
+                      max: shareSetting?.maximum ?? 100,
+                    })
+                  : undefined
+              }
+            >
+              <NumberField
+                name="ux_measurement_share"
+                value={chosenShare}
+                min={shareSetting?.minimum ?? 1}
+                max={shareSetting?.maximum ?? 100}
+                unit={t("staff_settings.unit", { unit: "percent" })}
+                onChange={(n) => {
+                  setShare(n);
+                  setRefused(false);
+                  setSent("idle");
+                }}
+                isDisabled={sent === "sending"}
+                invalid={refused}
+              />
+            </SettingRow>
+          )}
           <Row wrap align="center" gap="screen-tab-gap">
             <Button kind="primary" size="timeline" busy={sent === "sending"} onPress={save}>
               {t("staff_settings.save")}

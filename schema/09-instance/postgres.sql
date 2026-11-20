@@ -54,7 +54,7 @@ CREATE TABLE instance_setting_revisions (
     'article_authoring', 'max_article_bytes', 'max_article_images', 'auto_delete_default_keep_articles', 'auto_delete_max_allow_articles', 'event_creators',
     'event_records_retention_days',
     'funding_meter_visibility', 'funding_meter_target_amount', 'funding_meter_target_currency', 'funding_meter_rail',
-    'ux_measurement'
+    'ux_measurement', 'ux_measurement_share'
   )),
   value text NOT NULL,
   revised_by_user_id uuid,

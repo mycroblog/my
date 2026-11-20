@@ -8,13 +8,14 @@
 // A server that cannot say whether there is a session leaves the app signed out, as when there is none, but for what
 // the device keeps of the reader, which stays (reader.tsx). Signing out in another tab makes this one leave. Every request
 // goes through one watch of the server, which tells its maintenance, an outage and a too old build (ADR-0088, ADR-0028
-// §12). The build registers its Service Worker (ADR-0028 §3).
+// §12). The build registers its Service Worker (ADR-0028 §3). Once the instance is read, the app measures the session if
+// the instance measures it (measure.ts, ADR-0167 §3).
 
 import "@my/design-system/styles.css";
 import "@my/design-system/emoji.css";
 import "@my/design-system/noto-sans.css";
 import "@my/design-system/cjk.css";
-import { onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
+import { instanceQuery, onSignedOutElsewhere, openSession, startStream, visitorData, watchServer } from "@my/app-data";
 import { inCall } from "@my/app-features";
 import { claimPressableStyle, I18nProvider } from "@my/design-system";
 import { browserLanguages, readDeviceValue, registerServiceWorker, writeDeviceValue } from "@my/platform";
@@ -26,6 +27,7 @@ import { createRoot } from "react-dom/client";
 import { AppRoot } from "./app";
 import { parseConfig } from "./config";
 import { readerLocale } from "./locale";
+import { startMeasuring } from "./measure";
 import { createAppRouter } from "./router";
 import { followSignOut } from "./sign-out";
 
@@ -75,4 +77,12 @@ createRoot(root).render(
       <AppRoot router={router} visitor={visitor} unasked={opened === undefined} />
     </I18nProvider>
   </StrictMode>,
+);
+// The UX measurements of this browser session, if the instance takes them and drew it.
+const read = data ?? visitor;
+read.queryClient.query({ ...instanceQuery(read), staleTime: Number.POSITIVE_INFINITY }).then(
+  (instance) => {
+    startMeasuring({ router, instance, server: config.apiOrigin });
+  },
+  () => undefined,
 );

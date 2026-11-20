@@ -207,6 +207,27 @@ test("the setting's own Save sends the measuring alone, and once it is off the p
   expect(main().queryAllByRole("table")).toHaveLength(0);
 });
 
+test("while measuring is on, the share of the sessions is saved with it, and an empty share is refused", async () => {
+  const { app, on } = await atMeasurements();
+  const patch = on.fake.script("PATCH /admin/settings");
+  const share = main().getByRole("textbox", { name: "Share of sessions measured" });
+  expect((share as HTMLInputElement).value).toBe("10");
+
+  await app.user.clear(share);
+  await app.user.click(main().getByRole("button", { name: "Save" }));
+  expect(await main().findByText("Enter a whole number from 1 to 100.")).toBeDefined();
+
+  await app.user.type(share, "25");
+  await app.user.click(main().getByRole("button", { name: "Save" }));
+  expect((await patch.arrived()).body).toEqual({ values: { ux_measurement: "true", ux_measurement_share: "25" } });
+});
+
+test("while measuring is off, the share of the sessions is not offered", async () => {
+  const { app } = await atMeasurements();
+  await app.user.selectOptions(main().getByRole("combobox", { name: "Measure the web client" }), "Off");
+  expect(main().queryByRole("textbox", { name: "Share of sessions measured" })).toBeNull();
+});
+
 for (const settings of [true, false])
   test(`while measuring is off, ${settings ? "with" : "without"} manage_settings, the screen has no period to choose`, async () => {
     const on = fakeApp({ viewer: "hana" });

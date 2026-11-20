@@ -114,6 +114,7 @@ export const settingNames = {
   translation_user_monthly_characters: "staff_settings.setting.translation_user_monthly_characters",
   user_app_registration: "staff_settings.setting.user_app_registration",
   ux_measurement: "staff_settings.setting.ux_measurement",
+  ux_measurement_share: "staff_settings.setting.ux_measurement_share",
   voice_participants_retention_days: "staff_settings.setting.voice_participants_retention_days",
   voice_public_summary: "staff_settings.setting.voice_public_summary",
   voice_room_starters: "staff_settings.setting.voice_room_starters",
