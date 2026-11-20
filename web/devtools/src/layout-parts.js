@@ -47,6 +47,7 @@ export const LAYOUT_PARTS = {
     "CallPart",
   ],
   "web/design-system/src/form-page.tsx": ["FormPage", "GlyphLine"],
+  "web/design-system/src/landing.tsx": ["LandingFrame", "SampleGrid", "SampleCell"],
   "web/design-system/src/banner-head.tsx": ["BannerHead"],
   "web/design-system/src/list.tsx": ["GroupPlace", "ResultPlace"],
   "web/design-system/src/modal.tsx": ["ModalFrame", "ModalPanel"],
@@ -118,7 +119,8 @@ export const LAYOUT_PARTS = {
 /**
  * The frames of a page: the app's, with the parts of it that the viewport rearranges (shell.tsx, ADR-0110 §10), that
  * of a page of its own outside it (form-page.tsx), those of a modal, which under `tablet` is a screen of its own
- * (modal.tsx, and the panel that fills it, dialog.tsx), and that of the article editor's screen (article-editor.tsx).
+ * (modal.tsx, and the panel that fills it, dialog.tsx), that of the article editor's screen (article-editor.tsx), and
+ * that of a server's landing page (landing.tsx).
  * @type {Record<string, string[]>}
  */
 export const PAGE_FRAMES = {
@@ -138,6 +140,7 @@ export const PAGE_FRAMES = {
     "CallPart",
   ],
   "web/design-system/src/form-page.tsx": ["FormPage"],
+  "web/design-system/src/landing.tsx": ["LandingFrame"],
   "web/design-system/src/modal.tsx": ["ModalFrame"],
   "web/design-system/src/dialog.tsx": ["PanelFrame"],
   "web/design-system/src/article-editor.tsx": ["EditorFrame", "ArticlePane", "ModeRow"],

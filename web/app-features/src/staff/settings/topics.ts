@@ -153,7 +153,12 @@ const settingTopics: readonly SettingTopic[] = [
         setting("max_article_images", { unit: "images" }),
       ]),
       section("events", [setting("event_creators"), setting("event_records_retention_days", { unit: "days" })]),
-      section("landing", [setting("public_counts"), setting("featured_accounts")]),
+      section("landing", [
+        setting("public_counts"),
+        setting("landing_fediverse_explanation"),
+        setting("landing_features"),
+        setting("featured_accounts"),
+      ]),
     ],
   },
   {

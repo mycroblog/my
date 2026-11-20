@@ -583,6 +583,14 @@
     "defaultMessage": "サーバーの数字を出す",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
   },
+  "staff_settings.setting.landing_fediverse_explanation": {
+    "defaultMessage": "フェディバースのしくみを説明する",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
+  "staff_settings.setting.landing_features": {
+    "defaultMessage": "メンバーが使える機能を紹介する",
+    "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."
+  },
   "staff_settings.setting.featured_accounts": {
     "defaultMessage": "おすすめのアカウント",
     "description": "The name of an instance setting on its page of Server settings or of Translation. Read by administrators."

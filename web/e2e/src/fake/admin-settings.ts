@@ -124,6 +124,8 @@ const definitions: readonly Definition[] = [
   ["member_invite_max_uses", "int", "10", [1, 1000]],
   ["member_invite_max_lifetime_seconds", "int", "2592000", [3600, 31536000]],
   ["public_counts", "bool", "true"],
+  ["landing_fediverse_explanation", "bool", "true"],
+  ["landing_features", "bool", "true"],
   ["featured_accounts", "accounts", ""],
   ["remote_media_cache_max_bytes", "int", "1073741824", [1, 1125899906842624]],
   ["remote_status_retention_days", "int", "90", [1, 3650]],

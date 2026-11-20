@@ -78,27 +78,6 @@ test("a server without a logo shows the built-in wordmark, and one with its own 
   expect(screen.queryAllByRole("img")).toEqual([]);
 });
 
-test("the server's front page is named by the server, with its introduction and what follows it", () => {
-  render(
-    <FormPage
-      server={{ name: "Hanami", description: "A town square." }}
-      wordmark={wordmark}
-      front={{ more: <a href="/about">About this server</a> }}
-    >
-      <FormText>Sign in to join.</FormText>
-    </FormPage>,
-  );
-
-  const header = screen.getByRole("banner");
-  expect(within(header).getByRole("heading", { level: 1, name: "Hanami" })).not.toBeNull();
-  const description = within(header).getByText("A town square.");
-  const more = within(header).getByRole("link", { name: "About this server" });
-  expect(follows(more, description)).toBe(true);
-  // The introduction is the page's header: there is none beside the column.
-  expect(screen.queryByRole("complementary")).toBeNull();
-  expect(within(screen.getByRole("main")).getByText("Sign in to join.")).not.toBeNull();
-});
-
 test("a page without a server is the screen alone", () => {
   render(
     <FormPage wordmark={wordmark}>

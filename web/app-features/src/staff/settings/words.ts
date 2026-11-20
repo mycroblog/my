@@ -71,6 +71,8 @@ export const settingNames = {
   hook_signup_check_reject: "staff_settings.setting.hook_signup_check_reject",
   indexable_default: "staff_settings.setting.indexable_default",
   invite_creators: "staff_settings.setting.invite_creators",
+  landing_features: "staff_settings.setting.landing_features",
+  landing_fediverse_explanation: "staff_settings.setting.landing_fediverse_explanation",
   link_cards: "staff_settings.setting.link_cards",
   link_cards_ignore_robots_txt: "staff_settings.setting.link_cards_ignore_robots_txt",
   local_timeline_visibility: "staff_settings.setting.local_timeline_visibility",

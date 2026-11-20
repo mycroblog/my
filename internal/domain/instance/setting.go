@@ -173,6 +173,11 @@ const (
 	// SettingPublicCounts decides whether GET /instance/overview, and so the landing page, shows
 	// the number of members, the public posts of the last days, and when the instance started.
 	SettingPublicCounts SettingKey = "public_counts"
+	// SettingLandingFediverseExplanation decides whether the landing page explains how the
+	// fediverse works, and SettingLandingFeatures whether it shows what the software does on this
+	// instance (#3080).
+	SettingLandingFediverseExplanation SettingKey = "landing_fediverse_explanation"
+	SettingLandingFeatures             SettingKey = "landing_features"
 	// SettingFeaturedAccounts are the local accounts that the suggestions of accounts show first,
 	// in this order (FR-308).
 	SettingFeaturedAccounts SettingKey = "featured_accounts"
@@ -838,6 +843,14 @@ var definitions = []Definition{
 	{
 		Key: SettingPublicCounts, Kind: KindBool, Default: "true",
 		Doc: "Whether the landing page and GET /instance/overview show the number of members, the public posts of local accounts on each of the last 7 days, and when the instance started.",
+	},
+	{
+		Key: SettingLandingFediverseExplanation, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page explains how the fediverse works: that an account here follows and is followed by people on other servers.",
+	},
+	{
+		Key: SettingLandingFeatures, Kind: KindBool, Default: "true",
+		Doc: "Whether the landing page shows what the software does on this instance, with a sample of each feature that is on.",
 	},
 	{
 		Key: SettingFeaturedAccounts, Kind: KindAccounts, Default: "",
@@ -1821,6 +1834,14 @@ func (s Settings) LoginProvidersOnly() bool { return s.boolValue(SettingLoginPro
 
 // PublicCounts returns the value of SettingPublicCounts.
 func (s Settings) PublicCounts() bool { return s.boolValue(SettingPublicCounts) }
+
+// LandingFediverseExplanation returns the value of SettingLandingFediverseExplanation.
+func (s Settings) LandingFediverseExplanation() bool {
+	return s.boolValue(SettingLandingFediverseExplanation)
+}
+
+// LandingFeatures returns the value of SettingLandingFeatures.
+func (s Settings) LandingFeatures() bool { return s.boolValue(SettingLandingFeatures) }
 
 // FeaturedAccounts returns the usernames of SettingFeaturedAccounts, in order; none when unset.
 func (s Settings) FeaturedAccounts() []string {

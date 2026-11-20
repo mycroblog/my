@@ -276,6 +276,18 @@ export type FakeOptions = {
   registrations?: "open" | "approval" | "invite" | "closed";
   /** The instance's summary runs long. */
   longSummary?: boolean;
+  /** The instance's name runs long. */
+  longName?: boolean;
+  /**
+   * The counts of the instance (GET /instance/overview): its members, their public posts of each of the last 7 days
+   * and when it started, by default; none while the instance setting `public_counts` is off (`false`).
+   */
+  publicCounts?: boolean;
+  /**
+   * The parts of the landing page the software tells of itself: how the fediverse works (the instance setting
+   * `landing_fediverse_explanation`) and what this server offers (`landing_features`), each shown unless `false`.
+   */
+  landing?: { fediverseExplanation?: boolean; features?: boolean };
   /** The closure of the service: announced, or the server closed. */
   closure?: "announced" | "closed";
   /** The closure as its administrators run it (closure.ts): its date passed, a short notice, delivered, warnings. */
@@ -2203,7 +2215,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
 
   const instanceBody = exact<Schema<"Instance">>()({
     domain: fakeHost,
-    name: "mycroblog demo",
+    name: o.longName === true ? "Riverside Community Gardeners and Friends of the Old Mill" : "mycroblog demo",
     version: "0.0.0-demo",
     source_url: "https://example.invalid/mycroblog/my",
     ...about.instance,
@@ -2227,6 +2239,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ai_usage: o.crawlers?.ai ?? "allow",
     ux_measurement: o.uxMeasurement === true,
     ux_measurement_share: o.uxMeasurementShare ?? 10,
+    landing_fediverse_explanation: o.landing?.fediverseExplanation !== false,
+    landing_features: o.landing?.features !== false,
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,
@@ -2633,6 +2647,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
       ...(o.translation?.browser === true ? { translation_browser: "true" } : {}),
       ...(o.translation?.reports === true ? { translation_reports_to_server: "true" } : {}),
       ...(o.uxMeasurement === true ? { ux_measurement: "true" } : {}),
+      ...(o.landing?.fediverseExplanation === false ? { landing_fediverse_explanation: "false" } : {}),
+      ...(o.landing?.features === false ? { landing_features: "false" } : {}),
       ...(o.uxMeasurementShare === undefined ? {} : { ux_measurement_share: String(o.uxMeasurementShare) }),
     },
     texts: {
@@ -3160,6 +3176,16 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
         : o.about?.instance === "fails"
           ? problem(500, "Internal Server Error")
           : { status: 200, body: closing.instanceOf(instanceBody) },
+    "GET /instance/overview": () => {
+      if (o.publicCounts === false) return { status: 200, body: {} };
+      const counts: Schema<"InstanceCounts"> = {
+        members: 1284,
+        daily_posts: [212, 187, 240, 198, 263, 231, 219],
+        started_at: new Date(started - 2 * 365 * day).toISOString(),
+        counted_at: new Date(started).toISOString(),
+      };
+      return { status: 200, body: { counts } };
+    },
     "GET /instance/health": () => {
       const health: Schema<"ServerHealth"> = { status: "ok", checked_at: new Date().toISOString() };
       return { status: 200, body: health };
@@ -4144,7 +4170,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
    * paths read like an account's, a status's or a hashtag's.
    */
   const publicPath =
-    /^\/(?:instance(?:\/health|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
+    /^\/(?:instance(?:\/health|\/overview|\/supporter_plans|\/supporters|\/tip_amounts|\/cost_totals|\/income_totals|\/documents\/[^/]+|\/domain_actions)?|custom_emojis|accounts\/lookup|accounts\/(?!(?:verify_credentials|search|relationships|suggestions)$)[^/]+(?:\/statuses|\/featured_tags|\/followers|\/following)?|statuses\/(?!search$)[^/]+(?:\/context|\/history|\/reactions)?|timelines\/(?:local|federated|tag\/[^/]+)|tags\/(?!search$)[^/]+|voice\/rooms\/[^/]+\/summary)$/;
   /** Whether `/instance` answered once, before the server stopped answering (`down`). */
   let instanceRead = false;
 

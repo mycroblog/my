@@ -307,8 +307,10 @@ export {
   type SavedFile,
 } from "./exports";
 export {
+  instanceOverviewQuery,
   instanceQuery,
   useInstance,
+  useInstanceCounts,
   useServerActions,
   useServerState,
   useStatusPageUrl,
@@ -316,6 +318,7 @@ export {
   type Closure,
   type FundingMeter,
   type Instance,
+  type InstanceCounts,
 } from "./instance";
 export {
   moderationCountsQuery,

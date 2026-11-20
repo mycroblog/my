@@ -2,7 +2,7 @@
 
 // The frame of a page of its own and the parts that lay out its screen (form-page.tsx): FormPage, Form, FormActions,
 // FormChoice, FormLinks and FormList. Under `desktop` the page is one column under the server's mark; from `desktop`
-// the server's introduction stands beside it and stays in view; its front page shows the introduction at every width.
+// the server's introduction stands beside it and stays in view.
 
 import { expectNoComputedViolations } from "../axe";
 import {
@@ -120,45 +120,17 @@ test("a page of its own at the minimum width and at each side of `desktop`, in b
   await expectMirrored(page, phone, { deny: parts.deny, allow: parts.allow, request: parts.request });
 });
 
-test("with no banner, the introduction sits in the middle of its side; the server's front page shows it at every width, ended by its link onward", async ({
-  page,
-  open,
-}) => {
-  await test.step("with no banner, the introduction sits in the middle of its side", async () => {
-    await open(story, { width: from.desktop, args: { banner: false } });
-    const introduction = page.getByRole("complementary", { name: server, exact: true });
-    const name = introduction.getByText(server, { exact: true });
-    const description = introduction.getByText(/^A small server for people who like the sea.+$/);
-    await expect
-      .poll(async () => {
-        const [side, first, last] = [await boxOf(introduction), await boxOf(name), await boxOf(description)];
-        return Math.abs((first.top + last.bottom) / 2 - (side.top + side.bottom) / 2);
-      })
-      .toBeLessThan(24);
-  });
-
-  await test.step("the server's front page shows its introduction at every width, ended by its link onward", async () => {
-    await open(story, { args: { front: true } });
-    const introduction = page.getByRole("banner");
-    const name = introduction.getByRole("heading", { level: 1, name: server, exact: true });
-    const more = introduction.getByRole("link", { name: "About this server", exact: true });
-    const main = page.getByRole("main");
-    for (const width of [minimum, from.desktop - 1, from.desktop]) {
-      await page.setViewportSize({ width, height: 640 });
-      await expect(name).toBeVisible();
-      await expect(more).toBeVisible();
-      await expect(page.getByRole("complementary")).toHaveCount(0);
-      await expectNoSidewaysScroll(page);
-      await expect.poll(async () => (await boxOf(more)).top - (await boxOf(name)).bottom).toBeGreaterThanOrEqual(0);
-    }
-    // On a phone the introduction is over the screen; from `desktop` it is beside it.
-    await page.setViewportSize({ width: minimum, height: 640 });
-    await expect.poll(async () => (await boxOf(main)).top - (await boxOf(more)).bottom).toBeGreaterThanOrEqual(0);
-    await page.setViewportSize({ width: from.desktop, height: 640 });
-    await expect
-      .poll(async () => (await boxOf(main)).left - (await boxOf(introduction)).right)
-      .toBeGreaterThanOrEqual(0);
-  });
+test("with no banner, the introduction sits in the middle of its side", async ({ page, open }) => {
+  await open(story, { width: from.desktop, args: { banner: false } });
+  const introduction = page.getByRole("complementary", { name: server, exact: true });
+  const name = introduction.getByText(server, { exact: true });
+  const description = introduction.getByText(/^A small server for people who like the sea.+$/);
+  await expect
+    .poll(async () => {
+      const [side, first, last] = [await boxOf(introduction), await boxOf(name), await boxOf(description)];
+      return Math.abs((first.top + last.bottom) / 2 - (side.top + side.bottom) / 2);
+    })
+    .toBeLessThan(24);
 });
 
 test("a page keeps its width when a name in it is a word no line holds, and when an action's label is longer than a line", async ({

@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: MIT
 description: Public information about the instance.
 type: object
-required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, tips_enabled, supporter_list_visibility, domain_actions_visibility, voice_enabled, voice_room_starters, event_creators, full_text_search, translation, single_user]
+required: [domain, name, version, source_url, registrations, login_providers_only, limits, timelines, federation, sends_email, rules, search_indexing, ai_usage, link_cards, link_cards_ignore_robots_txt, finance_visibility, income_visibility, supporters_enabled, tips_enabled, supporter_list_visibility, domain_actions_visibility, voice_enabled, voice_room_starters, event_creators, full_text_search, translation, single_user, landing_fediverse_explanation, landing_features]
 properties:
   domain:
     description: The domain that serves the instance.
@@ -159,6 +159,17 @@ properties:
     description: |
       Whether the fetches of link cards skip `robots.txt`. While it is true, the sites that posts
       link to cannot refuse those fetches in `robots.txt`; the directives of their pages still apply.
+    type: boolean
+  landing_fediverse_explanation:
+    description: |
+      Whether the landing page (`/`, signed out) explains how the fediverse works: that an account
+      here follows and is followed by people on other servers (the instance setting
+      `landing_fediverse_explanation`).
+    type: boolean
+  landing_features:
+    description: |
+      Whether the landing page shows what the software does on this instance, a sample of each
+      feature that is on (the instance setting `landing_features`).
     type: boolean
   ux_measurement:
     description: |

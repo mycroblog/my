@@ -132,8 +132,26 @@ export class Landing {
     this.page = page;
   }
 
-  /** The way to the sign-in, which only a reader without a session is offered. */
+  /** Opens the server's address, as a reader without a session. */
+  async open(): Promise<void> {
+    await this.page.goto("/");
+  }
+
+  /**
+   * The way to the sign-in, which only a reader without a session is offered: at the page's head while the server
+   * takes new accounts, in the account's part while it takes none.
+   */
   get signIn(): Locator {
-    return this.page.getByRole("main").getByRole("link", { name: "Sign in", exact: true });
+    return this.page.getByRole("link", { name: "Sign in", exact: true });
+  }
+
+  /** The account's part of the page. */
+  get account(): Locator {
+    return this.page.getByRole("region", { name: "Account", exact: true });
+  }
+
+  /** The way to the registration screen, in the account's part, while the server takes new accounts from anyone. */
+  get signUp(): Locator {
+    return this.account.getByRole("link", { name: "Create an account", exact: true });
   }
 }

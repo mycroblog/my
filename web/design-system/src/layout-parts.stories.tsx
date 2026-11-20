@@ -234,15 +234,13 @@ type FormPageArgs = {
   server: boolean;
   /** The server has a banner. */
   banner: boolean;
-  /** The server's front page. */
-  front: boolean;
   /** What is longer than a line of a phone: nothing, the app's name (one word), or the first action's label. */
   long: "none" | "word" | "label";
   /** A band at the top says a state of the whole page. */
   band: boolean;
 };
 
-function FormPageSpecimen({ server, banner: withBanner, front, long, band }: FormPageArgs) {
+function FormPageSpecimen({ server, banner: withBanner, long, band }: FormPageArgs) {
   const app = long === "word" ? longWord : "Tide Tables";
   return (
     <FormPage
@@ -256,7 +254,6 @@ function FormPageSpecimen({ server, banner: withBanner, front, long, band }: For
           : undefined
       }
       wordmark={{ light: wordmark, dark: wordmark }}
-      front={front ? { more: <FormLink href="/about">About this server</FormLink> } : undefined}
       band={band ? "Test mode: nothing is charged." : undefined}
       footer={
         <FormPageFooter
@@ -313,12 +310,12 @@ function FormPageSpecimen({ server, banner: withBanner, front, long, band }: For
 }
 
 /**
- * A page of its own, a screen longer than a phone: of a server with a banner by default; `banner`, `server` and
- * `front` (the Controls) take the banner away, leave the column alone, or make it the server's front page, and `long`
- * names the app by a word no line holds, or gives the first action a label longer than a phone's line.
+ * A page of its own, a screen longer than a phone: of a server with a banner by default; `banner` and `server` (the
+ * Controls) take the banner away or leave the column alone, and `long` names the app by a word no line holds, or gives
+ * the first action a label longer than a phone's line.
  */
 export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
-  args: { server: true, banner: true, front: false, long: "none", band: false },
+  args: { server: true, banner: true, long: "none", band: false },
   parameters: { page: true },
   argTypes: {
     long: {
@@ -331,7 +328,6 @@ export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
       description: "The page belongs to a server, which it introduces",
     },
     banner: { control: "boolean", description: "The server has a banner" },
-    front: { control: "boolean", description: "The server's front page" },
     band: { control: "boolean", description: "A band at the top says a state of the whole page" },
   },
   render: (args) => <FormPageSpecimen {...args} />,
@@ -340,7 +336,7 @@ export const FormPageScreen: StoryObj<Meta<FormPageArgs>> = {
 /** The page with a band at the top that says a state of the whole page (a payment page in test mode). */
 export const FormPageBand: StoryObj<Meta<FormPageArgs>> = {
   ...FormPageScreen,
-  args: { server: true, banner: false, front: false, long: "none", band: true },
+  args: { server: true, banner: false, long: "none", band: true },
 };
 
 /** The versions of a post, newest first, each holding long text. */

@@ -15,10 +15,12 @@ import {
   receiveHomeGap,
   receiveHomeStatuses,
   receiveNotification,
+  AppDataProvider,
   watchServer,
   type AppData,
 } from "@my/app-data";
 import { enterCall, leaveCall, type Call } from "@my/app-features";
+import { NavigationProvider } from "@my/design-system";
 import {
   createFakeApi,
   fakeHost,
@@ -29,9 +31,10 @@ import {
 } from "@my/e2e/fake";
 import { createClient } from "@mycroblog/mykit";
 import type { StoryContext } from "@storybook/react-vite";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { addons } from "storybook/preview-api";
 import { AppRoot } from "./app";
+import { Reader } from "./reader";
 import { joinStoryCall, type StoryCall } from "./call.samples";
 import { createAppRouter } from "./router";
 
@@ -413,6 +416,32 @@ function StoryPage({
   useEffect(() => (joined === undefined ? undefined : joinStoryCall(data, fake, joined)), [data, fake, joined]);
   useStream(data, fake, stream);
   return <AppRoot router={router} visitor={data} />;
+}
+
+/**
+ * A part of the app for a visitor, without the router, on the fake server as `server` says: the server's data a
+ * visitor reads, the reader's language, and links that go nowhere. For a page the shell shows in place of its screens
+ * (the landing page), where a story compares arrangements of it that the router does not choose between.
+ */
+export function VisitorPart({ server, children }: { server?: Fake["server"]; children: ReactNode }) {
+  const [data] = useState(() => {
+    const fake = createFakeApi({ visitor: true, ...server });
+    return createAppData(
+      createClient({
+        server: fakeOrigin,
+        retry: { disabled: true },
+        fetch: fake.serve,
+        acceptLanguage: () => document.documentElement.lang,
+      }),
+    );
+  });
+  return (
+    <AppDataProvider data={data}>
+      <Reader signedIn={false}>
+        <NavigationProvider navigate={() => undefined}>{children}</NavigationProvider>
+      </Reader>
+    </AppDataProvider>
+  );
 }
 
 /** The parameters of a screen's story: the fake server's screen and state, what the Stream panel offers. */
