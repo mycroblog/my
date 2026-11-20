@@ -93,8 +93,8 @@ export function LandingHead({ mark, end }: { mark: ReactNode; end?: ReactNode })
 const parts = tv({
   slots: {
     heading: "text-title",
-    // In a right-to-left page it keeps to the right, whatever its own direction.
-    summary: "rtl:text-right",
+    // A block of the page's direction, so that it starts where the column starts, whatever the words' own direction.
+    summary: "text-start",
     places: "text-caption text-muted-text",
     // A place reads as the words around it; its target reaches the minimum around its text without moving the line
     // (WCAG 2.5.8).
@@ -108,8 +108,8 @@ const parts = tv({
  */
 export function LandingSummary({ children }: { children: string }) {
   return (
-    <p className={parts().summary()} dir="auto">
-      {children}
+    <p className={parts().summary()}>
+      <bdi>{children}</bdi>
     </p>
   );
 }
