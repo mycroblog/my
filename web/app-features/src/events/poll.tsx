@@ -354,13 +354,19 @@ function Ballots({ event, candidate, t }: { event: ServerEvent; candidate: Event
       <FeedNotice start>{t("events.ballots_none")}</FeedNotice>
     );
   const of = (vote: EventVote): readonly EventBallot[] => list.items.filter((b) => b.vote === vote);
+  // Each way is counted by the date's own counts, the server's, not by the pages read.
+  const counted: Readonly<Record<EventVote, number>> = {
+    yes: candidate.yes_count,
+    maybe: candidate.maybe_count,
+    no: candidate.no_count,
+  };
   return (
     <Stack gap="entry-room">
       {votes.map((vote) =>
         of(vote).length === 0 ? null : (
           <Stack key={vote} gap="entry-line">
-            <GroupHeading>{t("events.vote_group", { vote, count: of(vote).length })}</GroupHeading>
-            <RowList label={t("events.vote_group", { vote, count: of(vote).length })}>
+            <GroupHeading>{t("events.vote_group", { vote, count: counted[vote] })}</GroupHeading>
+            <RowList label={t("events.vote_group", { vote, count: counted[vote] })}>
               {of(vote).map((b) => (
                 <RowItem key={b.account.id} itemRef={added.item(list.items.indexOf(b))}>
                   <AccountLine account={b.account} />
