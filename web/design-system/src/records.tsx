@@ -37,6 +37,7 @@ import { tv } from "tailwind-variants/lite";
 import { Button, ButtonBase, LinkButton, TextButton } from "./button";
 import { ChoiceMark } from "./choice";
 import { Icon, type IconName } from "./icons";
+import { CodeText } from "./code-text";
 import { Box, Pin, Row, Spoken, Stack } from "./layout";
 import { stringsIn, useReader } from "./locale";
 import { MenuGroup, MenuItem, MenuSurface } from "./menu";
@@ -159,6 +160,8 @@ export type RecordRow<K extends string = string> = {
   caption?: string | undefined;
   href?: string | undefined;
   cells: Partial<Record<K, ReactNode>>;
+  /** Its head and its caption are code (a job's type, an error's message and route): in the code's face. */
+  code?: boolean | undefined;
   /**
    * What the record holds past its cells, across the whole of the row under them (a person's reason, their private
    * facts, the actions on that one record): at any width a line of its own, the row's last.
@@ -350,13 +353,13 @@ function NarrowName({ children }: { children: ReactNode }) {
  * short with an ellipsis only where its column has no more room: a handle never breaks inside. `cover`, its box past
  * it covers the whole row, so that a press anywhere opens the record.
  */
-function HeadWords({ cover = false, children }: { cover?: boolean; children: string }) {
+function HeadWords({ cover = false, code = false, children }: { cover?: boolean; code?: boolean; children: string }) {
   // Its own direction cuts it at its end in its reading order (a handle keeps its "@" and its start in a right-to-left
-  // page), standing at the start of its column all the same.
+  // page), standing at the start of its column all the same; code reads left to right.
   return (
     <span
-      dir="auto"
-      className={`block truncate [text-align:match-parent] ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
+      dir={code ? "ltr" : "auto"}
+      className={`block truncate [text-align:match-parent] ${code ? "font-mono" : ""} ${cover ? "after:absolute after:inset-0 after:content-['']" : ""}`}
     >
       {children}
     </span>
@@ -791,7 +794,12 @@ function Record<K extends string>({
   const { picked, onPick, onOpen, current } = use(RowsContext);
   // The open record: the page it leads to, for a link; the one shown, for a button.
   const open = row.id === current;
-  const words = <HeadWords cover>{row.head}</HeadWords>;
+  const code = row.code === true;
+  const words = (
+    <HeadWords cover code={code}>
+      {row.head}
+    </HeadWords>
+  );
   return (
     <RecordLine role="row" className={s.line()}>
       {picks && (
@@ -831,12 +839,12 @@ function Record<K extends string>({
             </AriaButton>
           ) : (
             <span className={s.plain()}>
-              <HeadWords>{row.head}</HeadWords>
+              <HeadWords code={code}>{row.head}</HeadWords>
             </span>
           )}
           {row.caption !== undefined && (
             <span className={s.caption()}>
-              <bdi dir="auto">{row.caption}</bdi>
+              {code ? <CodeText>{row.caption}</CodeText> : <bdi dir="auto">{row.caption}</bdi>}
             </span>
           )}
         </Stack>

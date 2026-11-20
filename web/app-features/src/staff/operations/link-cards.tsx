@@ -40,9 +40,9 @@ import {
   SettingsResult,
   SettingsScreen,
   SettingsSection,
-  Stack,
   SubmitBar,
   TextField,
+  TextLink,
 } from "@my/design-system";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings } from "../parts";
@@ -131,7 +131,13 @@ type RuleForm = { readonly domain: string; readonly mode: LinkCardMode; readonly
 /** Where a rule's last save is: refused, with which field and why, or why in the submit bar. */
 type Sent =
   | { readonly kind: "idle" | "sending" | "saved" }
-  | { readonly kind: "refused"; readonly field?: "domain" | "note" | undefined; readonly reason?: string | undefined };
+  | {
+      readonly kind: "refused";
+      readonly field?: "domain" | "note" | undefined;
+      readonly reason?: string | undefined;
+      /** The domain already has a rule, which a new one would replace: its domain as the list has it. */
+      readonly taken?: string | undefined;
+    };
 
 /** The way back to the rules. */
 function BackToRules({ go }: { go: (href: string) => void }) {
@@ -170,8 +176,8 @@ function useRuleForm(start: RuleForm, onUnsaved: AdminSubProps["onUnsaved"]) {
     },
     [onUnsaved],
   );
-  const refuseField = (field: "domain" | "note") => {
-    setSent({ kind: "refused", field });
+  const refuseField = (field: "domain" | "note", taken?: string) => {
+    setSent({ kind: "refused", field, taken });
     focusNext.current = `${id}-${field}`;
   };
   return {
@@ -194,10 +200,15 @@ function useRuleForm(start: RuleForm, onUnsaved: AdminSubProps["onUnsaved"]) {
       else if (error instanceof ProblemError && error.status === 400) refuseField("domain");
       else setSent({ kind: "refused", reason: refusalDetail(error) });
     },
-    /** What the form finds wrong before sending: no domain. */
-    check: (): boolean => {
-      if (form.domain.trim() !== "") return true;
-      refuseField("domain");
+    /**
+     * What the form finds wrong before sending: no domain, or, of a new rule, a domain that has a rule already among
+     * `rules`, which a save would replace without a word (the server sets a domain's rule whatever it had).
+     */
+    check: (rules?: readonly LinkCardRule[]): boolean => {
+      const domain = form.domain.trim().toLowerCase();
+      const taken = rules?.find((r) => r.domain === domain);
+      if (domain !== "" && taken === undefined) return true;
+      refuseField("domain", taken?.domain);
       return false;
     },
   };
@@ -221,7 +232,11 @@ function RuleFields({
 }) {
   const { t } = useStaffStrings();
   const error = (field: "domain" | "note") =>
-    sent.kind === "refused" && sent.field === field ? t("staff_operations.link_cards.rule", { field }) : undefined;
+    sent.kind !== "refused" || sent.field !== field
+      ? undefined
+      : sent.taken !== undefined
+        ? t("staff_operations.link_cards.taken", { domain: sent.taken })
+        : t("staff_operations.link_cards.rule", { field });
   return (
     <SettingsSection heading={t("staff_operations.link_cards.section")}>
       {withDomain && (
@@ -230,7 +245,6 @@ function RuleFields({
           name="domain"
           label={t("staff_operations.link_cards.domain")}
           row
-          hint={t("staff_operations.link_cards.domain.about")}
           autoCapitalize="none"
           inputMode="text"
           maxLength={linkCardDomainLimit}
@@ -241,22 +255,20 @@ function RuleFields({
           }}
         />
       )}
+      {withDomain && sent.kind === "refused" && sent.taken !== undefined && (
+        <Box>
+          <TextLink href={rulePath(sent.taken)}>
+            {t("staff_operations.link_cards.taken.open", { domain: sent.taken })}
+          </TextLink>
+        </Box>
+      )}
       <ChoiceList
         id={`${id}-mode`}
         label={t("staff_operations.link_cards.mode.label")}
         multiple={false}
         items={linkCardModes.map((mode) => ({
           key: mode,
-          label: (
-            <Stack gap="hair">
-              <Box as="span" weight="strong">
-                {t("staff_operations.link_cards.mode", { mode })}
-              </Box>
-              <Box as="span" text="caption" tone="muted" breaks="phrase">
-                {t("staff_operations.link_cards.mode.about", { mode })}
-              </Box>
-            </Stack>
-          ),
+          label: t("staff_operations.link_cards.mode", { mode }),
         }))}
         chosen={[linkCardModes.indexOf(form.mode)]}
         onChange={(chosen) => {
@@ -309,13 +321,15 @@ export function NewLinkCardRuleScreen({ go, onUnsaved, leaving }: AdminSubProps)
   const { t } = useStaffStrings();
   const writes = useLinkCardRuleWrites();
   const f = useRuleForm({ domain: "", mode: "no_fetch", note: "" }, onUnsaved);
+  const rules = useLinkCardRules().rules;
   const save = () => {
-    if (f.busy || !f.check()) return;
+    if (f.busy || !f.check(rules)) return;
     f.setSent({ kind: "sending" });
     writes.set(f.form.domain.trim(), { mode: f.form.mode, note: f.form.note }).then(
       (rule) => {
         f.setBase(f.form);
         f.setSent({ kind: "saved" });
+        onUnsaved?.(false);
         go(rulePath(rule.domain));
       },
       (error: unknown) => {
@@ -327,6 +341,7 @@ export function NewLinkCardRuleScreen({ go, onUnsaved, leaving }: AdminSubProps)
     <>
       <SettingsScreen
         sub
+        icon="link"
         title={t("staff_operations.link_cards.new")}
         back={<BackToRules go={go} />}
         foot={<RuleBar sent={f.sent} busy={f.busy} onSave={save} label={t("staff_operations.link_cards.add")} />}
@@ -367,6 +382,8 @@ function RuleForm({ rule, go, onUnsaved, leaving }: AdminSubProps & { rule: Link
     writes.remove(rule.domain).then(
       () => {
         setAsking(false);
+        // The rule is gone with whatever its form held: nothing is left to hold the reader back for.
+        onUnsaved?.(false);
         go(rulesPath);
       },
       () => {
@@ -379,6 +396,7 @@ function RuleForm({ rule, go, onUnsaved, leaving }: AdminSubProps & { rule: Link
     <>
       <SettingsScreen
         sub
+        icon="link"
         title={rule.domain}
         back={<BackToRules go={go} />}
         // What ends the rule stands last and apart, after the form and its Save.
@@ -441,6 +459,7 @@ export function LinkCardRuleScreen({ domain, ...sub }: AdminSubProps & { domain:
     return (
       <SettingsScreen
         sub
+        icon="link"
         title={t("staff_operations.entry.link_card_domains")}
         back={<BackToRules go={sub.go} />}
         notice={

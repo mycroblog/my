@@ -4,11 +4,12 @@
 // show them (ADR-0058).
 //
 // The facts of a record (an account's registration, a webhook's endpoint) are terms and their values: where the list
-// has the room of a phone's column and more, the terms down the start, as wide as the longest of them up to a limit,
-// each value beside its term; narrower (a detail inside a log's entry on a small phone), each term over its value.
+// has more room than a phone's column, the terms down the start, as wide as the longest of them up to a limit, each
+// value beside its term; on a phone, each term over its value, so that a long value (an ID, a key) has the whole line.
 // Terms are muted, at the caption's size; values are the text's. A value in the code's face is one that is copied or
 // compared character by character (an IP address, an endpoint), and breaks after a slash, never inside a word that
-// fits (code-text.tsx). A value that is private (an email address, an IP address) is shown only on demand
+// fits (code-text.tsx), isolated left to right, as code reads in a right-to-left page too. A fact may have an action
+// after its value (the button that copies it). A value that is private (an email address, an IP address) is shown only on demand
 // (ADR-0058 §9): in its place, Show, which asks the server for it, spins while it is asked, and gives the focus to the
 // value once it comes, so that a keyboard and a screen reader land on what they asked for. Every value so shown takes
 // one look, the open eye before it and the code's face, apart from the public ones.
@@ -39,7 +40,7 @@ function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { class
     <div className="@container">
       <dl
         {...rest}
-        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-y-screen-row-gap @min-[16rem]:grid-cols-[fit-content(12rem)_minmax(0,1fr)] @min-[16rem]:gap-x-shell-edge`}
+        className={`${className} grid grid-cols-[minmax(0,1fr)] gap-y-screen-row-gap @min-[30rem]:grid-cols-[fit-content(12rem)_minmax(0,1fr)] @min-[30rem]:gap-x-shell-edge`}
       />
     </div>
   );
@@ -48,7 +49,7 @@ function FactFrame({ className, ...rest }: HTMLAttributes<HTMLElement> & { class
 /** A fact: its term and its value, on the frame's columns; narrow, the term over the value, a hair apart. */
 function FactLine({ children }: { children: ReactNode }) {
   return (
-    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[16rem]:gap-y-0">
+    <div className="col-span-full grid grid-cols-subgrid items-baseline gap-y-[0.125rem] @min-[30rem]:gap-y-0">
       {children}
     </div>
   );
@@ -63,9 +64,6 @@ const facts = tv({
     // keyboard gave Show, with the ring a keyboard's focus shows.
     revealed: "rounded-control font-mono outline-hidden focus-visible:shadow-focus",
     eye: "text-muted-text",
-  },
-  variants: {
-    code: { true: { value: "font-mono" } },
   },
 });
 
@@ -82,14 +80,20 @@ export type Fact = {
    * stands in its place until `value` is given.
    */
   reveal?: { onReveal: () => void; busy?: boolean | undefined } | undefined;
+  /** What the reader may do with the value, after it (a button that copies it). */
+  action?: ReactNode;
 };
 
 /** A value in the code's face, kept in runs where it is text, so that it breaks after a slash, not inside a word. */
-const shownValue = (value: ReactNode): ReactNode => (typeof value === "string" ? codeRuns(value) : value);
+const shownValue = (value: ReactNode): ReactNode => (
+  <bdi dir="ltr" className="font-mono">
+    {typeof value === "string" ? codeRuns(value) : value}
+  </bdi>
+);
 
 /** A value kept until asked for: Show, then the value, which takes the focus Show had. */
 function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
-  const s = facts({ code: fact.code === true });
+  const s = facts();
   const { lang } = useReader(undefined);
   const strings = stringsIn(lang);
   const value = useRef<HTMLSpanElement>(null);
@@ -129,7 +133,7 @@ function KeptValue({ fact, termId }: { fact: Fact; termId: string }) {
 
 /** One fact, its term naming the Show that stands for a kept value. */
 function FactItem({ fact }: { fact: Fact }) {
-  const s = facts({ code: fact.code === true });
+  const s = facts();
   const termId = useId();
   return (
     <FactLine>
@@ -145,6 +149,14 @@ function FactItem({ fact }: { fact: Fact }) {
           )
         ) : (
           <KeptValue fact={fact} termId={termId} />
+        )}
+        {fact.action !== undefined && fact.action !== null && (
+          <>
+            {" "}
+            <Row as="span" inline rigid>
+              {fact.action}
+            </Row>
+          </>
         )}
       </dd>
     </FactLine>

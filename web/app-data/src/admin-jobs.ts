@@ -107,11 +107,16 @@ export function useAdminJobAttempts(id: string): PagedList<AdminJobAttempt> {
 
 /**
  * Runs the dead job of `id` again, a new count of attempts from 1; the queue, the lists of jobs, the job and its
- * attempts are read again. Rejects with the server's problem: a 404 for a job that is not dead (retried meanwhile).
+ * attempts are read again, after a refusal too. Rejects with the server's problem: a 404 for a job that is not dead
+ * (retried or deleted meanwhile).
  */
 export async function retryAdminJob(data: AppData, id: string): Promise<void> {
-  await data.api.POST("/admin/jobs/{id}/retry", { params: { path: { id } } });
-  staffChanged(data, ["/admin/jobs", "/admin/queue"]);
+  try {
+    await data.api.POST("/admin/jobs/{id}/retry", { params: { path: { id } } });
+  } finally {
+    // A refusal too says the job is not what the screen shows (retried or deleted meanwhile): it is read again.
+    staffChanged(data, ["/admin/jobs", "/admin/queue"]);
+  }
 }
 
 /** Runs a dead job again, for a screen (`retryAdminJob`). */

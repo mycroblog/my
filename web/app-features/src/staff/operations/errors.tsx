@@ -2,13 +2,13 @@
 
 // The errors the server and the web client reported, as a holder of `manage_errors` reads them (ADR-0103 §8), in two
 // screens. At /admin/errors, the groups, the open ones by default, filtered by state and source, which the address
-// keeps, the most recently seen first, a page at a time: each its type, where it happened, its state, its occurrences
-// of the last 24 hours and 7 days, and when it was last seen, with the first line of its message under them. At
+// keeps, the most recently seen first, a page at a time: each the first line of its message and where it happened, in
+// the code's face, its state, its occurrences of the last 24 hours and 7 days, and when it was last seen. At
 // /admin/errors/{id}, a group: first what the reader does with it (resolve or mute an open one, mute a resolved one,
 // unmute a muted one), what came of it said in the screen's status; then its facts; its occurrences of the last 24
-// hours and 7 days, a table; its latest occurrence, then the request ID and the trace ID to search the logs by and its
-// stack, each to copy under its name; its occurrences by hour, the newest first; and the changes of its state, the
-// newest first.
+// hours and 7 days, a table; its latest occurrence, with the request ID and the trace ID to search the logs by, each
+// with its copy button, and its stack to copy; its occurrences by hour, the newest first, a table of figures; and the
+// changes of its state, the newest first.
 
 import {
   errorGroupSources,
@@ -27,13 +27,15 @@ import {
   type ErrorGroupState,
 } from "@my/app-data";
 import {
-  BackButton,
   Box,
   Button,
+  CodeText,
   FactList,
   FeedNotice,
   FilterBar,
   FilterFacet,
+  FinanceRow,
+  FinanceTable,
   LogEntry,
   LogList,
   MoreRecords,
@@ -55,7 +57,7 @@ import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { cursorOf, filtered, Pages, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
 import { CopyValue } from "../settings/parts";
-import { useCount } from "./parts";
+import { CopyAction, SubTitle, useCount } from "./parts";
 
 /** The address of the error groups. */
 const errorsPath = "/admin/errors";
@@ -175,10 +177,17 @@ export function ErrorGroupsScreen({ search, onSearch }: StaffAddress): ReactNode
     { key: "seen", label: t("staff_operations.error_groups.column.seen"), kind: "fit", bare: true },
     { key: "state", label: t("staff_operations.error_groups.column.state"), kind: "fit", beside: true },
   ];
+  // What happened is the row's line, where the eye lands; where it happened under it.
   const rows = page.items.map((g): RecordRow<GroupColumn> => ({
     id: g.id,
-    head: g.type,
-    caption: g.where,
+    head: g.message === "" ? g.type : g.message,
+    code: true,
+    // Where it happened, across the row under its cells, where a route has the room to break only at its slashes.
+    detail: (
+      <Box as="p" text="caption" tone="muted">
+        <CodeText>{g.where}</CodeText>
+      </Box>
+    ),
     href: staffHref(errorGroupPath(g.id), search),
     cells: {
       day: count(g.count_24h),
@@ -186,12 +195,6 @@ export function ErrorGroupsScreen({ search, onSearch }: StaffAddress): ReactNode
       seen: <RelativeTime date={g.last_seen_at} />,
       state: <GroupStateMark state={g.state} />,
     },
-    detail:
-      g.message === "" ? undefined : (
-        <Box as="p" text="caption" tone="muted" breaks="phrase">
-          {g.message}
-        </Box>
-      ),
   }));
   return (
     <ScreenStack busy={page.stale}>
@@ -203,7 +206,7 @@ export function ErrorGroupsScreen({ search, onSearch }: StaffAddress): ReactNode
         rows={rows}
         busy={page.stale}
         empty={
-          <FeedNotice>
+          <FeedNotice start>
             {t(
               q.state === "open" && q.source === undefined
                 ? "staff_operations.error_groups.empty"
@@ -239,16 +242,17 @@ function groupFacts(t: T, moment: (iso: string) => string, g: ErrorGroupDetail):
       value: t("staff_operations.error_groups.kind.value", { kind: g.kind }),
     },
     { term: t("staff_operations.error_groups.where"), value: g.where, code: true },
-    { term: t("staff_operations.error_groups.message"), value: g.message },
+    { term: t("staff_operations.error_groups.message"), value: g.message, code: true },
+    { term: t("staff_operations.error_groups.first"), value: moment(g.first_seen_at) },
+    { term: t("staff_operations.error_groups.first_version"), value: g.first_version, code: true },
+    { term: t("staff_operations.error_groups.column.seen"), value: moment(g.last_seen_at) },
+    { term: t("staff_operations.error_groups.last_version"), value: g.last_version, code: true },
     {
-      term: t("staff_operations.error_groups.first"),
-      value: t("staff_operations.error_groups.seen_on", { date: moment(g.first_seen_at), version: g.first_version }),
+      term: t("staff_operations.error_groups.fingerprint"),
+      value: g.fingerprint,
+      code: true,
+      action: <CopyAction label={t("staff_operations.copy.fingerprint")} value={g.fingerprint} />,
     },
-    {
-      term: t("staff_operations.error_groups.column.seen"),
-      value: t("staff_operations.error_groups.seen_on", { date: moment(g.last_seen_at), version: g.last_version }),
-    },
-    { term: t("staff_operations.error_groups.fingerprint"), value: g.fingerprint, code: true },
   ];
 }
 
@@ -269,18 +273,18 @@ function Counts({ group }: { group: ErrorGroup }): ReactNode {
   );
 }
 
-/** The latest occurrence: its facts, then the IDs the logs are searched by and its stack, each to copy under its name. */
-function Sample({ sample }: { sample: NonNullable<ErrorGroupDetail["sample"]> }): ReactNode {
+/**
+ * The latest occurrence: its facts, the IDs the logs and the traces are searched by each with the button that copies
+ * it, its message where it differs from the group's, and its stack to copy.
+ */
+function Sample({ sample, message }: { sample: NonNullable<ErrorGroupDetail["sample"]>; message: string }): ReactNode {
   const { t } = useStaffStrings();
   const moment = useMoment();
-  const copied = (name: string, value: string, copy: string, code = false) => (
-    <Titled title={name}>
-      <CopyValue label={name} value={value} copy={copy} code={code} />
-    </Titled>
-  );
+  const id = (term: string, value: string | undefined, copy: string): Fact[] =>
+    value === undefined ? [] : [{ term, value, code: true, action: <CopyAction label={copy} value={value} /> }];
   return (
-    <>
-      <Titled title={t("staff_operations.error_groups.sample")}>
+    <Titled title={t("staff_operations.error_groups.sample")}>
+      <Stack gap="entry-room">
         <FactList
           label={t("staff_operations.error_groups.sample")}
           items={[
@@ -288,31 +292,36 @@ function Sample({ sample }: { sample: NonNullable<ErrorGroupDetail["sample"]> })
             { term: t("staff_operations.error_groups.sample.version"), value: sample.version, code: true },
             { term: t("staff_operations.error_groups.sample.role"), value: sample.role, code: true },
             { term: t("staff_operations.error_groups.sample.type"), value: sample.type, code: true },
-            { term: t("staff_operations.error_groups.message"), value: sample.message },
+            ...(sample.message === message
+              ? []
+              : [{ term: t("staff_operations.error_groups.message"), value: sample.message, code: true }]),
+            ...id(
+              t("staff_operations.error_groups.sample.request_id"),
+              sample.request_id,
+              t("staff_operations.copy.request_id"),
+            ),
+            ...id(
+              t("staff_operations.error_groups.sample.trace_id"),
+              sample.trace_id,
+              t("staff_operations.copy.trace_id"),
+            ),
           ]}
         />
-      </Titled>
-      {sample.request_id !== undefined &&
-        copied(
-          t("staff_operations.error_groups.sample.request_id"),
-          sample.request_id,
-          t("staff_operations.copy.request_id"),
-        )}
-      {sample.trace_id !== undefined &&
-        copied(
-          t("staff_operations.error_groups.sample.trace_id"),
-          sample.trace_id,
-          t("staff_operations.copy.trace_id"),
-        )}
-      {copied(t("staff_operations.error_groups.sample.stack"), sample.stack, t("staff_operations.copy.stack"), true)}
-    </>
+        <CopyValue
+          label={t("staff_operations.error_groups.sample.stack")}
+          value={sample.stack}
+          copy={t("staff_operations.copy.stack")}
+          code
+        />
+      </Stack>
+    </Titled>
   );
 }
 
 /** How many hours of occurrences show at first, and how many more each Show more adds. */
-const hoursShown = 24;
+const hoursShown = 12;
 
-/** The hours that had occurrences, the newest first, a table: when, how many, on which version. */
+/** The hours that had occurrences, the newest first, a table of figures: when, how many, on which version. */
 function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
   const { t } = useStaffStrings();
   const count = useCount();
@@ -322,29 +331,31 @@ function Hours({ group }: { group: ErrorGroupDetail }): ReactNode {
   const title = t("staff_operations.error_groups.hours");
   return (
     <Titled title={title}>
-      <Stack gap="entry-room">
-        <RecordTable
-          label={title}
-          head={{ label: t("staff_operations.error_groups.hours.hour") }}
-          columns={[
-            { key: "count", label: t("staff_operations.error_groups.counts.count"), kind: "figures" },
-            { key: "version", label: t("staff_operations.error_groups.sample.version"), kind: "fit" },
-          ]}
-          rows={hours.slice(0, shown).map((h) => ({
-            id: h.hour,
-            head: moment(h.hour),
-            cells: { count: count(h.count), version: h.last_version },
-          }))}
-          empty={<FeedNotice>{t("staff_operations.error_groups.hours.empty")}</FeedNotice>}
-        />
-        {hours.length > shown && (
-          <MoreRecords
-            onPress={() => {
-              setShown((n) => n + hoursShown);
-            }}
-          />
-        )}
-      </Stack>
+      {hours.length === 0 ? (
+        <FeedNotice start>{t("staff_operations.error_groups.hours.empty")}</FeedNotice>
+      ) : (
+        <Stack gap="entry-room">
+          <FinanceTable
+            label={title}
+            head={t("staff_operations.error_groups.hours.hour")}
+            columns={[
+              { label: t("staff_operations.error_groups.counts.count"), figures: true },
+              { label: t("staff_operations.error_groups.sample.version") },
+            ]}
+          >
+            {hours.slice(0, shown).map((h) => (
+              <FinanceRow key={h.hour} head={moment(h.hour)} cells={[{ figures: [count(h.count)] }, h.last_version]} />
+            ))}
+          </FinanceTable>
+          {hours.length > shown && (
+            <MoreRecords
+              onPress={() => {
+                setShown((n) => n + hoursShown);
+              }}
+            />
+          )}
+        </Stack>
+      )}
     </Titled>
   );
 }
@@ -398,39 +409,35 @@ function GroupView({ group, onBack }: { group: ErrorGroupDetail; onBack: () => v
   };
   return (
     <ScreenStack>
-      <Stack gap="entry-line">
-        <ScreenTitle
-          glyph="errors"
-          back={<BackButton onPress={onBack}>{t("staff_operations.entry.error_groups")}</BackButton>}
-        >
-          {group.type}
-        </ScreenTitle>
-        <Row wrap align="center" gap="screen-tab-gap">
-          {actsOf[group.state].map((which, i) => (
-            <Button
-              key={which}
-              kind={i === 0 ? "primary" : "secondary"}
-              size="timeline"
-              busy={busy === which}
-              onPress={() => {
-                act(which);
-              }}
-            >
-              {t("staff_operations.error_groups.act", { act: which })}
-            </Button>
-          ))}
-          {status}
-        </Row>
-      </Stack>
+      <SubTitle glyph="errors" back={t("staff_operations.entry.error_groups")} onBack={onBack}>
+        {group.type}
+      </SubTitle>
+      {/* Resolve is the one primary action; muting and unmuting are neutral, whatever the state. */}
+      <Row wrap align="center" gap="screen-tab-gap">
+        {actsOf[group.state].map((which) => (
+          <Button
+            key={which}
+            kind={which === "resolve" ? "primary" : "secondary"}
+            size="timeline"
+            busy={busy === which}
+            onPress={() => {
+              act(which);
+            }}
+          >
+            {t("staff_operations.error_groups.act", { act: which })}
+          </Button>
+        ))}
+        {status}
+      </Row>
       <FactList label={t("staff_operations.error_groups.facts")} items={groupFacts(t, moment, group)} />
       <Titled title={t("staff_operations.error_groups.counts")}>
         <Counts group={group} />
       </Titled>
-      {group.sample !== undefined && <Sample sample={group.sample} />}
+      {group.sample !== undefined && <Sample sample={group.sample} message={group.message} />}
       <Hours group={group} />
       <Titled title={t("staff_operations.error_groups.events")}>
         {group.events.length === 0 ? (
-          <FeedNotice>{t("staff_operations.error_groups.events.empty")}</FeedNotice>
+          <FeedNotice start>{t("staff_operations.error_groups.events.empty")}</FeedNotice>
         ) : (
           <LogList label={t("staff_operations.error_groups.events")}>
             {group.events.toReversed().map((e, i) => (

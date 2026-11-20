@@ -5,10 +5,10 @@
 // job has waited since, and a table of the jobs by type and state with how long each type has kept a job waiting; a
 // queue that cannot list its pending jobs says so, and leads to the failed ones, which it lists. At /admin/jobs/list,
 // the jobs of one state (the pending ones by default) and one type, which the address keeps, a page at a time: each its
-// type, its ID, its state, its attempts, and when it is due or failed. At /admin/jobs/{id}, a job: first, for a failed
+// type in the code's face, why it last failed, its state, its attempts, and when it is due or failed. At /admin/jobs/{id}, a job: first, for a failed
 // one, Run again, which asks before, since running a job again may repeat what it already did; then its facts, why its
-// last run failed and its payload, each to copy, and the runs that did not succeed, the newest first; the jobs of its
-// type apart, at the end. A job that is no longer in the queue (it completed, or was deleted) says so.
+// last run failed and its payload, each to copy, and the runs that did not succeed, the newest first, a table; the jobs
+// of its type apart, at the end. A job that is no longer in the queue (it completed, or was deleted) says so.
 
 import {
   jobStates,
@@ -22,23 +22,21 @@ import {
   useAdminQueue,
   useRetryAdminJob,
   type AdminJob,
-  type AdminJobAttempt,
   type AdminJobQuery,
   type AdminJobState,
   type AdminQueue,
   type AppData,
 } from "@my/app-data";
 import {
-  BackButton,
+  Box,
   Button,
+  CodeText,
   ConfirmDialog,
   FactList,
   FeedNotice,
   FigureTiles,
   FilterBar,
   FilterFacet,
-  LogEntry,
-  LogList,
   ModalPresence,
   MoreRecords,
   RecordTable,
@@ -59,7 +57,7 @@ import { useState, type ReactNode } from "react";
 import { staffHref, type StaffAddress, type StaffSearch } from "../entries";
 import { cursorOf, filtered, Pages, ReadNotice, Titled, useMoment, useSaid, useStaffStrings, type T } from "../parts";
 import { CopyValue } from "../settings/parts";
-import { useCount } from "./parts";
+import { CopyAction, SubTitle, useCount } from "./parts";
 
 /** The address of the queue's state. */
 const jobsPath = "/admin/jobs";
@@ -132,6 +130,7 @@ function TypeTable({ queue }: { queue: AdminQueue }): ReactNode {
     return {
       id: type,
       head: type,
+      code: true,
       href: listHref({ type }),
       cells: {
         ...Object.fromEntries(jobStates.map((state) => [state, count(of(state))])),
@@ -145,7 +144,7 @@ function TypeTable({ queue }: { queue: AdminQueue }): ReactNode {
       head={{ label: t("staff_operations.jobs.column.type") }}
       columns={columns}
       rows={rows}
-      empty={<FeedNotice>{t("staff_operations.queue.empty")}</FeedNotice>}
+      empty={<FeedNotice start>{t("staff_operations.queue.empty")}</FeedNotice>}
     />
   );
 }
@@ -176,9 +175,20 @@ export function JobQueueScreen(): ReactNode {
       ? []
       : [{ term: t("staff_operations.queue.oldest"), value: <RelativeTime date={queue.oldest_ready_at} /> }]),
   ];
+  const failed = countOf(queue, "dead");
   return (
     <ScreenStack>
       {title}
+      {/* Failed jobs wait for the reader: said first, with the way to them. */}
+      {failed > 0 && (
+        <FeedNotice
+          alert
+          start
+          action={<TextLink href={listHref({ state: "dead" })}>{t("staff_operations.queue.to_dead")}</TextLink>}
+        >
+          {t("staff_operations.queue.failed_count", { count: failed })}
+        </FeedNotice>
+      )}
       {queue.pending_listing ? (
         <FigureTiles
           label={t("staff_operations.queue.states")}
@@ -190,20 +200,21 @@ export function JobQueueScreen(): ReactNode {
         />
       ) : (
         <FeedNotice
+          start
           action={<TextLink href={listHref({ state: "dead" })}>{t("staff_operations.queue.to_dead")}</TextLink>}
         >
           {t("staff_operations.queue.unlisted")}
         </FeedNotice>
       )}
       <FactList label={t("staff_operations.queue.facts")} items={facts} />
+      <Row>
+        <TextLink href={jobListPath}>{t("staff_operations.jobs.title")}</TextLink>
+      </Row>
       {queue.pending_listing && (
         <Titled title={t("staff_operations.queue.types")}>
           <TypeTable queue={queue} />
         </Titled>
       )}
-      <Row>
-        <TextLink href={jobListPath}>{t("staff_operations.jobs.title")}</TextLink>
-      </Row>
     </ScreenStack>
   );
 }
@@ -270,6 +281,7 @@ const searchOf = (q: AdminJobQuery): StaffSearch => ({
 export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onBack: () => void }): ReactNode {
   const { t } = useStaffStrings();
   const moment = useMoment();
+  const count = useCount();
   const q = jobQueryOf(search);
   const page = useAdminJobs(q);
   const queue = useAdminQueue().value;
@@ -277,9 +289,9 @@ export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onB
   const dead = q.state === "dead";
   const head = (
     <>
-      <ScreenTitle glyph="jobs" back={<BackButton onPress={onBack}>{t("staff_operations.entry.jobs")}</BackButton>}>
+      <SubTitle glyph="jobs" back={t("staff_operations.entry.jobs")} onBack={onBack}>
         {t("staff_operations.jobs.title")}
-      </ScreenTitle>
+      </SubTitle>
       <JobFilters
         q={q}
         types={types}
@@ -317,12 +329,20 @@ export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onB
     return {
       id: job.id,
       head: job.type,
-      caption: job.id,
+      code: true,
+      // Why a job that failed did, what the reader opens it for, across the row under its cells. Its ID stands on its
+      // screen, with the way to copy it.
+      detail:
+        job.last_error === undefined || job.last_error === "" ? undefined : (
+          <Box as="p" text="caption" tone="muted">
+            <CodeText>{firstLine(job.last_error)}</CodeText>
+          </Box>
+        ),
       href: jobPath(job.id),
       cells: {
-        attempts: t("staff_operations.jobs.attempts", { count: job.attempts }),
-        // When a failed job failed is a time past; when a pending one is due matters as a time of day.
-        when: when === undefined ? undefined : job.state === "dead" ? <RelativeTime date={when} /> : moment(when),
+        attempts: count(job.attempts),
+        // When a job is due or failed, as a time of day: one style for both.
+        when: when === undefined ? undefined : moment(when),
         state: <JobStateMark state={job.state} />,
       },
     };
@@ -338,7 +358,7 @@ export function JobListScreen({ search, onSearch, onBack }: StaffAddress & { onB
         rows={rows}
         busy={page.stale}
         empty={
-          <FeedNotice>
+          <FeedNotice start>
             {t(
               unlisted
                 ? "staff_operations.queue.unlisted"
@@ -364,6 +384,9 @@ export function useJobTitle(id: string): string | undefined {
   return useAdminJob(id).value?.type;
 }
 
+/** The first line of `text`. */
+const firstLine = (text: string): string => text.split("\n", 1)[0] ?? text;
+
 /** The payload as its lines are best read: a JSON document laid out, anything else as it is. */
 function shownPayload(payload: string): string {
   try {
@@ -373,60 +396,48 @@ function shownPayload(payload: string): string {
   }
 }
 
-/** The facts of a job, its moments in the reader's zone. */
-function jobFacts(t: T, moment: (iso: string) => string, job: AdminJob): Fact[] {
+/** The facts of a job, its moments in the reader's zone, its ID and keys each with the button that copies it. */
+function jobFacts(t: T, moment: (iso: string) => string, count: (n: number) => string, job: AdminJob): Fact[] {
   const at = (term: string, iso: string | undefined): Fact[] =>
     iso === undefined ? [] : [{ term, value: moment(iso) }];
-  const code = (term: string, value: string | undefined): Fact[] =>
-    value === undefined || value === "" ? [] : [{ term, value, code: true }];
+  const code = (term: string, value: string | undefined, copy?: string): Fact[] =>
+    value === undefined || value === ""
+      ? []
+      : [
+          {
+            term,
+            value,
+            code: true,
+            action: copy === undefined ? undefined : <CopyAction label={copy} value={value} />,
+          },
+        ];
   return [
     { term: t("staff_operations.jobs.column.state"), value: <JobStateMark state={job.state} /> },
-    {
-      term: t("staff_operations.jobs.column.attempts"),
-      value: t("staff_operations.jobs.attempts", { count: job.attempts }),
-    },
+    { term: t("staff_operations.jobs.column.attempts"), value: count(job.attempts) },
     ...at(t("staff_operations.job.created"), job.created_at),
     ...at(t("staff_operations.jobs.column.due"), job.run_at),
     ...at(t("staff_operations.jobs.column.failed_at"), job.failed_at),
     ...code(t("staff_operations.job.worker"), job.worker),
     ...at(t("staff_operations.job.locked_until"), job.locked_until),
-    ...code(t("staff_operations.job.id"), job.id),
-    ...code(t("staff_operations.job.idempotency_key"), job.idempotency_key),
-    ...code(t("staff_operations.job.ordering_key"), job.ordering_key),
+    ...code(t("staff_operations.job.id"), job.id, t("staff_operations.copy.id")),
+    ...code(t("staff_operations.job.idempotency_key"), job.idempotency_key, t("staff_operations.copy.idempotency_key")),
+    ...code(t("staff_operations.job.ordering_key"), job.ordering_key, t("staff_operations.copy.ordering_key")),
   ];
 }
 
-/** A run that did not succeed: which run, whether the job runs again, on which worker, and why, under Details. */
-function Attempt({ attempt }: { attempt: AdminJobAttempt }): ReactNode {
-  const { t } = useStaffStrings();
-  const seconds = (Date.parse(attempt.finished_at) - Date.parse(attempt.started_at)) / 1000;
-  return (
-    <LogEntry
-      icon={attempt.outcome === "dead" ? "error" : "update"}
-      date={attempt.finished_at}
-      about={t("staff_operations.attempt.about", {
-        worker: attempt.worker,
-        seconds: Math.max(0, Math.round(seconds * 10) / 10),
-      })}
-      detail={
-        <CopyValue
-          label={t("staff_operations.attempt.reason")}
-          value={attempt.error}
-          copy={t("staff_operations.copy.reason")}
-          code
-        />
-      }
-    >
-      {t("staff_operations.attempt", { n: attempt.attempt, outcome: attempt.outcome })}
-    </LogEntry>
-  );
-}
+type AttemptColumn = "outcome" | "finished" | "worker";
 
-/** The runs of a job that did not succeed, the newest first, with Show more while there are older ones. */
+/**
+ * The runs of a job that did not succeed, the newest first, a table with Show more while there are older ones: each run
+ * its number, whether the job ran again or failed, when, on which worker, and why, in the code's face under it. A job
+ * none of whose runs failed has none to show.
+ */
 function Attempts({ id }: { id: string }): ReactNode {
   const { t } = useStaffStrings();
+  const moment = useMoment();
   const list = useAdminJobAttempts(id);
   const title = t("staff_operations.attempts");
+  if (list.status === "success" && list.items.length === 0) return null;
   if (list.status === "pending" || (list.status === "error" && list.items.length === 0))
     return (
       <Titled title={title}>
@@ -438,21 +449,45 @@ function Attempts({ id }: { id: string }): ReactNode {
         />
       </Titled>
     );
+  const columns: RecordColumn<AttemptColumn>[] = [
+    { key: "outcome", label: t("staff_operations.attempts.column.outcome"), kind: "fit" },
+    { key: "finished", label: t("staff_operations.attempts.column.finished"), kind: "fit" },
+    { key: "worker", label: t("staff_operations.job.worker"), kind: "fit" },
+  ];
+  const rows = list.items.map((a): RecordRow<AttemptColumn> => ({
+    id: `${String(a.attempt)}-${a.finished_at}`,
+    head: t("staff_operations.attempt.head", { n: a.attempt }),
+    cells: {
+      outcome: (
+        <StateMark state={a.outcome === "dead" ? "failed" : "retrying"}>
+          {t("staff_operations.attempt.outcome", { outcome: a.outcome })}
+        </StateMark>
+      ),
+      finished: moment(a.finished_at),
+      worker: <CodeText>{a.worker}</CodeText>,
+    },
+    detail: (
+      <Box as="p" text="caption">
+        <CodeText>{a.error}</CodeText>
+      </Box>
+    ),
+  }));
   return (
     <Titled title={title}>
-      {list.items.length === 0 ? (
-        <FeedNotice>{t("staff_operations.attempts.empty")}</FeedNotice>
-      ) : (
-        <Stack gap="entry-room">
-          <LogList label={title}>
-            {list.items.map((a) => (
-              <Attempt key={`${String(a.attempt)}-${a.finished_at}`} attempt={a} />
-            ))}
-          </LogList>
-          {list.failedNextPage && <FeedNotice alert>{t("staff_operations.attempts.failed")}</FeedNotice>}
-          {list.hasNextPage && <MoreRecords busy={list.isFetchingNextPage} onPress={list.fetchNextPage} />}
-        </Stack>
-      )}
+      <Stack gap="entry-room">
+        <RecordTable
+          label={title}
+          head={{ label: t("staff_operations.attempts.column.attempt") }}
+          columns={columns}
+          rows={rows}
+        />
+        {list.failedNextPage && (
+          <FeedNotice alert start>
+            {t("staff_operations.attempts.failed")}
+          </FeedNotice>
+        )}
+        {list.hasNextPage && <MoreRecords busy={list.isFetchingNextPage} onPress={list.fetchNextPage} />}
+      </Stack>
     </Titled>
   );
 }
@@ -461,6 +496,7 @@ function Attempts({ id }: { id: string }): ReactNode {
 function JobView({ job, onBack }: { job: AdminJob; onBack: () => void }): ReactNode {
   const { t } = useStaffStrings();
   const moment = useMoment();
+  const count = useCount();
   const retry = useRetryAdminJob();
   const [asking, setAsking] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -483,28 +519,26 @@ function JobView({ job, onBack }: { job: AdminJob; onBack: () => void }): ReactN
   return (
     <>
       <ScreenStack>
+        <SubTitle glyph="jobs" back={t("staff_operations.jobs.title")} onBack={onBack}>
+          {job.type}
+        </SubTitle>
         {/* What the reader does with the job first, on a row of its own under the title. */}
-        <Stack gap="entry-line">
-          <ScreenTitle glyph="jobs" back={<BackButton onPress={onBack}>{t("staff_operations.jobs.title")}</BackButton>}>
-            {job.type}
-          </ScreenTitle>
-          <Row wrap align="center" gap="screen-tab-gap">
-            {job.state === "dead" && (
-              <Button
-                kind="primary"
-                size="timeline"
-                busy={busy}
-                onPress={() => {
-                  setAsking(true);
-                }}
-              >
-                {t("staff_operations.job.retry")}
-              </Button>
-            )}
-            {status}
-          </Row>
-        </Stack>
-        <FactList label={t("staff_operations.job.facts")} items={jobFacts(t, moment, job)} />
+        <Row wrap align="center" gap="screen-tab-gap">
+          {job.state === "dead" && (
+            <Button
+              kind="primary"
+              size="timeline"
+              busy={busy}
+              onPress={() => {
+                setAsking(true);
+              }}
+            >
+              {t("staff_operations.job.retry")}
+            </Button>
+          )}
+          {status}
+        </Row>
+        <FactList label={t("staff_operations.job.facts")} items={jobFacts(t, moment, count, job)} />
         {job.last_error !== undefined && job.last_error !== "" && (
           <Titled title={t("staff_operations.job.last_error")}>
             <CopyValue

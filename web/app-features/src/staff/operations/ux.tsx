@@ -1,18 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 
 // The UX measurements, at /admin/ux-measurements (ADR-0167 §3), as a holder of `manage_errors` reads them: over a
-// window the reader chooses (the last 24 hours by default, the last 7 or 30 days), which the address keeps, a table of
-// each metric that has samples, a row a name (a route, a kind of navigation, an action, a call's transport) with its
-// samples, the bound under which three quarters of them fall, and the share of them that is good, that needs
-// improvement and that is poor, by the thresholds of the metric. Under them, whether the web client
-// sends samples at all, a form saved as a whole (form.tsx) of the instance setting `ux_measurement`, off by default;
-// while it is off, the window says so, and shows what was kept from before.
+// period the reader chooses (the last 24 hours by default, the last 7 or 30 days), which the address keeps, a table of
+// figures of each metric that has samples, a row a name (a route, a kind of navigation, an action, a call's transport)
+// with its samples and the bound under which three quarters of them fall, and, for LCP and INP, the share that is good
+// and the share that is poor by their thresholds, a 75th percentile past the good one marked. Under them, for a holder
+// of `manage_settings` alone, whether the web client sends samples at all, the instance setting `ux_measurement` (off
+// by default) with its own Save; while it is off and nothing was kept, the screen says so and offers no period.
 
 import {
   loadAdminSettings,
   loadUXMeasurements,
   useAdminSettings,
+  useAdminSettingsWrites,
+  usePermissions,
+  useInstance,
   useUXMeasurements,
+  viewerQuery,
   uxMetrics,
   uxWindows,
   type AppData,
@@ -20,22 +24,25 @@ import {
   type UXMetric,
 } from "@my/app-data";
 import {
+  Box,
+  Button,
   FeedNotice,
-  RecordTable,
+  FinanceRow,
+  FinanceTable,
+  FormAlert,
+  ModalPresence,
+  Row,
+  SaveState,
+  ScreenStack,
+  ScreenTitle,
   SegmentChoice,
-  SettingsScreen,
-  SettingsSection,
+  Stack,
   useLocale,
-  type RecordColumn,
-  type RecordRow,
 } from "@my/design-system";
-import type { ReactNode } from "react";
+import { useEffect, useId, useState, type ReactNode } from "react";
 import type { StaffSearch } from "../entries";
-import { ReadNotice, useMoment, useStaffStrings } from "../parts";
-import { TopicForm } from "../settings/form";
-import { ScreenNotice, type AdminSubProps } from "../settings/parts";
-import { uxMeasurementTopic } from "../settings/topics";
-import { useCount } from "./parts";
+import { ReadNotice, Titled, useMoment, useStaffStrings } from "../parts";
+import { LeaveDialog, OnOffRow, ScreenNotice, type AdminSubProps } from "../settings/parts";
 
 type Window = (typeof uxWindows)[number];
 
@@ -46,16 +53,21 @@ function uxWindowOf(search: StaffSearch): Window {
 
 /** Reads what the screen shows at `search`, for the route's loader. */
 export async function loadUXScreen(data: AppData, search: StaffSearch): Promise<void> {
-  await Promise.all([loadAdminSettings(data), loadUXMeasurements(data, uxWindowOf(search))]);
+  const viewer = await data.queryClient.query({ ...viewerQuery(data), staleTime: Infinity }).catch(() => undefined);
+  // The setting's form is only for a holder of `manage_settings`, whose permission the settings' read needs.
+  const keeps = viewer?.permissions.includes("manage_settings") === true;
+  await Promise.all([keeps ? loadAdminSettings(data) : undefined, loadUXMeasurements(data, uxWindowOf(search))]);
 }
 
 /**
- * The bounds of the bands a metric's samples are shared in, the thresholds of a good and of a poor value: a screen
- * shown within 2.5 s and past 4 s (LCP), and a response within 200 ms and past 500 ms (INP, and every other duration);
- * a call's packet loss within 1% and past 5%.
+ * The bounds of the bands a metric's samples are shared in, good, needs improvement and poor: only where ADR-0167 §1
+ * gives the thresholds, a screen shown within 2.5 s and past 4 s (LCP) and a press answered within 200 ms and past
+ * 500 ms (INP), from web.dev's Core Web Vitals. No document gives thresholds of the other metrics (the long frames,
+ * the navigations, the actions, a call's round trip, jitter and packet loss), whose tables say their samples and their
+ * 75th percentile alone.
  */
 const bandsOf = (metric: UXMetric): readonly number[] =>
-  metric === "call_packet_loss" ? [1, 5] : metric === "lcp" ? [2500, 4000] : [200, 500];
+  metric === "lcp" ? [2500, 4000] : metric === "inp" ? [200, 500] : [];
 
 /** Writes a value of `metric`: a duration in ms or s, a packet loss in percent. */
 function useValue(): (metric: UXMetric, value: number) => string {
@@ -79,65 +91,87 @@ function sharesOf(m: UXMeasurement, bounds: readonly number[]): number[] {
   return shares.map((n) => (m.samples === 0 ? 0 : n / m.samples));
 }
 
-/** The table of one metric: a row a name, its samples, its 75th percentile and its share in each band. */
+/** Which band `value` of `metric` falls in by its bounds: good, needs improvement, poor; none without bounds. */
+function bandOf(metric: UXMetric, value: number | undefined): "good" | "improve" | "poor" | undefined {
+  const [good, poor] = bandsOf(metric);
+  if (good === undefined || poor === undefined) return undefined;
+  if (value === undefined || value > poor) return "poor";
+  return value > good ? "improve" : "good";
+}
+
+/**
+ * The table of figures of one metric: a row a name, in the code's face, with its samples under it; for LCP and INP the
+ * share of its samples that is good and that is poor; then its 75th percentile, which stands last so that it lines up
+ * from one metric's table to the next, a percentile past the good threshold said so. Three columns at most leave a
+ * route the room to break only at its slashes.
+ */
 function MetricTable({ metric, items }: { metric: UXMetric; items: readonly UXMeasurement[] }): ReactNode {
   const { t } = useStaffStrings();
   const { locale } = useLocale();
-  const count = useCount();
   const value = useValue();
   const share = new Intl.NumberFormat(locale, { style: "percent", maximumFractionDigits: 0 });
   const bounds = bandsOf(metric);
-  const last = items[0]?.buckets.findLast((b) => b.le !== undefined)?.le;
-  const bands = [
-    ...bounds.map((b, i) => ({
-      key: `band${String(i)}`,
-      label: t("staff_operations.ux.band.upto", { value: value(metric, b) }),
-    })),
-    {
-      key: `band${String(bounds.length)}`,
-      label: t("staff_operations.ux.over", { value: value(metric, bounds.at(-1) ?? 0) }),
-    },
+  const [good, poor] = bounds;
+  const banded = good !== undefined && poor !== undefined;
+  const columns = [
+    ...(banded
+      ? [
+          { label: t("staff_operations.ux.band.upto", { value: value(metric, good) }), figures: true },
+          { label: t("staff_operations.ux.over", { value: value(metric, poor) }), figures: true },
+        ]
+      : []),
+    { label: t("staff_operations.ux.column.p75"), figures: true },
   ];
-  const columns: RecordColumn[] = [
-    { key: "samples", label: t("staff_operations.ux.column.samples"), kind: "figures" },
-    { key: "p75", label: t("staff_operations.ux.column.p75"), kind: "figures" },
-    ...bands.map((b) => ({ key: b.key, label: b.label, kind: "figures" as const })),
-  ];
-  const rows = items.map((m): RecordRow => {
-    const shares = sharesOf(m, bounds);
-    return {
-      id: m.name,
-      head: m.name,
-      cells: {
-        samples: count(m.samples),
-        p75:
-          m.p75 === undefined
-            ? t("staff_operations.ux.over", { value: value(metric, last ?? 0) })
-            : value(metric, m.p75),
-        ...Object.fromEntries(bands.map((b, i) => [b.key, share.format(shares[i] ?? 0)])),
-      },
-    };
-  });
   return (
-    <RecordTable
+    <FinanceTable
       label={t("staff_operations.ux.metric", { metric })}
-      head={{ label: t("staff_operations.ux.name", { metric }) }}
+      head={t("staff_operations.ux.name", { metric })}
       columns={columns}
-      rows={rows}
-    />
+    >
+      {items.map((m) => {
+        const shares = sharesOf(m, bounds);
+        // A 75th percentile in the last bucket has no bound: it is past the highest one of its own buckets.
+        const top = m.buckets.findLast((b) => b.le !== undefined)?.le;
+        const shown =
+          m.p75 === undefined
+            ? t("staff_operations.ux.over", { value: value(metric, top ?? 0) })
+            : value(metric, m.p75);
+        const band = bandOf(metric, m.p75);
+        return (
+          <FinanceRow
+            key={m.name}
+            head={m.name}
+            caption={t("staff_operations.ux.samples", { count: m.samples })}
+            code
+            cells={[
+              ...(banded
+                ? [{ figures: [share.format(shares[0] ?? 0)] }, { figures: [share.format(shares.at(-1) ?? 0)] }]
+                : []),
+              {
+                figures: [
+                  band === undefined || band === "good"
+                    ? shown
+                    : t("staff_operations.ux.p75.band", { value: shown, band }),
+                ],
+              },
+            ]}
+          />
+        );
+      })}
+    </FinanceTable>
   );
 }
 
-/** The window's choice, whether samples are taken, and a section of each metric that has samples. */
+/** The period's choice, and a table of each metric that has samples; while nothing is measured, only that it is not. */
 function Measurements({ hours, onHours, on }: { hours: Window; onHours: (hours: Window) => void; on: boolean }) {
   const { t } = useStaffStrings();
   const moment = useMoment();
   const read = useUXMeasurements(hours);
-  const heading = t("staff_operations.ux.window");
-  const choice = (
+  const choice = (about?: string) => (
     <SegmentChoice
-      label={heading}
-      fit
+      label={t("staff_operations.ux.window")}
+      shown
+      about={about}
       options={uxWindows.map((w) => ({
         value: String(w),
         label: t("staff_operations.ux.window.choice", { hours: w }),
@@ -150,80 +184,143 @@ function Measurements({ hours, onHours, on }: { hours: Window; onHours: (hours: 
   );
   if (read.value === undefined)
     return (
-      <SettingsSection heading={heading}>
-        {choice}
+      <>
+        {choice()}
         <ReadNotice
           status={read.status === "error" ? "error" : "pending"}
           loading={t("staff_operations.ux.loading")}
           failed={t("staff_operations.ux.failed")}
           retry={read.refetch}
         />
-      </SettingsSection>
+      </>
     );
   const list = read.value;
   const metrics = uxMetrics.filter((m) => list.items.some((i) => i.metric === m));
+  // Off with nothing kept from before: there is no period to choose among.
+  if (!on && metrics.length === 0) return <FeedNotice start>{t("staff_operations.ux.off")}</FeedNotice>;
   return (
     <>
-      <SettingsSection heading={heading} about={t("staff_operations.ux.since", { date: moment(list.since) })}>
-        {choice}
-        {!on && <FeedNotice>{t("staff_operations.ux.off")}</FeedNotice>}
-        {on && metrics.length === 0 && <FeedNotice>{t("staff_operations.ux.empty")}</FeedNotice>}
-      </SettingsSection>
+      {choice(t("staff_operations.ux.since", { date: moment(list.since) }))}
+      {!on && <FeedNotice start>{t("staff_operations.ux.off")}</FeedNotice>}
+      {on && metrics.length === 0 && <FeedNotice start>{t("staff_operations.ux.empty")}</FeedNotice>}
       {metrics.map((metric) => (
-        <SettingsSection key={metric} heading={t("staff_operations.ux.metric", { metric })}>
+        <Titled key={metric} title={t("staff_operations.ux.metric", { metric })}>
           <MetricTable metric={metric} items={list.items.filter((i) => i.metric === metric)} />
-        </SettingsSection>
+        </Titled>
       ))}
     </>
   );
 }
 
+type UXScreenProps = Partial<AdminSubProps> & {
+  search?: StaffSearch | undefined;
+  onSearch?: ((search: StaffSearch) => void) | undefined;
+};
+
+/** Where the setting's last save is. */
+type Sent = "idle" | "sending" | "saved" | "failed";
+
 /**
- * The UX measurements over the window of `search`, and whether they are taken, once the settings are read. Its route
- * holds the reader back while the form has changes not saved (`onUnsaved`, `leaving`).
+ * Whether the web client is measured, the setting `ux_measurement`, with its own Save beside it, for a holder of
+ * `manage_settings`: once the settings are read, and holding the reader back while it has a change not saved.
  */
-export function UXMeasurementsScreen({
-  search = {},
-  onSearch,
-  onUnsaved,
-  leaving,
-}: Partial<AdminSubProps> & { search?: StaffSearch; onSearch?: (search: StaffSearch) => void }): ReactNode {
+function MeasuringSetting({ onUnsaved, leaving }: Partial<AdminSubProps>): ReactNode {
   const { t } = useStaffStrings();
+  const id = useId();
   const read = useAdminSettings();
-  const title = t("staff_operations.entry.ux_measurements");
-  if (read.settings === undefined || read.texts === undefined)
+  const writes = useAdminSettingsWrites();
+  const saved = read.settings?.get("ux_measurement")?.value === "true";
+  const [on, setOn] = useState<boolean | undefined>(undefined);
+  const [sent, setSent] = useState<Sent>("idle");
+  const chosen = on ?? saved;
+  const unsaved = chosen !== saved;
+  useEffect(() => {
+    onUnsaved?.(unsaved && sent !== "sending");
+  }, [onUnsaved, unsaved, sent]);
+  useEffect(
+    () => () => {
+      onUnsaved?.(false);
+    },
+    [onUnsaved],
+  );
+  const heading = t("staff_settings.section.ux_measurement");
+  if (read.settings === undefined)
     return (
-      <SettingsScreen
-        sub
-        icon={uxMeasurementTopic.icon}
-        title={title}
-        notice={
-          <ScreenNotice
-            status={read.status === "failed" ? "failed" : "loading"}
-            retry={read.retry}
-            words={{ loading: t("staff_settings.loading"), failed: t("staff_settings.failed") }}
-          />
-        }
-      />
-    );
-  const hours = uxWindowOf(search);
-  return (
-    <TopicForm
-      topic={uxMeasurementTopic}
-      title={title}
-      settings={read.settings}
-      texts={read.texts}
-      before={
-        <Measurements
-          hours={hours}
-          on={read.settings.get("ux_measurement")?.value === "true"}
-          onHours={(next) => {
-            onSearch?.(next === 24 ? {} : { hours: String(next) });
-          }}
+      <Titled title={heading}>
+        <ScreenNotice
+          status={read.status === "failed" ? "failed" : "loading"}
+          retry={read.retry}
+          words={{ loading: t("staff_settings.loading"), failed: t("staff_settings.failed") }}
         />
-      }
-      onUnsaved={onUnsaved}
-      leaving={leaving}
-    />
+      </Titled>
+    );
+  const save = () => {
+    if (sent === "sending") return;
+    setSent("sending");
+    writes.save({ ux_measurement: chosen ? "true" : "false" }).then(
+      () => {
+        setOn(undefined);
+        setSent("saved");
+      },
+      () => {
+        setSent("failed");
+      },
+    );
+  };
+  return (
+    <>
+      <Titled title={heading}>
+        <Stack gap="entry-room">
+          <OnOffRow
+            id={`${id}-ux`}
+            label={t("staff_settings.setting.ux_measurement")}
+            on={chosen}
+            onChange={(next) => {
+              setOn(next);
+              setSent("idle");
+            }}
+            disabled={sent === "sending"}
+          />
+          <Row wrap align="center" gap="screen-tab-gap">
+            <Button kind="primary" size="timeline" busy={sent === "sending"} onPress={save}>
+              {t("staff_settings.save")}
+            </Button>
+            <Box as="span" role="status">
+              {sent === "saved" ? (
+                <SaveState state="saved" />
+              ) : sent === "failed" ? (
+                <FormAlert>{t("staff_settings.save.failed")}</FormAlert>
+              ) : null}
+            </Box>
+          </Row>
+        </Stack>
+      </Titled>
+      <ModalPresence>{leaving !== undefined && <LeaveDialog key="leave" leaving={leaving} />}</ModalPresence>
+    </>
+  );
+}
+
+/**
+ * The UX measurements over the period of `search`, and, for a holder of `manage_settings`, whether they are taken, a
+ * setting saved by itself; any other reader sees the measurements alone, whether they are taken read from the instance.
+ */
+export function UXMeasurementsScreen({ search = {}, onSearch, onUnsaved, leaving }: UXScreenProps): ReactNode {
+  const { t } = useStaffStrings();
+  const keeps = usePermissions().includes("manage_settings");
+  const settings = useAdminSettings(keeps).settings;
+  const instance = useInstance();
+  const on = keeps ? settings?.get("ux_measurement")?.value === "true" : instance?.ux_measurement === true;
+  return (
+    <ScreenStack>
+      <ScreenTitle glyph="measurements">{t("staff_operations.entry.ux_measurements")}</ScreenTitle>
+      <Measurements
+        hours={uxWindowOf(search)}
+        on={on}
+        onHours={(next) => {
+          onSearch?.(next === 24 ? {} : { hours: String(next) });
+        }}
+      />
+      {keeps && <MeasuringSetting onUnsaved={onUnsaved} leaving={leaving} />}
+    </ScreenStack>
   );
 }

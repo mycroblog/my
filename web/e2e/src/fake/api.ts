@@ -2143,6 +2143,7 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ai_usage: o.crawlers?.ai ?? "allow",
     link_cards: false,
     link_cards_ignore_robots_txt: false,
+    ux_measurement: o.uxMeasurement === true,
     ...finance.instance,
     ...supporting.instance,
     voice_enabled: o.voiceOff !== true,

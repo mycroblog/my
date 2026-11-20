@@ -1007,10 +1007,6 @@
     "defaultMessage": "Measure the web client",
     "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
   },
-  "staff_settings.setting.ux_measurement.about": {
-    "defaultMessage": "Samples carry no account, address or URL, and stay on this server.",
-    "description": "The line under Measure the web client. Read by administrators."
-  },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {Anyone} approval {After a moderator approves} invite {Only with an invite} other {Nobody}}",
     "description": "An option of the setting registration_mode, a radio in the list of its options. Read by administrators."

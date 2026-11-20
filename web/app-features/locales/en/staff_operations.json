@@ -63,6 +63,22 @@
     "defaultMessage": "Copy the stack",
     "description": "The button under the stack of an error's latest occurrence, which copies it. Read by administrators."
   },
+  "staff_operations.copy.fingerprint": {
+    "defaultMessage": "Copy the fingerprint",
+    "description": "The button after an error group's fingerprint, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.id": {
+    "defaultMessage": "Copy the ID",
+    "description": "The button after a job's ID, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.idempotency_key": {
+    "defaultMessage": "Copy the idempotency key",
+    "description": "The button after a job's idempotency key, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.ordering_key": {
+    "defaultMessage": "Copy the ordering key",
+    "description": "The button after a job's ordering key, which copies it. Read by administrators."
+  },
   "staff_operations.queue.loading": {
     "defaultMessage": "Loading the job queue…",
     "description": "In the place of the job queue's state while it loads. Read by administrators."
@@ -106,6 +122,10 @@
   "staff_operations.queue.to_dead": {
     "defaultMessage": "Failed jobs",
     "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
+  },
+  "staff_operations.queue.failed_count": {
+    "defaultMessage": "{count, plural, one {# job failed for good.} other {# jobs failed for good.}}",
+    "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
   },
   "staff_operations.jobs.title": {
     "defaultMessage": "Job list",
@@ -166,10 +186,6 @@
   "staff_operations.jobs.empty.filtered": {
     "defaultMessage": "No jobs match these filters.",
     "description": "In the place of the list of jobs when no job matches the filters; Clear filters is over it. Read by administrators."
-  },
-  "staff_operations.jobs.attempts": {
-    "defaultMessage": "{count, plural, one {# attempt} other {# attempts}}",
-    "description": "How many times a job has run, the run in progress included. Read by administrators."
   },
   "staff_operations.job.loading": {
     "defaultMessage": "Loading the job…",
@@ -259,17 +275,25 @@
     "defaultMessage": "No attempt of this job failed.",
     "description": "In the place of a job's failed attempts when it has none. Read by administrators."
   },
-  "staff_operations.attempt": {
-    "defaultMessage": "{outcome, select, dead {Attempt {n} failed, and the job failed} other {Attempt {n} failed, and the job runs again}}",
-    "description": "An entry of a job's failed attempts: which run failed, and whether the job runs again or failed for good. Read by administrators."
+  "staff_operations.attempts.column.attempt": {
+    "defaultMessage": "Attempt",
+    "description": "The head of the rows of the table of a job's failed attempts. Read by administrators."
   },
-  "staff_operations.attempt.about": {
-    "defaultMessage": "{seconds, number} s on {worker}",
-    "description": "The muted line under a failed attempt: how long the run took and the worker that ran it. Read by administrators."
+  "staff_operations.attempts.column.outcome": {
+    "defaultMessage": "Outcome",
+    "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
   },
-  "staff_operations.attempt.reason": {
-    "defaultMessage": "Error",
-    "description": "For assistive technology, why a failed attempt failed, under its Details. Read by administrators."
+  "staff_operations.attempts.column.finished": {
+    "defaultMessage": "Finished",
+    "description": "The column of when a failed attempt finished. Read by administrators."
+  },
+  "staff_operations.attempt.head": {
+    "defaultMessage": "Attempt {n}",
+    "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
+  },
+  "staff_operations.attempt.outcome": {
+    "defaultMessage": "{outcome, select, dead {Failed} other {Runs again}}",
+    "description": "What came of a failed attempt: the job failed for good, or runs again. Read by administrators."
   },
   "staff_operations.error_groups.state": {
     "defaultMessage": "{state, select, open {Open} resolved {Resolved} muted {Muted} other {{state}}}",
@@ -467,16 +491,20 @@
     "defaultMessage": "The change could not be saved. Reload the page and try again.",
     "description": "What a button of an error group that failed says, in its screen. Read by administrators."
   },
-  "staff_operations.error_groups.seen_on": {
-    "defaultMessage": "{date}, version {version}",
-    "description": "When and on which version of the server an error group first or last happened. Read by administrators."
+  "staff_operations.error_groups.first_version": {
+    "defaultMessage": "First version",
+    "description": "The term of the server's version an error group first happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.last_version": {
+    "defaultMessage": "Last version",
+    "description": "The term of the server's version an error group last happened on. Read by administrators."
   },
   "staff_operations.ux.window": {
     "defaultMessage": "Period",
     "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
   },
   "staff_operations.ux.window.choice": {
-    "defaultMessage": "{hours, select, 24 {Last 24 hours} 168 {Last 7 days} other {Last 30 days}}",
+    "defaultMessage": "{hours, select, 24 {24 hours} 168 {7 days} other {30 days}}",
     "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
   },
   "staff_operations.ux.since": {
@@ -503,10 +531,6 @@
     "defaultMessage": "{metric, select, transition {Kind} press {Action} call_rtt {Transport} call_jitter {Transport} call_packet_loss {Transport} other {Route}}",
     "description": "The head of the rows of a metric's table: a route of the app, a kind of navigation, an action's ID, or a call's transport. Read by administrators."
   },
-  "staff_operations.ux.column.samples": {
-    "defaultMessage": "Samples",
-    "description": "The column of how many samples a name has in the window. Read by administrators."
-  },
   "staff_operations.ux.column.p75": {
     "defaultMessage": "75th percentile",
     "description": "The column of the value at most three quarters of a name's samples have. Read by administrators."
@@ -522,6 +546,14 @@
   "staff_operations.ux.metric": {
     "defaultMessage": "{metric, select, lcp {Time for a screen to appear (LCP)} inp {Time to answer a press (INP)} long_frame {Long frames} transition {Time to navigate} press {Time to answer an action} call_rtt {Call round-trip time} call_jitter {Call jitter} other {Call packet loss}}",
     "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
+  },
+  "staff_operations.ux.p75.band": {
+    "defaultMessage": "{band, select, poor {{value}, poor} other {{value}, needs improvement}}",
+    "description": "A 75th percentile of LCP or INP past the good threshold, and how far: needs improvement, or poor. Read by administrators."
+  },
+  "staff_operations.ux.samples": {
+    "defaultMessage": "{count, plural, one {# sample} other {# samples}}",
+    "description": "The line under a route, an action or a call's transport in a table of the UX measurements: how many samples it has in the period. Read by administrators."
   },
   "staff_operations.link_cards.loading": {
     "defaultMessage": "Loading the rules…",
@@ -547,10 +579,6 @@
     "defaultMessage": "{mode, select, no_fetch {Stop fetching} other {Stop images only}}",
     "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
   },
-  "staff_operations.link_cards.mode.about": {
-    "defaultMessage": "{mode, select, no_fetch {Nothing is fetched from the domain, and its cards are hidden.} other {Pages are fetched but no images, and the cards show without them.}}",
-    "description": "The line under each mode of a rule, in its form. Read by administrators."
-  },
   "staff_operations.link_cards.mode.label": {
     "defaultMessage": "What the crawler does",
     "description": "The name of the choice of a rule's mode. Read by administrators."
@@ -570,10 +598,6 @@
   "staff_operations.link_cards.domain": {
     "defaultMessage": "Domain",
     "description": "The field of a new rule's domain. Read by administrators."
-  },
-  "staff_operations.link_cards.domain.about": {
-    "defaultMessage": "Its subdomains are covered too.",
-    "description": "The line under the field of a new rule's domain. Read by administrators."
   },
   "staff_operations.link_cards.note": {
     "defaultMessage": "Note",
@@ -610,5 +634,13 @@
   "staff_operations.link_cards.rule": {
     "defaultMessage": "{field, select, domain {Enter a host name, without https:// or a path.} other {Write at most 5,000 characters.}}",
     "description": "Under the field of a rule that the server refused: the rule its value follows. Read by administrators."
+  },
+  "staff_operations.link_cards.taken": {
+    "defaultMessage": "{domain} already has a rule. Change it on its page.",
+    "description": "Under the domain of a new rule of the link card crawler when the domain already has one, which saving would replace; its page is linked under it. Read by administrators."
+  },
+  "staff_operations.link_cards.taken.open": {
+    "defaultMessage": "The rule of {domain}",
+    "description": "The link under the domain of a new rule to the page of the rule the domain already has. Read by administrators."
   }
 }

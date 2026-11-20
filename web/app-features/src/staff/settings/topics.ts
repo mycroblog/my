@@ -327,13 +327,6 @@ export const translationTopic: SettingTopic = {
   ],
 };
 
-/** Whether the web client's UX is measured, a form under the measurements (operations/ux.tsx). */
-export const uxMeasurementTopic: SettingTopic = {
-  path: "ux-measurements",
-  icon: "measurements",
-  sections: [section("ux_measurement", [setting("ux_measurement", { about: true })])],
-};
-
 /**
  * What a number's field shows of its setting: the setting's value divided by this. Only a setting the server keeps in
  * another unit than its field shows has one (seconds shown as hours or minutes, bytes as MiB); a setting kept in

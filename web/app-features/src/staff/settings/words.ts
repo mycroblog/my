@@ -153,7 +153,6 @@ export const settingAbouts = {
   translation_reports_to_server: "staff_settings.setting.translation_reports_to_server.about",
   translation_user_monthly_characters: "staff_settings.setting.translation_user_monthly_characters.about",
   user_app_registration: "staff_settings.setting.user_app_registration.about",
-  ux_measurement: "staff_settings.setting.ux_measurement.about",
   voice_participants_retention_days: "staff_settings.setting.voice_participants_retention_days.about",
   voice_public_summary: "staff_settings.setting.voice_public_summary.about",
 } as const satisfies Readonly<Record<string, MessageId>>;

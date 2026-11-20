@@ -63,6 +63,22 @@
     "defaultMessage": "スタックをコピー",
     "description": "The button under the stack of an error's latest occurrence, which copies it. Read by administrators."
   },
+  "staff_operations.copy.fingerprint": {
+    "defaultMessage": "フィンガープリントをコピー",
+    "description": "The button after an error group's fingerprint, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.id": {
+    "defaultMessage": "ID をコピー",
+    "description": "The button after a job's ID, which copies it to search the logs. Read by administrators."
+  },
+  "staff_operations.copy.idempotency_key": {
+    "defaultMessage": "冪等キーをコピー",
+    "description": "The button after a job's idempotency key, which copies it. Read by administrators."
+  },
+  "staff_operations.copy.ordering_key": {
+    "defaultMessage": "順序キーをコピー",
+    "description": "The button after a job's ordering key, which copies it. Read by administrators."
+  },
   "staff_operations.queue.loading": {
     "defaultMessage": "ジョブのキューを読み込んでいます…",
     "description": "In the place of the job queue's state while it loads. Read by administrators."
@@ -106,6 +122,10 @@
   "staff_operations.queue.to_dead": {
     "defaultMessage": "失敗したジョブ",
     "description": "The link after the line saying the queue does not list its pending jobs, to the list of failed jobs. Read by administrators."
+  },
+  "staff_operations.queue.failed_count": {
+    "defaultMessage": "{count, plural, other {# 件のジョブが失敗しました。}}",
+    "description": "First on the job queue's screen while some jobs failed for good, before the link to them. Read by administrators."
   },
   "staff_operations.jobs.title": {
     "defaultMessage": "ジョブの一覧",
@@ -166,10 +186,6 @@
   "staff_operations.jobs.empty.filtered": {
     "defaultMessage": "この条件に合うジョブはありません。",
     "description": "In the place of the list of jobs when no job matches the filters; Clear filters is over it. Read by administrators."
-  },
-  "staff_operations.jobs.attempts": {
-    "defaultMessage": "{count, plural, other {# 回}}",
-    "description": "How many times a job has run, the run in progress included. Read by administrators."
   },
   "staff_operations.job.loading": {
     "defaultMessage": "ジョブを読み込んでいます…",
@@ -259,17 +275,25 @@
     "defaultMessage": "このジョブの試行は失敗していません。",
     "description": "In the place of a job's failed attempts when it has none. Read by administrators."
   },
-  "staff_operations.attempt": {
-    "defaultMessage": "{outcome, select, dead {{n} 回目の試行が失敗し、ジョブは失敗しました} other {{n} 回目の試行が失敗し、ジョブを再試行します}}",
-    "description": "An entry of a job's failed attempts: which run failed, and whether the job runs again or failed for good. Read by administrators."
+  "staff_operations.attempts.column.attempt": {
+    "defaultMessage": "試行",
+    "description": "The head of the rows of the table of a job's failed attempts. Read by administrators."
   },
-  "staff_operations.attempt.about": {
-    "defaultMessage": "{worker} で {seconds, number} 秒",
-    "description": "The muted line under a failed attempt: how long the run took and the worker that ran it. Read by administrators."
+  "staff_operations.attempts.column.outcome": {
+    "defaultMessage": "結果",
+    "description": "The column of whether a failed attempt's job ran again or failed for good. Read by administrators."
   },
-  "staff_operations.attempt.reason": {
-    "defaultMessage": "エラー",
-    "description": "For assistive technology, why a failed attempt failed, under its Details. Read by administrators."
+  "staff_operations.attempts.column.finished": {
+    "defaultMessage": "終了",
+    "description": "The column of when a failed attempt finished. Read by administrators."
+  },
+  "staff_operations.attempt.head": {
+    "defaultMessage": "{n} 回目",
+    "description": "The head of a row of a job's failed attempts: which run it was. Read by administrators."
+  },
+  "staff_operations.attempt.outcome": {
+    "defaultMessage": "{outcome, select, dead {失敗} other {再試行}}",
+    "description": "What came of a failed attempt: the job failed for good, or runs again. Read by administrators."
   },
   "staff_operations.error_groups.state": {
     "defaultMessage": "{state, select, open {未解決} resolved {解決済み} muted {ミュート中} other {{state}}}",
@@ -467,16 +491,20 @@
     "defaultMessage": "変更を保存できませんでした。ページを再読み込みして、もう一度試してください。",
     "description": "What a button of an error group that failed says, in its screen. Read by administrators."
   },
-  "staff_operations.error_groups.seen_on": {
-    "defaultMessage": "{date} (バージョン {version})",
-    "description": "When and on which version of the server an error group first or last happened. Read by administrators."
+  "staff_operations.error_groups.first_version": {
+    "defaultMessage": "最初のバージョン",
+    "description": "The term of the server's version an error group first happened on. Read by administrators."
+  },
+  "staff_operations.error_groups.last_version": {
+    "defaultMessage": "最後のバージョン",
+    "description": "The term of the server's version an error group last happened on. Read by administrators."
   },
   "staff_operations.ux.window": {
     "defaultMessage": "期間",
     "description": "The heading of the choice of the period the UX measurements sum, and the choice's name. Read by administrators."
   },
   "staff_operations.ux.window.choice": {
-    "defaultMessage": "{hours, select, 24 {直近 24 時間} 168 {直近 7 日間} other {直近 30 日間}}",
+    "defaultMessage": "{hours, select, 24 {24 時間} 168 {7 日間} other {30 日間}}",
     "description": "An option of the period the UX measurements sum, up to now. Read by administrators."
   },
   "staff_operations.ux.since": {
@@ -503,10 +531,6 @@
     "defaultMessage": "{metric, select, transition {種類} press {操作} call_rtt {通信の方式} call_jitter {通信の方式} call_packet_loss {通信の方式} other {ルート}}",
     "description": "The head of the rows of a metric's table: a route of the app, a kind of navigation, an action's ID, or a call's transport. Read by administrators."
   },
-  "staff_operations.ux.column.samples": {
-    "defaultMessage": "サンプル",
-    "description": "The column of how many samples a name has in the window. Read by administrators."
-  },
   "staff_operations.ux.column.p75": {
     "defaultMessage": "75 パーセンタイル",
     "description": "The column of the value at most three quarters of a name's samples have. Read by administrators."
@@ -522,6 +546,14 @@
   "staff_operations.ux.metric": {
     "defaultMessage": "{metric, select, lcp {画面が表示されるまでの時間 (LCP)} inp {押してから応答するまでの時間 (INP)} long_frame {長いフレーム} transition {画面の移動にかかる時間} press {操作に応答するまでの時間} call_rtt {通話の往復時間} call_jitter {通話のジッタ} other {通話のパケットロス}}",
     "description": "The heading of a metric's table of the UX measurements, and the table's name: what is measured, with the web's name of the metric where it has one (LCP, INP). Read by administrators."
+  },
+  "staff_operations.ux.p75.band": {
+    "defaultMessage": "{band, select, poor {{value} (不良)} other {{value} (要改善)}}",
+    "description": "A 75th percentile of LCP or INP past the good threshold, and how far: needs improvement, or poor. Read by administrators."
+  },
+  "staff_operations.ux.samples": {
+    "defaultMessage": "{count, plural, other {# サンプル}}",
+    "description": "The line under a route, an action or a call's transport in a table of the UX measurements: how many samples it has in the period. Read by administrators."
   },
   "staff_operations.link_cards.loading": {
     "defaultMessage": "ルールを読み込んでいます…",
@@ -547,10 +579,6 @@
     "defaultMessage": "{mode, select, no_fetch {取得を止める} other {画像だけ止める}}",
     "description": "What the crawler does not do on a rule's domain: fetch anything, or fetch images. Read by administrators."
   },
-  "staff_operations.link_cards.mode.about": {
-    "defaultMessage": "{mode, select, no_fetch {このドメインからは何も取得せず、カードを表示しません。} other {ページは取得しますが画像は取得せず、カードを画像なしで表示します。}}",
-    "description": "The line under each mode of a rule, in its form. Read by administrators."
-  },
   "staff_operations.link_cards.mode.label": {
     "defaultMessage": "取得のしかた",
     "description": "The name of the choice of a rule's mode. Read by administrators."
@@ -570,10 +598,6 @@
   "staff_operations.link_cards.domain": {
     "defaultMessage": "ドメイン",
     "description": "The field of a new rule's domain. Read by administrators."
-  },
-  "staff_operations.link_cards.domain.about": {
-    "defaultMessage": "サブドメインにも適用されます。",
-    "description": "The line under the field of a new rule's domain. Read by administrators."
   },
   "staff_operations.link_cards.note": {
     "defaultMessage": "メモ",
@@ -610,5 +634,13 @@
   "staff_operations.link_cards.rule": {
     "defaultMessage": "{field, select, domain {https:// やパスを付けずにホスト名を入力してください。} other {5000 文字以内で書いてください。}}",
     "description": "Under the field of a rule that the server refused: the rule its value follows. Read by administrators."
+  },
+  "staff_operations.link_cards.taken": {
+    "defaultMessage": "{domain} にはすでにルールがあります。そのページで変更してください。",
+    "description": "Under the domain of a new rule of the link card crawler when the domain already has one, which saving would replace; its page is linked under it. Read by administrators."
+  },
+  "staff_operations.link_cards.taken.open": {
+    "defaultMessage": "{domain} のルール",
+    "description": "The link under the domain of a new rule to the page of the rule the domain already has. Read by administrators."
   }
 }

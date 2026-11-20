@@ -38,6 +38,18 @@ export function codeRuns(text: string): ReactNode {
   return runs.map((run, i) => (/^\s+$/.test(run) ? run : <CodeRun key={i}>{run}</CodeRun>));
 }
 
+/**
+ * A value in the code's face among words (a job's type, a route, a version): isolated left to right, as code reads in
+ * a right-to-left page too, and broken as code is, after a slash or a colon, never inside a word that fits.
+ */
+export function CodeText({ children }: { children: string }) {
+  return (
+    <bdi dir="ltr" className="font-mono">
+      {codeRuns(children)}
+    </bdi>
+  );
+}
+
 /** A block of code, line by line, each wrapped line hung under its own indent. */
 export function CodeLines({ code }: { code: string }) {
   return code.split("\n").map((line, i) => {

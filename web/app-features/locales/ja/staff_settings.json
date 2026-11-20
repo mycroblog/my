@@ -1007,10 +1007,6 @@
     "defaultMessage": "Web クライアントを計測する",
     "description": "The setting ux_measurement: whether the web client sends samples of how fast it responds. Read by administrators."
   },
-  "staff_settings.setting.ux_measurement.about": {
-    "defaultMessage": "サンプルにはアカウント、アドレス、URL が含まれず、このサーバーだけに保存されます。",
-    "description": "The line under Measure the web client. Read by administrators."
-  },
   "staff_settings.choice.registration_mode": {
     "defaultMessage": "{value, select, open {誰でも} approval {モデレーターの承認のあと} invite {招待がある人だけ} other {誰も登録できない}}",
     "description": "An option of the setting registration_mode, a radio in the list of its options. Read by administrators."

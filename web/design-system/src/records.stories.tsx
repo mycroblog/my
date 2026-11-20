@@ -460,6 +460,7 @@ const job = (id: number, head: string, caption: string, state: RecordState, atte
   id: `j${String(id)}`,
   head,
   caption,
+  code: true,
   href: `#/admin/jobs/j${String(id)}`,
   cells: {
     attempts,

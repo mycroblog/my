@@ -44,14 +44,14 @@ export class Operations {
     return this.main.getByRole("table", { name: "Jobs", exact: true });
   }
 
-  /** The row of the list whose job has the ID `id`, shown under its type. */
-  job(id: string): Locator {
-    return this.jobs.getByRole("row").filter({ has: this.page.getByText(id, { exact: true }) });
+  /** The links of the list to the jobs of the type `type`. */
+  jobsOf(type: string): Locator {
+    return this.jobs.getByRole("link", { name: type, exact: true });
   }
 
-  /** Opens the job of `id` of type `type` from the list. */
+  /** Opens the job of `id`, of the type `type`, at its address. */
   async openJob(type: string, id: string): Promise<void> {
-    await this.job(id).getByRole("link", { name: type, exact: true }).click();
+    await this.page.goto(`/admin/jobs/${id}`);
     await expect(this.main.getByRole("heading", { level: 1, name: type, exact: true })).toBeVisible();
   }
 
@@ -60,9 +60,9 @@ export class Operations {
     return this.main.getByLabel("The job", { exact: true });
   }
 
-  /** The job's runs that did not succeed. */
+  /** The job's runs that did not succeed, a row each. */
   get attempts(): Locator {
-    return this.main.getByRole("list", { name: "Failed attempts", exact: true }).getByRole("listitem");
+    return this.main.getByRole("table", { name: "Failed attempts", exact: true }).getByRole("rowheader");
   }
 
   /** Runs the failed job of the screen again, as its question asks, and returns once the server answered. */
@@ -80,14 +80,14 @@ export class Operations {
     return this.main.getByRole("table", { name: "Error groups", exact: true });
   }
 
-  /** The link of the list to the group whose errors are of the type `type`. */
-  group(type: string): Locator {
-    return this.groups.getByRole("link", { name: type, exact: true });
+  /** The link of the list to the group whose message is `message`. */
+  group(message: string): Locator {
+    return this.groups.getByRole("link", { name: message, exact: true });
   }
 
-  /** Opens the group of `type` from the list. */
-  async openGroup(type: string): Promise<void> {
-    await this.group(type).click();
+  /** Opens the group whose message is `message`, of the type `type`, from the list. */
+  async openGroup(message: string, type: string): Promise<void> {
+    await this.group(message).click();
     await expect(this.main.getByRole("heading", { level: 1, name: type, exact: true })).toBeVisible();
   }
 
