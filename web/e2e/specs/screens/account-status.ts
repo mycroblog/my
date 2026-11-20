@@ -14,9 +14,9 @@ export class AccountStatus {
     this.page = page;
   }
 
-  /** The row of the settings' menu `menu` that leads to the entry, whose name its hint and its count follow. */
+  /** The row of the settings' menu `menu` that leads to the entry, whose name its count follows while there is one. */
   row(menu: Locator): Locator {
-    return menu.getByRole("link", { name: /^Account and data.+$/ });
+    return menu.getByRole("link", { name: /^Account and data(?: .+)?$/ });
   }
 
   /**
