@@ -20553,8 +20553,9 @@ export interface components {
          *     to the operation gets the first answer again instead of being carried out again. The
          *     same key with another request (another path, query, or body) is a 422
          *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-         *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-         *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+         *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+         *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+         *     carried out. A key longer than 256
          *     characters, or one that is not UTF-8 without U+0000, is a 422.
          */
         IdempotencyKey: string;
@@ -20728,8 +20729,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -20762,8 +20764,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -20822,8 +20825,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -20852,8 +20856,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21150,8 +21155,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21201,8 +21207,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21233,8 +21240,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21280,8 +21288,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21340,8 +21349,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21378,8 +21388,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21438,8 +21449,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21501,8 +21513,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21561,8 +21574,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21621,8 +21635,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21681,8 +21696,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21741,8 +21757,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21779,8 +21796,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21814,8 +21832,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21849,8 +21868,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21902,8 +21922,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21937,8 +21958,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -21972,8 +21994,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22025,8 +22048,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22138,8 +22162,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22176,8 +22201,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22284,8 +22310,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22370,8 +22397,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22456,8 +22484,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22564,8 +22593,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22620,8 +22650,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22651,8 +22682,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22707,8 +22739,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22805,8 +22838,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -22839,8 +22873,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23041,8 +23076,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23069,8 +23105,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23097,8 +23134,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23129,8 +23167,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23231,8 +23270,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23263,8 +23303,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23291,8 +23332,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23323,8 +23365,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23351,8 +23394,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23379,8 +23423,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23407,8 +23452,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23489,8 +23535,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23517,8 +23564,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23573,8 +23621,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23609,8 +23658,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23699,8 +23749,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23737,8 +23788,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23784,8 +23836,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23829,8 +23882,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23863,8 +23917,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23916,8 +23971,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23952,8 +24008,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -23988,8 +24045,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24051,8 +24109,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24121,8 +24180,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24187,8 +24247,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24279,8 +24340,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24342,8 +24404,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24480,8 +24543,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24514,8 +24578,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24570,8 +24635,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24608,8 +24674,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24670,8 +24737,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24709,8 +24777,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24748,8 +24817,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24786,8 +24856,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24855,8 +24926,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24906,8 +24978,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24938,8 +25011,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -24972,8 +25046,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25004,8 +25079,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25032,8 +25108,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25140,8 +25217,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25181,8 +25259,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25215,8 +25294,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25243,8 +25323,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25271,8 +25352,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25299,8 +25381,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25327,8 +25410,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25355,8 +25439,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25408,8 +25493,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25436,8 +25522,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25489,8 +25576,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25517,8 +25605,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25545,8 +25634,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25577,8 +25667,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25609,8 +25700,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25672,8 +25764,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25713,8 +25806,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25766,8 +25860,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25913,8 +26008,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -25946,8 +26042,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26005,8 +26102,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26050,8 +26148,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26084,8 +26183,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26129,8 +26229,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26300,8 +26401,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26331,8 +26433,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26395,8 +26498,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26480,8 +26584,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26673,8 +26778,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26711,8 +26817,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26745,8 +26852,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26783,8 +26891,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26817,8 +26926,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26851,8 +26961,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26885,8 +26996,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -26919,8 +27031,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27062,8 +27175,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27096,8 +27210,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27169,8 +27284,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27203,8 +27319,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27241,8 +27358,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27282,8 +27400,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27319,8 +27438,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27356,8 +27476,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27393,8 +27514,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27430,8 +27552,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27469,8 +27592,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27508,8 +27632,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27547,8 +27672,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27586,8 +27712,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27622,8 +27749,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27661,8 +27789,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27730,8 +27859,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27771,8 +27901,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27839,8 +27970,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27877,8 +28009,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -27944,8 +28077,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28063,8 +28197,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28126,8 +28261,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28194,8 +28330,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28235,8 +28372,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28306,8 +28444,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28345,8 +28484,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28414,8 +28554,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28455,8 +28596,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28491,8 +28633,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28530,8 +28673,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28594,8 +28738,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28635,8 +28780,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28671,8 +28817,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28748,8 +28895,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28787,8 +28935,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28822,8 +28971,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -28965,8 +29115,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29080,8 +29231,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29148,8 +29300,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29250,8 +29403,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29311,8 +29465,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29356,8 +29511,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29390,8 +29546,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29422,8 +29579,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29454,8 +29612,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29613,8 +29772,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29738,8 +29898,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29820,8 +29981,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29848,8 +30010,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29932,8 +30095,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29960,8 +30124,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -29988,8 +30153,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30041,8 +30207,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30132,8 +30299,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30160,8 +30328,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30188,8 +30357,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30220,8 +30390,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30252,8 +30423,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30280,8 +30452,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30312,8 +30485,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30353,8 +30527,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30396,8 +30571,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30434,8 +30610,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30504,8 +30681,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30552,8 +30730,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30609,8 +30788,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30654,8 +30834,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30686,8 +30867,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30718,8 +30900,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30775,8 +30958,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30820,8 +31004,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30852,8 +31037,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30880,8 +31066,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30921,8 +31108,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30973,8 +31161,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -30999,8 +31188,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31047,8 +31237,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31086,8 +31277,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31128,8 +31320,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31195,8 +31388,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31241,8 +31435,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31276,8 +31471,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31309,8 +31505,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31337,8 +31534,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31365,8 +31563,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31398,8 +31597,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31460,8 +31660,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31490,8 +31691,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31546,8 +31748,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31681,8 +31884,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31780,8 +31984,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31839,8 +32044,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31886,8 +32092,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31916,8 +32123,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -31951,8 +32159,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32000,8 +32209,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32030,8 +32240,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32105,8 +32316,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32137,8 +32349,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32196,8 +32409,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32228,8 +32442,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32291,8 +32506,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32336,8 +32552,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32364,8 +32581,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32451,8 +32669,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32489,8 +32708,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32554,8 +32774,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32602,8 +32823,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32636,8 +32858,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32668,8 +32891,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32757,8 +32981,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32789,8 +33014,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32834,8 +33060,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32935,8 +33162,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -32983,8 +33211,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33044,8 +33273,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33074,8 +33304,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33129,8 +33360,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33158,8 +33390,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33199,8 +33432,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33228,8 +33462,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33266,8 +33501,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33324,8 +33560,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33352,8 +33589,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33407,8 +33645,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33455,8 +33694,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33511,8 +33751,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33557,8 +33798,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33591,8 +33833,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33624,8 +33867,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33652,8 +33896,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33680,8 +33925,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33778,8 +34024,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33812,8 +34059,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33845,8 +34093,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33873,8 +34122,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33926,8 +34176,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -33984,8 +34235,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34036,8 +34288,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34077,8 +34330,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34155,8 +34409,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34185,8 +34440,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34220,8 +34476,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34249,8 +34506,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34278,8 +34536,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34312,8 +34571,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34346,8 +34606,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34405,8 +34666,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34449,8 +34711,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34491,8 +34754,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34543,8 +34807,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34573,8 +34838,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34606,8 +34872,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];
@@ -34690,8 +34957,9 @@ export interface operations {
                  *     to the operation gets the first answer again instead of being carried out again. The
                  *     same key with another request (another path, query, or body) is a 422
                  *     `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-                 *     5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+                 *     being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+                 *     400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+                 *     carried out. A key longer than 256
                  *     characters, or one that is not UTF-8 without U+0000, is a 422.
                  */
                 "Idempotency-Key"?: components["parameters"]["IdempotencyKey"];

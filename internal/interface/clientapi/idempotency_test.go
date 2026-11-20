@@ -171,6 +171,23 @@ func TestIdempotencyKeyKeepsNoServerError(t *testing.T) {
 	}
 }
 
+// An answer of 4xx is not kept either: the request corrected, or allowed again, is carried out
+// with the key.
+func TestIdempotencyKeyKeepsNoRefusal(t *testing.T) {
+	e := newIdempotencyEnv(t)
+	e.fail = errNotFound
+	if res := e.post(t, "write", "k1", postBody); res.StatusCode != http.StatusNotFound {
+		t.Fatalf("refused post = %d, want 404", res.StatusCode)
+	}
+	e.fail = nil
+	if res := e.post(t, "write", "k1", otherBody); res.StatusCode != http.StatusCreated {
+		t.Errorf("corrected post after a 404 = %d, want 201", res.StatusCode)
+	}
+	if n := e.created.Load(); n != 1 {
+		t.Errorf("posted %d times, want once", n)
+	}
+}
+
 // A repeat while the first request is in progress is a 409.
 func TestIdempotencyKeyInUseWhileTheFirstRuns(t *testing.T) {
 	e := newIdempotencyEnv(t)

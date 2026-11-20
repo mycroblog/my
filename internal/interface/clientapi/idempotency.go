@@ -67,8 +67,9 @@ var pendingAnswer = []byte(`{"pending":true}`)
 
 // serveIdempotent serves the request of an operation that the guard let through. For an
 // operation that takes an Idempotency-Key and a request that has one, the first request with
-// the key is carried out and its answer kept for IdempotencyWindow, unless it is a 429 or a
-// 5xx; a repeat of the same request gets that answer, the same key with another request
+// the key is carried out and its answer kept for IdempotencyWindow when it is below 400: a
+// refusal (any 4xx, a 429 too) or a 5xx frees the key, so that the request corrected, or allowed
+// again, is carried out with it; a repeat of the same request gets that answer, the same key with another request
 // (another path, query, Content-Type or body) a 422, and a repeat while the first is in
 // progress a 409. Keys are the user's own, an anonymous client's those of its address, and
 // each operation's own.
@@ -147,7 +148,7 @@ func (s *Server) serveFirst(w http.ResponseWriter, r *http.Request, pattern, key
 	// What the handler left unread is part of the request too.
 	_, drainErr := io.Copy(io.Discard, r.Body)
 	status := rec.statusCode()
-	if drainErr != nil || rec.overflow || status == http.StatusTooManyRequests || status >= http.StatusInternalServerError {
+	if drainErr != nil || rec.overflow || status >= http.StatusBadRequest {
 		if err := kv.Delete(ctx, idempotencyNamespace, key); err != nil {
 			s.o.Logger.WarnContext(ctx, "freeing an idempotency key failed", slog.Any("error", err))
 		}

@@ -18448,8 +18448,9 @@ type RemoveAccountAliasParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18461,8 +18462,9 @@ type AddAccountAliasParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18474,8 +18476,9 @@ type DeactivateOwnAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18487,8 +18490,9 @@ type DeleteOwnAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18500,8 +18504,9 @@ type ResendVerificationEmailParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18522,8 +18527,9 @@ type CancelOwnAccountMoveParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18535,8 +18541,9 @@ type MoveOwnAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18548,8 +18555,9 @@ type ChangePasswordParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18561,8 +18569,9 @@ type RemovePasswordParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18596,8 +18605,9 @@ type UpdateAccountCredentialsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18609,8 +18619,9 @@ type UnblockAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18622,8 +18633,9 @@ type BlockAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18635,8 +18647,9 @@ type UnfollowAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18648,8 +18661,9 @@ type FollowAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18661,8 +18675,9 @@ type RemoveFollowerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18692,8 +18707,9 @@ type UnmuteAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18705,8 +18721,9 @@ type MuteAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18718,8 +18735,9 @@ type DeleteAccountNoteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18731,8 +18749,9 @@ type SetAccountNoteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18769,8 +18788,9 @@ type UnsubscribeAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18782,8 +18802,9 @@ type SubscribeAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18795,8 +18816,9 @@ type LiftAccountActionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18855,8 +18877,9 @@ type CreateAccountActionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18868,8 +18891,9 @@ type LiftAdminAccountEmailSuppressionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18881,8 +18905,9 @@ type RefetchAccountStatusesParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18894,8 +18919,9 @@ type RevealAdminAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18907,8 +18933,9 @@ type RevokeAccountRoleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18920,8 +18947,9 @@ type GrantAccountRoleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18954,8 +18982,9 @@ type DisableAdminAccountTwoFactorParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18979,8 +19008,9 @@ type CreateAdminAnnouncementParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -18992,8 +19022,9 @@ type UpdateAdminAnnouncementParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19005,8 +19036,9 @@ type PublishAdminAnnouncementParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19018,8 +19050,9 @@ type WithdrawAdminAnnouncementParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19043,8 +19076,9 @@ type OverturnAppealParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19056,8 +19090,9 @@ type UpholdAppealParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19091,8 +19126,9 @@ type RunBillingImportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19104,8 +19140,9 @@ type WithdrawServiceClosureParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19117,8 +19154,9 @@ type AnnounceServiceClosureParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19130,8 +19168,9 @@ type CloseServiceParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19152,8 +19191,9 @@ type CreateCostItemParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19165,8 +19205,9 @@ type DeleteCostItemParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19178,8 +19219,9 @@ type UpdateCostItemParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19191,8 +19233,9 @@ type SetCostItemEndParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19204,8 +19247,9 @@ type ReviseCostItemPriceParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19243,8 +19287,9 @@ type ApproveCustomEmojiRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19256,8 +19301,9 @@ type RejectCustomEmojiRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19287,8 +19333,9 @@ type CreateCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19300,8 +19347,9 @@ type DeleteCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19313,8 +19361,9 @@ type UpdateCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19326,8 +19375,9 @@ type CopyCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19339,8 +19389,9 @@ type DisableCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19352,8 +19403,9 @@ type EnableCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19365,8 +19417,9 @@ type ReplaceCustomEmojiImageParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19394,8 +19447,9 @@ type CreateDomainActionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19413,8 +19467,9 @@ type ImportDomainBlocksParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19426,8 +19481,9 @@ type PreviewDomainBlockImportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19439,8 +19495,9 @@ type LiftDomainActionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19452,8 +19509,9 @@ type CreateDomainAllowParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19465,8 +19523,9 @@ type RemoveDomainAllowParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19487,8 +19546,9 @@ type CreateDomainListSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19503,8 +19563,9 @@ type DeleteDomainListSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19516,8 +19577,9 @@ type UpdateDomainListSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19529,8 +19591,9 @@ type AcceptDomainListDraftsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19542,8 +19605,9 @@ type RejectDomainListDraftsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19555,8 +19619,9 @@ type FetchDomainListSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19592,8 +19657,9 @@ type MuteErrorGroupParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19605,8 +19671,9 @@ type ResolveErrorGroupParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19618,8 +19685,9 @@ type UnmuteErrorGroupParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19631,8 +19699,9 @@ type CancelEventAsModeratorParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19656,8 +19725,9 @@ type OverturnHookAppealParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19669,8 +19739,9 @@ type UpholdHookAppealParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19700,8 +19771,9 @@ type OverrideHookDecisionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19745,8 +19817,9 @@ type SanitizeAdminBrandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19758,8 +19831,9 @@ type ClearAdminBrandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19771,8 +19845,9 @@ type SetAdminBrandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19784,8 +19859,9 @@ type SetInstanceTextParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19833,8 +19909,9 @@ type RevealInstanceDeliveryParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19846,8 +19923,9 @@ type MarkInstanceAvailableParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19859,8 +19937,9 @@ type RefetchInstanceStatusesParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19881,8 +19960,9 @@ type CreateInviteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19894,8 +19974,9 @@ type RevokeInviteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19931,8 +20012,9 @@ type RetryAdminJobParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19944,8 +20026,9 @@ type RemoveLinkCardDomainRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19957,8 +20040,9 @@ type SetLinkCardDomainRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19970,8 +20054,9 @@ type CreateLoginProviderParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19983,8 +20068,9 @@ type DeleteLoginProviderParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -19996,8 +20082,9 @@ type UpdateLoginProviderParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20009,8 +20096,9 @@ type DisableLoginProviderParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20022,8 +20110,9 @@ type EnableLoginProviderParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20035,8 +20124,9 @@ type RotateLoginProviderSecretParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20057,8 +20147,9 @@ type DenyOAuthClientHostParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20070,8 +20161,9 @@ type AllowOAuthClientHostParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20095,8 +20187,9 @@ type DisableOAuthClientParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20108,8 +20201,9 @@ type EnableOAuthClientParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20121,8 +20215,9 @@ type RunPaymentReconciliationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20143,8 +20238,9 @@ type ApproveRegistrationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20156,8 +20252,9 @@ type RejectRegistrationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20169,8 +20266,9 @@ type CreateRelayParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20182,8 +20280,9 @@ type DeleteRelayParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20195,8 +20294,9 @@ type UnfollowRelayParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20208,8 +20308,9 @@ type FollowRelayParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20252,8 +20353,9 @@ type AssignReportToSelfParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20265,8 +20367,9 @@ type TranslateReportCommentParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20278,8 +20381,9 @@ type ForwardReportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20291,8 +20395,9 @@ type AddReportNoteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20304,8 +20409,9 @@ type ReopenReportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20317,8 +20423,9 @@ type ResolveReportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20330,8 +20437,9 @@ type TranslateReportedStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20343,8 +20451,9 @@ type UnassignReportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20356,8 +20465,9 @@ type CreateRoleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20369,8 +20479,9 @@ type DeleteRoleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20382,8 +20493,9 @@ type UpdateRoleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20401,8 +20513,9 @@ type CreateInstanceRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20414,8 +20527,9 @@ type UpdateInstanceRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20427,8 +20541,9 @@ type MoveInstanceRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20440,8 +20555,9 @@ type RetireInstanceRuleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20453,8 +20569,9 @@ type UpdateInstanceSettingsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20488,8 +20605,9 @@ type CreateSignupBlockParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20501,8 +20619,9 @@ type ImportSignupBlocksParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20514,8 +20633,9 @@ type LiftSignupBlockParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20527,8 +20647,9 @@ type RefetchStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20540,8 +20661,9 @@ type CreateSupporterPlanParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20553,8 +20675,9 @@ type UpdateSupporterPlanParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20566,8 +20689,9 @@ type RetireSupporterPlanParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20579,8 +20703,9 @@ type SetSupporterProgramParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20607,8 +20732,9 @@ type EndSupporterSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20620,8 +20746,9 @@ type SetSupporterTipsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20633,8 +20760,9 @@ type SetAdminThemeDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20646,8 +20774,9 @@ type PublishAdminThemeParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20659,8 +20788,9 @@ type RestoreAdminThemeParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20678,8 +20808,9 @@ type EndVoiceRoomAsModeratorParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20691,8 +20822,9 @@ type DeleteWebhookParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20704,8 +20836,9 @@ type UpdateWebhookParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20726,8 +20859,9 @@ type RedeliverWebhookDeliveryParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20739,8 +20873,9 @@ type DisableWebhookParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20752,8 +20887,9 @@ type EnableWebhookParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20765,8 +20901,9 @@ type TestWebhookParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20787,8 +20924,9 @@ type MarkAnnouncementReadParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20800,8 +20938,9 @@ type CreateArticleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20813,8 +20952,9 @@ type PreviewArticleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20826,8 +20966,9 @@ type EditArticleParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20839,8 +20980,9 @@ type RevokeAuthorizedAppParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20879,8 +21021,9 @@ type HideConversationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20892,8 +21035,9 @@ type MarkConversationReadParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20914,8 +21058,9 @@ type CreateCustomEmojiRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20927,8 +21072,9 @@ type WithdrawCustomEmojiRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20949,8 +21095,9 @@ type DeleteOwnCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20962,8 +21109,9 @@ type UpdateOwnCustomEmojiParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20984,8 +21132,9 @@ type MuteDomainParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -20997,8 +21146,9 @@ type UnmuteDomainParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21022,8 +21172,9 @@ type CreateDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21035,8 +21186,9 @@ type DeleteDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21053,8 +21205,9 @@ type UpdateDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21066,8 +21219,9 @@ type PublishDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21079,8 +21233,9 @@ type UnscheduleDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21092,8 +21247,9 @@ type ScheduleDraftParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21117,8 +21273,9 @@ type CreateEventParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21130,8 +21287,9 @@ type UpdateEventParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21152,8 +21310,9 @@ type RevokeEventAttendeeApprovalParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21165,8 +21324,9 @@ type ApproveEventAttendeeParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21178,8 +21338,9 @@ type CancelEventParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21191,8 +21352,9 @@ type AddEventCandidateParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21204,8 +21366,9 @@ type WithdrawEventCandidateParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21217,8 +21380,9 @@ type ConfirmEventCandidateParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21230,8 +21394,9 @@ type VoteEventCandidateParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21255,8 +21420,9 @@ type RemoveEventCoorganizerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21268,8 +21434,9 @@ type AssignEventCoorganizerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21290,8 +21457,9 @@ type InviteToEventParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21303,8 +21471,9 @@ type RevokeEventInvitationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21316,8 +21485,9 @@ type AnswerEventParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21329,8 +21499,9 @@ type RequestDataExportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21342,8 +21513,9 @@ type SetFeaturedTagsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21355,8 +21527,9 @@ type CreateKeywordFilterParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21368,8 +21541,9 @@ type DeleteKeywordFilterParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21381,8 +21555,9 @@ type UpdateKeywordFilterParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21431,8 +21606,9 @@ type AcceptFollowRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21444,8 +21620,9 @@ type RejectFollowRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21457,8 +21634,9 @@ type AppealHookDecisionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21470,8 +21648,9 @@ type StartDataImportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21483,8 +21662,9 @@ type PreviewDataImportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21557,8 +21737,9 @@ type AcceptInteractionRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21570,8 +21751,9 @@ type RejectInteractionRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21592,8 +21774,9 @@ type CreateOwnInviteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21605,8 +21788,9 @@ type RevokeOwnInviteParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21618,8 +21802,9 @@ type UnlinkIdentityParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21631,8 +21816,9 @@ type CreateListParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21644,8 +21830,9 @@ type DeleteListParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21657,8 +21844,9 @@ type UpdateListParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21679,8 +21867,9 @@ type RemoveListAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21692,8 +21881,9 @@ type AddListAccountParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21705,8 +21895,9 @@ type UploadMediaParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21718,8 +21909,9 @@ type UpdateMediaParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21743,8 +21935,9 @@ type AppealModerationActionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21777,8 +21970,9 @@ type UpdateNotificationMarkerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21799,8 +21993,9 @@ type AcceptNotificationRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21812,8 +22007,9 @@ type DismissNotificationRequestParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21834,8 +22030,9 @@ type DismissNotificationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21847,8 +22044,9 @@ type DeleteOAuthAppParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21860,8 +22058,9 @@ type UpdateOAuthAppParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21873,8 +22072,9 @@ type CreatePasskeyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21886,8 +22086,9 @@ type DeletePasskeyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21899,8 +22100,9 @@ type UpdatePreferencesParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21912,8 +22114,9 @@ type UpdateAutoDeletePolicyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21925,8 +22128,9 @@ type PreviewAutoDeletePolicyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21938,8 +22142,9 @@ type UpdateBadgeChoiceParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21951,8 +22156,9 @@ type UpdateEventRemindersParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21964,8 +22170,9 @@ type UpdateNotificationPolicyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21977,8 +22184,9 @@ type UpdateNotificationSettingsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -21990,8 +22198,9 @@ type UpdateSupporterListingParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22003,8 +22212,9 @@ type DeletePushSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22016,8 +22226,9 @@ type PutPushSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22038,8 +22249,9 @@ type CreateReportParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22051,8 +22263,9 @@ type RevokeOtherSessionsParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22064,8 +22277,9 @@ type RevokeSessionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22077,8 +22291,9 @@ type CreateStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22108,8 +22323,9 @@ type DeleteStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22121,8 +22337,9 @@ type EditStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22134,8 +22351,9 @@ type UnbookmarkStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22147,8 +22365,9 @@ type BookmarkStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22160,8 +22379,9 @@ type UnboostStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22173,8 +22393,9 @@ type BoostStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22186,8 +22407,9 @@ type UnfavouriteStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22199,8 +22421,9 @@ type FavouriteStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22212,8 +22435,9 @@ type SetStatusInteractionPolicyParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22225,8 +22449,9 @@ type UnmuteStatusThreadParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22238,8 +22463,9 @@ type MuteStatusThreadParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22251,8 +22477,9 @@ type UnpinStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22264,8 +22491,9 @@ type PinStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22277,8 +22505,9 @@ type VoteInPollParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22299,8 +22528,9 @@ type RevokeStatusQuoteApprovalParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22312,8 +22542,9 @@ type UnreactToStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22325,8 +22556,9 @@ type ReactToStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22351,8 +22583,9 @@ type TranslateStatusParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22373,8 +22606,9 @@ type StartSupporterCheckoutParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22386,8 +22620,9 @@ type OpenSupporterPortalParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22399,8 +22634,9 @@ type CancelOwnSupporterSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22412,8 +22648,9 @@ type CancelOwnSupporterScheduledChangeParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22425,8 +22662,9 @@ type ChangeOwnSupporterSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22438,8 +22676,9 @@ type ResumeOwnSupporterSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22451,8 +22690,9 @@ type SyncOwnSupporterSubscriptionParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22464,8 +22704,9 @@ type StartSupporterTipParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22487,8 +22728,9 @@ type UnfollowTagParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22500,8 +22742,9 @@ type FollowTagParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22558,8 +22801,9 @@ type DisableTotpParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22592,8 +22836,9 @@ type EndVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22605,8 +22850,9 @@ type UpdateVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22618,8 +22864,9 @@ type LowerVoiceHandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22631,8 +22878,9 @@ type RaiseVoiceHandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22644,8 +22892,9 @@ type SendVoiceHeartbeatParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22657,8 +22906,9 @@ type HandOverVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22679,8 +22929,9 @@ type InviteToVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22692,8 +22943,9 @@ type RevokeVoiceInvitationParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22705,8 +22957,9 @@ type SetVoiceMicParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22718,8 +22971,9 @@ type RemoveVoiceParticipantParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22731,8 +22985,9 @@ type RemoveVoiceCohostParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22744,8 +22999,9 @@ type AssignVoiceCohostParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22757,8 +23013,9 @@ type DismissVoiceHandParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22770,8 +23027,9 @@ type MuteVoiceParticipantParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22783,8 +23041,9 @@ type RevokeVoiceSpeakingParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22796,8 +23055,9 @@ type GrantVoiceSpeakingParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22818,8 +23078,9 @@ type LeaveVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22831,8 +23092,9 @@ type ReactInVoiceRoomParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22844,8 +23106,9 @@ type SendVoiceSignalParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22857,8 +23120,9 @@ type BecomeVoiceListenerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
@@ -22870,8 +23134,9 @@ type BecomeVoiceSpeakerParams struct {
 	// to the operation gets the first answer again instead of being carried out again. The
 	// same key with another request (another path, query, or body) is a 422
 	// `/api/v1/problems/idempotency-key-reused`, and a repeat while the first request is still
-	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. An answer of 429 or
-	// 5xx is not kept, so a request sent again after it is carried out. A key longer than 256
+	// being carried out is a 409 `/api/v1/problems/idempotency-key-in-use`. Only an answer below
+	// 400 is kept: after a 4xx or 5xx the key is free, so a request sent again with it is
+	// carried out. A key longer than 256
 	// characters, or one that is not UTF-8 without U+0000, is a 422.
 	IdempotencyKey *IdempotencyKey `json:"Idempotency-Key,omitempty"`
 }
