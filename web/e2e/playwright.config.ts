@@ -9,8 +9,11 @@
 import { availableParallelism } from "node:os";
 import { defineConfig, devices } from "@playwright/test";
 
-/** The specs that change what every other spec's server is: they run in a project of their own, after the rest. */
-const serverWide = ["admin-theme.spec.ts", "admin-closure.spec.ts"];
+/**
+ * The specs that change what every other spec's server is: they run in a project of their own, after the rest. The
+ * about spec publishes terms of service, which make the sign-up ask for an agreement.
+ */
+const serverWide = ["admin-theme.spec.ts", "admin-closure.spec.ts", "about.spec.ts"];
 
 export default defineConfig({
   testDir: "specs",
