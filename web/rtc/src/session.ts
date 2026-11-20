@@ -2,6 +2,7 @@
 // Creates the RoomSession of a grant (ADR-0101 §7): P2P, LiveKit or Sora, all behind the same interface. The SFU
 // kinds load their SDK with import() once the grant names them (ADR-0101 §15); any other kind is refused.
 import { createLiveKitSession } from "./livekit";
+import { reportQuality } from "./measure";
 import { createP2PSession } from "./p2p";
 import { createSoraSession } from "./sora";
 import type { RoomSession, RoomSessionOptions } from "./types";
@@ -17,8 +18,16 @@ export class UnsupportedRoomKindError extends Error {
   }
 }
 
-/** Joins the session `options.session` to the audio of the room that `options.grant` names. */
+/**
+ * Joins the session `options.session` to the audio of the room that `options.grant` names; its quality goes where
+ * `measureCallsWith` of measure.ts says.
+ */
 export function createRoomSession(options: RoomSessionOptions): RoomSession {
+  return reportQuality(createSession(options));
+}
+
+/** The session of the kind the grant names. */
+function createSession(options: RoomSessionOptions): RoomSession {
   switch (options.grant.kind) {
     case "p2p":
       if (options.signaling === undefined)

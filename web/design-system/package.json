@@ -15,6 +15,7 @@
     "./samples": "./src/samples.tsx",
     "./styles.css": "./src/styles.css",
     "./theme-reload": "./src/theme-reload.ts",
+    "./measure": "./src/measure.ts",
     "./emoji.css": "./src/emoji.css",
     "./cjk.css": "./src/cjk.css",
     "./noto-sans.css": "./src/noto-sans.css"

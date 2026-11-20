@@ -83,6 +83,7 @@ const definitions: readonly Definition[] = [
   ["link_cards", "bool", "true"],
   ["link_cards_ignore_robots_txt", "bool", "false"],
   ["ux_measurement", "bool", "false"],
+  ["ux_measurement_share", "int", "10", [1, 100]],
   ["finance_visibility", "enum", "private", ["private", "totals", "breakdown"]],
   ["finance_viewer_item_names", "bool", "false"],
   ["finance_viewer_item_memos", "bool", "false"],
@@ -172,7 +173,6 @@ const definitions: readonly Definition[] = [
   ["article_authoring", "enum", "everyone", ["everyone", "permission"]],
   ["max_article_bytes", "int", "100000", [1000, 100000]],
   ["max_article_images", "int", "20", [0, 100]],
-  ["ux_measurement", "bool", "false"],
 ];
 
 /** Whether `value` is one `kind` takes, as far as the fake checks: a number in its bounds, a choice, an address. */

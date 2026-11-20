@@ -8,8 +8,9 @@
 // (token-colors), an `error: layout <class>` or `error: layout-part <name>` comment (layout-parts), an `error:
 // viewport <what>` comment (viewport-breakpoints), an `error: switch <what>` comment (switch-in-form), an `error:
 // section <element>` comment (settings-sections), an `error: heading <element>` comment (heading-size), an `error:
-// count <element>` comment (settings-count), an `error: date <what>` comment (zone-dates), or an `error: html <what>`
-// comment (html-sinks), and each expected one
+// count <element>` comment (settings-count), an `error: date <what>` comment (zone-dates), an `error: html <what>`
+// comment (html-sinks), or an `error: measure @my/<x>/measure` comment (no-restricted-imports of a feature or a shared
+// component, ADR-0167 §2), and each expected one
 // must be found. Oxlint's RuleTester refuses to run on Bun (ADR-0025 §8, §10). .oxlintrc.json ignores the fixtures, so that no
 // other lint run fails on them; this lints copies of them beside them, under the same overrides, and removes the
 // copies. It also holds the lists of the rules to the code: the files layout-parts.js names exist, and the
@@ -61,6 +62,10 @@ const findings = {
   "restrict(pager-parts)": (/** @type {string} */ message) => `pager ${/^`([^`]+)`/.exec(message)?.[1]}`,
   "restrict(page-trail)": () => "trail",
   "restrict(html-sinks)": (/** @type {string} */ message) => `html ${/^`([^`]+)`/.exec(message)?.[1]}`,
+  "eslint(no-restricted-imports)": (/** @type {string} */ message) => {
+    const imported = /^'([^']+)' import is restricted/.exec(message)?.[1] ?? message;
+    return /^@my\/[\w-]+\/measure$/.test(imported) ? `measure ${imported}` : `imports ${imported}`;
+  },
 };
 
 /** A finding of a rule of the styles: what a declaration wrote, or a name of layout-parts.js. */
@@ -106,7 +111,7 @@ async function expected() {
     const lines = (await Bun.file(`${root}${file}`).text()).split("\n");
     for (const [index, line] of lines.entries()) {
       const match =
-        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|(?:html|classes) \S+(?: =)?|trail(?= |$))/.exec(
+        /error: (<\S+> (?:className|style)|layers @my\/[\w-]+|measure @my\/[\w-]+\/measure|platform (?:"\w+" in|\S+)|e2e \S+|e2e-flaky .*\S|(?:color|layout|layout-part|viewport|switch|section|heading|count|date|pager) \S+|(?:html|classes) \S+(?: =)?|trail(?= |$))/.exec(
           line,
         );
       if (match) found.push(`${file}:${index + 1} ${match[1]}`);
@@ -132,6 +137,8 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
   expect(fixtures).toContain("web/app-features/fixtures/pagers.tsx");
   expect(fixtures).toContain("web/app-features/fixtures/staff/trail.tsx");
   expect(fixtures).toContain("web/devtools/fixtures/restrictions/html-sinks.tsx");
+  expect(fixtures).toContain("web/app-features/fixtures/measure.tsx");
+  expect(fixtures).toContain("web/app-components/fixtures/measure.tsx");
   const want = await expected();
   expect(want.some((line) => line.includes(" e2e-flaky "))).toBe(true);
   expect(want.some((line) => line.endsWith(" className") || line.endsWith(" style"))).toBe(true);
@@ -152,6 +159,7 @@ test("the rules find exactly what the fixtures expect, and nothing in the allowe
     "pager",
     "html",
     "classes",
+    "measure",
   ])
     expect([kind, want.some((line) => line.includes(` ${kind} `))]).toEqual([kind, true]);
   expect(lint()).toEqual(want);
