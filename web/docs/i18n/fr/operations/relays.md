@@ -31,10 +31,10 @@ my admin relay delete <relay id>                                  # delete a rel
 Vous ne pouvez pas enregistrer le relais d’un serveur soumis à une action de domaine (`suspend`). Si le serveur d’un relais rejoint est suspendu par la suite, l’état ne change pas,
 mais rien n’est envoyé à ce relais ni reçu de lui, et la zone d’administration l’indique dans l’état du relais.
 
-<!-- source: what-the-server-sends 1db52c508f9c -->
+<!-- source: what-the-server-sends c55ab0a5b079 -->
 ## Ce que le serveur envoie
 
-- Seuls la création, la modification et la suppression de publications **publiques** (`public`) locales sont envoyées. Les publications `unlisted`, réservées aux abonnés, directes ou locales uniquement (`local`), ainsi que les boosts, ne sont jamais envoyés. Pour garder une publication hors des relais, publiez-la en `unlisted` ou en `local`. Il n’existe pas de refus par utilisateur.
+- Seuls la création, la modification et la suppression de publications **publiques** (`public`) locales sont envoyées. Les publications `unlisted`, réservées aux abonnés, directes ou pour les voisins (`local`), ainsi que les boosts, ne sont jamais envoyés. Pour garder une publication hors des relais, publiez-la en `unlisted` ou en `local`. Il n’existe pas de refus par utilisateur.
 - Les documents des publications publiques portent une signature Linked Data (`RsaSignature2017`), afin que Mastodon et Misskey puissent accepter des publications qu’un relais transmet telles quelles.
 - Le nombre de livraisons augmente du nombre de relais rejoints multiplié par le nombre de publications publiques (les livraisons vers un relais sont regroupées en une seule).
 
