@@ -12622,6 +12622,12 @@ type Instance struct {
 	// Domain The domain that serves the instance.
 	Domain string `json:"domain"`
 
+	// DomainActionsVisibility Who may read the list of moderated domains (`GET /instance/domain_actions`), the instance
+	// setting `domain_actions_visibility`: `off`, nobody (the list is a 404); `signed_in`, the
+	// users signed in to this server; `everyone`, anonymous visitors included. The about page shows
+	// the list only when it lets the viewer read it.
+	DomainActionsVisibility InstanceAudience `json:"domain_actions_visibility"`
+
 	// EventCreators Who may create events: `everyone` (every local user who is not limited) or `permitted`
 	// (only the users whose roles have `create_events`).
 	EventCreators InstanceEventCreators `json:"event_creators"`

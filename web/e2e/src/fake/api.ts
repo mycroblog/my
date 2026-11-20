@@ -2209,6 +2209,8 @@ export function createFakeApi(o: FakeOptions = {}): FakeApi {
     ux_measurement: o.uxMeasurement === true,
     ...finance.instance,
     ...supporting.instance,
+    // The fake publishes no moderated domains (GET /instance/domain_actions).
+    domain_actions_visibility: "off",
     voice_enabled: o.voiceOff !== true,
     voice_room_starters: o.voiceStarters ?? "everyone",
     event_creators: o.eventCreators ?? "everyone",
