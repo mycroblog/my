@@ -15,7 +15,7 @@ import {
   type TargetAndTransition,
   type Transition,
 } from "motion/react";
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Link } from "react-aria-components";
 import { tv } from "tailwind-variants/lite";
 import { Icon, type IconName } from "./icons";
@@ -183,11 +183,12 @@ function Server({
 const seconds = (ms: number) => ms / 1000;
 
 /**
- * One post's cycle: it sets out from under the server it leaves once `start` of the cycle is past, travels the line,
- * and waits under the one it reaches for the next cycle, which takes it back under the first at once, unseen.
+ * One post's cycle, without end: it sets out from under the server it leaves once `start` of the cycle is past,
+ * travels the line, and waits under the one it reaches for the next cycle, which takes it back under the first at
+ * once, unseen.
  */
 function journey(from: Point, to: Point, start: number): { animate: TargetAndTransition; transition: Transition } {
-  const { cycle, travel, rounds, ease } = figureMotion;
+  const { cycle, travel, ease } = figureMotion;
   const reach = start + travel / cycle;
   return {
     animate: { x: [from.x, from.x, to.x, to.x], y: [from.y, from.y, to.y, to.y] },
@@ -195,7 +196,7 @@ function journey(from: Point, to: Point, start: number): { animate: TargetAndTra
       duration: seconds(cycle),
       times: [0, start, reach, 1],
       ease: ["linear", curve(ease), "linear"],
-      repeat: rounds - 1,
+      repeat: Infinity,
     },
   };
 }
@@ -203,25 +204,15 @@ function journey(from: Point, to: Point, start: number): { animate: TargetAndTra
 /** Where a post stands on the still figure: half way along its line. */
 const halfWay = (from: Point, to: Point) => ({ x: (from.x + to.x) / 2, y: (from.y + to.y) / 2 });
 
-/** The last journey: from under the server it leaves, half way along its line. */
-const halfWayFrom = (from: Point, to: Point) => {
-  const half = halfWay(from, to);
-  return { x: [from.x, half.x], y: [from.y, half.y] };
-};
-
 /**
  * The fediverse in a figure, which says nothing its sentence beside it does not: this server among others, joined by
- * the follows of their people, and a post travelling along a follow to another server while another comes back. It
- * runs a few cycles (figureMotion), then each post sets out once more and stops half way along its line; with reduced
- * motion it is that still figure from the start. Only the posts move, by their position alone.
+ * the follows of their people, and a post travelling along a follow to another server while another comes back, cycle
+ * after cycle at a calm pace (figureMotion); with reduced motion it stands still, each post half way along its line.
+ * Only the posts move, by their position alone.
  */
 export function FediverseFigure() {
   const s = figure();
   const reduced = useReducedMotionConfig() ?? false;
-  const [settled, setSettled] = useState(false);
-  const still = reduced || settled;
-  // Its last journey goes half way, where the still figure has the post.
-  const settle: Transition = { duration: seconds(figureMotion.travel / 2), ease: curve(figureMotion.ease) };
   return (
     <Box
       full
@@ -234,17 +225,12 @@ export function FediverseFigure() {
       <LazyMotion features={domAnimation} strict>
         {journeys.map(({ from, to, start }, i) => {
           const run = journey(from, to, start);
-          const last = i === journeys.length - 1;
           return (
             <m.g
               key={i}
               initial={reduced ? halfWay(from, to) : { x: from.x, y: from.y }}
-              animate={reduced ? halfWay(from, to) : settled ? halfWayFrom(from, to) : run.animate}
-              transition={settled ? settle : run.transition}
-              onAnimationComplete={() => {
-                // The last post's last cycle ends the cycles.
-                if (last && !still) setSettled(true);
-              }}
+              animate={reduced ? halfWay(from, to) : run.animate}
+              transition={run.transition}
             >
               <rect
                 className={s.post()}

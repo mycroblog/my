@@ -531,13 +531,13 @@ export const formPage = {
 export const landing = { figure: 24, sample: 15, samplePadding: 0.75, sampleScale: 0.75 } as const;
 
 /**
- * The motion of the landing page's figure of the fediverse: a post travels along a follow from this server to
- * another, and another comes back, once in each `cycle` ms. Each sets out from under its server, travels for `travel`
- * ms with `ease`, starting and stopping gently as a thing sent from one place to another, and goes under the server it
- * reaches. The cycle runs `rounds` times, then the posts settle half way, as the still figure shows them with reduced
- * motion: nothing loops on to draw the eye from the way to an account.
+ * The motion of the landing page's figure of the fediverse, without end: a post travels along a follow from this
+ * server to another, and half a `cycle` (ms) later another comes back. Each sets out from under its server, travels
+ * for `travel` ms with `ease`, starting and stopping gently as a thing sent from one place to another, and goes under
+ * the server it reaches; the rest of the cycle nothing moves, so that the figure is still most of the time and the
+ * way to an account keeps the eye. With reduced motion the posts stand half way.
  */
-export const figureMotion = { cycle: 7000, travel: 1800, rounds: 3, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
+export const figureMotion = { cycle: 9000, travel: 1800, ease: "cubic-bezier(0.4, 0, 0.2, 1)" } as const;
 
 /**
  * The parts of the app's screens over and among the entries of a feed, in rem: the space between the tabs of a row
