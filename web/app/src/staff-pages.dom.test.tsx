@@ -251,6 +251,54 @@ test("an account's sign-ins and the accounts of its address read whole, each pag
   expect(sameIp.seen).toHaveLength(1);
 });
 
+/** A few turns of the event loop, for a request the app would send by itself to reach the fake. */
+const turns = async () => {
+  for (let i = 0; i < 5; i++) await new Promise((resolve) => setTimeout(resolve, 10));
+};
+
+test("an account's later sign-ins and accounts of its address are read on a press alone, not on focus nor when shown again", async () => {
+  const app = await renderApp("/moderation", { viewer: "hana", moderation: "crowded" });
+  const signIns = app.fake.script("GET /admin/accounts/{id}/sign_ins");
+  const sameIp = app.fake.script("GET /admin/accounts/{id}/same_ip_accounts");
+  const manage = `/moderation/accounts/${app.fake.accountId("kai")}/manage`;
+  const opened = async () => {
+    const [show] = within(await main().findByLabelText("Email and IP addresses")).getAllByRole("button", {
+      name: "Show",
+    });
+    if (show === undefined) throw new Error("test: nothing to show");
+    await app.user.click(show);
+    return within(await main().findByRole("table", { name: "Sign-ins" }));
+  };
+  await app.navigate(manage);
+  const table = await opened();
+  const [more] = main().getAllByRole("button", { name: "Show more" });
+  if (more === undefined) throw new Error("test: no Show more under the sign-ins");
+  await app.user.click(more);
+  await waitFor(() => {
+    if (table.getAllByRole("rowheader").length !== 30) throw new Error("test: the later sign-ins are not shown");
+  });
+  const [next] = main().getAllByRole("button", { name: "Show more" });
+  if (next === undefined) throw new Error("test: no Show more under the accounts of the address");
+  await app.user.click(next);
+  await waitFor(() => {
+    if (sameIp.seen.length !== 1) throw new Error("test: the accounts of the address were not read");
+  });
+  expect(signIns.seen).toHaveLength(1);
+
+  // The window takes the focus again, as when the moderator comes back from another tab.
+  window.dispatchEvent(new Event("focus"));
+  document.dispatchEvent(new Event("visibilitychange"));
+  await turns();
+  expect([signIns.seen.length, sameIp.seen.length]).toEqual([1, 1]);
+
+  // The screen left and shown again: what was read stays read, and nothing is asked again.
+  await app.navigate(`/moderation/accounts/${app.fake.accountId("kai")}`);
+  await app.navigate(manage);
+  await opened();
+  await turns();
+  expect([signIns.seen.length, sameIp.seen.length]).toEqual([1, 1]);
+});
+
 test("an error group's hours grow under Show more, twelve at a time", async () => {
   const app = await renderApp("/admin", { viewer: "hana", operations: "crowded" });
   await app.navigate(`/admin/errors/${app.fake.operations.id("error:panic")}`);
