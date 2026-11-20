@@ -7,6 +7,9 @@
 // build of web/app, the brand assets of web/brand, and the list of the ETags of those files. The build holds
 // its text files only in Brotli and gzip (encoding.go). The server reads the list, not the files, when it
 // starts: a file of the build is first read by a request for it.
+//
+// A document of the app entry or the auth entry hints the entry's files in Link headers and, with
+// Options.EarlyHints, first in a 103 Early Hints response before the server prepares it (WriteLinks).
 // Only dist/.gitkeep is committed, so the package compiles and its tests run without Bun; a binary
 // built that way serves a shell without scripts and logs a warning at start.
 //

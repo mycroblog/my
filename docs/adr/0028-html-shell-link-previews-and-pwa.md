@@ -72,6 +72,7 @@ Go がルートごとに HTML の外枠を `html/template` で返し、meta タ�
   - 埋め込みは `//go:embed all:dist`（`.vite/` を含めるため）。CDN から配信するときは `/assets/*` だけを置く。
 - ハッシュ付きのアセットは `immutable` で 1 年キャッシュする。外枠の HTML・`sw.js`・マニフェストは長期キャッシュしない。
 - テキストのファイルはビルドで Brotli と gzip に圧縮し、その 2 つだけを埋め込む。Brotli を受け付ければ Brotli、でなければ gzip、どちらも受け付けない要求には gzip を展開して返す。
+- 外枠の HTML と認証のエントリは、エントリのファイルを `Link` で知らせる。`103 Early Hints` は運営者の設定で送る（既定は送らない。Google Cloud の Application Load Balancer は 103 で要求を失敗させるため）。
 - CDN を前に置く場合は、`Accept` の種類をキャッシュキーに含める（AP の JSON と HTML を取り違えないため）。デプロイ文書に書く。
 - プレビューの表示は X・Mastodon・Discord・Slack・LINE の実機で確認する（手動、リリースごと）。
 

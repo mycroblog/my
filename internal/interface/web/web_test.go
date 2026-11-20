@@ -146,6 +146,10 @@ func TestAuthEntry(t *testing.T) {
 	want := web.Entry{
 		Script: "/assets/auth-FFFF.js", Stylesheets: []string{"/assets/auth-GGGG.css", "/assets/shared-DDDD.css"},
 		Preloads: []string{"/assets/shared-BBBB.js"},
+		Links: []string{
+			"</assets/auth-GGGG.css>; rel=preload; as=style", "</assets/shared-DDDD.css>; rel=preload; as=style",
+			"</assets/shared-BBBB.js>; rel=preload; as=script; crossorigin", "</assets/auth-FFFF.js>; rel=preload; as=script; crossorigin",
+		},
 	}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("AuthEntry() = %+v, want %+v", got, want)

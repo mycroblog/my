@@ -53,6 +53,8 @@ type Config struct {
 	MaintenanceRetryAfter time.Duration
 	// WebOrigin is the origin of the web client that the client API allows by CORS.
 	WebOrigin string
+	// WebEarlyHints sends a 103 Early Hints response before each page of the web client.
+	WebEarlyHints bool
 	// MediaOrigin is the origin of the media files' URLs, for a CDN in front of /media/; empty
 	// serves them from ServerOrigin(). Use MediaBaseURL.
 	MediaOrigin string
@@ -417,6 +419,7 @@ func (c *Config) LogValue() slog.Value {
 		slog.Time("maintenance_until", c.MaintenanceUntil),
 		slog.Duration("maintenance_retry_after", c.MaintenanceRetryAfter),
 		slog.String("web_origin", c.WebOrigin),
+		slog.Bool("web_early_hints", c.WebEarlyHints),
 		slog.String("origin_secret", redact(c.OriginSecret != "")),
 		slog.String("origin_secret_previous", redact(c.OriginSecretPrevious != "")),
 		slog.String("role", string(c.Role)),

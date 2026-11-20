@@ -9,6 +9,8 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"maps"
+	"net/http"
 	"path"
 	"slices"
 	"strings"
@@ -240,6 +242,55 @@ func entryOf(manifest map[string]chunk, key string) (entryTags, error) {
 		return entryTags{}, err
 	}
 	return tags, nil
+}
+
+// links returns the Link header values (RFC 8288) that hint the files a document of the entry loads,
+// in the order of its tags: each stylesheet as rel=preload; as=style, then the static imports and
+// the entry module as rel=preload; as=script; crossorigin. Browsers take no rel=modulepreload from
+// a 103 Early Hints response; a preload in CORS mode with the same-origin credentials is the fetch
+// of a module script of this site, so the module reuses its response, as a stylesheet does that of
+// its no-cors preload. An entry without a script hints nothing.
+func (t entryTags) links() []string {
+	if t.Script == "" {
+		return nil
+	}
+	links := make([]string, 0, len(t.Stylesheet)+1+len(t.Preload))
+	for _, u := range t.Stylesheet {
+		links = append(links, "<"+u+">; rel=preload; as=style")
+	}
+	for _, u := range t.Preload {
+		links = append(links, "<"+u+">; rel=preload; as=script; crossorigin")
+	}
+	return append(links, "<"+t.Script+">; rel=preload; as=script; crossorigin")
+}
+
+// WriteLinks adds links to the response's Link headers, which a CDN can also make early hints of.
+// With early, for a GET request over HTTP/1.1 or later, it first sends them in a 103 Early Hints
+// response (RFC 8297), so that the browser fetches the files while the server prepares the
+// document; the headers stay for the document's response. Call it before setting the document's
+// headers. With no links it does nothing.
+func WriteLinks(w http.ResponseWriter, r *http.Request, links []string, early bool) {
+	if len(links) == 0 {
+		return
+	}
+	hd := w.Header()
+	// An HTTP/1.0 client knows no 1xx (RFC 9110 §15.2), and a HEAD request loads nothing.
+	if !early || r.Method != http.MethodGet || !r.ProtoAtLeast(1, 1) {
+		for _, l := range links {
+			hd.Add("Link", l)
+		}
+		return
+	}
+	// The 103 carries the header map as it is, so it holds the links alone: the headers set so far
+	// are the server's defaults for a response that is no document, and a browser applies a
+	// Content-Security-Policy of the 103 to the hinted fetches.
+	set := hd.Clone()
+	clear(hd)
+	for _, l := range links {
+		hd.Add("Link", l)
+	}
+	w.WriteHeader(http.StatusEarlyHints)
+	maps.Copy(hd, set)
 }
 
 // fileURL is the absolute URL path of a file of the build.
