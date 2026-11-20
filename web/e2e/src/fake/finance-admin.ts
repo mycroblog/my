@@ -41,8 +41,36 @@ export type FakeFinanceAdmin = {
   readonly costId: (key: string) => string;
 };
 
+/** The codes whose minor unit is not two digits, by its digits, as ISO 4217 and the server's table have them. */
+const otherDigits: Readonly<Record<string, number>> = {
+  ...Object.fromEntries(
+    [
+      "BIF",
+      "CLP",
+      "DJF",
+      "GNF",
+      "ISK",
+      "JPY",
+      "KMF",
+      "KRW",
+      "PYG",
+      "RWF",
+      "UGX",
+      "UYI",
+      "VND",
+      "VUV",
+      "XAF",
+      "XOF",
+      "XPF",
+    ].map((code) => [code, 0]),
+  ),
+  ...Object.fromEntries(["BHD", "IQD", "JOD", "KWD", "LYD", "OMR", "TND"].map((code) => [code, 3])),
+  CLF: 4,
+  UYW: 4,
+};
+
 /** The digits of a currency's minor unit, as the server's table has them. */
-const digits = (currency: string) => (currency === "JPY" ? 0 : 2);
+const digits = (currency: string) => otherDigits[currency] ?? 2;
 const moneyValid = (m: Money) =>
   /^[A-Z]{3}$/.test(m.currency) &&
   (digits(m.currency) === 0 ? /^\d+$/ : new RegExp(`^\\d+(\\.\\d{1,${String(digits(m.currency))}})?$`)).test(m.amount);
