@@ -48,6 +48,10 @@ SELECT CAST(EXISTS (SELECT 1 FROM custom_emoji_requests r
   JOIN custom_emoji_pending_requests p ON p.request_id = r.id
   WHERE r.media_id = @media_id) AS INTEGER) AS pending;
 
+-- CountCustomEmojiPendingRequests counts the requests that await a decision (the staff counts).
+-- name: CountCustomEmojiPendingRequests :one
+SELECT COUNT(*) FROM custom_emoji_pending_requests;
+
 -- name: GetCustomEmojiRequest :one
 SELECT r.id, r.kind, r.requester_user_id, r.emoji_id, r.shortcode, r.media_id, r.created_at,
   CAST(COALESCE(o.id, '') AS TEXT) AS outcome_id, CAST(COALESCE(o.outcome, '') AS TEXT) AS outcome,

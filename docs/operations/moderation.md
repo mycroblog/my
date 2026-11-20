@@ -585,7 +585,7 @@ New reports, registrations waiting for approval and appeals reach people with th
   The mail contains only the kind of notification and a link to the notifications screen, and none of the contents of the report or the account. Its unsubscribe link turns off the email of that kind only.
   With `mail = none`, no mail is sent, and `sends_email` in `GET /api/v1/instance` is `false`.
 
-`GET /api/v1/admin/counts` returns the number of open reports (`open_reports`, needs `manage_reports`), the number of registrations waiting for approval (`pending_registrations`) and the number of appeals waiting for review (`pending_appeals`) (both need `manage_accounts`).
+`GET /api/v1/admin/counts` returns the number of open reports (`open_reports`, needs `manage_reports`), the number of registrations waiting for approval (`pending_registrations`) and the number of appeals waiting for review (`pending_appeals`) (both need `manage_accounts`), the number of custom emoji requests waiting for a decision (`pending_custom_emoji_requests`, needs `manage_custom_emojis`), and the number of open error groups, new, regressed or unmuted (`open_error_groups`, needs `manage_errors`).
 Items you lack the permission for are not returned.
 
 ## Audit log

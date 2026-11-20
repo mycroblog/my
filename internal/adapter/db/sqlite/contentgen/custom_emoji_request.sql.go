@@ -22,6 +22,18 @@ func (q *Queries) BlankCustomEmojiRequester(ctx context.Context, userID sql.Null
 	return err
 }
 
+const countCustomEmojiPendingRequests = `-- name: CountCustomEmojiPendingRequests :one
+SELECT COUNT(*) FROM custom_emoji_pending_requests
+`
+
+// CountCustomEmojiPendingRequests counts the requests that await a decision (the staff counts).
+func (q *Queries) CountCustomEmojiPendingRequests(ctx context.Context) (int64, error) {
+	row := q.db.QueryRowContext(ctx, countCustomEmojiPendingRequests)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countCustomEmojiUsage = `-- name: CountCustomEmojiUsage :one
 SELECT CAST(COALESCE(SUM(CASE WHEN o.outcome = 'approved' THEN 1 ELSE 0 END), 0) AS INTEGER) AS approved,
   CAST(COALESCE(SUM(CASE WHEN o.request_id IS NULL THEN 1 ELSE 0 END), 0) AS INTEGER) AS pending

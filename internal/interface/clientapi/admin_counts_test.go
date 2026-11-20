@@ -28,6 +28,24 @@ func (f fakeCounts) CountPendingRegistrations(context.Context) (int64, error) {
 	return f.registrations, nil
 }
 
+// fakeEmojiRequestCounts counts the pending custom emoji requests.
+type fakeEmojiRequestCounts struct {
+	clientapi.CustomEmojiRequests
+	pending int64
+}
+
+func (f fakeEmojiRequestCounts) CountPendingRequests(context.Context) (int64, error) {
+	return f.pending, nil
+}
+
+// fakeErrorGroupCounts counts the open error groups.
+type fakeErrorGroupCounts struct {
+	clientapi.ErrorGroups
+	open int64
+}
+
+func (f fakeErrorGroupCounts) CountOpen(context.Context) (int64, error) { return f.open, nil }
+
 // TestGetAdminCounts checks that each count needs its own permission and that a count the
 // viewer may not see is omitted, not refused.
 func TestGetAdminCounts(t *testing.T) {
@@ -41,12 +59,19 @@ func TestGetAdminCounts(t *testing.T) {
 		{"both", []identity.Permission{identity.PermManageReports, identity.PermManageAccounts}, clientapi.AdminCounts{OpenReports: n(3), OldestOpenReportFiledAt: &oldest, PendingRegistrations: n(0)}},
 		{"reports", []identity.Permission{identity.PermManageReports, identity.PermViewAudit}, clientapi.AdminCounts{OpenReports: n(3), OldestOpenReportFiledAt: &oldest}},
 		{"registrations", []identity.Permission{identity.PermManageAccounts}, clientapi.AdminCounts{PendingRegistrations: n(0)}},
+		{"custom emoji requests", []identity.Permission{identity.PermManageCustomEmojis}, clientapi.AdminCounts{PendingCustomEmojiRequests: n(2)}},
+		{"error groups", []identity.Permission{identity.PermManageErrors}, clientapi.AdminCounts{OpenErrorGroups: n(5)}},
+		{"all", identity.AllPermissions(), clientapi.AdminCounts{
+			OpenReports: n(3), OldestOpenReportFiledAt: &oldest, PendingRegistrations: n(0), PendingCustomEmojiRequests: n(2), OpenErrorGroups: n(5),
+		}},
 		{"none", []identity.Permission{identity.PermManageDomains}, clientapi.AdminCounts{}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e := newAuthEnv(t, func(o *clientapi.Options) {
 				o.Permissions = fakePermissions{userOf(aliceAccountID): tc.perms}
 				o.ReportCounts, o.RegistrationCounts = fakeCounts{reports: 3, oldest: &oldest}, fakeCounts{reports: 3}
+				o.CustomEmojiRequests = fakeEmojiRequestCounts{pending: 2}
+				o.ErrorGroups = fakeErrorGroupCounts{open: 5}
 			})
 			e.auth.tokens["admin-read"] = bearer("admin:read", aliceAccountID)
 			res := e.admin(t, http.MethodGet, "/admin/counts", "admin-read", nil)
