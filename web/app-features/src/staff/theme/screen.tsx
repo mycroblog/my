@@ -32,6 +32,7 @@ import {
 import { useState, type ReactNode } from "react";
 import { useMoment, useStaffStrings, type T } from "../parts";
 import { ScreenNotice } from "../settings/parts";
+import { tokenNames } from "./tokens";
 
 /** The address of the draft's form. */
 const themeDraftPath = "/admin/theme/draft";
@@ -46,7 +47,7 @@ const sameSet = (a: ThemeSet | undefined, b: ThemeSet | undefined) =>
   JSON.stringify(a?.tokens ?? []) === JSON.stringify(b?.tokens ?? []);
 
 /** The facts of a set: when it was saved or published, how many tokens it changes, and what no longer applies. */
-function setFacts(t: T, set: ThemeSet, when: Fact): Fact[] {
+function setFacts(t: T, list: (items: string[]) => string, set: ThemeSet, when: Fact): Fact[] {
   return [
     when,
     { term: t("staff_theme.fact.changes"), value: t("staff_theme.changes", { count: set.tokens.length }) },
@@ -57,7 +58,13 @@ function setFacts(t: T, set: ThemeSet, when: Fact): Fact[] {
             term: t("staff_theme.fact.stale"),
             value: t("staff_theme.stale", {
               count: set.stale_tokens.length,
-              tokens: set.stale_tokens.map((s) => s.token).join(", "),
+              // A token the app knows by its name; one it no longer knows (renamed, retired) by its code name.
+              tokens: list(
+                set.stale_tokens.map((s) => {
+                  const name = tokenNames[s.token];
+                  return name === undefined ? s.token : t(name);
+                }),
+              ),
             }),
           },
         ]),
@@ -69,7 +76,8 @@ type Said = { readonly section: "draft" | "published"; readonly words: string } 
 
 /** The theme: the draft and its actions, the theme in effect and its restore, and the way to the brand images. */
 export function AdminThemeScreen(): ReactNode {
-  const { t } = useStaffStrings();
+  const { t, locale } = useStaffStrings();
+  const list = (items: string[]) => new Intl.ListFormat(locale, { type: "conjunction" }).format(items);
   const moment = useMoment();
   const read = useAdminTheme();
   const writes = useAdminThemeWrites();
@@ -130,7 +138,7 @@ export function AdminThemeScreen(): ReactNode {
           <FactList
             label={t("staff_theme.draft")}
             items={[
-              ...setFacts(t, draft, { term: t("staff_theme.fact.saved"), value: moment(draft.saved_at) }),
+              ...setFacts(t, list, draft, { term: t("staff_theme.fact.saved"), value: moment(draft.saved_at) }),
               {
                 term: t("staff_theme.fact.state"),
                 value: t(publishedSame ? "staff_theme.draft.same" : "staff_theme.draft.differs"),
@@ -172,7 +180,7 @@ export function AdminThemeScreen(): ReactNode {
         ) : (
           <FactList
             label={t("staff_theme.published")}
-            items={setFacts(t, published.set, {
+            items={setFacts(t, list, published.set, {
               term: t("staff_theme.fact.published"),
               value: moment(published.published_at),
             })}

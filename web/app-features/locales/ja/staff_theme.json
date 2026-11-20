@@ -241,7 +241,7 @@
   },
   "staff_theme.stale": {
     "defaultMessage": "{count, plural, other {# 件: {tokens}。次に保存すると消えます。}}",
-    "description": "On the theme's screen of the administration (/admin/theme), the overrides an upgrade renamed, retired or put out of bounds ({tokens}, their names as the stylesheet writes them, comma-separated). Read by administrators."
+    "description": "On the theme's screen of the administration (/admin/theme), the overrides an upgrade renamed, retired or put out of bounds ({tokens}: their names as this screen says them, in a list of the reader's language; the code name, such as color-link, for a token the app no longer knows). Read by administrators."
   },
   "staff_theme.publish": {
     "defaultMessage": "公開する",
