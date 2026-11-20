@@ -61,6 +61,16 @@
 //   date and time held in a variable (`new Date(value)`, `Date.parse(value)`: the API's timestamps, which name their
 //   zone, are read so), nor a Date held in one and written out by coercion (`String(date)`, `${date}`,
 //   `date.toString()`, `"" + date`).
+//
+// - pager-parts: outside @my/design-system, no button pages a list (#3279): a `Button`, `TextButton` or `LinkButton`
+//   whose words are a message of the catalog that pages or grows a list (`t("….more")`, `_more`, `.earlier`, `.later`,
+//   `.next`, `.previous`; a thread's fold of earlier posts, a disclosure, aside) is a pager of its own. The design
+//   system's Pager (Previous and Next, Later and Earlier) and ShowMore are the one look of both kinds. It reads the
+//   message ID written in the element's children, not one held in a variable.
+//
+// - page-trail: in the staff's screens (a file under staff/ of @my/app-features but its parts.tsx), no list keeps the
+//   trail of its pages in the address itself (#3279): no `trail` read or written as a member or a key. useAddressPages
+//   of staff/parts.tsx is the one place that keeps a list's cursor and trail.
 
 import { rules as styles } from "./styles.js";
 
@@ -1147,10 +1157,109 @@ function createZoneDates(context) {
   };
 }
 
+/** The buttons a list's pager would be written with, by their names. */
+const PAGER_BUTTONS = new Set(["Button", "TextButton", "LinkButton"]);
+/** A message of the catalog that pages a list or grows it. */
+const PAGING_MESSAGE = /(?:[._]more|\.earlier|\.later|\.next|\.previous)$/;
+/**
+ * The messages of that shape that page nothing: a thread's fold of the posts between its first and the closest ones,
+ * which shows posts already read, as a disclosure does.
+ */
+const NOT_PAGING = new Set(["thread.earlier"]);
+
+/**
+ * pager-parts (#3279): outside @my/design-system, a Button, TextButton or LinkButton whose words are a paging message.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createPagerParts(context) {
+  /** The message IDs written in `node` as the first argument of a call of `t` (`t("…")`, `strings.t("…")`). */
+  const messages = (/** @type {Node} */ node, /** @type {string[]} */ found) => {
+    if (node === null || typeof node !== "object") return found;
+    if (Array.isArray(node)) {
+      for (const n of node) messages(n, found);
+      return found;
+    }
+    if (node.type === "JSXElement") return found;
+    if (node.type === "CallExpression") {
+      const callee = node.callee;
+      const named =
+        (callee.type === "Identifier" && callee.name === "t") ||
+        (callee.type === "MemberExpression" && !callee.computed && callee.property.name === "t");
+      const first = node.arguments[0];
+      if (named && first?.type === "Literal" && typeof first.value === "string") found.push(first.value);
+    }
+    for (const key of Object.keys(node))
+      if (key !== "parent" && key !== "loc" && key !== "range") messages(node[key], found);
+    return found;
+  };
+  return {
+    JSXElement(/** @type {Node} */ node) {
+      const name = elementName(node.openingElement.name);
+      if (!PAGER_BUTTONS.has(name)) return;
+      const paging = messages(node.children, []).find((id) => PAGING_MESSAGE.test(id) && !NOT_PAGING.has(id));
+      if (paging === undefined) return;
+      context.report({
+        node: node.openingElement,
+        message:
+          `\`<${name}>\` says "${paging}" and pages a list of its own: every paged list has the design system's one ` +
+          "pager (#3279). Use Pager of @my/design-system for a list that is a screen's subject (Previous and Next, " +
+          "Later and Earlier with `periods`), ShowMore with useAddedFocus for one that grows in place.",
+      });
+    },
+  };
+}
+
+/**
+ * page-trail (#3279): in the staff's screens but staff/parts.tsx, no `trail` read or written as a member or a key.
+ * @param {any} context The rule's context, as Oxlint gives it to a JS plugin.
+ */
+function createPageTrail(context) {
+  const file = String(context.filename ?? context.getFilename?.() ?? "");
+  if (!/\/staff\//.test(file) || /\/staff\/parts\.tsx$/.test(file)) return {};
+  const report = (/** @type {Node} */ node) => {
+    context.report({
+      node,
+      message:
+        "`trail` keeps a list's pages in the address outside the one hook (#3279). Read the page with " +
+        "useAddressPages of staff/parts.tsx (its `cursor`, `position` and `pager(next)` for the Pager), and " +
+        "start a list again with `filtered`.",
+    });
+  };
+  return {
+    MemberExpression(/** @type {Node} */ node) {
+      const key = node.property;
+      if (
+        (!node.computed && key.type === "Identifier" && key.name === "trail") ||
+        (node.computed && key.type === "Literal" && key.value === "trail")
+      )
+        report(node);
+    },
+    Property(/** @type {Node} */ node) {
+      if (node.parent?.type === "ObjectExpression" && keyName(node) === "trail") report(node);
+    },
+  };
+}
+
 export default {
   meta: { name: "restrict" },
   rules: {
     ...styles,
+    "pager-parts": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a button that pages or grows a list outside @my/design-system" },
+        schema: [],
+      },
+      create: createPagerParts,
+    },
+    "page-trail": {
+      meta: {
+        type: "problem",
+        docs: { description: "Disallow a trail of pages kept in the address outside the staff's useAddressPages" },
+        schema: [],
+      },
+      create: createPageTrail,
+    },
     "zone-dates": {
       meta: {
         type: "problem",
